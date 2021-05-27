@@ -34,16 +34,17 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_datagram_io
 #include "lib/rx_datagram_io.h"
 
 namespace rx_internal {
 namespace interfaces {
 namespace ip_endpoints {
+class udp_endpoint;
 class udp_port;
 
 } // namespace ip_endpoints
@@ -67,6 +68,14 @@ namespace ip_endpoints {
 
 class udp_endpoint 
 {
+    enum class udp_state
+    {
+        not_active = 0,
+        not_binded = 1,
+        binded = 2,
+        stopped = 3
+    };
+
     struct socket_holder_t : public rx::io::udp_socket_std_buffer
     {
         DECLARE_REFERENCE_PTR(udp_endpoint::socket_holder_t);
@@ -84,7 +93,6 @@ class udp_endpoint
     };
     friend struct udp_endpoint::socket_holder_t;
 public:
-    typedef std::unique_ptr<udp_endpoint> endpoint_ptr;
     typedef rx_reference<socket_holder_t> socket_ptr;
 
     friend struct udp_endpoint::socket_holder_t;
@@ -95,24 +103,34 @@ public:
       ~udp_endpoint();
 
 
-      rx_result open (io::ip4_address addr, uint32_t session_timeout, security::security_context_ptr identity, udp_port* port);
-
-      rx_result close ();
-
       rx_protocol_stack_endpoint* get_stack_endpoint ();
 
       runtime::items::port_runtime* get_port ();
+
+      rx_protocol_result_t send_packet (send_protocol_packet packet);
+
+      rx_result open (io::ip4_address addr, security::security_context_ptr identity, udp_port* port);
+
+      rx_result close ();
+
+      bool tick ();
+
+      bool is_connected () const;
 
 
   protected:
 
   private:
 
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+
       void disconnected (rx_security_handle_t identity);
 
       bool readed (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity);
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+      void start_timer (bool fire_now);
+
+      void suspend_timer ();
 
 
 
@@ -123,9 +141,13 @@ public:
       rx_reference<socket_holder_t> udp_socket_;
 
 
-      io::ip4_address bind_address_;
+      udp_state current_state_;
 
-      uint32_t session_timeout_;
+      rx_timer_ptr timer_;
+
+      locks::slim_lock state_lock_;
+
+      io::ip4_address bind_address_;
 
       security::security_context_ptr identity_;
 
@@ -137,8 +159,7 @@ public:
 
 
 
-
-typedef rx_platform::runtime::io_types::ports_templates::extern_routed_port_impl< udp_endpoint , runtime::io_types::ports_templates::routing_endpoint<runtime::io_types::ports_templates::address_routing_translator<io::ip4_address>, io::ip4_address>  > udp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::ip_endpoints::udp_endpoint  > udp_server_base;
 
 
 
@@ -147,20 +168,10 @@ typedef rx_platform::runtime::io_types::ports_templates::extern_routed_port_impl
 
 class udp_port : public udp_server_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 0, 2, "\
+    DECLARE_CODE_INFO("rx", 0, 5, 0, "\
 UDP port class. implementation of an UDP/IP4 port");
 
     DECLARE_REFERENCE_PTR(udp_port);
-
-    struct session_data_t
-    {
-        rx_protocol_stack_endpoint* entry;
-        uint32_t last_tick;
-    };
-
-    typedef std::map<io::ip4_address, session_data_t> sessions_type;
-
-    
 
   public:
       udp_port();
@@ -170,9 +181,11 @@ UDP port class. implementation of an UDP/IP4 port");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      void timer_tick (uint32_t tick);
+      uint32_t get_reconnect_timeout () const;
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
+
+      virtual rx_result_with<port_connect_result> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
       rx_result stop_passive ();
 
@@ -181,13 +194,10 @@ UDP port class. implementation of an UDP/IP4 port");
 
   protected:
 
-      bool packet_arrived (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity);
-
-
   private:
 
-      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
+      std::unique_ptr<udp_endpoint> endpoint_;
 
 
       io::ip4_address bind_address_;
@@ -195,6 +205,8 @@ UDP port class. implementation of an UDP/IP4 port");
       runtime::local_value<uint32_t> recv_timeout_;
 
       runtime::local_value<uint32_t> send_timeout_;
+
+      runtime::local_value<uint32_t> reconnect_timeout_;
 
 
 };

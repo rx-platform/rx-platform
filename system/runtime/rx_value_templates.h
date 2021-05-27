@@ -151,10 +151,13 @@ public:
     {
         if (ctx_ && handle_)// just in case both of them...
         {
-            val_ = right;
-            if constexpr (!manual)
+            if (val_ != right)
             {
-                internal_commit();
+                val_ = right;
+                if constexpr (!manual)
+                {
+                    internal_commit();
+                }
             }
         }
         return *this;
@@ -163,10 +166,13 @@ public:
     {
         if (ctx_ && handle_)// just in case both of them...
         {
-            val_ = std::move(right);
-            if constexpr (!manual)
+            if (val_ != right)
             {
-                internal_commit();
+                val_ = std::move(right);
+                if constexpr (!manual)
+                {
+                    internal_commit();
+                }
             }
         }
         return *this;
@@ -183,7 +189,7 @@ public:
         }
         return *this;
     }
-    operator typeT()
+    operator typeT() const
     {
         return val_;
     }
@@ -249,10 +255,13 @@ public:
     {
         if (ctx_ && handle_)// just in case both of them...
         {
-            val_ = right;
-            if constexpr (!manual)
+            if (val_ != right)
             {
-                internal_commit();
+                val_ = right;
+                if constexpr (!manual)
+                {
+                    internal_commit();
+                }
             }
         }
         return *this;
@@ -261,10 +270,13 @@ public:
     {
         if (ctx_ && handle_)// just in case both of them...
         {
-            val_ = std::move(right);
-            if constexpr (!manual)
+            if (val_ != right)
             {
-                internal_commit();
+                val_ = std::move(right);
+                if constexpr (!manual)
+                {
+                    internal_commit();
+                }
             }
         }
         return *this;
@@ -281,7 +293,7 @@ public:
         }
         return *this;
     }
-    operator typeT()
+    operator typeT() const
     {
         return val_;
     }
@@ -352,10 +364,6 @@ public:
     }
     remote_local_value& operator=(typeT right)
     {
-        {
-            locks::auto_lock_t<lockT> _(&lock_);
-            value_ = right;
-        }
         if (ctx_ && handle_)// just in case both of them...
         {
             typeT temp(right);
@@ -363,9 +371,9 @@ public:
         }
         return this;
     }
-    operator typeT()
+    operator typeT() const
     {
-        locks::auto_lock_t<lockT> _(&lock_);
+        locks::const_auto_lock_t<lockT> _(&lock_);
         return value_;
     }
 };

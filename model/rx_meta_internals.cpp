@@ -600,27 +600,29 @@ api::query_result types_repository<typeT>::get_derived_types (const rx_node_id& 
 template <class typeT>
 rx_result types_repository<typeT>::register_type (typename types_repository<typeT>::Tptr what)
 {
-	rx_node_id parent_id;
-	if (!what->meta_info.parent.is_null())
-	{
-		ns::rx_directory_resolver dirs;
-		dirs.add_paths({ what->meta_info.path });
-		auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
-		if (!parent_id_result)
-		{
-			return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
-		}
-		parent_id = parent_id_result.move_value();
-	}
-
 	const auto& id = what->meta_info.id;
 
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
 		registered_types_.emplace(what->meta_info.id, what);
-		if(rx_gate::instance().get_platform_status()== rx_platform_status::running)
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+		{
+			rx_node_id parent_id;
+			if (!what->meta_info.parent.is_null())
+			{
+				ns::rx_directory_resolver dirs;
+				dirs.add_paths({ what->meta_info.path });
+				auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
+				if (!parent_id_result)
+				{
+					registered_types_.erase(id);
+					return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
+				}
+				parent_id = parent_id_result.move_value();
+			}
 			auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
+		}
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info.id, typeT::type_id, what->meta_info);
 		RX_ASSERT(type_res);
 		return true;
@@ -1112,25 +1114,29 @@ typename simple_types_repository<typeT>::TdefRes simple_types_repository<typeT>:
 template <class typeT>
 rx_result simple_types_repository<typeT>::register_type (typename simple_types_repository<typeT>::Tptr what)
 {
-	rx_node_id parent_id;
-	if (!what->meta_info.parent.is_null())
-	{
-		ns::rx_directory_resolver dirs;
-		dirs.add_paths({ what->meta_info.path });
-		auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
-		if (!parent_id_result)
-		{
-			return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
-		}
-		parent_id = parent_id_result.move_value();
-	}
 	const auto& id = what->meta_info.id;
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
 		registered_types_.emplace(what->meta_info.id, what);
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
+		{
+			if (!what->meta_info.parent.is_null())
+			{
+				rx_node_id parent_id;
+
+				ns::rx_directory_resolver dirs;
+				dirs.add_paths({ what->meta_info.path });
+				auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
+				if (!parent_id_result)
+				{
+					registered_types_.erase(id);
+					return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
+				}
+				parent_id = parent_id_result.move_value();
+				auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
+			}
+		}
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info.id, typeT::type_id, what->meta_info);
 		RX_ASSERT(type_res);
 		return true;
@@ -1477,25 +1483,29 @@ relations_type_repository::TdefRes relations_type_repository::get_type_definitio
 
 rx_result relations_type_repository::register_type (relations_type_repository::Tptr what)
 {
-	rx_node_id parent_id;
-	if (!what->meta_info.parent.is_null())
-	{
-		ns::rx_directory_resolver dirs;
-		dirs.add_paths({ what->meta_info.path });
-		auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
-		if (!parent_id_result)
-		{
-			return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
-		}
-		parent_id = parent_id_result.move_value();
-	}
+	
 	const auto& id = what->meta_info.id;
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
 		registered_types_.emplace(what->meta_info.id, what);
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+		{
+			rx_node_id parent_id;
+			if (!what->meta_info.parent.is_null())
+			{
+				ns::rx_directory_resolver dirs;
+				dirs.add_paths({ what->meta_info.path });
+				auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
+				if (!parent_id_result)
+				{
+					registered_types_.erase(id);
+					return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
+				}
+				parent_id = parent_id_result.move_value();
+			}
 			auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
+		}
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info.id, relation_type::type_id, what->meta_info);
 		RX_ASSERT(type_res);
 		return true;
@@ -1751,25 +1761,29 @@ data_type_repository::TdefRes data_type_repository::get_type_definition (const r
 
 rx_result data_type_repository::register_type (data_type_repository::Tptr what)
 {
-	rx_node_id parent_id;
-	if (!what->meta_info.parent.is_null())
-	{
-		ns::rx_directory_resolver dirs;
-		dirs.add_paths({ what->meta_info.path });
-		auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
-		if (!parent_id_result)
-		{
-			return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
-		}
-		parent_id = parent_id_result.move_value();
-	}
+	
 	const auto& id = what->meta_info.id;
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
 		registered_types_.emplace(what->meta_info.id, what);
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+		{
+			rx_node_id parent_id;
+			if (!what->meta_info.parent.is_null())
+			{
+				ns::rx_directory_resolver dirs;
+				dirs.add_paths({ what->meta_info.path });
+				auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
+				if (!parent_id_result)
+				{
+					registered_types_.erase(id);
+					return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
+				}
+				parent_id = parent_id_result.move_value();
+			}
 			auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
+		}
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info.id, data_type::type_id, what->meta_info);
 		RX_ASSERT(type_res);
 		return true;

@@ -102,7 +102,7 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 			}
 		}
 		// first create all types
-		for (auto& item : type_items)
+		for (rx_storage_item_ptr& item : type_items)
 		{
 			if (item->get_storage_type() == rx_storage_item_type::type)
 			{
@@ -119,10 +119,8 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 						case STREAMING_TYPE_TYPE:
 							result = create_type_from_storage(item, root);
 							break;
-						case STREAMING_TYPE_OBJECT:
-							continue;
 						default:
-							result = "Invalid serialization type!";
+							result = "Invalid serialization for " + item->get_item_reference();
 						}
 					}
 					else
@@ -139,7 +137,7 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 			}
 		}
 		// then create runtime instances
-		for (auto& item : instance_items)
+		for (rx_storage_item_ptr& item : instance_items)
 		{
 			if (item)
 			{
@@ -155,9 +153,6 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 						{
 							switch (type)
 							{
-							case STREAMING_TYPE_TYPE:
-								continue;
-								break;
 							case STREAMING_TYPE_OBJECT:
 								{
 									auto jbg = item->get_item_path();
@@ -170,6 +165,11 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 											result = create_object_from_storage(item, rt_it->second, root);
 											rt_it->second->close_read();
 										}
+										else
+										{
+											result = rt_result.errors();
+											result.register_error("Unable to open runtime file " + rt_it->second->get_item_reference());
+										}
 									}
 									else
 									{
@@ -179,7 +179,7 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 								}
 								break;
 							default:
-								result = "Invalid serialization type!";
+								result = "Invalid serialization type for " + item->get_item_reference();
 							}
 						}
 						else
@@ -201,6 +201,9 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 	{
 		result.register_error("Error listing storage");
 	}
+	items.clear();
+	type_items.clear();
+	instance_items.clear();
 	return result;
 }
 

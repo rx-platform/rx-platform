@@ -119,6 +119,7 @@ recv_protocol_packet rx_create_recv_packet(rx_packet_id_type id, rx_const_packet
 	ret.to = to;
 	ret.from_addr = NULL;
 	ret.to_addr = NULL;
+	ret.priority = 0;
 	return ret;
 }
 
@@ -131,6 +132,7 @@ send_protocol_packet rx_create_send_packet(rx_packet_id_type id, rx_packet_buffe
 	ret.to = to;
 	ret.from_addr = NULL;
 	ret.to_addr = NULL;
+	ret.priority = 0;
 	return ret;
 }
 

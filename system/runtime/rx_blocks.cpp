@@ -234,7 +234,7 @@ threads::job_thread* mapper_runtime::get_jobs_queue ()
     }*/
 }
 
-std::vector<rx_value> mapper_runtime::get_mapped_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path)
+std::vector<rx_value> mapper_runtime::get_mapped_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const
 {
     return ctx.mappers.get_mapped_values(id, path);
 }
@@ -343,7 +343,7 @@ void source_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
         container_->add_periodic_job(job);
 }
 
-std::vector<rx_value> source_runtime::get_sourced_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path)
+std::vector<rx_value> source_runtime::get_sourced_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const
 {
     return ctx.sources.get_sourced_values(id, path);
 }

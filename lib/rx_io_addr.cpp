@@ -290,7 +290,7 @@ bool ip4_address::operator>=(const ip4_address &right) const
 rx_result ip4_address::parse (const protocol_address* ep)
 {
     rx_free_address(this);
-    if (ep == nullptr)
+    if (rx_is_null_address(ep))
         return true;// null address is always valid
 
     if (ep->type == protocol_address_ip4)
@@ -557,7 +557,7 @@ template <typename defT>
 rx_result numeric_address<defT>::parse (const protocol_address* ep)
 {
     rx_free_address(this);
-    if (ep == nullptr)
+    if (rx_is_null_address(ep))
         return true;// null address is always valid
     defT addr;
     auto result = extract_numeric_address(ep, addr);
@@ -648,6 +648,27 @@ rx_result numeric_address<defT>::parse (const string_type& what)
     }
 }
 
+
+template <typename defT>
+numeric_address<defT>::numeric_address(numeric_address<defT>&& right) noexcept
+{
+    rx_create_null_address(this);
+    rx_move_address(this, &right);
+}
+template <typename defT>
+numeric_address<defT>& numeric_address<defT>::operator=(const numeric_address<defT>& right)
+{
+    rx_free_address(this);
+    rx_copy_address(this, &right);
+    return *this;
+}
+template <typename defT>
+numeric_address<defT>& numeric_address<defT>::operator=(numeric_address<defT>&& right) noexcept
+{
+    rx_free_address(this);
+    rx_move_address(this, &right);
+    return *this;
+}
 // explicit template instantiation
 template class numeric_address<uint8_t>;
 template class numeric_address<uint16_t>;

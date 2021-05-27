@@ -35,14 +35,14 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "system/server/rx_server.h"
 
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // dummy
 #include "dummy.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -66,6 +66,31 @@ class application_algorithms;
 
 
 namespace rx_platform {
+
+struct port_connect_result
+{
+    port_connect_result()
+        : endpoint(nullptr)
+        , connected(false)
+    {
+    }
+    port_connect_result(rx_protocol_stack_endpoint* ep, bool conn)
+        : endpoint(ep)
+        , connected(conn)
+    {
+    }
+    port_connect_result(const port_connect_result&) = default;
+    port_connect_result(port_connect_result&&) noexcept = default;
+    ~port_connect_result() = default;
+
+    rx_protocol_stack_endpoint* endpoint;
+    bool connected;
+    operator bool() const
+    {
+        return endpoint != nullptr;
+    }
+};
+
 
 void rx_split_item_path(const string_type& full_path, string_type& object_path, string_type& item_path);
 
@@ -414,7 +439,7 @@ system port class. basic implementation of a port");
 
       virtual rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
-      virtual rx_result_with<rx_protocol_stack_endpoint*> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+      virtual rx_result_with<port_connect_result> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
       virtual rx_result stop_passive ();
 

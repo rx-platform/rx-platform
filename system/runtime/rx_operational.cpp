@@ -275,6 +275,63 @@ rx_result binded_tags::internal_set_item (const string_type& path, rx_simple_val
 	}
 }
 
+rx_result binded_tags::get_item (const string_type& path, rx_simple_value& what, runtime_start_context& ctx)
+{
+	return internal_get_item(path, what, ctx.structure, ctx.context);
+}
+
+rx_result binded_tags::internal_get_item (const string_type& path, rx_simple_value& what, runtime_structure_resolver& structure, runtime_process_context* ctx)
+{
+	string_type revisied_path;
+	rt_value_ref ref;
+	ref.ref_type = rt_value_ref_type::rt_null;
+
+	if (!path.empty())
+	{
+		switch (path[0])
+		{
+		case RX_PATH_CURRENT:
+			{
+				auto ref_result = structure.get_current_item().get_value_ref(&path.c_str()[1], ref);
+				if (!ref_result)
+					return ref_result.errors();
+			}
+			break;
+		case RX_PATH_PARENT:
+			{
+				size_t idx = 1;
+				while (idx < path.size() && path[idx] == RX_PATH_PARENT)
+					idx++;
+				auto ref_result = structure.get_current_item().get_value_ref(path, ref);
+				if (!ref_result)
+					return ref_result.errors();
+			}
+			break;
+		}
+	}
+	if (ref.ref_type == rt_value_ref_type::rt_null)
+	{
+		auto ref_result = structure.get_root().get_value_ref(path, ref);
+		if (!ref_result)
+			return ref_result.errors();
+	}
+	switch (ref.ref_type)
+	{
+	case rt_value_ref_type::rt_const_value:
+		what = ref.ref_value_ptr.const_value->get_value(ctx).to_simple();
+	case rt_value_ref_type::rt_value:
+		what = ref.ref_value_ptr.value->get_value(ctx).to_simple();
+		return true;
+	default:
+		return "Unsupported type!.";
+	}
+}
+
+rx_result binded_tags::get_item (const string_type& path, rx_simple_value& what, runtime_init_context& ctx)
+{
+	return internal_get_item(path, what, ctx.structure, ctx.context);
+}
+
 
 // Class rx_platform::runtime::tag_blocks::connected_tags 
 

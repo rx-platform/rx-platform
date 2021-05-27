@@ -464,11 +464,17 @@ public:
 
 class rx_simple_value
 {
-  public:template<typename typeT>
+  public:
+      template<typename typeT>
 	  void assign_static(typeT&& val, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY)
 	  {
 		  storage_.assign_static(std::forward<typeT>(val));
 	  }
+      template<typename typeT>
+      typeT extract_static(const typeT& def) const
+      {
+          return extract_value<typeT>(storage_, def);
+      }
 	  ~rx_simple_value() = default;
 	  rx_simple_value() = default;
 	  rx_simple_value(const rx_simple_value &right);
@@ -564,6 +570,11 @@ public:
 		storage_.assign_static(std::forward<typeT>(val));
 		quality_ = quality;
 	}
+    template<typename typeT>
+    typeT extract_static(const typeT& def) const
+    {
+        return extract_value<typeT>(storage_, def);
+    }
 	~rx_value() = default;
 	rx_value();
 	rx_value(const rx_value &right);
@@ -749,6 +760,11 @@ public:
 		time_ = ts;
 		storage_.assign_static(std::forward<typeT>(val));
 	}
+    template<typename typeT>
+    typeT extract_static(const typeT& def) const
+    {
+        return extract_value<typeT>(storage_, def);
+    }
 	~rx_timed_value() = default;
 	rx_timed_value();
 	rx_timed_value(const rx_timed_value &right);

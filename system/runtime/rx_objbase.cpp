@@ -285,7 +285,7 @@ rx_result port_runtime::start_listen (const protocol_address* local_address, con
     return RX_NOT_SUPPORTED;
 }
 
-rx_result_with<rx_protocol_stack_endpoint*> port_runtime::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+rx_result_with<port_connect_result> port_runtime::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
 {
 	return RX_NOT_SUPPORTED;
 }

@@ -51,6 +51,8 @@
 #include "system/runtime/rx_port_stack_construction.h"
 #include "system/runtime/rx_port_stack_passive.h"
 #include "system/runtime/rx_port_stack_active.h"
+#include "system/runtime/rx_full_duplex_packet.h"
+#include "system/runtime/rx_transaction_limiter.h"
 
 
 namespace rx_internal {
@@ -145,6 +147,20 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
             RX_TCP_CLIENT_PORT_TYPE_ID, [] {
                 return rx_create_reference<ip_endpoints::tcp_client_port>();
             });
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_IP4_ROUTER_TYPE_ID, [] {
+				return rx_create_reference<runtime::io_types::ports_lib::ip4_routing_port>();
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_BYTE_ROUTER_TYPE_ID, [] {
+				return rx_create_reference<runtime::io_types::ports_lib::byte_routing_port>();
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_TRANS_LIMITER_TYPE_ID, [] {
+				return rx_create_reference<runtime::io_types::ports_lib::transaction_limiter_port>();
+			});
+		
+
         rx_internal::terminal::commands::server_command_manager::instance()->register_internal_commands();
 	}
 	return result;

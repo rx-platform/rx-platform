@@ -45,6 +45,7 @@ using namespace rx_platform;
 
 #include "rx_runtime_holder.h"
 #include "interfaces/rx_endpoints.h"
+#include "sys_internal/rx_async_functions.h"
 
 
 namespace rx_platform {
@@ -380,9 +381,19 @@ rx_result_with<rx_protocol_stack_endpoint*> routing_endpoint<translatorT,addrT>:
         {
             if (connected_)
             {
-                // we are already connected so send connected up
-                rx_session session = rx_create_session(&local_addr, &remote_addr, local_ref, remote_ref, nullptr);
-                rx_notify_connected(&emplace_result.first->second->stack, &session);
+                rx_post_function_to(RX_DOMAIN_IO, smart_this(), [this](session_key_t map_key)
+                    {// we are already connected so send connected up
+
+                        locks::auto_slim_lock _(&sessions_lock_);
+
+                        auto it = active_map_.find(map_key);
+                        if (it != active_map_.end())
+                        {
+                            rx_session session = rx_create_session(&it->second->local_addr, &it->second->remote_addr, it->second->local_reference, it->second->remote_reference, nullptr);
+                            rx_notify_connected(&it->second->stack, &session);
+                        }
+                    }, map_key);
+                
             }
         }
 
@@ -392,6 +403,12 @@ rx_result_with<rx_protocol_stack_endpoint*> routing_endpoint<translatorT,addrT>:
     {
         return "Address already occupied";
     }
+}
+
+template <typename translatorT, typename addrT>
+bool routing_endpoint<translatorT,addrT>::is_connected () const
+{
+    return connected_;
 }
 
 template class routing_endpoint<simple_slave_routing_translator<uint8_t>, io::numeric_address<uint8_t> >;

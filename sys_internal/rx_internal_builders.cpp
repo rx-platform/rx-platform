@@ -1132,24 +1132,6 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 		port->complex_data.register_struct("Status", RX_PHY_PORT_STATUS_TYPE_ID);
 		add_type_to_configuration(dir, port, true);
 
-		/*port = create_type<port_type>(meta::object_type_creation_data{
-			RX_PHYSICAL_SINGLE_PORT_TYPE_NAME
-			, RX_PHYSICAL_SINGLE_PORT_TYPE_ID
-			, RX_EXTERNAL_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		add_type_to_configuration(dir, port, true);
-
-		port = create_type<port_type>(meta::object_type_creation_data{
-			RX_PHYSICAL_MULTI_PORT_TYPE_NAME
-			, RX_PHYSICAL_MULTI_PORT_TYPE_ID
-			, RX_EXTERNAL_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		add_type_to_configuration(dir, port, true);*/
-
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TTY_PORT_TYPE_NAME
 			, RX_TTY_PORT_TYPE_ID
@@ -1175,7 +1157,6 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		port->complex_data.register_struct("Bind", RX_IP_BIND_TYPE_ID);
-		port->complex_data.register_struct("Timeouts", RX_TIMEOUTS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1186,7 +1167,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		port->complex_data.register_struct("Bind", RX_IP_BIND_TYPE_ID);
-		port->complex_data.register_struct("Timeouts", RX_TIMEOUTS_TYPE_ID);
+		port->complex_data.register_struct("Timeouts", RX_SERVER_TIMEOUTS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1255,6 +1236,43 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		add_type_to_configuration(dir, port, false);
+
+		// special types of ports, routers, limiters, bridges....
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_IP4_ROUTER_TYPE_NAME
+			, RX_IP4_ROUTER_TYPE_ID
+			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_const_value_static("Initiator", false);
+		port->complex_data.register_const_value_static("Listener", false);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_BYTE_ROUTER_TYPE_NAME
+			, RX_BYTE_ROUTER_TYPE_ID
+			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_const_value_static("Initiator", false);
+		port->complex_data.register_const_value_static("Listener", false);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_TRANS_LIMITER_TYPE_NAME
+			, RX_TRANS_LIMITER_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Timeouts", RX_MASTER_TIMEOUTS_TYPE_ID);
+		port->complex_data.register_struct("Status", RX_MASTER_PORT_STATUS_TYPE_ID);
+		port->complex_data.register_simple_value_static("Limit", 1, false, true);
+		port->complex_data.register_simple_value_static("IgnoreZeros", true, false, true);
+		port->complex_data.register_simple_value_static("QueueSize", 0, true, false);
 		add_type_to_configuration(dir, port, false);
 
 		// protocol ports
@@ -1527,6 +1545,34 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
+			RX_CLIENT_PORT_STATUS_TYPE_NAME
+			, RX_CLIENT_PORT_STATUS_TYPE_ID
+			, RX_PORT_STATUS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static<bool>("Connected", false, false, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_MASTER_PORT_STATUS_TYPE_NAME
+			, RX_MASTER_PORT_STATUS_TYPE_ID
+			, RX_PORT_STATUS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static<bool>("Online", false, true, false);
+		what->complex_data.register_simple_value_static<int64_t>("Reads", 0, false, false);
+		what->complex_data.register_simple_value_static<int64_t>("Writes", 0, false, false);
+		what->complex_data.register_simple_value_static<int64_t>("FailedReads", 0, false, false);
+		what->complex_data.register_simple_value_static<int64_t>("FailedWrites", 0, false, false);
+		what->complex_data.register_simple_value_static<float>("LastRead", 0, true, false);
+		what->complex_data.register_simple_value_static<float>("MaxRead", 0, false, false);
+		what->complex_data.register_simple_value_static<float>("LastWrite", 0, true, false);
+		what->complex_data.register_simple_value_static<float>("MaxWrite", 0, false, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_IP_BIND_TYPE_NAME
 			, RX_IP_BIND_TYPE_ID
 			, RX_CLASS_STRUCT_BASE_ID
@@ -1544,6 +1590,15 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_SERVER_TIMEOUTS_TYPE_NAME
+			, RX_SERVER_TIMEOUTS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
 		what->complex_data.register_simple_value_static<uint32_t>("ReceiveTimeout", 10000, false, true);
 		what->complex_data.register_simple_value_static<uint32_t>("SendTimeout", 1000, false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
@@ -1555,8 +1610,21 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		what->complex_data.register_simple_value_static<uint32_t>("ReceiveTimeout", 10000, false, true);
+		what->complex_data.register_simple_value_static<uint32_t>("SendTimeout", 1000, false, true);
 		what->complex_data.register_simple_value_static<uint32_t>("ConnectTimeout", 2000, false, true);
 		what->complex_data.register_simple_value_static<uint32_t>("ReconnectTimeout", 5000, false, true);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_MASTER_TIMEOUTS_TYPE_NAME
+			, RX_MASTER_TIMEOUTS_TYPE_ID
+			, RX_TIMEOUTS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static<uint32_t>("ReadTimeout", 200, false, true);
+		what->complex_data.register_simple_value_static<uint32_t>("WriteTimeout", 500, false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{

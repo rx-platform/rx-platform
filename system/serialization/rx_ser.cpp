@@ -1016,7 +1016,7 @@ public:
 struct json_writer_data
 {
 	std::stack<json_write_stack_data, std::vector<json_write_stack_data> > stack;
-
+	json_writer_data() : writer(stream) {}
 	rapidjson::StringBuffer stream;
 	rapidjson::Writer<rapidjson::StringBuffer> writer;
 };

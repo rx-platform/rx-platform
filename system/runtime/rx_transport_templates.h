@@ -33,10 +33,10 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_active_endpoints
 #include "system/runtime/rx_active_endpoints.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 
 
@@ -145,7 +145,7 @@ public:
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
-      rx_result_with<rx_protocol_stack_endpoint*> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+      rx_result_with<port_connect_result> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
       void stack_assembled ();
 
@@ -192,7 +192,7 @@ public:
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
-      rx_result_with<rx_protocol_stack_endpoint*> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+      rx_result_with<port_connect_result> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
       void stack_assembled ();
 
@@ -336,7 +336,7 @@ rx_result routed_transport_port_impl<endpointT,routingT>::start_listen (const pr
 }
 
 template <typename endpointT, typename routingT>
-rx_result_with<rx_protocol_stack_endpoint*> routed_transport_port_impl<endpointT,routingT>::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+rx_result_with<port_connect_result> routed_transport_port_impl<endpointT,routingT>::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
 {
     return RX_NOT_SUPPORTED;
 }
@@ -420,10 +420,13 @@ rx_result routed_master_transport_impl<endpointT,routingT>::start_listen (const 
 }
 
 template <typename endpointT, typename routingT>
-rx_result_with<rx_protocol_stack_endpoint*> routed_master_transport_impl<endpointT,routingT>::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+rx_result_with<port_connect_result> routed_master_transport_impl<endpointT,routingT>::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
 {
     auto result = active_endpoint_.router(this)->create_session(local_address, remote_address, endpoint);
-    return result;
+    if (result)
+        return port_connect_result(result.value(), active_endpoint_.router(this)->is_connected());
+    else
+        return result.errors();
 }
 
 template <typename endpointT, typename routingT>

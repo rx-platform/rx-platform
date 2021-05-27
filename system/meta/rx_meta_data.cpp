@@ -550,7 +550,10 @@ rx_item_reference meta_data::create_weak_item_reference (const string_array& dir
 
 void meta_data::increment_version (bool full_ver)
 {
-	version++;
+	if (full_ver)
+		version = ((version >> 16) + 1 ) << 16;
+	else
+		version++;
 }
 
 meta_data create_meta_for_new(const meta_data& proto)

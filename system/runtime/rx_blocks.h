@@ -95,7 +95,7 @@ filter runtime. basic implementation of an filter runtime");
           auto result = get_value(handle, temp_val);
           if (result)
           {
-              return values::extract_value<valT>(temp_val.get_storage(), default_value);
+              return temp_val.extract_static<valT>(default_value);
           }
           return default_value;
       }
@@ -176,7 +176,7 @@ source runtime. basic implementation of an source runtime");
 
       void source_result_received (rx_result&& result, runtime_transaction_id_t id);
 
-      std::vector<rx_value> get_sourced_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path);
+      std::vector<rx_value> get_sourced_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const;
 
 
       rx_value_t get_value_type () const;
@@ -192,7 +192,7 @@ source runtime. basic implementation of an source runtime");
           {
               for (const auto& raw : raw_values)
               {
-                  ret.emplace_back(values::extract_value<T>(raw.get_storage(), default_value));
+                  ret.emplace_back(raw.extract_static<T>(default_value));
               }
           }
           return ret;
@@ -425,7 +425,7 @@ mapper runtime. basic implementation of an mapper runtime");
 
       void map_current_value () const;
 
-      std::vector<rx_value> get_mapped_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path);
+      std::vector<rx_value> get_mapped_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const;
 
 
       rx_value_t get_value_type () const;
@@ -441,7 +441,7 @@ mapper runtime. basic implementation of an mapper runtime");
           {
               for (const auto& raw : raw_values)
               {
-                  ret.emplace_back(values::extract_value<T>(raw.get_storage(), default_value));
+                  ret.emplace_back(raw.extract_static<T>(default_value));
               }
           }
           return ret;

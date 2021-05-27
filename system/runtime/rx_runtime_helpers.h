@@ -45,10 +45,6 @@ using namespace rx::values;
 
 
 namespace rx_platform {
-namespace runtime {
-class relation_subscriber;
-} // namespace runtime
-
 namespace ns {
 class rx_directory_resolver;
 } // namespace ns
@@ -69,6 +65,7 @@ namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
 
+class relation_subscriber;
 class runtime_process_context;
 namespace tag_blocks {
 class binded_tags;
@@ -233,7 +230,7 @@ typedef rx::const_size_vector<structure::variable_data> runtime_variables_type;
 typedef rx::const_size_vector<structure::struct_data> runtime_structs_type;
 typedef rx::const_size_vector<structure::event_data> runtime_events_type;
 typedef rx::const_size_vector<structure::filter_data> runtime_filters_type;
-typedef rx::const_size_vector<structure::source_data> runtime_sources_type; 
+typedef rx::const_size_vector<structure::source_data> runtime_sources_type;
 typedef rx::const_size_vector<structure::mapper_data> runtime_mappers_type;
 
 union rt_value_ref_union
@@ -411,12 +408,16 @@ struct runtime_deinit_context
 struct runtime_start_context 
 {
 
-      runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories, relations::relations_holder* relations);
+      runtime_start_context (structure::runtime_item& root, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, relations::relations_holder* relations);
 
 
       runtime_handle_t connect (const string_type& path, uint32_t rate, std::function<void(const values::rx_value&)> callback);
 
       rx_result register_relation_subscriber (const string_type& name, relation_subscriber* who);
+
+      rx_result set_item (const string_type& path, rx_simple_value&& value);
+
+      rx_result get_item (const string_type& path, rx_simple_value& val);
 
 
       runtime_path_resolver path;
@@ -427,13 +428,40 @@ struct runtime_start_context
 
       runtime_process_context *context;
 
+      tag_blocks::binded_tags *tags;
+
 
       ns::rx_directory_resolver* directories;
 
       rx_time now;
 
   public:
+      template<typename T>
+      rx_result set_item_static(const string_type& path, T&& value)
+      {
+          rx_simple_value temp;
+          temp.assign_static<T>(std::forward<T>(value));
+          auto result = set_item(path, std::move(temp));
 
+          return result;
+      }
+      template<typename T>
+      T get_item_static(const string_type& path, const T& def = T(0))
+      {
+          rx_simple_value temp;
+          auto result = get_item(path, temp);
+          if (result)
+          {
+              if (temp.convert_to(values::get_type<T>()))
+                  return values::extract_value<T>(temp.get_storage(), def);
+              else
+                  return def;
+          }
+          else
+          {
+              return def;
+          }
+      }
   protected:
 
   private:
@@ -541,6 +569,8 @@ struct runtime_init_context
 
       rx_result set_item (const string_type& path, rx_simple_value&& value);
 
+      rx_result get_item (const string_type& path, rx_simple_value& val);
+
 
       runtime_path_resolver path;
 
@@ -576,6 +606,23 @@ struct runtime_init_context
           auto result = set_item(path, std::move(temp));
 
           return result;
+      }
+      template<typename T>
+      T get_item_static(const string_type& path, const T& def = T(0))
+      {
+          rx_simple_value temp;
+          auto result = get_item(path, temp);
+          if (result)
+          {
+              if (temp.convert_to(values::get_type<T>()))
+                  return values::extract_value<T>(temp.get_storage(), def);
+              else
+                  return def;
+          }
+          else
+          {
+              return def;
+          }
       }
   protected:
 

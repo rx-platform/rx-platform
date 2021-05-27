@@ -139,6 +139,8 @@ class routing_endpoint : public rx::pointers::reference_object
 
       rx_result_with<rx_protocol_stack_endpoint*> create_session (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
+      bool is_connected () const;
+
 
       runtime::items::port_runtime* get_port ()
       {

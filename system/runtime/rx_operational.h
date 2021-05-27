@@ -257,6 +257,10 @@ class binded_tags
 
       rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_start_context& ctx);
 
+      rx_result get_item (const string_type& path, rx_simple_value& what, runtime_start_context& ctx);
+
+      rx_result get_item (const string_type& path, rx_simple_value& what, runtime_init_context& ctx);
+
 	  template<typename T>
 	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
 	  {
@@ -280,6 +284,8 @@ class binded_tags
   private:
 
       rx_result internal_set_item (const string_type& path, rx_simple_value&& what, runtime_structure_resolver& structure);
+
+      rx_result internal_get_item (const string_type& path, rx_simple_value& what, runtime_structure_resolver& structure, runtime_process_context* ctx);
 
 
 

@@ -162,8 +162,15 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
                 item_result.value()->write_stream().write_header(STREAMING_TYPE_MESSAGE, 0);
                 result = serialize_runtime_value(item_result.value()->write_stream(), runtime_value_type::persistent_runtime_value, whose);
                 if (result)
-                    result = item_result.value()->commit_write();
-                RUNTIME_LOG_DEBUG("runtime_model_algorithm", 100, "Saved "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+                {
+                    result = item_result.value()->write_stream().write_footer();
+                    if (result)
+                        result = item_result.value()->commit_write();
+                    if (result)
+                        RUNTIME_LOG_DEBUG("runtime_model_algorithm", 100, "Saved "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+                    else
+                        RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+                }
             }
             else
             {
@@ -192,7 +199,7 @@ runtime_init_context runtime_holder_algorithms<typeT>::create_init_context (type
 template <class typeT>
 runtime_start_context runtime_holder_algorithms<typeT>::create_start_context (typename typeT::RType& whose)
 {
-    return runtime_start_context(*whose.tags_.item_, &whose.context_, &whose.directories_, &whose.relations_);
+    return runtime_start_context(*whose.tags_.item_, &whose.context_, &whose.tags_.binded_tags_, &whose.directories_, &whose.relations_);
 }
 
 template <class typeT>
@@ -282,13 +289,17 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
             result = serialize_runtime_value(writer, runtime_value_type::simple_runtime_value, whose);
             if (result)
             {
+                result = writer.write_footer();
+                if (result)
+                {
 #ifdef _DEBUG
-                const_cast<string_type&>(whose.json_cache_) = writer.get_string();
+                    const_cast<string_type&>(whose.json_cache_) = writer.get_string();
 #else
-                const_cast<string_type&>(whose.json_cache_) = writer.get_string();
+                    const_cast<string_type&>(whose.json_cache_) = writer.get_string();
 #endif
-                if(!whose.json_cache_.empty())
-                    value.assign_static<string_type>(string_type(whose.json_cache_), whose.meta_info_.modified_time);
+                    if (!whose.json_cache_.empty())
+                        value.assign_static<string_type>(string_type(whose.json_cache_), whose.meta_info_.modified_time);
+                }
             }
         }
 #else
@@ -312,10 +323,14 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
         result = serialize_runtime_value(writer, runtime_value_type::persistent_runtime_value, whose);
         if (result)
         {
-            string_type temp_str(writer.get_string());
-            if (!temp_str.empty())
+            result = writer.write_footer();
+            if (result)
             {
-                value.assign_static<string_type>(string_type(temp_str), whose.meta_info_.modified_time);
+                string_type temp_str(writer.get_string());
+                if (!temp_str.empty())
+                {
+                    value.assign_static<string_type>(string_type(temp_str), whose.meta_info_.modified_time);
+                }
             }
         }
     }

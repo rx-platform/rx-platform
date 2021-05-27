@@ -44,6 +44,7 @@ extern "C" {
 
 
 typedef uint32_t rx_packet_id_type;
+typedef uint_fast8_t rx_packet_priority_type;
 typedef uint32_t rx_address_reference_type;
 
 
@@ -55,6 +56,7 @@ typedef struct rx_recv_protocol_packet_def
 	rx_address_reference_type to;
 	rx_const_packet_buffer* buffer;
 	rx_packet_id_type id;
+	rx_packet_priority_type priority;
 
 } recv_protocol_packet;
 
@@ -70,6 +72,7 @@ typedef struct rx_send_protocol_packet_def
 	rx_address_reference_type to;
 	rx_packet_buffer* buffer;
 	rx_packet_id_type id;
+	rx_packet_priority_type priority;
 
 } send_protocol_packet;
 

@@ -121,13 +121,19 @@ rx_result passive_builder::send_connect (rx_port_ptr who, const io::any_address&
     {
         io::any_address local_addr_copy(local_addr);
         io::any_address remote_addr_copy(remote_addr);
-        auto result = send_connect_down_recursive(who, ep, local_addr_copy, remote_addr_copy);
+        std::pair<rx_protocol_stack_endpoint*, rx_session*> connected_data{};
+        auto result = send_connect_down_recursive(who, ep, local_addr_copy, remote_addr_copy, connected_data);
         if (result)
         {
             result = stack_active::active_builder::register_connection_endpoints(
                 who, ep, who, nullptr, &local_addr_copy, &remote_addr_copy);
             if (result)
             {
+                if (connected_data.first)
+                {
+                    auto session = rx_create_session(&local_addr, &remote_addr, 0, 0, nullptr);
+                    rx_notify_connected(connected_data.first, &session);
+                }
                 return true;
             }
             else
@@ -159,9 +165,11 @@ rx_result passive_builder::send_connect (rx_port_ptr who, const io::any_address&
     }
 }
 
-rx_result passive_builder::send_connect_down_recursive (rx_port_ptr who, rx_protocol_stack_endpoint* ep, io::any_address& local_addr, io::any_address remote_addr)
+rx_result passive_builder::send_connect_down_recursive (rx_port_ptr who, rx_protocol_stack_endpoint* ep, io::any_address& local_addr, io::any_address remote_addr, std::pair<rx_protocol_stack_endpoint*, rx_session*>& connected)
 {
     auto& who_data = who->get_instance_data().stack_data;
+    if (!who_data.build_map.stack_ready || !who_data.build_map.stack_top)
+        return "Protocol stack not ready";
     rx_port_ptr stack_top = who_data.build_map.stack_top;
     auto& top_data = stack_top->get_instance_data().stack_data;
     auto& top_passive_kind = stack_top->get_instance_data().behavior.passive_behavior;
@@ -180,18 +188,25 @@ rx_result passive_builder::send_connect_down_recursive (rx_port_ptr who, rx_prot
     rx_protocol_stack_endpoint* top_ep = nullptr;
     if (top_passive_kind->is_connect_subscriber())
     {
-        if (!top_data.passive_map.stack_binded)
+        if (true)//!top_data.passive_map.stack_binded)
         {
             rx_result result;
             auto connect_result = stack_top->get_implementation()->start_connect(&local_addr, &remote_addr, ep);
             if (connect_result)
             {
-                result = stack_active::active_builder::register_connection_endpoints(stack_top, connect_result.value(), who, ep, &local_addr, &remote_addr);
+                result = stack_active::active_builder::register_connection_endpoints(stack_top, connect_result.value().endpoint, who, ep, &local_addr, &remote_addr);
                 if (result)
                 {
                     who_data.passive_map.stack_binded = true;
-                    top_data.passive_map.stack_binded = true;
+                    if(connect_result.value().connected)
+                        connected.first = connect_result.value().endpoint;
                     return true;
+                }
+                if (connect_result.value().endpoint)
+                {
+                    auto result = rx_pop_stack(connect_result.value().endpoint);
+                    if (result != RX_PROTOCOL_OK)
+                        RX_ASSERT(false);
                 }
             }
             else
@@ -222,13 +237,19 @@ rx_result passive_builder::send_connect_down_recursive (rx_port_ptr who, rx_prot
 
                 io::any_address local_addr_copy;
                 io::any_address remote_addr_copy;
-                result = send_connect_down_recursive(stack_top, top_ep, local_addr_copy, remote_addr_copy);
+                result = send_connect_down_recursive(stack_top, top_ep, local_addr_copy, remote_addr_copy, connected);
                 if (result)
                 {
                     who_data.passive_map.stack_binded = true;
                     who_data.passive_map.bind_port = stack_top;
                     return true;
                 }
+            }
+            if (ep)
+            {
+                auto result = rx_pop_stack(ep);
+                if (result != RX_PROTOCOL_OK)
+                    RX_ASSERT(false);
             }
             stack_top->get_implementation()->destroy_endpoint(top_ep);
         }

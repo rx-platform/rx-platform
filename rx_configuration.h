@@ -221,6 +221,16 @@
 #define RX_ETHERNET_PORT_TYPE_NAME "EthernetPort"
 #define RX_ETHENERT_PORT_TYPE_ID 0xc000016
 
+
+#define RX_IP4_ROUTER_TYPE_NAME "IP4RouterPort"
+#define RX_IP4_ROUTER_TYPE_ID 0xc00005a
+#define RX_BYTE_ROUTER_TYPE_NAME "ByteRouterPort"
+#define RX_BYTE_ROUTER_TYPE_ID 0xc00005b
+
+
+#define RX_TRANS_LIMITER_TYPE_NAME "TransactionLimiterPort"
+#define RX_TRANS_LIMITER_TYPE_ID 0xc00005c
+
 #define RX_VT00_TYPE_NAME "VT100Port"
 #define RX_VT00_TYPE_ID 0xc000017
 
@@ -230,8 +240,13 @@
 
 #define RX_PORT_STATUS_TYPE_NAME "PortStatusData"
 #define RX_PORT_STATUS_TYPE_ID 0xc000019
-#define RX_PHY_PORT_STATUS_TYPE_NAME "PhysicalPortStatusData"
+#define RX_PHY_PORT_STATUS_TYPE_NAME "ExternalPortStatusData"
 #define RX_PHY_PORT_STATUS_TYPE_ID 0xc000020
+#define RX_CLIENT_PORT_STATUS_TYPE_NAME "ClientPortStatusData"
+#define RX_CLIENT_PORT_STATUS_TYPE_ID 0xc00005e
+#define RX_MASTER_PORT_STATUS_TYPE_NAME "MasterPortStatusData"
+#define RX_MASTER_PORT_STATUS_TYPE_ID 0xc00005f
+
 #define RX_IP_BIND_TYPE_NAME "IPBindData"
 #define RX_IP_BIND_TYPE_ID 0xc000021
 
@@ -243,6 +258,10 @@
 #define RX_TIMEOUTS_TYPE_ID 0xc000024
 #define RX_CLIENT_TIMEOUTS_TYPE_NAME "ClientTimeoutsData"
 #define RX_CLIENT_TIMEOUTS_TYPE_ID 0xc000025
+#define RX_SERVER_TIMEOUTS_TYPE_NAME "ServerTimeoutsData"
+#define RX_SERVER_TIMEOUTS_TYPE_ID 0xc000060
+#define RX_MASTER_TIMEOUTS_TYPE_NAME "MasterTimeoutsData"
+#define RX_MASTER_TIMEOUTS_TYPE_ID 0xc00005d
 
 // runtime support structures
 #define RX_POOL_DATA_TYPE_NAME "PoolData"
@@ -332,7 +351,7 @@
 #define RX_TCP_RX_PORT_TYPE_NAME "SystemRxPort"
 
 
-// last is 0xc000059!!!! 
+// last is 0xc000060!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

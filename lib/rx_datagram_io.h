@@ -205,15 +205,22 @@ int udp_socket<buffT>::internal_read_from_callback (size_t count, uint32_t statu
     if (!receiving)
         return 0;
 
-    if (status == 0 && count != 0)
+    if (status == 0)
     {
-        if (readed(dispatcher_data_.read_buffer, count, addr, get_identity()))
+        if (count != 0)
         {
-            ret = read_loop();
-            if (!ret)
-            {   // read closes socket here
-                internal_shutdown_callback(0);
+            if (readed(dispatcher_data_.read_buffer, count, addr, get_identity()))
+            {
+                ret = read_loop();
+                if (!ret)
+                {   // read closes socket here
+                    internal_shutdown_callback(0);
+                }
             }
+        }
+        else
+        {// UDP error shit
+            ret = read_loop();
         }
     }
     return ret ? 1 : 0;

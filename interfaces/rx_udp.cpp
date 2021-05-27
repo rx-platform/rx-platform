@@ -48,7 +48,8 @@ namespace ip_endpoints {
 
 udp_port::udp_port()
       : recv_timeout_(2000),
-        send_timeout_(1000)
+        send_timeout_(1000),
+        reconnect_timeout_(5000)
 {
 }
 
@@ -61,13 +62,6 @@ udp_port::~udp_port()
 
 rx_result udp_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    auto bind_result = recv_timeout_.bind("Timeouts.ReceiveTimeout", ctx);
-    if (!bind_result)
-        RUNTIME_LOG_ERROR("udp_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
-    bind_result = send_timeout_.bind("Timeouts.SendTimeout", ctx);
-    if (!bind_result)
-        RUNTIME_LOG_ERROR("udp_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
-
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
     bind_address_.parse(addr, port);
@@ -75,63 +69,44 @@ rx_result udp_port::initialize_runtime (runtime::runtime_init_context& ctx)
     return true;
 }
 
-void udp_port::timer_tick (uint32_t tick)
+uint32_t udp_port::get_reconnect_timeout () const
 {
-   /* std::vector<std::pair<io::ip4_address, rx_protocol_stack_endpoint*> > to_remove;
-    sessions_lock_.lock();
-    if (!sessions_.empty())
-    {
-        auto it = sessions_.begin();
-        while (it != sessions_.end())
-        {
-            uint32_t diff = (it->second.last_tick + session_timeout_) - tick;
-            if (diff & 0x80000000)
-            {
-                to_remove.emplace_back(it->first, it->second.entry);
-                it = sessions_.erase(it);
-            }
-            else
-            {
-                it++;
-            }
-        }
-    }
-    sessions_lock_.unlock();
-    if (!to_remove.empty())
-    {
-        for (const auto& one : to_remove)
-        {
-            std::ostringstream ss;
-            ss << "UDP/IP4 session from "
-                << one.first.to_string()
-                << " time-outed.";
-            ITF_LOG_TRACE("udp_port", 500, ss.str());
-        }
-    }*/
+    return (uint32_t)reconnect_timeout_;
 }
 
 rx_result udp_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
-    auto ep = std::make_unique<udp_endpoint>();
+    return RX_NOT_SUPPORTED;
+}
+
+rx_result_with<port_connect_result> udp_port::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+{
+    auto session_timeout = recv_timeout_;
+    endpoint_ = std::make_unique<udp_endpoint>();
     auto sec_result = create_security_context();
     if (!sec_result)
     {
-        rx_result ret(sec_result.errors());
-        ret.register_error("Unable to create security context");
+        sec_result.register_error("Unable to create security context");
+        return sec_result.errors();
     }
-    auto result = ep->open(bind_address_, recv_timeout_, sec_result.value(), this);
+    endpoint_->get_stack_endpoint()->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+    {
+        udp_endpoint* whose = reinterpret_cast<udp_endpoint*>(entry->user_data);
+        whose->get_port()->disconnect_stack_endpoint(entry);
+    };
+    auto result = endpoint_->open(bind_address_, sec_result.value(), this);
     if (!result)
     {
         stop_passive();
-        return result;
+        return result.errors();
     }
-    result = add_stack_endpoint(ep->get_stack_endpoint(), std::move(ep));
-    return result;
+    return port_connect_result(endpoint_->get_stack_endpoint(), endpoint_->is_connected());
 }
 
 rx_result udp_port::stop_passive ()
 {
-    close_all_endpoints();
+    if (endpoint_)
+        endpoint_->close();
     return true;
 }
 
@@ -154,16 +129,23 @@ void udp_port::extract_bind_address (const data::runtime_values_data& binder_dat
                 local_addr = &ip_addr;
         }
     }
-}
-
-rx_protocol_result_t udp_port::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
-{
-    return RX_PROTOCOL_EMPTY;
-}
-
-bool udp_port::packet_arrived (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity)
-{
-    return RX_PROTOCOL_EMPTY;
+    if (remote_addr.is_null())
+    {
+        auto addr = binder_data.get_value("Connect.IPAddress");
+        auto port = binder_data.get_value("Connect.IPPort");
+        string_type addr_str;
+        uint16_t port_val = 0;
+        if (!addr.is_null())
+            addr_str = addr.get_storage().get_string_value();
+        if (!port.is_null())
+            port_val = (uint16_t)port.get_storage().get_integer_value();
+        if (!addr_str.empty() || port_val != 0)
+        {
+            io::ip4_address ip_addr(addr_str, port_val);
+            if (ip_addr.is_valid())
+                remote_addr = &ip_addr;
+        }
+    }
 }
 
 
@@ -171,7 +153,7 @@ bool udp_port::packet_arrived (const void* data, size_t count, const struct sock
 
 udp_endpoint::udp_endpoint()
       : my_port_(nullptr),
-        session_timeout_(5000),
+        current_state_(udp_state::not_active),
         identity_(security::security_context_ptr::null_ptr)
 {
     ITF_LOG_DEBUG("udp_endpoint", 200, "UDP endpoint created.");
@@ -179,13 +161,6 @@ udp_endpoint::udp_endpoint()
     rx_init_stack_entry(mine_entry, this);
 
     mine_entry->send_function = &udp_endpoint::send_function;
-    mine_entry->close_function = [](rx_protocol_stack_endpoint* ref, rx_protocol_result_t reason) ->rx_protocol_result_t
-    {
-        udp_endpoint* me = reinterpret_cast<udp_endpoint*>(ref->user_data);
-        me->close();
-        rx_notify_closed(&me->stack_endpoint_, 0);
-        return RX_PROTOCOL_OK;
-    };
 }
 
 
@@ -196,96 +171,13 @@ udp_endpoint::~udp_endpoint()
 
 
 
-rx_result udp_endpoint::open (io::ip4_address addr, uint32_t session_timeout, security::security_context_ptr identity, udp_port* port)
-{
-    identity_ = identity;
-    identity_->login();
-    my_port_ = port;
-    udp_socket_ = rx_create_reference<socket_holder_t>(this);
-    bind_address_ = addr;
-    udp_socket_->set_identity(identity);
-    if (!bind_address_.is_null())
-    {
-        auto result = udp_socket_->bind_socket_udpip_4(bind_address_.get_ip4_address(), rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool());
-        if (!result)
-        {
-            identity->logout();
-            char buff[0x100];
-            rx_last_os_error("Unable to bind to UDP/IP port.", buff, sizeof(buff));
-            std::ostringstream ss;
-            ss << "Unable to bind to address "
-                << bind_address_.to_string()
-                << ":";
-            for (auto& one : result.errors())
-                ss << one << ";";
-            ITF_LOG_ERROR("udp_port", 500, ss.str()); 
-        }
-        else
-        {
-            udp_socket_->set_identity(identity_->get_handle());
-        }
-        return result;
-    }
-    else
-    {
-        string_type err_msg("Can't bind to an empty address!");
-        ITF_LOG_ERROR("udp_port", 500, err_msg);
-        return err_msg;
-    }
-}
-
-rx_result udp_endpoint::close ()
-{
-    if (udp_socket_)
-    {
-        udp_socket_->disconnect();
-        udp_socket_ = rx_reference<socket_holder_t>::null_ptr;
-    }
-    return true;
-}
-
-void udp_endpoint::disconnected (rx_security_handle_t identity)
-{
-    std::ostringstream ss;
-    ss << "UDP port at IP4:"
-        << bind_address_.to_string()
-        << " disconnected.";
-    ITF_LOG_TRACE("udp_endpoint", 500, ss.str());
-    if (udp_socket_)
-    {
-        rx_session session = rx_create_session(nullptr, nullptr, 0, 0, nullptr);
-        rx_notify_disconnected(&stack_endpoint_, &session, 0);
-        rx_close(&stack_endpoint_, 0);
-    }
-}
-
-bool udp_endpoint::readed (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity)
-{
-    io::ip4_address ip4addr(addr);
-    if (!ip4addr.is_valid())
-        return false;
-    security::secured_scope _(identity);
-    rx_const_packet_buffer buff{};
-    rx_init_const_packet_buffer(&buff, data, count);
-    recv_protocol_packet up = rx_create_recv_packet(0, &buff, 0, 0);
-    up.from_addr = &ip4addr;
-    up.to_addr = &bind_address_;
-    auto result = rx_move_packet_up(&stack_endpoint_, up);
-    if (result == RX_PROTOCOL_OK)
-        return true;
-      
-    return false;
-}
-
 rx_protocol_result_t udp_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
     udp_endpoint* self = reinterpret_cast<udp_endpoint*>(reference->user_data);
-    auto io_buffer = rx_create_reference<socket_holder_t::buffer_t>();
-    io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
-    io::ip4_address addr;
-    addr.parse(packet.to_addr);
-    bool ret = self->udp_socket_->write(io_buffer, addr.get_address(), sizeof(sockaddr_in));
-    return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
+    if (self->udp_socket_)
+        return self->send_packet(packet);
+    else
+        return RX_PROTOCOL_CLOSED;
 }
 
 rx_protocol_stack_endpoint* udp_endpoint::get_stack_endpoint ()
@@ -296,6 +188,172 @@ rx_protocol_stack_endpoint* udp_endpoint::get_stack_endpoint ()
 runtime::items::port_runtime* udp_endpoint::get_port ()
 {
     return my_port_;
+}
+
+rx_protocol_result_t udp_endpoint::send_packet (send_protocol_packet packet)
+{
+    auto io_buffer = rx_create_reference<socket_holder_t::buffer_t>();
+    io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
+    io::ip4_address addr;
+    addr.parse(packet.to_addr);
+    bool ret = udp_socket_->write(io_buffer, addr.get_address(), sizeof(sockaddr_in));
+    return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
+}
+
+void udp_endpoint::disconnected (rx_security_handle_t identity)
+{
+    if (udp_socket_)
+    {
+        udp_socket_->disconnect();
+        udp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+
+        if (current_state_ == udp_state::binded)
+        {
+            auto session = rx_create_session(&bind_address_, nullptr, 0, 0, nullptr);
+            auto proto_result = rx_notify_disconnected(&stack_endpoint_, &session, RX_PROTOCOL_OK);
+        }
+
+    }
+    if (current_state_ == udp_state::binded || current_state_ == udp_state::not_binded)
+    {
+        suspend_timer();
+        bool fire_now = current_state_ == udp_state::binded;
+        current_state_ = udp_state::not_binded;
+        start_timer(false);
+    }
+}
+
+bool udp_endpoint::readed (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity)
+{
+    io::ip4_address ip4addr(addr);
+    if (!ip4addr.is_valid())
+        return false;
+    security::secured_scope auto_sec(identity);
+    rx_const_packet_buffer buff{};
+    rx_init_const_packet_buffer(&buff, data, count);
+    recv_protocol_packet up = rx_create_recv_packet(0, &buff, 0, 0);
+    up.from_addr = &ip4addr;
+    up.to_addr = &bind_address_;
+    auto result = rx_move_packet_up(&stack_endpoint_, up);
+    if (result == RX_PROTOCOL_OK)
+        return true;
+    else
+        return true;
+}
+
+rx_result udp_endpoint::open (io::ip4_address addr, security::security_context_ptr identity, udp_port* port)
+{
+    identity_ = identity;
+    identity_->login();
+    my_port_ = port;
+    bind_address_ = addr;
+    timer_ = my_port_->create_timer_function([this]()
+        {
+            if (!tick())
+            {
+                suspend_timer();
+            }
+        });
+    start_timer(true);
+    return true;
+
+}
+
+rx_result udp_endpoint::close ()
+{
+    if (timer_)
+    {
+        timer_->cancel();
+        timer_ = rx_timer_ptr::null_ptr;
+    }
+    if (udp_socket_)
+    {
+        udp_socket_->disconnect();
+        udp_socket_ = rx_reference<socket_holder_t>::null_ptr;
+    }
+    current_state_ = udp_state::stopped;
+    return true;
+}
+
+bool udp_endpoint::tick ()
+{
+    switch (current_state_)
+    {
+    case udp_state::not_active:
+    case udp_state::not_binded:
+        {
+            RX_ASSERT(!udp_socket_ && my_port_ != nullptr);
+            rx_result result;
+            udp_socket_ = rx_create_reference<socket_holder_t>(this);
+            udp_socket_->set_identity(stack_endpoint_.identity);
+            if (!bind_address_.is_null())
+            {
+                result = udp_socket_->bind_socket_udpip_4(bind_address_.get_ip4_address(), infrastructure::server_runtime::instance().get_io_pool()->get_pool());
+                if (result)
+                {
+                    ITF_LOG_INFO("udp_endpoint", 200, "UDP port opened at "s + bind_address_.to_string());
+                    current_state_ = udp_state::binded;
+                    auto session = rx_create_session(&bind_address_, nullptr, 0, 0, nullptr);
+
+                    auto proto_result = rx_notify_connected(&stack_endpoint_, &session);
+
+                    return false;// we're done here nothing more to do
+                }
+                else
+                {
+                    if (udp_socket_)
+                    {
+                        udp_socket_->disconnect();
+                        udp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+                    }
+                    if (current_state_ != udp_state::not_binded)
+                    {
+
+                        ITF_LOG_ERROR("udp_endpoint", 200, "Error binding UDP port at "s + bind_address_.to_string() + "." + result.errors_line());
+                        current_state_ = udp_state::not_binded;
+                    }
+                    return true;
+                }
+            }
+            else
+            {
+                RX_ASSERT(false);// this should not happened
+                return false;// stop the timer
+            }
+        }
+    case udp_state::binded:
+        {
+            return false;
+        }
+    case udp_state::stopped:
+        {
+            return false;
+        }
+    default:
+        RX_ASSERT(false);
+        return false;
+    }
+}
+
+void udp_endpoint::start_timer (bool fire_now)
+{
+    if (my_port_ && timer_)
+    {
+        timer_->start(my_port_->get_reconnect_timeout(), fire_now);
+    }
+}
+
+void udp_endpoint::suspend_timer ()
+{
+    if (timer_)
+    {
+        timer_->suspend();
+    }
+}
+
+bool udp_endpoint::is_connected () const
+{
+    return current_state_ == udp_state::binded;
 }
 
 

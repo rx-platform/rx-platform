@@ -303,6 +303,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		}
 		else
 		{
+			writer.write_footer();
 			string_type temp_str(writer.get_string());
 			if (!temp_str.empty())
 			{
@@ -2564,6 +2565,7 @@ rx_result block_data::get_value (const string_type& path, rx_value& val, runtime
 		}
 		else
 		{
+			writer.write_footer();
 			string_type temp_str(writer.get_string());
 			if (!temp_str.empty())
 			{

@@ -1668,8 +1668,16 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
 		{
 			data = (struct rx_io_register_data_t*)WorkIndex;
 			internal_data = (struct windows_overlapped_t*)data->internal;
-			(data->shutdown_callback)(data->data, err);
-			ret = TRUE;
+			if (err == ERROR_PORT_UNREACHABLE && pOvl == &internal_data->m_read_from)
+			{
+				(data->read_from_callback)(data->data, 0, 0, NULL, 0);
+				ret = TRUE;
+			}
+			else
+			{
+				(data->shutdown_callback)(data->data, err);
+				ret = TRUE;
+			}
 		}
 
 	}
@@ -1791,6 +1799,8 @@ uint32_t rx_socket_write_to(struct rx_io_register_data_t* what, const void* data
 	if (ret == SOCKET_ERROR)
 	{
 		int err = WSAGetLastError();
+		if (err == ERROR_PORT_UNREACHABLE)
+			return RX_OK;// this is UDP so no error is expected
 		if (err != WSA_IO_PENDING)
 			return RX_ERROR;
 	}
@@ -1941,7 +1951,13 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr)
 	}
 
 	int on = 1;
-	setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&on, sizeof(on));
+	setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&on, sizeof(on));
+
+	if (addr->sin_port != 0)
+	{//this is listen or udp server socket mark resuse
+		on = 1;
+		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on));
+	}
 
 	ULONG buff_len = 0;
 	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char*)&buff_len, sizeof(buff_len));

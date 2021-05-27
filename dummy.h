@@ -71,23 +71,6 @@ class std::streambuf
 
 
 
-class rx_protocol_stack_endpoint 
-{
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 class protocol_address 
 {
 
@@ -134,6 +117,23 @@ class opcua_transport_protocol_type
 
       opcua_transport_protocol_type & operator=(const opcua_transport_protocol_type &right);
 
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_protocol_stack_endpoint 
+{
+
+  public:
 
   protected:
 

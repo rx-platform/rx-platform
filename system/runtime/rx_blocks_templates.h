@@ -190,7 +190,12 @@ rx_result extern_mapper_impl<portT>::start_mapper (runtime::runtime_start_contex
     my_executer_ = rx_thread_context();
     auto port_reference = ctx.structure.get_current_item().get_local_as<string_type>("Port", "");
     ret = ctx.register_relation_subscriber(port_reference, &resolver_user_);
-    return ret;
+    if (!ret)
+    {
+        RUNTIME_LOG_WARNING("extern_mapper_impl", 900, "Error starting mapper "
+            + ctx.context->meta_info.get_full_path() + "." + ctx.path.get_current_path() + " " + ret.errors_line());
+    }
+    return true;
 }
 
 template <class portT>
@@ -248,7 +253,12 @@ rx_result extern_source_impl<portT>::start_source (runtime::runtime_start_contex
     my_executer_ = rx_thread_context();
     auto port_reference = ctx.structure.get_current_item().get_local_as<string_type>("Port", "");
     ret = ctx.register_relation_subscriber(port_reference, &resolver_user_);
-    return ret;
+    if (!ret)
+    {
+        RUNTIME_LOG_WARNING("extern_source_impl", 900, "Error starting source "
+            + ctx.context->meta_info.get_full_path() + "." + ctx.path.get_current_path() + " " + ret.errors_line());
+    }
+    return true;
 }
 
 template <class portT>

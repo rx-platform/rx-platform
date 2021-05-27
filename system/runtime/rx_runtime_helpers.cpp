@@ -39,8 +39,6 @@
 #include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-// rx_resolvers
-#include "system/runtime/rx_resolvers.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 // rx_runtime_holder
@@ -112,6 +110,11 @@ rx_result runtime_init_context::set_item (const string_type& path, rx_simple_val
 	return tags->set_item(path, std::move(value), *this);
 }
 
+rx_result runtime_init_context::get_item (const string_type& path, rx_simple_value& val)
+{
+	return tags->get_item(path, val, *this);
+}
+
 
 // Class rx_platform::runtime::runtime_path_resolver 
 
@@ -176,9 +179,10 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 
 // Class rx_platform::runtime::runtime_start_context 
 
-runtime_start_context::runtime_start_context (structure::runtime_item& root, runtime_process_context* context, ns::rx_directory_resolver* directories, relations::relations_holder* relations)
+runtime_start_context::runtime_start_context (structure::runtime_item& root, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, relations::relations_holder* relations)
       : context(context),
         relations_(relations),
+        tags(binded),
         directories(directories),
         now(rx_time::now())
     , structure(root)
@@ -195,6 +199,16 @@ runtime_handle_t runtime_start_context::connect (const string_type& path, uint32
 rx_result runtime_start_context::register_relation_subscriber (const string_type& name, relation_subscriber* who)
 {
 	return relations_->register_relation_subscriber(name, who);
+}
+
+rx_result runtime_start_context::set_item (const string_type& path, rx_simple_value&& value)
+{
+	return tags->set_item(path, std::move(value), *this);
+}
+
+rx_result runtime_start_context::get_item (const string_type& path, rx_simple_value& val)
+{
+	return tags->get_item(path, val, *this);
 }
 
 

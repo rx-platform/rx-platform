@@ -151,7 +151,7 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 			storage_meta.name = one.substr(0, idx);
 			storage_meta.path = get_base_path() + path;
 			result_path = rx_combine_paths(file_path, one);
-			auto storage_item = get_storage_item_from_file_path(result_path, storage_meta);
+			rx_storage_item_ptr storage_item = get_storage_item_from_file_path(result_path, storage_meta);
 			if(storage_item)
 				items.emplace_back(std::move(storage_item));
 		}

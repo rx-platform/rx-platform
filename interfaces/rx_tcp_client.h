@@ -33,10 +33,10 @@
 
 
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
 #include "lib/rx_stream_io.h"
 
@@ -136,15 +136,17 @@ public:
       ~tcp_client_endpoint();
 
 
-      rx_result stop ();
+      rx_result close ();
 
       bool tick ();
 
-      rx_result start (const protocol_address* addr, const protocol_address* remote_addr, security::security_context_ptr identity, tcp_client_port* port);
+      rx_result open (const protocol_address* addr, const protocol_address* remote_addr, security::security_context_ptr identity, tcp_client_port* port);
 
       rx_protocol_stack_endpoint* get_stack_endpoint ();
 
       runtime::items::port_runtime* get_port ();
+
+      bool is_connected () const;
 
 
   protected:
@@ -193,7 +195,7 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< tcp_client_endpoint  > tcp_client_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::ip_endpoints::tcp_client_endpoint  > tcp_client_base;
 
 
 
@@ -215,7 +217,7 @@ TCP Server port class. implementation of an TCP/IP4 client side, connect...");
 
       uint32_t get_reconnect_timeout () const;
 
-      rx_result_with<rx_protocol_stack_endpoint*> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
+      rx_result_with<port_connect_result> start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint);
 
       rx_result stop_passive ();
 

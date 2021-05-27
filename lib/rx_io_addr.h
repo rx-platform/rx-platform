@@ -146,6 +146,9 @@ class numeric_address : public protocol_address
       rx_result parse (const string_type& what);
 
       ~numeric_address() = default;
+      numeric_address(numeric_address&& right) noexcept;
+      numeric_address& operator=(const numeric_address& right);
+      numeric_address& operator=(numeric_address&& right) noexcept;
   protected:
 
   private:

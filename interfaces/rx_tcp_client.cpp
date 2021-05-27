@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace interfaces {
 
 namespace ip_endpoints {
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_client_endpoint
+// Class rx_internal::interfaces::ip_endpoints::tcp_client_endpoint 
 
 tcp_client_endpoint::tcp_client_endpoint()
       : my_port_(nullptr),
@@ -59,7 +59,7 @@ tcp_client_endpoint::tcp_client_endpoint()
     mine_entry->close_function = [](rx_protocol_stack_endpoint* ref, rx_protocol_result_t reason) ->rx_protocol_result_t
     {
         tcp_client_endpoint* me = reinterpret_cast<tcp_client_endpoint*>(ref->user_data);
-        me->stop();
+        me->close();
         rx_notify_closed(&me->stack_endpoint_, 0);
         return RX_PROTOCOL_OK;
     };
@@ -73,7 +73,7 @@ tcp_client_endpoint::~tcp_client_endpoint()
 
 
 
-rx_result tcp_client_endpoint::stop ()
+rx_result tcp_client_endpoint::close ()
 {
     if (timer_)
     {
@@ -229,7 +229,7 @@ bool tcp_client_endpoint::tick ()
     }
 }
 
-rx_result tcp_client_endpoint::start (const protocol_address* addr, const protocol_address* remote_addr, security::security_context_ptr identity, tcp_client_port* port)
+rx_result tcp_client_endpoint::open (const protocol_address* addr, const protocol_address* remote_addr, security::security_context_ptr identity, tcp_client_port* port)
 {
     identity_ = identity;
     identity_->login();
@@ -273,8 +273,13 @@ runtime::items::port_runtime* tcp_client_endpoint::get_port ()
     return my_port_;
 }
 
+bool tcp_client_endpoint::is_connected () const
+{
+    return current_state_ == tcp_state::connected;
+}
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_client_port
+
+// Class rx_internal::interfaces::ip_endpoints::tcp_client_port 
 
 tcp_client_port::tcp_client_port()
       : recv_timeout_(2000),
@@ -318,7 +323,7 @@ uint32_t tcp_client_port::get_reconnect_timeout () const
     return (uint32_t)reconnect_timeout_;
 }
 
-rx_result_with<rx_protocol_stack_endpoint*> tcp_client_port::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
+rx_result_with<port_connect_result> tcp_client_port::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
 {
     auto session_timeout = recv_timeout_;
     endpoint_ = std::make_unique<tcp_client_endpoint>();
@@ -333,19 +338,19 @@ rx_result_with<rx_protocol_stack_endpoint*> tcp_client_port::start_connect (cons
         tcp_client_endpoint* whose = reinterpret_cast<tcp_client_endpoint*>(entry->user_data);
         whose->get_port()->disconnect_stack_endpoint(entry);
     };
-    auto result = endpoint_->start(&bind_address_, &connect_address_, sec_result.value(), this);
+    auto result = endpoint_->open(&bind_address_, &connect_address_, sec_result.value(), this);
     if (!result)
     {
         stop_passive();
         return result.errors();
     }
-    return endpoint_->get_stack_endpoint();
+    return port_connect_result(endpoint_->get_stack_endpoint(), endpoint_->is_connected());
 }
 
 rx_result tcp_client_port::stop_passive ()
 {
     if(endpoint_)
-        endpoint_->stop();
+        endpoint_->close();
     return true;
 }
 

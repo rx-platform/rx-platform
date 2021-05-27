@@ -251,7 +251,7 @@ const typename typeT::runtime_data_t& runtime_holder<typeT>::get_instance_data (
 template <class typeT>
 rx_result runtime_holder<typeT>::add_target_relation (relations::relation_data::smart_ptr data)
 {
-    auto ctx = runtime_holder_algorithms<typeT>::create_start_context(*this);
+    runtime_start_context ctx = runtime_holder_algorithms<typeT>::create_start_context(*this);
     return relations_.add_target_relation(std::move(data), ctx);
 }
 

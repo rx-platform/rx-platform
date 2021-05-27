@@ -69,7 +69,7 @@ class passive_builder
 
   private:
 
-      static rx_result send_connect_down_recursive (rx_port_ptr who, rx_protocol_stack_endpoint* ep, io::any_address& local_addr, io::any_address remote_addr);
+      static rx_result send_connect_down_recursive (rx_port_ptr who, rx_protocol_stack_endpoint* ep, io::any_address& local_addr, io::any_address remote_addr, std::pair<rx_protocol_stack_endpoint*, rx_session*>& connected);
 
       static rx_result send_unbind_up_recursive (rx_port_ptr who);
 
