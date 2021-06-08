@@ -72,6 +72,8 @@ class rx_query
 
       static rx_result init_query_types ();
 
+      static void deinit_query_types ();
+
       static rx_result_with<query_ptr> create_query (base_meta_reader& stream);
 
       virtual rx_result do_query (api::query_result& result, rx_directory_ptr dir) = 0;

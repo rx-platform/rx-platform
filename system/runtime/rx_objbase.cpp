@@ -351,6 +351,16 @@ rx_result_with<security::security_context_ptr> port_runtime::create_security_con
 	return runtime_->get_instance_data().create_security_context(runtime_->meta_info());
 }
 
+rx_result_with<io_types::rx_io_buffer> port_runtime::alloc_io_buffer ()
+{
+	return io_types::port_buffers::alloc_io_buffer(runtime_);
+}
+
+void port_runtime::release_io_buffer (io_types::rx_io_buffer buff)
+{
+	return io_types::port_buffers::release_io_buffer(runtime_, std::move(buff));
+}
+
 
 } // namespace items
 } // namespace runtime

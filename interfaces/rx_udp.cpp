@@ -148,6 +148,27 @@ void udp_port::extract_bind_address (const data::runtime_values_data& binder_dat
     }
 }
 
+void udp_port::release_buffer (buffer_ptr what)
+{
+    locks::auto_lock_t _(&free_buffers_lock_);
+    what->reinit();
+    free_buffers_.push(what);
+}
+
+buffer_ptr udp_port::get_buffer ()
+{
+    {
+        locks::auto_lock_t _(&free_buffers_lock_);
+        if (!free_buffers_.empty())
+        {
+            buffer_ptr ret = free_buffers_.top();
+            free_buffers_.pop();
+            return ret;
+        }
+    }
+    return rx_create_reference<buffer_ptr::pointee_type>();
+}
+
 
 // Class rx_internal::interfaces::ip_endpoints::udp_endpoint 
 
@@ -192,12 +213,19 @@ runtime::items::port_runtime* udp_endpoint::get_port ()
 
 rx_protocol_result_t udp_endpoint::send_packet (send_protocol_packet packet)
 {
-    auto io_buffer = rx_create_reference<socket_holder_t::buffer_t>();
-    io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
-    io::ip4_address addr;
-    addr.parse(packet.to_addr);
-    bool ret = udp_socket_->write(io_buffer, addr.get_address(), sizeof(sockaddr_in));
-    return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
+    if (my_port_)
+    {
+        auto io_buffer = my_port_->get_buffer();
+        io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
+        io::ip4_address addr;
+        addr.parse(packet.to_addr);
+        bool ret = udp_socket_->write(io_buffer, addr.get_address(), sizeof(sockaddr_in));
+        if (!ret)
+            my_port_->release_buffer(io_buffer);
+        return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
+    }
+    else
+        return RX_PROTOCOL_INVALID_SEQUENCE;
 }
 
 void udp_endpoint::disconnected (rx_security_handle_t identity)
@@ -356,9 +384,16 @@ bool udp_endpoint::is_connected () const
     return current_state_ == udp_state::binded;
 }
 
+void udp_endpoint::release_buffer (buffer_ptr what)
+{
+    return my_port_->release_buffer(what);
+}
+
 
 void udp_endpoint::socket_holder_t::release_buffer(buffer_ptr what)
 {
+    if (whose)
+        return whose->release_buffer(what);
 }
 bool udp_endpoint::socket_holder_t::readed(const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity)
 {

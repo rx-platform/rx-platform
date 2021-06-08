@@ -47,6 +47,23 @@ using rx_internal::sys_runtime::data_source::value_point;
 namespace rx_platform {
 
 namespace runtime {
+namespace
+{
+remotes_data_type g_empty_remotes;
+variables_type g_empty_variables;
+structs_type g_empty_structs;
+source_writes_type g_empty_source_writes;
+source_updates_type g_empty_source_updates;
+source_results_type g_empty_source_results;
+programs_type g_empty_programs;
+owner_jobs_type g_empty_jobs;
+mapper_writes_type g_empty_mapper_writes;
+mapper_updates_type g_empty_mapper_updates;
+filters_type g_empty_filters;
+events_type g_empty_events;
+}
+
+
 template<runtime_process_step step>
 void runtime_process_context::turn_on_pending()
 {
@@ -110,7 +127,7 @@ void runtime_process_context::tag_updates_pending ()
 rx_result runtime_process_context::init_context ()
 {
     now = rx_time::now();
-    current_step_ = runtime_process_step::status_change;
+    current_step_ = runtime_process_step::remote_updates;
     return true;
 }
 
@@ -160,11 +177,10 @@ void runtime_process_context::mapper_write_pending (write_data_struct<structure:
 mapper_writes_type& runtime_process_context::get_mapper_writes ()
 {
     locks::auto_lock_t _(&context_lock_);
-    static mapper_writes_type empty;
     if (should_do_step<runtime_process_step::mapper_inputs>())
         return mapper_inputs_.get_and_swap();
     else
-        return empty;
+        return g_empty_mapper_writes;
 }
 
 void runtime_process_context::status_change_pending ()
@@ -180,15 +196,15 @@ void runtime_process_context::mapper_update_pending (update_data_struct<structur
 
 mapper_updates_type& runtime_process_context::get_mapper_updates ()
 {
-    static mapper_updates_type empty;
     if (should_do_step<runtime_process_step::mapper_outputs>())
         return mapper_outputs_.get_and_swap();
     else
-        return empty;
+        return g_empty_mapper_updates;
 }
 
 void runtime_process_context::source_write_pending (write_data_struct<structure::source_data> data)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::source_outputs>();
     source_outputs_.emplace_back(std::move(data));
 }
@@ -196,11 +212,10 @@ void runtime_process_context::source_write_pending (write_data_struct<structure:
 source_writes_type& runtime_process_context::get_source_writes ()
 {
     locks::auto_lock_t _(&context_lock_);
-    static source_writes_type empty;
     if (should_do_step<runtime_process_step::source_outputs>())
         return source_outputs_.get_and_swap();
     else
-        return empty;
+        return g_empty_source_writes;
 }
 
 void runtime_process_context::source_update_pending (update_data_struct<structure::source_data> data)
@@ -212,12 +227,11 @@ void runtime_process_context::source_update_pending (update_data_struct<structur
 
 source_updates_type& runtime_process_context::get_source_updates ()
 {
-    static source_updates_type empty;
     locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::source_inputs>())
         return source_inputs_.get_and_swap();
     else
-        return empty;
+        return g_empty_source_updates;
 }
 
 void runtime_process_context::variable_pending (structure::variable_data* whose)
@@ -228,11 +242,10 @@ void runtime_process_context::variable_pending (structure::variable_data* whose)
 
 variables_type& runtime_process_context::get_variables_for_process ()
 {
-    static variables_type empty;
     if (should_do_step<runtime_process_step::variables>())
         return variables_.get_and_swap();
     else
-        return empty;
+        return g_empty_variables;
 }
 
 bool runtime_process_context::should_process_status_change ()
@@ -248,11 +261,10 @@ void runtime_process_context::program_pending (program_runtime_ptr whose)
 
 programs_type& runtime_process_context::get_programs_for_process ()
 {
-    static programs_type empty;
     if (should_do_step<runtime_process_step::programs>())
         return programs_.get_and_swap();
     else
-        return empty;
+        return g_empty_programs;
 }
 
 void runtime_process_context::filter_pending (structure::filter_data* whose)
@@ -263,11 +275,10 @@ void runtime_process_context::filter_pending (structure::filter_data* whose)
 
 filters_type& runtime_process_context::get_filters_for_process ()
 {
-    static filters_type empty;
     if (should_do_step<runtime_process_step::filters>())
         return filters_.get_and_swap();
     else
-        return empty;
+        return g_empty_filters;
 }
 
 void runtime_process_context::variable_value_changed (structure::variable_data* whose, const values::rx_value& val)
@@ -282,11 +293,10 @@ void runtime_process_context::event_pending (structure::event_data* whose)
 
 events_type& runtime_process_context::get_events_for_process ()
 {
-    static events_type empty;
     if (should_do_step<runtime_process_step::events>())
         return events_.get_and_swap();
     else
-        return empty;
+        return g_empty_events;
 }
 
 void runtime_process_context::struct_pending (structure::event_data* whose)
@@ -295,11 +305,10 @@ void runtime_process_context::struct_pending (structure::event_data* whose)
 
 structs_type& runtime_process_context::get_structs_for_process ()
 {
-    static structs_type empty;
     if (should_do_step<runtime_process_step::structs>())
         return structs_.get_and_swap();
     else
-        return empty;
+        return g_empty_structs;
 }
 
 rx_value runtime_process_context::adapt_value (const rx_value& from) const
@@ -401,11 +410,10 @@ void runtime_process_context::own_pending (jobs::job_ptr what)
 
 owner_jobs_type& runtime_process_context::get_for_own_process ()
 {
-    static owner_jobs_type empty;
     if (should_do_step<runtime_process_step::own>())
         return owns_.get_and_swap();
     else
-        return empty;
+        return g_empty_jobs;
 }
 
 runtime_handle_t runtime_process_context::connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, runtime_start_context& ctx)
@@ -432,13 +440,12 @@ void runtime_process_context::source_result_pending (write_result_struct<structu
 
 source_results_type& runtime_process_context::get_source_results ()
 {
-    static source_results_type empty;
     locks::auto_lock_t _(&context_lock_);
     RX_ASSERT(current_step_ == runtime_process_step::source_inputs);
     if (current_step_ == runtime_process_step::source_inputs)
         return source_results_.get_and_swap();
     else
-        return empty;
+        return g_empty_source_results;
 }
 
 void runtime_process_context::runtime_dirty ()
@@ -454,14 +461,18 @@ bool runtime_process_context::should_save ()
 void runtime_process_context::from_remote_pending (remotes_data data)
 {
     locks::auto_lock_t _(&context_lock_);
+    turn_on_pending<runtime_process_step::remote_updates>();
     from_remote_.emplace_back(std::move(data));
-    fire_callback_();
 }
 
 remotes_data_type& runtime_process_context::get_from_remote ()
 {
     locks::auto_lock_t _(&context_lock_);
-    return from_remote_.get_and_swap();
+    RX_ASSERT(current_step_ == runtime_process_step::remote_updates);
+    if (should_do_step<runtime_process_step::remote_updates>())
+        return from_remote_.get_and_swap();
+    else
+        return g_empty_remotes;
 }
 
 rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)

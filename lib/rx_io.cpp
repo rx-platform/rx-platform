@@ -232,6 +232,12 @@ int dispatcher_subscriber::_internal_read_from_callback (size_t count, uint32_t 
 	return internal_read_from_callback(count, status, addr, addrsize);
 }
 
+void dispatcher_subscriber::deinitialize ()
+{
+	locks::auto_lock dummy(&time_aware_subscribers_lock_);
+	time_aware_subscribers_.clear();
+}
+
 
 } // namespace io
 } // namespace rx

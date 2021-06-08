@@ -370,15 +370,17 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 	config.other.http_port = 0;
 	config.other.rx_port = 0;
 
+	
+
+	cxxopts::Options options(help_name, "");
+
+	add_command_line_options(options, config);
+
 	// had to do stuff, but if we do not have actual command line
 	// it must be safe to send 0, nullptr as command line arguments
 	// parsers tend do misbehave if send those arguments
 	if (argv == nullptr || argc == 0)
 		return true;// no command line options, so skip it!
-
-	cxxopts::Options options(help_name, "");
-
-	add_command_line_options(options, config);
 
 	try
 	{

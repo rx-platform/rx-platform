@@ -79,6 +79,11 @@ rx_result rx_message_base::init_messages ()
 	return result;
 }
 
+void rx_message_base::deinit_messages ()
+{
+	rx_request_message::deinit_request_messages();
+}
+
 
 // Class rx_internal::rx_protocol::messages::error_message 
 
@@ -244,6 +249,13 @@ rx_result_with<request_message_ptr> rx_request_message::create_request_message (
 		return type + " is unknown message type!";
 	else
 		return it->second();
+}
+
+void rx_request_message::deinit_request_messages ()
+{
+	meta::queries::rx_query::deinit_query_types();
+	registered_messages_.clear();
+	registered_string_messages_.clear();
 }
 
 

@@ -73,6 +73,11 @@ data_controler::data_controler (rx::threads::physical_job_thread* worker)
 }
 
 
+data_controler::~data_controler()
+{
+}
+
+
 
 void data_controler::register_value (value_handle_type handle, value_point* whose)
 {
@@ -191,6 +196,10 @@ data_source::~data_source()
 }
 
 
+namespace
+{
+data_source_factory* g_obj = nullptr;
+}
 
 // Class rx_internal::sys_runtime::data_source::data_source_factory 
 
@@ -202,8 +211,9 @@ data_source_factory::data_source_factory()
 
 data_source_factory& data_source_factory::instance ()
 {
-	static data_source_factory g_obj;
-	return g_obj;
+	if (g_obj == nullptr)
+		g_obj = new data_source_factory();
+	return *g_obj;
 }
 
 void data_source_factory::register_data_source (const string_type& type, std::function<std::unique_ptr<data_source>(const string_type&)> creator)
@@ -245,6 +255,12 @@ rx_result_with<std::unique_ptr<data_source> > data_source_factory::create_data_s
 			return "Data Source not registered!";
 	}
 	return default_(concrete);
+}
+
+void data_source_factory::deinitialize ()
+{
+	if (g_obj)
+		delete g_obj;
 }
 
 

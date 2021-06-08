@@ -40,6 +40,10 @@
 namespace rx_internal {
 
 namespace rx_security {
+namespace
+{
+platform_security* g_instance = nullptr;
+}
 
 // Class rx_internal::rx_security::maintenance_context 
 
@@ -91,13 +95,26 @@ platform_security::~platform_security()
 
 platform_security& platform_security::instance ()
 {
-    static platform_security g_instance;
-    return g_instance;
+    if (g_instance == nullptr)
+        g_instance = new platform_security();
+    return *g_instance;
 }
 
 rx_result platform_security::register_role (const string_type& role, const string_type& parent_role)
 {
     return true;
+}
+
+rx_result platform_security::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
+{
+    security::security_manager::instance();
+    return true;
+}
+
+void platform_security::deinitialize ()
+{
+    security::security_manager::instance().deinitialize();
+    delete this;
 }
 
 

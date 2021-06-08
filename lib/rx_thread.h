@@ -82,6 +82,8 @@ class thread : public locks::waitable
 
       void start (int priority = RX_PRIORITY_NORMAL);
 
+      static void deinitialize ();
+
 
       uint32_t get_thread_id () const
       {
@@ -127,7 +129,7 @@ class job_thread
   public:
       job_thread();
 
-      ~job_thread();
+      virtual ~job_thread();
 
 
       virtual void append (job_ptr pjob) = 0;
@@ -302,7 +304,7 @@ class timer : public thread
 
       rx_timer_ticks_t medium_randoms_[RX_OFFSET_TIMES_SIZE];
 
-      static rx_timer_ticks_t soft_randoms_[RX_OFFSET_TIMES_SIZE];
+      rx_timer_ticks_t soft_randoms_[RX_OFFSET_TIMES_SIZE];
 
       int soft_random_index_;
 

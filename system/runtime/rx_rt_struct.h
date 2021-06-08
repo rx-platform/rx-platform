@@ -320,6 +320,7 @@ class runtime_item
 		  }
 		  return default_value;
 	  }
+      virtual ~runtime_item() = default;
   protected:
 
   private:
@@ -543,14 +544,14 @@ class variable_write_task
 class variable_data 
 {
   public:
-	  ~variable_data() = default;
+      ~variable_data() = default;
 	  variable_data(const variable_data&) = delete;
 	  variable_data(variable_data&&) noexcept = default;
 	  variable_data& operator=(const variable_data&) = delete;
 	  variable_data& operator=(variable_data&&) noexcept = default;
 	  operator bool() const
 	  {
-		  return variable_ptr;
+		  return (bool)variable_ptr;
 	  }
       friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::variable_attribute>;
       friend class meta::basic_types::variable_type;

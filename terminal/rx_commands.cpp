@@ -61,6 +61,7 @@ namespace commands {
 #include "others/others.h"
 namespace
 {
+server_command_manager::smart_ptr g_inst;
 void read_to_eol(string_type::const_iterator& it, const string_type& data, std::ostringstream& out)
 {
 	while (it != data.end() && *it != '\r' && *it != '\n')
@@ -151,7 +152,6 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::mkdir_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::move_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_command>());
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::mkdir_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_system_command>());
 	// test command
 	register_command(rx_create_reference<testing::test_command>());
@@ -226,10 +226,9 @@ server_command_base_ptr server_command_manager::get_command_by_name (const strin
 
 server_command_manager::smart_ptr server_command_manager::instance ()
 {
-	static server_command_manager::smart_ptr g_inst;
 	if (!g_inst)
 	{
-		g_inst = smart_ptr::create_from_pointer(new server_command_manager());
+		g_inst = smart_ptr::create_from_pointer_without_bind(new server_command_manager());
 	}
 	return g_inst;
 }
@@ -255,6 +254,12 @@ void server_command_manager::get_commands (std::vector<command_ptr>& sub_items) 
 
 void server_command_manager::register_suggestions (const string_type& line, suggestions_type& suggestions)
 {
+}
+
+void server_command_manager::clear ()
+{
+	rx_internal::rx_protocol::messages::rx_message_base::deinit_messages();
+	g_inst = smart_ptr::null_ptr;
 }
 
 

@@ -36,12 +36,12 @@
 
 // rx_http_request
 #include "system/http_support/rx_http_request.h"
+// rx_http
+#include "system/http_support/rx_http.h"
 // rx_http_handlers
 #include "http_server/rx_http_handlers.h"
 // rx_http_mapping
 #include "protocols/http/rx_http_mapping.h"
-// rx_http
-#include "system/http_support/rx_http.h"
 
 /////////////////////////////////////////////////////////////
 // logging macros for http library
@@ -56,28 +56,6 @@
 namespace rx_internal {
 
 namespace rx_http_server {
-
-
-
-
-
-class standard_request_filter : public rx_platform::http::http_request_filter  
-{
-
-  public:
-
-      rx_result handle_request_after (http_request& req, http_response& resp);
-
-      rx_result handle_request_before (http_request& req, http_response& resp);
-
-
-  protected:
-
-  private:
-
-
-};
-
 
 
 
@@ -101,6 +79,8 @@ class http_server
       static string_type get_server_info ();
 
       static string_type get_server_header_info ();
+
+      void deinitialize ();
 
 
       const string_type& get_resources_path () const
@@ -132,6 +112,28 @@ class http_server
       cached_items_type cached_items_;
 
       locks::slim_lock cache_lock_;
+
+
+};
+
+
+
+
+
+
+class standard_request_filter : public rx_platform::http::http_request_filter  
+{
+
+  public:
+
+      rx_result handle_request_after (http_request& req, http_response& resp);
+
+      rx_result handle_request_before (http_request& req, http_response& resp);
+
+
+  protected:
+
+  private:
 
 
 };

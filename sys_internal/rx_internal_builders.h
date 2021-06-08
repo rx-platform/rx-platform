@@ -74,6 +74,8 @@ class rx_platform_builder
 
       virtual rx_result do_build (rx_directory_ptr root) = 0;
 
+      static void deinitialize (rx_directory_ptr root);
+
 
   protected:
 
@@ -96,6 +98,8 @@ class rx_platform_builder
       static rx_result buid_unassigned (platform_root::smart_ptr root, hosting::rx_platform_host* host, namespace_data_t& data);
 
       static std::vector<std::unique_ptr<rx_platform_builder> > get_plugin_builders (namespace_data_t& data, hosting::rx_platform_host* host);
+
+      static void recursive_destory_fs (rx_directory_ptr root);
 
 
 
@@ -169,7 +173,6 @@ class system_types_builder : public rx_platform_builder
 
   private:
       void build_instance_info_struct_type(rx_directory_ptr dir, struct_type_ptr what);
-
 
 };
 

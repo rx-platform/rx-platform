@@ -39,16 +39,19 @@
 #define NOMINMAX
 
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
-#include <crtdbg.h>
+
 
 #ifdef _DEBUG
-#define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+#define DEBUG_CLIENTBLOCK new ( _CLIENT_BLOCK , __FILE__ , __LINE__ )
 // Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
 // allocations to be of _CLIENT_BLOCK type
 #else
-#define DBG_NEW new
+#define DEBUG_CLIENTBLOCK new
 #endif
+
+#include <stdlib.h>
+#include <crtdbg.h>
+
 
 
 #include <WinSock2.h>
@@ -193,6 +196,9 @@ typedef DWORD rx_thread_data_t;
 
 
 
+#ifdef _DEBUG
+#define new DEBUG_CLIENTBLOCK
+#endif
 
 #include "os_itf/rx_ositf.h"
 

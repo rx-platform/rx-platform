@@ -45,41 +45,6 @@ rx_protocol_result_t http_close(struct rx_protocol_stack_endpoint* transport, rx
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }
 
-rx_protocol_result_t http_allocate_buffer(struct rx_protocol_stack_endpoint* reference, rx_packet_buffer* buffer, size_t initial_size)
-{
-	rx_protocol_result_t result;
-	void* temp_ptr;
-
-	http_transport_protocol_type* transport = (http_transport_protocol_type*)reference->user_data;
-	if (rx_stack_empty(&transport->free_buffers))
-	{
-		result = rx_init_packet_buffer(buffer, max(initial_size, transport->initial_packet_size), reference->downward);
-		if (result == RX_PROTOCOL_OK)
-		{
-			temp_ptr = rx_alloc_from_packet(buffer, http_buffer_size, &result);
-			if (!temp_ptr)
-				result = rx_deinit_packet_buffer(buffer);
-		}
-		return result;
-	}
-	else
-	{
-		result = rx_pop(&transport->free_buffers, buffer);
-		if (result == RX_PROTOCOL_OK)
-		{
-			temp_ptr = rx_alloc_from_packet(buffer, http_buffer_size, &result);
-			if (!temp_ptr)
-				result = rx_deinit_packet_buffer(buffer);
-		}
-		return result;
-	}
-}
-rx_protocol_result_t http_free_buffer(struct rx_protocol_stack_endpoint* reference, rx_packet_buffer* buffer)
-{
-	http_transport_protocol_type* transport = (http_transport_protocol_type*)reference->user_data;
-	rx_reinit_packet_buffer(buffer);
-	return rx_push(&transport->free_buffers, buffer);
-}
 rx_protocol_result_t http_init_transport_state(http_transport_protocol_type* transport)
 {
 	memset(&transport->parser_data, 0, sizeof(http_parser_data));
@@ -89,7 +54,6 @@ rx_protocol_result_t http_init_transport(http_transport_protocol_type* transport
 	, size_t buffer_size
 	, size_t queue_size)
 {
-	rx_protocol_result_t result;
 	memset(transport, 0, sizeof(http_transport_protocol_type));
 	rx_init_stack_entry(&transport->stack_entry, transport);
 
@@ -99,39 +63,14 @@ rx_protocol_result_t http_init_transport(http_transport_protocol_type* transport
 	//transport->stack_entry.ack_function = http_bytes_sent;
 	//transport->stack_entry.closed_function = http_closed;
 	//transport->stack_entry.close_function = http_close;
-	transport->stack_entry.allocate_packet_function = http_allocate_buffer;
-	transport->stack_entry.free_packet_function = http_free_buffer;
 	// fill options
-	transport->initial_packet_size = buffer_size;
-	// fill state
-	result = http_init_transport_state(transport);
-	if (result != RX_PROTOCOL_OK)
-		return result;
-	// initialize containers
-	result = rx_init_queue(&transport->send_queue, queue_size);
-	if (result != RX_PROTOCOL_OK)
-		return result;
-	result = rx_init_packet_buffer(&transport->receive_buffer, buffer_size, NULL);
-	if (result != RX_PROTOCOL_OK)
-	{
-		rx_deinit_queue(&transport->send_queue);
-		return result;
-	}
-	result = rx_init_stack(&transport->free_buffers, queue_size);
-	if (result != RX_PROTOCOL_OK)
-	{
-		rx_deinit_packet_buffer(&transport->receive_buffer);
-		rx_deinit_queue(&transport->send_queue);
-		return result;
-	}
+
 
 	return RX_PROTOCOL_OK;
 }
 rx_protocol_result_t http_deinit_transport(http_transport_protocol_type* transport)
 {
-	rx_deinit_stack(&transport->free_buffers);
-	rx_deinit_queue(&transport->send_queue);
-	rx_deinit_packet_buffer(&transport->receive_buffer);
+	transport->stack_entry.release_packet(&transport->stack_entry, &transport->receive_buffer);
 
 	return RX_PROTOCOL_OK;
 }
@@ -146,7 +85,7 @@ rx_protocol_result_t http_bytes_sent(struct rx_protocol_stack_endpoint* referenc
 }
 rx_protocol_result_t http_bytes_received(struct rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
-	char *method, *path;
+	const char *method, *path;
 	int pret, minor_version;
 	struct phr_header headers[100];
 	size_t buflen = 0, prevbuflen = 0, method_len, path_len, num_headers;
@@ -159,7 +98,7 @@ rx_protocol_result_t http_bytes_received(struct rx_protocol_stack_endpoint* refe
 	{
 		buflen = transport->receive_buffer.size;
 		num_headers = sizeof(headers) / sizeof(headers[0]);
-		pret = phr_parse_request(transport->receive_buffer.buffer_ptr, buflen, &method, &method_len, &path, &path_len,
+		pret = phr_parse_request((const char *)transport->receive_buffer.buffer_ptr, buflen, &method, &method_len, &path, &path_len,
 			&minor_version, headers, &num_headers, prevbuflen);
 		if (pret > 0)
 		{

@@ -45,6 +45,10 @@ using namespace rx;
 namespace rx_internal {
 
 namespace model {
+namespace
+{
+std::unique_ptr<platform_types_manager> g_platform_types_instance;
+}
 
 // Class rx_internal::model::platform_types_manager 
 
@@ -56,8 +60,9 @@ platform_types_manager::platform_types_manager()
 
 platform_types_manager& platform_types_manager::instance ()
 {
-	static platform_types_manager g_instance;
-	return g_instance;//ROOT of CLASSES!!!! $$$ Important Object Here!!!
+	if (!g_platform_types_instance)
+		g_platform_types_instance = std::unique_ptr<platform_types_manager>(new platform_types_manager());
+	return *g_platform_types_instance;//ROOT of CLASSES!!!! $$$ Important Object Here!!!
 }
 
 rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
@@ -117,6 +122,29 @@ rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, c
 
 void platform_types_manager::deinitialize ()
 {
+	auto apps = get_type_repository<object_types::application_type>().get_active_runtimes();
+	sys_runtime::algorithms::shutdown_algorithms::deinit_applications(apps);
+	get_type_repository<object_types::object_type>().deinitialize();
+	get_type_repository<object_types::port_type>().deinitialize();
+	get_type_repository<object_types::domain_type>().deinitialize();
+	get_type_repository<object_types::application_type>().deinitialize();
+	
+	get_relations_repository().deinitialize();
+
+	get_simple_type_repository<basic_types::display_type>().deinitialize();
+	get_simple_type_repository<basic_types::program_type>().deinitialize();
+	get_simple_type_repository<basic_types::method_type>().deinitialize();
+
+	get_simple_type_repository<basic_types::mapper_type>().deinitialize();
+	get_simple_type_repository<basic_types::event_type>().deinitialize();
+	get_simple_type_repository<basic_types::filter_type>().deinitialize();
+	get_simple_type_repository<basic_types::source_type>().deinitialize();
+	get_simple_type_repository<basic_types::variable_type>().deinitialize();
+	get_simple_type_repository<basic_types::struct_type>().deinitialize();
+
+	get_data_types_repository().deinitialize();
+
+	g_platform_types_instance.reset();
 }
 
 rx_result platform_types_manager::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
@@ -300,6 +328,10 @@ void relations_hash_data::get_first_backward (const rx_node_id& id, std::vector<
 		for (const auto& one : *(it->second))
 			result.push_back(one);
 	}
+}
+
+void relations_hash_data::deinitialize ()
+{
 }
 
 
@@ -737,6 +769,11 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 }
 
 template <class typeT>
+void types_repository<typeT>::deinitialize ()
+{
+}
+
+template <class typeT>
 api::query_result types_repository<typeT>::get_instanced_objects (const rx_node_id& id) const
 {
 	api::query_result ret;
@@ -841,6 +878,16 @@ rx_result types_repository<typeT>::type_exists (rx_node_id id) const
 			<< id;
 		return ss.str();
 	}
+}
+
+template <class typeT>
+std::vector<typename types_repository<typeT>::RTypePtr> types_repository<typeT>::get_active_runtimes ()
+{
+	std::vector<RTypePtr> ret;
+	ret.reserve(registered_objects_.size());
+	for (auto one : registered_objects_)
+		ret.emplace_back(one.second.target);
+	return ret;
 }
 
 
@@ -1012,6 +1059,10 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 	return true;
 }
 
+void inheritance_hash::deinitialize ()
+{
+}
+
 
 // Class rx_internal::model::instance_hash 
 
@@ -1077,6 +1128,10 @@ rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& 
 	{
 		return "Node id does not exists";
 	}
+}
+
+void instance_hash::deinitialize ()
+{
 }
 
 
@@ -1346,6 +1401,11 @@ rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host*
 }
 
 template <class typeT>
+void simple_types_repository<typeT>::deinitialize ()
+{
+}
+
+template <class typeT>
 rx_result simple_types_repository<typeT>::update_type (typename simple_types_repository<typeT>::Tptr what)
 {
 	const auto& id = what->meta_info.id;
@@ -1449,6 +1509,10 @@ rx_result types_resolver::update_id (const rx_node_id& id)
 		}
 		return true;
 	}
+}
+
+void types_resolver::deinitialize ()
+{
 }
 
 
@@ -1624,6 +1688,10 @@ rx_result relations_type_repository::initialize (hosting::rx_platform_host* host
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	return result;
+}
+
+void relations_type_repository::deinitialize ()
+{
 }
 
 rx_result relations_type_repository::update_type (relations_type_repository::Tptr what)
@@ -1951,6 +2019,10 @@ rx_result data_type_repository::initialize (hosting::rx_platform_host* host, con
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	return result;
+}
+
+void data_type_repository::deinitialize ()
+{
 }
 
 rx_result data_type_repository::update_type (data_type_repository::Tptr what)

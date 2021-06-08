@@ -120,6 +120,7 @@ rx_platform_directory::rx_platform_directory (const string_type& name, namespace
 
 rx_platform_directory::~rx_platform_directory()
 {
+	printf("Deleted directory: %s\r\n", meta_.name.c_str());
 }
 
 
@@ -818,7 +819,7 @@ rx_result rx_names_cache::insert_cached_item (const string_type& name, const rx_
 	}
 	else
 	{
-		name_items_hash_.emplace(name, item);
+		auto result = name_items_hash_.emplace(name, item);
 		return true;
 	}
 }
@@ -846,6 +847,16 @@ bool rx_names_cache::should_cache (const rx_namespace_item& item)
 	{
 		return false;
 	}
+}
+
+rx_result rx_names_cache::removed_cached_item (const string_type& name)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+void rx_names_cache::clear ()
+{
+	name_items_hash_.clear();
 }
 
 

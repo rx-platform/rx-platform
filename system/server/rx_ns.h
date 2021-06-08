@@ -61,6 +61,10 @@ using namespace rx_platform;
 
 namespace rx_internal
 {
+namespace builders
+{
+class rx_platform_builder;
+}
 namespace internal_ns
 {
 class namespace_algorithms;
@@ -172,6 +176,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 	typedef std::map<string_type, rx_platform_directory::smart_ptr>  sub_directories_type;
 	typedef std::map<string_type, rx_namespace_item> sub_items_type;
 	typedef std::unordered_set<string_type> reserved_type;
+    friend class rx_internal::builders::rx_platform_builder;
 
   public:
       rx_platform_directory (const string_type& name, namespace_item_attributes attrs, rx_storage_ptr storage = rx_storage_ptr::null_ptr);
@@ -278,7 +283,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 
 class rx_names_cache 
 {
-	  typedef std::unordered_map<string_type, rx_namespace_item> name_items_hash_type;
+	  typedef std::map<string_type, rx_namespace_item> name_items_hash_type;
 
   public:
       rx_names_cache();
@@ -291,6 +296,10 @@ class rx_names_cache
       static bool should_cache (const platform_item_ptr& item);
 
       static bool should_cache (const rx_namespace_item& item);
+
+      rx_result removed_cached_item (const string_type& name);
+
+      void clear ();
 
 
   protected:

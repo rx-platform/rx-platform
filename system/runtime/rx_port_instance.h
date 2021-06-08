@@ -106,6 +106,7 @@ class port_passive_behavior
 
       virtual bool is_connect_subscriber () = 0;
 
+      virtual ~port_passive_behavior() = default;
 
   protected:
 
@@ -130,6 +131,7 @@ class port_active_behavior
 
       virtual bool is_endpoint_user () = 0;
 
+      virtual ~port_active_behavior() = default;
 
   protected:
 

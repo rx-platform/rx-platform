@@ -70,8 +70,8 @@ void win32_headless_host::get_host_info (string_array& hosts)
 
 string_type win32_headless_host::get_win32_headless_info ()
 {
-	static string_type ret;
-	if (ret.empty())
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_WIN32_HEADLESS_HOST_NAME, RX_WIN32_HEADLESS_HOST_MAJOR_VERSION, RX_WIN32_HEADLESS_HOST_MINOR_VERSION, RX_WIN32_HEADLESS_HOST_BUILD_NUMBER);
 	}

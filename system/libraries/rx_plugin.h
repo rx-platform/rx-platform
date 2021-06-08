@@ -105,41 +105,6 @@ class rx_plugin_base
 };
 
 
-
-//	I just love singletones
-
-
-
-class plugin_manager 
-{
-    typedef std::map<rx_node_id, rx_plugin_base*> registered_plugins_type;
-
-
-    template<typename typeT>
-    friend rx_result register_plugin_constructor(rx_plugin_base* plugin
-        , const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
-    template<typename typeT>
-    friend rx_result register_plugin_simple_constructor(rx_plugin_base* plugin
-        , const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
-
-  public:
-
-      static plugin_manager& instance ();
-
-
-  protected:
-
-  private:
-      plugin_manager();
-
-
-
-      registered_plugins_type registered_plugins_;
-
-
-};
-
-
 } // namespace library
 } // namespace rx_platform
 

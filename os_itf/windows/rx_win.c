@@ -533,7 +533,6 @@ struct WSAData wsaData;
 void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, const char* server_name)
 {
 
-	OutputDebugStringA("{rx-platform} initializing 1...");
 
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
@@ -602,7 +601,6 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, const char* server_
 	BOOL cret = CryptAcquireContext(&hcrypt, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
 
 
-	OutputDebugStringA("{rx-platform} initializing 3...");
 
 #ifndef _DEBUG
 	if (rt)
@@ -613,8 +611,22 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, const char* server_
 	}
 #endif
 }
+
+int drives_count = 0;
+char** drives = NULL;
+
 void rx_deinitialize_os()
 {
+	int i = 0;
+
+	if (drives_count > 0 && drives)
+	{
+		for (; i < drives_count; i++)
+			free(drives[i]);
+	}
+	if(drives)
+		free(drives);
+
 	if(hcrypt)
 		CryptReleaseContext(hcrypt,0);
 	WSACleanup();
@@ -1291,8 +1303,6 @@ uint64_t rx_get_us_ticks()
 
 // directories stuff
 
-int drives_count = 0;
-char** drives = NULL;
 
 void init_fixed_drives()
 {

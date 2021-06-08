@@ -79,6 +79,8 @@ rx_result domain_relation::initialize_relation (runtime::runtime_init_context& c
 
 rx_result domain_relation::deinitialize_relation (runtime::runtime_deinit_context& ctx)
 {
+    from_ = rx_object_ptr::null_ptr;
+    to_ = rx_domain_ptr::null_ptr;
     return true;
 }
 
@@ -143,6 +145,8 @@ rx_result application_relation::initialize_relation (runtime::runtime_init_conte
 
 rx_result application_relation::deinitialize_relation (runtime::runtime_deinit_context& ctx)
 {
+    from_ = rx_domain_ptr::null_ptr;
+    to_ = rx_application_ptr::null_ptr;
     return true;
 }
 
@@ -207,6 +211,8 @@ rx_result port_app_relation::initialize_relation (runtime::runtime_init_context&
 
 rx_result port_app_relation::deinitialize_relation (runtime::runtime_deinit_context& ctx)
 {
+    from_ = rx_port_ptr::null_ptr;
+    to_ = rx_application_ptr::null_ptr;
     return true;
 }
 

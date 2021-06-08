@@ -151,6 +151,19 @@ int isdelim(char c)
 
 // Class rx_internal::sys_runtime::data_source::value_point 
 
+value_point::value_point()
+      : context_(nullptr),
+        state_(value_point_not_connected),
+        rate_(0)
+{
+}
+
+
+value_point::~value_point()
+{
+}
+
+
 
 void value_point::connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, data_controler* controler, char* buffer)
 {

@@ -40,8 +40,24 @@ struct rx_hosting_functions g_memory;
 rx_protocol_result_t rx_c_alloc_buffer(void** buffer, size_t buffer_size)
 {
 	*buffer = malloc(buffer_size);
-	if (buffer)
+	if (*buffer)
 	{
+		return RX_PROTOCOL_OK;
+	}
+	else
+	{
+		return RX_PROTOCOL_OUT_OF_MEMORY;
+	}
+}
+
+rx_protocol_result_t rx_c_realloc_buffer(void** buffer, size_t buffer_size)
+{
+	if (buffer == NULL || *buffer == NULL)
+		return RX_PROTOCOL_INVALID_ARG;
+	void* temp = realloc(*buffer, buffer_size);
+	if (temp)
+	{
+		*buffer = temp;
 		return RX_PROTOCOL_OK;
 	}
 	else

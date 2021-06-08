@@ -82,7 +82,7 @@ class security_context : public pointers::reference_object
   public:
       security_context();
 
-      ~security_context();
+      virtual ~security_context();
 
 
       void logout ();
@@ -164,7 +164,7 @@ class security_manager
 	friend void pop_security();
 
   public:
-      virtual ~security_manager();
+      ~security_manager();
 
 
       static security_manager& instance ();
@@ -174,6 +174,8 @@ class security_manager
       rx_security_handle_t context_deactivated (security_context::smart_ptr who);
 
       void get_active_contexts (std::vector<security_context_ptr >& ctxs);
+
+      void deinitialize ();
 
 
   protected:

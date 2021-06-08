@@ -54,24 +54,10 @@ rx_plugin_base::~rx_plugin_base()
 
 
 
-// Class rx_platform::library::plugin_manager 
-
-plugin_manager::plugin_manager()
-{
-}
-
-
-
-plugin_manager& plugin_manager::instance ()
-{
-    static plugin_manager g_instance;
-    return g_instance;
-}
-
-
 // Class rx_platform::library::plugin_builder 
 
 
 } // namespace library
 } // namespace rx_platform
+
 

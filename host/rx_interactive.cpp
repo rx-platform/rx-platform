@@ -37,6 +37,9 @@
 #include "rx_interactive_config.h"
 #include "terminal/rx_terminal_style.h"
 #include "system/hosting/rx_yaml.h"
+#include "sys_internal/rx_security/rx_platform_security.h"
+#include "sys_internal/rx_plugin_manager.h"
+#include "lib/rx_io.h"
 
 // rx_interactive
 #include "host/rx_interactive.h"
@@ -76,7 +79,7 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 	if (config.processor.io_pool_size <= 0)// has to have at least one
 		config.processor.io_pool_size = 1;
 	if (config.processor.workers_pool_size < 0)
-		config.processor.workers_pool_size = 7;
+		config.processor.workers_pool_size = 2;
 
 	auto result = rx_platform::register_host_constructor<object_types::port_type>(rx_node_id(RX_STD_IO_TYPE_ID, 3), [this] {
 		return interactive_port_;
@@ -313,34 +316,48 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			if (ret)
 			{
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-
-				std::cout << "Registering plug-ins...";
-				ret = register_plugins(plugins);
+				std::cout << "Initializing security...";
+				ret = rx_internal::rx_security::platform_security::instance().initialize(this, config);
 				if (ret)
 				{
 					std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
-					std::cout << "Initializing storages...";
-					ret = initialize_storages(config, plugins);
+					std::cout << "Registering plug-ins...";
+					ret = register_plugins(plugins);
 					if (ret)
 					{
 						std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-						HOST_LOG_INFO("Main", 999, "Starting Console Host...");
-						// execute main loop of the console host
-						ret = console_loop(config, plugins);
-						HOST_LOG_INFO("Main", 999, "Console Host exited.");
 
-						deinitialize_storages();
+						std::cout << "Initializing storages...";
+						ret = initialize_storages(config, plugins);
+						if (ret)
+						{
+							std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+							HOST_LOG_INFO("Main", 999, "Starting Console Host...");
+							// execute main loop of the console host
+							ret = console_loop(config, plugins);
+							HOST_LOG_INFO("Main", 999, "Console Host exited.");
+
+							deinitialize_storages();
+						}
+						else
+						{
+							std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
+							rx_dump_error_result(std::cout, ret);
+						}
 					}
 					else
 					{
-						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
+						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError registering plug-ins\r\n";
 						rx_dump_error_result(std::cout, ret);
 					}
+					rx_internal::plugins::plugins_manager::instance().deinitialize();
+					rx_internal::rx_security::platform_security::instance().deinitialize();
+
 				}
 				else
 				{
-					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError registering plug-ins\r\n";
+					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing security:\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();
@@ -359,6 +376,8 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			rx_dump_error_result(std::cout, ret);
 		}
 	}
+	rx::io::dispatcher_subscriber::deinitialize();
+	rx::threads::thread::deinitialize();
 	restore_console();
 	std::cout << "\r\n";
 	return ret ? 0 : -1;
@@ -375,8 +394,8 @@ void interactive_console_host::restore_console ()
 
 string_type interactive_console_host::get_interactive_info ()
 {
-	static string_type ret;
-	if (ret.empty())
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_INTERACTIVE_HOST_NAME, RX_INTERACTIVE_HOST_MAJOR_VERSION, RX_INTERACTIVE_HOST_MINOR_VERSION, RX_INTERACTIVE_HOST_BUILD_NUMBER);
 	}
@@ -549,7 +568,7 @@ void interactive_console_host::console_run_result (rx_result result)
 
 interactive_console_port::interactive_console_port (interactive_console_host* host)
       : listening_(false)
-	, endpoint_(host)
+	, endpoint_(host, this)
 {
 }
 
@@ -612,23 +631,36 @@ void interactive_console_port::destroy_endpoint (rx_protocol_stack_endpoint* wha
 {
 }
 
+rx_result interactive_console_port::stop_passive ()
+{
+	return true;
+}
+
 
 // Class host::interactive::interactive_console_endpoint 
 
-interactive_console_endpoint::interactive_console_endpoint (interactive_console_host* host)
-      : host_(host)
+interactive_console_endpoint::interactive_console_endpoint (interactive_console_host* host, interactive_console_port* my_port)
+      : host_(host),
+        my_port_(my_port)
 	, std_out_sender_("Standard Out Writer", RX_DOMAIN_EXTERN)
 {
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.send_function = &interactive_console_endpoint::send_function;
 	stack_entry_.close_function = [](rx_protocol_stack_endpoint* reference, rx_protocol_result_t reason)->rx_protocol_result_t
-	{
-		if(!rx_gate::instance().is_shutting_down())
-			rx_platform::rx_gate::instance().shutdown("Interactive Shutdown");
-		else
-			rx_notify_closed(reference, reason);
-		return RX_PROTOCOL_OK;
-	};
+		{
+			interactive_console_endpoint* whose = (interactive_console_endpoint*)reference->user_data;
+			if(!rx_gate::instance().is_shutting_down())
+				rx_platform::rx_gate::instance().shutdown("Interactive Shutdown");
+
+			rx_notify_closed(reference, RX_PROTOCOL_OK);
+
+			return RX_PROTOCOL_OK;
+		};
+	stack_entry_.closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+		{
+			interactive_console_endpoint* whose = (interactive_console_endpoint*)entry->user_data;
+			whose->my_port_->unbind_stack_endpoint(entry);
+		};
 }
 
 
@@ -667,6 +699,9 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 			}
 		}
 	}
+	rx_session session = rx_create_session(nullptr, nullptr, 0, 0, nullptr);
+	rx_notify_disconnected(&stack_entry_, &session, 0);
+	std_out_sender_.end();
 	return true;
 }
 
@@ -701,7 +736,7 @@ rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_st
 
 void interactive_console_endpoint::close ()
 {
-	std_out_sender_.end();
+	host_->exit();
 }
 
 rx_result interactive_console_endpoint::open (std::function<void(int64_t)> sent_func)
@@ -714,5 +749,4 @@ rx_result interactive_console_endpoint::open (std::function<void(int64_t)> sent_
 
 } // namespace interactive
 } // namespace host
-
 

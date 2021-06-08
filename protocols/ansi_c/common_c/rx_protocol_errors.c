@@ -49,7 +49,9 @@ const char* error_messages[] =
 	"Protocol stack not defined completely",
 	"Insufficient data",
 	"Invalid address",
-	"Closed by stack"
+	"Closed by stack",
+	"Disconnected",
+	"Invalid Arguments"
 };
 
 

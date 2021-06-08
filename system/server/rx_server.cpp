@@ -47,6 +47,7 @@
 #include "interfaces/rx_endpoints.h"
 #include "sys_internal/rx_inf.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
+#include "runtime_internal/rx_runtime_internal.h"
 #include "sys_internal/rx_async_functions.h"
 #include "http_server/rx_http_server.h"
 
@@ -70,7 +71,9 @@ rx_gate::rx_gate()
 	os_info_ = buff;
 	pid_ = rx_pid;
 	{
-		ASSIGN_MODULE_VERSION(rx_version_, RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
+		buff[0] = '\0';
+		ASSIGN_MODULE_VERSION(buff, RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
+		rx_version_ = buff;
 	}
 	auto sname = rx_get_server_name();
 	if(sname)
@@ -106,6 +109,7 @@ rx_gate& rx_gate::instance ()
 
 void rx_gate::cleanup ()
 {
+	platform_root::clear_cached_items();
 	RX_ASSERT(g_instance);
 	delete g_instance;
 	g_instance = nullptr;
@@ -147,7 +151,10 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 					{
 						result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
 						if (!result)
+						{
 							result.register_error("Error initializing http server!");
+							rx_internal::rx_http_server::http_server::instance().deinitialize();
+						}
 					}
 				}
 				else
@@ -194,12 +201,18 @@ rx_result rx_gate::deinitialize (security::security_context_ptr sec_ctx)
 	for (auto one : scripts_)
 		one.second->deinitialize();
 
+	rx_internal::rx_http_server::http_server::instance().deinitialize();
+
 	rx_internal::model::platform_types_manager::instance().deinitialize();
+
+	rx_internal::builders::rx_platform_builder::deinitialize(root_);
 
 	io_manager_->deinitialize();
 	rx_internal::infrastructure::server_runtime::instance().deinitialize();
 
 	sec_ctx->logout();
+
+	cleanup();
 
 	return RX_OK;
 }
@@ -232,6 +245,7 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 rx_result rx_gate::stop ()
 {
 	platform_status_ = rx_platform_status::stopping;
+	rx_internal::sys_runtime::platform_runtime_manager::instance().stop_all();
 	rx_internal::model::platform_types_manager::instance().stop();
 	rx_internal::infrastructure::server_runtime::instance().stop();
 	platform_status_ = rx_platform_status::deinitializing;

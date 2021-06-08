@@ -222,6 +222,7 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_reference_pt
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
+				result = algorithms::delete_runtime_structure<object_type>(whose);
 				RUNTIME_LOG_TRACE("object_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function_to(RX_DOMAIN_META, whose, 
 					[](rx_object_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
@@ -408,6 +409,7 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, rx_reference_pt
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
+				result = algorithms::delete_runtime_structure<domain_type>(whose);
 				RUNTIME_LOG_TRACE("domain_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function_to(RX_DOMAIN_META, whose,
 					[](rx_domain_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
@@ -597,6 +599,7 @@ rx_result port_algorithms::deinit_runtime (rx_port_ptr what, rx_reference_ptr re
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
+				result = algorithms::delete_runtime_structure<port_type>(whose);
 				RUNTIME_LOG_TRACE("port_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function_to(RX_DOMAIN_META, whose,
 					[](rx_port_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
@@ -785,6 +788,7 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, rx_re
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
+				result = algorithms::delete_runtime_structure<application_type>(whose);
 				RUNTIME_LOG_TRACE("application_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function_to(RX_DOMAIN_META, whose,
 					[](rx_application_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
@@ -852,6 +856,100 @@ rx_result relations_algorithms::deinit_runtime (rx_relation_ptr what, rx_referen
 rx_result relations_algorithms::stop_runtime (rx_relation_ptr what, runtime::runtime_stop_context& ctx)
 {
 	return RX_NOT_IMPLEMENTED;
+}
+
+
+// Class rx_internal::sys_runtime::algorithms::shutdown_algorithms 
+
+
+void shutdown_algorithms::stop_applications (std::vector<rx_application_ptr> apps)
+{
+	for (auto app : apps)
+	{
+		std::vector<rx_port_ptr> ports = app->get_instance_data().get_ports();
+		stop_ports(std::move(ports));
+		runtime::runtime_stop_context stop_ctx;
+		algorithms::application_algorithms::stop_runtime(app, stop_ctx);
+	}
+}
+
+void shutdown_algorithms::stop_domains (std::vector<rx_domain_ptr> domains)
+{
+	for (auto domain : domains)
+	{
+		std::vector<rx_object_ptr> objects = domain->get_instance_data().get_objects();
+		stop_objects(std::move(objects));
+		runtime::runtime_stop_context stop_ctx;
+		algorithms::domain_algorithms::stop_runtime(domain, stop_ctx);
+	}
+}
+
+void shutdown_algorithms::stop_ports (std::vector<rx_port_ptr> ports)
+{
+	for (auto port : ports)
+	{
+		runtime::runtime_stop_context stop_ctx;
+		algorithms::port_algorithms::stop_runtime(port, stop_ctx);
+	}
+}
+
+void shutdown_algorithms::stop_objects (std::vector<rx_object_ptr> objects)
+{
+	for (auto one : objects)
+	{
+		runtime::runtime_stop_context stop_ctx;
+		algorithms::object_algorithms::stop_runtime(one, stop_ctx);
+	}
+}
+
+void shutdown_algorithms::deinit_applications (std::vector<rx_application_ptr> apps)
+{
+	for (auto app : apps)
+	{
+		std::vector<rx_port_ptr> ports = app->get_instance_data().get_ports();
+		deinit_ports(std::move(ports));
+		std::vector<rx_domain_ptr> domains = app->get_instance_data().get_domains();
+		deinit_domains(std::move(domains));
+		runtime::runtime_deinit_context deinit_ctx;
+		app->deinitialize_runtime(deinit_ctx);
+		app->get_instance_data().after_deinit_runtime(app, deinit_ctx);
+		platform_runtime_manager::instance().applications_.erase(app->meta_info().id);
+	}
+}
+
+void shutdown_algorithms::deinit_domains (std::vector<rx_domain_ptr> domains)
+{
+	for (auto domain : domains)
+	{
+		std::vector<rx_object_ptr> objects = domain->get_instance_data().get_objects();
+		deinit_objects(std::move(objects));
+		algorithms::domain_algorithms::disconnect_application(domain);
+		runtime::runtime_deinit_context deinit_ctx;
+		domain->deinitialize_runtime(deinit_ctx);
+		domain->get_instance_data().after_deinit_runtime(domain, deinit_ctx);
+	}
+}
+
+void shutdown_algorithms::deinit_ports (std::vector<rx_port_ptr> ports)
+{
+	for (auto port : ports)
+	{
+		algorithms::port_algorithms::disconnect_application(port);
+		runtime::runtime_deinit_context deinit_ctx;
+		port->deinitialize_runtime(deinit_ctx);
+		port->get_instance_data().after_deinit_runtime(port, deinit_ctx);
+	}
+}
+
+void shutdown_algorithms::deinit_objects (std::vector<rx_object_ptr> objects)
+{
+	for (auto one : objects)
+	{
+		algorithms::object_algorithms::disconnect_domain(one);
+		runtime::runtime_deinit_context deinit_ctx;
+		one->deinitialize_runtime(deinit_ctx);
+		one->get_instance_data().after_deinit_runtime(one, deinit_ctx);
+	}
 }
 
 

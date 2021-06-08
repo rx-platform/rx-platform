@@ -90,7 +90,7 @@ rx_result rx_json_file::close_read (const string_type& file_path)
 	if (!reader_)
 		return "File storage "s + file_path + " not opened for reading";
 	else // (reader_)
-		reader_.release();
+		reader_.reset();
 	return true;
 }
 
@@ -99,7 +99,7 @@ rx_result rx_json_file::close_write (const string_type& file_path)
 	if (!writer_)
 		return "File storage "s + file_path + " not opened for writing";
 	else // (writer_)
-		writer_.release();
+		writer_.reset();
 	return true;
 }
 
@@ -141,7 +141,7 @@ rx_result rx_binary_file::close_read (const string_type& file_path)
 	if (!reader_)
 		return "File storage "s + file_path + " not opened for reading";
 	else // (reader_)
-		reader_.release();
+		reader_.reset();
 	return true;
 }
 
@@ -150,7 +150,7 @@ rx_result rx_binary_file::close_write (const string_type& file_path)
 	if (!writer_)
 		return "File storage "s + file_path + " not opened for writing";
 	else // (writer_)
-		writer_.release();
+		writer_.reset();
 	return true;
 }
 

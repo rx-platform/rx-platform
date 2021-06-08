@@ -51,7 +51,7 @@ namespace pipe {
 local_pipe_port::local_pipe_port (const pipe_client_t& pipes, rx_pipe_host* host)
       : pipe_handles_(pipes),
         active_(false)
-	, pipes_(host)
+	, pipes_(host, this)
 {
 }
 
@@ -84,6 +84,7 @@ rx_result local_pipe_port::receive_loop (rx_pipe_host* host)
 	host->pipe_run_result(true);
 
 
+	add_stack_endpoint(&pipes_.stack_entry_, nullptr, nullptr);
 	pipes_.receive_loop([this] (size_t count)
 		{
 		});
@@ -104,20 +105,18 @@ rx_result local_pipe_port::start_listen (const protocol_address* local_address, 
 	if (!result)
 		return result;
 
-	add_stack_endpoint(&pipes_.stack_entry_, nullptr, nullptr);
 	active_ = true;
 
 	return true;
 }
 
-void local_pipe_port::stack_disassembled ()
-{
-	if(active_)
-		pipes_.close();
-}
-
 void local_pipe_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
 {
+}
+
+rx_result local_pipe_port::stop_passive ()
+{
+	return true;
 }
 
 
@@ -172,15 +171,35 @@ void anonymus_pipe_client::close_pipe ()
 
 // Class host::pipe::anonymus_pipe_endpoint 
 
-anonymus_pipe_endpoint::anonymus_pipe_endpoint (rx_pipe_host* host)
+anonymus_pipe_endpoint::anonymus_pipe_endpoint (rx_pipe_host* host, local_pipe_port* my_port)
       : host_(host),
+        my_port_(my_port),
         binded(false)
 	, pipe_sender_("Pipe Writer", RX_DOMAIN_EXTERN)
 {
 	rx_init_stack_entry(&stack_entry_, this);
 
 	stack_entry_.send_function = &anonymus_pipe_endpoint::send_function;
-	stack_entry_.stack_changed_function = &anonymus_pipe_endpoint::stack_changed_function;
+	stack_entry_.close_function = [](rx_protocol_stack_endpoint* reference, rx_protocol_result_t reason)->rx_protocol_result_t
+		{
+			anonymus_pipe_endpoint* whose = (anonymus_pipe_endpoint*)reference->user_data;
+			
+			whose->close();
+
+			rx_notify_closed(reference, RX_PROTOCOL_OK);
+
+			return RX_PROTOCOL_OK;
+		};
+	stack_entry_.closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+		{
+			anonymus_pipe_endpoint* whose = (anonymus_pipe_endpoint*)entry->user_data;
+			whose->my_port_->unbind_stack_endpoint(entry);
+		};
+}
+
+
+anonymus_pipe_endpoint::~anonymus_pipe_endpoint()
+{
 }
 
 
@@ -211,6 +230,9 @@ void anonymus_pipe_endpoint::receive_loop (std::function<void(int64_t)> received
 			break;
 		}
 	}
+	auto session = rx_create_session(nullptr, nullptr, 0, 0, nullptr);
+	rx_notify_disconnected(&stack_entry_, &session, RX_PROTOCOL_OK);
+	pipe_sender_.end();
 }
 
 rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes, std::function<void(int64_t)> sent_func)
@@ -225,43 +247,46 @@ rx_result anonymus_pipe_endpoint::open (const pipe_client_t& pipes, std::functio
 
 rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
-	anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference->user_data);
-	using job_type = rx::jobs::function_job<rx_reference_ptr, rx_packet_buffer>;
-	auto packet_id = packet.id;
-	rx::function_to_go<rx_reference_ptr, rx_packet_buffer> send_func(rx_reference_ptr(), [self, packet_id](rx_packet_buffer buffer)
-		{
-			auto result = self->pipes_->write_pipe(&buffer);
-			if (result)
+	if (packet.buffer && packet.buffer->buffer_ptr && packet.buffer->size > 0)
+	{
+		anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference->user_data);
+		using job_type = rx::jobs::function_job<rx_reference_ptr, rx_packet_buffer>;
+		auto packet_id = packet.id;
+		rx::function_to_go<rx_reference_ptr, rx_packet_buffer> send_func(rx_reference_ptr(), [self, packet_id](rx_packet_buffer buffer)
 			{
-				self->sent_func_(buffer.size);
-				rx_notify_ack(&self->stack_entry_, packet_id, RX_PROTOCOL_OK);
-			}
-			else
-			{
-				for (const auto& one : result.errors())
-					std::cout << one << "\r\n";
-			}
-			rx_deinit_packet_buffer(&buffer);
-		});
+				auto result = self->pipes_->write_pipe(&buffer);
+				if (result)
+				{
+					self->sent_func_(buffer.size);
+					rx_notify_ack(&self->stack_entry_, packet_id, RX_PROTOCOL_OK);
+				}
+				else
+				{
+					for (const auto& one : result.errors())
+						std::cout << one << "\r\n";
+				}
+				rx_deinit_packet_buffer(&buffer);
+			});
 
-	send_func.set_arguments(std::move(*packet.buffer));
-	auto job = rx_create_reference<job_type>(std::move(send_func));
+		rx_packet_buffer copy_buff;
+		rx_init_packet_buffer(&copy_buff, packet.buffer->size, 0);
+		rx_push_to_packet(&copy_buff, packet.buffer->buffer_ptr, packet.buffer->size);
 
-	self->pipe_sender_.append(job);
+		send_func.set_arguments(std::move(copy_buff));
+		auto job = rx_create_reference<job_type>(std::move(send_func));
 
+		self->pipe_sender_.append(job);
+	}
 	return RX_PROTOCOL_OK;
 }
 
 void anonymus_pipe_endpoint::close ()
 {
-	pipe_sender_.end();
-	pipes_->close_pipe();
-	pipes_.release();
-}
-
-void anonymus_pipe_endpoint::stack_changed_function (rx_protocol_stack_endpoint* reference)
-{
-	rx_notify_connected(reference, nullptr);
+	if (pipes_)
+	{
+		pipes_->close_pipe();
+		pipes_.reset();
+	}
 }
 
 

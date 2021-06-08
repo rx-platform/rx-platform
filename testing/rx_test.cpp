@@ -47,6 +47,9 @@
 
 
 namespace testing {
+namespace {
+testing_enviroment* g_obj = nullptr;
+}
 
 // Class testing::test_command 
 
@@ -521,8 +524,9 @@ void testing_enviroment::register_test_category (test_category::smart_ptr test)
 
 testing_enviroment& testing_enviroment::instance ()
 {
-	static testing_enviroment g_obj;
-	return g_obj;
+	if (g_obj == nullptr)
+		g_obj = new testing_enviroment();
+	return *g_obj;
 }
 
 void testing_enviroment::collect_test_cases (const string_type& category, std::vector<std::pair<string_type, test_case::smart_ptr> >& cases)

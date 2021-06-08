@@ -62,6 +62,8 @@ system application. contains system objects and internal system communication");
 
       static system_application::smart_ptr instance ();
 
+      void deinitialize ();
+
 
   protected:
 
@@ -90,6 +92,8 @@ this domain is used by system objects");
       namespace_item_attributes get_attributes () const;
 
       static system_domain::smart_ptr instance ();
+
+      void deinitialize ();
 
 
   protected:
@@ -121,6 +125,8 @@ this application is for unassigned domains.it allways has bad quality");
 
       static unassigned_application::smart_ptr instance ();
 
+      void deinitialize ();
+
 
   protected:
 
@@ -150,6 +156,8 @@ this domain is for unassigned objects.it always has bad quality");
       namespace_item_attributes get_attributes () const;
 
       static unassigned_domain::smart_ptr instance ();
+
+      void deinitialize ();
 
 
   protected:
@@ -185,6 +193,8 @@ System object implementation");
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
       rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      void deinitialize ();
 
 
   protected:

@@ -48,6 +48,10 @@
 namespace rx_internal {
 
 namespace infrastructure {
+namespace
+{
+server_runtime* g_object = nullptr;
+}
 
 // Class rx_internal::infrastructure::server_runtime 
 
@@ -135,6 +139,8 @@ void server_runtime::deinitialize ()
 		io_pool_ = server_dispatcher_object::smart_ptr::null_ptr;
 	if (unassigned_pool_)
 		unassigned_pool_ = physical_thread_object::smart_ptr::null_ptr;
+	if (meta_pool_)
+		meta_pool_ = physical_thread_object::smart_ptr::null_ptr;
 
 	for (auto& one : workers_)
 	{
@@ -142,10 +148,14 @@ void server_runtime::deinitialize ()
 			one->clear();
 	}
 
-	if (general_timer_)
-		general_timer_.release();
+	if (general_timer_)		
+		general_timer_.reset();
 	if (calculation_timer_)
-		calculation_timer_.release();
+		calculation_timer_.reset();
+
+	sys_runtime::platform_runtime_manager::instance().deinitialize();
+
+	delete this;
 }
 
 void server_runtime::append_timer_job (rx::jobs::timer_job_ptr job, threads::job_thread* whose)
@@ -364,8 +374,9 @@ rx_result server_runtime::initialize_runtime (runtime::runtime_init_context& ctx
 
 server_runtime& server_runtime::instance ()
 {
-	static server_runtime g_object;
-	return g_object;
+	if (g_object == nullptr)
+		g_object = new server_runtime();
+	return *g_object;
 }
 
 runtime_data_t server_runtime::get_cpu_data ()
@@ -448,6 +459,10 @@ domains_pool::domains_pool (uint32_t pool_size)
 
 domains_pool::~domains_pool()
 {
+	for (auto one : workers_)
+		delete one;
+	for (auto one : data_controlers_)
+		delete one;
 }
 
 

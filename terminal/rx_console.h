@@ -35,10 +35,10 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "interfaces/rx_endpoints.h"
 
-// rx_protocol_templates
-#include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_mem
@@ -235,7 +235,7 @@ class console_runtime : public rx::pointers::reference_object
       ~console_runtime();
 
 
-      const string_type& get_console_terminal ();
+      string_type get_console_terminal ();
 
       void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer);
 
@@ -324,7 +324,7 @@ class console_runtime : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< console_runtime  > console_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_internal::terminal::console::console_runtime  > console_port_base;
 
 
 

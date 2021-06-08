@@ -465,6 +465,13 @@ rx_result rx_result::create_from_c_error(const string_type& text)
 const rx_item_reference rx_item_reference::null_ref;
 
 
+// placement new and MSVC debug heap problem
+#ifdef _MSC_VER 
+#ifdef _DEBUG
+#undef new
+#endif
+#endif
+
 rx_item_reference::rx_item_reference()
 {
 	is_id_ = true;
@@ -515,6 +522,7 @@ rx_item_reference::rx_item_reference(const rx_simple_value& right)
 		new(&path_) string_type(right.get_storage().get_string_value());
 	}
 }
+
 
 
 rx_item_reference::~rx_item_reference()
@@ -1281,6 +1289,12 @@ void rx_node_id::set_node_type(rx_node_id_type value)
 	node_type_ = value;
 }
 
+#ifdef _MSC_VER 
+#ifdef _DEBUG
+#define new DEBUG_CLIENTBLOCK
+#endif
+#endif
+
 const char* g_complie_time;
 const char* g_lib_version;
 
@@ -2014,100 +2028,6 @@ time_stamp time_stamp::now()
 }
 
 
-
-class rx_thread_data_object
-{
-	typedef typename std::unique_ptr<std::stack<intptr_t, std::vector<intptr_t> > > stack_ptr_t;
-private:
-	std::map<int, stack_ptr_t> m_objects;
-	rx_thread_data_object()
-	{
-	}
-public:
-	static rx_thread_data_object& instance();
-
-	bool push_object(int handle, intptr_t obj)
-	{
-		auto it = m_objects.find(handle);
-		if (it == m_objects.end())
-		{
-			stack_ptr_t temp = std::make_unique<std::stack<intptr_t, std::vector<intptr_t> > >();
-			temp->push(obj);
-			m_objects.emplace(handle, std::forward<stack_ptr_t>(temp));
-			return true;
-		}
-		else
-		{
-			it->second->push(obj);
-			return true;
-		}
-	}
-	bool pop_object(int handle)
-	{
-		auto it = m_objects.find(handle);
-		if (it != m_objects.end())
-		{
-			RX_ASSERT(!it->second->empty());
-			if(!it->second->empty())
-				it->second->pop();
-			return true;
-		}
-		return false;
-	}
-	intptr_t get_object(int handle)
-	{
-		auto it = m_objects.find(handle);
-		if (it == m_objects.end() || it->second->empty())
-			return 0;
-		else
-			return it->second->top();
-	}
-};
-
-
-rx_thread_data_object& rx_thread_data_object::instance()
-{
-	rx_thread_data_object* ptr = (rx_thread_data_object*)rx_get_thread_data(rx_tls);
-	if (ptr == nullptr)
-	{
-		ptr = new rx_thread_data_object();
-		rx_set_thread_data(rx_tls, ptr);
-	}
-	return *ptr;
-}
-
-#define SECURITY_TLS_DATA 999
-
-
-rx_security_handle_t rx_security_context()
-{
-	return rx_thread_data_object::instance().get_object(SECURITY_TLS_DATA);
-}
-bool rx_push_security_context(rx_security_handle_t obj)
-{
-	return rx_thread_data_object::instance().push_object(SECURITY_TLS_DATA,obj);
-}
-bool rx_pop_security_context()
-{
-    return rx_thread_data_object::instance().pop_object(SECURITY_TLS_DATA);
-}
-
-
-#define THREADING_TLS_DATA 998
-
-
-rx_thread_handle_t rx_thread_context()
-{
-	return rx_thread_data_object::instance().get_object(THREADING_TLS_DATA);
-}
-bool rx_push_thread_context(rx_thread_handle_t obj)
-{
-	return rx_thread_data_object::instance().push_object(THREADING_TLS_DATA, obj);
-}
-bool rx_pop_thread_context()
-{
-	return rx_thread_data_object::instance().pop_object(THREADING_TLS_DATA);
-}
 
 
 void rx_dump_ticks_to_stream(std::ostream& out,rx_timer_ticks_t ticks)

@@ -284,12 +284,11 @@ template <class typeT>
 void runtime_scan_algorithms<typeT>::process_from_remotes (typename typeT::RType& whose, runtime_process_context& ctx)
 {
     auto remote_updates = &ctx.get_from_remote();
-    if (!remote_updates->empty())
+    while (!remote_updates->empty())
     {
         for (auto& one : *remote_updates)
-        {
             ctx.set_value(one.handle, std::move(one.value));
-        }
+        remote_updates = &ctx.get_from_remote();
     }
 }
 

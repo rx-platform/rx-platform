@@ -68,7 +68,7 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	transport->connection_data.max_chunk_count = message->max_chunk_count;
 
 	// allocate the response
-	result = rx_init_packet_buffer(&response, 0x1000, stack->downward);
+	result = stack->allocate_packet(stack, &response);
 	if (result != RX_PROTOCOL_OK)
 		return result;
 	// fill the response header
@@ -104,6 +104,7 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 		else
 			transport->current_state = opcua_transport_opening;
 	}
+	stack->release_packet(stack, &response);
 	return result;
 }
 rx_protocol_result_t opcua_parse_reverse_hello_message(struct rx_protocol_stack_endpoint* stack, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)

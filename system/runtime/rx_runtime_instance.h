@@ -35,12 +35,12 @@
 #include "rx_runtime_helpers.h"
 #include "lib/rx_io_addr.h"
 
-// rx_port_instance
-#include "system/runtime/rx_port_instance.h"
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
+// rx_port_instance
+#include "system/runtime/rx_port_instance.h"
 // rx_security
 #include "lib/security/rx_security.h"
 
@@ -154,6 +154,8 @@ class domain_instance_data
 
       security::security_context_ptr get_security_context () const;
 
+      std::vector<rx_object_ptr> get_objects ();
+
 
       const meta::runtime_data::domain_data& get_data () const
       {
@@ -225,6 +227,10 @@ class application_instance_data
       static rx_result after_stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
 
       security::security_context_ptr get_security_context () const;
+
+      std::vector<rx_domain_ptr> get_domains ();
+
+      std::vector<rx_port_ptr> get_ports ();
 
 
       const meta::runtime_data::application_data& get_data () const

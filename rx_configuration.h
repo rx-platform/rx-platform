@@ -263,6 +263,16 @@
 #define RX_MASTER_TIMEOUTS_TYPE_NAME "MasterTimeoutsData"
 #define RX_MASTER_TIMEOUTS_TYPE_ID 0xc00005d
 
+
+#define RX_PORT_OPTIONS_TYPE_NAME "PortOptions"
+#define RX_PORT_OPTIONS_TYPE_ID 0xc000061
+#define RX_ROUTER_PORT_OPTIONS_TYPE_NAME "RouterPortOptions"
+#define RX_ROUTER_PORT_OPTIONS_TYPE_ID 0xc000062
+#define RX_BRIDGE_PORT_OPTIONS_TYPE_NAME "BridgePortOptions"
+#define RX_BRIDGE_PORT_OPTIONS_TYPE_ID 0xc000063
+#define RX_LIMITER_PORT_OPTIONS_TYPE_NAME "LimiterPortOptions"
+#define RX_LIMITER_PORT_OPTIONS_TYPE_ID 0xc000064
+
 // runtime support structures
 #define RX_POOL_DATA_TYPE_NAME "PoolData"
 #define RX_POOL_DATA_TYPE_ID 0xc000026
@@ -351,7 +361,7 @@
 #define RX_TCP_RX_PORT_TYPE_NAME "SystemRxPort"
 
 
-// last is 0xc000060!!!! 
+// last is 0xc000064!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

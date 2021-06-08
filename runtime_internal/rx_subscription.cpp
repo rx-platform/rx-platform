@@ -56,6 +56,11 @@ rx_subscription::rx_subscription (rx_subscription_callback* callback)
 }
 
 
+rx_subscription::~rx_subscription()
+{
+}
+
+
 
 rx_result rx_subscription::connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& result)
 {
@@ -142,18 +147,16 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 
 			std::vector<runtime_handle_t> items;
 			tag->ref_count++;
-			result.emplace_back(ret_handle);
 			if (connection->item && tag->target_handle)
 			{
 				std::vector<runtime_handle_t> items { tag->target_handle };
 				api::rx_context ctx;
 				ctx.object = smart_this();
 
-				auto result = connection->item->read_items(items, smart_this(), ctx);
-				if (!result)
-				{
-					return result;
-				}
+				locks::auto_lock_t<decltype(items_lock_)> _(&items_lock_);
+				auto it = values_cache_.find(ret_handle);
+				if (it != values_cache_.end())
+					pending_updates_.emplace_back(update_item{ret_handle, it->second});
 			}
 			else
 			{
@@ -327,6 +330,8 @@ void rx_subscription::deactivate ()
 	if (active_)
 	{
 		active_ = false;
+		timer_->cancel();
+		timer_ = rx_timer_ptr::null_ptr;
 	}
 }
 
@@ -342,7 +347,10 @@ void rx_subscription::items_changed (const std::vector<update_item>& items)
 			if (it != handles_.end() && !it->second.empty())
 			{
 				for (auto&& handle : it->second)
+				{
 					pending_updates_.emplace_back(update_item{ std::forward<decltype(handle)>(handle), one.value });
+					values_cache_[handle]= one.value;
+				}
 
 				if (one.value.is_dead())
 				{

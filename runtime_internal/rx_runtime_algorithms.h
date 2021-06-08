@@ -71,6 +71,8 @@ class object_algorithms
 
       static rx_result deinit_runtime (rx_object_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
 
+      static rx_result stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx);
+
       static rx_result connect_domain (rx_object_ptr what);
 
       static rx_result disconnect_domain (rx_object_ptr what);
@@ -81,8 +83,6 @@ class object_algorithms
   private:
 
       static rx_result start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx);
-
-      static rx_result stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx);
 
 
 
@@ -102,6 +102,8 @@ class domain_algorithms
 
       static rx_result deinit_runtime (rx_domain_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
 
+      static rx_result stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
+
       static rx_result connect_application (rx_domain_ptr what);
 
       static rx_result disconnect_application (rx_domain_ptr what);
@@ -112,8 +114,6 @@ class domain_algorithms
   private:
 
       static rx_result start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx);
-
-      static rx_result stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
 
 
 
@@ -133,6 +133,8 @@ class port_algorithms
 
       static rx_result deinit_runtime (rx_port_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
 
+      static rx_result stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
+
       static rx_result connect_application (rx_port_ptr what);
 
       static rx_result disconnect_application (rx_port_ptr what);
@@ -143,8 +145,6 @@ class port_algorithms
   private:
 
       static rx_result start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx);
-
-      static rx_result stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
 
 
 
@@ -164,14 +164,14 @@ class application_algorithms
 
       static rx_result deinit_runtime (rx_application_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
 
+      static rx_result stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
+
 
   protected:
 
   private:
 
       static rx_result start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, runtime::tag_blocks::binded_tags* binded);
-
-      static rx_result stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
 
 
 
@@ -200,6 +200,40 @@ class relations_algorithms
 
       static rx_result stop_runtime (rx_relation_ptr what, runtime::runtime_stop_context& ctx);
 
+
+
+};
+
+
+
+
+
+
+class shutdown_algorithms 
+{
+
+  public:
+
+      static void stop_applications (std::vector<rx_application_ptr> apps);
+
+      static void stop_domains (std::vector<rx_domain_ptr> domains);
+
+      static void stop_ports (std::vector<rx_port_ptr> ports);
+
+      static void stop_objects (std::vector<rx_object_ptr> objects);
+
+      static void deinit_applications (std::vector<rx_application_ptr> apps);
+
+      static void deinit_domains (std::vector<rx_domain_ptr> domains);
+
+      static void deinit_ports (std::vector<rx_port_ptr> ports);
+
+      static void deinit_objects (std::vector<rx_object_ptr> objects);
+
+
+  protected:
+
+  private:
 
 
 };

@@ -75,6 +75,8 @@ rx_result port_stack_relation::initialize_relation (runtime::runtime_init_contex
 
 rx_result port_stack_relation::deinitialize_relation (runtime::runtime_deinit_context& ctx)
 {
+    from_ = rx_port_ptr::null_ptr;
+    to_ = rx_port_ptr::null_ptr;
     return true;
 }
 
@@ -146,6 +148,7 @@ rx_result port_reference_relation::initialize_relation (runtime::runtime_init_co
 
 rx_result port_reference_relation::deinitialize_relation (runtime::runtime_deinit_context& ctx)
 {
+    to_ = rx_port_ptr::null_ptr;
     return true;
 }
 

@@ -136,7 +136,7 @@ class interactive_console_endpoint
 {
 
   public:
-      interactive_console_endpoint (interactive_console_host* host);
+      interactive_console_endpoint (interactive_console_host* host, interactive_console_port* my_port);
 
 
       rx_result run_interactive (std::function<void(int64_t)> received_func);
@@ -159,6 +159,8 @@ class interactive_console_endpoint
       rx::threads::physical_job_thread std_out_sender_;
 
       rx_protocol_stack_endpoint stack_entry_;
+
+      interactive_console_port *my_port_;
 
 
       std::function<void(int64_t)> sent_func_;
@@ -189,6 +191,8 @@ Standard IO class. implementation of an standard IO console port");
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
       void destroy_endpoint (rx_protocol_stack_endpoint* what);
+
+      rx_result stop_passive ();
 
       void remove_endpoint(rx_protocol_stack_endpoint* what)
       {

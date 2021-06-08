@@ -142,29 +142,20 @@ typedef struct opcua_transport_protocol_def
 	int last_chunk_received;
 	uint32_t current_request_id;
 	uint32_t current_sequence_id;
-	// memory handling
-	size_t initial_packet_size;
-	rx_packet_stack free_buffers;
-	// send queue
-	rx_packet_queue send_queue;
 	// receive collector
 	rx_packet_buffer receive_buffer;
 
 } opcua_transport_protocol_type;
 // initialize and deinitialize of transport
 rx_protocol_result_t opcua_bin_init_client_transport(opcua_transport_protocol_type* transport
-	, size_t buffer_size
-	, size_t queue_size);
+	, rx_packet_buffer receive_buffer);
 rx_protocol_result_t opcua_bin_init_server_transport(opcua_transport_protocol_type* transport
-	, size_t buffer_size
-	, size_t queue_size);
+	, rx_packet_buffer receive_buffer);
 rx_protocol_result_t opcua_bin_init_pipe_transport(opcua_transport_protocol_type* transport
-	, size_t buffer_size
-	, size_t queue_size);
+	, rx_packet_buffer receive_buffer);
 rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport);
 
 rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
-rx_protocol_result_t opcua_bin_bytes_sent(struct rx_protocol_stack_endpoint* reference, rx_packet_id_type id, rx_protocol_result_t result);
 rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
 
 

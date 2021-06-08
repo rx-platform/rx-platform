@@ -38,6 +38,7 @@
 extern struct rx_hosting_functions g_memory;
 
 rx_protocol_result_t rx_c_alloc_buffer(void** buffer, size_t buffer_size);
+rx_protocol_result_t rx_c_realloc_buffer(void** buffer, size_t buffer_size);
 rx_protocol_result_t rx_c_free_buffer(void* buffer, size_t buffer_size);
 
 

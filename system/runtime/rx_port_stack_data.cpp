@@ -208,9 +208,20 @@ bool port_passive_map::empty () const
 
 // Class rx_platform::runtime::io_types::port_stack_data 
 
+port_stack_data::~port_stack_data()
+{
+}
+
+
 
 rx_result port_stack_data::init_runtime_data (runtime::runtime_init_context& ctx)
 {
+    buffers.buffer_back_capacity = ctx.get_item_static<size_t>("Options.BuffBackCapacity", 0x100);
+    buffers.buffer_front_capacity = ctx.get_item_static<size_t>("Options.BuffFrontCapacity", 0x10);
+    buffers.buffer_discard_size = ctx.get_item_static<size_t>("Options.BuffDiscardSize", 0x1000);
+    buffers.buffer_count.bind("Status.Buffers", ctx);
+    buffers.discard_buffer_count.bind("Status.DropedBuffers", ctx);
+    buffers.buffer_count.bind("Status.", ctx);
     passive_map.stack_binded.bind("Status.Binded", ctx);
     build_map.stack_ready.bind("Status.Assembled", ctx);
     active_map.active_endpoints.bind("Status.Endpoints", ctx);
@@ -347,6 +358,51 @@ std::vector<rx_port_ptr> port_build_map::get_registered ()
         }
     }
     return ret;
+}
+
+
+// Class rx_platform::runtime::io_types::port_buffers 
+
+
+rx_result_with<io_types::rx_io_buffer> port_buffers::alloc_io_buffer (rx_port_ptr& whose)
+{
+    rx_io_buffer ret;
+    port_buffers& buffers = whose->get_instance_data().stack_data.buffers;
+    buffers.buffers_lock_.lock();
+    if (buffers.free_buffers.empty())
+    {
+        buffers.buffers_lock_.unlock();
+        auto result = rx_init_packet_buffer(&ret, buffers.buffer_back_capacity, buffers.buffer_front_capacity);
+        if (result != RX_PROTOCOL_OK)
+        {
+            memzero(&ret, sizeof(ret));
+            return "Out of memory";
+        }
+        buffers.buffer_count += 1;
+    }
+    else
+    {
+        buffers.free_buffers.back().detach(&ret);
+        buffers.free_buffers.pop_back();
+        buffers.buffers_lock_.unlock();
+    }
+    return ret;
+}
+
+void port_buffers::release_io_buffer (rx_port_ptr& whose, io_types::rx_io_buffer buff)
+{
+    port_buffers& buffers = whose->get_instance_data().stack_data.buffers;
+    if (buff.size > buffers.buffer_discard_size)
+    {// this buffer is to big so discard it
+        buffers.discard_buffer_count += 1;
+        buffers.buffer_count -= 1;
+    }
+    else
+    {
+        rx_reinit_packet_buffer(&buff);
+        locks::auto_lock_t _(&buffers.buffers_lock_);
+        buffers.free_buffers.emplace_back(std::move(buff));
+    }
 }
 
 

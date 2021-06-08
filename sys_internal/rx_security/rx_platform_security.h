@@ -36,6 +36,7 @@
 // rx_security
 #include "lib/security/rx_security.h"
 
+#include "system/hosting/rx_host.h"
 
 
 namespace rx_internal {
@@ -56,6 +57,10 @@ class platform_security
       static platform_security& instance ();
 
       rx_result register_role (const string_type& role, const string_type& parent_role);
+
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
+
+      void deinitialize ();
 
 
   protected:

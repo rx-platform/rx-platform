@@ -69,8 +69,8 @@ void gnu_pipe_host::get_host_info (string_array& hosts)
 
 string_type gnu_pipe_host::get_gnu_pipe_info ()
 {
-  static string_type ret;
-	if (ret.empty())
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_GNU_PIPE_HOST_NAME, RX_GNU_PIPE_HOST_MAJOR_VERSION, RX_GNU_PIPE_HOST_MINOR_VERSION, RX_GNU_PIPE_HOST_BUILD_NUMBER);
 	}

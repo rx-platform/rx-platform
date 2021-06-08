@@ -37,6 +37,8 @@
 #include "rx_value_templates.h"
 using namespace rx_platform;
 
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
 
 
 
@@ -163,10 +165,52 @@ class port_build_map
 
 
 
+class port_buffers 
+{
+    typedef std::vector<rx_io_buffer> free_buffers_type;
+
+  public:
+
+      static rx_result_with<io_types::rx_io_buffer> alloc_io_buffer (rx_port_ptr& whose);
+
+      static void release_io_buffer (rx_port_ptr& whose, io_types::rx_io_buffer buff);
+
+
+      free_buffers_type free_buffers;
+
+
+      size_t buffer_back_capacity;
+
+      size_t buffer_front_capacity;
+
+      size_t buffer_discard_size;
+
+      remote_owned_value<uint32_t> buffer_count;
+
+      remote_owned_value<int64_t> discard_buffer_count;
+
+
+  protected:
+
+  private:
+
+
+      locks::slim_lock buffers_lock_;
+
+
+};
+
+
+
+
+
+
 class port_stack_data 
 {
 
   public:
+      ~port_stack_data();
+
 
       rx_result init_runtime_data (runtime::runtime_init_context& ctx);
 
@@ -176,6 +220,8 @@ class port_stack_data
       port_active_map active_map;
 
       port_build_map build_map;
+
+      port_buffers buffers;
 
 
   protected:

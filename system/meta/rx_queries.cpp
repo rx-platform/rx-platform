@@ -240,6 +240,11 @@ rx_result rx_query::init_query_types ()
 	return true;
 }
 
+void rx_query::deinit_query_types ()
+{
+	registered_queries_.clear();
+}
+
 rx_result_with<query_ptr> rx_query::create_query (base_meta_reader& stream)
 {
 	if (!stream.start_object("query"))

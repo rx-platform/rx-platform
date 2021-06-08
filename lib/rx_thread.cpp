@@ -40,9 +40,134 @@
 
 
 namespace rx {
-rx_security_handle_t rx_security_context();
-bool rx_push_security_context(rx_security_handle_t obj);
-bool rx_pop_security_context();
+class rx_thread_data_object
+{
+	typedef typename std::unique_ptr<std::stack<intptr_t, std::vector<intptr_t> > > stack_ptr_t;
+private:
+	std::map<int, stack_ptr_t> m_objects;
+	rx_thread_data_object();
+public:
+	~rx_thread_data_object();
+
+	static rx_thread_data_object& instance();
+	static void clear_extern_threads_data();
+
+	bool push_object(int handle, intptr_t obj);
+	bool pop_object(int handle);
+	intptr_t get_object(int handle);
+};
+
+namespace
+{
+locks::slim_lock  g_allocated_thread_objects_locks;
+std::set< rx_thread_data_object*> g_allocated_thread_objects;
+}
+
+
+rx_thread_data_object::rx_thread_data_object()
+{
+	locks::auto_lock_t _(&g_allocated_thread_objects_locks);
+	g_allocated_thread_objects.emplace(this);
+}
+
+rx_thread_data_object::~rx_thread_data_object()
+{
+	locks::auto_lock_t _(&g_allocated_thread_objects_locks);
+	g_allocated_thread_objects.erase(this);
+}
+rx_thread_data_object& rx_thread_data_object::instance()
+{
+	rx_thread_data_object* ptr = (rx_thread_data_object*)rx_get_thread_data(rx_tls);
+	if (ptr == nullptr)
+	{
+		ptr = new rx_thread_data_object();
+		rx_set_thread_data(rx_tls, ptr);
+	}
+	return *ptr;
+}
+void rx_thread_data_object::clear_extern_threads_data()
+{
+	locks::auto_lock_t _(&g_allocated_thread_objects_locks);
+	auto it = g_allocated_thread_objects.begin();
+	while (it != g_allocated_thread_objects.end())
+	{
+		delete *it;
+		it = g_allocated_thread_objects.begin();
+	}
+}
+
+bool rx_thread_data_object::push_object(int handle, intptr_t obj)
+{
+	auto it = m_objects.find(handle);
+	if (it == m_objects.end())
+	{
+		stack_ptr_t temp = std::make_unique<std::stack<intptr_t, std::vector<intptr_t> > >();
+		temp->push(obj);
+		m_objects.emplace(handle, std::forward<stack_ptr_t>(temp));
+		return true;
+	}
+	else
+	{
+		it->second->push(obj);
+		return true;
+	}
+}
+bool rx_thread_data_object::pop_object(int handle)
+{
+	auto it = m_objects.find(handle);
+	if (it != m_objects.end())
+	{
+		RX_ASSERT(!it->second->empty());
+		if (!it->second->empty())
+			it->second->pop();
+		return true;
+	}
+	return false;
+}
+intptr_t rx_thread_data_object::get_object(int handle)
+{
+	auto it = m_objects.find(handle);
+	if (it == m_objects.end() || it->second->empty())
+		return 0;
+	else
+		return it->second->top();
+}
+
+
+
+#define SECURITY_TLS_DATA 999
+
+
+rx_security_handle_t rx_security_context()
+{
+	return rx_thread_data_object::instance().get_object(SECURITY_TLS_DATA);
+}
+bool rx_push_security_context(rx_security_handle_t obj)
+{
+	return rx_thread_data_object::instance().push_object(SECURITY_TLS_DATA, obj);
+}
+bool rx_pop_security_context()
+{
+	return rx_thread_data_object::instance().pop_object(SECURITY_TLS_DATA);
+}
+
+
+#define THREADING_TLS_DATA 998
+
+
+rx_thread_handle_t rx_thread_context()
+{
+	return rx_thread_data_object::instance().get_object(THREADING_TLS_DATA);
+}
+bool rx_push_thread_context(rx_thread_handle_t obj)
+{
+	return rx_thread_data_object::instance().push_object(THREADING_TLS_DATA, obj);
+}
+bool rx_pop_thread_context()
+{
+	return rx_thread_data_object::instance().pop_object(THREADING_TLS_DATA);
+}
+
 
 namespace threads {
 
@@ -59,8 +184,6 @@ void execute_job(void* arg)
 	}
 	pjob->release_unsafe_ptr();
 }
-
-
 
 // Class rx::threads::thread 
 
@@ -88,6 +211,10 @@ void thread::_inner_handler (void* arg)
 
 	p->handler();
 
+
+	rx_thread_data_object* ptr = (rx_thread_data_object*)rx_get_thread_data(rx_tls);
+	if (ptr)
+		delete ptr;
 }
 
 void thread::start (int priority)
@@ -103,6 +230,11 @@ void thread::start (int priority)
 		snprintf(buff, sizeof(buff) / sizeof(buff[0]), "Error while creating %s thread. Error code: %x", name_.c_str(), errno);
 	}
 
+}
+
+void thread::deinitialize ()
+{
+	rx_thread_data_object::clear_extern_threads_data();
 }
 
 
@@ -295,8 +427,6 @@ uint32_t dispatcher_thread::handler ()
 
 
 // Class rx::threads::timer 
-
-rx_timer_ticks_t timer::soft_randoms_[RX_OFFSET_TIMES_SIZE];
 
 timer::timer (const string_type& name, rx_thread_handle_t rx_thread_id)
       : wake_up_(false),

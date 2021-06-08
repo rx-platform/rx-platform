@@ -55,8 +55,8 @@ namespace storage {
 namespace files {
 string_type get_file_storage_info()
 {
-	static string_type ret;
-	if (ret.empty())
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_STORAGE_NAME, RX_STORAGE_MAJOR_VERSION, RX_STORAGE_MINOR_VERSION, RX_STORAGE_BUILD_NUMBER);
 	}

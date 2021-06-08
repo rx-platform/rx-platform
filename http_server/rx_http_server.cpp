@@ -40,62 +40,9 @@
 namespace rx_internal {
 
 namespace rx_http_server {
-
-// Class rx_internal::rx_http_server::standard_request_filter 
-
-
-rx_result standard_request_filter::handle_request_after (http_request& req, http_response& resp)
-{
-	resp.headers.emplace("Connection", "Keep-Alive");
-	resp.headers.emplace("Keep-Alive", "timeout=32");
-	resp.headers.emplace("Content-Language", "en");
-	resp.headers.emplace("Server", http_server::get_server_header_info());
-	char buff[0x20];
-	auto[ptr, ep] = std::to_chars(buff, buff + 0x1f, resp.content.size());
-	*ptr = '\0';
-	resp.headers.emplace("Content-Length", buff);
-	switch (resp.result)
-	{
-	case 200:
-		resp.result_string = "200 OK";
-		break;
-	case  403:
-		resp.result_string = "403 Forbidden";
-		break;
-	case  404:
-		resp.result_string = "404 Not Found";
-		break;
-	case 405:
-		resp.result_string = "405 Method Not Allowed";
-		break;
-	case 500:
-		resp.result_string = "500 Internal Server Error";
-		break;
-	case 501:
-		resp.result_string = "501 Not Implemented";
-		break;
-	default:
-		{
-			char buff[0x20];
-			auto [ptr, ec] = std::to_chars(buff, buff + 0x1f, resp.result);
-			*ptr = '\0';
-			resp.result_string = buff;
-			resp.result_string += " Unknown";
-		}
-	}
-	return true;
+namespace {
+http_server* g_inst = nullptr;
 }
-
-rx_result standard_request_filter::handle_request_before (http_request& req, http_response& resp)
-{
-	size_t idx = req.path.rfind('.');
-	if (idx != !string_type::npos)
-	{
-		req.extension = req.path.substr(idx + 1);
-	}
-	return true;
-}
-
 
 // Class rx_internal::rx_http_server::http_server 
 
@@ -107,8 +54,9 @@ http_server::http_server()
 
 http_server& http_server::instance ()
 {
-	static http_server g_inst;
-	return g_inst;
+	if (g_inst == nullptr)
+		g_inst = new http_server();
+	return *g_inst;
 }
 
 rx_result http_server::initialize (hosting::rx_platform_host* host, configuration_data_t& config)
@@ -188,8 +136,8 @@ void http_server::send_response (http_request& request, http_response response)
 
 string_type http_server::get_server_info ()
 {
-	static string_type ret;
-	if (ret.empty())
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_HTTP_NAME, RX_HTTP_MAJOR_VERSION, RX_HTTP_MINOR_VERSION, RX_HTTP_BUILD_NUMBER);
 	}
@@ -208,6 +156,67 @@ string_type http_server::get_server_header_info ()
 		ret = ss.str();
 	}
 	return ret;
+}
+
+void http_server::deinitialize ()
+{
+	delete this;
+}
+
+
+// Class rx_internal::rx_http_server::standard_request_filter 
+
+
+rx_result standard_request_filter::handle_request_after (http_request& req, http_response& resp)
+{
+	resp.headers.emplace("Connection", "Keep-Alive");
+	resp.headers.emplace("Keep-Alive", "timeout=32");
+	resp.headers.emplace("Content-Language", "en");
+	resp.headers.emplace("Server", http_server::get_server_header_info());
+	char buff[0x20];
+	auto[ptr, ep] = std::to_chars(buff, buff + 0x1f, resp.content.size());
+	*ptr = '\0';
+	resp.headers.emplace("Content-Length", buff);
+	switch (resp.result)
+	{
+	case 200:
+		resp.result_string = "200 OK";
+		break;
+	case  403:
+		resp.result_string = "403 Forbidden";
+		break;
+	case  404:
+		resp.result_string = "404 Not Found";
+		break;
+	case 405:
+		resp.result_string = "405 Method Not Allowed";
+		break;
+	case 500:
+		resp.result_string = "500 Internal Server Error";
+		break;
+	case 501:
+		resp.result_string = "501 Not Implemented";
+		break;
+	default:
+		{
+			char buff[0x20];
+			auto [ptr, ec] = std::to_chars(buff, buff + 0x1f, resp.result);
+			*ptr = '\0';
+			resp.result_string = buff;
+			resp.result_string += " Unknown";
+		}
+	}
+	return true;
+}
+
+rx_result standard_request_filter::handle_request_before (http_request& req, http_response& resp)
+{
+	size_t idx = req.path.rfind('.');
+	if (idx != !string_type::npos)
+	{
+		req.extension = req.path.substr(idx + 1);
+	}
+	return true;
 }
 
 

@@ -256,57 +256,12 @@ rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_endpoint*
 	return result;
 }
 
-void opcua_bin_closed(struct rx_protocol_stack_endpoint* transport, rx_protocol_result_t result)
-{
-}
-rx_protocol_result_t opcua_bin_close(struct rx_protocol_stack_endpoint* transport, rx_protocol_result_t result)
-{
-	return RX_PROTOCOL_NOT_IMPLEMENTED;
-}
-
-rx_protocol_result_t opcua_bin_allocate_buffer(struct rx_protocol_stack_endpoint* reference, rx_packet_buffer* buffer, size_t initial_size)
-{
-	rx_protocol_result_t result;
-	void* temp_ptr;
-
-	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference->user_data;
-	if (rx_stack_empty(&transport->free_buffers))
-	{
-		result = rx_init_packet_buffer(buffer, max(initial_size , transport->initial_packet_size), reference->downward);
-		if (result == RX_PROTOCOL_OK)
-		{
-			temp_ptr = rx_alloc_from_packet(buffer, opcua_regular_headers_size, &result);
-			if (!temp_ptr)
-				result = rx_deinit_packet_buffer(buffer);
-		}
-		return result;
-	}
-	else
-	{
-		result = rx_pop(&transport->free_buffers, buffer);
-		if(result == RX_PROTOCOL_OK)
-		{
-			temp_ptr = rx_alloc_from_packet(buffer, opcua_regular_headers_size, &result);
-			if (!temp_ptr)
-				result = rx_deinit_packet_buffer(buffer);
-		}
-		return result;
-	}
-}
-rx_protocol_result_t opcua_bin_free_buffer(struct rx_protocol_stack_endpoint* reference, rx_packet_buffer* buffer)
-{
-	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference->user_data;
-	rx_reinit_packet_buffer(buffer);
-	return rx_push(&transport->free_buffers, buffer);
-}
 
 
 rx_protocol_result_t opcua_bin_init_transport(opcua_transport_protocol_type* transport
-	, size_t buffer_size
-	, size_t queue_size
+	, rx_packet_buffer receive_buffer
 	, int supports_pipe
-	, int server_side
-	)
+	, int server_side)
 {
 	rx_protocol_result_t result;
 	memset(transport, 0, sizeof(opcua_transport_protocol_type));
@@ -315,93 +270,65 @@ rx_protocol_result_t opcua_bin_init_transport(opcua_transport_protocol_type* tra
 	// fill protocol stack header
 	transport->stack_entry.received_function = opcua_bin_bytes_received;
 	transport->stack_entry.send_function = opcua_bin_bytes_send;
-	transport->stack_entry.ack_function = opcua_bin_bytes_sent;
-	transport->stack_entry.closed_function = opcua_bin_closed;
-	transport->stack_entry.close_function = opcua_bin_close;
-	transport->stack_entry.allocate_packet_function = opcua_bin_allocate_buffer;
-	transport->stack_entry.free_packet_function = opcua_bin_free_buffer;
+	//transport->stack_entry.closed_function = opcua_bin_closed;
+	//transport->stack_entry.close_function = opcua_bin_close;
 	// fill options
 	transport->supports_pipe = supports_pipe;
 	transport->server_side = server_side;
-	transport->initial_packet_size = buffer_size;
 	// fill state
 	result = opcua_init_transport_state(transport);
 	if (result != RX_PROTOCOL_OK)
 		return result;
-	// initialize containers
-	result = rx_init_queue(&transport->send_queue, queue_size);
-	if (result != RX_PROTOCOL_OK)
-		return result;
-	result = rx_init_packet_buffer(&transport->receive_buffer, buffer_size, NULL);
-	if (result != RX_PROTOCOL_OK)
-	{
-		rx_deinit_queue(&transport->send_queue);
-		return result;
-	}
-	result = rx_init_stack(&transport->free_buffers, queue_size);
-	if (result != RX_PROTOCOL_OK)
-	{
-		rx_deinit_packet_buffer(&transport->receive_buffer);
-		rx_deinit_queue(&transport->send_queue);
-		return result;
-	}
+	transport->receive_buffer = receive_buffer;
 
 	return RX_PROTOCOL_OK;
 }
 rx_protocol_result_t opcua_bin_init_client_transport(opcua_transport_protocol_type* transport
-	, size_t buffer_size
-	, size_t queue_size
-	)
+	, rx_packet_buffer receive_buffer)
 {
-	return opcua_bin_init_transport(transport, buffer_size, queue_size, 0, 0);
+	return opcua_bin_init_transport(transport, receive_buffer, 0, 0);
 }
 rx_protocol_result_t opcua_bin_init_server_transport(opcua_transport_protocol_type* transport
-	, size_t buffer_size
-	, size_t queue_size
-	)
+	, rx_packet_buffer receive_buffer)
 {
-	return opcua_bin_init_transport(transport, buffer_size, queue_size, 0, 1);
+	return opcua_bin_init_transport(transport, receive_buffer, 0, 1);
 }
 
 
 rx_protocol_result_t opcua_bin_init_pipe_transport(opcua_transport_protocol_type* transport
-	, size_t buffer_size
-	, size_t queue_size
-	)
+	, rx_packet_buffer receive_buffer)
 {
-	return opcua_bin_init_transport(transport, buffer_size, queue_size, 1, 1);
+	return opcua_bin_init_transport(transport, receive_buffer, 1, 1);
 }
 
-rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport
-	)
+rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport)
 {
-	rx_deinit_stack(&transport->free_buffers);
-	rx_deinit_queue(&transport->send_queue);
 	rx_deinit_packet_buffer(&transport->receive_buffer);
 
 	return RX_PROTOCOL_OK;
 }
 rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
+	uint8_t* buffer_front_ptr = NULL;
 	rx_protocol_result_t result;
 	opcua_transport_header* header;
 	opcua_security_simetric_header* sec_header;
 	opcua_sequence_header* sequence_header;
 	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference->user_data;
+	rx_packet_buffer my_buffer;
+	size_t headers_size = sizeof(opcua_transport_header) + sizeof(opcua_security_simetric_header) + sizeof(opcua_sequence_header);
 
 
 	size_t size = rx_get_packet_usable_data(packet.buffer);
-	if (size <= transport->connection_data.receive_buffer_size)
+	if (size + headers_size <= transport->connection_data.send_buffer_size)
 	{// one packet, just handle header stuff
-		header = (opcua_transport_header*)rx_get_packet_data_at(packet.buffer, 0, &result);
+		buffer_front_ptr = (uint8_t*)rx_alloc_from_packet_front(packet.buffer
+			, headers_size, &result);
 		if (result != RX_PROTOCOL_OK)
 			return result;
-		sec_header = (opcua_security_simetric_header*)rx_get_packet_data_at(packet.buffer, sizeof(opcua_transport_header), &result);
-		if (result != RX_PROTOCOL_OK)
-			return result;
-		sequence_header = (opcua_sequence_header*)rx_get_packet_data_at(packet.buffer, sizeof(opcua_transport_header) + sizeof(opcua_security_simetric_header), &result);
-		if (result != RX_PROTOCOL_OK)
-			return result;
+		header = (opcua_transport_header*)buffer_front_ptr;
+		sec_header = (opcua_security_simetric_header*)&buffer_front_ptr[sizeof(opcua_transport_header)];
+		sequence_header = (opcua_sequence_header*)&buffer_front_ptr[sizeof(opcua_transport_header) + sizeof(opcua_security_simetric_header)];
 		// header
 		header->is_final = 'F';
 		header->message_type[0] = 'M';
@@ -418,40 +345,25 @@ rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_endpoint* ref
 		// TODO - handle rollover
 		transport->current_sequence_id++;
 
-		result = rx_enqueue(&transport->send_queue, packet.buffer);
+		packet.id = sequence_header->request_id;
+
+		result = rx_move_packet_down(reference, packet);
 		if (result != RX_PROTOCOL_OK)
 			return result;
-
 	}
 	else
+	{
+		assert(0);
+		result = reference->allocate_packet(reference, &my_buffer);
+		if (result != RX_PROTOCOL_OK)
+			return result;
+		result = rx_push_to_packet(&my_buffer, packet.buffer->buffer_ptr, packet.buffer->size);
+		if (result != RX_PROTOCOL_OK)
+			return result;
 		return RX_PROTOCOL_NOT_IMPLEMENTED;
-
-	return opcua_bin_bytes_sent(reference, packet.id, RX_PROTOCOL_OK);
-}
-rx_protocol_result_t opcua_bin_bytes_sent(
-	struct rx_protocol_stack_endpoint* reference
-	, rx_packet_id_type id
-	, rx_protocol_result_t result)
-{
-	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference->user_data;
-	rx_packet_buffer buffer;
-
-	if (!rx_queue_empty(&transport->send_queue))
-	{// send another next packet from queue
-		result = rx_dequeue(&transport->send_queue, &buffer);
-		if (result != RX_PROTOCOL_OK)
-			return result;
-
-
-		send_protocol_packet pack = rx_create_send_packet(0, &buffer, 0, 0);
-
-		result = rx_move_packet_down(reference, pack);//!!!!!!
-		if (result != RX_PROTOCOL_OK)
-			return result;
-		rx_deinit_packet_buffer(&buffer);
 	}
 
-	return result;
+	return RX_PROTOCOL_OK;
 }
 
 

@@ -34,6 +34,7 @@
 // rx_full_duplex_packet
 #include "system/runtime/rx_full_duplex_packet.h"
 
+#include "interfaces/rx_endpoints.h"
 
 
 namespace rx_platform {
@@ -75,7 +76,7 @@ std::pair<typename duplex_port_adapter<addrT>::key_type, std::unique_ptr<initiat
 		return { key_type(), std::move(data) };
 	}
 	result = data->remote_addr.parse(remote_address);
-	if (!result)
+	if (!result || data->remote_addr.is_null())
 	{
 		data.reset();
 		return { key_type(), std::move(data) };
@@ -83,6 +84,42 @@ std::pair<typename duplex_port_adapter<addrT>::key_type, std::unique_ptr<initiat
 	addrT key = data->remote_addr;
 	return { key, std::move(data) };
 }
+
+// Class rx_platform::runtime::io_types::ports_lib::byte_routing_port 
+
+
+void byte_routing_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
+{
+}
+
+void byte_routing_port::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
+{
+	if (local_addr.is_null())
+	{
+		auto addr = binder_data.get_value("Bind.Address");
+		uint8_t addr_val = 0;
+		if (!addr.is_null())
+			addr_val = (uint8_t)addr.get_storage().get_integer_value();
+		if (addr_val != 0)
+		{
+			io::numeric_address<uint8_t> num_addr(addr_val);
+			local_addr = &num_addr;
+		}
+	}
+	if (remote_addr.is_null())
+	{
+		auto addr = binder_data.get_value("Connect.Address");
+		uint8_t addr_val = 0;
+		if (!addr.is_null())
+			addr_val = (uint8_t)addr.get_storage().get_integer_value();
+		if (addr_val != 0)
+		{
+			io::numeric_address<uint8_t> num_addr(addr_val);
+			remote_addr = &num_addr;
+		}
+	}
+}
+
 
 // Parameterized Class rx_platform::runtime::io_types::ports_lib::full_duplex_addr_packet_port 
 
@@ -141,6 +178,29 @@ rx_result_with<port_connect_result> full_duplex_addr_packet_port<addrT>::start_c
 			}
 			return ret;
 		};
+	stack_ep->allocate_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+		{
+			initiator_data_t* whose = (initiator_data_t*)entry->user_data;
+			auto result = whose->my_port->alloc_io_buffer();
+			if (result)
+			{
+				result.value().detach(buffer);
+				return RX_PROTOCOL_OK;
+			}
+			else
+			{
+				return RX_PROTOCOL_OUT_OF_MEMORY;
+			}
+		};
+	stack_ep->release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+		{
+			initiator_data_t* whose = (initiator_data_t*)entry->user_data;
+			rx_io_buffer temp;
+			temp.attach(buffer);
+			whose->my_port->release_io_buffer(std::move(temp));
+
+			return RX_PROTOCOL_OK;
+		};
 
 
 	locks::auto_lock_t _(&routing_lock_);
@@ -198,9 +258,32 @@ rx_result full_duplex_addr_packet_port<addrT>::start_runtime (runtime_start_cont
 			full_duplex_addr_packet_port<addrT>* me = (full_duplex_addr_packet_port<addrT>*)reference->user_data;
 			return me->initiator_connected_received(session);
 		};
-	if (ctx.get_item_static("Initiator", false))
+	initiators_endpoint_.allocate_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+		{
+			full_duplex_addr_packet_port<addrT>* whose = (full_duplex_addr_packet_port<addrT>*)entry->user_data;
+			auto result = whose->alloc_io_buffer();
+			if (result)
+			{
+				result.value().detach(buffer);
+				return RX_PROTOCOL_OK;
+			}
+			else
+			{
+				return RX_PROTOCOL_OUT_OF_MEMORY;
+			}
+		};
+	initiators_endpoint_.release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+		{
+			full_duplex_addr_packet_port<addrT>* whose = (full_duplex_addr_packet_port<addrT>*)entry->user_data;
+			rx_io_buffer temp;
+			temp.attach(buffer);
+			whose->release_io_buffer(std::move(temp));
+
+			return RX_PROTOCOL_OK;
+		};
+	if (ctx.get_item_static("Options.Initiator", false))
 		new_state = new_state | port_state_wait_connecting;
-	if (ctx.get_item_static("Listener", false))
+	if (ctx.get_item_static("Options.Listener", false))
 		new_state = new_state | port_state_wait_listening;
 	state_ = new_state;
 	return true;
@@ -301,8 +384,19 @@ rx_protocol_result_t full_duplex_addr_packet_port<addrT>::remove_initiator (cons
 
 // Parameterized Class rx_platform::runtime::io_types::ports_lib::initiator_data_type 
 
+template <typename addrT>
+initiator_data_type<addrT>::initiator_data_type()
+{
+	ITF_LOG_DEBUG("initiator_endpoint", 200, "Routing initiator endpoint created.");
+}
 
-// Parameterized Class rx_platform::runtime::io_types::ports_lib::listener_data_type 
+
+template <typename addrT>
+initiator_data_type<addrT>::~initiator_data_type()
+{
+	ITF_LOG_DEBUG("initiator_endpoint", 200, "Routing initiator endpoint destroyed.");
+}
+
 
 
 // Class rx_platform::runtime::io_types::ports_lib::ip4_routing_port 
@@ -351,40 +445,7 @@ void ip4_routing_port::extract_bind_address (const data::runtime_values_data& bi
 }
 
 
-// Class rx_platform::runtime::io_types::ports_lib::byte_routing_port 
-
-
-void byte_routing_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
-{
-}
-
-void byte_routing_port::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
-{
-	if (local_addr.is_null())
-	{
-		auto addr = binder_data.get_value("Bind.Address");
-		uint8_t addr_val = 0;
-		if (!addr.is_null())
-			addr_val = (uint8_t)addr.get_storage().get_integer_value();
-		if (addr_val != 0)
-		{
-			io::numeric_address<uint8_t> num_addr(addr_val);
-			local_addr = &num_addr;
-		}
-	}
-	if (remote_addr.is_null())
-	{
-		auto addr = binder_data.get_value("Connect.Address");
-		uint8_t addr_val = 0;
-		if (!addr.is_null())
-			addr_val = (uint8_t)addr.get_storage().get_integer_value();
-		if (addr_val != 0)
-		{
-			io::numeric_address<uint8_t> num_addr(addr_val);
-			remote_addr = &num_addr;
-		}
-	}
-}
+// Parameterized Class rx_platform::runtime::io_types::ports_lib::listener_data_type 
 
 
 } // namespace ports_lib

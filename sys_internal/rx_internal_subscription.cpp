@@ -96,6 +96,7 @@ message_ptr create_subscription_request::do_job (api::rx_context ctx, rx_protoco
 	if (result)
 	{
 		auto response = std::make_unique<create_subscriptions_response>();
+		response->request_id = request_id;
 		response->subscription_id = data.subscription_id;
 		response->revised_keep_alive_period = data.keep_alive_period;
 		response->revised_publish_rate = data.publish_rate;

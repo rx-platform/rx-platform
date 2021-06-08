@@ -92,7 +92,7 @@ struct general_data_t
 struct runtime_data_t
 {
     bool real_time = false;
-    bool no_hd_timer = true;
+    bool no_hd_timer = false;
     int io_pool_size = -1;
     bool has_unassigned_pool = true;
     int workers_pool_size = -1;

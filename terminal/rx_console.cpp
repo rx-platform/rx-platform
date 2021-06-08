@@ -158,10 +158,9 @@ void console_runtime::get_wellcome (string_type& wellcome)
 	wellcome = ss.str();
 }
 
-const string_type& console_runtime::get_console_terminal ()
+string_type console_runtime::get_console_terminal ()
 {
-	static string_type ret(get_terminal_info());
-	return ret;
+	return get_terminal_info();
 }
 
 void console_runtime::process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer)
@@ -176,36 +175,35 @@ void console_runtime::process_result (bool result, memory::buffer_ptr out_buffer
 	size_t size = out_buffer->get_size() + err_buffer->get_size() + prompt.size();
 	if (size)
 	{
-		runtime::io_types::rx_io_buffer send_buffer(size, &stack_entry_);
-		if (!result)
+		auto send_buffer = port_->alloc_io_buffer();
+		if (send_buffer)
 		{
-			if (!out_buffer->empty())
-				send_buffer.write(out_buffer->pbase(), out_buffer->get_size());
-			if (!exit)
+			if (!result)
 			{
-				send_buffer.write_chars(
-					"\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n"
-				);
+				if (!out_buffer->empty())
+					send_buffer.value().write(out_buffer->pbase(), out_buffer->get_size());
+				if (!exit)
+				{
+					send_buffer.value().write_chars(
+						"\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n"
+					);
+				}
+				if (!err_buffer->empty())
+					send_buffer.value().write(err_buffer->pbase(), err_buffer->get_size());
 			}
-			if (!err_buffer->empty())
-				send_buffer.write(err_buffer->pbase(), err_buffer->get_size());
-		}
-		else
-		{
-			if (!out_buffer->empty())
-				send_buffer.write(out_buffer->pbase(), out_buffer->get_size());
-		}
-		if(!prompt.empty())
-			send_buffer.write_chars(prompt);
+			else
+			{
+				if (!out_buffer->empty())
+					send_buffer.value().write(out_buffer->pbase(), out_buffer->get_size());
+			}
+			if (!prompt.empty())
+				send_buffer.value().write_chars(prompt);
 
-		rx_packet_buffer buff;
-		send_buffer.detach(&buff);
-		send_protocol_packet packet = rx_create_send_packet(0, &buff, 0, 0);
-		auto result = rx_move_packet_down(&stack_entry_, packet);
-		/*if (result == RX_PROTOCOL_OK)
-			return true;
-		else
-			return rx_protocol_error_message(result);*/
+			send_protocol_packet packet = rx_create_send_packet(0, &send_buffer.value(), 0, 0);
+			auto result = rx_move_packet_down(&stack_entry_, packet);
+
+			port_->release_io_buffer(send_buffer.move_value());
+		}
 
 	}
 }
@@ -404,8 +402,8 @@ bool console_runtime::do_commands (string_array&& lines, memory::buffer_ptr out_
 
 string_type console_runtime::get_terminal_info ()
 {
-	static string_type ret;
-	if (ret.empty())
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_TERM_NAME, RX_TERM_MAJOR_VERSION, RX_TERM_MINOR_VERSION, RX_TERM_BUILD_NUMBER);
 	}

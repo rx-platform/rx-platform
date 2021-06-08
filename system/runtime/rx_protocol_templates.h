@@ -164,6 +164,36 @@ rx_protocol_stack_endpoint* master_client_port_impl<endpointT>::construct_endpoi
             whose->get_port()->disconnect_stack_endpoint(entry);
         };
     }
+
+    if (endpoint_data.first->allocate_packet == nullptr)
+    {
+        endpoint_data.first->allocate_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+        {
+            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            auto result = whose->get_port()->alloc_io_buffer();
+            if (result)
+            {
+                result.value().detach(buffer);
+                return RX_PROTOCOL_OK;
+            }
+            else
+            {
+                return RX_PROTOCOL_OUT_OF_MEMORY;
+            }
+        };
+    }
+    if (endpoint_data.first->release_packet == nullptr)
+    {
+        endpoint_data.first->release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+        {
+            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            rx_io_buffer temp;
+            temp.attach(buffer);
+            whose->get_port()->release_io_buffer(std::move(temp));
+
+            return RX_PROTOCOL_OK;
+        };
+    }
     active_endpoint_ = std::move(endpoint_data.second);
     return endpoint_data.first;
 }
@@ -192,6 +222,35 @@ rx_protocol_stack_endpoint* slave_server_port_impl<endpointT>::construct_endpoin
             endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
             whose->close_endpoint();
             whose->get_port()->unbind_stack_endpoint(entry);
+        };
+    }
+    if (endpoint_data.first->allocate_packet == nullptr)
+    {
+        endpoint_data.first->allocate_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+        {
+            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            auto result = whose->get_port()->alloc_io_buffer();
+            if (result)
+            {
+                result.value().detach(buffer);
+                return RX_PROTOCOL_OK;
+            }
+            else
+            {
+                return RX_PROTOCOL_OUT_OF_MEMORY;
+            }
+        };
+    }
+    if (endpoint_data.first->release_packet == nullptr)
+    {
+        endpoint_data.first->release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+        {
+            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            rx_io_buffer temp;
+            temp.attach(buffer);
+            whose->get_port()->release_io_buffer(std::move(temp));
+
+            return RX_PROTOCOL_OK;
         };
     }
     active_endpoints_.emplace(endpoint_data.first, std::move(endpoint_data.second));

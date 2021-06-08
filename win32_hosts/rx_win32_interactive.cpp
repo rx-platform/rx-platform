@@ -559,8 +559,8 @@ string_type win32_console_host::get_default_name () const
 
 string_type win32_console_host::get_win32_interactive_info ()
 {
-	static string_type ret;
-	if (ret.empty())
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_WIN32_CON_HOST_NAME, RX_WIN32_CON_HOST_MAJOR_VERSION, RX_WIN32_CON_HOST_MINOR_VERSION, RX_WIN32_CON_HOST_BUILD_NUMBER);
 	}

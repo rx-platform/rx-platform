@@ -200,8 +200,8 @@ string_type gnu_console_host::get_default_name () const
 
 string_type gnu_console_host::get_gnu_interactive_info ()
 {
-	static string_type ret;
-	if (ret.empty())
+	static char ret[0x100] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_GNU_CON_HOST_NAME, RX_GNU_CON_HOST_MAJOR_VERSION, RX_GNU_CON_HOST_MINOR_VERSION, RX_GNU_CON_HOST_BUILD_NUMBER);
 	}

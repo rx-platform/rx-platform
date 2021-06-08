@@ -309,7 +309,6 @@ rx_protocol_stack_endpoint* telnet_transport_endpoint::bind (std::function<void(
 
 rx_protocol_result_t telnet_transport_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
-
 	telnet_transport_endpoint* self = reinterpret_cast<telnet_transport_endpoint*>(reference->user_data);
 	string_type to_echo;
 	string_array lines;
@@ -326,19 +325,25 @@ rx_protocol_result_t telnet_transport_endpoint::received_function (rx_protocol_s
 	rx_protocol_result_t result = RX_PROTOCOL_OK;
 	if (self->telnet_.send_echo && !to_echo.empty())
 	{
-		runtime::io_types::rx_io_buffer send_buffer(to_echo.size(), reference);
-		auto temp = send_buffer.write_chars(to_echo);
-		if (!temp)
+		auto send_buffer = self->port_->alloc_io_buffer();
+		if (!send_buffer)
 		{
-			result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
+			result = RX_PROTOCOL_OUT_OF_MEMORY;
 		}
 		else
 		{
-			send_protocol_packet down = rx_create_send_packet(packet.id, &send_buffer, 0, 0);
-			result = rx_move_packet_down(reference, down);
+			auto temp = send_buffer.value().write_chars(to_echo);
+			if (!temp)
+			{
+				result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
+			}
+			else
+			{
+				send_protocol_packet down = rx_create_send_packet(packet.id, &send_buffer.value(), 0, 0);
+				result = rx_move_packet_down(reference, down);
+			}
+			self->port_->release_io_buffer(send_buffer.move_value());
 		}
-		if (result == RX_PROTOCOL_OK)
-			send_buffer.detach(nullptr);
 	}
 	if (result == RX_PROTOCOL_OK && !lines.empty())
 	{
@@ -359,16 +364,24 @@ rx_protocol_result_t telnet_transport_endpoint::received_function (rx_protocol_s
 
 rx_protocol_result_t telnet_transport_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
 {
-	rx_packet_buffer_type buffer;
-	auto result = rx_init_packet_buffer(&buffer, TELENET_IDENTIFICATION_SIZE, nullptr);
-	if (result != RX_PROTOCOL_OK)
+	telnet_transport_endpoint* self = reinterpret_cast<telnet_transport_endpoint*>(reference->user_data);
+	auto send_buffer = self->port_->alloc_io_buffer();
+	if (!send_buffer)
+	{
+		return RX_PROTOCOL_OUT_OF_MEMORY;
+	}
+	else
+	{
+		
+		send_buffer.value().write(g_server_telnet_idetification, TELENET_IDENTIFICATION_SIZE);
+		rx_protocol_result_t result = rx_move_packet_down(reference, rx_create_send_packet(0, &send_buffer.value(), 0, 0));
+		if (result == RX_PROTOCOL_OK)
+		{
+			result = rx_notify_connected(reference, session);
+		}
+		self->port_->release_io_buffer(send_buffer.move_value());
 		return result;
-	result = rx_push_to_packet(&buffer, g_server_telnet_idetification, TELENET_IDENTIFICATION_SIZE);
-	if (result != RX_PROTOCOL_OK)
-		return result;
-	result = rx_move_packet_down(reference, rx_create_send_packet(0, &buffer, 0, 0));
-	result = rx_notify_connected(reference, session);
-	return result;
+	}
 }
 
 

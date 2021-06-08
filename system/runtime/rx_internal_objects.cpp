@@ -43,6 +43,13 @@ using namespace rx_platform::runtime;
 namespace rx_platform {
 
 namespace sys_objects {
+namespace {
+system_application::smart_ptr g_system_application_inst;
+unassigned_application::smart_ptr g_unassigned_application_inst;
+system_domain::smart_ptr g_system_domain_inst;
+unassigned_domain::smart_ptr g_unassigned_domain_inst;
+system_object::smart_ptr g_system_object_inst;
+}
 
 // Class rx_platform::sys_objects::system_application 
 
@@ -64,10 +71,15 @@ namespace_item_attributes system_application::get_attributes () const
 
 system_application::smart_ptr system_application::instance ()
 {
-    static smart_ptr g_inst;
-    if (!g_inst)
-        g_inst = smart_ptr::create_from_pointer(new system_application());
-    return g_inst;
+    if (!g_system_application_inst)
+        g_system_application_inst = smart_ptr::create_from_pointer_without_bind(new system_application());
+    return g_system_application_inst;
+}
+
+void system_application::deinitialize ()
+{
+    if (g_system_application_inst)
+        g_system_application_inst = smart_ptr::null_ptr;
 }
 
 
@@ -91,10 +103,15 @@ namespace_item_attributes system_domain::get_attributes () const
 
 system_domain::smart_ptr system_domain::instance ()
 {
-    static smart_ptr g_inst;
-    if (!g_inst)
-        g_inst = smart_ptr::create_from_pointer(new system_domain());
-    return g_inst;
+    if (!g_system_domain_inst)
+        g_system_domain_inst = smart_ptr::create_from_pointer_without_bind(new system_domain());
+    return g_system_domain_inst;
+}
+
+void system_domain::deinitialize ()
+{
+    if (g_system_domain_inst)
+        g_system_domain_inst = smart_ptr::null_ptr;
 }
 
 
@@ -118,10 +135,15 @@ namespace_item_attributes unassigned_application::get_attributes () const
 
 unassigned_application::smart_ptr unassigned_application::instance ()
 {
-    static smart_ptr g_inst;
-    if (!g_inst)
-        g_inst = smart_ptr::create_from_pointer(new unassigned_application());
-    return g_inst;
+    if (!g_unassigned_application_inst)
+        g_unassigned_application_inst = smart_ptr::create_from_pointer_without_bind(new unassigned_application());
+    return g_unassigned_application_inst;
+}
+
+void unassigned_application::deinitialize ()
+{
+    if (g_unassigned_application_inst)
+        g_unassigned_application_inst = smart_ptr::null_ptr;
 }
 
 
@@ -145,10 +167,15 @@ namespace_item_attributes unassigned_domain::get_attributes () const
 
 unassigned_domain::smart_ptr unassigned_domain::instance ()
 {
-    static smart_ptr g_inst;
-    if (!g_inst)
-        g_inst = smart_ptr::create_from_pointer(new unassigned_domain());
-    return g_inst;
+    if (!g_unassigned_domain_inst)
+        g_unassigned_domain_inst = smart_ptr::create_from_pointer_without_bind(new unassigned_domain());
+    return g_unassigned_domain_inst;
+}
+
+void unassigned_domain::deinitialize ()
+{
+    if (g_unassigned_domain_inst)
+        g_unassigned_domain_inst = smart_ptr::null_ptr;
 }
 
 
@@ -173,10 +200,9 @@ namespace_item_attributes system_object::get_attributes () const
 
 system_object::smart_ptr system_object::instance ()
 {
-    static smart_ptr g_inst;
-    if (!g_inst)
-        g_inst = smart_ptr::create_from_pointer(new system_object());
-    return g_inst;
+    if (!g_system_object_inst)
+        g_system_object_inst = smart_ptr::create_from_pointer_without_bind(new system_object());
+    return g_system_object_inst;
 }
 
 rx_result system_object::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -228,6 +254,15 @@ rx_result system_object::start_runtime (runtime::runtime_start_context& ctx)
     what->complex_data.register_const_value_static("CompilerVer", rx_gate::instance().get_comp_version());
     */
     return true;
+}
+
+void system_object::deinitialize ()
+{
+    if (timer_)
+        timer_->cancel();
+    timer_ = rx_timer_ptr::null_ptr;
+    if (g_system_object_inst)
+        g_system_object_inst = smart_ptr::null_ptr;
 }
 
 

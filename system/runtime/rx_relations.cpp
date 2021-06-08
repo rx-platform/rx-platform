@@ -110,6 +110,8 @@ rx_result relation_data::initialize_relation (runtime::runtime_init_context& ctx
 rx_result relation_data::deinitialize_relation (runtime::runtime_deinit_context& ctx)
 {
 	auto result = implementation_->deinitialize_relation(ctx);
+	resolver_user_.my_relation = smart_ptr::null_ptr;
+	implementation_ = rx_relation_ptr::null_ptr;
 	return result;
 }
 
@@ -150,14 +152,9 @@ rx_result relation_data::start_relation (runtime::runtime_start_context& ctx)
 
 rx_result relation_data::stop_relation (runtime::runtime_stop_context& ctx)
 {
-	if (target_id)
-	{		
-		auto remove_result = platform_runtime_manager::instance().get_cache().remove_target_relation(target_id, target_relation_name);
-		if (!remove_result)
-			RUNTIME_LOG_ERROR("relation_runtime", 999, "Error removing target relation from "s + parent_path);
-	}
 	my_state_ = relation_state::stopping;
 	auto result = implementation_->stop_relation(ctx);
+	resolver_.stop_resolver();
 	return result;
 }
 
@@ -293,7 +290,7 @@ void relation_data::try_resolve ()
 			{
 				auto target_rel = make_target_relation(context_->meta_info.get_full_path());
 
-				auto add_result = platform_runtime_manager::instance().get_cache().add_target_relation(target_id, std::move(target_rel));
+				auto add_result = platform_runtime_manager::instance().get_cache().add_target_relation(target_id, target_rel);
 				if (!add_result)
 					RUNTIME_LOG_ERROR("relation_runtime", 999, "Error adding target relation to "s + parent_path);
 			}
@@ -352,6 +349,8 @@ rx_result relation_data::stop_target_relation (runtime::runtime_stop_context& ct
 {
 	my_state_ = relation_state::stopping;
 	auto result = implementation_->stop_relation(ctx);
+	resolver_user_.my_relation = smart_ptr::null_ptr;
+	implementation_ = rx_relation_ptr::null_ptr;
 	return result;
 }
 
@@ -365,6 +364,12 @@ void relation_data::runtime_disconnected ()
 {
 	if (my_state_ != relation_state::idle || my_state_ == relation_state::stopping)
 	{
+		if (!is_target_ && target_id)
+		{
+			auto remove_result = platform_runtime_manager::instance().get_cache().remove_target_relation(target_id, target_relation_name);
+			if (!remove_result)
+				RUNTIME_LOG_ERROR("relation_runtime", 999, "Error removing target relation from "s + parent_path);
+		}
 		implementation_->relation_disconnected();
 		if (my_state_ != relation_state::stopping)
 			my_state_ = relation_state::idle;
@@ -459,12 +464,24 @@ rx_result relations_holder::deinitialize_relations (runtime::runtime_deinit_cont
 		if (!result)
 			break;
 	}
+	if(result)
+		implicit_relations_.clear();
 	for (auto& one : source_relations_)
 	{
 		result = one->deinitialize_relation(ctx);
 		if (!result)
 			break;
 	}
+	if (result)
+		source_relations_.clear();
+	for (auto& one : target_relations_)
+	{
+		if (one)
+		{
+			one->deinitialize_relation(ctx);
+		}
+	}
+	target_relations_.clear();
 	return result;
 }
 
@@ -563,12 +580,15 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 		}
 		for (auto& one : target_relations_)
 		{
-			runtime_item_attribute attr;
-			attr.full_path = prefix.empty() ? one->name : prefix + RX_OBJECT_DELIMETER + one->name;
-			attr.name = one->name;
-			attr.type = rx_attribute_type::relation_target_attribute_type;
-			attr.value.assign_static<string_type>(string_type(one->target_path));
-			items.push_back(attr);
+			if (one)
+			{
+				runtime_item_attribute attr;
+				attr.full_path = prefix.empty() ? one->name : prefix + RX_OBJECT_DELIMETER + one->name;
+				attr.name = one->name;
+				attr.type = rx_attribute_type::relation_target_attribute_type;
+				attr.value.assign_static<string_type>(string_type(one->target_path));
+				items.push_back(attr);
+			}
 		}
 		return true;
 	}
@@ -603,7 +623,7 @@ rx_result relations_holder::browse (const string_type& prefix, const string_type
 		}
 		for (auto& one : target_relations_)
 		{
-			if (one->name == sub_path)
+			if (one && one->name == sub_path)
 			{
 				return one->browse(bellow_prefix, rest_path, filter, items);
 			}
@@ -621,7 +641,7 @@ relation_data::smart_ptr relations_holder::get_relation (const string_type& name
 	}
 	for (auto& one : target_relations_)
 	{
-		if (one->name == name)
+		if (one && one->name == name)
 			return one;
 	}
 	for (auto& one : implicit_relations_)
@@ -636,13 +656,13 @@ rx_result relations_holder::add_target_relation (relations::relation_data::smart
 {
 	for (auto& one : target_relations_)
 	{
-		if (one->name.empty())
+		if(!one)
 		{
-			one = std::move(data);
+			one = data;
 			return one->start_target_relation(ctx);
 		}
 	}
-	auto& one = target_relations_.emplace_back(std::move(data));
+	auto& one = target_relations_.emplace_back(data);
 	return one->start_target_relation(ctx);
 }
 
@@ -651,11 +671,11 @@ rx_result_with<relation_data::smart_ptr> relations_holder::remove_target_relatio
 	relation_data::smart_ptr ret;
 	for (auto& one : target_relations_)
 	{
-		if (one->name == name)
+		if (one && one->name == name)
 		{
 			ret = one;
 			auto result = one->stop_target_relation(ctx);
-			one->name.clear();
+			one = relation_data::smart_ptr::null_ptr;
 			break;
 		}
 	}
@@ -667,14 +687,6 @@ rx_result_with<relation_data::smart_ptr> relations_holder::remove_target_relatio
 
 rx_result relations_holder::add_implicit_relation (relations::relation_data::smart_ptr data)
 {
-	for (auto& one : implicit_relations_)
-	{
-		if (one->name.empty())
-		{
-			one = std::move(data);
-			return true;
-		}
-	}
 	implicit_relations_.emplace_back(std::move(data));
 	return true;
 }
@@ -696,7 +708,7 @@ bool relations_holder::is_this_yours (const string_type& path) const
 		}
 		for (const auto& one : target_relations_)
 		{
-			if (one->name == path)
+			if (one && one->name == path)
 				return true;
 		}
 	}
@@ -715,7 +727,7 @@ bool relations_holder::is_this_yours (const string_type& path) const
 		}
 		for (const auto& one : target_relations_)
 		{
-			if (one->name.size() == len && memcmp(one->name.c_str(), path.c_str(), len) == 0)
+			if (one && one->name.size() == len && memcmp(one->name.c_str(), path.c_str(), len) == 0)
 				return true;
 		}
 	}
@@ -742,7 +754,7 @@ rx_result relations_holder::get_value_ref (const string_type& path, rt_value_ref
 		}
 		for (auto& one : target_relations_)
 		{
-			if (one->name == path)
+			if (one && one->name == path)
 				ret = one.unsafe_ptr();
 		}
 	}
@@ -771,7 +783,7 @@ rx_result relations_holder::register_relation_subscriber (const string_type& nam
 	{
 		for (auto& one : source_relations_)
 		{
-			if (one->name == name)
+			if (name == one->name)
 			{
 				relation_subscribers_[name].emplace_back(who);
 				return true;

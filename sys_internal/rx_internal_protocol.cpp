@@ -44,15 +44,6 @@
 namespace rx_internal {
 
 namespace rx_protocol {
-rx_result_with<runtime::io_types::rx_io_buffer> allocate_io_buffer(rx_protocol_stack_endpoint* entry, size_t initial_capacity = 0)
-{
-	runtime::io_types::rx_io_buffer ret;
-	auto result = rx_init_packet_buffer(&ret, initial_capacity, entry);
-	if (result == RX_PROTOCOL_OK)
-		return ret;
-	else
-		return rx_protocol_error_message(result);
-}
 
 // serializing messages
 rx_result serialize_message(base_meta_writer& stream, int requestId, messages::rx_message_base& what)
@@ -295,33 +286,7 @@ void rx_protocol_connection::request_received (request_message_ptr&& request)
 	}
 	if (result_msg)
 	{
-		uint32_t temp_version = RX_CURRENT_SERIALIZE_VERSION;
-		if (stream_version_)
-			temp_version = stream_version_;
-		serialization::json_writer writter(temp_version);
-		auto result = serialize_message(writter, request->request_id, *result_msg);
-		if (result)
-		{
-			auto buff_result = allocate_io_buffer(&stack_entry_);
-			buff_result.value().write_to_buffer((uint8_t)1);
-			buff_result.value().write_to_buffer((uint8_t)1);
-			buff_result.value().write_to_buffer((uint16_t)0x7fff);
-			string_type ret_data;
-			ret_data = writter.get_string();
-			result = buff_result.value().write_string(ret_data);
-
-			send_protocol_packet packet = rx_create_send_packet(request->request_id, &buff_result.value(), 0, 0);
-
-			auto protocol_res = rx_move_packet_down(&stack_entry_, packet);
-			if (protocol_res != RX_PROTOCOL_OK)
-			{
-				std::cout << "Error returned from move_down:"
-					<< rx_protocol_error_message(protocol_res)
-					<< "\r\n";
-			}
-			else
-				buff_result.value().detach(nullptr);
-		}
+		send_message(std::move(result_msg));
 	}
 }
 
@@ -329,31 +294,7 @@ void rx_protocol_connection::data_processed (message_ptr result)
 {
 	if (current_directory_) // check if we are closed...
 	{
-		uint32_t temp_version = stream_version_ == 0 ? RX_CURRENT_SERIALIZE_VERSION : stream_version_;
-		serialization::json_writer writter(temp_version);
-		auto res = serialize_message(writter, result->request_id, *result);
-		if (res)
-		{
-			auto buff_result = allocate_io_buffer(&stack_entry_);
-			buff_result.value().write_to_buffer((uint8_t)1);
-			buff_result.value().write_to_buffer((uint8_t)1);
-			buff_result.value().write_to_buffer((uint16_t)0x7fff);
-			string_type ret_data;
-			ret_data = writter.get_string();
-			auto ret = buff_result.value().write_string(ret_data);
-
-			send_protocol_packet packet = rx_create_send_packet(0, &buff_result.value(), 0, 0);
-
-			auto protocol_res = rx_move_packet_down(&stack_entry_, packet);
-			if (protocol_res != RX_PROTOCOL_OK)
-			{
-				std::cout << "Error returned from move_down:"
-					<< rx_protocol_error_message(protocol_res)
-					<< "\r\n";
-			}
-			else
-				buff_result.value().detach(nullptr);
-		}
+		send_message(std::move(result));
 	}
 }
 
@@ -516,30 +457,7 @@ rx_protocol_result_t rx_protocol_connection::received (recv_protocol_packet pack
 		{
 			auto result_msg = std::make_unique<messages::error_message>(std::move(request), 21, request_id);
 
-			serialization::json_writer writter(temp_version);
-			auto result = serialize_message(writter, request_id, *result_msg);
-			if (result)
-			{
-				auto buff_result = allocate_io_buffer(&stack_entry_);
-				buff_result.value().write_to_buffer((uint8_t)1);
-				buff_result.value().write_to_buffer((uint8_t)1);
-				buff_result.value().write_to_buffer((uint16_t)0x7fff);
-				string_type ret_data;
-				ret_data = writter.get_string();
-				auto ret = buff_result.value().write_string(ret_data);
-
-				send_protocol_packet packet = rx_create_send_packet(request_id, &buff_result.value(), 0, 0);
-
-				auto protocol_res = rx_move_packet_down(&stack_entry_, packet);
-				if (protocol_res != RX_PROTOCOL_OK)
-				{
-					std::cout << "Error returned from move_down:"
-						<< rx_protocol_error_message(protocol_res)
-						<< "\r\n";
-				}
-				else
-					buff_result.value().detach(nullptr);
-			}
+			send_message(std::move(result_msg));
 		}
 	}
 	return RX_PROTOCOL_OK;
@@ -586,6 +504,38 @@ rx_result rx_protocol_connection::request_stream_version (uint32_t sversion)
 		return RX_INVALID_ARGUMENT;
 	stream_version_ = std::min<uint32_t>(sversion, RX_CURRENT_SERIALIZE_VERSION);
 	return true;
+}
+
+void rx_protocol_connection::send_message (message_ptr msg)
+{
+	uint32_t temp_version = RX_CURRENT_SERIALIZE_VERSION;
+	if (stream_version_)
+		temp_version = stream_version_;
+	serialization::json_writer writter(temp_version);
+	auto result = serialize_message(writter, msg->request_id, *msg);
+	if (result)
+	{
+		string_type ret_data;
+		ret_data = writter.get_string();
+		auto buff_result = port_->alloc_io_buffer();
+		if(buff_result)
+		{
+			buff_result.value().write_to_buffer((uint8_t)1);
+			buff_result.value().write_to_buffer((uint8_t)1);
+			buff_result.value().write_to_buffer((uint16_t)0x7fff);
+			result = buff_result.value().write_string(ret_data);
+			send_protocol_packet packet = rx_create_send_packet(msg->request_id, &buff_result.value(), 0, 0);
+
+			auto protocol_res = rx_move_packet_down(&stack_entry_, packet);
+			if (protocol_res != RX_PROTOCOL_OK)
+			{
+				std::cout << "Error returned from move_down:"
+					<< rx_protocol_error_message(protocol_res)
+					<< "\r\n";
+			}
+			port_->release_io_buffer(buff_result.move_value());
+		}
+	}
 }
 
 

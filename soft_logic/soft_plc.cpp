@@ -1168,6 +1168,7 @@ bool sl_do_chanel::get_out_bit_written (int module, program_context* context)
 sl_program_holder::sl_program_holder()
       : executer_(NULL),
         main_(NULL),
+        main_context_(NULL),
         rate_(500),
         name_("NewProgram"),
         debug_context_(NULL),
@@ -1178,6 +1179,7 @@ sl_program_holder::sl_program_holder()
 sl_program_holder::sl_program_holder(const sl_program_holder &right)
       : executer_(NULL),
         main_(NULL),
+        main_context_(NULL),
         rate_(500),
         name_("NewProgram"),
         debug_context_(NULL),
@@ -1191,8 +1193,10 @@ sl_program_holder::~sl_program_holder()
 {
 	for(modules_iterator it=modules_.begin(); it!=modules_.end(); it++)
 		delete (*it);
-	delete main_;
-	delete main_context_;
+	if(main_)
+		delete main_;
+	if(main_context_)
+		delete main_context_;
 	for(subprograms_iterator it=subprograms_.begin(); it!=subprograms_.end(); it++)
 		delete it->second;
 	for(subcontexts_iterator it=subcontexts_.begin(); it!=subcontexts_.end(); it++)

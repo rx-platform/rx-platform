@@ -60,6 +60,11 @@ job::job()
 }
 
 
+job::~job()
+{
+}
+
+
 
 void job::cancel ()
 {
@@ -101,6 +106,11 @@ timer_job::timer_job()
         period_(0x0),
         suspended_(true)
   , executer_(nullptr), my_timer_(nullptr)
+{
+}
+
+
+timer_job::~timer_job()
 {
 }
 

@@ -73,7 +73,6 @@ runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typena
 {
     using rimpl_t = typename typeT::RImplType;
     RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta.get_full_path()));
-    my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
 }
 
 
@@ -85,6 +84,7 @@ runtime_holder<typeT>::~runtime_holder()
         RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " destructor, for unknown"));
     else
         RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta_info_.get_full_path()));
+    printf("Deleted %s %s\r\n", rx_item_type_name(typeT::type_id).c_str(), meta_info_.name.c_str());
 }
 
 
@@ -117,6 +117,7 @@ rx_result runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t ty
 template <class typeT>
 rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
 {
+    my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
     ctx.anchor = smart_this();
     context_.init_state([this]
         {
@@ -165,6 +166,7 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
             }
         }
     }
+    my_job_ptr_ = process_runtime_job<typeT>::smart_ptr::null_ptr;
     return result;
 }
 
@@ -296,6 +298,12 @@ template class runtime_holder<object_types::application_type>;
 template <class typeT>
 process_runtime_job<typeT>::process_runtime_job (typename typeT::RTypePtr whose)
       : whose_(whose)
+{
+}
+
+
+template <class typeT>
+process_runtime_job<typeT>::~process_runtime_job()
 {
 }
 

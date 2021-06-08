@@ -498,6 +498,30 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_plug
 	return builders;
 }
 
+void rx_platform_builder::deinitialize (rx_directory_ptr root)
+{
+	rx_platform::sys_objects::system_application::instance()->deinitialize();
+	rx_platform::sys_objects::system_domain::instance()->deinitialize();
+	rx_platform::sys_objects::system_object::instance()->deinitialize();
+	rx_platform::sys_objects::unassigned_application::instance()->deinitialize();
+	rx_platform::sys_objects::unassigned_domain::instance()->deinitialize();
+	// now delete directories recursive
+	recursive_destory_fs(root);
+}
+
+void rx_platform_builder::recursive_destory_fs (rx_directory_ptr root)
+{
+	platform_directories_type dirs;
+	platform_items_type items;
+	for (auto one : root->sub_directories_)
+	{
+		recursive_destory_fs(one.second);
+	}
+	root->sub_directories_.clear();
+	root->sub_items_.clear();
+	root->parent_ = rx_directory_ptr::null_ptr;
+}
+
 
 // Class rx_internal::builders::root_folder_builder 
 
@@ -729,6 +753,35 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 			});
 		build_object_data_struct_type(dir, str);
 
+		// port related helper structures
+		str = create_type<struct_type>(meta::type_creation_data{
+			RX_PORT_STATUS_TYPE_NAME
+			, RX_PORT_STATUS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		str->complex_data.register_simple_value_static("Binded", false, true, false);
+		str->complex_data.register_simple_value_static("Assembled", false, true, false);
+		str->complex_data.register_simple_value_static<int16_t>("Endpoints", 0, true, false);
+		str->complex_data.register_simple_value_static<int64_t>("RxPackets", 0, false, false);
+		str->complex_data.register_simple_value_static<int64_t>("TxPackets", 0, false, false);
+		str->complex_data.register_simple_value_static<uint32_t>("Buffers", 0, true, false);
+		str->complex_data.register_simple_value_static<int64_t>("DropedBuffers", 0, false, false);
+		add_simple_type_to_configuration<struct_type>(dir, str, false);
+
+		str = create_type<struct_type>(meta::type_creation_data{
+			RX_PORT_OPTIONS_TYPE_NAME
+			, RX_PORT_OPTIONS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		str->complex_data.register_const_value_static<uint32_t>("BuffBackCapacity", 0x100);
+		str->complex_data.register_const_value_static<uint32_t>("BuffFrontCapacity", 0x10);
+		str->complex_data.register_const_value_static<uint32_t>("BuffDiscardSize", 0x1000);
+		add_simple_type_to_configuration<struct_type>(dir, str, false);
+
 		//build base object type
 		auto obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_CLASS_OBJECT_BASE_NAME
@@ -871,6 +924,8 @@ void basic_types_builder::build_basic_application_type(rx_directory_ptr dir, rx_
 template<class T>
 void basic_types_builder::build_basic_port_type(rx_directory_ptr dir, rx_reference<T> what)
 {
+	what->complex_data.register_struct("Options", RX_PORT_OPTIONS_TYPE_ID);
+	what->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
 	build_basic_object_type(dir, what);
 }
 template<class T>
@@ -1111,7 +1166,6 @@ void system_types_builder::build_instance_info_struct_type(rx_directory_ptr dir,
 	what->complex_data.register_const_value_static("HttpVer", ""s);
 	what->complex_data.register_const_value_static("CompilerVer", ""s);
 }
-
 // Class rx_internal::builders::port_types_builder 
 
 
@@ -1189,7 +1243,6 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
 		meta::object_types::relation_attribute rel_attr;
 		rel_attr.name = "StackTop";
 		rel_attr.relation_type = RX_NS_PORT_STACK_ID;
@@ -1204,7 +1257,6 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
 		rel_attr.name = "StackTop";
 		rel_attr.relation_type = RX_NS_PORT_STACK_ID;
 		rel_attr.target = RX_CLASS_PORT_BASE_ID;
@@ -1246,8 +1298,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data.register_const_value_static("Initiator", false);
-		port->complex_data.register_const_value_static("Listener", false);
+		port->complex_data.register_struct("Options", RX_ROUTER_PORT_OPTIONS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1257,8 +1308,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data.register_const_value_static("Initiator", false);
-		port->complex_data.register_const_value_static("Listener", false);
+		port->complex_data.register_struct("Options", RX_ROUTER_PORT_OPTIONS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1270,9 +1320,7 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			});
 		port->complex_data.register_struct("Timeouts", RX_MASTER_TIMEOUTS_TYPE_ID);
 		port->complex_data.register_struct("Status", RX_MASTER_PORT_STATUS_TYPE_ID);
-		port->complex_data.register_simple_value_static("Limit", 1, false, true);
-		port->complex_data.register_simple_value_static("IgnoreZeros", true, false, true);
-		port->complex_data.register_simple_value_static("QueueSize", 0, true, false);
+		port->complex_data.register_struct("Options", RX_LIMITER_PORT_OPTIONS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		// protocol ports
@@ -1283,7 +1331,6 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
 		rel_attr.name = "StackTop";
 		rel_attr.relation_type = RX_NS_PORT_STACK_ID;
 		rel_attr.target = RX_CLASS_PORT_BASE_ID;
@@ -1518,22 +1565,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 		filter->complex_data.register_simple_value_static("LowRaw", 0.0, false, true);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
-		// port related helper structures
 		auto what = create_type<struct_type>(meta::type_creation_data{
-			RX_PORT_STATUS_TYPE_NAME
-			, RX_PORT_STATUS_TYPE_ID
-			, RX_CLASS_STRUCT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		what->complex_data.register_simple_value_static("Binded", false, true, false);
-		what->complex_data.register_simple_value_static("Assembled", false, true, false);
-		what->complex_data.register_simple_value_static<int16_t>("Endpoints", 0, true, false);
-		what->complex_data.register_simple_value_static<int64_t>("RxPackets", 0, false, false);
-		what->complex_data.register_simple_value_static<int64_t>("TxPackets", 0, false, false);
-		add_simple_type_to_configuration<struct_type>(dir, what, false);
-
-		what = create_type<struct_type>(meta::type_creation_data{
 			RX_PHY_PORT_STATUS_TYPE_NAME
 			, RX_PHY_PORT_STATUS_TYPE_ID
 			, RX_PORT_STATUS_TYPE_ID
@@ -1625,6 +1657,41 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			});
 		what->complex_data.register_simple_value_static<uint32_t>("ReadTimeout", 200, false, true);
 		what->complex_data.register_simple_value_static<uint32_t>("WriteTimeout", 500, false, true);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+		
+		
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_ROUTER_PORT_OPTIONS_TYPE_NAME
+			, RX_ROUTER_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("Initiator", false);
+		what->complex_data.register_const_value_static("Listener", false);
+		what->complex_data.register_simple_value_static<uint32_t>("SessionTimeout", 2000, false, true);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_LIMITER_PORT_OPTIONS_TYPE_NAME
+			, RX_LIMITER_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static("Limit", 1, false, true);
+		what->complex_data.register_simple_value_static("IgnoreZeros", false, false, true);
+		what->complex_data.register_simple_value_static("UsePacketId", true, false, true);
+		what->complex_data.register_simple_value_static("QueueSize", 0, true, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_BRIDGE_PORT_OPTIONS_TYPE_NAME
+			, RX_BRIDGE_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{

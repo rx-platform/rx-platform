@@ -182,6 +182,8 @@ class relations_hash_data
 
       void get_first_backward (const rx_node_id& id, std::vector< rx_node_id>& result) const;
 
+      void deinitialize ();
+
 
   protected:
 
@@ -241,6 +243,8 @@ class inheritance_hash
 
       rx_result add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items);
 
+      void deinitialize ();
+
 
   protected:
 
@@ -285,6 +289,8 @@ class instance_hash
       bool remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& type_id, const rx_node_ids& all_type_ids);
 
       rx_result get_instanced_from (const rx_node_id& id, rx_node_ids& result) const;
+
+      void deinitialize ();
 
 
   protected:
@@ -392,6 +398,8 @@ public:
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
+      void deinitialize ();
+
       api::query_result get_instanced_objects (const rx_node_id& id) const;
 
       rx_result_with<typename typeT::RTypePtr> mark_runtime_for_delete (rx_node_id id, const rx_uuid& checkout = rx_uuid::null_uuid());
@@ -399,6 +407,8 @@ public:
       rx_result mark_runtime_running (rx_node_id id);
 
       rx_result type_exists (rx_node_id id) const;
+
+      std::vector<typename types_repository<typeT>::RTypePtr> get_active_runtimes ();
 
 
   protected:
@@ -467,6 +477,8 @@ public:
       rx_result type_exists (rx_node_id id) const;
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+
+      void deinitialize ();
 
       rx_result update_type (typename simple_types_repository<typeT>::Tptr what);
 
@@ -560,6 +572,8 @@ class types_resolver
 
       rx_result update_id (const rx_node_id& id);
 
+      void deinitialize ();
+
 
   protected:
 
@@ -627,6 +641,8 @@ public:
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
 
+      void deinitialize ();
+
       rx_result update_type (relations_type_repository::Tptr what);
 
       rx_result type_exists (rx_node_id id) const;
@@ -691,6 +707,8 @@ public:
       rx_result delete_type (rx_node_id id);
 
       rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+
+      void deinitialize ();
 
       rx_result update_type (data_type_repository::Tptr what);
 
@@ -758,6 +776,8 @@ class platform_types_manager
 		}
 		~type_repositories_holder()
 		{
+            if (value_)
+                delete value_;
 		}
 	};
 
@@ -790,6 +810,8 @@ class platform_types_manager
 		}
 		~simple_types_repositories_holder()
 		{
+            if (value_)
+                delete value_;
 		}
 	};
 

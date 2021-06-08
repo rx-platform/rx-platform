@@ -39,6 +39,10 @@
 namespace rx_internal {
 
 namespace plugins {
+namespace
+{
+plugins_manager* g_obj = nullptr;
+}
 
 // Class rx_internal::plugins::plugins_manager 
 
@@ -67,8 +71,9 @@ plugins_manager & plugins_manager::operator=(const plugins_manager &right)
 
 plugins_manager& plugins_manager::instance ()
 {
-	static plugins_manager g_obj;
-	return g_obj;
+	if (g_obj == nullptr)
+		g_obj = new plugins_manager();
+	return *g_obj;
 }
 
 bool plugins_manager::check_class (rx::pointers::code_behind_definition_t* cd)
@@ -92,6 +97,11 @@ rx_result plugins_manager::register_plugin (rx_platform::library::rx_plugin_base
 		PLUGIN_LOG_ERROR("plugins_manager", 900, "Error registering plugin "s + what->get_plugin_name());
 	}
 	return result;
+}
+
+void plugins_manager::deinitialize ()
+{
+	delete this;
 }
 
 

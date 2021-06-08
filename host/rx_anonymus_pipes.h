@@ -44,6 +44,7 @@
 namespace host {
 namespace pipe {
 class anonymus_pipe_client;
+class local_pipe_port;
 class rx_pipe_host;
 
 } // namespace pipe
@@ -102,7 +103,9 @@ class anonymus_pipe_endpoint
 {
 
   public:
-      anonymus_pipe_endpoint (rx_pipe_host* host);
+      anonymus_pipe_endpoint (rx_pipe_host* host, local_pipe_port* my_port);
+
+      ~anonymus_pipe_endpoint();
 
 
       void receive_loop (std::function<void(int64_t)> received_func);
@@ -121,8 +124,6 @@ class anonymus_pipe_endpoint
 
       static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
-      static void stack_changed_function (rx_protocol_stack_endpoint* reference);
-
 
 
       std::unique_ptr<anonymus_pipe_client> pipes_;
@@ -132,6 +133,8 @@ class anonymus_pipe_endpoint
       rx_protocol_stack_endpoint stack_entry_;
 
       rx_pipe_host *host_;
+
+      local_pipe_port *my_port_;
 
 
       std::function<void(int64_t)> sent_func_;
@@ -161,9 +164,9 @@ Local Pipe class. implementation of an local pipe port");
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
-      void stack_disassembled ();
-
       void destroy_endpoint (rx_protocol_stack_endpoint* what);
+
+      rx_result stop_passive ();
 
       void remove_endpoint(rx_protocol_stack_endpoint* what)
       {

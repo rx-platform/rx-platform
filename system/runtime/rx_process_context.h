@@ -197,20 +197,21 @@ class relation_subscriber
 enum class runtime_process_step : uint_fast8_t
 {
     idle = 0,
-    status_change = 1,
-    source_inputs = 2,
-    mapper_inputs = 3,
-    tag_inputs = 4,
-    variables = 5,
-    programs = 6,
-    events = 7,
-    filters = 8,
-    structs = 9,
-    own = 10,
-    tag_outputs = 11,
-    mapper_outputs = 12,
-    source_outputs = 13,
-    beyond_last = 14
+    remote_updates = 1,
+    status_change = 2,
+    source_inputs = 3,
+    mapper_inputs = 4,
+    tag_inputs = 5,
+    variables = 6,
+    programs = 7,
+    events = 8,
+    filters = 9,
+    structs = 10,
+    own = 11,
+    tag_outputs = 12,
+    mapper_outputs = 13,
+    source_outputs = 14,
+    beyond_last = 15
 };
 
 template<class T>

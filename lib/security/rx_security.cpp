@@ -45,6 +45,10 @@ bool rx_pop_security_context();
 namespace rx {
 
 namespace security {
+namespace {
+security_manager* g_object = nullptr;
+security_context_ptr dummy_ctx;
+}
 
 // Class rx::security::security_context 
 
@@ -139,8 +143,13 @@ security_manager & security_manager::operator=(const security_manager &right)
 
 security_manager& security_manager::instance ()
 {
-	static security_manager g_object;
-	return g_object;
+	if (g_object == nullptr)
+	{
+		g_object = new security_manager();
+
+		dummy_ctx = rx_create_reference<unathorized_security_context>();
+	}
+	return *g_object;
 }
 
 rx_security_handle_t security_manager::context_activated (security_context::smart_ptr who)
@@ -211,10 +220,15 @@ security_context_ptr security_manager::get_context (rx_security_handle_t handle)
 	}
 }
 
+void security_manager::deinitialize ()
+{
+	dummy_ctx = security_context_ptr::null_ptr;
+	delete this;
+}
+
 // whole purpose of this function is to enable lazy initialization of dummy_ctx
 security_context_ptr security_context_helper(bool get_unathorized)
 {
-	static unathorized_security_context::smart_ptr dummy_ctx(pointers::_create_new);
 	if (get_unathorized)
 		return dummy_ctx;
 

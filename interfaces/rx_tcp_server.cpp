@@ -68,6 +68,11 @@ tcp_server_endpoint::tcp_server_endpoint()
     mine_entry->close_function = [] (rx_protocol_stack_endpoint* ref, rx_protocol_result_t reason) ->rx_protocol_result_t
     {
         tcp_server_endpoint* me = reinterpret_cast<tcp_server_endpoint*>(ref->user_data);
+        me->close();
+        rx_notify_closed(&me->stack_endpoint_, 0);
+        return RX_PROTOCOL_OK;
+
+
         if (me->tcp_socket_)
         {
             bool ret = me->tcp_socket_->write(buffer_ptr::null_ptr);
@@ -119,7 +124,6 @@ rx_result tcp_server_endpoint::close ()
         tcp_socket_->disconnect();
         tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
     }
-    rx_notify_closed(&stack_endpoint_, 0);
     return true;
 }
 
@@ -135,7 +139,7 @@ void tcp_server_endpoint::disconnected (rx_security_handle_t identity)
     if (tcp_socket_)
     {
         rx_session session = rx_create_session(&remote_address_, &local_address_, 0, 0, nullptr);
-        rx_notify_disconnected(&stack_endpoint_,  &session, 0);
+        rx_notify_disconnected(&stack_endpoint_, &session, 0);
         rx_close(&stack_endpoint_, 0);
     }
 }
@@ -168,11 +172,13 @@ bool tcp_server_endpoint::readed (const void* data, size_t count, rx_security_ha
 rx_protocol_result_t tcp_server_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
     tcp_server_endpoint* self = reinterpret_cast<tcp_server_endpoint*>(reference->user_data);
-    if (self->tcp_socket_)
+    if (self->my_port_ && self->tcp_socket_)
     {
-        auto io_buffer = rx_create_reference<socket_holder_t::buffer_t>();
+        auto io_buffer = self->my_port_->get_buffer();
         io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
         bool ret = self->tcp_socket_->write(io_buffer);
+        if (!ret)
+            self->my_port_->release_buffer(io_buffer);
         return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
     }
     else
@@ -201,8 +207,16 @@ runtime::items::port_runtime* tcp_server_endpoint::get_port ()
     return my_port_;
 }
 
+void tcp_server_endpoint::release_buffer (buffer_ptr what)
+{
+    if (my_port_)
+        return my_port_->release_buffer(what);
+}
+
 void tcp_server_endpoint::socket_holder_t::release_buffer(buffer_ptr what)
 {
+    if (whose)
+        return whose->release_buffer(what);
 }
 bool tcp_server_endpoint::socket_holder_t::readed(const void* data, size_t count, rx_security_handle_t identity)
 {
@@ -341,6 +355,39 @@ void tcp_server_port::extract_bind_address (const data::runtime_values_data& bin
     }
 }
 
+void tcp_server_port::release_buffer (buffer_ptr what)
+{
+    locks::auto_lock_t _(&free_buffers_lock_);
+    what->reinit();
+    free_buffers_.push(what);
+}
+
+buffer_ptr tcp_server_port::get_buffer ()
+{
+    {
+        locks::auto_lock_t _(&free_buffers_lock_);
+        if (!free_buffers_.empty())
+        {
+            buffer_ptr ret = free_buffers_.top();
+            free_buffers_.pop();
+            return ret;
+        }
+    }
+    return rx_create_reference<buffer_ptr::pointee_type>();
+}
+
+
+// Class rx_internal::interfaces::ip_endpoints::system_http_port 
+
+
+uint16_t system_http_port::get_configuration_port () const
+{
+    auto ret = rx_gate::instance().get_configuration().other.http_port;
+    if (ret == 0)
+        ret = 0x7ABD;
+    return ret;
+}
+
 
 // Class rx_internal::interfaces::ip_endpoints::system_rx_port 
 
@@ -364,18 +411,6 @@ rx_result system_server_port_base::initialize_runtime (runtime::runtime_init_con
         ctx.set_item_static("Bind.IPPort", port);
     auto result = tcp_server_port::initialize_runtime(ctx);
     return result;
-}
-
-
-// Class rx_internal::interfaces::ip_endpoints::system_http_port 
-
-
-uint16_t system_http_port::get_configuration_port () const
-{
-    auto ret = rx_gate::instance().get_configuration().other.http_port;
-    if (ret == 0)
-        ret = 0x7ABD;
-    return ret;
 }
 
 

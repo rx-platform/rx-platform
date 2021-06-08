@@ -2021,7 +2021,9 @@ rx_result event_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx
 {
 	auto result = event_ptr->deinitialize_event(ctx);
 	if (result)
+	{
 		result = item->deinitialize_runtime(ctx);
+	}
 	return result;
 }
 
@@ -2203,7 +2205,7 @@ rx_result filter_data::deinitialize_runtime (runtime::runtime_deinit_context& ct
 	auto result = filter_ptr->deinitialize_filter(ctx);
 	if (result)
 		result = item->deinitialize_runtime(ctx);
-	filter_ptr->container_ = this;
+	filter_ptr->container_ = nullptr;
 	return result;
 }
 

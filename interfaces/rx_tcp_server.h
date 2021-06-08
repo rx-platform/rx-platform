@@ -34,10 +34,10 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// dummy
-#include "dummy.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
 // rx_stream_io
 #include "lib/rx_stream_io.h"
 
@@ -105,6 +105,8 @@ class tcp_server_endpoint
 
       runtime::items::port_runtime* get_port ();
 
+      void release_buffer (buffer_ptr what);
+
 
       const rx_reference<socket_holder_t> get_tcp_socket () const
       {
@@ -165,6 +167,7 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
     DECLARE_REFERENCE_PTR(tcp_server_port);
 
 
+    typedef std::stack< buffer_ptr, std::vector< buffer_ptr> > free_buffers_type;
     typedef std::map<rx_protocol_stack_endpoint*, tcp_server_endpoint::endpoint_ptr> active_endpoints_type;
 
   public:
@@ -176,6 +179,10 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
       rx_result stop_passive ();
 
       void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
+
+      void release_buffer (buffer_ptr what);
+
+      buffer_ptr get_buffer ();
 
 
   protected:
@@ -191,6 +198,10 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
       runtime::local_value<uint32_t> recv_timeout_;
 
       runtime::local_value<uint32_t> send_timeout_;
+
+      free_buffers_type free_buffers_;
+
+      locks::slim_lock free_buffers_lock_;
 
 
 };
@@ -223,12 +234,12 @@ class system_server_port_base : public tcp_server_port
 
 
 
-class system_rx_port : public system_server_port_base  
+class system_http_port : public system_server_port_base  
 {
     DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-System rx-protocol TCP Server port class.");
+System HTTP TCP Server port class.");
 
-    DECLARE_REFERENCE_PTR(system_rx_port);
+    DECLARE_REFERENCE_PTR(system_http_port);
 
   public:
 
@@ -247,12 +258,12 @@ System rx-protocol TCP Server port class.");
 
 
 
-class system_http_port : public system_server_port_base  
+class system_rx_port : public system_server_port_base  
 {
     DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-System HTTP TCP Server port class.");
+System rx-protocol TCP Server port class.");
 
-    DECLARE_REFERENCE_PTR(system_http_port);
+    DECLARE_REFERENCE_PTR(system_rx_port);
 
   public:
 

@@ -33,14 +33,14 @@
 
 
 
-// rx_internal_objects
-#include "system/runtime/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_platform_item
 #include "system/server/rx_platform_item.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_internal_objects
+#include "system/runtime/rx_internal_objects.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "api/rx_platform_api.h"
@@ -111,6 +111,8 @@ contains root server folders\
       static rx_result insert_cached_item (const string_type& name, const rx_namespace_item& item);
 
       static rx_result remove_cached_item (const string_type& name, const rx_namespace_item& item);
+
+      static void clear_cached_items ();
 
 
   protected:
@@ -217,6 +219,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
   public:
       rx_item_implementation (TImpl impl);
 
+      ~rx_item_implementation();
+
 
       rx_item_type get_type_id () const;
 
@@ -260,7 +264,7 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result save () const;
 
-	  ~rx_item_implementation() = default;
+
   protected:
 
   private:
@@ -286,6 +290,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
   public:
       rx_meta_item_implementation (TImpl impl);
+
+      ~rx_meta_item_implementation();
 
 
       rx_item_type get_type_id () const;
@@ -382,6 +388,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
   public:
       rx_other_implementation (TImpl impl);
+
+      ~rx_other_implementation();
 
 
       rx_item_type get_type_id () const;

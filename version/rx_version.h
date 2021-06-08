@@ -37,10 +37,9 @@
 
 
 #define ASSIGN_MODULE_VERSION(val,arg,arg1,arg2,arg3)  \
-char temp_str[0x100];\
+char temp_str[0x60];\
 create_module_version_string(arg,arg1,arg2,arg3,__DATE__,__TIME__,temp_str);\
-val=temp_str;\
-
+strcpy(val,temp_str);\
 
 #ifdef __cplusplus
 extern "C" {

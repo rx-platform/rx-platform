@@ -64,6 +64,8 @@ class plugins_manager
 
       rx_result register_plugin (rx_platform::library::rx_plugin_base* what);
 
+      void deinitialize ();
+
 
       plugins_type& get_plugins ()
       {

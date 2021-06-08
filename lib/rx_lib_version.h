@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 1
 #define RX_LIB_MINOR_VERSION 0
-#define RX_LIB_BUILD_NUMBER 9
+#define RX_LIB_BUILD_NUMBER 10
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -42,5 +42,6 @@
 // version 1.0.3 added binary_istream<> and binary_ostream<>
 // version 1.0.4 changed rx_log_query_type, added acceding sort
 // version 1.0.6 added write/read value type in streams
+// version 1.0.10 added atomic values for some job flags
 
 

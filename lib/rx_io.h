@@ -69,7 +69,7 @@ class dispatcher_subscriber : public pointers::reference_object
   public:
       dispatcher_subscriber (rx_security_handle_t identity = 0);
 
-      ~dispatcher_subscriber();
+      virtual ~dispatcher_subscriber();
 
 
       static void propagate_timer ();
@@ -77,6 +77,8 @@ class dispatcher_subscriber : public pointers::reference_object
       virtual void timer_tick (uint32_t tick);
 
       void set_identity (rx_security_handle_t identity);
+
+      static void deinitialize ();
 
 
       const rx_security_handle_t get_identity () const

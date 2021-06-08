@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace interfaces {
 
 namespace ip_endpoints {
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_client_endpoint 
+// Class rx_internal::interfaces::ip_endpoints::tcp_client_endpoint
 
 tcp_client_endpoint::tcp_client_endpoint()
       : my_port_(nullptr),
@@ -140,16 +140,18 @@ bool tcp_client_endpoint::readed (const void* data, size_t count, rx_security_ha
 rx_protocol_result_t tcp_client_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
     tcp_client_endpoint* self = reinterpret_cast<tcp_client_endpoint*>(reference->user_data);
-    if (self->tcp_socket_)
+    if (self->my_port_ && self->tcp_socket_)
     {
-        auto io_buffer = rx_create_reference<socket_holder_t::buffer_t>();
+        auto io_buffer = self->my_port_->get_buffer();
         io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
         bool ret = self->tcp_socket_->write(io_buffer);
+        if (!ret)
+            self->my_port_->release_buffer(io_buffer);
         return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
     }
     else
     {
-        return RX_PROTOCOL_COLLECT_ERROR;
+        return RX_PROTOCOL_DISCONNECTED;
     }
 }
 
@@ -195,6 +197,7 @@ bool tcp_client_endpoint::tick ()
             {
                 current_state_ = tcp_state::connecting;
                 result = tcp_socket_->connect_to(remote_addr_.get_address(), sizeof(sockaddr_in), infrastructure::server_runtime::instance().get_io_pool()->get_pool());
+
             }
             if (!result)
             {
@@ -278,8 +281,56 @@ bool tcp_client_endpoint::is_connected () const
     return current_state_ == tcp_state::connected;
 }
 
+void tcp_client_endpoint::release_buffer (buffer_ptr what)
+{
+    if (my_port_)
+        return my_port_->release_buffer(what);
+}
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_client_port 
+
+void tcp_client_endpoint::socket_holder_t::release_buffer(buffer_ptr what)
+{
+    if (whose)
+        return whose->release_buffer(what);
+}
+bool tcp_client_endpoint::socket_holder_t::readed(const void* data, size_t count, rx_security_handle_t identity)
+{
+    security::secured_scope _(identity);
+    if (whose)
+        return whose->readed(data, count, identity);
+    else
+        return false;
+}
+void tcp_client_endpoint::socket_holder_t::on_shutdown(rx_security_handle_t identity)
+{
+    security::secured_scope _(identity);
+    if (whose)
+        whose->disconnected(identity);
+}
+bool tcp_client_endpoint::socket_holder_t::connect_complete(sockaddr_in* addr, sockaddr_in* local_addr)
+{
+    if (whose)
+        whose->connected(addr, local_addr);
+    else
+        return false;
+
+    return rx::io::tcp_client_socket_std_buffer::connect_complete(addr, local_addr);
+}
+tcp_client_endpoint::socket_holder_t::socket_holder_t(tcp_client_endpoint* whose)
+    : whose(whose)
+{
+}
+tcp_client_endpoint::socket_holder_t::socket_holder_t(socket_holder_t&& right) noexcept
+{
+    whose = right.whose;
+    right.whose = nullptr;
+}
+void tcp_client_endpoint::socket_holder_t::disconnect()
+{
+    whose = nullptr;
+    close();
+}
+// Class rx_internal::interfaces::ip_endpoints::tcp_client_port
 
 tcp_client_port::tcp_client_port()
       : recv_timeout_(2000),
@@ -338,6 +389,29 @@ rx_result_with<port_connect_result> tcp_client_port::start_connect (const protoc
         tcp_client_endpoint* whose = reinterpret_cast<tcp_client_endpoint*>(entry->user_data);
         whose->get_port()->disconnect_stack_endpoint(entry);
     };
+    endpoint_->get_stack_endpoint()->allocate_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+    {
+        tcp_client_endpoint* whose = reinterpret_cast<tcp_client_endpoint*>(entry->user_data);
+        auto result = whose->get_port()->alloc_io_buffer();
+        if (result)
+        {
+            result.value().detach(buffer);
+            return RX_PROTOCOL_OK;
+        }
+        else
+        {
+            return RX_PROTOCOL_OUT_OF_MEMORY;
+        }
+    };
+    endpoint_->get_stack_endpoint()->release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
+    {
+        tcp_client_endpoint* whose = reinterpret_cast<tcp_client_endpoint*>(entry->user_data);
+        runtime::io_types::rx_io_buffer temp;
+        temp.attach(buffer);
+        whose->get_port()->release_io_buffer(std::move(temp));
+
+        return RX_PROTOCOL_OK;
+    };
     auto result = endpoint_->open(&bind_address_, &connect_address_, sec_result.value(), this);
     if (!result)
     {
@@ -390,6 +464,27 @@ void tcp_client_port::extract_bind_address (const data::runtime_values_data& bin
                 remote_addr = &ip_addr;
         }
     }
+}
+
+void tcp_client_port::release_buffer (buffer_ptr what)
+{
+    locks::auto_lock_t _(&free_buffers_lock_);
+    what->reinit();
+    free_buffers_.push(what);
+}
+
+buffer_ptr tcp_client_port::get_buffer ()
+{
+    {
+        locks::auto_lock_t _(&free_buffers_lock_);
+        if (!free_buffers_.empty())
+        {
+            buffer_ptr ret = free_buffers_.top();
+            free_buffers_.pop();
+            return ret;
+        }
+    }
+    return rx_create_reference<buffer_ptr::pointee_type>();
 }
 
 

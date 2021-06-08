@@ -423,7 +423,7 @@ bool udp_socket<buffT>::write (buffer_ptr what, const struct sockaddr* addr, siz
 {
     if (what && what->empty())
         return true;
-    if (addrsize > sizeof(sockaddr_storage))
+    if (addr == nullptr || addrsize > sizeof(sockaddr_storage))
         return false;
 
     std::pair<sockaddr_storage, buffer_ptr> entry;

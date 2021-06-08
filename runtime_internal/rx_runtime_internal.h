@@ -33,10 +33,10 @@
 
 
 
-// rx_runtime_helpers
-#include "system/runtime/rx_runtime_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_runtime_helpers
+#include "system/runtime/rx_runtime_helpers.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -156,6 +156,8 @@ class runtime_cache
 
       std::vector<platform_item_ptr> get_items (const rx_node_ids& ids);
 
+      void cleanup_cache ();
+
       template<typename typeT>
       typename typeT::RTypePtr get_runtime(const rx_node_id& id)
       {
@@ -205,6 +207,7 @@ class platform_runtime_manager
 	typedef std::map<rx_node_id, rx_application_ptr> applications_type;
 	typedef std::vector<int> coverage_type;
 	friend class algorithms::application_algorithms;
+    friend class algorithms::shutdown_algorithms;
 
   public:
 
@@ -223,6 +226,10 @@ class platform_runtime_manager
       static runtime_handle_t get_new_handle ();
 
       static runtime_transaction_id_t get_new_transaction_id ();
+
+      void stop_all ();
+
+      void deinitialize ();
 
 
       runtime_cache& get_cache ()
@@ -246,9 +253,8 @@ class platform_runtime_manager
           rx_result_callback wrapper;
           wrapper.anchor = ref;
           wrapper.function = std::forward<funcT>(callback);
-          auto result = algorithms::delete_runtime_structure<typeT>(what);
           runtime::runtime_deinit_context ctx;
-		  result = algorithms::deinit_runtime<typeT>(what, ref, result_target, std::move(wrapper), ctx);
+		  auto result = algorithms::deinit_runtime<typeT>(what, ref, result_target, std::move(wrapper), ctx);
 		  return result;
 	  }
   protected:

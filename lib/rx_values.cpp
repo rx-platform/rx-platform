@@ -2374,7 +2374,6 @@ void rx_value_storage::destroy_value(rx_value_union& who, rx_value_t type)
 		case RX_BYTES_TYPE:
 			delete who.bytes_value;
 			break;
-			break;
 		case RX_NODE_ID_TYPE:
 			delete who.node_id_value;
 			break;

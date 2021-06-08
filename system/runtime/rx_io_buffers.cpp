@@ -49,9 +49,9 @@ rx_io_buffer::rx_io_buffer()
 	memzero(this, sizeof(rx_packet_buffer));
 }
 
-rx_io_buffer::rx_io_buffer (size_t initial_capacity, rx_protocol_stack_endpoint* stack_entry)
+rx_io_buffer::rx_io_buffer (size_t initial_capacity, size_t initial_front_capacity)
 {
-	auto result = rx_init_packet_buffer(this, initial_capacity, stack_entry);
+	auto result = rx_init_packet_buffer(this, initial_capacity, initial_front_capacity);
 	if (result != RX_PROTOCOL_OK)
 	{
 		memzero(this, sizeof(rx_packet_buffer));

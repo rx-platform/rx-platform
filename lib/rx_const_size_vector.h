@@ -34,6 +34,12 @@
 
 
 
+
+#ifdef _MSC_VER 
+#ifdef _DEBUG
+#undef new
+#endif
+#endif
 namespace rx
 {
 template<class T, class Allocator = std::allocator<T> >
@@ -269,6 +275,12 @@ private:
 }
 
 
+
+#ifdef _MSC_VER 
+#ifdef _DEBUG
+#define new DEBUG_CLIENTBLOCK
+#endif
+#endif
 
 
 #endif

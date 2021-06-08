@@ -420,19 +420,25 @@ rx_protocol_result_t vt100_transport_endpoint::received_function (rx_protocol_st
 	rx_protocol_result_t result = RX_PROTOCOL_OK;
 	if (self->vt100_.send_echo && !to_echo.empty())
 	{
-		runtime::io_types::rx_io_buffer send_buffer(to_echo.size(), reference);
-		auto temp = send_buffer.write_chars(to_echo);
-		if (!temp)
+		auto send_buffer = self->port_->alloc_io_buffer();
+		if (!send_buffer)
 		{
-			result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
+			result = RX_PROTOCOL_OUT_OF_MEMORY;
 		}
 		else
 		{
-			send_protocol_packet down = rx_create_send_packet(packet.id, &send_buffer, 0, 0);
-			result = rx_move_packet_down(reference, down);
+			auto temp = send_buffer.value().write_chars(to_echo);
+			if (!temp)
+			{
+				result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
+			}
+			else
+			{
+				send_protocol_packet down = rx_create_send_packet(packet.id, &send_buffer.value(), 0, 0);
+				result = rx_move_packet_down(reference, down);
+			}
+			self->port_->release_io_buffer(send_buffer.move_value());
 		}
-		if (result == RX_PROTOCOL_OK)
-			send_buffer.detach(nullptr);
 	}
 	if (result == RX_PROTOCOL_OK && !lines_buffers.empty())
 	{
@@ -452,16 +458,18 @@ rx_protocol_result_t vt100_transport_endpoint::received_function (rx_protocol_st
 
 rx_protocol_result_t vt100_transport_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
 {
-	rx_packet_buffer_type buffer;
+	vt100_transport_endpoint* self = reinterpret_cast<vt100_transport_endpoint*>(reference->user_data);
 	static string_type conn_msg("rx-Terminal connected...\r\n");
-	auto result = rx_init_packet_buffer(&buffer, conn_msg.size(), nullptr);
-	if (result != RX_PROTOCOL_OK)
-		return result;
-	result = rx_push_to_packet(&buffer, &conn_msg[0], conn_msg.size());
-	if (result != RX_PROTOCOL_OK)
-		return result;
-	result = rx_move_packet_down(reference, rx_create_send_packet(0, &buffer, 0, 0));
-	result = rx_notify_connected(reference, session);
+	rx_protocol_result_t result = RX_PROTOCOL_OUT_OF_MEMORY;
+	auto buffer = self->port_->alloc_io_buffer();
+	if (buffer)
+	{
+		buffer.value().write_chars(conn_msg);
+		result = rx_move_packet_down(reference, rx_create_send_packet(0, &buffer.value(), 0, 0));
+
+		result = rx_notify_connected(reference, session);
+		self->port_->release_io_buffer(buffer.move_value());
+	}
 	return result;
 }
 

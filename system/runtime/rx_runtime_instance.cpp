@@ -286,6 +286,17 @@ security::security_context_ptr domain_instance_data::get_security_context () con
     }
 }
 
+std::vector<rx_object_ptr> domain_instance_data::get_objects ()
+{
+    std::vector<rx_object_ptr> result;
+    result.reserve(objects_.size());
+    for (const auto& one : objects_)
+    {
+        result.emplace_back(one.second);
+    }
+    return result;
+}
+
 
 // Class rx_platform::runtime::items::application_instance_data 
 
@@ -352,9 +363,13 @@ rx_result application_instance_data::before_init_runtime (rx_application_ptr wha
 {
     auto sec_ctx = what->get_instance_data().identity_.create_context(what->meta_info().get_full_path(), "", what->get_instance_data().data_.identity);
 
-  //what->get_instance_data().security_ctx_
-    if (what->get_instance_data().security_ctx_)
-        what->get_instance_data().security_ctx_->logout();
+    if (sec_ctx)
+    {
+        what->get_instance_data().security_ctx_ = sec_ctx.value();
+        if (what->get_instance_data().security_ctx_)
+            what->get_instance_data().security_ctx_->login();
+    }
+
     what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
     what->get_implementation()->context_ = ctx.context;
     what->get_implementation()->executer_ = what->get_instance_data().executer_;
@@ -387,20 +402,30 @@ security::security_context_ptr application_instance_data::get_security_context (
         return security::unauthorized_context();
 }
 
-//application_instance_data::application_instance_data(application_instance_data&& right)
-//{
-//    domains_ = std::move(right.domains_);
-//    ports_ = std::move(right.ports_);
-//    executer_ = std::move(right.executer_);
-//    identity_ = std::move(right.identity_);
-//}
-//application_instance_data::application_instance_data(const application_instance_data& right)
-//{
-//    domains_ = right.domains_;
-//    ports_ = right.ports_;
-//    executer_ = right.executer_;
-//    identity_ = right.identity_;
-//}
+std::vector<rx_domain_ptr> application_instance_data::get_domains ()
+{
+    std::vector<rx_domain_ptr> result;
+    result.reserve(domains_.size());
+    locks::auto_lock_t<decltype(domains_lock_)> _(&domains_lock_);
+    for (const auto& one : domains_)
+    {
+        result.emplace_back(one.second);
+    }
+    return result;
+}
+
+std::vector<rx_port_ptr> application_instance_data::get_ports ()
+{
+    std::vector<rx_port_ptr> result;
+    result.reserve(ports_.size());
+    for (const auto& one : ports_)
+    {
+        result.emplace_back(one.second);
+    }
+    return result;
+}
+
+
 } // namespace items
 } // namespace runtime
 } // namespace rx_platform

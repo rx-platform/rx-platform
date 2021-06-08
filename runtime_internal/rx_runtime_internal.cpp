@@ -76,14 +76,18 @@ rx_port_ptr get_runtime_impl<meta::object_types::port_type>(runtime_cache* whose
 {
 	return whose->get_port(id);
 }
+namespace {
+platform_runtime_manager* g_instance = nullptr;
+}
 
 // Class rx_internal::sys_runtime::platform_runtime_manager 
 
 
 platform_runtime_manager& platform_runtime_manager::instance ()
 {
-	static platform_runtime_manager g_instance;
-	return g_instance;
+	if (g_instance == nullptr)
+		g_instance = new platform_runtime_manager();
+	return *g_instance;
 }
 
 rx_thread_handle_t platform_runtime_manager::resolve_app_processor (const application_instance_data& data)
@@ -215,6 +219,53 @@ runtime_transaction_id_t platform_runtime_manager::get_new_transaction_id ()
 		return get_new_handle();
 	else
 		return ret;
+}
+
+void platform_runtime_manager::stop_all ()
+{
+	std::map<rx_thread_handle_t, std::vector<rx_application_ptr> > apps;
+	std::map<rx_thread_handle_t, std::vector<rx_domain_ptr> > domains;
+	for (auto one : applications_)
+	{
+		apps[one.first].push_back(one.second);
+		std::vector<rx_domain_ptr> temp = one.second->get_instance_data().get_domains();
+		for (auto& one_dom : temp)
+		{
+			domains[one_dom->get_executer()].push_back(one_dom);
+		}
+	}
+
+	locks::event sync_event(false);
+	locks::event* psync_event = &sync_event;
+	rx_reference_ptr dummy_ptr;
+
+	for (auto& one : domains)
+	{
+		std::function<void(std::vector<rx_domain_ptr>, locks::event*)> func = [](std::vector<rx_domain_ptr> domains, locks::event* psync_event)
+			{
+				algorithms::shutdown_algorithms::stop_domains(std::move(domains));
+				psync_event->set();
+			};
+		rx_post_function_to(one.first, dummy_ptr, std::move(func), std::move(one.second), std::move(psync_event));
+		sync_event.wait_handle();
+	}
+
+	for (auto& one : apps)
+	{
+		std::function<void(std::vector<rx_application_ptr>, locks::event*)> func = [](std::vector<rx_application_ptr> apps, locks::event* psync_event)
+			{
+				algorithms::shutdown_algorithms::stop_applications(std::move(apps));
+				psync_event->set();
+			};
+		rx_post_function_to(one.first, dummy_ptr, std::move(func), std::move(one.second), std::move(psync_event));
+		sync_event.wait_handle();
+	}
+}
+
+void platform_runtime_manager::deinitialize ()
+{
+	data_source::data_source_factory::instance().deinitialize();
+	delete this;
 }
 
 
@@ -374,6 +425,50 @@ void runtime_cache::remove_functions (const rx_node_id& id)
 
 void runtime_cache::unregister_subscriber (const rx_item_reference& ref, runtime::resolvers::runtime_subscriber* whose)
 {
+	string_type name;
+	if (!ref.is_node_id())
+	{
+		size_t idx = ref.get_path().rfind(RX_DIR_DELIMETER);
+		if (idx != string_type::npos)
+			name = ref.get_path().substr(idx + 1);
+		else
+			name = ref.get_path();
+	}
+	rx_node_id id;
+	platform_item_ptr item;
+	{
+		locks::auto_slim_lock _(&lock_);
+		if (name.empty())
+		{
+			if (ref.is_node_id())
+			{
+				id = ref.get_node_id();
+				auto it_subs = id_subscribers_.find(id);
+				if (it_subs != id_subscribers_.end())
+				{
+					auto result = it_subs->second.erase(whose);
+					RX_ASSERT(result);// has to be here
+				}
+				else
+				{
+					RX_ASSERT(false);// has to be here
+				}
+			}
+		}
+		else
+		{
+			auto it_subs = path_subscribers_.find(name);
+			if (it_subs != path_subscribers_.end())
+			{
+				auto result = it_subs->second.erase(whose);
+				RX_ASSERT(result);// has to be here
+			}
+			else
+			{
+				RX_ASSERT(false);// has to be here
+			}
+		}
+	}
 }
 
 void runtime_cache::register_subscriber (const rx_item_reference& ref, runtime::resolvers::runtime_subscriber* whose)
@@ -577,7 +672,7 @@ rx_result runtime_cache::add_target_relation (const rx_node_id& id, relations::r
 				{
 					auto rt_ptr = rt_it->second;
 					lock_.unlock();
-					result = rt_ptr->add_target_relation(std::move(data));
+					result = rt_ptr->add_target_relation(data);
 				}
 				else
 				{
@@ -594,7 +689,7 @@ rx_result runtime_cache::add_target_relation (const rx_node_id& id, relations::r
 				{
 					auto rt_ptr = rt_it->second;
 					lock_.unlock();
-					result = rt_ptr->add_target_relation(std::move(data));
+					result = rt_ptr->add_target_relation(data);
 				}
 				else
 				{
@@ -611,7 +706,7 @@ rx_result runtime_cache::add_target_relation (const rx_node_id& id, relations::r
 				{
 					auto rt_ptr = rt_it->second;
 					lock_.unlock();
-					result = rt_ptr->add_target_relation(std::move(data));
+					result = rt_ptr->add_target_relation(data);
 				}
 				else
 				{
@@ -628,7 +723,7 @@ rx_result runtime_cache::add_target_relation (const rx_node_id& id, relations::r
 				{
 					auto rt_ptr = rt_it->second;
 					lock_.unlock();
-					result = rt_ptr->add_target_relation(std::move(data));
+					result = rt_ptr->add_target_relation(data);
 				}
 				else
 				{
@@ -757,6 +852,20 @@ std::vector<platform_item_ptr> runtime_cache::get_items (const rx_node_ids& ids)
 			ret.emplace_back(platform_item_ptr());
 	}
 	return ret;
+}
+
+void runtime_cache::cleanup_cache ()
+{
+	applications_cache_.clear();
+	domains_cache_.clear();
+	objects_cache_.clear();
+	ports_cache_.clear();
+
+	id_cache_.clear();
+	path_cache_.clear();
+
+	id_subscribers_.clear();
+	path_subscribers_.clear();
 }
 
 

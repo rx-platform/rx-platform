@@ -85,6 +85,8 @@ class job : private pointers::reference_object
   public:
       job();
 
+      ~job();
+
 
       void cancel ();
 
@@ -138,7 +140,7 @@ class job : private pointers::reference_object
 
 
 
-      bool canceled_;
+      std::atomic<bool> canceled_;
 
       rx_security_handle_t security_context_;
 
@@ -167,6 +169,8 @@ class timer_job : public job
   public:
       timer_job();
 
+      ~timer_job();
+
 
       virtual rx_timer_ticks_t tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove) = 0;
 
@@ -191,7 +195,7 @@ class timer_job : public job
 
       rx_timer_ticks_t period_;
 
-      bool suspended_;
+      std::atomic<bool> suspended_;
 
 
   private:

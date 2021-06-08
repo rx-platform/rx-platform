@@ -48,9 +48,24 @@ typedef struct rx_packet_buffer_type
 	uint8_t* buffer_ptr;
 	size_t size;
 	size_t capacity;
-	struct rx_protocol_stack_endpoint* whose;
+	size_t front_capacity;
+	uint8_t* mem_ptr;
 
 } rx_packet_buffer;
+
+
+// initialization
+rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, size_t initial_front_capacity);
+rx_protocol_result_t rx_deinit_packet_buffer(rx_packet_buffer* buffer);
+rx_protocol_result_t rx_reinit_packet_buffer(rx_packet_buffer* buffer);
+// writing to buffer
+void* rx_alloc_from_packet(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
+rx_protocol_result_t rx_push_to_packet(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size);
+// writing to buffer front
+void* rx_alloc_from_packet_front(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
+rx_protocol_result_t rx_push_to_packet_front(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size);
+// data for "write-to"
+size_t rx_get_packet_usable_data(const rx_packet_buffer* buffer);
 
 
 typedef struct rx_const_packet_buffer_type
@@ -61,19 +76,9 @@ typedef struct rx_const_packet_buffer_type
 
 } rx_const_packet_buffer;
 
-// initialization
-rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, struct rx_protocol_stack_endpoint* whose);
-rx_protocol_result_t rx_deinit_packet_buffer(rx_packet_buffer* buffer);
-rx_protocol_result_t rx_reinit_packet_buffer(rx_packet_buffer* buffer);
 rx_protocol_result_t rx_reinit_const_packet_buffer(rx_const_packet_buffer* buffer);
 rx_protocol_result_t rx_init_const_packet_buffer(rx_const_packet_buffer* buffer, const void* data, size_t size);
 rx_protocol_result_t rx_init_const_from_packet_buffer(rx_const_packet_buffer* buffer, const rx_packet_buffer* from);
-// writing to buffer
-void* rx_alloc_from_packet(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
-rx_protocol_result_t rx_push_to_packet(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size);
-// data for "write-to"
-size_t rx_get_packet_usable_data(const rx_packet_buffer* buffer);
-void* rx_get_packet_data_at(rx_packet_buffer* buffer, size_t pos, rx_protocol_result_t* result);
 // reading from const buffer
 const void* rx_get_from_packet(rx_const_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
 rx_protocol_result_t rx_pop_from_packet(rx_const_packet_buffer* buffer, void* buffer_ptr, size_t size);

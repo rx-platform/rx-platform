@@ -69,6 +69,10 @@ class initiator_data_type
 {
 
   public:
+      initiator_data_type();
+
+      ~initiator_data_type();
+
 
       rx_protocol_stack_endpoint stack_endpoint;
 
@@ -79,8 +83,6 @@ class initiator_data_type
 
       addrT remote_addr;
 
-      initiator_data_type() = default;
-      ~initiator_data_type() = default;
       initiator_data_type(const initiator_data_type&) = delete;
       initiator_data_type(initiator_data_type&&) noexcept = default;
       initiator_data_type& operator=(const initiator_data_type&) = delete;
@@ -219,19 +221,15 @@ protected:
 
 
 
-typedef full_duplex_addr_packet_port< io::ip4_address  > ip4_routing_port_base;
+typedef full_duplex_addr_packet_port< io::numeric_address<uint8_t>  > byte_routing_port_base;
 
 
 
 
 
 
-class ip4_routing_port : public ip4_routing_port_base  
+class byte_routing_port : public byte_routing_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 1, "\
-IP4 routing port implementation, for both initiators and listeners");
-
-    DECLARE_REFERENCE_PTR(ip4_routing_port);
 
   public:
 
@@ -252,15 +250,19 @@ IP4 routing port implementation, for both initiators and listeners");
 
 
 
-typedef full_duplex_addr_packet_port< io::numeric_address<uint8_t>  > byte_routing_port_base;
+typedef full_duplex_addr_packet_port< io::ip4_address  > ip4_routing_port_base;
 
 
 
 
 
 
-class byte_routing_port : public byte_routing_port_base  
+class ip4_routing_port : public ip4_routing_port_base  
 {
+    DECLARE_CODE_INFO("rx", 0, 1, 1, "\
+IP4 routing port implementation, for both initiators and listeners");
+
+    DECLARE_REFERENCE_PTR(ip4_routing_port);
 
   public:
 

@@ -218,14 +218,28 @@ rx_result rx_http_endpoint::send_response (http_response response)
 
 	string_type pack_text(ss.str());
 
-	rx_packet_buffer buffer;
-	rx_init_packet_buffer(&buffer, pack_text.size(), nullptr);
-	rx_push_to_packet(&buffer, pack_text.c_str(), pack_text.size());
-	if(!response.content.empty())
-		rx_push_to_packet(&buffer, &response.content[0], response.content.size());
-	send_protocol_packet ret_packet = rx_create_send_packet(0, &buffer, 0, 0);
-	auto result = rx_move_packet_down(&stack_entry_, ret_packet);
+	auto buffer = port_->alloc_io_buffer();
+	if (!buffer)
+	{
+		buffer.register_error("Out of memory");
+		return buffer.errors();
+	}
 
+	auto result = buffer.value().write_chars(pack_text);
+	if (!response.content.empty())
+		result = buffer.value().write(&response.content[0], response.content.size());
+	if (!result)
+	{
+		result.register_error("Error writing to buffer");
+		return result;
+	}
+	send_protocol_packet ret_packet = rx_create_send_packet(0, &buffer.value(), 0, 0);
+	auto proto_result = rx_move_packet_down(&stack_entry_, ret_packet);
+	port_->release_io_buffer(buffer.move_value());
+	if (proto_result != RX_PROTOCOL_OK)
+	{
+		return "Error sending packet:"s + rx_protocol_error_message(proto_result);
+	}
 	return true;
 }
 

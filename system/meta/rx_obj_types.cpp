@@ -90,7 +90,8 @@ object_data_type::object_data_type()
 {
 }
 
-object_data_type::object_data_type (const string_type& name, const rx_node_id& id, const rx_node_id& parent, bool system, bool sealed, bool abstract)
+
+object_data_type::~object_data_type()
 {
 }
 

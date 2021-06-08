@@ -213,7 +213,9 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 	typedef std::map<runtime_handle_t, std::vector<runtime_handle_t> > handles_type;// target_handle -> mine handles
 	typedef std::map<string_type, runtime_handle_t> tags_type;// path -> mine handle
     typedef std::map<runtime_handle_t, string_type> inverse_tags_type;// mine handle -> path
-	
+
+    typedef std::map<runtime_handle_t, rx_value> values_cache_type;// values cache
+
     typedef std::vector<runtime_connection_data> connections_type;
 	typedef std::map<string_type, size_t> connection_paths_type;
 	typedef std::map<rx_thread_handle_t, std::vector<size_t> > connection_attempts_type;
@@ -235,6 +237,8 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
   public:
       rx_subscription (rx_subscription_callback* callback);
+
+      ~rx_subscription();
 
 
       rx_result connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& result);
@@ -291,7 +295,7 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
       connection_attempts_type attempts_;
 
-      bool active_;
+      std::atomic<bool> active_;
 
       rx_thread_handle_t target_;
 
@@ -308,6 +312,8 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
       subscription_write_transaction::transactions_map_type transactions_map_;
 
       pending_write_results_type pending_write_results_;
+
+      values_cache_type values_cache_;
 
 
 };

@@ -59,11 +59,6 @@ typedef struct http_transport_protocol_def
 	struct rx_protocol_stack_endpoint stack_entry;
 
 	struct http_parser_data_def parser_data;
-	// memory handling
-	size_t initial_packet_size;
-	rx_packet_stack free_buffers;
-	// send queue
-	rx_packet_queue send_queue;
 	// receive collector
 	rx_packet_buffer receive_buffer;
 

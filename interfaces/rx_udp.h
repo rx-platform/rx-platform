@@ -34,10 +34,10 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// dummy
-#include "dummy.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
 // rx_datagram_io
 #include "lib/rx_datagram_io.h"
 
@@ -117,6 +117,8 @@ public:
 
       bool is_connected () const;
 
+      void release_buffer (buffer_ptr what);
+
 
   protected:
 
@@ -159,7 +161,7 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::ip_endpoints::udp_endpoint  > udp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< udp_endpoint  > udp_server_base;
 
 
 
@@ -171,6 +173,7 @@ class udp_port : public udp_server_base
     DECLARE_CODE_INFO("rx", 0, 5, 0, "\
 UDP port class. implementation of an UDP/IP4 port");
 
+    typedef std::stack< buffer_ptr, std::vector<buffer_ptr> > free_buffers_type;
     DECLARE_REFERENCE_PTR(udp_port);
 
   public:
@@ -191,6 +194,10 @@ UDP port class. implementation of an UDP/IP4 port");
 
       void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
+      void release_buffer (buffer_ptr what);
+
+      buffer_ptr get_buffer ();
+
 
   protected:
 
@@ -207,6 +214,10 @@ UDP port class. implementation of an UDP/IP4 port");
       runtime::local_value<uint32_t> send_timeout_;
 
       runtime::local_value<uint32_t> reconnect_timeout_;
+
+      free_buffers_type free_buffers_;
+
+      locks::slim_lock free_buffers_lock_;
 
 
 };

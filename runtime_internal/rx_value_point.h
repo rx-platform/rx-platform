@@ -86,6 +86,10 @@ class value_point
     typedef std::map<value_handle_type, int> tag_handles_type;
 
   public:
+      value_point();
+
+      ~value_point();
+
 
       void connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, data_controler* controler = nullptr, char* buffer = nullptr);
 

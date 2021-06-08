@@ -43,6 +43,8 @@ rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory)
 		g_memory = *memory;
 		if (g_memory.alloc_buffer_function == NULL)
 			g_memory.alloc_buffer_function = rx_c_alloc_buffer;
+		if (g_memory.realloc_buffer_function == NULL)
+			g_memory.realloc_buffer_function = rx_c_realloc_buffer;
 		if (g_memory.alloc_function == NULL)
 			g_memory.alloc_function = rx_c_alloc_buffer;
 		if (g_memory.free_buffer_function == NULL)
@@ -53,6 +55,7 @@ rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory)
 	else
 	{
 		g_memory.alloc_buffer_function = rx_c_alloc_buffer;
+		g_memory.realloc_buffer_function = rx_c_realloc_buffer;
 		g_memory.alloc_function = rx_c_alloc_buffer;
 		g_memory.free_buffer_function = rx_c_free_buffer;
 		g_memory.free_function = rx_c_free_buffer;
@@ -277,30 +280,6 @@ void rx_notify_closed(struct rx_protocol_stack_endpoint* stack, rx_protocol_resu
 			stack->closed_function(stack, reason);
 		}
 		stack = temp_stack;
-	}
-}
-rx_protocol_result_t rx_allocate_packet(struct rx_protocol_stack_endpoint* stack, rx_packet_buffer* buffer, size_t initial_capacity)
-{
-	if (stack)
-	{
-		while (stack->downward != NULL && stack->allocate_packet_function == NULL)
-			stack = stack->downward;
-
-		if (stack->allocate_packet_function != NULL)
-			return stack->allocate_packet_function(stack, buffer, initial_capacity);
-	}
-	return g_memory.alloc_buffer_function((void**)&buffer->buffer_ptr, initial_capacity);
-}
-
-rx_protocol_result_t rx_free_packet(rx_packet_buffer* buffer)
-{
-	if (buffer->whose && buffer->whose->free_packet_function)
-	{
-		return buffer->whose->free_packet_function(buffer->whose, buffer);
-	}
-	else
-	{
-		return g_memory.free_buffer_function(buffer->buffer_ptr, buffer->capacity);
 	}
 }
 

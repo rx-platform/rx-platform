@@ -168,6 +168,7 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 
 void rx_io_manager::deinitialize ()
 {
+	rx_internal::terminal::commands::server_command_manager::instance()->clear();
 	rx_deinit_protocols();
 }
 

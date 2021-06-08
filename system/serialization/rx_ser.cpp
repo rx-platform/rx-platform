@@ -34,10 +34,26 @@
 // rx_ser
 #include "system/serialization/rx_ser.h"
 
+
+// placement new and MSVC debug heap problem
+#ifdef _MSC_VER 
+#ifdef _DEBUG
+#undef new
+#endif
+#endif
 #include "third-party/rapidjson/include/rapidjson/document.h"
 #include "third-party/rapidjson/include/rapidjson/error/en.h"
 #include "third-party/rapidjson/include/rapidjson/prettywriter.h"
+
+// placement new and MSVC debug heap problem
+#ifdef _MSC_VER 
+#ifdef _DEBUG
+#define new DEBUG_CLIENTBLOCK
+#endif
+#endif
+
 #include "base64.h"
+
 
 
 namespace rx_platform {

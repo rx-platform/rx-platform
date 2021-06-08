@@ -43,6 +43,8 @@
 #include "rx_pipe_config.h"
 #include "api/rx_meta_api.h"
 #include "terminal/rx_terminal_style.h"
+#include "sys_internal/rx_security/rx_platform_security.h"
+#include "lib/rx_io.h"
 
 
 namespace host {
@@ -239,38 +241,50 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			if (ret)
 			{
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-				char buff[0x20];
-				sprintf(buff, "%d", rx_gate::instance().get_pid());
-				HOST_LOG_INFO("Main", 900, "{rx-platform} running on PID "s + buff);
-
-				std::cout << "Registering plug-ins...";
-				ret = register_plugins(plugins);
+				std::cout << "Initializing security...";
+				ret = rx_internal::rx_security::platform_security::instance().initialize(this, config);
 				if (ret)
 				{
-					std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-					std::cout << "Initializing storages...";
-					ret = initialize_storages(config, plugins);
+					char buff[0x20];
+					sprintf(buff, "%d", rx_gate::instance().get_pid());
+					HOST_LOG_INFO("Main", 900, "{rx-platform} running on PID "s + buff);
 
+					std::cout << "Registering plug-ins...";
+					ret = register_plugins(plugins);
 					if (ret)
 					{
 						std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+						std::cout << "Initializing storages...";
+						ret = initialize_storages(config, plugins);
 
-						HOST_LOG_INFO("Main", 999, "Starting Console Host...");
-						// execute main loop of the console host
-						pipe_loop(config, pipes, plugins);
-						HOST_LOG_INFO("Main", 999, "Console Host exited.");
+						if (ret)
+						{
+							std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
-						deinitialize_storages();
+							HOST_LOG_INFO("Main", 999, "Starting Console Host...");
+							// execute main loop of the console host
+							pipe_loop(config, pipes, plugins);
+							HOST_LOG_INFO("Main", 999, "Console Host exited.");
+
+							deinitialize_storages();
+						}
+						else
+						{
+							std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
+							rx_dump_error_result(std::cout, ret);
+						}
 					}
 					else
 					{
-						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
+						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError registering plug-ins\r\n";
 						rx_dump_error_result(std::cout, ret);
 					}
+					rx_internal::rx_security::platform_security::instance().deinitialize();
+
 				}
 				else
 				{
-					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError registering plug-ins\r\n";
+					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing security:\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();
@@ -287,6 +301,8 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 		}
 	}
 	std::cout << "\r\n";
+	rx::io::dispatcher_subscriber::deinitialize();
+	rx::threads::thread::deinitialize();
 	restore_console();
 
 	if (debug_stop_)
@@ -300,8 +316,8 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 
 string_type rx_pipe_host::get_pipe_info ()
 {
-	static string_type ret;
-	if (ret.empty())
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_PIPE_HOST_NAME, RX_PIPE_HOST_MAJOR_VERSION, RX_PIPE_HOST_MINOR_VERSION, RX_PIPE_HOST_BUILD_NUMBER);
 	}

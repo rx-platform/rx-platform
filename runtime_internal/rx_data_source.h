@@ -104,6 +104,8 @@ class data_source_factory
 
       rx_result_with<std::unique_ptr<data_source> > create_data_source (const string_type& source);
 
+      void deinitialize ();
+
 
   protected:
 
@@ -145,6 +147,8 @@ class data_controler
 
   public:
       data_controler (rx::threads::physical_job_thread* worker);
+
+      ~data_controler();
 
 
       void register_value (value_handle_type handle, value_point* whose);

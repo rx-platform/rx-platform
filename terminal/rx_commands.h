@@ -208,6 +208,8 @@ bin folder in file hierarcyh\
 
       void register_suggestions (const string_type& line, suggestions_type& suggestions);
 
+      void clear ();
+
 
   protected:
 

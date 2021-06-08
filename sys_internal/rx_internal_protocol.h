@@ -259,6 +259,8 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
       rx_protocol_result_t received (recv_protocol_packet packet);
 
+      void send_message (message_ptr msg);
+
 
 
       subscriptions_type subscriptions_;
@@ -285,7 +287,7 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_protocol_connection  > rx_json_protocol_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_internal::rx_protocol::rx_protocol_connection  > rx_json_protocol_port_base;
 
 
 

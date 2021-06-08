@@ -189,6 +189,18 @@ public:
         }
         return *this;
     }
+    owned_value& operator-=(const typeT& right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            val_ -= right;
+            if constexpr (!manual)
+            {
+                internal_commit();
+            }
+        }
+        return *this;
+    }
     operator typeT() const
     {
         return val_;
@@ -293,6 +305,18 @@ public:
         }
         return *this;
     }
+    remote_owned_value& operator-=(const typeT& right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            val_ -= right;
+            if constexpr (!manual)
+            {
+                internal_commit();
+            }
+        }
+        return *this;
+    }
     operator typeT() const
     {
         return val_;
@@ -323,9 +347,9 @@ struct remote_local_value
 public:
     remote_local_value() = default;
     ~remote_local_value() = default;
-    remote_local_value(const remote_local_value&) = default;
+    remote_local_value(const remote_local_value&) = delete;
     remote_local_value(remote_local_value&&) = default;
-    remote_local_value& operator=(const remote_local_value&) = default;
+    remote_local_value& operator=(const remote_local_value&) = delete;
     remote_local_value& operator=(remote_local_value&&) = default;
     rx_result bind(const string_type& path, runtime_init_context& ctx, callback_t callback = callback_t())
     {

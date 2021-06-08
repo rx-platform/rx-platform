@@ -78,7 +78,7 @@ rx_result simplified_yaml_reader::parse_configuration (const string_type& input_
 rx_result simplified_yaml_reader::parse_yaml_line (const string_type& line, string_type& key, string_type& value, const int line_number, int& level)
 {
 
-	static const string_type delimeters(" \t\r\n");
+	string_type delimeters(" \t\r\n");
 	auto line_size = line.size();
 	size_t idx_key_start = 0;
 	size_t idx_key_stop = 0;

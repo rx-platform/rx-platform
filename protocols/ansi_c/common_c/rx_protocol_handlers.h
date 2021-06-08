@@ -133,11 +133,7 @@ typedef rx_protocol_result_t(*rx_disconnected_function_type)(
 	, struct rx_session_def* session
 	, rx_protocol_result_t reason);
 
-typedef rx_protocol_result_t(*rx_allocate_packet_type)(
-	struct rx_protocol_stack_endpoint* reference
-	, rx_packet_buffer* buffer
-	, size_t size);
-typedef rx_protocol_result_t(*rx_modify_packet_type)(
+typedef rx_protocol_result_t(*rx_packet_alloc_type)(
 	struct rx_protocol_stack_endpoint* reference
 	, rx_packet_buffer* buffer);
 
@@ -165,16 +161,13 @@ struct rx_protocol_stack_endpoint
 	rx_connected_function_type connected_function;
 	rx_disconnect_function_type disconnect_function;
 	rx_disconnected_function_type disconnected_function;
-
-	rx_allocate_packet_type allocate_packet_function;
-	rx_modify_packet_type free_packet_function;
-
-	rx_add_reference_type add_reference_func;
-	rx_release_reference_type release_reference_func;
-	
+		
 	struct rx_protocol_stack_endpoint* upward;
 	struct rx_protocol_stack_endpoint* downward;
 	rx_stack_changed_function_type stack_changed_function;
+
+	rx_packet_alloc_type allocate_packet;
+	rx_packet_alloc_type release_packet;
 
 	void* user_data;
 	security_data_t identity;
@@ -209,6 +202,7 @@ struct rx_hosting_functions
 	rx_free_buffer_type free_function;
 
 	rx_alloc_buffer_type alloc_buffer_function;
+	rx_alloc_buffer_type realloc_buffer_function;
 	rx_free_buffer_type free_buffer_function;
 
 	rx_protocol_atomic_inc_type atomic_inc_function;

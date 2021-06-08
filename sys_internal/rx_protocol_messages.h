@@ -173,6 +173,8 @@ class rx_message_base
 
       static rx_result init_messages ();
 
+      static void deinit_messages ();
+
       virtual rx_result serialize (base_meta_writer& stream) const = 0;
 
       virtual rx_result deserialize (base_meta_reader& stream) = 0;
@@ -279,6 +281,8 @@ class rx_request_message : public rx_message_base
       static rx_result_with<request_message_ptr> create_request_from_stream (rx_request_id_t& request_id, base_meta_reader& reader);
 
       static rx_result init_request_messages ();
+
+      static void deinit_request_messages ();
 
 
   protected:

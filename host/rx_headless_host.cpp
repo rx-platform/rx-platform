@@ -37,6 +37,8 @@
 
 #include "system/hosting/rx_yaml.h"
 #include "terminal/rx_terminal_style.h"
+#include "sys_internal/rx_security/rx_platform_security.h"
+#include "lib/rx_io.h"
 
 
 namespace host {
@@ -150,76 +152,86 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 			ret = rx::log::log_object::instance().start(config_.management.test_log);
 			if (ret)
 			{
-
 				std::cout << "OK\r\n";
-				char buff[0x20];
-				sprintf(buff, "%d", rx_gate::instance().get_pid());
-				HOST_LOG_INFO("Main", 900, "{rx-platform} running on PID "s + buff);
-
-				std::cout << "Registering plug-ins...";
-				ret = register_plugins(plugins);
+				std::cout << "Initializing security...";
+				ret = rx_internal::rx_security::platform_security::instance().initialize(this, config_);
 				if (ret)
 				{
-
 					std::cout << "OK\r\n";
+					char buff[0x20];
+					sprintf(buff, "%d", rx_gate::instance().get_pid());
+					HOST_LOG_INFO("Main", 900, "{rx-platform} running on PID "s + buff);
 
-					std::cout << "Initializing storages...";
-					ret = initialize_storages(config_, plugins);
+					std::cout << "Registering plug-ins...";
+					ret = register_plugins(plugins);
 					if (ret)
 					{
-
 						std::cout << "OK\r\n";
 
-						HOST_LOG_INFO("Main", 999, "Starting Headless Host...");
-
-						if (!config_.management.telnet_port)// set to the last default if not set
-							config_.management.telnet_port = 12345;
-						if (config_.processor.io_pool_size <= 0)// has to have at least one
-							config_.processor.io_pool_size = 1;
-						if (config_.processor.workers_pool_size < 0)
-							config_.processor.workers_pool_size = 2;
-
-						// initialize extern ui thread
-						thread_synchronizer_.init_callback(sync_callback);
-						config_.processor.extern_executer = &thread_synchronizer_;
-
-						ret = register_constructors();
+						std::cout << "Initializing storages...";
+						ret = initialize_storages(config_, plugins);
 						if (ret)
 						{
-							HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
-							std::cout << "Initializing{rx-platform} ...";
-							auto result = rx_platform::rx_gate::instance().initialize(this, config_);
-							if (result)
-							{
-								host_security_context_ = result.value();
 
-								std::cout << "OK\r\n";
-								return 1;
+							std::cout << "OK\r\n";
+
+							HOST_LOG_INFO("Main", 999, "Starting Headless Host...");
+
+							if (!config_.management.telnet_port)// set to the last default if not set
+								config_.management.telnet_port = 12345;
+							if (config_.processor.io_pool_size <= 0)// has to have at least one
+								config_.processor.io_pool_size = 1;
+							if (config_.processor.workers_pool_size < 0)
+								config_.processor.workers_pool_size = 2;
+
+							// initialize extern ui thread
+							thread_synchronizer_.init_callback(sync_callback);
+							config_.processor.extern_executer = &thread_synchronizer_;
+
+							ret = register_constructors();
+							if (ret)
+							{
+								HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
+								std::cout << "Initializing{rx-platform} ...";
+								auto result = rx_platform::rx_gate::instance().initialize(this, config_);
+								if (result)
+								{
+									host_security_context_ = result.value();
+
+									std::cout << "OK\r\n";
+									return 1;
+								}
+								else
+								{
+									std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing {rx-platform}:\r\n";
+									rx_dump_error_result(std::cout, result);
+								}
 							}
 							else
 							{
-								std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing {rx-platform}:\r\n";
-								rx_dump_error_result(std::cout, result);
+								HOST_LOG_WARNING("Main", 999, "Error registering standard console port constructor:"s + ret.errors()[0]);
 							}
 						}
 						else
 						{
-							HOST_LOG_WARNING("Main", 999, "Error registering standard console port constructor:"s + ret.errors()[0]);
+							std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
+							rx_dump_error_result(std::cout, ret);
 						}
 					}
 					else
 					{
-						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing storages\r\n";
+						std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError registering plug-ins\r\n";
 						rx_dump_error_result(std::cout, ret);
 					}
+					rx_internal::rx_security::platform_security::instance().deinitialize();
+
 				}
 				else
 				{
-					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError registering plug-ins\r\n";
+					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing security:\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
 				rx::log::log_object::instance().deinitialize();
-				
 			}
 
 			rx_deinitialize_os();
@@ -236,8 +248,8 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 
 string_type headless_platform_host::get_headless_info ()
 {
-	static string_type ret;
-	if (ret.empty())
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
 	{
 		ASSIGN_MODULE_VERSION(ret, RX_HEADLESS_HOST_NAME, RX_HEADLESS_HOST_MAJOR_VERSION, RX_HEADLESS_HOST_MINOR_VERSION, RX_HEADLESS_HOST_BUILD_NUMBER);
 	}
@@ -262,17 +274,33 @@ bool headless_platform_host::write_stdout (const void* data, size_t size)
 int headless_platform_host::deinitialize_platform ()
 {
 
-	auto result = remove_headless_thread_security();
-
-	std::cout << "Stopping {rx-platform} ...";
-	result = rx_platform::rx_gate::instance().stop();
+	std::cout << "De-initializing{rx-platform} ...";
+	rx_result result;
+	if (host_security_context_)
+		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
 	if (result)
-		std::cout << "OK\r\n";
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 	else
 	{
-		std::cout << "ERROR\r\nError stopping {rx-platform}:\r\n";
+		std::cout << "ERROR\r\nError deinitialize {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
+	thread_synchronizer_.deinit_callback();
+	result = remove_headless_thread_security();
+
+
+	rx_internal::rx_security::platform_security::instance().deinitialize();
+
+	HOST_LOG_INFO("Main", 999, "Console Host exited.");
+
+	deinitialize_storages();
+
+	rx::io::dispatcher_subscriber::deinitialize();
+	rx::threads::thread::deinitialize();
+
+	rx_deinitialize_os();
+
+
 	if (debug_break_)
 	{
 		std::cout << "Press <ENTER> to continue...\r\n";
@@ -372,24 +400,15 @@ int headless_platform_host::start_platform ()
 
 int headless_platform_host::stop_platform ()
 {
-	std::cout << "De-initializing{rx-platform} ...";
-	rx_result result;
-	if (host_security_context_)
-		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
+	std::cout << "Stopping {rx-platform} ...";
+	auto result = rx_platform::rx_gate::instance().stop();
 	if (result)
-		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+		std::cout << "OK\r\n";
 	else
 	{
-		std::cout << "ERROR\r\nError deinitialize {rx-platform}:\r\n";
+		std::cout << "ERROR\r\nError stopping {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
-	thread_synchronizer_.deinit_callback();
-
-	HOST_LOG_INFO("Main", 999, "Console Host exited.");
-
-	deinitialize_storages();
-	rx_deinitialize_os();
-
 	return 1;
 }
 
