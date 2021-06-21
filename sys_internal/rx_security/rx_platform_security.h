@@ -38,40 +38,12 @@
 
 #include "system/hosting/rx_host.h"
 
+#define RX_NONE_SECURITY_NAME "none"
+
 
 namespace rx_internal {
 
 namespace rx_security {
-
-
-
-
-
-class platform_security 
-{
-
-  public:
-      ~platform_security();
-
-
-      static platform_security& instance ();
-
-      rx_result register_role (const string_type& role, const string_type& parent_role);
-
-      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
-
-      void deinitialize ();
-
-
-  protected:
-
-  private:
-      platform_security();
-
-
-
-};
-
 
 
 
@@ -182,6 +154,104 @@ class process_context : public built_in_security_context
       bool has_console () const;
 
       bool is_interactive () const;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class platform_security_provider 
+{
+
+  public:
+
+      virtual const string_type& get_name () = 0;
+
+      virtual string_type get_info () = 0;
+
+      virtual rx_result initialize (hosting::rx_platform_host* host) = 0;
+
+      virtual void deinitialize () = 0;
+
+      platform_security_provider() = default;
+      platform_security_provider(const platform_security_provider&) = delete;
+      platform_security_provider(platform_security_provider&&) = delete;
+      virtual ~platform_security_provider() = default;
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class platform_security 
+{
+    typedef std::map<string_type, std::unique_ptr<platform_security_provider> > providers_type;
+
+  public:
+      ~platform_security();
+
+
+      static platform_security& instance ();
+
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
+
+      void deinitialize ();
+
+      rx_result register_role (const string_type& role, const string_type& parent_role, hosting::rx_platform_host* host);
+
+      rx_result register_provider (std::unique_ptr<platform_security_provider>  who, hosting::rx_platform_host* host);
+
+      platform_security_provider* get_provider (const string_type& name);
+
+
+  protected:
+
+  private:
+      platform_security();
+
+
+      std::vector<std::unique_ptr<platform_security_provider> > collect_internal_providers ();
+
+
+
+      providers_type providers_;
+
+      platform_security_provider *default_provider_;
+
+
+};
+
+
+
+
+
+
+class none_security_provider : public platform_security_provider  
+{
+
+  public:
+
+      const string_type& get_name ();
+
+      string_type get_info ();
+
+      rx_result initialize (hosting::rx_platform_host* host);
+
+      void deinitialize ();
 
 
   protected:

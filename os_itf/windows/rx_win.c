@@ -1084,7 +1084,10 @@ uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
 }
 uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout)
 {
-	DWORD ret = WaitForSingleObject(what, (DWORD)(timeout/1000));
+	DWORD to_sleep = 0;
+	if (timeout > 50)
+		to_sleep = (DWORD)((timeout - 50) / 1000) + 1;
+	DWORD ret = WaitForSingleObject(what, to_sleep);
 	if (ret == WAIT_OBJECT_0)
 		return RX_WAIT_0;
 	else if (ret == WAIT_TIMEOUT)

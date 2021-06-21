@@ -4,7 +4,7 @@
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 1
 #define RX_HAL_MINOR_VERSION 0
-#define RX_HAL_BUILD_NUMBER 3
+#define RX_HAL_BUILD_NUMBER 4
 
 /*********************************************************************************
 
@@ -35,6 +35,7 @@
 1.0.0 first release version
 1.0.1 resolved stuff with get_us_ticks and overflow
 1.0.2 implemented hd-timer option
-1.0.3 ERROR_PORT_UNREACHABLE does not generate error
+1.0.3 ERROR_PORT_UNREACHABLE does not generate error on UDP
+1.0.4 wait for single object is callculated as (t-50)/1000 + 1
 
 *********************************************************************************/

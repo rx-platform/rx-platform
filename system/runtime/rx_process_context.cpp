@@ -110,6 +110,7 @@ runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binde
 
 bool runtime_process_context::should_repeat ()
 {
+    locks::auto_lock_t _(&context_lock_);
     RX_ASSERT(current_step_ == runtime_process_step::beyond_last);
     bool ret =  pending_steps_.to_ulong() != 0;
     if (ret)
@@ -121,6 +122,7 @@ bool runtime_process_context::should_repeat ()
 
 void runtime_process_context::tag_updates_pending ()
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::tag_outputs>();
 }
 
@@ -138,11 +140,13 @@ void runtime_process_context::tag_writes_pending ()
 
 bool runtime_process_context::should_process_tag_updates ()
 {
+    locks::auto_lock_t _(&context_lock_);
     return should_do_step<runtime_process_step::tag_outputs>();
 }
 
 bool runtime_process_context::should_process_tag_writes ()
 {
+    locks::auto_lock_t _(&context_lock_);
     return should_do_step<runtime_process_step::tag_inputs>();
 }
 
@@ -185,11 +189,13 @@ mapper_writes_type& runtime_process_context::get_mapper_writes ()
 
 void runtime_process_context::status_change_pending ()
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::status_change>();
 }
 
 void runtime_process_context::mapper_update_pending (update_data_struct<structure::mapper_data> data)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::mapper_outputs>();
     mapper_outputs_.emplace_back(std::move(data));
 }
@@ -236,12 +242,14 @@ source_updates_type& runtime_process_context::get_source_updates ()
 
 void runtime_process_context::variable_pending (structure::variable_data* whose)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::variables>();
     variables_.emplace_back(std::move(whose));
 }
 
 variables_type& runtime_process_context::get_variables_for_process ()
 {
+    locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::variables>())
         return variables_.get_and_swap();
     else
@@ -250,17 +258,20 @@ variables_type& runtime_process_context::get_variables_for_process ()
 
 bool runtime_process_context::should_process_status_change ()
 {
+    locks::auto_lock_t _(&context_lock_);
     return should_do_step<runtime_process_step::status_change>();
 }
 
 void runtime_process_context::program_pending (program_runtime_ptr whose)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::programs>();
     programs_.emplace_back(std::move(whose));
 }
 
 programs_type& runtime_process_context::get_programs_for_process ()
 {
+    locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::programs>())
         return programs_.get_and_swap();
     else
@@ -269,12 +280,14 @@ programs_type& runtime_process_context::get_programs_for_process ()
 
 void runtime_process_context::filter_pending (structure::filter_data* whose)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::events>();
     filters_.emplace_back(std::move(whose));
 }
 
 filters_type& runtime_process_context::get_filters_for_process ()
 {
+    locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::filters>())
         return filters_.get_and_swap();
     else
@@ -293,6 +306,7 @@ void runtime_process_context::event_pending (structure::event_data* whose)
 
 events_type& runtime_process_context::get_events_for_process ()
 {
+    locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::events>())
         return events_.get_and_swap();
     else
@@ -305,6 +319,7 @@ void runtime_process_context::struct_pending (structure::event_data* whose)
 
 structs_type& runtime_process_context::get_structs_for_process ()
 {
+    locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::structs>())
         return structs_.get_and_swap();
     else
@@ -404,12 +419,14 @@ rx_result runtime_process_context::do_command (rx_object_command_t command_type)
 
 void runtime_process_context::own_pending (jobs::job_ptr what)
 {
+    locks::auto_lock_t _(&context_lock_);
     turn_on_pending<runtime_process_step::own>();
     owns_.emplace_back(std::move(what));
 }
 
 owner_jobs_type& runtime_process_context::get_for_own_process ()
 {
+    locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::own>())
         return owns_.get_and_swap();
     else

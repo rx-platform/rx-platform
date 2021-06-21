@@ -66,7 +66,8 @@ rx_result platform_source::initialize_source (runtime::runtime_init_context& ctx
 rx_result platform_source::start_source (runtime::runtime_start_context& ctx)
 {
     auto result = connect(path_);
-    return result;
+        return result;
+    return true;
 }
 
 rx_result platform_source::stop_source (runtime::runtime_stop_context& ctx)

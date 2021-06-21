@@ -209,7 +209,7 @@ class log_object : public locks::lockable
 
       void deinitialize ();
 
-      rx_result start (bool test, size_t log_cache_size = 0x100, int priority = RX_PRIORITY_IDLE);
+      rx_result start (bool test, size_t log_cache_size = 0x400, int priority = RX_PRIORITY_IDLE);
 
       bool read_log (const string_type& log, const log_query_type& query, std::function<void(rx_result_with<log_events_type>&&)> callback);
 

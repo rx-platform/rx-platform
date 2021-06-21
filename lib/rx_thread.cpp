@@ -510,6 +510,16 @@ void timer::wake_up ()
 void timer::append_job (timer_job_ptr job, job_thread* executer)
 {
 
+	switch (job->get_criticalness())
+	{
+	case rx_criticalness::medium:
+		job->period_error_ = rx_medium_time_offset;
+		break;
+	case rx_criticalness::soft:
+		job->period_error_ = rx_soft_time_offset;
+		break;
+	}
+
 	job->lock();
 	job->my_timer_ = this;
 	job->executer_ = executer;

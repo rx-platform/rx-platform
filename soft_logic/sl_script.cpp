@@ -42,11 +42,9 @@ namespace sl_script {
 
 // Class sl_runtime::sl_script::script_program_context 
 
-script_program_context::script_program_context (program_context* parent, sl_program_holder* holder, std::streambuf* out_buffer, std::streambuf* error_buffer)
+script_program_context::script_program_context (program_context* parent, sl_program_holder* holder)
       : current_line_(0),
-        out_std_(out_buffer),
-        err_std_(error_buffer),
-        run_again_(true),
+        waiting_(false),
         error_(false)
 	, program_context(parent, holder)
 {
@@ -69,48 +67,51 @@ void script_program_context::deinitialize (deinitialize_context* ctx)
 	program_context::deinitialize(ctx);
 }
 
+void script_program_context::raise_error ()
+{
+	reset_waiting();
+	error_ = true;
+	get_stderr() << "\r\nError in line " << current_line_ + 1 << "\r\n";
+}
+
+bool script_program_context::get_result () const
+{
+    return !error_;
+}
+
+void script_program_context::set_waiting ()
+{
+	waiting_ = true;
+}
+
+void script_program_context::reset_waiting ()
+{
+	waiting_ = false;
+}
+
 size_t script_program_context::next_line ()
 {
 	current_line_++;
 	return current_line_;
 }
 
-std::ostream& script_program_context::get_stdout ()
+void script_program_context::continue_scan ()
 {
-	return out_std_;
+	waiting_ = false;
+	program_context::continue_scan();
 }
 
-std::ostream& script_program_context::get_stderr ()
+void script_program_context::init_scan ()
 {
-	return err_std_;
+	current_line_ = 0;
+	error_ = false;
+	program_context::init_scan();
 }
 
-bool script_program_context::should_run_again ()
-{
-	if (!run_again_)
-	{
-		run_again_ = true;
-		return false;
-	}
-	else
-	{
-		return !error_;
-	}
-}
 
-void script_program_context::raise_error ()
+const size_t script_program_context::get_current_line () const
 {
-	error_ = true;
-}
-
-void script_program_context::stop_execution ()
-{
-	run_again_ = false;
-}
-
-bool script_program_context::get_result () const
-{
-    return !error_;
+  return current_line_;
 }
 
 
@@ -137,11 +138,19 @@ void sl_script_program::process_program (program_context* context, const rx_time
 	std::ostream& out(ctx->get_stdout());
 	std::ostream& err(ctx->get_stderr());
 
-	while (ctx->should_run_again() && ctx->get_current_line() < total_lines)
+	while (!ctx->waiting_ && ctx->get_current_line() < total_lines)
 	{
 		if (!parse_line(lines_[current_line], out, err, context))
+		{
 			ctx->raise_error();
+			break;
+		}
+		else
+		{
+			ctx->next_line();
+		}
 	}
+	ctx->send_results(ctx->get_result(), !ctx->waiting_);
 }
 
 void sl_script_program::load (FILE* file, dword version)

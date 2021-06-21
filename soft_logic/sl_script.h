@@ -50,7 +50,7 @@ class script_program_context : public program_context
 {
 
   public:
-      script_program_context (program_context* parent, sl_program_holder* holder, std::streambuf* out_buffer, std::streambuf* error_buffer);
+      script_program_context (program_context* parent, sl_program_holder* holder);
 
       ~script_program_context();
 
@@ -59,51 +59,46 @@ class script_program_context : public program_context
 
       void deinitialize (deinitialize_context* ctx);
 
-      size_t next_line ();
-
-      std::ostream& get_stdout ();
-
-      std::ostream& get_stderr ();
-
-      bool should_run_again ();
-
       void raise_error ();
-
-      void stop_execution ();
 
       bool get_result () const;
 
+      virtual std::ostream& get_stdout () = 0;
 
-      const size_t get_current_line () const
-      {
-        return current_line_;
-      }
+      virtual std::ostream& get_stderr () = 0;
+
+      void set_waiting ();
+
+      void reset_waiting ();
+
+      void continue_scan ();
+
+      void init_scan ();
 
 
-      bool has_error () const
-      {
-        return error_;
-      }
-
+      const size_t get_current_line () const;
 
 
   protected:
 
   private:
 
+      size_t next_line ();
+
+      virtual void send_results (bool result, bool done) = 0;
+
+
 
       size_t current_line_;
 
-      std::ostream out_std_;
+      std::atomic_bool waiting_;
 
-      std::ostream err_std_;
-
-      bool run_again_;
-
-      bool error_;
+      std::atomic_bool error_;
 
 
+    friend class sl_script_program;
 };
+
 
 
 

@@ -294,6 +294,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 			<< from_command << "!";
 		return false;
 	}
+	auto api_ctx = ctx->create_api_context();
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -313,14 +314,15 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 					return false;
 				}
 				proto.overrides = init_data;
+				ctx->set_waiting();
 				auto result = rx_platform::api::meta::rx_create_runtime<T>(std::move(proto), 
-					rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
+					rx_result_with_callback<typename T::RTypePtr>(api_ctx.object, [=](rx_result_with<typename T::RTypePtr>&& result)
 					{
 						if (!result)
 						{
 							ctx->get_stderr() << "Error creating "
 								<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-							dump_error_result(ctx->get_stderr(), result);
+							ctx->raise_error(result);
 						}
 						else
 						{
@@ -328,13 +330,13 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 								<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 								<< ".\r\n";
 						}
-						ctx->send_results(result);
+						ctx->continue_scan();
 					}));
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
 						<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-					dump_error_result(ctx->get_stderr(), result);
+					ctx->raise_error(result);
 				}
 				return result;
 			}
@@ -365,15 +367,16 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 			err << "Error resolving base reference:\r\n";
 			return false;
 		}
+		ctx->set_waiting();
 		auto result = rx_platform::api::meta::rx_create_runtime<T>(std::move(proto),
-			rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
+			rx_result_with_callback<typename T::RTypePtr>(api_ctx.object, [=](rx_result_with<typename T::RTypePtr>&& result)
 			{
 				if (!result)
 				{
 					auto& err = ctx->get_stderr();
 					err << "Error creating "
 						<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-					dump_error_result(err, result);
+					ctx->raise_error(result);
 				}
 				else
 				{
@@ -382,13 +385,13 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
 				}
-				ctx->send_results(result);
+				ctx->continue_scan();
 			}));
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
 				<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-			dump_error_result(ctx->get_stderr(), result);
+			ctx->raise_error(result);
 		}
 		return result;
 	}
@@ -433,6 +436,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 			<< from_command << "!";
 		return false;
 	}
+	auto api_ctx = ctx->create_api_context();
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -448,18 +452,19 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 				rx_result_with<typename T::smart_ptr> proto_result = create_prototype<T>(name, base_reference, path);
 				if (!proto_result)
 				{
-					dump_error_result(err, proto_result);
+					ctx->raise_error(proto_result);
 					return false;
 				}
 
+				ctx->set_waiting();
 				auto result = rx_platform::api::meta::rx_create_type<T>(proto_result.move_value(),
-					rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
+					rx_result_with_callback<typename T::smart_ptr>(api_ctx.object, [=](rx_result_with<typename T::smart_ptr>&& result)
 					{
 						if (!result)
 						{
 							ctx->get_stderr() << "Error creating "
 								<< rx_item_type_name(T::type_id) << ":\r\n";
-							dump_error_result(ctx->get_stderr(), result);
+							ctx->raise_error(result);
 						}
 						else
 						{
@@ -467,13 +472,13 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 								<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 								<< ".\r\n";
 						}
-						ctx->send_results(result);
+						ctx->continue_scan();
 					}));
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
 						<< rx_item_type_name(T::type_id) << ":\r\n";
-					dump_error_result(ctx->get_stderr(), result);
+					ctx->raise_error(result);
 				}
 				return result;
 			}
@@ -501,19 +506,20 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 		auto proto_result = create_prototype<T>(name, base_reference, path);
 		if (!proto_result)
 		{
-			dump_error_result(err, proto_result);
+			ctx->raise_error(proto_result);
 			return false;
 		}
 
+		ctx->set_waiting();
 		auto result = rx_platform::api::meta::rx_create_type<T>(proto_result.move_value(),
-			rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
+			rx_result_with_callback<typename T::smart_ptr>(api_ctx.object, [=](rx_result_with<typename T::smart_ptr>&& result)
 			{
 				if (!result)
 				{
 					auto& err = ctx->get_stderr();
 					err << "Error creating "
 						<< rx_item_type_name(T::type_id) << ":\r\n";
-					dump_error_result(err, result);
+					ctx->raise_error(result);
 				}
 				else
 				{
@@ -522,13 +528,13 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
 				}
-				ctx->send_results(result);
+				ctx->continue_scan();
 			}));
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
 				<< rx_item_type_name(T::type_id) << ":\r\n";
-			dump_error_result(ctx->get_stderr(), result);
+			ctx->raise_error(result);
 		}
 		return result;
 	}
@@ -574,6 +580,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 			<< from_command << "!";
 		return false;
 	}
+	auto api_ctx = ctx->create_api_context();
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -589,17 +596,18 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 				auto proto_result = create_simple_prototype<T>(name, base_reference, path);
 				if (!proto_result)
 				{
-					dump_error_result(err, proto_result);
+					ctx->raise_error(proto_result);
 					return false;
 				}
+				ctx->set_waiting();
 				auto result = rx_platform::api::meta::rx_create_simple_type<T>(proto_result.move_value(),
-					rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
+					rx_result_with_callback<typename T::smart_ptr>(api_ctx.object, [=](rx_result_with<typename T::smart_ptr>&& result)
 					{
 						if (!result)
 						{
 							ctx->get_stderr() << "Error creating "
 								<< rx_item_type_name(T::type_id) << ":\r\n";
-							dump_error_result(ctx->get_stderr(), result);
+							ctx->raise_error(result);
 						}
 						else
 						{
@@ -607,13 +615,13 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 								<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 								<< ".\r\n";
 						}
-						ctx->send_results(result);
+						ctx->continue_scan();
 					}));
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
 						<< rx_item_type_name(T::type_id) << ":\r\n";
-					dump_error_result(ctx->get_stderr(), result);
+					ctx->raise_error(result);
 				}
 				return result;
 			}
@@ -641,18 +649,19 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 		auto proto_result = create_simple_prototype<T>(name, base_reference, path);
 		if (!proto_result)
 		{
-			dump_error_result(err, proto_result);
+			ctx->raise_error(proto_result);
 			return false;
 		}
+		ctx->set_waiting();
 		auto result = rx_platform::api::meta::rx_create_simple_type<T>(proto_result.move_value(),
-			rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
+			rx_result_with_callback<typename T::smart_ptr>(api_ctx.object, [=](rx_result_with<typename T::smart_ptr>&& result)
 			{
 				if (!result)
 				{
 					auto& err = ctx->get_stderr();
 					err << "Error creating "
 						<< rx_item_type_name(T::type_id) << ":\r\n";
-					dump_error_result(err, result);
+					ctx->raise_error(result);
 				}
 				else
 				{
@@ -661,13 +670,13 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 						<< ".\r\n";
 				}
-				ctx->send_results(result);
+				ctx->continue_scan();
 			}));
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
 				<< rx_item_type_name(T::type_id) << ":\r\n";
-			dump_error_result(ctx->get_stderr(), result);
+			ctx->raise_error(result);
 		}
 		return result;
 	}
@@ -890,10 +899,12 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
+	auto api_ctx = ctx->create_api_context();
+
 	string_type path;
 	ctx->get_current_directory()->fill_path(path);
 	auto result = rx_platform::api::meta::rx_delete_runtime<T>(rx_item_reference(rx_combine_paths(path, name)),
-		rx_function_to_go<rx_result&&>(ctx->get_client(), [ctx, name, this](rx_result&& result)
+		rx_function_to_go<rx_result&&>(api_ctx.object, [ctx, name, this](rx_result&& result)
 		{
 			if (!result)
 			{
@@ -908,7 +919,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 					<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 					<< ".\r\n";
 			}
-			ctx->send_results(result);
+			ctx->continue_scan();
 		}));
 
 	if (!result)
@@ -943,8 +954,10 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 	string_type path;
 	ctx->get_current_directory()->fill_path(path);
 
+	auto api_ctx = ctx->create_api_context();
+
 	algorithms::types_model_algorithm<T>::delete_type(rx_combine_paths(path, name),
-		rx_function_to_go<rx_result&&>(ctx->get_client(), [ctx, name, this](rx_result result)
+		rx_function_to_go<rx_result&&>(api_ctx.object, [ctx, name, this](rx_result result)
 		{
 			if (!result)
 			{
@@ -959,7 +972,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 					<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 					<< ".\r\n";
 			}
-			ctx->send_results(result);
+			ctx->continue_scan();
 		}));
 	ctx->set_waiting();
 	return true;
@@ -982,10 +995,11 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
+	auto api_ctx = ctx->create_api_context();
 	string_type path;
 	ctx->get_current_directory()->fill_path(path);
 	algorithms::simple_types_model_algorithm<T>::delete_type(rx_item_reference(rx_combine_paths(path, name)),
-		rx_function_to_go<rx_result&&>(ctx->get_client(), [ctx, name, this](rx_result result)
+		rx_function_to_go<rx_result&&>(api_ctx.object, [ctx, name, this](rx_result result)
 		{
 			if (!result)
 			{
@@ -1000,7 +1014,7 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 					<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 					<< ".\r\n";
 			}
-			ctx->send_results(result);
+			ctx->continue_scan();
 		}));
 	ctx->set_waiting();
 	return true;
@@ -1141,8 +1155,10 @@ bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream
 	in >> name;
 	if (!name.empty())
 	{
+		ctx->set_waiting();
+		auto api_ctx = ctx->create_api_context();
 		algorithms::types_model_algorithm<T>::check_type(name, ctx->get_current_directory(),
-			rx_result_with_callback<check_type_result>(ctx->get_client(), [ctx, name, this](rx_result_with<check_type_result>&& result)
+			rx_result_with_callback<check_type_result>(api_ctx.object, [ctx, name, this](rx_result_with<check_type_result>&& result)
 			{
 				if (result)
 				{
@@ -1158,7 +1174,7 @@ bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream
 						ctx->get_stdout() << rx_item_type_name(T::type_id) << " "
 							<< name << "O.K.\r\n";
 					}
-					ctx->send_results(true);
+					ctx->continue_scan();
 				}
 				else
 				{
@@ -1166,7 +1182,7 @@ bool check_command::check_type(std::istream& in, std::ostream& out, std::ostream
 					err << "Error checking "
 						<< rx_item_type_name(T::type_id) << " type:\r\n";
 					rx_dump_error_result(err, std::move(result));
-					ctx->send_results(false);
+					ctx->continue_scan();
 				}
 			}));
 		return true;
@@ -1184,8 +1200,10 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 	in >> name;
 	if (!name.empty())
 	{
+		ctx->set_waiting();
+		auto api_ctx = ctx->create_api_context();
 		algorithms::simple_types_model_algorithm<T>::check_type(name, ctx->get_current_directory(),
-			rx_result_with_callback<check_type_result>(ctx->get_client(), [ctx, name, this](rx_result_with<check_type_result>&& result)
+			rx_result_with_callback<check_type_result>(api_ctx.object, [ctx, name, this](rx_result_with<check_type_result>&& result)
 				{
 					if (result)
 					{
@@ -1201,7 +1219,7 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 							ctx->get_stdout() << rx_item_type_name(T::type_id) << " "
 								<< name << "O.K.\r\n";
 						}
-						ctx->send_results(true);
+						ctx->continue_scan();
 					}
 					else
 					{
@@ -1209,7 +1227,7 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 						err << "Error checking "
 							<< rx_item_type_name(T::type_id) << " type:\r\n";
 						rx_dump_error_result(err, std::move(result));
-						ctx->send_results(false);
+						ctx->continue_scan();
 					}
 				}));
 		return true;
@@ -1304,6 +1322,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
+	auto api_ctx = ctx->create_api_context();
 	//// try to acquire the type
 	if (from_command == "from")
 	{
@@ -1330,8 +1349,9 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 				err << "Error resolving base reference:\r\n";
 				return false;
 			}
+			ctx->set_waiting();
 			auto result = rx_platform::api::meta::rx_create_prototype<T>(std::move(proto),
-				rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
+				rx_result_with_callback<typename T::RTypePtr>(api_ctx.object, [=](rx_result_with<typename T::RTypePtr>&& result)
 				{
 					bool ret = result;
 					if (!result)
@@ -1339,7 +1359,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 						auto& err = ctx->get_stderr();
 						err << "Error prototyping "
 							<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-						dump_error_result(err, result);
+						ctx->raise_error(result);
 					}
 					else
 					{
@@ -1350,13 +1370,13 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 							<< ".\r\n";
 						out << result.value()->get_item_ptr()->get_definition_as_json();
 					}
-					ctx->send_results(ret);
+					ctx->continue_scan();
 				}));
 			if (!result)
 			{
 				ctx->get_stderr() << "Error creating "
 					<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-				dump_error_result(ctx->get_stderr(), result);
+				ctx->raise_error(result);
 			}
 			return result;
 		}
@@ -1415,7 +1435,6 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 							<< ANSI_RX_OBJECT_COLOR << path << ANSI_COLOR_RESET
 							<< ".\r\n";
 					}
-					ctx->send_results(result);
 				}));
 			if (!result)
 			{
@@ -1595,7 +1614,8 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 
 
 	rx_update_runtime_data update_data;
-	
+
+	auto api_ctx = ctx->create_api_context();
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -1610,14 +1630,15 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 				ctx->get_current_directory()->fill_path(path);
 				auto proto = create_runtime_prototype<T>(name, base_reference, path);
 				proto.overrides = init_data;
+				ctx->set_waiting();
 				auto result = rx_platform::api::meta::rx_update_runtime<T>(std::move(proto), update_data,
-					rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
+					rx_result_with_callback<typename T::RTypePtr>(api_ctx.object, [=](rx_result_with<typename T::RTypePtr>&& result)
 						{
 							if (!result)
 							{
 								ctx->get_stderr() << "Error updating "
 									<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-								dump_error_result(ctx->get_stderr(), result);
+								ctx->raise_error(result);
 							}
 							else
 							{
@@ -1625,13 +1646,13 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 									<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 									<< ".\r\n";
 							}
-							ctx->send_results(result);
+							ctx->continue_scan();
 						}));
 				if (!result)
 				{
 					ctx->get_stderr() << "Error updating "
 						<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-					dump_error_result(ctx->get_stderr(), result);
+					ctx->raise_error(result);
 				}
 				return result;
 			}
@@ -1657,15 +1678,16 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 		string_type path;
 		ctx->get_current_directory()->fill_path(path);
 		auto proto = create_runtime_prototype<T>(name, base_reference, path);
+		ctx->set_waiting();
 		auto result = rx_platform::api::meta::rx_update_runtime<T>(std::move(proto), update_data,
-			rx_result_with_callback<typename T::RTypePtr>(ctx->get_client(), [=](rx_result_with<typename T::RTypePtr>&& result)
+			rx_result_with_callback<typename T::RTypePtr>(api_ctx.object, [=](rx_result_with<typename T::RTypePtr>&& result)
 				{
 					if (!result)
 					{
 						auto& err = ctx->get_stderr();
 						err << "Error updating "
 							<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-						dump_error_result(err, result);
+						ctx->raise_error(result);
 					}
 					else
 					{
@@ -1674,13 +1696,13 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 							<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 							<< ".\r\n";
 					}
-					ctx->send_results(result);
+					ctx->continue_scan();
 				}));
 		if (!result)
 		{
 			ctx->get_stderr() << "Error updating "
 				<< rx_item_type_name(T::RImplType::type_id) << ":\r\n";
-			dump_error_result(ctx->get_stderr(), result);
+			ctx->raise_error(result);
 		}
 		return result;
 	}
@@ -1725,6 +1747,7 @@ bool update_command::update_type(std::istream& in, std::ostream& out, std::ostre
 			<< from_command << "!";
 		return false;
 	}
+	auto api_ctx = ctx->create_api_context();
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -1740,18 +1763,19 @@ bool update_command::update_type(std::istream& in, std::ostream& out, std::ostre
 				rx_result_with<typename T::smart_ptr> proto_result = create_prototype<T>(name, base_reference, path);
 				if (!proto_result)
 				{
-					dump_error_result(err, proto_result);
+					ctx->raise_error(proto_result);
 					return false;
 				}
 
+				ctx->set_waiting();
 				auto result = rx_platform::api::meta::rx_create_type<T>(proto_result.move_value(),
-					rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
+					rx_result_with_callback<typename T::smart_ptr>(api_ctx.object, [=](rx_result_with<typename T::smart_ptr>&& result)
 						{
 							if (!result)
 							{
 								ctx->get_stderr() << "Error creating "
 									<< rx_item_type_name(T::type_id) << ":\r\n";
-								dump_error_result(ctx->get_stderr(), result);
+								ctx->raise_error(result);
 							}
 							else
 							{
@@ -1759,13 +1783,13 @@ bool update_command::update_type(std::istream& in, std::ostream& out, std::ostre
 									<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 									<< ".\r\n";
 							}
-							ctx->send_results(result);
+							ctx->continue_scan();
 						}));
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
 						<< rx_item_type_name(T::type_id) << ":\r\n";
-					dump_error_result(ctx->get_stderr(), result);
+					ctx->raise_error(result);
 				}
 				return result;
 			}
@@ -1793,19 +1817,20 @@ bool update_command::update_type(std::istream& in, std::ostream& out, std::ostre
 		auto proto_result = create_prototype<T>(name, base_reference, path);
 		if (!proto_result)
 		{
-			dump_error_result(err, proto_result);
+			ctx->raise_error(proto_result);
 			return false;
 		}
+		ctx->set_waiting();
 
 		auto result = rx_platform::api::meta::rx_create_type<T>(proto_result.move_value(),
-			rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
+			rx_result_with_callback<typename T::smart_ptr>(api_ctx.object, [=](rx_result_with<typename T::smart_ptr>&& result)
 				{
 					if (!result)
 					{
 						auto& err = ctx->get_stderr();
 						err << "Error creating "
 							<< rx_item_type_name(T::type_id) << ":\r\n";
-						dump_error_result(err, result);
+						ctx->raise_error(result);
 					}
 					else
 					{
@@ -1814,13 +1839,13 @@ bool update_command::update_type(std::istream& in, std::ostream& out, std::ostre
 							<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 							<< ".\r\n";
 					}
-					ctx->send_results(result);
+					ctx->continue_scan();
 				}));
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
 				<< rx_item_type_name(T::type_id) << ":\r\n";
-			dump_error_result(ctx->get_stderr(), result);
+			ctx->raise_error(result);
 		}
 		return result;
 	}
@@ -1866,6 +1891,7 @@ bool update_command::update_simple_type(std::istream& in, std::ostream& out, std
 			<< from_command << "!";
 		return false;
 	}
+	auto api_ctx = ctx->create_api_context();
 	// try to acquire definition
 	if (as_command == "with")
 	{
@@ -1881,17 +1907,18 @@ bool update_command::update_simple_type(std::istream& in, std::ostream& out, std
 				auto proto_result = create_simple_prototype<T>(name, base_reference, path);
 				if (!proto_result)
 				{
-					dump_error_result(err, proto_result);
+					ctx->raise_error(proto_result);
 					return false;
 				}
+				ctx->set_waiting();
 				auto result = rx_platform::api::meta::rx_create_simple_type<T>(proto_result.move_value(),
-					rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
+					rx_result_with_callback<typename T::smart_ptr>(api_ctx.object, [=](rx_result_with<typename T::smart_ptr>&& result)
 						{
 							if (!result)
 							{
 								ctx->get_stderr() << "Error creating "
 									<< rx_item_type_name(T::type_id) << ":\r\n";
-								dump_error_result(ctx->get_stderr(), result);
+								ctx->raise_error(result);
 							}
 							else
 							{
@@ -1899,13 +1926,13 @@ bool update_command::update_simple_type(std::istream& in, std::ostream& out, std
 									<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 									<< ".\r\n";
 							}
-							ctx->send_results(result);
+							ctx->continue_scan();
 						}));
 				if (!result)
 				{
 					ctx->get_stderr() << "Error creating "
 						<< rx_item_type_name(T::type_id) << ":\r\n";
-					dump_error_result(ctx->get_stderr(), result);
+					ctx->raise_error(result);
 				}
 				return result;
 			}
@@ -1933,18 +1960,19 @@ bool update_command::update_simple_type(std::istream& in, std::ostream& out, std
 		auto proto_result = create_simple_prototype<T>(name, base_reference, path);
 		if (!proto_result)
 		{
-			dump_error_result(err, proto_result);
+			ctx->raise_error(proto_result);
 			return false;
 		}
+		ctx->set_waiting();
 		auto result = rx_platform::api::meta::rx_create_simple_type<T>(proto_result.move_value(),
-			rx_result_with_callback<typename T::smart_ptr>(ctx->get_client(), [=](rx_result_with<typename T::smart_ptr>&& result)
+			rx_result_with_callback<typename T::smart_ptr>(api_ctx.object, [=](rx_result_with<typename T::smart_ptr>&& result)
 				{
 					if (!result)
 					{
 						auto& err = ctx->get_stderr();
 						err << "Error creating "
 							<< rx_item_type_name(T::type_id) << ":\r\n";
-						dump_error_result(err, result);
+						ctx->raise_error(result);
 					}
 					else
 					{
@@ -1953,13 +1981,13 @@ bool update_command::update_simple_type(std::istream& in, std::ostream& out, std
 							<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
 							<< ".\r\n";
 					}
-					ctx->send_results(result);
+					ctx->continue_scan();
 				}));
 		if (!result)
 		{
 			ctx->get_stderr() << "Error creating "
 				<< rx_item_type_name(T::type_id) << ":\r\n";
-			dump_error_result(ctx->get_stderr(), result);
+			ctx->raise_error(result);
 		}
 		return result;
 	}

@@ -31,8 +31,8 @@
 #include "pch.h"
 
 
-// rx_console
-#include "terminal/rx_console.h"
+// rx_con_programs
+#include "terminal/rx_con_programs.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 
@@ -385,12 +385,6 @@ string_type server_command::get_help () const
 		ss << parse_man_file(str);
 	ss << "\r\n\r\n";
 	return ss.str();
-}
-
-void server_command::dump_error_result (std::ostream& err, const rx_result& result)
-{
-	for (const auto& one : result.errors())
-		err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
 }
 
 void server_command::register_suggestions (const string_type& line, suggestions_type& suggestions)

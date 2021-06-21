@@ -35,12 +35,12 @@
 
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
-// rx_console
-#include "terminal/rx_console.h"
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_con_programs
+#include "terminal/rx_con_programs.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 namespace testing {
 class test_case;
@@ -110,13 +110,13 @@ struct test_context_data
 
 
 
-class test_program_context : public rx_internal::terminal::console::console_program_context  
+class test_program_context : public rx_internal::terminal::console::script::console_program_context  
 {
   public:
 	typedef test_program_context* smart_ptr;
 
   public:
-      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<rx_internal::terminal::console::console_runtime> client);
+      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor);
 
       ~test_program_context();
 
@@ -126,6 +126,12 @@ class test_program_context : public rx_internal::terminal::console::console_prog
       void set_passed ();
 
       void async_test_end ();
+
+      std::ostream& get_stdout ();
+
+      std::ostream& get_stderr ();
+
+      api::rx_context create_api_context ();
 
 
       void set_current_test_case (rx_reference<test_case> value)
@@ -147,6 +153,18 @@ class test_program_context : public rx_internal::terminal::console::console_prog
       }
 
 
+      const buffer_ptr get_out () const
+      {
+        return out_;
+      }
+
+
+      const buffer_ptr get_err () const
+      {
+        return err_;
+      }
+
+
 
   protected:
 
@@ -157,6 +175,8 @@ class test_program_context : public rx_internal::terminal::console::console_prog
 
       void fill_data ();
 
+      void send_results (bool result, bool done);
+
 
 
       rx_reference<test_case> current_test_case_;
@@ -165,6 +185,14 @@ class test_program_context : public rx_internal::terminal::console::console_prog
       test_status_t status_;
 
       test_context_data data_;
+
+      std::ostream out_std_;
+
+      std::ostream err_std_;
+
+      buffer_ptr out_;
+
+      buffer_ptr err_;
 
 
 };

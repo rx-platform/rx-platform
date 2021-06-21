@@ -59,7 +59,7 @@ read_command::~read_command()
 
 
 
-bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err)
+bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
 	rx_value my_value;
 	auto result = rt_item->read_value(sub_item, my_value);
@@ -73,7 +73,6 @@ bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_it
 		}
 		out << " = ";
 		rx_dump_value(my_value, out, false);
-		return true;
 	}
 	else
 	{
@@ -81,8 +80,8 @@ bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_it
 			<< sub_item;
 		for (const auto& one : result.errors())
 			out << "\r\n" << one;
-		return false;
 	}
+	return true;
 }
 
 
@@ -122,7 +121,7 @@ write_command::~write_command()
 
 
 
-bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err)
+bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
 	rx_simple_value my_copy;
 	auto now = rx_time::now();
@@ -134,43 +133,43 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 	out << "Start time: " << now.get_string() << "\r\n";
 	uint64_t us1 = rx_get_us_ticks();
 	auto rctx = ctx->create_api_context();
+	ctx->set_waiting();
 	auto result = rt_item->write_value(sub_item, std::move(value), 
-		rx_result_callback(rctx.object, [ctx, this, sub_item, value, my_copy, us1](rx_result&& result)
+		rx_result_callback(rctx.object, [ctx, this, sub_item, value, my_copy, us1, executer](rx_result&& result)
 		{
-		///////////////////////////////////////////////
-			rx_post_function_to(ctx->get_executer(), smart_this()
-                ,[us1, this](rx_result result, string_type full_path, rx_simple_value value, console_context_ptr ctx) -> void
-				{
-					uint64_t us2 = rx_get_us_ticks() - us1;
-					auto& out = ctx->get_stdout();
-					auto& err = ctx->get_stderr();
-					if (result)
+			///////////////////////////////////////////////
+			rx_post_function_to(executer, smart_this()
+					,[us1, this](rx_result result, string_type full_path, rx_simple_value value, console_context_ptr ctx) -> void
 					{
-						out << "Write to "
-							<< full_path
-							<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
-						out << "Time elapsed: " ANSI_RX_GOOD_COLOR << us2 << ANSI_COLOR_RESET " us\r\n";
-					}
-					else
-					{
-						out << "Write " ANSI_COLOR_BOLD ANSI_COLOR_GREEN "failed" ANSI_COLOR_RESET ". \r\n";
-						dump_error_result(err, result);
-					}
-					ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
-				} , std::move(result), sub_item, my_copy, ctx);
-        //////////////////////////////////////////////
+						uint64_t us2 = rx_get_us_ticks() - us1;
+						auto& out = ctx->get_stdout();
+						auto& err = ctx->get_stderr();
+						if (result)
+						{
+							out << "Write to "
+								<< full_path
+								<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
+							out << "Time elapsed: " ANSI_RX_GOOD_COLOR << us2 << ANSI_COLOR_RESET " us\r\n";
+						}
+						else
+						{
+							out << "Write " ANSI_COLOR_BOLD ANSI_COLOR_GREEN "failed" ANSI_COLOR_RESET ". \r\n";
+							ctx->raise_error(result);
+						}
+						ctx->continue_scan();
+					} , std::move(result), sub_item, my_copy, ctx);
+			//////////////////////////////////////////////
 
 		}), ctx->create_api_context());
-	if (result)
-	{
-		ctx->set_waiting();
-		return true;
-	}
-	else
+	if (!result)
 	{
 		out << "Error writing item "
 			<< sub_item << "\r\n";
 		err << result.errors_line();
+		return true;
+	}
+	else
+	{
 		return false;
 	}
 }
@@ -274,7 +273,7 @@ browse_command::~browse_command()
 
 
 
-bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err)
+bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
 	std::vector<runtime_item_attribute> items;
 	auto result = rt_item->browse("", sub_item, "", items);
@@ -357,13 +356,12 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 			idx++;
 		}
 		rx_dump_table(table, out, true, false);
-		return true;
 	}
 	else
 	{
-		dump_error_result(err, result);
-		return false;
+		ctx->raise_error(result);
 	}
+	return true;
 }
 
 
@@ -408,36 +406,37 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 		auto resolve_result = api::ns::rx_resolve_reference(whose, directories);
 		if (!resolve_result)
 		{
-			dump_error_result(err, resolve_result);
+			ctx->raise_error(resolve_result);
 			return resolve_result;
 
 		}
+		rx_thread_handle_t executer = rx_thread_context();
+		ctx->set_waiting();
 		rx_result result = model::algorithms::do_with_runtime_item(resolve_result.value()
-			, [ctx, item_path, to_write, this](rx_result_with<platform_item_ptr>&& data) mutable -> rx_result
+			, [ctx, item_path, to_write, this, executer](rx_result_with<platform_item_ptr>&& data) mutable -> bool
 			{
-				ctx->postpone_done();
 				auto& out = ctx->get_stdout();
 				auto& err = ctx->get_stderr();
 				if (data)
 				{
-					return this->do_with_item(data.move_value(), item_path, std::move(to_write), ctx, out, err);
+					return this->do_with_item(data.move_value(), item_path, std::move(to_write), ctx, out, err, executer);
 				}
 				else
 				{
-					dump_error_result(err, data);
-					return false;
+					ctx->raise_error(data);
+					return true;
 				}
 			}
-			, rx_result_callback(context.object, [ctx](rx_result&& result) mutable
+			, rx_result_callback(context.object, [ctx](bool done) mutable
 				{
-					if (!ctx->is_postponed())
-						ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
+					if(done)
+						ctx->continue_scan();
 				})
 			, context);
 
-		if (result)
+		if (!result)
 		{
-			ctx->set_waiting();
+			ctx->raise_error(result);
 		}
 		return result;
 	}

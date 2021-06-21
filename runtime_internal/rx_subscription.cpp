@@ -303,6 +303,7 @@ void rx_subscription::process_subscription (bool posted)
 		std::vector<update_item> to_send;
 
 		items_lock_.lock();
+		RX_ASSERT(pending_updates_.size() < 1000);
 		callback = callback_;
 		if (!pending_updates_.empty())
 		{
@@ -348,7 +349,8 @@ void rx_subscription::items_changed (const std::vector<update_item>& items)
 			{
 				for (auto&& handle : it->second)
 				{
-					pending_updates_.emplace_back(update_item{ std::forward<decltype(handle)>(handle), one.value });
+					if(active_)
+						pending_updates_.emplace_back(update_item{ std::forward<decltype(handle)>(handle), one.value });
 					values_cache_[handle]= one.value;
 				}
 

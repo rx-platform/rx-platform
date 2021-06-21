@@ -281,7 +281,8 @@ void port_active_map::close_all_endpoints ()
     if (!endpoints_map_.empty())
     {
         map_lock_.unlock();
-        while (true)
+        int counter = (int)endpoints_map_.size();
+        while (counter>0)
         {
             rx_protocol_stack_endpoint* ep = nullptr;
             map_lock_.lock();
@@ -292,10 +293,14 @@ void port_active_map::close_all_endpoints ()
             map_lock_.unlock();
             active_endpoints = 0;
             if (ep)
+            {
+                counter--;
                 rx_close(ep, RX_PROTOCOL_OK);
+            }
             else
                 break;
         }
+        RX_ASSERT(counter <= 0);
     }
     else
     {

@@ -82,12 +82,14 @@ struct io_manager_data_t
 	uint32_t io_timer_period = 200;
 };
 
+
 struct general_data_t
 {
 	string_type manuals_path;
     string_type http_path;
     uint16_t http_port;
     uint16_t rx_port;
+    string_type rx_security;
 };
 struct runtime_data_t
 {

@@ -85,7 +85,7 @@ class job : private pointers::reference_object
   public:
       job();
 
-      ~job();
+      virtual ~job();
 
 
       void cancel ();
@@ -196,6 +196,8 @@ class timer_job : public job
       rx_timer_ticks_t period_;
 
       std::atomic<bool> suspended_;
+
+      rx_timer_ticks_t period_error_;
 
 
   private:

@@ -120,7 +120,9 @@ rx_platform_directory::rx_platform_directory (const string_type& name, namespace
 
 rx_platform_directory::~rx_platform_directory()
 {
+#ifdef _DEBUG
 	printf("Deleted directory: %s\r\n", meta_.name.c_str());
+#endif
 }
 
 

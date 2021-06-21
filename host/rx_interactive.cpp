@@ -700,7 +700,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 		}
 	}
 	rx_session session = rx_create_session(nullptr, nullptr, 0, 0, nullptr);
-	rx_notify_disconnected(&stack_entry_, &session, 0);
+	rx_notify_disconnected(&stack_entry_, &session, RX_PROTOCOL_OK);
 	std_out_sender_.end();
 	return true;
 }

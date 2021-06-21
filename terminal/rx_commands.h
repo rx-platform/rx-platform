@@ -41,8 +41,10 @@
 namespace rx_internal {
 namespace terminal {
 namespace console {
+namespace script {
 class console_program_context;
 
+} // namespace script
 } // namespace console
 } // namespace terminal
 } // namespace rx_internal
@@ -83,9 +85,12 @@ class server_command;
 }
 namespace console
 {
+namespace script
+{
 class console_program_context;
 }
-typedef console::console_program_context* console_context_ptr;
+}
+typedef console::script::console_program_context* console_context_ptr;
 typedef rx::pointers::reference<commands::server_command> server_command_ptr;
 
 namespace commands {
@@ -127,8 +132,6 @@ class server_command : public rx_platform::logic::program_runtime
 
       virtual string_type get_help () const;
 
-      static void dump_error_result (std::ostream& err, const rx_result& result);
-
       virtual void register_suggestions (const string_type& line, suggestions_type& suggestions);
 
 
@@ -144,12 +147,7 @@ class server_command : public rx_platform::logic::program_runtime
       }
 
 
-	  template<typename T>
-	  void dump_error_result(std::ostream& err, const rx_result_with<T>& result) const
-	  {
-		  for (const auto& one : result.errors())
-			  err << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
-	  }
+
   protected:
 
       virtual bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx) = 0;

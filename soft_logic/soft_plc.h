@@ -35,8 +35,9 @@
 
 
 namespace sl_runtime {
-class sl_program_holder;
 class program_context;
+class sl_program;
+class sl_program_holder;
 namespace builders {
 class module_chanels_factory;
 
@@ -281,16 +282,18 @@ class program_executer
   public:
       program_executer (sl_program_holder* program);
 
-      ~program_executer();
+      virtual ~program_executer();
 
 
       void program_scan ();
 
-      virtual void start_program (uint32_t rate) = 0;
+      virtual void start_program (uint32_t rate, std::unique_ptr<program_context>&& context);
 
-      virtual void stop_program () = 0;
+      virtual std::unique_ptr<program_context> stop_program ();
 
-      virtual void delete_executer () = 0;
+      virtual void schedule_scan (uint32_t interval);
+
+      program_context* get_main_context ();
 
 
   protected:
@@ -299,6 +302,8 @@ class program_executer
 
 
       sl_program_holder *program_;
+
+      std::unique_ptr<program_context> main_context_;
 
 
 };
@@ -820,12 +825,16 @@ class program_context
 
       bool get_out_register_written (dword reg);
 
+      bool schedule_scan (uint32_t interval);
 
-      const rx_uuid& get_guid () const
-      {
-        return guid_;
-      }
+      virtual void continue_scan ();
 
+      virtual void set_waiting () = 0;
+
+      virtual void reset_waiting () = 0;
+
+
+      const rx_uuid& get_guid () const;
       void set_guid (const rx_uuid& value)
       {
         guid_ = value;
@@ -894,6 +903,10 @@ class ladder_program_context : public program_context
 
       void deinitialize (deinitialize_context* ctx);
 
+      void set_waiting ();
+
+      void reset_waiting ();
+
 
   protected:
 
@@ -943,11 +956,7 @@ class custom_program_step
   public:
       custom_program_step();
 
-      custom_program_step(const custom_program_step &right);
-
       virtual ~custom_program_step();
-
-      custom_program_step & operator=(const custom_program_step &right);
 
 
       virtual void process_step_before (program_context* context, const rx_time& now);
@@ -962,6 +971,10 @@ class custom_program_step
   protected:
 
   private:
+      custom_program_step(const custom_program_step &right);
+
+      custom_program_step & operator=(const custom_program_step &right);
+
 
 
 };
@@ -1027,11 +1040,7 @@ class sl_program
   public:
       sl_program();
 
-      sl_program(const sl_program &right);
-
       virtual ~sl_program();
-
-      sl_program & operator=(const sl_program &right);
 
 
       virtual void initialize (sl_program_holder* holder, initialize_context* ctx, program_context* current_context);
@@ -1040,7 +1049,7 @@ class sl_program
 
       virtual void process_program (program_context* context, const rx_time& now, bool debug);
 
-      virtual program_context* create_program_context (program_context* parent_context, sl_program_holder* holder) = 0;
+      virtual std::unique_ptr<program_context> create_program_context (program_context* parent_context, sl_program_holder* holder) = 0;
 
       virtual void load (FILE* file, dword version);
 
@@ -1048,6 +1057,10 @@ class sl_program
   protected:
 
   private:
+      sl_program(const sl_program &right);
+
+      sl_program & operator=(const sl_program &right);
+
 
 
 };
@@ -1162,7 +1175,7 @@ class sl_ladder_program : public sl_program
 
       void process_program (program_context* context, const rx_time& now, bool debug);
 
-      program_context* create_program_context (program_context* parent_context, sl_program_holder* holder);
+      std::unique_ptr<program_context> create_program_context (program_context* parent_context, sl_program_holder* holder);
 
       void load (FILE* file, dword version);
 
@@ -1187,7 +1200,7 @@ class sl_ladder_program : public sl_program
 struct subcontext_data
 {
 	sl_program* program;
-	program_context* context;
+	std::unique_ptr<program_context> context;
 };
 
 
@@ -1200,15 +1213,10 @@ struct subcontext_data
 class sl_program_holder 
 {
 	typedef std::list<sl_module_base*> modules_type;
-	typedef std::list<sl_module_base*>::iterator modules_iterator;
-	typedef std::map<string_type,sl_program*> subprograms_type;
-	typedef std::map<string_type,sl_program*>::iterator subprograms_iterator;
+	typedef std::map<string_type,std::unique_ptr<sl_program> > subprograms_type;
 	typedef std::map<sl_instruction_base*,subcontext_data> subcontexts_type;
-	typedef std::map<sl_instruction_base*,subcontext_data>::iterator subcontexts_iterator;
-	typedef std::map<rx::rx_uuid,subcontext_data> subcontexts_hash;
-	typedef std::map<rx::rx_uuid,subcontext_data>::iterator subcontexts_hash_iterator;
+	typedef std::map<rx::rx_uuid, program_context*> subcontexts_hash;
 	typedef std::vector<custom_program_step*> custom_steps_type;
-	typedef std::vector<custom_program_step*>::iterator custom_steps_iterator;
 
   public:
       sl_program_holder();
@@ -1220,19 +1228,13 @@ class sl_program_holder
 
       void deinitialize (deinitialize_context* ctx);
 
-      virtual void program_scan ();
-
-      virtual void process_inputs (program_context* context, const rx_time& now);
-
-      virtual void process_outputs (program_context* context, const rx_time& now);
-
-      virtual void process_program (program_context* context, const rx_time& now, bool debug);
+      void program_scan (bool continue_scan = false);
 
       virtual void load (FILE* file, dword version);
 
-      virtual void start_program (program_executer* executer);
+      virtual void start_program (program_executer* executer, std::unique_ptr<program_context>&& context);
 
-      virtual void stop_program ();
+      virtual std::unique_ptr<program_context> stop_program ();
 
       bool register_subcontext (instructions_runtime::subprogram_instruction* inst, const string_type& name, initialize_context* ctx, program_context* current_context);
 
@@ -1244,9 +1246,9 @@ class sl_program_holder
 
       void set_debug_context (program_context* context);
 
-      void set_main_program (sl_program* main, program_context* context = nullptr);
+      void set_main_program (std::unique_ptr<sl_program> main);
 
-      void add_sub_program (const string_type& name, sl_program* prog);
+      void add_sub_program (const string_type& name, std::unique_ptr<sl_program> prog);
 
       void add_custom_step (custom_program_step* step);
 
@@ -1255,6 +1257,8 @@ class sl_program_holder
       program_context* get_main_context ();
 
       void deinitialize_sub (sl_instruction_base* inst, deinitialize_context* ctx);
+
+      bool schedule_scan (uint32_t interval);
 
 
   protected:
@@ -1265,12 +1269,19 @@ class sl_program_holder
       sl_program_holder & operator=(const sl_program_holder &right);
 
 
+      void process_inputs (program_context* context, const rx_time& now);
+
+      void process_outputs (program_context* context, const rx_time& now);
+
+      void process_program (program_context* context, const rx_time& now, bool debug);
+
+
 
       program_executer *executer_;
 
       modules_type modules_;
 
-      sl_program *main_;
+      std::unique_ptr<sl_program> main_;
 
       program_context *main_context_;
 
@@ -1301,8 +1312,7 @@ class sl_program_holder
 
 class sl_programs_collection 
 {
-	typedef std::list<sl_program_holder*> programs_type;
-	typedef std::list<sl_program_holder*>::iterator programs_iterator;
+	typedef std::vector<std::unique_ptr<sl_program_holder> > programs_type;
 
   public:
       sl_programs_collection();
@@ -1316,7 +1326,7 @@ class sl_programs_collection
 
       void stop_programs ();
 
-      void add_program (sl_program_holder* prog);
+      void add_program (std::unique_ptr<sl_program_holder> prog);
 
 
   protected:
@@ -1423,7 +1433,7 @@ class program_builder
       virtual ~program_builder();
 
 
-      virtual sl_program* build_program () = 0;
+      virtual std::unique_ptr<sl_program> build_program () = 0;
 
 
   protected:
@@ -1490,7 +1500,7 @@ class ladder_program_builder : public program_builder
       ~ladder_program_builder();
 
 
-      sl_program* build_program ();
+      std::unique_ptr<sl_program> build_program ();
 
 
   protected:

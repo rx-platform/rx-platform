@@ -446,8 +446,6 @@ bool test_case::do_console_test (std::istream& in, std::ostream& out, std::ostre
 			test_end(out, err, test_ctx);
 			return ret;
 		}
-		if (test_ctx->is_postponed())
-			ctx->set_waiting();
 		return true;
 	}
 	else
@@ -485,7 +483,7 @@ size_t test_case::get_size () const
 void test_case::async_test_end (test_program_context* ctx)
 {
 	test_end(ctx->get_stdout(), ctx->get_stderr(), ctx);
-	ctx->send_results(true);
+	ctx->continue_scan();
 }
 
 
@@ -577,22 +575,27 @@ test_case::smart_ptr testing_enviroment::get_test_case (const string_type& test_
 
 test_program_context* testing_enviroment::create_test_context (rx_internal::terminal::console_context_ptr console_ctx)
 {
+	auto api_ctx = console_ctx->create_api_context();
 	return new test_program_context(
-		console_ctx,
-		console_ctx->get_program_holder(),
-		console_ctx->get_current_directory(),
-		console_ctx->get_out(),
-		console_ctx->get_err(),
-		console_ctx->get_client()
+			console_ctx,
+			console_ctx->get_program_holder(),
+			console_ctx->get_current_directory(),
+			rx_create_reference<memory::std_strbuff<memory::std_vector_allocator> >(),
+			rx_create_reference<memory::std_strbuff<memory::std_vector_allocator> >(),
+			api_ctx.object
 		);
 }
 
 
 // Class testing::test_program_context 
 
-test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<rx_internal::terminal::console::console_runtime> client)
-      : status_(RX_TEST_STATUS_UNKNOWN)
-	, console_program_context(parent, holder,  current_directory, out, err, client)
+test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor)
+      : status_(RX_TEST_STATUS_UNKNOWN),
+        out_std_(out.unsafe_ptr()),
+        err_std_(err.unsafe_ptr()),
+        out_(out),
+        err_(err)
+	, console_program_context(parent, holder,  current_directory)
 {
 }
 
@@ -629,6 +632,26 @@ size_t test_program_context::get_possition () const
 void test_program_context::async_test_end ()
 {
 	this->current_test_case_->async_test_end(this);
+}
+
+std::ostream& test_program_context::get_stdout ()
+{
+	return out_std_;
+}
+
+std::ostream& test_program_context::get_stderr ()
+{
+	return err_std_;
+}
+
+api::rx_context test_program_context::create_api_context ()
+{
+	api::rx_context ret;
+	return ret;
+}
+
+void test_program_context::send_results (bool result, bool done)
+{
 }
 
 

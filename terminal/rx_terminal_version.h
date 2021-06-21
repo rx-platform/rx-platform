@@ -4,7 +4,7 @@
 
 #define RX_TERM_NAME "{rx-platform} Terminal"
 #define RX_TERM_MAJOR_VERSION 1
-#define RX_TERM_MINOR_VERSION 3
+#define RX_TERM_MINOR_VERSION 4
 #define RX_TERM_BUILD_NUMBER 0
 
 

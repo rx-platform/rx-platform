@@ -186,7 +186,7 @@ void sl_scheme::process_schema (ladder_program_context* context, const rx_time& 
 			runtime_schema_[i][j].active_vertical=false;
 		}
 	}
-	// now go and iterate throught
+	// now go and iterate through
 	int i=0;
 	while(i<width_)
 	{
@@ -210,7 +210,7 @@ void sl_scheme::process_schema (ladder_program_context* context, const rx_time& 
 			}
 		}
 
-		// vertical processing nad horizontal pass
+		// vertical processing and horizontal pass
 		if(i<(width_-1))// no vertical processing for last line
 		{
 			j=0;
@@ -384,7 +384,7 @@ void sl_ladder_program::process_program (program_context* context, const rx_time
 		current_segment++;
 		(*it)->process_schema(ladder_context,now);
 		if(current_segment==segment && debug)
-		{// go jhony go....
+		{// go Johny go....
 			std::vector<bool> dbg_data;
 			(*it)->get_debug_data(dbg_data);
 			ladder_context->set_debug_data(dbg_data,now,segment);
@@ -399,9 +399,9 @@ void sl_ladder_program::process_program (program_context* context, const rx_time
 	sl_program::process_program(context,now,debug);
 }
 
-program_context* sl_ladder_program::create_program_context (program_context* parent_context, sl_program_holder* holder)
+std::unique_ptr<program_context> sl_ladder_program::create_program_context (program_context* parent_context, sl_program_holder* holder)
 {
-	  return new ladder_program_context(parent_context,holder);
+	  return std::make_unique<ladder_program_context>(parent_context,holder);
 }
 
 void sl_ladder_program::load (FILE* file, dword version)
@@ -585,11 +585,13 @@ void program_context::get_debug_segment (int& segment)
 void program_context::set_debug_data (const std::vector<bool>& data, const rx_time& now, int segment)
 {
 	if(parent_==NULL)
-	{// glavni program
+	{// main program
 		set_debug_data(data,now,segment,get_guid());
 	}
-	else// posalji glavnom contextu
-		parent_->set_debug_data(data,now,segment,get_guid());
+	else
+	{// send to main program
+		parent_->set_debug_data(data, now, segment, get_guid());
+	}
 }
 
 void program_context::set_debug_data (const std::vector<bool>& data, const rx_time& now, int segment, const rx_uuid& guid)
@@ -634,6 +636,28 @@ bool program_context::get_out_register_written (dword reg)
 	return addresses->get_out_register_written(reg);
 }
 
+bool program_context::schedule_scan (uint32_t interval)
+{
+	RX_ASSERT(holder_);
+	if (holder_)
+		return holder_->schedule_scan(interval);
+	else
+		return false;
+}
+
+void program_context::continue_scan ()
+{
+	RX_ASSERT(holder_);
+	if (holder_)
+		holder_->program_scan(true);
+}
+
+
+const rx_uuid& program_context::get_guid () const
+{
+  return guid_;
+}
+
 
 // Class sl_runtime::ladder_program_context 
 
@@ -656,6 +680,14 @@ void ladder_program_context::initialize (initialize_context* ctx)
 void ladder_program_context::deinitialize (deinitialize_context* ctx)
 {
 	program_context::deinitialize(ctx);
+}
+
+void ladder_program_context::set_waiting ()
+{
+}
+
+void ladder_program_context::reset_waiting ()
+{
 }
 
 
@@ -686,38 +718,37 @@ sl_programs_collection & sl_programs_collection::operator=(const sl_programs_col
 
 void sl_programs_collection::deinitialize (deinitialize_context* ctx)
 {
-	for(programs_iterator it=programs_.begin(); it!=programs_.end(); it++)
+	for (auto& one : programs_)
 	{
-		(*it)->deinitialize(ctx);
-		delete (*it);
+		one->deinitialize(ctx);
 	}
 	programs_.clear();
 }
 
 void sl_programs_collection::start_programs ()
 {
-	for(programs_iterator it=programs_.begin(); it!=programs_.end(); it++)
+	for(auto& one : programs_)
 	{
-		(*it)->start_program(get_executer(*it));
+		one->start_program(get_executer(one.get()), std::unique_ptr<program_context>());
 	}
 }
 
 void sl_programs_collection::stop_programs ()
 {
-	for(programs_iterator it=programs_.begin(); it!=programs_.end(); it++)
+	for (auto& one : programs_)
 	{
-		(*it)->stop_program();
+		one->stop_program();
 	}
 }
 
-void sl_programs_collection::add_program (sl_program_holder* prog)
+void sl_programs_collection::add_program (std::unique_ptr<sl_program_holder> prog)
 {
-	programs_.push_back(prog);
+	programs_.emplace_back(std::move(prog));
 }
 
 program_executer* sl_programs_collection::get_executer (sl_program_holder* holder)
 {
-	  return NULL;
+	  return nullptr;
 }
 
 
@@ -878,6 +909,29 @@ program_executer::~program_executer()
 void program_executer::program_scan ()
 {
 	program_->program_scan();
+}
+
+void program_executer::start_program (uint32_t rate, std::unique_ptr<program_context>&& context)
+{
+	RX_ASSERT(!main_context_);
+	main_context_ = std::move(context);
+}
+
+std::unique_ptr<program_context> program_executer::stop_program ()
+{
+	RX_ASSERT(main_context_);
+	std::unique_ptr<program_context> ret(main_context_.release());
+	main_context_ = {};
+	return std::move(ret);
+}
+
+void program_executer::schedule_scan (uint32_t interval)
+{
+}
+
+program_context* program_executer::get_main_context ()
+{
+	return main_context_.get();
 }
 
 
@@ -1166,23 +1220,21 @@ bool sl_do_chanel::get_out_bit_written (int module, program_context* context)
 // Class sl_runtime::sl_program_holder 
 
 sl_program_holder::sl_program_holder()
-      : executer_(NULL),
-        main_(NULL),
-        main_context_(NULL),
+      : executer_(nullptr),
+        main_context_(nullptr),
         rate_(500),
         name_("NewProgram"),
-        debug_context_(NULL),
+        debug_context_(nullptr),
         first_scan_(true)
 {
 }
 
 sl_program_holder::sl_program_holder(const sl_program_holder &right)
-      : executer_(NULL),
-        main_(NULL),
-        main_context_(NULL),
+      : executer_(nullptr),
+        main_context_(nullptr),
         rate_(500),
         name_("NewProgram"),
-        debug_context_(NULL),
+        debug_context_(nullptr),
         first_scan_(true)
 {
 	RX_ASSERT(false);
@@ -1191,16 +1243,8 @@ sl_program_holder::sl_program_holder(const sl_program_holder &right)
 
 sl_program_holder::~sl_program_holder()
 {
-	for(modules_iterator it=modules_.begin(); it!=modules_.end(); it++)
-		delete (*it);
-	if(main_)
-		delete main_;
-	if(main_context_)
-		delete main_context_;
-	for(subprograms_iterator it=subprograms_.begin(); it!=subprograms_.end(); it++)
-		delete it->second;
-	for(subcontexts_iterator it=subcontexts_.begin(); it!=subcontexts_.end(); it++)
-		delete it->second.context;
+	for(auto one : modules_)
+		delete one;
 }
 
 
@@ -1216,8 +1260,8 @@ void sl_program_holder::initialize (initialize_context* ctx)
 {
 	main_context_->initialize(ctx);
 	main_->initialize(this,ctx,main_context_);
-	for(custom_steps_iterator it=custom_steps_.begin(); it!=custom_steps_.end(); it++)
-		(*it)->initialize(this,ctx);
+	for(auto one : custom_steps_)
+		one->initialize(this,ctx);
 }
 
 void sl_program_holder::deinitialize (deinitialize_context* ctx)
@@ -1225,32 +1269,35 @@ void sl_program_holder::deinitialize (deinitialize_context* ctx)
 	main_->deinitialize(this,ctx,main_context_);
 	main_context_->deinitialize(ctx);
 
-	for(custom_steps_iterator it=custom_steps_.begin(); it!=custom_steps_.end(); it++)
-		(*it)->deinitialize();
+	for (auto one : custom_steps_)
+		one->deinitialize();
 	custom_steps_.clear();
 }
 
-void sl_program_holder::program_scan ()
+void sl_program_holder::program_scan (bool continue_scan)
 {
 	rx::rx_time now(rx::rx_time::now());
-	main_context_->init_scan();
+	if (!continue_scan)
+	{
+		main_context_->init_scan();
 
-	// custom steps before process
-	for(custom_steps_iterator it=custom_steps_.begin(); it!=custom_steps_.end(); it++)
-		(*it)->process_step_before(main_context_,now);
+		// custom steps before process
+		for (auto one : custom_steps_)
+			one->process_step_before(main_context_, now);
 
-	//////////////////////////////////////////////////////
-	// processing program
-	process_inputs(main_context_,now);
-	process_program(main_context_,now,debug_context_==main_context_);
+		//////////////////////////////////////////////////////
+		// processing program
+		process_inputs(main_context_, now);
+	}
+	process_program(main_context_, now, debug_context_ == main_context_);
 	process_outputs(main_context_,now);
 
 	// custom steps after process
-	for(custom_steps_iterator it=custom_steps_.begin(); it!=custom_steps_.end(); it++)
-		(*it)->process_step_after(main_context_,now);
+	for (auto one : custom_steps_)
+		one->process_step_after(main_context_,now);
 
 	// first scan handling
-	if(first_scan_)
+	if(first_scan_ && main_context_)
 	{
 		first_scan_=false;
 		main_context_->set_bit(system_registers,0,0,false);
@@ -1260,18 +1307,14 @@ void sl_program_holder::program_scan ()
 
 void sl_program_holder::process_inputs (program_context* context, const rx_time& now)
 {
-	for(modules_iterator it=modules_.begin(); it!=modules_.end(); it++)
-	{
-		(*it)->process_inputs(context,now);
-	}
+	for(auto one : modules_)
+		one->process_inputs(context,now);
 }
 
 void sl_program_holder::process_outputs (program_context* context, const rx_time& now)
 {
-	for(modules_iterator it=modules_.begin(); it!=modules_.end(); it++)
-	{
-		(*it)->process_outputs(context,now);
-	}
+	for (auto one : modules_)
+		one->process_outputs(context,now);
 }
 
 void sl_program_holder::process_program (program_context* context, const rx_time& now, bool debug)
@@ -1307,38 +1350,46 @@ void sl_program_holder::load (FILE* file, dword version)
 	}*/
 }
 
-void sl_program_holder::start_program (program_executer* executer)
+void sl_program_holder::start_program (program_executer* executer, std::unique_ptr<program_context>&& context)
 {
-	executer_=executer;
+	RX_ASSERT(main_context_ == nullptr);
+	main_context_ = context.get();
+	executer_ = executer;
 	debug_context_=main_context_;
 	main_context_->set_bit(system_registers,0,0,true);
-	executer_->start_program(rate_);
+	executer_->start_program(rate_, std::move(context));
 }
 
-void sl_program_holder::stop_program ()
+std::unique_ptr<program_context> sl_program_holder::stop_program ()
 {
-	if(executer_!=NULL)
+	if(executer_)
 	{
-		executer_->stop_program();
-		executer_->delete_executer();
-		executer_=NULL;
+		RX_ASSERT(main_context_ != nullptr);
+		main_context_ = nullptr;
+		return executer_->stop_program();
+	}
+	else
+	{
+		RX_ASSERT(false);
+		return std::move(std::unique_ptr<program_context>());
 	}
 }
 
 bool sl_program_holder::register_subcontext (instructions_runtime::subprogram_instruction* inst, const string_type& name, initialize_context* ctx, program_context* current_context)
 {
-	subprograms_iterator it=subprograms_.find(name);
+	auto it=subprograms_.find(name);
 	if(it!=subprograms_.end())
 	{
 		subcontext_data temp;
-		temp.program=it->second;
+		temp.program=it->second.get();
 		temp.context=it->second->create_program_context(current_context,this);
 		temp.context->set_guid(inst->get_guid());
-		subcontexts_[inst]=temp;
-		sub_hash_[inst->get_guid()]=temp;
+		auto sub_ctx = temp.context.get();
+		subcontexts_[inst] = std::move(temp);
+		sub_hash_[inst->get_guid()] = sub_ctx;
 
 		temp.context->initialize(ctx);
-		temp.program->initialize(this,ctx,temp.context);
+		temp.program->initialize(this, ctx, sub_ctx);
 
 		return true;
 	}
@@ -1347,19 +1398,19 @@ bool sl_program_holder::register_subcontext (instructions_runtime::subprogram_in
 
 program_context* sl_program_holder::get_subcontext (sl_instruction_base* inst)
 {
-	subcontexts_iterator it=subcontexts_.find(inst);
+	auto it=subcontexts_.find(inst);
 	if(it!=subcontexts_.end())
-		return it->second.context;
+		return it->second.context.get();
 	else
 		return NULL;
 }
 
 bool sl_program_holder::execute_sub (sl_instruction_base* inst, const rx_time& now)
 {
-	subcontexts_iterator it=subcontexts_.find(inst);
+	auto it=subcontexts_.find(inst);
 	if(it!=subcontexts_.end())
 	{
-		it->second.program->process_program(it->second.context,now,debug_context_==it->second.context);
+		it->second.program->process_program(it->second.context.get(), now, debug_context_ == it->second.context.get());
 		return true;
 	}
 	RX_ASSERT(false);
@@ -1368,9 +1419,9 @@ bool sl_program_holder::execute_sub (sl_instruction_base* inst, const rx_time& n
 
 program_context* sl_program_holder::get_subcontext (const rx_uuid& guid)
 {
-	subcontexts_hash_iterator it=sub_hash_.find(guid);
+	auto it=sub_hash_.find(guid);
 	if(it!=sub_hash_.end())
-		return it->second.context;
+		return it->second;
 	else
 		return NULL;
 }
@@ -1380,18 +1431,14 @@ void sl_program_holder::set_debug_context (program_context* context)
 	  debug_context_=context;
 }
 
-void sl_program_holder::set_main_program (sl_program* main, program_context* context)
+void sl_program_holder::set_main_program (std::unique_ptr<sl_program> main)
 {
-	main_=main;
-	if (context)
-		main_context_ = context;
-	else
-		main_context_=main_->create_program_context(nullptr,this);
+	main_ = std::move(main);	
 }
 
-void sl_program_holder::add_sub_program (const string_type& name, sl_program* prog)
+void sl_program_holder::add_sub_program (const string_type& name, std::unique_ptr<sl_program> prog)
 {
-	subprograms_[name]=prog;
+	subprograms_[name]=std::move(prog);
 }
 
 void sl_program_holder::add_custom_step (custom_program_step* step)
@@ -1411,12 +1458,18 @@ program_context* sl_program_holder::get_main_context ()
 
 void sl_program_holder::deinitialize_sub (sl_instruction_base* inst, deinitialize_context* ctx)
 {
-	subcontexts_iterator it=subcontexts_.find(inst);
+	auto it=subcontexts_.find(inst);
 	if(it!=subcontexts_.end())
 	{
-		it->second.program->deinitialize(this,ctx,it->second.context);
+		it->second.program->deinitialize(this,ctx,it->second.context.get());
 		it->second.context->deinitialize(ctx);
 	}
+}
+
+bool sl_program_holder::schedule_scan (uint32_t interval)
+{
+	executer_->schedule_scan(interval);
+	return true;
 }
 
 
@@ -2000,8 +2053,8 @@ sl_program_holder* program_holder_bulder::build_program_holder ()
 	string_type sub_name;
 	while((sub_builder=get_sub_program_builder(sub_name)))
 	{
-		sl_program* sub=sub_builder->build_program();
-		ret->add_sub_program(sub_name,sub);
+		auto sub=sub_builder->build_program();
+		ret->add_sub_program(sub_name,std::move(sub));
 		delete sub_builder;
 	}
 	return ret;
@@ -2071,9 +2124,9 @@ ladder_program_builder::~ladder_program_builder()
 
 
 
-sl_program* ladder_program_builder::build_program ()
+std::unique_ptr<sl_program> ladder_program_builder::build_program ()
 {
-	sl_ladder_program* ret=new sl_ladder_program;
+	auto ret = std::make_unique<sl_ladder_program>();
 	sl_scheme* scheme=NULL;
 	while((scheme=get_next_schema()))
 	{

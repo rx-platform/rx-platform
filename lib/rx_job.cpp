@@ -104,7 +104,8 @@ void job::process_wrapper ()
 timer_job::timer_job()
       : next_(0x0),
         period_(0x0),
-        suspended_(true)
+        suspended_(true),
+        period_error_(0)
   , executer_(nullptr), my_timer_(nullptr)
 {
 }
@@ -157,7 +158,7 @@ post_period_job::post_period_job()
 
 rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove)
 {
-	if (current_tick >= next_)
+	if (current_tick + period_error_ >= next_)
 	{
 		// should be done
 		executer_->append(smart_this());// add job to right thread
@@ -197,14 +198,16 @@ rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, rx_timer_tic
 	if (suspended_)
 		return 0;
 
-	if (current_tick >= next_)
+	if (current_tick + period_error_ >= next_)
 	{
 		// should be done
 		executer_->append(smart_this());// add job to right thread
 
+		int loop_count = 0;
 		next_ += random_offset;
 		do
 		{
+			loop_count++;
 			next_ = next_ + period_;// new time
 
 		} while (next_ < current_tick);

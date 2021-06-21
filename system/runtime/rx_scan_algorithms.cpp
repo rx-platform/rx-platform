@@ -60,6 +60,8 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     whose.tags_.common_tags_.loop_count_.commit();
     whose.tags_.common_tags_.last_scan_time_.commit();
 
+    check_context(whose, whose.context_);
+
     auto old_tick = rx_get_us_ticks();
 
     // persistence handling receive side
@@ -83,35 +85,85 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
 
         }
         /////////////////////////////////////////////////////////////////////////////////////////////////
+        // DEBUG SCAN SUPPPORT
+        // ========================
+        // this is a debug scan stuff that handles all arrived data
+        // it is used to skip all scan steps that are needed
+        process_debug_scan(whose);
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////
         // REMOTE UPDATES
-        process_from_remotes(whose, whose.context_);
+        if constexpr (C_has_remote_updates)
+        {
+            process_from_remotes(whose, whose.context_);
+        }
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // STATUS
-        process_status_change(whose, whose.context_);
+        if constexpr (C_has_status_response)
+        {
+            process_status_change(whose, whose.context_);
+        }
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // INPUTS
-        process_source_inputs(whose, whose.context_);
-        process_mapper_inputs(whose, whose.context_);
-        process_subscription_inputs(whose, whose.context_);
+        if constexpr (C_has_source_updates || C_has_source_results)
+        {
+            process_source_inputs(whose, whose.context_);
+        }
+        if constexpr (C_has_mapper_writes)
+        {
+            process_mapper_inputs(whose, whose.context_);
+        }
+        if constexpr (C_has_tag_writes)
+        {
+            process_subscription_inputs(whose, whose.context_);
+        }
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // PROCESS
-        process_variables(whose, whose.context_);
-        process_programs(whose, whose.context_);
-        process_events(whose, whose.context_);
-        process_filters(whose, whose.context_);
-        process_structs(whose, whose.context_);
-        process_own(whose, whose.context_);
+        if constexpr (C_has_variables)
+        {
+            process_variables(whose, whose.context_);
+        }
+        if constexpr (C_has_programs)
+        {
+            process_programs(whose, whose.context_);
+        }
+        if constexpr (C_has_events)
+        {
+            process_events(whose, whose.context_);
+        }
+        if constexpr (C_has_filters)
+        {
+            process_filters(whose, whose.context_);
+        }
+        if constexpr (C_has_structs)
+        {
+            process_structs(whose, whose.context_);
+        }
+        if constexpr (C_has_own)
+        {
+            process_own(whose, whose.context_);
+        }
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // OUTPUTS
-        process_subscription_outputs(whose, whose.context_);
-        process_mapper_outputs(whose, whose.context_);
-        process_source_outputs(whose, whose.context_);
+        if constexpr (C_has_tag_updates)
+        {
+            process_subscription_outputs(whose, whose.context_);
+        }
+        if constexpr (C_has_mapper_updates)
+        {
+            process_mapper_outputs(whose, whose.context_);
+        }
+        if constexpr (C_has_source_writes)
+        {
+            process_source_outputs(whose, whose.context_);
+        }
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
         lap_count++;
@@ -133,6 +185,117 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
 }
 
 template <class typeT>
+void runtime_scan_algorithms<typeT>::check_context (typename typeT::RType& whose, runtime_process_context& ctx)
+{
+    size_t ret;
+    {
+        locks::auto_lock_t _(&ctx.context_lock_);
+        ret = ctx.mapper_inputs_.full_size();
+        ret += ctx.mapper_outputs_.full_size();
+        ret += ctx.source_inputs_.full_size();
+        ret += ctx.source_outputs_.full_size();
+        ret += ctx.source_results_.full_size();
+        ret += ctx.variables_.full_size();
+        ret += ctx.filters_.full_size();
+        ret += ctx.programs_.full_size();
+        ret += ctx.events_.full_size();
+        ret += ctx.structs_.full_size();
+        ret += ctx.owns_.full_size();
+        ret += ctx.from_remote_.full_size();
+    }
+    RX_ASSERT(ret < 0x10000);
+    whose.tags_.common_tags_.queues_size_.commit();
+    whose.tags_.common_tags_.queues_size_ = (uint32_t)ret;
+}
+
+template <class typeT>
+void runtime_scan_algorithms<typeT>::process_debug_scan (typename typeT::RType& whose)
+{
+    // this is important as it clears everything that is needed
+    // it is so convenient for debugging, you can select what to exclude from scan
+
+    // internal stuff
+    if constexpr (!C_has_remote_updates)
+    {
+        auto remote_updates = whose.context_.get_from_remote();
+    }
+    if constexpr (!C_has_status_response)
+    {
+        auto status_response = whose.context_.should_process_status_change();
+    }
+
+    // input stuff
+    if constexpr (!C_has_source_results)
+    {
+        auto source_results = &whose.context_.get_source_results();
+    }
+    if constexpr (!C_has_source_updates)
+    {
+        auto source_updates = whose.context_.get_source_updates();
+    }
+    if constexpr (!C_has_mapper_writes)
+    {
+        auto mapper_writes = whose.context_.get_mapper_writes();
+    }
+    if constexpr (!C_has_tag_writes)
+    {
+        auto writes_response = whose.context_.should_process_tag_writes();
+    }
+    // processing
+    if constexpr (!C_has_variables)
+    {
+        auto variables = whose.context_.get_variables_for_process();
+    }
+    if constexpr (!C_has_programs)
+    {
+        auto programs = whose.context_.get_programs_for_process();
+    }
+    if constexpr (!C_has_events)
+    {
+        auto events = whose.context_.get_events_for_process();
+    }
+    if constexpr (!C_has_filters)
+    {
+        auto filters = whose.context_.get_filters_for_process();
+    }
+    if constexpr (!C_has_structs)
+    {
+        auto structs = whose.context_.get_structs_for_process();
+    }
+    if constexpr (!C_has_own)
+    {
+        auto own = whose.context_.get_for_own_process();
+    }
+
+
+    if constexpr (!C_has_tag_updates)
+    {
+        auto tag_updates_result = whose.context_.should_process_tag_updates();
+    }
+    if constexpr (!C_has_mapper_updates)
+    {
+        auto mapper_updates = whose.context_.get_mapper_updates();
+    }
+    if constexpr (!C_has_source_writes)
+    {
+        auto source_writes = &whose.context_.get_source_writes();
+    }
+
+}
+
+template <class typeT>
+void runtime_scan_algorithms<typeT>::process_from_remotes (typename typeT::RType& whose, runtime_process_context& ctx)
+{
+    auto remote_updates = &ctx.get_from_remote();
+    while (!remote_updates->empty())
+    {
+        for (auto& one : *remote_updates)
+            ctx.set_value(one.handle, std::move(one.value));
+        remote_updates = &ctx.get_from_remote();
+    }
+}
+
+template <class typeT>
 void runtime_scan_algorithms<typeT>::process_status_change (typename typeT::RType& whose, runtime_process_context& ctx)
 {
     while (ctx.should_process_status_change())
@@ -148,12 +311,19 @@ void runtime_scan_algorithms<typeT>::process_source_inputs (typename typeT::RTyp
     source_updates_type* source_updates = &ctx.get_source_updates();
     while (!source_updates->empty() || !source_results->empty())
     {
-        for (auto& one : *source_results)
-            one.whose->process_result(one.transaction_id, std::move(one.result));
+
+        if constexpr (C_has_source_results)
+        {
+            for (auto& one : *source_results)
+                one.whose->process_result(one.transaction_id, std::move(one.result));
+        }
         source_results = &ctx.get_source_results();
 
-        for (auto& one : *source_updates)
-            one.whose->process_update(std::move(one.value));
+        if constexpr (C_has_source_updates)
+        {
+            for (auto& one : *source_updates)
+                one.whose->process_update(std::move(one.value));
+        }
         source_updates = &ctx.get_source_updates();
     }
 }
@@ -202,6 +372,18 @@ void runtime_scan_algorithms<typeT>::process_programs (typename typeT::RType& wh
 }
 
 template <class typeT>
+void runtime_scan_algorithms<typeT>::process_events (typename typeT::RType& whose, runtime_process_context& ctx)
+{
+    auto events = &ctx.get_events_for_process();
+    while (!events->empty())
+    {
+        for (auto& one : *events)
+            one->process_runtime(&ctx);
+        events = &ctx.get_events_for_process();
+    }
+}
+
+template <class typeT>
 void runtime_scan_algorithms<typeT>::process_filters (typename typeT::RType& whose, runtime_process_context& ctx)
 {
     auto filters = &ctx.get_filters_for_process();
@@ -210,6 +392,30 @@ void runtime_scan_algorithms<typeT>::process_filters (typename typeT::RType& who
         for (auto& one : *filters)
             one->process_runtime(&ctx);
         filters = &ctx.get_filters_for_process();
+    }
+}
+
+template <class typeT>
+void runtime_scan_algorithms<typeT>::process_structs (typename typeT::RType& whose, runtime_process_context& ctx)
+{
+    auto structs = &ctx.get_structs_for_process();
+    while (!structs->empty())
+    {
+        for (auto& one : *structs)
+            one->process_runtime(&ctx);
+        structs = &ctx.get_structs_for_process();
+    }
+}
+
+template <class typeT>
+void runtime_scan_algorithms<typeT>::process_own (typename typeT::RType& whose, runtime_process_context& ctx)
+{
+    auto own_jobs = &ctx.get_for_own_process();
+    while (!own_jobs->empty())
+    {
+        for (auto& one : *own_jobs)
+            one->process();
+        own_jobs = &ctx.get_for_own_process();
     }
 }
 
@@ -241,54 +447,6 @@ void runtime_scan_algorithms<typeT>::process_source_outputs (typename typeT::RTy
         for (auto& one : *source_writes)
             one.whose->process_write(std::move(one.data));
         source_writes = &ctx.get_source_writes();
-    }
-}
-
-template <class typeT>
-void runtime_scan_algorithms<typeT>::process_events (typename typeT::RType& whose, runtime_process_context& ctx)
-{
-    auto events = &ctx.get_events_for_process();
-    while (!events->empty())
-    {
-        for (auto& one : *events)
-            one->process_runtime(&ctx);
-        events = &ctx.get_events_for_process();
-    }
-}
-
-template <class typeT>
-void runtime_scan_algorithms<typeT>::process_structs (typename typeT::RType& whose, runtime_process_context& ctx)
-{
-    auto structs = &ctx.get_structs_for_process();
-    while (!structs->empty())
-    {
-        for (auto& one : *structs)
-            one->process_runtime(&ctx);
-        structs = &ctx.get_structs_for_process();
-    }
-}
-
-template <class typeT>
-void runtime_scan_algorithms<typeT>::process_own (typename typeT::RType& whose, runtime_process_context& ctx)
-{
-    auto own_jobs = &ctx.get_for_own_process();
-    while (!own_jobs->empty())
-    {
-        for (auto& one : *own_jobs)
-            one->process();
-        own_jobs = &ctx.get_for_own_process();
-    }
-}
-
-template <class typeT>
-void runtime_scan_algorithms<typeT>::process_from_remotes (typename typeT::RType& whose, runtime_process_context& ctx)
-{
-    auto remote_updates = &ctx.get_from_remote();
-    while (!remote_updates->empty())
-    {
-        for (auto& one : *remote_updates)
-            ctx.set_value(one.handle, std::move(one.value));
-        remote_updates = &ctx.get_from_remote();
     }
 }
 

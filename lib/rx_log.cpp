@@ -437,6 +437,14 @@ void cache_log_subscriber::log_event (log_event_type event_type, const string_ty
 	log_event_data one = { event_type,library,source,level,code,message,when };
 	locks::auto_lock dummy(&cache_lock_);
 	events_cache_.emplace(when, one);
+	if (events_cache_.size() > max_size_ + (max_size_ >> 4))
+	{
+		size_t border = (max_size_ >> 4);
+		auto it = events_cache_.begin();
+		for (size_t i = 0; i < border; i++)
+			it++;
+		events_cache_.erase(events_cache_.begin(), it);
+	}
 }
 
 rx_result cache_log_subscriber::read_log (const log_query_type& query, log_events_type& result)

@@ -392,7 +392,7 @@ bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std
 	if (!ret)
 	{
 		err << "Error adding directory!\r\n";
-		dump_error_result(err, std::move(ret));
+		ctx->raise_error(ret);
 		return false;
 	}
 	return true;

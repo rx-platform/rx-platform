@@ -256,6 +256,10 @@ public:
             return second_collection_;
         }
     }
+    size_t full_size()
+    {
+        return first_collection_.size() + second_collection_.size();
+    }
 };
 
 typedef std::vector<jobs::job_ptr> owner_jobs_type;

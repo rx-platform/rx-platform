@@ -139,6 +139,19 @@ rx_result tags_holder::get_value_ref (const string_type& path, rt_value_ref& ref
 
 // Class rx_platform::runtime::tag_blocks::common_runtime_tags 
 
+common_runtime_tags::common_runtime_tags()
+      : last_scan_time_(-1),
+        max_scan_time_(0),
+        loop_count_(0),
+        on_(false),
+        test_(false),
+        blocked_(false),
+        simulate_(false),
+        queues_size_(0)
+{
+}
+
+
 
 rx_result common_runtime_tags::initialize_runtime (runtime_init_context& ctx)
 {
@@ -161,6 +174,10 @@ rx_result common_runtime_tags::initialize_runtime (runtime_init_context& ctx)
 						if (bind_result)
 						{
 							bind_result = simulate_.bind("Object.Simulate", ctx);
+							if (bind_result)
+							{
+								bind_result = queues_size_.bind("Object.ProcessQueues", ctx);
+							}
 						}
 					}
 				}

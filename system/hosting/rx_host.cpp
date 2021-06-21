@@ -213,6 +213,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.manuals_path = row.second;
 		else if (row.first == "http.resources" && config.other.http_path.empty())
 			config.other.http_path = row.second;
+		else if (row.first == "rx.security" && config.other.rx_security.empty())
+			config.other.rx_security = row.second;
 		else if (row.first == "http.port" && config.other.http_port == 0)
 			config.other.http_port = atoi(row.second.c_str());
 		else if (row.first == "rx.port" && config.other.rx_port == 0)
@@ -369,7 +371,6 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 {
 	config.other.http_port = 0;
 	config.other.rx_port = 0;
-
 	
 
 	cxxopts::Options options(help_name, "");
@@ -451,6 +452,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
 
 		("rx-port", "TCP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.other.rx_port))
+		("security", "Default security provider for {rx-platform}", cxxopts::value<string_type>(config.other.rx_security))
 
 		("v,version", "Displays platform version")
 		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.meta_configuration.build_system_from_code))

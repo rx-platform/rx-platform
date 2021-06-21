@@ -73,6 +73,8 @@ class common_runtime_tags
     friend class algorithms::runtime_scan_algorithms;
 
   public:
+      common_runtime_tags();
+
 
       rx_result initialize_runtime (runtime_init_context& ctx);
 
@@ -95,6 +97,8 @@ class common_runtime_tags
       local_value<bool> blocked_;
 
       local_value<bool> simulate_;
+
+      owned_value<uint32_t, true> queues_size_;
 
 
 };

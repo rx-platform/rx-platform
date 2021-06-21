@@ -52,12 +52,10 @@ public:\
 		}\
 	void fill_code_info(std::ostream& info,const string_type& name)\
 	{\
-		static string_type compile_time;\
-		if(compile_time.empty())\
+		char compile_time[0x100] = {'\0'};\
+		if(compile_time[0]=='\0')\
 		{\
-			char compile_buffer[0x100];\
-			create_module_compile_time_string(__DATE__, __TIME__,compile_buffer);\
-			compile_time=compile_buffer;\
+			create_module_compile_time_string(__DATE__, __TIME__,compile_time);\
 		}\
 		info << "CODE INFO" << "\r\n";\
 		info << "--------------------------------------------------------------------------------" << "\r\n";\

@@ -114,6 +114,8 @@ class memory_buffer_base : public pointers::reference_object
 
       memory_buffer_base (const void* ptr, size_t size);
 
+      memory_buffer_base (memory_buffer_base&& right, size_t size);
+
       ~memory_buffer_base();
 
 
@@ -651,6 +653,18 @@ memory_buffer_base<allocT,swap_bytes>::memory_buffer_base (const void* ptr, size
 	next_push_ = (int)size;
 	allocator_.allocate(size);
 	memcpy(allocator_.get_char_buffer(), ptr, size);
+}
+
+template <class allocT, bool swap_bytes>
+memory_buffer_base<allocT,swap_bytes>::memory_buffer_base (memory_buffer_base&& right, size_t size)
+      : current_read_(0),
+        next_push_(0)
+{
+    current_read_ = right.current_read_;
+    next_push_ = right.next_push_;
+    right.current_read_ = 0;
+    right.next_push_ = 0;
+    allocator_ = std::move(right.allocator_);
 }
 
 

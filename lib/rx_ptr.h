@@ -276,9 +276,15 @@ public:
 
 	  static const char* get_pointee_class_name()
 	  {
+#ifdef _DEBUG
+		  static char ret[0x100] = { '\0' };
+		  if (ret[0] == '\0')
+		  {
+#else
 		  static char* ret = nullptr;
 		  if (ret == nullptr)
 		  {
+#endif
 			  string_type temp(_rx_func_);
 			  if (temp.size() > 1 && *(temp.rbegin()) == ']')
 			  {// gcc stuff
@@ -302,7 +308,9 @@ public:
 					  }
 				  }
 			  }
+#ifndef _DEBUG
 			  ret = new char[temp.size() + 1];
+#endif
 			  strcpy(ret, temp.c_str());
 		  }
 		  return ret;
@@ -483,6 +491,43 @@ typedef pointers::struct_reference::smart_ptr rx_struct_ptr;
 
 typedef pointers::reference_object::smart_ptr rx_reference_ptr;
 
+
+// this strange looking stuff is placed in order to catch dangling pointers with
+//  microsoft debug heap, if used enables to detect the caller line and file
+
+#ifdef _DEBUG
+
+#ifdef _MSC_VER 
+
+#undef new
+
+struct debug_reference_wrapper
+{
+	const char* file_;
+	int line_;
+	debug_reference_wrapper(const char* file, int line)
+		: file_(file), line_(line)
+	{
+	}
+	template<class T, typename... Args>
+	pointers::reference<T> create_func(Args&&... args)
+	{
+		return pointers::reference<T>::create_from_pointer_without_bind(new(_CLIENT_BLOCK, file_, line_) T(std::forward<Args>(args)...));
+	}
+	template<class T>
+	pointers::reference<T> create_func()
+	{
+		return pointers::reference<T>::create_from_pointer_without_bind(new(_CLIENT_BLOCK, file_, line_) T());
+	}
+};
+
+#define DEBUG_ALLOC_WRAPPER(f, l) debug_reference_wrapper(f, l).create_func
+
+#define rx_create_reference DEBUG_ALLOC_WRAPPER(__FILE__, __LINE__)
+
+#define new DEBUG_CLIENTBLOCK 
+
+#else
 // for standard references
 template<class T, typename... Args>
 pointers::reference<T> rx_create_reference(Args&&... args)
@@ -494,6 +539,25 @@ pointers::reference<T> rx_create_reference()
 {
 	return pointers::reference<T>::create_from_pointer_without_bind(new T());
 }
+
+#endif
+
+#else
+// for standard references
+template<class T, typename... Args>
+pointers::reference<T> rx_create_reference(Args&&... args)
+{
+	return pointers::reference<T>::create_from_pointer_without_bind(new T(std::forward<Args>(args)...));
+}
+template<class T>
+pointers::reference<T> rx_create_reference()
+{
+	return pointers::reference<T>::create_from_pointer_without_bind(new T());
+}
+
+#endif
+
+
 }
 
 

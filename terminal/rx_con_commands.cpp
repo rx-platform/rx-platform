@@ -356,6 +356,8 @@ bool log_command::do_console_command (std::istream& in, std::ostream& out, std::
 
 bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
+	err << "e jebi ga ne radi!!!\r\n";
+	return false;
 
 	char buffer[0x100];
 
@@ -422,9 +424,9 @@ bool log_command::do_test_command (std::istream& in, std::ostream& out, std::ost
 				line = buffer;
 				CONSOLE_LOG_INFO("log", 900, line);
 				ctx->get_stdout() << line << "\r\n";
-				ctx->send_results(true);
+				ctx->continue_scan();
 			};
-		rx_post_function_to(ctx->get_executer(), api_ctx.object, std::move(func), ctx);
+		//rx_post_function_to(ctx->get_executer(), api_ctx.object, std::move(func), ctx);
 	};
 
 
@@ -499,6 +501,7 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 				query.type = query.type | log::rx_log_acceding;
 			query.count = count;
 
+			ctx->set_waiting();
 			ret = rx_gate::instance().read_log(log_name, query, [ctx, this](rx_result_with<log::log_events_type>&& result)
 				{
 					auto& out = ctx->get_stdout();
@@ -517,32 +520,22 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 							options.list_source = false;
 							options.list_dates = false;
 							dump_log_items(result.value(), options, out, 1000);
-							ctx->send_results(true);
 						}
 						else
 						{
-							out << "\r\nLog results are empty.\r\n";
-							ctx->send_results(false);
+							out << "total 0\r\n";
 						}
 
 					}
 					else
 					{
-						dump_error_result(err, result);
-						ctx->send_results(false);
+						ctx->raise_error(result);
 					}
+					ctx->continue_scan();
 				});
 		}
 	}
-	if (ret)
-	{
-		ctx->set_waiting();
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return ret;
 }
 
 void log_command::dump_log_items (const log::log_events_type& items, list_log_options options, std::ostream& out, int count, bool header)
@@ -755,43 +748,36 @@ sleep_command::~sleep_command()
 
 bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
+	uint32_t period = 0;
+	in >> period;
 
-	rx_reference<sleep_data_t> data = ctx->get_instruction_data<sleep_data_t>();
-	if (!data)
-	{// we just entered to command
-		uint32_t period = 0;
-		in >> period;
-
-		if (period == 0)
-		{
-			err << "Invalid period specified!";
-			return false;
-		}
-		else
-		{
-			data = rx_create_reference<sleep_data_t>();
-			data->started = rx_get_us_ticks();
-			ctx->set_instruction_data(data);
-			ctx->postpone(period);
-			ctx->one_more_time();
-		}
+	if (period == 0)
+	{
+		err << "Invalid period specified!";
+		return false;
 	}
 	else
-	{// timer expired or canceled
-		uint64_t lasted = rx_get_us_ticks() - data->started;
-		if (ctx->is_canceled())
-		{
-			out << "Sleep was canceled after ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
-		else
-		{
-			out << "Sleep lasted ";
-			rx_dump_ticks_to_stream(out, lasted);
-			out << ".\r\n";
-		}
+	{
+		out << "Evo cekam...\r\n";
+		uint64_t started = rx_get_us_ticks();;
+		auto api_ctx = ctx->create_api_context();
+		ctx->set_waiting();
+		rx_post_delayed_function(api_ctx.object, period, [started](console_context_ptr ctx)
+			{
+				auto& out = ctx->get_stdout();
+				uint64_t lasted = rx_get_us_ticks() - started;
+
+				auto state = out.rdstate();
+				out << "Sleep lasted ";
+				state = out.rdstate();
+				rx_dump_ticks_to_stream(ctx->get_stdout(), lasted);
+				ctx->get_stdout() << ".\r\n";
+				ctx->get_stdout().flush();
+				ctx->continue_scan();
+
+			}, ctx);
 	}
+
 	return true;
 }
 
@@ -853,10 +839,11 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 		auto resolve_result = api::ns::rx_resolve_reference(whose, directories);
 		if (!resolve_result)
 		{
-			dump_error_result(err, resolve_result);
+			ctx->raise_error(resolve_result);
 			return resolve_result;
 
 		}
+		ctx->set_waiting();
 		rx_result result = model::algorithms::do_with_item(resolve_result.move_value()
 			, [ctx, this](rx_result_with<platform_item_ptr>&& data) mutable -> rx_result
 			{
@@ -875,19 +862,14 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 				{
 					if (!result)
 					{
-						auto& err = ctx->get_stderr();
-						dump_error_result(err, result);
+						ctx->raise_error(result);
 					}
-					ctx->get_client()->process_event(result, ctx->get_out(), ctx->get_err(), true);
+					ctx->continue_scan();
+
 				}), context);
-		if (result)
+		if (!result)
 		{
-			ctx->set_waiting();
-		}
-		else
-		{
-			auto& err = ctx->get_stderr();
-			dump_error_result(err, result);
+			ctx->raise_error(result);
 		}
 		return result;
 	}
