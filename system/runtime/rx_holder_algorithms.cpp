@@ -316,7 +316,7 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
         }
 #endif
     }
-    if (path == "Storage")
+    else if (path == "Storage")
     {// our runtime value
         serialization::json_writer writer;
         writer.write_header(STREAMING_TYPE_MESSAGE, 0);

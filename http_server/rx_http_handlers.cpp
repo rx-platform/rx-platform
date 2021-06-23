@@ -35,6 +35,7 @@
 #include "http_server/rx_http_handlers.h"
 
 #include "http_server/rx_http_server.h"
+#include "rx_http_items.h"
 
 
 namespace rx_internal {
@@ -57,6 +58,8 @@ void http_handlers_repository::register_standard_handlers ()
 	handler_ptr = std::make_unique<html_file_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<css_file_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<http_json_object_reader>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 }
 
@@ -89,7 +92,7 @@ rx_result http_file_handler::handle_request (http_request& req, http_response& r
 		auto result = rx_file_get_size(file, &size);
 		if (result == RX_OK)
 		{
-			resp.content.assign(size, 0);
+			resp.content.assign((size_t)size, 0);
 			uint32_t readed = 0;
 			result = rx_file_read(file, &resp.content[0], (uint32_t)size, &readed);
 			if (result == RX_OK)

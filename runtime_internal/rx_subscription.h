@@ -179,6 +179,8 @@ class subscription_write_transaction
       typedef std::map<runtime_transaction_id_t, runtime_transaction_id_t> transactions_map_type;
 
   public:
+      subscription_write_transaction();
+
 
       runtime_transaction_id_t add_write (runtime_transaction_id_t master_id, transactions_map_type& map, runtime_handle_t handle);
 

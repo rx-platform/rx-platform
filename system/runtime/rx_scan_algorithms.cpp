@@ -52,6 +52,7 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     whose.job_lock_.lock();
     whose.job_pending_ = false;
     whose.job_lock_.unlock();
+    whose.json_cache_.clear();
     whose.context_.init_context();
 
     string_type full_path = whose.meta_info().get_full_path();

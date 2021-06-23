@@ -85,7 +85,7 @@ rx_result local_pipe_port::receive_loop (rx_pipe_host* host)
 
 
 	add_stack_endpoint(&pipes_.stack_entry_, nullptr, nullptr);
-	pipes_.receive_loop([this] (size_t count)
+	pipes_.receive_loop([this] (int64_t count)
 		{
 		});
 
@@ -99,7 +99,7 @@ rx_result local_pipe_port::start_listen (const protocol_address* local_address, 
 		RX_ASSERT(false);
 		return "Already started.";
 	}
-	auto result = pipes_.open(pipe_handles_, [this](size_t count)
+	auto result = pipes_.open(pipe_handles_, [this](int64_t count)
 		{
 		});
 	if (!result)

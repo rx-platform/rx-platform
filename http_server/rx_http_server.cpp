@@ -103,14 +103,19 @@ rx_result http_server::handle_request (http_request req)
 		auto result = handler->handle_request(req, response);
 		if (!result)
 		{
+			response.set_string_content(result.errors_line());
+			response.headers["Content-Type"] = "text/plain";
 			response.result = 500;
 		}
 	}
 	else
 	{
+		response.set_string_content("No handler registered for this type");
+		response.headers["Content-Type"] = "text/plain";
 		response.result = 501;
 	}
-	send_response(req, std::move(response));
+	if (response.result > 0)
+		send_response(req, std::move(response));
 	return true;
 }
 
@@ -179,6 +184,9 @@ rx_result standard_request_filter::handle_request_after (http_request& req, http
 	resp.headers.emplace("Content-Length", buff);
 	switch (resp.result)
 	{
+	case 100:
+		resp.result_string = "100 Continue";
+		break;
 	case 200:
 		resp.result_string = "200 OK";
 		break;

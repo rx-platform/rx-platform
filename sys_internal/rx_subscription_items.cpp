@@ -424,6 +424,7 @@ message_ptr write_items_request::do_job (api::rx_context ctx, rx_protocol_connec
 	if (result)
 	{
 		auto response = std::make_unique<write_items_response>();
+		response->request_id = request_id;
 		response->subscription_id = subscription_id;
 		response->results.reserve(results.size());
 		for (auto& one : results)

@@ -1566,6 +1566,49 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 		filter->complex_data.register_simple_value_static("LowRaw", 0.0, false, true);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_LIMIT_FILTER_TYPE_NAME
+			, RX_LIMIT_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		filter->complex_data.register_simple_value_static("HiInput", 1000.0, false, true);
+		filter->complex_data.register_simple_value_static("LowInput", 0.0, false, true);
+		filter->complex_data.register_simple_value_static("HiOutput", 1000.0, false, true);
+		filter->complex_data.register_simple_value_static("LowOutput", 0.0, false, true);
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_CUTOFF_FILTER_TYPE_NAME
+			, RX_CUTOFF_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		filter->complex_data.register_simple_value_static("InCutoffValue", 0.0, false, true);
+		filter->complex_data.register_simple_value_static("OutCutoffValue", 0.0, false, true);
+		add_simple_type_to_configuration<filter_type>(dir, filter, true);
+
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_LO_CUTOFF_FILTER_TYPE_NAME
+			, RX_LO_CUTOFF_FILTER_TYPE_ID
+			, RX_CUTOFF_FILTER_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_HI_CUTOFF_FILTER_TYPE_NAME
+			, RX_HI_CUTOFF_FILTER_TYPE_ID
+			, RX_CUTOFF_FILTER_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+
+
 		auto what = create_type<struct_type>(meta::type_creation_data{
 			RX_PHY_PORT_STATUS_TYPE_NAME
 			, RX_PHY_PORT_STATUS_TYPE_ID

@@ -319,9 +319,16 @@
 #define RX_PLATFORM_SOURCE_TYPE_ID 0xc000049
  
 
-
 #define RX_LINEAR_SCALING_FILTER_TYPE_NAME "LinearScaling"
 #define RX_LINEAR_SCALING_FILTER_TYPE_ID 0xc000039
+#define RX_LIMIT_FILTER_TYPE_NAME "LimitFilter"
+#define RX_LIMIT_FILTER_TYPE_ID 0xc000065
+#define RX_CUTOFF_FILTER_TYPE_NAME "CutoffScaling"
+#define RX_CUTOFF_FILTER_TYPE_ID 0xc000066
+#define RX_LO_CUTOFF_FILTER_TYPE_NAME "LowCutoffScaling"
+#define RX_LO_CUTOFF_FILTER_TYPE_ID 0xc000067
+#define RX_HI_CUTOFF_FILTER_TYPE_NAME "HighCutoffScaling"
+#define RX_HI_CUTOFF_FILTER_TYPE_ID 0xc000068
 
 #define RX_SIMULATION_SOURCE_TYPE_NAME "SimulationSource"
 #define RX_SIMULATION_SOURCE_TYPE_ID 0xc000040
@@ -361,7 +368,7 @@
 #define RX_TCP_RX_PORT_TYPE_NAME "SystemRxPort"
 
 
-// last is 0xc000064!!!! 
+// last is 0xc000068!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

@@ -33,12 +33,12 @@
 
 
 
+// dummy
+#include "dummy.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
-// dummy
-#include "dummy.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_http_server
@@ -124,7 +124,7 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_http_endpoint  > rx_http_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< protocols::rx_http::rx_http_endpoint  > rx_http_port_base;
 
 
 

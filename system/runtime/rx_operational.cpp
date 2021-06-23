@@ -580,10 +580,10 @@ void connected_tags::binded_tags_change (structure::value_data* whose, const rx_
 				{
 					next_send_[one].emplace(handle, val);
 				}
-				context_->tag_updates_pending();
 			}
 		}
 	}
+	context_->tag_updates_pending();
 }
 
 void connected_tags::write_result_arrived (tags_callback_ptr whose, write_result_data&& data)

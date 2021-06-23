@@ -40,31 +40,6 @@ namespace protocols {
 
 namespace rx_http {
 
-// Class protocols::rx_http::rx_http_port 
-
-rx_http_port::rx_http_port()
-{
-	construct_func = [this]()
-	{
-		auto rt = rx_create_reference<rx_http_endpoint>(this);
-		auto entry = rt->bind_endpoint([this](int64_t count)
-			{
-			},
-			[this](int64_t count)
-			{
-			});
-		return construct_func_type::result_type{ entry, rt };
-	};
-}
-
-
-
-void rx_http_port::stack_assembled ()
-{
-	auto result = listen(nullptr, nullptr);
-}
-
-
 // Class protocols::rx_http::rx_http_endpoint 
 
 rx_http_endpoint::rx_http_endpoint (runtime::items::port_runtime* port)
@@ -241,6 +216,31 @@ rx_result rx_http_endpoint::send_response (http_response response)
 		return "Error sending packet:"s + rx_protocol_error_message(proto_result);
 	}
 	return true;
+}
+
+
+// Class protocols::rx_http::rx_http_port 
+
+rx_http_port::rx_http_port()
+{
+	construct_func = [this]()
+	{
+		auto rt = rx_create_reference<rx_http_endpoint>(this);
+		auto entry = rt->bind_endpoint([this](int64_t count)
+			{
+			},
+			[this](int64_t count)
+			{
+			});
+		return construct_func_type::result_type{ entry, rt };
+	};
+}
+
+
+
+void rx_http_port::stack_assembled ()
+{
+	auto result = listen(nullptr, nullptr);
 }
 
 

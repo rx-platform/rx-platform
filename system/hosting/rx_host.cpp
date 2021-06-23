@@ -276,7 +276,7 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 			uint64_t size = 0;
 			if (RX_OK == rx_file_get_size(file, &size) && size > 0)
 			{
-				copyright_cache_.assign(size, ' ');
+				copyright_cache_.assign((size_t)size, ' ');
 				if (RX_OK != rx_file_read(file, &copyright_cache_[0], (uint32_t)size, nullptr))
 				{
 					copyright_cache_.clear();
@@ -729,7 +729,7 @@ const string_type& rx_platform_host::get_license ()
 			uint64_t size = 0;
 			if (RX_OK == rx_file_get_size(file, &size) && size > 0)
 			{
-				lic_cahce.assign(size, ' ');
+				lic_cahce.assign((size_t)size, ' ');
 				if (RX_OK != rx_file_read(file, &lic_cahce[0], (uint32_t)size, nullptr))
 				{
 					lic_cahce.clear();

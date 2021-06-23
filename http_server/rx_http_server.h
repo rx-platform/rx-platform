@@ -76,6 +76,8 @@ class http_server
 
       rx_result handle_request (http_request req);
 
+      void send_response (http_request& request, http_response response);
+
       static string_type get_server_info ();
 
       static string_type get_server_header_info ();
@@ -97,8 +99,6 @@ class http_server
 
 
       void register_standard_filters ();
-
-      void send_response (http_request& request, http_response response);
 
 
 

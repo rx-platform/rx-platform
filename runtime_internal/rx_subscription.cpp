@@ -755,6 +755,12 @@ bool runtime_connection_data::connection_dead ()
 
 // Class rx_internal::sys_runtime::subscriptions::subscription_write_transaction 
 
+subscription_write_transaction::subscription_write_transaction()
+      : pending_count_(0)
+{
+}
+
+
 
 runtime_transaction_id_t subscription_write_transaction::add_write (runtime_transaction_id_t master_id, transactions_map_type& map, runtime_handle_t handle)
 {

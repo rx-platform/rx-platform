@@ -1420,6 +1420,7 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 		if (!path.empty())
 		{
 			api::rx_context rx_ctx = ctx->create_api_context();
+			ctx->set_waiting();
 			auto result = rx_platform::api::meta::rx_save_item(path,
 				rx_function_to_go<rx_result&&>(rx_ctx.object, [ctx, path, this](rx_result&& result)
 				{
@@ -1435,6 +1436,7 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 							<< ANSI_RX_OBJECT_COLOR << path << ANSI_COLOR_RESET
 							<< ".\r\n";
 					}
+					ctx->continue_scan();
 				}));
 			if (!result)
 			{
@@ -1442,8 +1444,6 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 				err << "Error saving item\r\n";
 				rx_dump_error_result(err, std::move(result));
 			}
-			else
-				ctx->set_waiting();
 
 			ret = result;
 		}

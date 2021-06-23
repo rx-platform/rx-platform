@@ -220,7 +220,6 @@ rx_protocol_stack_endpoint* slave_server_port_impl<endpointT>::construct_endpoin
         endpoint_data.first->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
         {
             endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
-            whose->close_endpoint();
             whose->get_port()->unbind_stack_endpoint(entry);
         };
     }

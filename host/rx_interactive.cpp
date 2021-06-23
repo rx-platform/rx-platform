@@ -601,7 +601,7 @@ rx_result interactive_console_port::run_interactive (interactive_console_host* h
 	host->write_stdout(RX_LICENSE_MESSAGE);
 
 	add_stack_endpoint(&endpoint_.stack_entry_, nullptr, nullptr);
-	auto result = endpoint_.run_interactive([this](size_t count)
+	auto result = endpoint_.run_interactive([this](int64_t count)
 		{
 
 		});

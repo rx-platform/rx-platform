@@ -87,8 +87,50 @@ Implementation of linear scaling for input and output.");
 
 
 
-class bound_filter : public rx_platform::runtime::blocks::filter_runtime  
+class cutoff_scaling : public rx_platform::runtime::blocks::filter_runtime  
 {
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation of cutoff scaling for input and output.");
+
+    DECLARE_REFERENCE_PTR(cutoff_scaling);
+
+  public:
+      cutoff_scaling (bool lo_cutoff);
+
+
+      rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result filter_input (rx_value& val);
+
+      rx_result filter_output (rx_simple_value& val);
+
+
+
+      runtime::local_value<double> input_cutoff_;
+
+      runtime::local_value<double> output_cutoff_;
+
+      bool lo_cutoff_;
+
+
+};
+
+
+
+
+
+
+class limit_filter : public rx_platform::runtime::blocks::filter_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation of limit filter for input and output.");
+
+    DECLARE_REFERENCE_PTR(limit_filter);
 
   public:
 
@@ -105,9 +147,13 @@ class bound_filter : public rx_platform::runtime::blocks::filter_runtime
 
 
 
-      runtime::local_value<double> hi_bound_;
+      runtime::local_value<double> hi_input_;
 
-      runtime::local_value<double> low_bound_;
+      runtime::local_value<double> low_input_;
+
+      runtime::local_value<double> hi_output_;
+
+      runtime::local_value<double> low_output_;
 
 
 };
