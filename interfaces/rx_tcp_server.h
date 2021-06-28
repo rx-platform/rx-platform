@@ -52,7 +52,6 @@ class tcp_server_port;
 
 
 #include "sys_internal/rx_inf.h"
-#include "system/runtime/address_endpoint.h"
 
 
 namespace rx_internal {

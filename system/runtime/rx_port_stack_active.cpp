@@ -63,7 +63,7 @@ rx_result active_builder::bind_stack_endpoint (rx_port_ptr who, rx_protocol_stac
 	{
 		security::secured_scope _(what->identity);
 
-		auto ep = who->get_implementation()->construct_endpoint();
+		auto ep = who->get_implementation()->construct_listener_endpoint(&local_addr, &remote_addr);
 
 		if (ep)
 		{
@@ -118,7 +118,7 @@ rx_result active_builder::bind_stack_endpoint (rx_port_ptr who, rx_protocol_stac
 		{
 			security::secured_scope _(what->identity);
 
-			auto ep = who->get_implementation()->construct_endpoint();
+			auto ep = who->get_implementation()->construct_listener_endpoint(&local_addr, &remote_addr);
 
 			if (ep)
 			{

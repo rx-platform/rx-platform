@@ -33,8 +33,6 @@
 
 
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 
@@ -47,40 +45,6 @@ namespace runtime {
 namespace io_types {
 
 namespace ports_templates {
-
-
-
-
-
-template <typename endpointT, typename routingT>
-class extern_routed_port_impl : public items::port_runtime  
-{
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-standard multiple endpoint transport port implementation");
-
-    DECLARE_REFERENCE_PTR(extern_routed_port_impl);
-
-    typedef routed_port_endpoint<endpointT, routingT> endpoint_type;
-    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<endpoint_type> > active_endpoints_type;
-
-  public:
-
-      void destroy_endpoint (rx_protocol_stack_endpoint* what);
-
-
-  protected:
-
-      rx_result add_stack_endpoint (rx_protocol_stack_endpoint* what, std::unique_ptr<endpointT>&& ep);
-
-
-  private:
-
-
-      active_endpoints_type active_endpoints_;
-
-
-};
-
 
 
 
@@ -151,50 +115,6 @@ standard single endpoint transport port implementation");
 };
 
 
-// Parameterized Class rx_platform::runtime::io_types::ports_templates::extern_routed_port_impl 
-
-
-template <typename endpointT, typename routingT>
-rx_result extern_routed_port_impl<endpointT,routingT>::add_stack_endpoint (rx_protocol_stack_endpoint* what, std::unique_ptr<endpointT>&& ep)
-{
-    auto endpoint_ptr = std::make_unique<endpoint_type>(this);
-
-    if (what->closed_function == nullptr)
-    {
-        what->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
-        {
-            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
-            whose->get_port()->unbind_stack_endpoint(entry);
-        };
-    }
-
-    auto push_result = rx_push_stack(what, &endpoint_ptr->router(this)->stack);
-    if (push_result == RX_PROTOCOL_OK)
-    {
-        auto result = register_routing_endpoint(&endpoint_ptr->router(this)->stack);
-        result = register_routing_endpoint(what);
-        endpoint_ptr->endpoint = std::move(ep);
-        active_endpoints_.emplace(&endpoint_ptr->router(this)->stack, std::move(endpoint_ptr));
-        return result;
-    }
-    else
-    {
-        return rx_protocol_error_message(push_result);
-    }
-}
-
-template <typename endpointT, typename routingT>
-void extern_routed_port_impl<endpointT,routingT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
-{
-    auto it = active_endpoints_.find(what);
-    if (it != active_endpoints_.end())
-    {
-        it->second->router(this)->close_sessions();
-        active_endpoints_.erase(it);
-    }
-}
-
-
 // Parameterized Class rx_platform::runtime::io_types::ports_templates::extern_port_impl 
 
 
@@ -245,5 +165,51 @@ void extern_singleton_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_
 } // namespace rx_platform
 
 
+
+#endif
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+standard multiple endpoint transport port implementation");
+
+    DECLARE_REFERENCE_PTR(extern_routed_port_impl);
+
+    typedef routed_port_endpoint<endpointT, routingT> endpoint_type;
+    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<endpoint_type> > active_endpoints_type;
+
+    auto endpoint_ptr = std::make_unique<endpoint_type>(this);
+
+    if (what->closed_function == nullptr)
+    {
+        what->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+        {
+            endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            whose->get_port()->unbind_stack_endpoint(entry);
+        };
+    }
+
+    auto push_result = rx_push_stack(what, &endpoint_ptr->router(this)->stack);
+    if (push_result == RX_PROTOCOL_OK)
+    {
+        auto result = register_routing_endpoint(&endpoint_ptr->router(this)->stack);
+        result = register_routing_endpoint(what);
+        endpoint_ptr->endpoint = std::move(ep);
+        active_endpoints_.emplace(&endpoint_ptr->router(this)->stack, std::move(endpoint_ptr));
+        return result;
+    }
+    else
+    {
+        return rx_protocol_error_message(push_result);
+    }
+
+    auto it = active_endpoints_.find(what);
+    if (it != active_endpoints_.end())
+    {
+        it->second->router(this)->close_sessions();
+        active_endpoints_.erase(it);
+    }
 
 #endif

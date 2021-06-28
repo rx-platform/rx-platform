@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_transaction_limiter.h
+*  interfaces\rx_transaction_limiter.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -34,36 +34,33 @@
 
 #include "lib/rx_const_size_vector.h"
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
 // dummy
 #include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
 // rx_io_addr
 #include "lib/rx_io_addr.h"
 
-namespace rx_platform {
-namespace runtime {
-namespace io_types {
+namespace rx_internal {
+namespace interfaces {
 namespace ports_lib {
 class transaction_limiter_port;
 
 } // namespace ports_lib
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace interfaces
+} // namespace rx_internal
 
 
+using namespace rx_platform::runtime;
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
-
-namespace io_types {
+namespace interfaces {
 
 namespace ports_lib {
 
@@ -92,7 +89,7 @@ class limiter_transaction_data
       bool is_write () const;
 
 
-      rx_io_buffer buffer;
+      rx_platform::runtime::io_types::rx_io_buffer buffer;
 
       rx::io::any_address to;
 
@@ -216,7 +213,7 @@ class limiter_endpoint
 
 
 
-typedef ports_templates::transport_port_impl< limiter_endpoint  > transaction_limiter_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< limiter_endpoint  > transaction_limiter_port_base;
 
 
 struct limit_options_t
@@ -252,7 +249,7 @@ Use limit value 1 for enabling half-duplex connection, or 0 for no limit.");
       uint32_t get_write_timeout () const;
 
 
-      master_port_status status;
+      rx_platform::runtime::io_types::master_port_status status;
 
 
   protected:
@@ -277,9 +274,8 @@ Use limit value 1 for enabling half-duplex connection, or 0 for no limit.");
 
 
 } // namespace ports_lib
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace interfaces
+} // namespace rx_internal
 
 
 

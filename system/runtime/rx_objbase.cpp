@@ -295,7 +295,13 @@ rx_result port_runtime::stop_passive ()
 	return RX_NOT_SUPPORTED;
 }
 
-rx_protocol_stack_endpoint* port_runtime::construct_endpoint ()
+rx_protocol_stack_endpoint* port_runtime::construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
+{
+	RX_ASSERT(false);
+	return nullptr;
+}
+
+rx_protocol_stack_endpoint* port_runtime::construct_initiator_endpoint ()
 {
 	RX_ASSERT(false);
 	return nullptr;

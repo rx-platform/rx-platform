@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_full_duplex_packet.h
+*  interfaces\rx_full_duplex_packet.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -38,28 +38,51 @@
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 
-namespace rx_platform {
-namespace runtime {
-namespace io_types {
+namespace rx_internal {
+namespace interfaces {
 namespace ports_lib {
+template <typename addrT> class listener_instance;
 template <typename addrT> class full_duplex_addr_packet_port;
 
 } // namespace ports_lib
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace interfaces
+} // namespace rx_internal
 
 
+using namespace rx_platform::runtime;
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
-
-namespace io_types {
+namespace interfaces {
 
 namespace ports_lib {
+template <typename addrT>
+class initiator_data_type;
+template <typename addrT>
+class listener_data_type;
+template <typename addrT>
+class listener_instance;
 
+
+// adapter
+template <typename addrT>
+struct duplex_port_adapter
+{
+    typedef addrT key_type;
+    typedef addrT listener_key_type;
+
+    static key_type get_key_from_addresses_initiator(const addrT& local_address, const addrT& remote_address);
+    static std::pair<bool, key_type> get_key_from_packet_initiator(const recv_protocol_packet& packet);
+    static key_type get_key_from_addresses_listener(const addrT& local_address, const addrT& remote_address);
+    static std::pair<bool, key_type> get_key_from_packet_listener(const recv_protocol_packet& packet);
+    static void fill_send_packet(send_protocol_packet& packet, const initiator_data_type<addrT>& session_data);
+    static void fill_send_packet(send_protocol_packet& packet, const listener_data_type<addrT>& session_data);
+
+    static std::pair<key_type, std::unique_ptr<initiator_data_type<addrT> > > create_initiator_data(const protocol_address* local_address, const protocol_address* remote_address);
+    static std::unique_ptr<listener_instance<addrT> > create_listener_instance(const protocol_address* local_address, const protocol_address* remote_address);
+    static std::pair<key_type, std::unique_ptr<listener_data_type<addrT> > > create_listener_data(const protocol_address* local_address, const protocol_address* remote_address);
+};
 
 
 
@@ -104,7 +127,26 @@ class listener_data_type
 {
 
   public:
+      listener_data_type();
 
+      ~listener_data_type();
+
+
+      rx_protocol_stack_endpoint stack_endpoint;
+
+      full_duplex_addr_packet_port<addrT>* my_port;
+
+      listener_instance<addrT>* my_instance;
+
+
+      addrT local_addr;
+
+      addrT remote_addr;
+
+      listener_data_type(const listener_data_type&) = delete;
+      listener_data_type(listener_data_type&&) noexcept = default;
+      listener_data_type& operator=(const listener_data_type&) = delete;
+      listener_data_type& operator=(listener_data_type&&) noexcept = default;
   protected:
 
   private:
@@ -113,24 +155,68 @@ class listener_data_type
 };
 
 
-// adapter
-template <typename addrT>
-struct duplex_port_adapter
-{
-    typedef addrT key_type;
-    typedef addrT listener_key_type;
 
-    static key_type get_key_from_addresses(const addrT& local_address, const addrT& remote_address);
-    static std::pair<bool, key_type> get_key_from_packet(const recv_protocol_packet& packet);
-    static void fill_send_packet(send_protocol_packet& packet, const initiator_data_type<addrT>& session_data);
-    static std::pair<key_type, std::unique_ptr<initiator_data_type<addrT> >> create_initiator_data(const protocol_address* local_address, const protocol_address* remote_address);
+
+
+
+template <typename addrT>
+class listener_instance 
+{
+    typedef duplex_port_adapter<addrT> address_adapter_type;
+    typedef typename duplex_port_adapter<addrT>::key_type key_type;
+
+    typedef listener_data_type<addrT> listener_data_t;
+    typedef std::map<key_type, listener_data_t*> listeners_type;
+
+  public:
+      listener_instance();
+
+      ~listener_instance();
+
+
+      rx_protocol_result_t route_listeners_packet (recv_protocol_packet packet);
+
+      rx_protocol_result_t listener_connected_received (rx_session* session);
+
+      rx_protocol_result_t remove_listener (const key_type& key);
+
+
+      full_duplex_addr_packet_port<addrT>* my_port;
+
+      rx_protocol_stack_endpoint stack_endpoint;
+
+
+      addrT local_addr;
+
+      addrT remote_addr;
+
+      listener_instance(const listener_instance&) = delete;
+      listener_instance(listener_instance&&) noexcept = default;
+      listener_instance& operator=(const listener_instance&) = delete;
+      listener_instance& operator=(listener_instance&&) noexcept = default;
+  protected:
+
+  private:
+
+      rx_protocol_stack_endpoint* find_listener_endpoint (const key_type& key, const protocol_address* local_address, const protocol_address* remote_address);
+
+
+
+      listeners_type listeners_;
+
+
+      locks::slim_lock routing_lock_;
+
+
 };
 
 
 
 
+
+
 template <typename addrT>
-class full_duplex_addr_packet_port : public items::port_runtime  
+class full_duplex_addr_packet_port : public rx_platform::runtime::items::port_runtime  
 {
     DECLARE_CODE_INFO("rx", 0, 1, 0, "\
 standard single endpoint transport port implementation");
@@ -138,8 +224,12 @@ standard single endpoint transport port implementation");
     DECLARE_REFERENCE_PTR(full_duplex_addr_packet_port);
 
     typedef initiator_data_type<addrT> initiator_data_t;
-    friend class initiator_data_type<addrT>;
     typedef listener_data_type<addrT> listener_data_t;
+    typedef listener_instance<addrT> listener_instance_t;
+
+    friend class initiator_data_type<addrT>;
+    friend class listener_instance<addrT>;
+    friend class listener_data_type<addrT>;
 
     typedef duplex_port_adapter<addrT> address_adapter_type;
     typedef typename duplex_port_adapter<addrT>::key_type key_type;
@@ -147,7 +237,8 @@ standard single endpoint transport port implementation");
     // listeners initiator initiators
 
     typedef std::map<key_type, std::unique_ptr<initiator_data_t> > initiators_type;
-    typedef std::map<key_type, std::unique_ptr<listener_data_t> > listeners_type;
+    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<listener_instance_t> > listener_endpoints_type;
+    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<listener_data_t> > listening_type;
 
     enum current_port_state : uint_fast8_t
     {
@@ -169,7 +260,9 @@ protected:
       full_duplex_addr_packet_port();
 
 
-      rx_protocol_stack_endpoint* construct_endpoint ();
+      rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+
+      rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       virtual void destroy_endpoint (rx_protocol_stack_endpoint* what) = 0;
 
@@ -204,9 +297,11 @@ protected:
 
       initiators_type initiators_;
 
-      listeners_type listeners_;
+      rx_protocol_stack_endpoint initiator_endpoint_;
 
-      rx_protocol_stack_endpoint initiators_endpoint_;
+      listener_endpoints_type listener_endpoints_;
+
+      listening_type listening_;
 
 
       locks::slim_lock routing_lock_;
@@ -280,9 +375,8 @@ IP4 routing port implementation, for both initiators and listeners");
 
 
 } // namespace ports_lib
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace interfaces
+} // namespace rx_internal
 
 
 

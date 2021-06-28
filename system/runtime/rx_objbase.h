@@ -35,14 +35,14 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "system/server/rx_server.h"
 
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
-// rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // dummy
 #include "dummy.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
+// rx_io_buffers
+#include "system/runtime/rx_io_buffers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -443,7 +443,9 @@ system port class. basic implementation of a port");
 
       virtual rx_result stop_passive ();
 
-      virtual rx_protocol_stack_endpoint* construct_endpoint ();
+      virtual rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
+
+      virtual rx_protocol_stack_endpoint* construct_initiator_endpoint ();
 
       rx_result register_routing_endpoint (rx_protocol_stack_endpoint* what);
 

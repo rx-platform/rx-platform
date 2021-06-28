@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_transaction_limiter.cpp
+*  interfaces\rx_transaction_limiter.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,20 +32,18 @@
 
 
 // rx_transaction_limiter
-#include "system/runtime/rx_transaction_limiter.h"
+#include "interfaces/rx_transaction_limiter.h"
 
 #include "interfaces/rx_endpoints.h"
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
-
-namespace io_types {
+namespace interfaces {
 
 namespace ports_lib {
 
-// Class rx_platform::runtime::io_types::ports_lib::limiter_endpoint 
+// Class rx_internal::interfaces::ports_lib::limiter_endpoint 
 
 limiter_endpoint::limiter_endpoint (transaction_limiter_port* port)
       : port_(port),
@@ -442,7 +440,7 @@ void limiter_endpoint::release_transaction (transaction_ptr_t trans)
 }
 
 
-// Class rx_platform::runtime::io_types::ports_lib::limiter_transaction_data 
+// Class rx_internal::interfaces::ports_lib::limiter_transaction_data 
 
 limiter_transaction_data::limiter_transaction_data()
       : sent_tick(0)
@@ -526,7 +524,7 @@ bool limiter_transaction_data::is_write () const
 }
 
 
-// Class rx_platform::runtime::io_types::ports_lib::transaction_limiter_port 
+// Class rx_internal::interfaces::ports_lib::transaction_limiter_port 
 
 transaction_limiter_port::transaction_limiter_port()
       : limit_(1),
@@ -612,7 +610,6 @@ uint32_t transaction_limiter_port::get_write_timeout () const
 
 
 } // namespace ports_lib
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace interfaces
+} // namespace rx_internal
 

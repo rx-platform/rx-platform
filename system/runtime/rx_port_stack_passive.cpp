@@ -116,7 +116,7 @@ rx_result passive_builder::send_connect (rx_port_ptr who, const io::any_address&
     if (!who_data.build_map.stack_ready || !who_data.build_map.stack_top)
         return "Protocol stack not ready";
 
-    auto ep = who->get_implementation()->construct_endpoint();
+    auto ep = who->get_implementation()->construct_initiator_endpoint();
     if (ep)
     {
         io::any_address local_addr_copy(local_addr);
@@ -227,7 +227,7 @@ rx_result passive_builder::send_connect_down_recursive (rx_port_ptr who, rx_prot
     else
     {
 
-        top_ep = stack_top->get_implementation()->construct_endpoint();
+        top_ep = stack_top->get_implementation()->construct_initiator_endpoint();
         if (top_ep)
         {
             result = stack_active::active_builder::register_connection_endpoints(
