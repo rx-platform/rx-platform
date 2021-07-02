@@ -50,7 +50,7 @@ string_type ns_suggetions_query::query_name = "suggestion";
 
 rx_result ns_suggetions_query::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_string("typeName", instance_name))
+	if (!stream.write_string("typeName", type_name))
 		return stream.get_error();
 	if (!stream.write_string("instanceName", instance_name))
 		return stream.get_error();
@@ -89,40 +89,35 @@ rx_result ns_suggetions_query::do_query (api::query_result& result, rx_directory
 	string_type local_stuff;
 	size_t idx = suggested_path.rfind(RX_DIR_DELIMETER);
 
-	if (type == rx_item_type::rx_directory)
+	if (idx == string_type::npos)
 	{
-		if (idx == string_type::npos)
-		{
-			if (suggested_path.empty())
-			{
-				target_dir = dir;
-			}
-			else
-			{
-				target_dir = dir->get_sub_directory(suggested_path);
-				if (!target_dir)
-				{
-					return suggested_path + " not found!";
-				}
-				result.items.emplace_back(api::query_result_detail{ rx_directory, dir->meta_info() });
-				return true;
-			}
-		}
+		target_dir = dir;
+		local_stuff = suggested_path;
 	}
 	else
 	{
-		local_stuff = suggested_path.substr(idx + 1);
 		target_dir = dir->get_sub_directory(suggested_path.substr(0, idx));
 		if (!target_dir)
 		{
-			return suggested_path.substr(0, idx) + " not found!";
+			return suggested_path + " not found!";
 		}
+		local_stuff = suggested_path.substr(idx + 1);
 	}
 	
 	RX_ASSERT(target_dir);
 	if (target_dir)// can't help this one :(
 	{
-		//auto ret=target_dir->get_content()
+		platform_directories_type sub_dirs;
+		platform_items_type items;
+		target_dir->get_content(sub_dirs, items, local_stuff + "*");
+		for (auto& one : sub_dirs)
+		{
+			result.items.emplace_back(api::query_result_detail{ rx_directory, one->meta_info() });
+		}
+		for (auto& one : items)
+		{
+			result.items.emplace_back(api::query_result_detail{ one.get_type(), one.get_meta() });
+		}
 	}
 	return true;
 }

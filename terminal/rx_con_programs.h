@@ -84,6 +84,28 @@ public:
       rx_directory_ptr get_current_directory ();
       void set_current_directory (rx_directory_ptr value);
 
+      const int get_terminal_width () const
+      {
+        return terminal_width_;
+      }
+
+      void set_terminal_width (int value)
+      {
+        terminal_width_ = value;
+      }
+
+
+      const int get_terminal_height () const
+      {
+        return terminal_height_;
+      }
+
+      void set_terminal_height (int value)
+      {
+        terminal_height_ = value;
+      }
+
+
       template<typename T>
       pointers::reference<T> get_instruction_data()
       {
@@ -114,6 +136,10 @@ public:
       instructions_data_type instructions_data_;
 
       std::atomic_bool canceled_;
+
+      int terminal_width_;
+
+      int terminal_height_;
 
 
 };

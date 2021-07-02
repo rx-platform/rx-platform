@@ -356,6 +356,11 @@ namespace urke
 			size_t bool_temp = 0;
 
 			size_t pom_for_bit_options = 0;
+			size_t pom_for_string_options = 0;
+			bool pom_if_together = true;
+			bool quotes = false;
+
+			size_t pom_for_all = 0;
 
 			char current;
 
@@ -365,10 +370,13 @@ namespace urke
 
 			bool wrong = true;
 
+			size_t count_bit_options = 0;
+
 			while (!in.eof())
 			{
 				wrong = true;
 				pom_for_bit_options = 0;
+				count_bit_options = 0;
 				form = "";
 				if (bool_temp == 0)
 					in.get(current);
@@ -377,19 +385,21 @@ namespace urke
 					temp++;
 				else if (current != '-' && current != ' ' && current != '	' && temp == 1)
 				{
-					while (!in.eof() && current != ' ' && current != '	')
-					{
+					/*while (!in.eof() && current != ' ' && current != '	')
+					{*/
 						form.push_back(current);
 						in.get(current);
-					}
+				//	}
 					for (unsigned int i = 0; i < bit_options.size(); i++)
 					{
+						
 						if (bit_options[i].short_option == '\0')
 							continue;
 						for (unsigned int j = 0; j < form.size(); j++)
 						{
 							if (form[j] == bit_options[i].short_option)
 							{
+								count_bit_options++;
 								wrong = false;
 								if (*bit_options[i].value == true)
 								{
@@ -398,39 +408,65 @@ namespace urke
 								}
 								*bit_options[i].value = true;
 								while (!in.eof() && (current == ' ' || current == '	'))
+								{
 									in.get(current);
-								if (current != '-' && !in.eof())
+									pom_for_all++;
+								}
+								if ((j!=0 || pom_for_all!=0) && (current != '-' && !in.eof()))
 								{
 									err << "Bit option cant have argument!";
 									return false;
 								}
 								bool_temp = 1;
 								pom_for_bit_options++;
+
+								if (j == 0)
+								{
+									while (!in.eof() && current != ' ' && current != '	' && current != '-')
+									{
+										form.push_back(current);
+										in.get(current);
+									}
+									///
+								}
 							}
+							
 						}
-						if (i == bit_options.size() - 1 && pom_for_bit_options != form.size() && !wrong)
+						if (i == bit_options.size() - 1 && pom_for_bit_options != form.size() && !wrong && ((current != ' ' && current != '	')/* && pom_for_bit_options == 0*/))
 						{
-							err << "Unknown command " << form << "!";
-							return false;
+							/*err << "Unknown command " << form << "!";
+							return false;*/
+							pom_if_together = false;
 						}
 					}
+					pom_for_all = 0;
 					//for bit options
 					for (unsigned int i = 0; i < int_options.size(); i++)
 					{
 						if (int_options[i].short_option == '\0')
 							continue;
-						if (form[form.size() - 1] == int_options[i].short_option)
+						if (form[pom_for_bit_options] == int_options[i].short_option)
 						{
 							wrong = false;
-							do
+							//do
+							while (!in.eof() && (current == ' ' || current == '	'))
 							{
 								in.get(current);
-							} while (!in.eof() && (current == ' ' || current == '	'));
+							} //while (!in.eof() && (current == ' ' || current == '	'));
 							while (!in.eof() && current != ' ' && current != '	')
 							{
 								int_temp.push_back(current);
 								in.get(current);
 							}
+							//
+							if (int_temp.empty())
+							{
+								for (size_t q = pom_for_bit_options + 1; q < form.size(); q++)
+								{
+									int_temp.push_back(form[q]);
+								}
+							}
+							//
 							if (to_int_parser(int_temp, val1))
 							{
 								if (int_temp.empty())
@@ -445,6 +481,7 @@ namespace urke
 								err << "Unable to convert " << int_temp << " to integer value!";
 								return false;
 							}
+							if (pom_if_together == false) pom_if_together = true;
 							break;
 						}
 					}
@@ -454,18 +491,28 @@ namespace urke
 					{
 						if (uint_options[i].short_option == '\0')
 							continue;
-						if (form[form.size() - 1] == uint_options[i].short_option)
+						if (form[pom_for_bit_options] == uint_options[i].short_option)
 						{
 							wrong = false;
-							do
+							//do
+							while (!in.eof() && (current == ' ' || current == '	'))
 							{
 								in.get(current);
-							} while (!in.eof() && (current == ' ' || current == '	'));
+							} //while (!in.eof() && (current == ' ' || current == '	'));
 							while (!in.eof() && current != ' ' && current != '	')
 							{
 								uint_temp.push_back(current);
 								in.get(current);
 							}
+							//
+							if (uint_temp.empty())
+							{
+								for (size_t q = pom_for_bit_options + 1; q < form.size(); q++)
+								{
+									uint_temp.push_back(form[q]);
+								}
+							}
+							//
 							if (to_uint_parser(uint_temp, val2))
 							{
 								if (uint_temp.empty())
@@ -480,6 +527,7 @@ namespace urke
 								err << "Unable to convert " << uint_temp << " to unsigned integer value!";
 								return false;
 							}
+							if (pom_if_together == false) pom_if_together = true;
 							break;
 						}
 					}
@@ -489,18 +537,28 @@ namespace urke
 					{
 						if (float_options[i].short_option == '\0')
 							continue;
-						if (form[form.size() - 1] == float_options[i].short_option)
+						if (form[pom_for_bit_options] == float_options[i].short_option)
 						{
 							wrong = false;
-							do
+							//do
+							while (!in.eof() && (current == ' ' || current == '	'))
 							{
 								in.get(current);
-							} while (!in.eof() && (current == ' ' || current == '	'));
+							} //while (!in.eof() && (current == ' ' || current == '	'));
 							while (!in.eof() && current != ' ' && current != '	')
 							{
 								float_temp.push_back(current);
 								in.get(current);
 							}
+							//
+							if (float_temp.empty())
+							{
+								for (size_t q = pom_for_bit_options + 1; q < form.size(); q++)
+								{
+									float_temp.push_back(form[q]);
+								}
+							}
+							//
 							if (to_float_parser(float_temp, val3))
 							{
 								if (float_temp.empty())
@@ -515,6 +573,7 @@ namespace urke
 								err << "Unable to convert " << float_temp << " to double value!";
 								return false;
 							}
+							if (pom_if_together == false) pom_if_together = true;
 							break;
 						}
 					}
@@ -524,34 +583,73 @@ namespace urke
 					{
 						if (string_options[i].short_option == '\0')
 							continue;
-						if (form[form.size() - 1] == string_options[i].short_option)
+						if (form[pom_for_bit_options] == string_options[i].short_option)
 						{
 							wrong = false;
-							do
+							//do
+							while (!in.eof() && (current == ' ' || current == '	'))
 							{
 								in.get(current);
-							} while (!in.eof() && (current == ' ' || current == '	'));
-							if (in.eof())
+							} //while (!in.eof() && (current == ' ' || current == '	'));
+							if (in.eof() && form.size() <= pom_for_bit_options + 1)
 							{
 								err << "String option needs an argument!";
 								return false;
 							}
 							string_options[i].value->clear();
-							while (!in.eof() && current != ' ' && current != '	')
+							//while (!in.eof() && ((current != ' ' && current != '	') || (quotes == true)))
+							do
 							{
-								if (current == '-' || in.eof())
+								if (current == '-' /*|| in.eof()*/)
 								{
 									err << "String option needs an argument!";
 									return false;
 								}
-								string_options[i].value->push_back(current);
+								if (current == '"')
+								{
+									quotes = true;
+									if (pom_for_string_options == 2 && current == '"')
+									{
+										pom_for_string_options--;
+										string_options[i].value->push_back(current);
+									}
+									else pom_for_string_options++;
+								}
+								if (pom_for_string_options == 2 && current != '"') break;
+								if (current != '"') string_options[i].value->push_back(current);
 								in.get(current);
+							} while (!in.eof() && ((current != ' ' && current != '	') || (quotes == true)));
+							if (pom_if_together == false) pom_if_together = true;
+
+							if (count_bit_options > 0)
+							{
+								string_options[i].value->clear();
+								for (size_t w = count_bit_options + 1; w < form.size(); w++)
+								{
+									if (form[w] != '"')
+										string_options[i].value->push_back(form[w]);
+									else if (w != 0 && w != form.size() - 1)
+										if (form[w] == '"' && form[w - 1] == '"' && form[w + 1] == '"')
+											string_options[i].value->push_back(form[w]);
+								}
+									
 							}
+
 							break;
 						}
+
+						/*if (count_bit_options > 1)
+						{
+							string_options[i].value->clear();
+							for (size_t w = count_bit_options; w < form.size(); w++)
+								string_options[i].value->push_back(form[w]);
+						}*/
 					}
+					
+					pom_for_string_options = 0;
+					quotes = false;
 					//for string options
-					if (wrong)
+					if (wrong || !pom_if_together)
 					{
 						err << "Unknown command " << form << "!";
 						return false;
@@ -714,20 +812,32 @@ namespace urke
 								return false;
 							}
 							string_options[i].value->clear();
-							while (!in.eof() && current != ' ' && current != '	')
+							while (!in.eof() && ((current != ' ' && current != '	') || (quotes == true)))
 							{
 								if (current == '-')
 								{
 									err << "String option needs an argument!";
 									return false;
 								}
-								string_options[i].value->push_back(current);
+								if (current == '"')
+								{
+									quotes = true;
+									if (pom_for_string_options == 2 && current == '"')
+									{
+										pom_for_string_options--;
+										string_options[i].value->push_back(current);
+									}
+									else pom_for_string_options++;
+								}
+								if (pom_for_string_options == 2 && current != '"') break;
+								if (current != '"') string_options[i].value->push_back(current);
 								in.get(current);
 							}
-
 							break;
 						}
 					}
+					pom_for_string_options = 0;
+					quotes = false;
 					//for string options
 					if (wrong)
 					{

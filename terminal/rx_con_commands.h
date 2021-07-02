@@ -32,14 +32,6 @@
 #define rx_con_commands_h 1
 
 
-/////////////////////////////////////////////////////////////
-// logging macros for console library
-#define CONSOLE_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Console",src,lvl,msg)
-#define CONSOLE_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Console",src,lvl,msg)
-#define CONSOLE_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Console",src,lvl,msg)
-#define CONSOLE_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Console",src,lvl,msg)
-#define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
-#define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
 // rx_commands
 #include "terminal/rx_commands.h"

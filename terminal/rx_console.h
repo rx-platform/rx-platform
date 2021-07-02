@@ -35,14 +35,20 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "interfaces/rx_endpoints.h"
 
-// dummy
-#include "dummy.h"
-// rx_protocol_templates
-#include "system/runtime/rx_protocol_templates.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
+
+/////////////////////////////////////////////////////////////
+// logging macros for console library
+#define CONSOLE_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Console",src,lvl,msg)
+#define CONSOLE_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Console",src,lvl,msg)
+#define CONSOLE_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Console",src,lvl,msg)
+#define CONSOLE_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Console",src,lvl,msg)
+#define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
+#define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
+
 // rx_con_programs
 #include "terminal/rx_con_programs.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
 
@@ -65,89 +71,50 @@ namespace terminal {
 
 namespace console {
 
+typedef std::function<void(bool, memory::buffer_ptr, memory::buffer_ptr, bool)> console_runtime_callback_t;
 
 
 
 
 class console_runtime : public rx::pointers::reference_object  
 {
-    DECLARE_REFERENCE_PTR(console_runtime)
+    DECLARE_REFERENCE_PTR(console_runtime);
 
   public:
-      console_runtime();
-
-      console_runtime (runtime::items::port_runtime* port);
+      console_runtime (rx_thread_handle_t executer, console_runtime_callback_t callback);
 
       ~console_runtime();
 
 
-      string_type get_console_terminal ();
+      void do_command (const string_type& line, security::security_context_ptr ctx);
 
       void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
 
-      static string_type get_terminal_info ();
+      bool cancel_command (security::security_context_ptr ctx);
 
       rx_result check_validity ();
 
-      rx_protocol_stack_endpoint* bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
-
-      void close_endpoint ();
-
-
-      rx_thread_handle_t get_executer () const
-      {
-        return executer_;
-      }
-
-      void set_executer (rx_thread_handle_t value)
-      {
-        executer_ = value;
-      }
-
-
-      runtime::items::port_runtime* get_port ()
-      {
-        return port_;
-      }
-
-
-
-  protected:
-
-      bool do_command (string_type&& line, security::security_context_ptr ctx);
+      void reset ();
 
       void get_prompt (string_type& prompt);
 
-      void get_wellcome (string_type& wellcome);
-
-      bool cancel_command (security::security_context_ptr ctx);
-
-      void get_security_error (string_type& txt, sec_error_num_t err_number);
-
-      bool do_commands (string_array&& lines, security::security_context_ptr ctx);
+      void set_terminal_size (int width, int height);
 
 
-  private:
+      const rx_directory_ptr get_current_directory () const
+      {
+        return current_directory_;
+      }
 
-      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
-
-      void synchronized_do_command (const string_type& line, security::security_context_ptr ctx);
-
-      void synchronized_cancel_command (security::security_context_ptr ctx);
-
-      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
-
-      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
 
 
       rx_directory_ptr current_directory_;
 
 
+  protected:
 
-      memory::buffer_ptr create_buffer ();
+  private:
 
-
-      rx_protocol_stack_endpoint stack_entry_;
 
       std::unique_ptr<console_runtime_program_executer> program_executer_;
 
@@ -164,42 +131,11 @@ class console_runtime : public rx::pointers::reference_object
 
       rx_thread_handle_t executer_;
 
-      runtime::items::port_runtime* port_;
+      console_runtime_callback_t callback_;
 
+      int term_width_;
 
-};
-
-
-
-
-
-
-
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< console_runtime  > console_port_base;
-
-
-
-
-
-
-class console_port : public console_port_base  
-{
-    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-Console port. implementation of an console port");
-
-    DECLARE_REFERENCE_PTR(console_port);
-
-
-  public:
-      console_port();
-
-
-      void stack_assembled ();
-
-
-  protected:
-
-  private:
+      int term_height_;
 
 
 };

@@ -286,7 +286,9 @@ win32_console_host::win32_console_host (const std::vector<storage_base::rx_platf
         supports_ansi_(false),
         default_attribute_(0),
         no_ansi_(false),
-        use_ansi_(false)
+        use_ansi_(false),
+        width_(0),
+        height_(0)
 	, host::interactive::interactive_console_host(storages)
 {
 }
@@ -332,14 +334,33 @@ bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& coun
 	ctrl.dwCtrlWakeupMask = (1 << 4) | (1 << 26) | (1 << 3);
 	bool has = false;
 
+	CONSOLE_SCREEN_BUFFER_INFO con_info;
+	int temp_width, temp_height;
+
 	while (!has && !exit())
 	{
 		if (WAIT_TIMEOUT == WaitForSingleObject(in_handle_, 20))
+		{
+			//// see about the sizes
+			BOOL info = GetConsoleScreenBufferInfo(out_handle_, &con_info);
+			if (info)
+			{
+				temp_width = con_info.srWindow.Right - con_info.srWindow.Left;
+				temp_height = con_info.srWindow.Bottom - con_info.srWindow.Top;
+				DWORD err = GetLastError();
+				if (info && (temp_width != width_ || temp_height != height_))
+				{// send coordinates
+					width_ = temp_width;
+					height_ = temp_height;
+					terminal_size_changed(width_, height_);
+				}
+			}
 			continue;
-
+		}
+		
 		read = 0;
 		INPUT_RECORD inputs[0x10];
-		BOOL peek = ReadConsoleInputA(in_handle_, inputs, sizeof(inputs)/sizeof(inputs[0]), &read);
+		BOOL peek = ReadConsoleInputA(in_handle_, inputs, sizeof(inputs) / sizeof(inputs[0]), &read);
 		if (!peek)
 		{
 			RX_ASSERT(false);
@@ -350,13 +371,13 @@ bool win32_console_host::read_stdin (std::array<char,0x100>& chars, size_t& coun
 			{
 				for (DWORD i = 0; i < read; i++)
 				{
-					
+
 					if (inputs[i].EventType == KEY_EVENT)
 					{
 						if (inputs[i].Event.KeyEvent.bKeyDown)
 						{
 							for (WORD j = 0; j < inputs[i].Event.KeyEvent.wRepeatCount; j++)
-							{	
+							{
 								has = true;
 								chars[count] = (char)(inputs[i].Event.KeyEvent.uChar.AsciiChar);
 								count++;

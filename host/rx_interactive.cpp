@@ -508,23 +508,6 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 		return result;
 	}
 
-	inst_data = meta::runtime_data::port_runtime_data();
-	inst_data.meta_info.name = RX_STD_CONSOLE_NAME;
-	inst_data.meta_info.id = rx_node_id(RX_STD_CONSOLE_ID, 3);
-	inst_data.meta_info.parent = rx_node_id(RX_CONSOLE_TYPE_ID);
-	inst_data.meta_info.path = "/sys/host";
-	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
-
-	inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
-
-	inst_data.overrides.add_value_static<string_type>("StackTop", RX_STD_VT100_NAME);
-
-	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
-	if (!result)
-	{
-		result.register_error("Unable to register " RX_STD_CONSOLE_NAME " port runtime.");
-		return result;
-	}
 
 	return true;
 #else
@@ -561,6 +544,11 @@ void interactive_console_host::console_run_result (rx_result result)
 		dump_startup_log(std::cout);
 	}
 	host_started();
+}
+
+void interactive_console_host::terminal_size_changed (int width, int height)
+{
+	interactive_port_->terminal_size_changed(width, height);
 }
 
 
@@ -634,6 +622,12 @@ void interactive_console_port::destroy_endpoint (rx_protocol_stack_endpoint* wha
 rx_result interactive_console_port::stop_passive ()
 {
 	return true;
+}
+
+void interactive_console_port::terminal_size_changed (int width, int height)
+{
+	if (listening_)
+		endpoint_.terminal_size_changed(width, height);
 }
 
 
@@ -744,6 +738,18 @@ rx_result interactive_console_endpoint::open (std::function<void(int64_t)> sent_
 	sent_func_ = sent_func;
 	std_out_sender_.start();
 	return true;
+}
+
+void interactive_console_endpoint::terminal_size_changed (int width, int height)
+{
+	char str_buff[0x20];
+	int ret = sprintf(str_buff, "\033]T %d %d\033\\", width, height);
+	if (ret > 0)
+	{
+		rx_const_packet_buffer buffer{};
+		rx_init_const_packet_buffer(&buffer, str_buff, ret);
+		rx_move_packet_up(&stack_entry_, rx_create_recv_packet(0, &buffer, 0, 0));
+	}
 }
 
 

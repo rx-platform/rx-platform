@@ -110,6 +110,8 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       void console_run_result (rx_result result);
 
+      void terminal_size_changed (int width, int height);
+
 
   protected:
 
@@ -144,6 +146,8 @@ class interactive_console_endpoint
       void close ();
 
       rx_result open (std::function<void(int64_t)> sent_func);
+
+      void terminal_size_changed (int width, int height);
 
 
   protected:
@@ -193,6 +197,8 @@ Standard IO class. implementation of an standard IO console port");
       void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
       rx_result stop_passive ();
+
+      void terminal_size_changed (int width, int height);
 
       void remove_endpoint(rx_protocol_stack_endpoint* what)
       {

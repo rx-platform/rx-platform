@@ -36,7 +36,7 @@
 
 #include "sys_internal/rx_internal_protocol.h"
 #include "system//server/rx_server.h"
-#include "terminal/rx_console.h"
+#include "terminal/rx_vt100.h"
 #include "http_server/rx_http_server.h"
 
 
@@ -172,7 +172,7 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
     response->platform = rx_gate::instance().get_rx_version();
     response->library = rx_gate::instance().get_lib_version();
     response->os_itf = rx_gate::instance().get_hal_version();
-    response->terminal = terminal::console::console_runtime::get_terminal_info();
+    response->terminal = terminal::term_ports::vt100_endpoint::get_terminal_info();
     response->http = rx_http_server::http_server::get_server_info();
     response->compiler = rx_gate::instance().get_comp_version();
     std::ostringstream out3;

@@ -153,10 +153,6 @@ void sl_script_program::process_program (program_context* context, const rx_time
 	ctx->send_results(ctx->get_result(), !ctx->waiting_);
 }
 
-void sl_script_program::load (FILE* file, dword version)
-{
-}
-
 void sl_script_program::initialize (sl_program_holder* holder, initialize_context* ctx, program_context* current_context)
 {
 	sl_program::initialize(holder, ctx, current_context);
@@ -167,30 +163,27 @@ void sl_script_program::deinitialize (sl_program_holder* holder, deinitialize_co
 	sl_program::deinitialize(holder, ctx, current_context);
 }
 
-void sl_script_program::load (const string_type& file, dword version)
+void sl_script_program::load (const string_type& lines)
 {
-}
-
-void sl_script_program::load (string_type&& file, dword version)
-{
-}
-
-void sl_script_program::parse (const string_type& file, dword version)
-{
-}
-
-void sl_script_program::parse (string_type&& file, dword version)
-{
-}
-
-void sl_script_program::load (string_type&& line)
-{
-	lines_.emplace_back(std::move(line));
-}
-
-void sl_script_program::load (const string_type& line)
-{
-	lines_.emplace_back(line);
+	size_t count = lines.size();
+	size_t idx1 = 0;
+	size_t idx2 = 0;
+	while (idx2<count && idx2 != string_type::npos)
+	{
+		idx1 = idx2;
+		idx2 = lines.find_first_of("\r\n", idx1);
+		if (idx2 != string_type::npos)
+		{			
+			if(idx2>idx1+1)
+				lines_.emplace_back(lines.substr(idx1, (idx2 - idx1)));
+			idx2++;
+		}
+		
+	}
+	if (idx1 == 0 && idx2 == string_type::npos)
+		lines_.emplace_back(lines);
+	else if (idx2 != string_type::npos && idx2 + 1 < count)
+		lines_.emplace_back(lines.substr(idx2 + 1));
 }
 
 void sl_script_program::clear ()

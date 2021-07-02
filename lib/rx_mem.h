@@ -391,6 +391,7 @@ class std_strbuff : public memory_buffer_base<allocT, swap_bytes>,
 
 
 typedef rx_reference<std_strbuff<memory::std_vector_allocator> > buffer_ptr;
+typedef std_strbuff<memory::std_vector_allocator> std_buffer_type;
 
 
 

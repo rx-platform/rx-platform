@@ -92,8 +92,17 @@ class gnu_console_host : public host::interactive::interactive_console_host
 
   private:
 
+      void adjust_terminal_size ();
+
+
 
       termios ttyold_;
+
+      int width_;
+
+      int height_;
+
+      std::atomic_bool win_changed_;
 
 
 };

@@ -108,6 +108,10 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       bool use_ansi_;
 
+      int width_;
+
+      int height_;
+
 
 };
 

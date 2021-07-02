@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -40,15 +40,13 @@
 // rx_gnu_console
 #include "gnu_hosts/rx_gnu_console.h"
 
-
-#include <signal.h>
-
 namespace
 {
 
 pthread_t main_pid;
 
 std::atomic<uint_fast8_t> g_console_canceled(0);
+std::function<void()> g_term_size_callback;
 
 void sig_handler(int s)
 {
@@ -56,17 +54,31 @@ void sig_handler(int s)
 		g_console_canceled.store(1);
 }
 
+void sig_handler_swinch(int s)
+{
+	if (s == SIGWINCH && g_term_size_callback)
+		g_term_size_callback();
+}
+
+
 
 } // anonymous namespace
 
 
 namespace gnu {
 
-// Class gnu::gnu_console_host 
+// Class gnu::gnu_console_host
 
 gnu_console_host::gnu_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
-	: host::interactive::interactive_console_host(storages)
+      : width_(0),
+        height_(0),
+        win_changed_(true)
+	, host::interactive::interactive_console_host(storages)
 {
+	g_term_size_callback = [this]()
+	{
+		adjust_terminal_size();
+	};
 }
 
 
@@ -106,6 +118,12 @@ bool gnu_console_host::break_host (const string_type& msg)
 
 bool gnu_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
 {
+  static bool first=true;
+  if(first)
+  {
+    first=false;
+    adjust_terminal_size();
+  }
   uint32_t read=0;
   bool ret = (RX_OK == rx_file_read(STDIN_FILENO,&chars[0],0x100, &read));
   count=read;
@@ -180,6 +198,8 @@ rx_result gnu_console_host::setup_console (int argc, char* argv[])
 	if (ret != 0)
 		perror("sigaction2");
 
+    signal(SIGWINCH, sig_handler_swinch);
+
 	return true;
 }
 
@@ -222,6 +242,19 @@ bool gnu_console_host::supports_ansi () const
 string_type gnu_console_host::get_full_path (const string_type& path)
 {
     return get_full_path_from_relative(path);
+}
+
+void gnu_console_host::adjust_terminal_size ()
+{
+    struct winsize winsz;
+
+    ioctl(0, TIOCGWINSZ, &winsz);
+    if (width_ != (int)winsz.ws_col || height_ != (int)winsz.ws_row)
+    {
+        width_ = (int)winsz.ws_col;
+        height_ = (int)winsz.ws_row;
+        terminal_size_changed(width_, height_);
+    }
 }
 
 

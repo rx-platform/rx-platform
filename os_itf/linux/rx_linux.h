@@ -71,6 +71,8 @@ typedef std::string string_type;
 #include <dirent.h>
 #include <signal.h>
 #include <termios.h>
+#include <signal.h>
+#include <sys/ioctl.h>
 #include <sys/prctl.h>
 
 #ifdef _DEBUG

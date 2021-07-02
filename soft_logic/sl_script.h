@@ -116,19 +116,11 @@ class sl_script_program : public sl_program
 
       void process_program (program_context* context, const rx_time& now, bool debug);
 
-      void load (FILE* file, dword version);
-
       void initialize (sl_program_holder* holder, initialize_context* ctx, program_context* current_context);
 
       void deinitialize (sl_program_holder* holder, deinitialize_context* ctx, program_context* current_context);
 
-      void load (const string_type& file, dword version);
-
-      void load (string_type&& file, dword version);
-
-      void load (string_type&& line);
-
-      void load (const string_type& line);
+      void load (const string_type& lines);
 
       void clear ();
 
@@ -139,11 +131,6 @@ class sl_script_program : public sl_program
 
 
   private:
-
-      void parse (const string_type& file, dword version);
-
-      void parse (string_type&& file, dword version);
-
 
 
       string_array lines_;

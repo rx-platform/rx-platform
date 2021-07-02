@@ -34,14 +34,14 @@
 // rx_telnet
 #include "terminal/rx_telnet.h"
 
-#include "rx_con_commands.h"
+#include "rx_console.h"
 
 
 namespace rx_internal {
 
 namespace terminal {
 
-namespace term_transport {
+namespace term_ports {
 namespace
 {
 
@@ -86,6 +86,7 @@ namespace
 #define TERMINAL_SPEED ((char)32)
 #define NEW_ENVIRON ((char)39)
 #define SLE ((char)45)
+
 
 /*
 const char* get_IAC_name(char code)
@@ -136,19 +137,18 @@ char g_password_prompt[] = "Enter Password:";
 */
 
 char g_server_telnet_idetification[] = { IAC, WILL, TELNET_ECHO,
-IAC, WILL, SUPPRESS_GO_AHEAD };  /* IAC DO LINEMODE */
+IAC, WILL, SUPPRESS_GO_AHEAD, IAC, DO, NAWS };  /* IAC DO LINEMODE */
 //IAC, SB, LINEMODE, 1, 0, IAC, SE /* IAC SB LINEMODE MODE 0 IAC SE */};
 #define TELENET_IDENTIFICATION_SIZE sizeof(g_server_telnet_idetification)// has to be done here, don't ask why
 
 } // anonymous
 
 
-// Class rx_internal::terminal::term_transport::telnet_transport 
+// Class rx_internal::terminal::term_ports::telnet_transport 
 
 telnet_transport::telnet_transport()
       : send_echo(false),
         telnet_state_(telnet_parser_idle)
-	, vt100_(false)
 {
 }
 
@@ -159,7 +159,7 @@ telnet_transport::~telnet_transport()
 
 
 
-bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
+bool telnet_transport::handle_telnet (const char ch, string_type& to_echo, string_type& line)
 {
 	switch (telnet_state_)
 	{
@@ -186,6 +186,10 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
 			case DONT:
 				telnet_state_ = telnet_parser_had_dont;
 				return true;
+			case SB:
+				telnet_state_ = telnet_parser_had_sb;
+				sub_neg_data_.clear();
+				return true;
 			}
 		}
 		break;
@@ -194,6 +198,10 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
 		{
 		case TELNET_ECHO:
 			to_echo = { IAC, DONT, TELNET_ECHO };
+			telnet_state_ = telnet_parser_idle;
+			return true;
+		case NAWS:
+			to_echo = { IAC, DO, NAWS };
 			telnet_state_ = telnet_parser_idle;
 			return true;
 		default:
@@ -206,6 +214,10 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
 		{
 		case TELNET_ECHO:
 			to_echo = { IAC, DONT, TELNET_ECHO };
+			telnet_state_ = telnet_parser_idle;
+			return true;
+		case NAWS:
+			to_echo = { IAC, DONT, NAWS };
 			telnet_state_ = telnet_parser_idle;
 			return true;
 		default:
@@ -221,6 +233,11 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
 			to_echo = { IAC, WILL, TELNET_ECHO };
 			telnet_state_ = telnet_parser_idle;
 			return true;
+		case NAWS:
+			send_echo = true;
+			to_echo = { IAC, WILL, NAWS };
+			telnet_state_ = telnet_parser_idle;
+			return true;
 		default:
 			telnet_state_ = telnet_parser_idle;
 			return false;
@@ -234,16 +251,36 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo)
 			to_echo = { IAC, WONT, TELNET_ECHO };
 			telnet_state_ = telnet_parser_idle;
 			return true;
+		case NAWS:
+			send_echo = false;
+			to_echo = { IAC, WONT, NAWS };
+			telnet_state_ = telnet_parser_idle;
+			return true;
 		default:
 			telnet_state_ = telnet_parser_idle;
 			return false;
 		}
 		break;
 	case telnet_parser_had_sb:
-		telnet_state_ = telnet_parser_idle;
+		if (ch == IAC)
+		{
+			parse_negotiation(line);
+			telnet_state_ = telnet_parser_had_sb2;
+		}
+		else
+		{
+			sub_neg_data_.emplace_back(ch);
+		}
 		break;
 	case telnet_parser_had_sb2:
-		telnet_state_ = telnet_parser_idle;
+		if (ch == SE)
+		{
+			telnet_state_ = telnet_parser_idle;
+		}
+		else
+		{
+			telnet_state_ = telnet_parser_had_sb;
+		}
 		break;
 	};
 	return false;
@@ -253,16 +290,34 @@ bool telnet_transport::char_received (const char ch, bool eof, string_type& to_e
 {
 	if (telnet_state_ != telnet_parser_idle || ch == IAC)
 	{// handle telnet
-		return handle_telnet(ch, to_echo);
+		return handle_telnet(ch, to_echo, line);
 	}
 	else
 	{
-		return vt100_.char_received(ch, eof, to_echo, line);
+		line += ch;
+		return false;
+	}
+}
+
+void telnet_transport::parse_negotiation (string_type& line)
+{
+	if (sub_neg_data_.size() >= 5)
+	{
+		if (sub_neg_data_[0] == NAWS)
+		{
+			uint16_t width = (((uint16_t)sub_neg_data_[1]) << 8) | sub_neg_data_[2];
+			uint16_t height = (((uint16_t)sub_neg_data_[3]) << 8) | sub_neg_data_[4];
+			std::ostringstream ss;
+			ss	<< "\033]T "
+				<< width << " " << height
+				<< "\033\\";
+			line += ss.str();
+		}
 	}
 }
 
 
-// Class rx_internal::terminal::term_transport::telnet_transport_port 
+// Class rx_internal::terminal::term_ports::telnet_transport_port 
 
 telnet_transport_port::telnet_transport_port()
 {
@@ -281,7 +336,7 @@ telnet_transport_port::telnet_transport_port()
 
 
 
-// Class rx_internal::terminal::term_transport::telnet_transport_endpoint 
+// Class rx_internal::terminal::term_ports::telnet_transport_endpoint 
 
 telnet_transport_endpoint::telnet_transport_endpoint (runtime::items::port_runtime* port)
       : port_(port)
@@ -311,16 +366,16 @@ rx_protocol_result_t telnet_transport_endpoint::received_function (rx_protocol_s
 {
 	telnet_transport_endpoint* self = reinterpret_cast<telnet_transport_endpoint*>(reference->user_data);
 	string_type to_echo;
-	string_array lines;
+	string_type to_send;
 	size_t i = 0;
 	auto buffer = packet.buffer;
 
+	if (buffer->size)
+		to_send.reserve(buffer->size);
+
 	for (; i < buffer->size; i++)
 	{
-		string_type line;
-		self->telnet_.char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, line);
-		if (!line.empty())
-			lines.emplace_back(std::move(line));
+		self->telnet_.char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, to_send);
 	}
 	rx_protocol_result_t result = RX_PROTOCOL_OK;
 	if (self->telnet_.send_echo && !to_echo.empty())
@@ -345,19 +400,14 @@ rx_protocol_result_t telnet_transport_endpoint::received_function (rx_protocol_s
 			self->port_->release_io_buffer(send_buffer.move_value());
 		}
 	}
-	if (result == RX_PROTOCOL_OK && !lines.empty())
+	if (result == RX_PROTOCOL_OK && !to_send.empty())
 	{
-		for (const auto& one : lines)
-		{
-			rx_const_packet_buffer up_buffer{ (const uint8_t*)one.c_str(), 0, one.size() };
-			rx_init_const_packet_buffer(&up_buffer, one.c_str(), one.size());
+		rx_const_packet_buffer up_buffer { };
+		rx_init_const_packet_buffer(&up_buffer, to_send.c_str(), to_send.size());
 
-			recv_protocol_packet packet = rx_create_recv_packet(0, &up_buffer, 0, 0);
+		recv_protocol_packet packet = rx_create_recv_packet(0, &up_buffer, 0, 0);
 
-			result = rx_move_packet_up(reference, packet);
-			if (result != RX_PROTOCOL_OK)
-				break;
-		}
+		result = rx_move_packet_up(reference, packet);
 	}
 	return result;
 }
@@ -385,7 +435,7 @@ rx_protocol_result_t telnet_transport_endpoint::connected_function (rx_protocol_
 }
 
 
-} // namespace term_transport
+} // namespace term_ports
 } // namespace terminal
 } // namespace rx_internal
 

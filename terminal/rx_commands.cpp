@@ -192,16 +192,16 @@ void server_command_manager::register_internal_commands ()
 		});
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_VT00_TYPE_ID, [] {
-			return rx_create_reference<rx_internal::terminal::term_transport::vt100_transport_port>();
+			return rx_create_reference<rx_internal::terminal::term_ports::vt100_port>();
 		});
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_TELNET_TYPE_ID, [] {
-			return rx_create_reference<rx_internal::terminal::term_transport::telnet_transport_port>();
+			return rx_create_reference<rx_internal::terminal::term_ports::telnet_transport_port>();
 		});
-	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+	/*result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_CONSOLE_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::terminal::console::console_port>();
-		});
+		});*/
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_NS_HTTP_TYPE_ID, [] {
 			return rx_create_reference<protocols::rx_http::rx_http_port>();

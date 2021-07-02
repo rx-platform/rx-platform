@@ -33,12 +33,10 @@
 
 
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
-// rx_vt100
-#include "terminal/rx_vt100.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 
 
 
@@ -46,7 +44,7 @@ namespace rx_internal {
 
 namespace terminal {
 
-namespace term_transport {
+namespace term_ports {
 
 
 
@@ -71,6 +69,7 @@ private:
         telnet_parser_had_sb,
         telnet_parser_had_sb2
     };
+    int sub_neg_index = 0;
 
   public:
       telnet_transport();
@@ -88,14 +87,15 @@ private:
 
   private:
 
-      bool handle_telnet (const char ch, string_type& to_echo);
+      bool handle_telnet (const char ch, string_type& to_echo, string_type& line);
 
+      void parse_negotiation (string_type& line);
 
-
-      vt100_transport vt100_;
 
 
       telnet_parser_state telnet_state_;
+
+      byte_string sub_neg_data_;
 
 
 };
@@ -145,6 +145,8 @@ class telnet_transport_endpoint
 
       std::function<void(int64_t)> received_func_;
 
+      string_array lines_;
+
 
 };
 
@@ -180,7 +182,7 @@ VT100 terminal. implementation of telnet and VT100 transport protocol port.");
 };
 
 
-} // namespace term_transport
+} // namespace term_ports
 } // namespace terminal
 } // namespace rx_internal
 

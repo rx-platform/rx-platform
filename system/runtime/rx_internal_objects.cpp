@@ -35,7 +35,7 @@
 #include "system/runtime/rx_internal_objects.h"
 
 #include "system/server/rx_server.h"
-#include "terminal/rx_console.h"
+#include "terminal/rx_vt100.h"
 #include "http_server/rx_http_server.h"
 using namespace rx_platform::runtime;
 
@@ -227,7 +227,7 @@ rx_result system_object::initialize_runtime (runtime::runtime_init_context& ctx)
     rx_gate::instance().get_host()->get_host_info(hosts);
     if (hosts.size() > 0)
         ctx.set_item_static("Info.HostVer", hosts[0]);
-    ctx.set_item_static("Info.TerminalVer", rx_internal::terminal::console::console_runtime::get_terminal_info());
+    ctx.set_item_static("Info.TerminalVer", rx_internal::terminal::term_ports::vt100_endpoint::get_terminal_info());
     ctx.set_item_static("Info.HttpVer", rx_internal::rx_http_server::http_server::get_server_info());
     ctx.set_item_static("Info.CompilerVer", rx_gate::instance().get_comp_version());
 

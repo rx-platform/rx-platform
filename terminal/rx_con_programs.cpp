@@ -119,7 +119,9 @@ void console_program::process_program (sl_runtime::program_context* context, con
 
 console_program_context::console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory)
       : current_directory_(current_directory),
-        canceled_(false)
+        canceled_(false),
+        terminal_width_(80),
+        terminal_height_(24)
     , sl_runtime::sl_script::script_program_context(parent, holder)
 {
 }

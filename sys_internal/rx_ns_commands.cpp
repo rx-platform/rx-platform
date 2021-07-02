@@ -265,7 +265,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 				row.emplace_back(one.get_meta().name, ANSI_RX_DATA_COLOR, ANSI_COLOR_RESET);
 
 		}
-		rx_dump_large_row(row, out, RX_CONSOLE_WIDTH);
+		rx_dump_large_row(row, out, ctx->get_terminal_width());
 		return true;
 
 	}

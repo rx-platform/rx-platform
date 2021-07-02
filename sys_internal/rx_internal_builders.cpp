@@ -1265,15 +1265,6 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 		add_type_to_configuration(dir, port, true);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
-			RX_VT00_TYPE_NAME
-			, RX_VT00_TYPE_ID
-			, RX_TRANSPORT_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		add_type_to_configuration(dir, port, false);
-
-		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TELNET_TYPE_NAME
 			, RX_TELNET_TYPE_ID
 			, RX_TRANSPORT_PORT_TYPE_ID
@@ -1338,9 +1329,18 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 		port->object_data.register_relation(rel_attr, port->complex_data);
 		add_type_to_configuration(dir, port, true);
 
-		port = create_type<port_type>(meta::object_type_creation_data{
+		/*port = create_type<port_type>(meta::object_type_creation_data{
 			RX_CONSOLE_TYPE_NAME
 			, RX_CONSOLE_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);*/
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_VT00_TYPE_NAME
+			, RX_VT00_TYPE_ID
 			, RX_APPLICATION_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path

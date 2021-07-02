@@ -33,10 +33,14 @@
 
 
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
+// rx_console
+#include "terminal/rx_console.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -44,19 +48,15 @@ namespace rx_internal {
 
 namespace terminal {
 
-namespace term_transport {
+namespace term_ports {
 
 
 
 
 
-class vt100_transport 
+class vt100_endpoint : public rx::pointers::reference_object  
 {
-  public:
-	vt100_transport(const vt100_transport &right) = delete;
-	vt100_transport & operator=(const vt100_transport &right) = delete;
-	vt100_transport(vt100_transport &&right) = delete;
-	vt100_transport & operator=(vt100_transport &&right) = delete;
+    DECLARE_REFERENCE_PTR(vt100_endpoint);
   private:
 	enum parser_state
 	{
@@ -64,14 +64,15 @@ class vt100_transport
 		parser_in_end_line,
 		parser_had_escape,
 		parser_had_bracket,
+        parser_had_os_command,
 		parser_had_bracket_number
 	};
 	typedef std::list<string_type> history_type;
 
   public:
-      vt100_transport (bool to_echo = true);
+      vt100_endpoint (runtime::items::port_runtime* port, bool to_echo = true);
 
-      ~vt100_transport();
+      ~vt100_endpoint();
 
 
       bool char_received (const char ch, bool eof, string_type& to_echo, string_type& line);
@@ -80,12 +81,33 @@ class vt100_transport
 
       void set_echo (bool val);
 
+      bool do_command (string_type&& line, security::security_context_ptr ctx);
+
+      bool do_commands (string_array&& lines, security::security_context_ptr ctx);
+
+      static string_type get_terminal_info ();
+
+      void get_prompt (string_type& prompt);
+
+      void get_wellcome (string_type& wellcome);
+
+      void close_endpoint ();
+
 
       void set_password_mode (bool value)
       {
         password_mode_ = value;
       }
 
+
+      runtime::items::port_runtime* get_port ()
+      {
+        return port_;
+      }
+
+
+
+      rx_protocol_stack_endpoint stack_entry;
 
 
       bool send_echo;
@@ -107,12 +129,27 @@ class vt100_transport
 
       bool char_received_had_bracket (char ch, string_type& to_echo);
 
+      bool char_received_had_os (char ch, string_type& to_echo);
+
       bool char_received_had_bracket_number (const char ch, string_type& to_echo);
 
       bool move_history_up (string_type& to_echo);
 
       bool move_history_down (string_type& to_echo);
 
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
+
+      void synchronized_cancel_command (security::security_context_ptr ctx);
+
+      void synchronized_do_command (const string_type& in_line, security::security_context_ptr ctx);
+
+      void process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
+
+
+
+      rx_reference<console::console_runtime> console_program_;
 
 
       parser_state state_;
@@ -131,58 +168,9 @@ class vt100_transport
 
       int opened_brackets_;
 
-
-};
-
-
-
-
-
-
-class vt100_transport_endpoint 
-{
-public:
-    vt100_transport_endpoint(const vt100_transport_endpoint& right) = delete;
-    vt100_transport_endpoint& operator=(const vt100_transport_endpoint& right) = delete;
-    vt100_transport_endpoint(vt100_transport_endpoint&& right) = delete;
-    vt100_transport_endpoint& operator=(vt100_transport_endpoint&& right) = delete;
-
-  public:
-      vt100_transport_endpoint (runtime::items::port_runtime* port, bool to_echo = true);
-
-      ~vt100_transport_endpoint();
-
-
-      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
-
-
-      runtime::items::port_runtime* get_port ()
-      {
-        return port_;
-      }
-
-
-
-  protected:
-
-  private:
-
-      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
-
-      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
-
-
-
-      vt100_transport vt100_;
-
-      rx_protocol_stack_endpoint stack_entry_;
-
-
       runtime::items::port_runtime* port_;
 
-      std::function<void(int64_t)> sent_func_;
-
-      std::function<void(int64_t)> received_func_;
+      string_type os_command_;
 
 
 };
@@ -193,23 +181,27 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< vt100_transport_endpoint  > vt100_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_internal::terminal::term_ports::vt100_endpoint  > vt100_port_base;
 
 
 
 
 
 
-class vt100_transport_port : public vt100_port_base  
+class vt100_port : public vt100_port_base  
 {
-	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-VT100 terminal. implementation of VT100 transport protocol port.");
+	DECLARE_CODE_INFO("rx", 2, 0, 0, "\
+VT100 terminal, implementation of VT100 terminal server that\r\n\
+executes input based script program.");
 
-	DECLARE_REFERENCE_PTR(vt100_transport_port);
-    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<vt100_transport> > active_endpoints_type;
+	DECLARE_REFERENCE_PTR(vt100_port);
+    typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<vt100_endpoint> > active_endpoints_type;
 
   public:
-      vt100_transport_port();
+      vt100_port();
+
+
+      void stack_assembled ();
 
 
   protected:
@@ -220,7 +212,7 @@ VT100 terminal. implementation of VT100 transport protocol port.");
 };
 
 
-} // namespace term_transport
+} // namespace term_ports
 } // namespace terminal
 } // namespace rx_internal
 

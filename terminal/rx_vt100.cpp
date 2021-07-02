@@ -34,7 +34,9 @@
 // rx_vt100
 #include "terminal/rx_vt100.h"
 
-#include "rx_con_commands.h"
+#include "rx_terminal_version.h"
+#include "system/meta/rx_useful_queries.h"
+#include "api/rx_namespace_api.h"
 #define VT100_CURCOR_UP ""
 
 
@@ -42,29 +44,89 @@ namespace rx_internal {
 
 namespace terminal {
 
-namespace term_transport {
+namespace term_ports {
 
-// Class rx_internal::terminal::term_transport::vt100_transport 
+/*
+char g_console_welcome[] = "\r\n\
+	   ____   __  __\r\n\
+	  |  _ \\  \\ \\/ /\r\n\
+	  | |_) |  \\  / \r\n\
+	  |  _ <   /  \\ \r\n\
+	  |_| \\_\\ /_/\\_\\\r\n\
+ \r\n\
+";
+*/
 
-vt100_transport::vt100_transport (bool to_echo)
+#define WELCOME_SPACES "  "
+
+char g_console_welcome[] = ANSI_COLOR_YELLOW "\r\n\r\n\
+                            ,p@@Np,\r\n\
+                       ,gg@@@@@@@@@@@@@gg,\r\n\
+                 ,g@@@@@/   \\@@N 'V |@@@@@@@@g,\r\n\
+           ,gg@@@@@@@@@K I$\\ 'K@M\\  g@@@@@@@@@@@@Np,\r\n\
+      ,g@@@@@@@@@@@@@@K  fM'  ]@@@  \\@@@@@@@@@@@@@@@@@@@g\r\n\
+     '%@@@@@@@@@@@@@@K   g,  %@@@@'   \\@@@@@@@@@@@@@@@@@@P\r\n\
+     gpR*N@@@@@@@@@@K   $@@b  %@P/  A   'B@@@@@@@@@@@R'Nmg\r\n\
+    JK  gP''%B@@@@@K   $@@@b   @P  /@$   'B@@@@@@@@P'*%w- $\r\n\
+   _@P  @     g@%@/   $@@@@@   \\C  g@@@\\   $@@@N@,     ]P Rw,\r\n\
+  %Q-,gM'   ]| _,gP*@@@@@@@@@@@@@@@@@@@@@@@@**w,  ]P    *g, ]@\r\n\
+           |[  ]|  *'N@@@@@@@@@@@@@@@@N'^     ]|  |_      ***\r\n\
+          pP'  ]      ;pP'*B@@@@@@@@@*''Nw     ]|  '*mg\r\n\
+          'Nwg**      @  ]@'<'N@@P''*w   ]r      '%gg*\r\n\
+                      $. ]|          |[  $p\r\n\
+                   pP'  ,@            @p  *'Np\r\n\
+                   '%wgP'              '*Ng@'\r\n\
+" ANSI_COLOR_RESET;
+
+
+char g_console_welcome_old[] = ANSI_COLOR_YELLOW "\
+        ____________________\r\n\
+       / ____     _  __    /\\\r\n\
+      / / __ \\   | |/ /   / /\\\r\n\
+     / / /_/ /   |   /   / /\\\r\n\
+    / / _, _/   /   |   / /\\\r\n\
+   / /_/ |_|   /_/|_|  / /\\\r\n\
+  /___________________/ /\\\r\n\
+  \\___________________\\/\\\r\n\
+   \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\\r\n\
+ \r\n\
+" ANSI_COLOR_RESET;
+
+
+char g_console_unauthorized[] = ANSI_COLOR_RED "You are unauthorized!" ANSI_COLOR_RESET "\r\n;";
+
+// Class rx_internal::terminal::term_ports::vt100_endpoint 
+
+vt100_endpoint::vt100_endpoint (runtime::items::port_runtime* port, bool to_echo)
       : state_(parser_normal),
         current_idx_(string_type::npos),
         password_mode_(false),
         history_it_(history_.begin()),
         had_first_(false),
         opened_brackets_(0),
-        send_echo(to_echo)
+        send_echo(to_echo),
+        port_(port)
 {
+	CONSOLE_LOG_TRACE("vt100_endpoint", 900, "VT-100 Endpoint created.");
+	rx_init_stack_entry(&stack_entry, this);
+	stack_entry.received_function = &vt100_endpoint::received_function;
+	stack_entry.connected_function = &vt100_endpoint::connected_function;
+	console_program_ = rx_create_reference<console::console_runtime>(port_->get_executer(),
+		[this](bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
+		{
+			process_result(result, out_buffer, err_buffer, done);
+		});
 }
 
 
-vt100_transport::~vt100_transport()
+vt100_endpoint::~vt100_endpoint()
 {
+	CONSOLE_LOG_TRACE("vt100_endpoint", 900, "VT-100 Endpoint destroyed.");
 }
 
 
 
-bool vt100_transport::move_cursor_left ()
+bool vt100_endpoint::move_cursor_left ()
 {
 	if (current_idx_ == string_type::npos && !current_line_.empty())
 	{
@@ -79,7 +141,7 @@ bool vt100_transport::move_cursor_left ()
 	return false;
 }
 
-bool vt100_transport::move_cursor_right ()
+bool vt100_endpoint::move_cursor_right ()
 {
 	if (current_idx_ != string_type::npos && !current_line_.empty() && current_idx_<current_line_.size())
 	{
@@ -91,7 +153,7 @@ bool vt100_transport::move_cursor_right ()
 	return false;
 }
 
-bool vt100_transport::char_received (const char ch, bool eof, string_type& to_echo, string_type& line)
+bool vt100_endpoint::char_received (const char ch, bool eof, string_type& to_echo, string_type& line)
 {
 	if (ch == '\003')
 	{// this is cancel
@@ -109,13 +171,15 @@ bool vt100_transport::char_received (const char ch, bool eof, string_type& to_ec
 		return char_received_had_escape(ch, to_echo);
 	case parser_had_bracket:
 		return char_received_had_bracket(ch, to_echo);
+	case parser_had_os_command:
+		return char_received_had_os(ch, to_echo);
 	case parser_had_bracket_number:
 		return char_received_had_bracket_number(ch, to_echo);
 	}
 	return false;
 }
 
-bool vt100_transport::char_received_normal (const char ch, bool eof, string_type& to_echo, string_type& line)
+bool vt100_endpoint::char_received_normal (const char ch, bool eof, string_type& to_echo, string_type& line)
 {
 	switch (ch)
 	{
@@ -160,16 +224,140 @@ bool vt100_transport::char_received_normal (const char ch, bool eof, string_type
 		{
 			if (!current_line_.empty() && eof)
 			{
-				string_type buffer(current_line_ + '\t');
-				line = current_line_;
-				string_type offered;//!! = m_consumer->line_asked(current_line_);
-				if (!offered.empty())
+				string_type what;
+				auto idx = current_line_.rfind(' ');
+				if (idx != string_type::npos)
 				{
+					what = current_line_.substr(idx + 1);
+					if (!what.empty())
+					{
+						auto query = std::make_shared<meta::queries::ns_suggetions_query>();
+						query->suggested_path = what;
+						api::rx_context ctx;
+						ctx.directory = console_program_->get_current_directory();
+						ctx.object = smart_this();
+						
+						rx_function_to_go<rx_result_with<api::query_result>&&> callback(ctx.object,
+							[this, what](rx_result_with<api::query_result>&& result) mutable
+							{
+								if (result)
+								{
+									bool had_options = false;
+									// trim what
+									auto idx = what.find_first_not_of("./");
+									if (idx != string_type::npos)
+										what = what.substr(idx);
+									if (result.value().items.size() > 0)
+									{
+										string_type suggested;
+										if (result.value().items.size() == 1)
+										{
+											suggested = result.value().items[0].data.get_full_path();
 
-					to_echo += "\033[1G\033[M";
-					to_echo += offered;
-					current_idx_ = string_type::npos;
-					current_line_ = offered;
+											idx = suggested.rfind(what);
+											if (idx != string_type::npos)
+											{
+												suggested = suggested.substr(idx + what.size());
+											}
+											else
+											{
+												return;
+											}
+										}
+										else
+										{
+											string_array suggestions;
+											string_type temp_suggested;
+											for (auto one : result.value().items)
+											{
+												temp_suggested = one.data.get_full_path();
+
+												idx = temp_suggested.rfind(what);
+												if (idx != string_type::npos)
+												{
+													temp_suggested = temp_suggested.substr(idx + what.size());
+													if (temp_suggested.empty())
+														return;// we have exact match
+													else
+														suggestions.emplace_back(temp_suggested);
+												}
+												else
+												{
+													return;
+												}
+											}
+
+											
+
+											int idx = 0;
+											auto sug_size = result.value().items.size();
+											bool done = false;
+											while(!done)
+											{
+												bool had_one = false;
+												for (auto one : suggestions)
+												{
+													if (one.size() <= idx)
+													{
+														done = true;
+														break;
+													}
+													if (!had_one)
+													{
+														suggested.push_back(one[idx]);
+														had_one = true;
+													}
+													else
+													{
+														if (suggested[idx] != one[idx])
+														{
+															done = true;
+															suggested.pop_back();
+															break;
+														}
+													}
+												}
+												idx++;
+											}
+											if (suggested.empty())
+											{
+												std::ostringstream strs;
+												strs << "\r\n";
+												rx_row_type row;
+												for (auto& one : suggestions)
+													row.emplace_back(what + one);
+												rx_dump_large_row(row, strs, 80);
+												string_type prompt;
+												get_prompt(prompt);
+												strs << prompt;
+												strs << current_line_;
+												suggested = strs.str();
+												had_options = true;
+											}
+										}
+										if (!suggested.empty())
+										{
+											auto sbuff_res = port_->alloc_io_buffer();
+											if (sbuff_res)
+											{
+												if(!had_options)
+													current_line_ += suggested;
+												io_types::rx_io_buffer sbuffer = sbuff_res.move_value();
+												sbuffer.write_chars(suggested);
+												rx_move_packet_down(&stack_entry, rx_create_send_packet(0, &sbuffer, 0, 0));
+											}
+										}
+									}
+								}
+								else
+								{
+								}
+
+							});
+						
+						rx_result result = api::ns::rx_query_model({ query }, std::move(callback), ctx);
+
+					}
 				}
 			}
 		}	
@@ -203,7 +391,7 @@ bool vt100_transport::char_received_normal (const char ch, bool eof, string_type
 	return true;
 }
 
-bool vt100_transport::char_received_in_end_line (char ch, string_type& to_echo, string_type& line)
+bool vt100_endpoint::char_received_in_end_line (char ch, string_type& to_echo, string_type& line)
 {
 	state_ = parser_normal;
 	switch (ch)
@@ -219,12 +407,18 @@ bool vt100_transport::char_received_in_end_line (char ch, string_type& to_echo, 
 	return true;
 }
 
-bool vt100_transport::char_received_had_escape (const char ch, string_type& to_echo)
+bool vt100_endpoint::char_received_had_escape (const char ch, string_type& to_echo)
 {
 	switch (ch)
 	{
 	case '[':
 		state_ = parser_had_bracket;
+		break;
+	case '\\':// ST command
+		state_ = parser_normal;
+		return false;
+	case ']':
+		state_ = parser_had_os_command;
 		break;
 	case 'D':
 		if (current_idx_ != 0 && !current_line_.empty())
@@ -251,7 +445,7 @@ bool vt100_transport::char_received_had_escape (const char ch, string_type& to_e
 	return true;
 }
 
-bool vt100_transport::char_received_had_bracket (char ch, string_type& to_echo)
+bool vt100_endpoint::char_received_had_bracket (char ch, string_type& to_echo)
 {
 	switch (ch)
 	{
@@ -290,18 +484,46 @@ bool vt100_transport::char_received_had_bracket (char ch, string_type& to_echo)
 	return true;
 }
 
-bool vt100_transport::char_received_had_bracket_number (const char ch, string_type& to_echo)
+bool vt100_endpoint::char_received_had_os (char ch, string_type& to_echo)
+{
+	switch (ch)
+	{
+	case '\x1b':
+		state_ = parser_had_escape;
+		{
+			std::istringstream ss(os_command_);
+			string_type comm;
+			ss >> comm;
+			if (comm == "T")
+			{
+				int w, h;
+				ss >> w;
+				ss >> h;
+				if (console_program_)
+					console_program_->set_terminal_size(w, h);
+			}
+			os_command_.clear();
+		}
+		break;
+	default:
+		os_command_ += ch;
+		return false;
+	}
+	return true;
+}
+
+bool vt100_endpoint::char_received_had_bracket_number (const char ch, string_type& to_echo)
 {
 	return false;
 }
 
-void vt100_transport::add_to_history (const string_type& line)
+void vt100_endpoint::add_to_history (const string_type& line)
 {
 	history_it_ = history_.insert(history_it_,line);
 	had_first_ = false;
 }
 
-bool vt100_transport::move_history_up (string_type& to_echo)
+bool vt100_endpoint::move_history_up (string_type& to_echo)
 {
 	if (had_first_ && history_it_ != history_.end())
 	{
@@ -319,7 +541,7 @@ bool vt100_transport::move_history_up (string_type& to_echo)
 	return false;
 }
 
-bool vt100_transport::move_history_down (string_type& to_echo)
+bool vt100_endpoint::move_history_down (string_type& to_echo)
 {
 	if (history_it_ != history_.end())
 	{
@@ -333,58 +555,14 @@ bool vt100_transport::move_history_down (string_type& to_echo)
 	return true;
 }
 
-void vt100_transport::set_echo (bool val)
+void vt100_endpoint::set_echo (bool val)
 {
+	send_echo = val;
 }
 
-
-// Class rx_internal::terminal::term_transport::vt100_transport_port 
-
-vt100_transport_port::vt100_transport_port()
+rx_protocol_result_t vt100_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
-	construct_func = [this]()
-	{
-		auto rt = std::make_unique<vt100_transport_endpoint>(this);
-		auto entry = rt->bind([this](int64_t count)
-			{
-			},
-			[this](int64_t count)
-			{
-			});
-		return construct_func_type::result_type{ entry, std::move(rt) };
-	};
-}
-
-
-
-// Class rx_internal::terminal::term_transport::vt100_transport_endpoint 
-
-vt100_transport_endpoint::vt100_transport_endpoint (runtime::items::port_runtime* port, bool to_echo)
-      : port_(port)
-{
-	CONSOLE_LOG_TRACE("vt100_transport", 900, "Telnet Transport endpoint created.");
-	rx_init_stack_entry(&stack_entry_, this);
-	stack_entry_.received_function = &vt100_transport_endpoint::received_function;
-}
-
-
-vt100_transport_endpoint::~vt100_transport_endpoint()
-{
-	CONSOLE_LOG_TRACE("vt100_transport", 900, "Telnet Transport endpoint destroyed.");
-}
-
-
-
-rx_protocol_stack_endpoint* vt100_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
-{
-	sent_func_ = sent_func;
-	received_func_ = received_func;
-	return &stack_entry_;
-}
-
-rx_protocol_result_t vt100_transport_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
-{
-	vt100_transport_endpoint* self = reinterpret_cast<vt100_transport_endpoint*>(reference->user_data);
+	vt100_endpoint* self = reinterpret_cast<vt100_endpoint*>(reference->user_data);
 	string_type to_echo;
 	string_array lines_buffers;
 	string_array::reverse_iterator current_line_it;
@@ -394,7 +572,7 @@ rx_protocol_result_t vt100_transport_endpoint::received_function (rx_protocol_st
 	for (; i < buffer->size; i++)
 	{
 		string_type line;
-		auto is_normal = self->vt100_.char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, line);
+		auto is_normal = self->char_received((char)buffer->buffer_ptr[i], i == buffer->size - 1, to_echo, line);
 		if (!line.empty())
 		{
 			if (!is_normal)
@@ -418,7 +596,7 @@ rx_protocol_result_t vt100_transport_endpoint::received_function (rx_protocol_st
 		//lines_buffer += (std::move(line) + RX_LINE_END);
 	}
 	rx_protocol_result_t result = RX_PROTOCOL_OK;
-	if (self->vt100_.send_echo && !to_echo.empty())
+	if (self->send_echo && !to_echo.empty())
 	{
 		auto send_buffer = self->port_->alloc_io_buffer();
 		if (!send_buffer)
@@ -442,39 +620,290 @@ rx_protocol_result_t vt100_transport_endpoint::received_function (rx_protocol_st
 	}
 	if (result == RX_PROTOCOL_OK && !lines_buffers.empty())
 	{
-		for (const auto& one : lines_buffers)
+		if (self->console_program_)
 		{
-			rx_const_packet_buffer up_buffer{ (const uint8_t*)one.c_str(), 0, one.size() };
-			rx_init_const_packet_buffer(&up_buffer, one.c_str(), one.size());
-
-			recv_protocol_packet packet = rx_create_recv_packet(0, &up_buffer, 0, 0);
-			result = rx_move_packet_up(reference, packet);
-			if (!result)
-				break;
+			if (lines_buffers.size() > 1)
+			{
+				self->do_commands(std::move(lines_buffers), rx_create_reference<security::unathorized_security_context>());
+			}
+			else
+			{
+				self->do_command(std::move(lines_buffers[0]), rx_create_reference<security::unathorized_security_context>());
+			}
 		}
+		lines_buffers.clear();
 	}
 	return result;
 }
 
-rx_protocol_result_t vt100_transport_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
+rx_protocol_result_t vt100_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
 {
-	vt100_transport_endpoint* self = reinterpret_cast<vt100_transport_endpoint*>(reference->user_data);
-	static string_type conn_msg("rx-Terminal connected...\r\n");
-	rx_protocol_result_t result = RX_PROTOCOL_OUT_OF_MEMORY;
-	auto buffer = self->port_->alloc_io_buffer();
-	if (buffer)
-	{
-		buffer.value().write_chars(conn_msg);
-		result = rx_move_packet_down(reference, rx_create_send_packet(0, &buffer.value(), 0, 0));
+	vt100_endpoint* self = reinterpret_cast<vt100_endpoint*>(reference->user_data);
+	memory::buffer_ptr out_buffer(pointers::_create_new);
+	memory::buffer_ptr err_buffer(pointers::_create_new);
 
-		result = rx_notify_connected(reference, session);
-		self->port_->release_io_buffer(buffer.move_value());
+	std::ostream out(out_buffer.unsafe_ptr());
+	out << ANSI_COLOR_BOLD ANSI_COLOR_YELLOW ">>>" ANSI_COLOR_RESET "Hello!\r\n";
+	out << ANSI_COLOR_BOLD ANSI_COLOR_YELLOW ">>>" ANSI_COLOR_RESET "Connecting terminal as ";
+	out << ANSI_COLOR_BOLD ANSI_COLOR_GREEN
+		<< security::active_security()->get_full_name()
+		<< ANSI_COLOR_RESET;
+	out << "...\r\n";
+
+	string_type msg;
+	self->get_wellcome(msg);
+
+	out << msg;
+	self->process_result(true, out_buffer, err_buffer, true);
+
+	return RX_PROTOCOL_OK;
+}
+
+bool vt100_endpoint::do_command (string_type&& line, security::security_context_ptr ctx)
+{
+	port_->send_function(
+		[ctx, this](string_type&& line)
+		{
+			synchronized_do_command(std::move(line), ctx);
+		}, std::move(line));
+	return true;
+}
+
+bool vt100_endpoint::do_commands (string_array&& lines, security::security_context_ptr ctx)
+{
+	port_->send_function(
+		[ctx, this](string_array&& lines)
+		{
+			for (const auto& captured_line : lines)
+				synchronized_do_command(captured_line, ctx);
+		}, std::move(lines));
+	return true;
+}
+
+void vt100_endpoint::synchronized_cancel_command (security::security_context_ptr ctx)
+{
+}
+
+void vt100_endpoint::synchronized_do_command (const string_type& in_line, security::security_context_ptr ctx)
+{
+	// string end line
+	string_type line(in_line);
+	while (!line.empty() && (*line.rbegin() == '\r' || *line.rbegin() == '\n'))
+		line.pop_back();
+
+	if (line.empty())
+	{
+		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+		std::ostream out(out_buffer.unsafe_ptr());
+		out << "\r\n";
+		process_result(true, out_buffer, memory::buffer_ptr::null_ptr, true);
 	}
-	return result;
+	else if (line[0] == '@')
+	{// this is host command
+		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+		auto err_buffer = rx_create_reference< memory::std_buffer_type>();
+		bool ret = rx_platform::rx_gate::instance().do_host_command(line.substr(1), out_buffer, err_buffer, ctx);
+		process_result(ret, out_buffer, err_buffer, true);
+	}
+	else if (line == "exit")
+	{
+		rx_close(&stack_entry, RX_PROTOCOL_OK);
+	}
+	else if (line == "hello")
+	{
+		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+		std::ostream out(out_buffer.unsafe_ptr());
+		out << "Hello to you too!!!\r\nNow from VT-100 Endpoint...";
+		process_result(true, out_buffer, memory::buffer_ptr::null_ptr, true);
+	}
+	else if (line == "term")
+	{
+		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+		std::ostream out(out_buffer.unsafe_ptr());
+
+		out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "Terminal Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+		out << "Version: " << get_terminal_info() << "\r\n";
+		port_->fill_code_info(out, rx_gate::instance().get_rx_name());
+		out << "\r\n";
+		process_result(true, out_buffer, memory::buffer_ptr::null_ptr, true);
+	}
+	else if (line == "host")
+	{
+		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+		auto err_buffer = rx_create_reference< memory::std_buffer_type>();
+		std::ostream out(out_buffer.unsafe_ptr());
+		std::ostream err(err_buffer.unsafe_ptr());
+
+		string_type man = rx_gate::instance().get_host()->get_host_manual();
+
+		out << man << "\r\n";
+
+		out << "Hosts stack details:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+		hosting::hosts_type hosts;
+		rx_gate::instance().get_host()->get_host_info(hosts);
+		for (const auto& one : hosts)
+		{
+			out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET << one << "\r\n";
+		}
+		process_result(true, out_buffer, err_buffer, true);
+	}
+	else if (line == "storage")
+	{
+		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+		std::ostream out(out_buffer.unsafe_ptr());
+		out << "Storage Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+		rx_gate::instance().get_host()->dump_storage_references(out);
+		out << "\r\n";
+		process_result(true, out_buffer, memory::buffer_ptr::null_ptr, true);
+	}
+	else if (line == "welcome")
+	{
+		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+		std::ostream out(out_buffer.unsafe_ptr());
+
+		string_type msg;
+		get_wellcome(msg);
+
+		out << msg;
+		process_result(true, out_buffer, memory::buffer_ptr::null_ptr, true);
+	}
+	else if (console_program_)
+	{
+		console_program_->do_command(line, ctx);
+	}
+	else
+	{
+		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+		auto err_buffer = rx_create_reference< memory::std_buffer_type>();
+		std::ostream out(err_buffer.unsafe_ptr());
+		std::ostream err(err_buffer.unsafe_ptr());
+		err << "Error while parsing the line:"
+			<< line;
+		out << RX_NULL_ITEM_NAME;
+		out << "\r\n";
+		process_result(false, out_buffer, err_buffer, true);
+	}
+}
+
+void vt100_endpoint::process_result (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
+{
+
+	string_type prompt;
+	bool exit = true;
+	if (!rx_gate::instance().is_shutting_down() && done)
+	{
+		exit = false;
+		get_prompt(prompt);
+	}
+	size_t size = out_buffer->get_size() + (err_buffer ? err_buffer->get_size() : 0) + prompt.size();
+	if (size)
+	{
+		auto send_buffer = port_->alloc_io_buffer();
+		if (send_buffer)
+		{
+			if (!result)
+			{
+				if (!out_buffer->empty())
+					send_buffer.value().write(out_buffer->pbase(), out_buffer->get_size());
+				if (!exit)
+				{
+					send_buffer.value().write_chars(
+						"\r\n" ANSI_COLOR_RED "ERROR" ANSI_COLOR_RESET "\r\n"
+					);
+				}
+				if (!err_buffer->empty())
+					send_buffer.value().write(err_buffer->pbase(), err_buffer->get_size());
+			}
+			else
+			{
+				if (!out_buffer->empty())
+					send_buffer.value().write(out_buffer->pbase(), out_buffer->get_size());
+			}
+			if (!prompt.empty())
+				send_buffer.value().write_chars(prompt);
+
+			if (send_buffer.value().size > 0)
+			{
+				send_protocol_packet packet = rx_create_send_packet(0, &send_buffer.value(), 0, 0);
+				auto result = rx_move_packet_down(&stack_entry, packet);
+			}
+
+			port_->release_io_buffer(send_buffer.move_value());
+		}
+
+	}
+}
+
+string_type vt100_endpoint::get_terminal_info ()
+{
+	static char ret[0x60] = { 0 };
+	if (!ret[0])
+	{
+		ASSIGN_MODULE_VERSION(ret, RX_TERM_NAME, RX_TERM_MAJOR_VERSION, RX_TERM_MINOR_VERSION, RX_TERM_BUILD_NUMBER);
+	}
+	return ret;
+}
+
+void vt100_endpoint::get_prompt (string_type& prompt)
+{
+	if (console_program_)
+		console_program_->get_prompt(prompt);
+	prompt += "\r\n" ANSI_RX_USER;
+	prompt += security::active_security()->get_full_name();
+	prompt += ":" ANSI_COLOR_RESET;
+	prompt += ">";
+}
+
+void vt100_endpoint::get_wellcome (string_type& wellcome)
+{
+	wellcome.clear();
+	std::ostringstream ss;
+	ss << "\r\n";
+	ss << g_console_welcome;
+	ss << "\r\n\r\n         " ANSI_COLOR_BOLD ANSI_COLOR_GREEN;
+	ss << get_terminal_info()
+		<< ANSI_COLOR_RESET "\r\n\r\n";
+	ss << ">Type "
+		<< ANSI_COLOR_YELLOW "\"help\"" ANSI_COLOR_RESET ", "
+		<< ANSI_COLOR_YELLOW "\"copyright\"" ANSI_COLOR_RESET ", or "
+		<< ANSI_COLOR_YELLOW "\"license\"" ANSI_COLOR_RESET " for more information."
+		<< "\r\n";
+	wellcome = ss.str();
+}
+
+void vt100_endpoint::close_endpoint ()
+{
+	stack_entry.received_function = nullptr;
+	if (console_program_)
+		console_program_->reset();
 }
 
 
-} // namespace term_transport
+// Class rx_internal::terminal::term_ports::vt100_port 
+
+vt100_port::vt100_port()
+{
+	construct_func = [this]()
+	{
+		auto rt = rx_create_reference<vt100_endpoint>(this);
+		return construct_func_type::result_type{ &rt->stack_entry, rt };
+	};
+}
+
+
+
+void vt100_port::stack_assembled ()
+{
+	auto result = listen(nullptr, nullptr);
+	if (!result)
+	{
+		// handle the fucking error!!!
+		CONSOLE_LOG_WARNING("VT-100", 200, "Listen failed on (nullptr, nullptr):" + result.errors_line());
+	}
+}
+
+
+} // namespace term_ports
 } // namespace terminal
 } // namespace rx_internal
 
