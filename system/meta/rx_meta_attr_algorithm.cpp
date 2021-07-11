@@ -127,8 +127,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 	if (temp)
 	{
 		temp.value().value = whose.get_value(ctx.now);
-		ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()));
-		return true;
+		return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target);
 	}
 	else
 	{
@@ -180,8 +179,7 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
 		temp.value().source_id = target;
-		ctx.runtime_data().add(whose.name_, std::move(temp.value()));
-		return true;
+		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
 	}
 	else
 	{
@@ -236,8 +234,7 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
 		temp.value().mapper_id = target;
-		ctx.runtime_data().add(whose.name_, std::move(temp.value()));
-		return true;
+		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
 	}
 	else
 	{
@@ -291,8 +288,7 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::construct_complex
 	{
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
-		ctx.runtime_data().add(whose.name_, std::move(temp.value()));
-		return true;
+		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
 	}
 	else
 	{
@@ -707,19 +703,29 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 			// constant values
 		case complex_data_type::const_values_mask:
 			{
-				ctx.runtime_data().add_const_value(
+				rx_result ret = ctx.runtime_data().add_const_value(
 					one.first,
 					whose.const_values_[one.second & complex_data_type::index_mask].get_value());
+				if (!ret)
+				{
+					ret.register_error("Unable to add const value "s + one.first + "!");
+					return ret;
+				}
 			}
 			break;
 			// simple values
 		case complex_data_type::simple_values_mask:
 			{
-				ctx.runtime_data().add_value(
+				rx_result ret = ctx.runtime_data().add_value(
 					one.first,
 					whose.simple_values_[one.second & complex_data_type::index_mask].get_value(ctx.now),
 					whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
 					whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent());
+				if (!ret)
+				{
+					ret.register_error("Unable to add simple value "s + one.first + "!");
+					return ret;
+				}
 			}
 			break;
 			// structures
@@ -1158,8 +1164,7 @@ rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
-		ctx.runtime_data().add(whose.name_, std::move(temp.value()));
-		return true;
+		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
 	}
 	else
 	{

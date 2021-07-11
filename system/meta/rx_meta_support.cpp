@@ -37,6 +37,7 @@
 #include "system/runtime/rx_rt_struct.h"
 #include "system/runtime/rx_blocks.h"
 #include "rx_def_blocks.h"
+#include "model/rx_meta_internals.h"
 using namespace rx_platform::runtime::structure;
 
 
@@ -198,7 +199,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_data_.push_back(object_data_prototype());
 }
 
-runtime_data_prototype construct_context::pop_rt_name ()
+rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(runtime_data_.rbegin()->runtime_data);
@@ -299,19 +300,53 @@ void construct_context::register_warining (runtime_status_record data)
 // Class rx_platform::meta::runtime_data_prototype 
 
 
-void runtime_data_prototype::add_const_value (const string_type& name, rx_simple_value value)
+rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_simple_value value)
 {
-	if (check_name(name))
-	{
+	auto idx = check_member_name(name);
+	if (idx < 0)
+	{// new one
 		members_index_type new_idx = static_cast<members_index_type>(const_values.size());
 		const_values.push_back({ value });
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_const_index_type });
+		return true;
+	}
+	else
+	{// override so check it
+		auto& elem = items[idx];
+		switch (elem.index & rt_type_mask)
+		{
+		case rt_const_index_type:
+			{
+				if(value.get_type() != const_values[elem.index>> rt_type_shift].value.get_type())
+					return "Can't override constant value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
+				const_values.push_back({ value });
+				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
+			}
+			break;
+		case rt_value_index_type:
+			{
+				if (value.get_type() != values[elem.index >> rt_type_shift].value.get_type())
+					return "Can't override value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
+				const_values.push_back({ value });
+				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
+			}
+			break;
+		case rt_variable_index_type:
+			return "Well, don't know what to do with this one?"s + RX_NOT_SUPPORTED;
+			break;
+		}
+		return true;
 	}
 }
 
-void runtime_data_prototype::add_value (const string_type& name, rx_timed_value value, bool read_only, bool persistent)
+rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_value value, bool read_only, bool persistent)
 {
-	if (check_name(name))
+	auto idx = check_member_name(name);
+	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(values.size());
 		value_data temp_val;
@@ -320,76 +355,260 @@ void runtime_data_prototype::add_value (const string_type& name, rx_timed_value 
 		temp_val.value_opt[value_data::opt_persistent] = persistent;
 		values.emplace_back(std::move(temp_val));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_index_type });
+		return true;
+	}
+	else
+	{// override so check it
+		auto& elem = items[idx];
+		switch (elem.index & rt_type_mask)
+		{
+		case rt_const_index_type:
+			{
+				if (value.get_type() != const_values[elem.index >> rt_type_shift].value.get_type())
+					return "Can't override constant value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(values.size());
+				value_data temp_val;
+				temp_val.value = std::move(value);
+				temp_val.value_opt[value_data::opt_readonly] = read_only;
+				temp_val.value_opt[value_data::opt_persistent] = persistent;
+				values.push_back({ temp_val });
+				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
+			}
+			break;
+		case rt_value_index_type:
+			{
+				if (value.get_type() != values[elem.index >> rt_type_shift].value.get_type())
+					return "Can't override value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(values.size());
+				value_data temp_val;
+				temp_val.value = std::move(value);
+				temp_val.value_opt[value_data::opt_readonly] = read_only;
+				temp_val.value_opt[value_data::opt_persistent] = persistent;
+				values.push_back({ temp_val });
+				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
+			}
+			break;
+		case rt_variable_index_type:
+			return "Well, don't know what to do with this one?"s + RX_NOT_SUPPORTED;
+			break;
+		}
+		return true;
 	}
 }
 
-bool runtime_data_prototype::check_name (const string_type& name) const
+int runtime_data_prototype::check_member_name (const string_type& name) const
 {
+	int idx = 0;
 	for (const auto& one : items)
 	{
 		if (one.name == name)
-			return false;
+			return idx;
+		idx++;
 	}
-	return true;
+	return -1;
 }
 
-void runtime_data_prototype::add (const string_type& name, runtime::structure::mapper_data&& value)
+rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id)
 {
-	if (check_name(name))
+	auto idx = check_member_name(name);
+	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(mappers.size());
-		mappers.emplace_back(std::move(value));
+		mappers.emplace_back(std::move(id), std::move(value));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_mapper_index_type });
+		return true;
+	}
+	else
+	{
+		auto& elem = items[idx];
+		if (((elem.index & rt_type_mask) == rt_mapper_index_type))
+		{
+			members_index_type new_idx = static_cast<members_index_type>(mappers.size());
+			mappers.emplace_back(std::move(id), std::move(value));
+			elem.index = (new_idx << rt_type_shift) | rt_mapper_index_type;
+			return true;
+		}
+		else
+		{
+			return name  + " has invalid type for mapper to override";
+		}
 	}
 }
 
-void runtime_data_prototype::add (const string_type& name, runtime::structure::struct_data&& value)
+rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id)
 {
-	if (check_name(name))
+	auto idx = check_member_name(name);
+	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(structs.size());
-		structs.emplace_back(std::move(value));
+		structs.emplace_back(std::move(id), std::move(value));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_struct_index_type });
+		return true;
+	}
+	else
+	{
+		// override so check it
+		auto& elem = items[idx];
+		// here i should check about the sub-classing
+		/*if (value.value.get_type() != const_values[elem.index >> rt_type_shift].value.get_type())
+			return "Can't override constant value, wrong value type!";*/
+		if (((elem.index & rt_type_mask) == rt_struct_index_type))
+		{
+			if (id != structs[elem.index >> rt_type_shift].first &&
+				!rx_internal::model::platform_types_manager::instance().get_simple_type_repository<basic_types::struct_type>().is_derived_from(id, structs[elem.index >> rt_type_shift].first))
+				return "Can't override struct, wrong struct type!";
+			members_index_type new_idx = static_cast<members_index_type>(structs.size());
+			structs.emplace_back(std::move(id), std::move(value));
+			elem.index = (new_idx << rt_type_shift) | rt_struct_index_type;
+			return true;
+		}
+		else
+		{
+			return name + " has invalid type for struct to override";
+		}
 	}
 }
 
-void runtime_data_prototype::add_variable (const string_type& name, runtime::structure::variable_data&& value)
+rx_result runtime_data_prototype::add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_node_id id)
 {
-	if (check_name(name))
+	auto idx = check_member_name(name);
+	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(variables.size());
-		variables.emplace_back(std::move(value));
+		variables.emplace_back(std::move(id), std::move(value));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_variable_index_type });
+		return true;
+	}
+	else
+	{
+		// override so check it
+		auto& elem = items[idx];
+		switch (elem.index & rt_type_mask)
+		{
+		case rt_const_index_type:
+			{
+				if (value.value.get_type() != const_values[elem.index >> rt_type_shift].value.get_type())
+					return "Can't override constant value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(variables.size());
+				variables.emplace_back(std::move(id), std::move(value));
+				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
+			}
+			break;
+		case rt_value_index_type:
+			{
+				if (value.value.get_type() != values[elem.index >> rt_type_shift].value.get_type())
+					return "Can't override value, wrong value type!";
+				members_index_type new_idx = static_cast<members_index_type>(variables.size());
+				variables.emplace_back(std::move(id), std::move(value));
+				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
+			}
+			break;
+		case rt_variable_index_type:
+			{
+				if (value.value.get_type() != variables[elem.index >> rt_type_shift].second.value.get_type())
+					return "Can't override variable, wrong value type!";
+				if(id != variables[elem.index >> rt_type_shift].first &&
+					!rx_internal::model::platform_types_manager::instance().get_simple_type_repository<basic_types::variable_type>().is_derived_from(id, variables[elem.index >> rt_type_shift].first))
+					return "Can't override variable, wrong variable type!";
+				members_index_type new_idx = static_cast<members_index_type>(variables.size());
+				variables.emplace_back(std::move(id), std::move(value));
+				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
+			}
+			break;
+		default:
+			return "JOJ!!!";
+		}
+		return true;
 	}
 }
 
-void runtime_data_prototype::add (const string_type& name, runtime::structure::source_data&& value)
+rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::source_data&& value, rx_node_id id)
 {
-	if (check_name(name))
+	auto idx = check_member_name(name);
+	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(sources.size());
-		sources.emplace_back(std::move(value));
+		sources.emplace_back(std::move(id), std::move(value));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_source_index_type });
+		return true;
+	}
+	else
+	{
+		auto& elem = items[idx];
+		if (((elem.index & rt_type_mask) == rt_source_index_type))
+		{
+			members_index_type new_idx = static_cast<members_index_type>(sources.size());
+			sources.emplace_back(std::move(id), std::move(value));
+			elem.index = (new_idx << rt_type_shift) | rt_source_index_type;
+			return true;
+		}
+		else
+		{
+			return name + " has invalid type for source to override";
+		}
 	}
 }
 
-void runtime_data_prototype::add (const string_type& name, runtime::structure::filter_data&& value)
+rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::filter_data&& value, rx_node_id id)
 {
-	if (check_name(name))
+	auto idx = check_member_name(name);
+	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(filters.size());
-		filters.emplace_back(std::move(value));
+		filters.emplace_back(std::move(id), std::move(value));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_filter_index_type });
+		return true;
+	}
+	else
+	{
+		auto& elem = items[idx];
+		if (((elem.index & rt_type_mask) == rt_filter_index_type))
+		{
+			if (id != filters[elem.index >> rt_type_shift].first &&
+				!rx_internal::model::platform_types_manager::instance().get_simple_type_repository<basic_types::filter_type>().is_derived_from(id, structs[elem.index >> rt_type_shift].first))
+				return "Can't override filter, wrong filter type!";
+			members_index_type new_idx = static_cast<members_index_type>(filters.size());
+			filters.emplace_back(std::move(id), std::move(value));
+			elem.index = (new_idx << rt_type_shift) | rt_filter_index_type;
+			return true;
+		}
+		else
+		{
+			return name + " has invalid type for filter to override";
+		}
 	}
 }
 
-void runtime_data_prototype::add (const string_type& name, runtime::structure::event_data&& value)
+rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::event_data&& value, rx_node_id id)
 {
-	if (check_name(name))
+	auto idx = check_member_name(name);
+	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(events.size());
-		events.emplace_back(std::move(value));
+		events.emplace_back(std::move(id), std::move(value));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_event_index_type });
+		return true;
+	}
+	else
+	{
+		auto& elem = items[idx];
+		if (((elem.index & rt_type_mask) == rt_event_index_type))
+		{
+			if (id != events[elem.index >> rt_type_shift].first &&
+				!rx_internal::model::platform_types_manager::instance().get_simple_type_repository<basic_types::event_type>().is_derived_from(id, structs[elem.index >> rt_type_shift].first))
+				return "Can't override filter, wrong filter type!";
+			members_index_type new_idx = static_cast<members_index_type>(events.size());
+			events.emplace_back(std::move(id), std::move(value));
+			elem.index = (new_idx << rt_type_shift) | rt_event_index_type;
+			return true;
+		}
+		else
+		{
+			return name + " has invalid type for event to override";
+		}
 	}
 }
 

@@ -245,6 +245,8 @@ class inheritance_hash
 
       void deinitialize ();
 
+      bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
+
 
   protected:
 
@@ -481,6 +483,8 @@ public:
       void deinitialize ();
 
       rx_result update_type (typename simple_types_repository<typeT>::Tptr what);
+
+      bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
 
 
   protected:

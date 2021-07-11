@@ -1344,7 +1344,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 			string_type path;
 			ctx->get_current_directory()->fill_path(path);
 			auto proto = create_runtime_prototype<T>(name, base_reference, path);
-			if (!proto.meta_info.parent.is_null())
+			if (proto.meta_info.parent.is_null())
 			{
 				err << "Error resolving base reference:\r\n";
 				return false;

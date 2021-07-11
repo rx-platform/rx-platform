@@ -49,7 +49,7 @@ typename duplex_port_adapter<addrT>::key_type duplex_port_adapter<addrT>::get_ke
 	return remote_address;
 }
 template <typename addrT>
-typename duplex_port_adapter<addrT>::key_type duplex_port_adapter<addrT>::get_key_from_addresses_listener(const addrT& local_address, const addrT& remote_address)
+typename duplex_port_adapter<addrT>::listener_key_type duplex_port_adapter<addrT>::get_key_from_addresses_listener(const addrT& local_address, const addrT& remote_address)
 {
 	return local_address;
 }
@@ -65,14 +65,14 @@ std::pair<bool, typename duplex_port_adapter<addrT>::key_type> duplex_port_adapt
 }
 
 template <typename addrT>
-std::pair<bool, typename duplex_port_adapter<addrT>::key_type> duplex_port_adapter<addrT>::get_key_from_packet_listener(const recv_protocol_packet& packet)
+std::pair<bool, typename duplex_port_adapter<addrT>::listener_key_type> duplex_port_adapter<addrT>::get_key_from_packet_listener(const recv_protocol_packet& packet)
 {
 	addrT local, remote;
 	if (!remote.parse(packet.from_addr))
-		return { false, key_type() };
+		return { false, listener_key_type() };
 	if (!local.parse(packet.to_addr))
-		return { false, key_type() };
-	return { true, local };
+		return { false, listener_key_type() };
+	return { true, { local, remote } };
 }
 template <typename addrT>
 void duplex_port_adapter<addrT>::fill_send_packet(send_protocol_packet& packet, const initiator_data_type<addrT>& session_data)
@@ -107,22 +107,22 @@ std::pair<typename duplex_port_adapter<addrT>::key_type, std::unique_ptr<initiat
 }
 
 template <typename addrT>
-std::pair<typename duplex_port_adapter<addrT>::key_type, std::unique_ptr<listener_data_type<addrT> >> duplex_port_adapter<addrT>::create_listener_data(const protocol_address* local_address, const protocol_address* remote_address)
+std::pair<typename duplex_port_adapter<addrT>::listener_key_type, std::unique_ptr<listener_data_type<addrT> >> duplex_port_adapter<addrT>::create_listener_data(const protocol_address* local_address, const protocol_address* remote_address)
 {
 	std::unique_ptr<listener_data_type<addrT> > data = std::make_unique<listener_data_type<addrT> >();
 	auto result = data->local_addr.parse(local_address);
 	if (!result || data->local_addr.is_null())
 	{
 		data.reset();
-		return { key_type(), std::move(data) };
+		return { listener_key_type(), std::move(data) };
 	}
 	result = data->remote_addr.parse(remote_address);
 	if (!result)
 	{
 		data.reset();
-		return { key_type(), std::move(data) };
+		return { listener_key_type(), std::move(data) };
 	}
-	addrT key = data->local_addr;
+	listener_key_type key = { data->local_addr, data->remote_addr };
 	return { key, std::move(data) };
 }
 
@@ -130,6 +130,19 @@ template <typename addrT>
 std::unique_ptr<listener_instance<addrT> > duplex_port_adapter<addrT>::create_listener_instance(const protocol_address* local_address, const protocol_address* remote_address)
 {
 	std::unique_ptr<listener_instance<addrT> > data = std::make_unique<listener_instance<addrT> >();
+	/*auto result = data->local_addr.parse(local_address);
+	if (!result)
+	{
+		data.reset();
+	}
+	else
+	{
+		result = data->remote_addr.parse(remote_address);
+		if (!result)
+		{
+			data.reset();
+		}
+	}*/
 	return std::move(data);
 }
 
@@ -200,21 +213,22 @@ rx_protocol_stack_endpoint* full_duplex_addr_packet_port<addrT>::construct_liste
 	listener_inst->my_port = this;
 
 	rx_init_stack_entry(&listener_inst->stack_endpoint, listener_inst.get());
-	/*initiators_endpoint_.send_function = [](rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
+	/*listener_inst->stack_endpoint.send_function = [](rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 		{
-			full_duplex_addr_packet_port<addrT>* me = (full_duplex_addr_packet_port<addrT>*)reference->user_data;
-			return me->send_packet(packet);
+			listener_instance<addrT>* me = (listener_instance<addrT>*)reference->user_data;
+			address_adapter_type::fill_send_packet(packet, *me);
+			return rx_move_packet_down(&me->my_port->initiator_endpoint_, packet);
 		};*/
 	listener_inst->stack_endpoint.received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 	{
 		listener_instance<addrT>* me = (listener_instance<addrT>*)reference->user_data;
 		return me->route_listeners_packet(packet);
 	};
-	listener_inst->stack_endpoint.connected_function = [](rx_protocol_stack_endpoint* reference, rx_session* session)
+	/*listener_inst->stack_endpoint.connected_function = [](rx_protocol_stack_endpoint* reference, rx_session* session)
 	{
 		listener_instance<addrT>* me = (listener_instance<addrT>*)reference->user_data;
 		return me->listener_connected_received(session);
-	};
+	};*/
 	listener_inst->stack_endpoint.allocate_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
 	{
 		listener_instance<addrT>* me = (listener_instance<addrT>*)entry->user_data;
@@ -248,9 +262,9 @@ rx_result full_duplex_addr_packet_port<addrT>::start_listen (const protocol_addr
 {
 	if (state_ == port_state_inactive)
 		return "Port not started!";
-	std::pair<key_type, std::unique_ptr<listener_data_t> > listener_data = address_adapter_type::create_listener_data(local_address, remote_address);
+	std::pair<listener_key_type, std::unique_ptr<listener_data_t> > listener_data = address_adapter_type::create_listener_data(local_address, remote_address);
 	if (!listener_data.second)
-		return "Unable to parse address";
+		return "Unable to parse address:";
 
 	return true;
 	/*
@@ -613,12 +627,14 @@ template <typename addrT>
 listener_data_type<addrT>::listener_data_type()
       : my_instance(nullptr)
 {
+	ITF_LOG_DEBUG("listener_data_type", 200, "Routing listener endpoint created.");
 }
 
 
 template <typename addrT>
 listener_data_type<addrT>::~listener_data_type()
 {
+	ITF_LOG_DEBUG("listener_data_type", 200, "Routing listener endpoint destroyed.");
 }
 
 
@@ -628,12 +644,14 @@ listener_data_type<addrT>::~listener_data_type()
 template <typename addrT>
 listener_instance<addrT>::listener_instance()
 {
+	ITF_LOG_DEBUG("listener_instance", 200, "Routing listener instance endpoint created.");
 }
 
 
 template <typename addrT>
 listener_instance<addrT>::~listener_instance()
 {
+	ITF_LOG_DEBUG("listener_instance", 200, "Routing listener instance endpoint destroyed.");
 }
 
 
@@ -679,7 +697,7 @@ rx_protocol_result_t listener_instance<addrT>::listener_connected_received (rx_s
 	{// notify the one
 		rx_protocol_stack_endpoint* endpoint = nullptr;
 		locks::auto_lock_t _(&routing_lock_);
-		endpoint = find_listener_endpoint(local, &local, &remote);
+		endpoint = find_listener_endpoint(listener_key_type(local, remote), &local, &remote);
 		if (endpoint)
 		{
 			return rx_notify_connected(endpoint, session);
@@ -692,7 +710,7 @@ rx_protocol_result_t listener_instance<addrT>::listener_connected_received (rx_s
 }
 
 template <typename addrT>
-rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (const key_type& key, const protocol_address* local_address, const protocol_address* remote_address)
+rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (const listener_key_type& key, const protocol_address* local_address, const protocol_address* remote_address)
 {
 	auto it_cli = listeners_.find(key);
 	if (it_cli != listeners_.end())
@@ -701,6 +719,11 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 	}
 	else
 	{
+		addrT rmt;
+		rmt.parse(remote_address);
+		if (rmt.is_null())
+			return nullptr;
+
 		std::unique_ptr<listener_data_t> new_listener = std::make_unique<listener_data_t>();
 		new_listener->my_port = my_port;
 		new_listener->my_instance = this;
@@ -711,25 +734,25 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 		rx_protocol_stack_endpoint* new_endpoint = &new_listener->stack_endpoint;
 		rx_init_stack_entry(new_endpoint, new_listener.get());
 		new_endpoint->send_function = [](rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
-			{
-				listener_data_t* me = (listener_data_t*)reference->user_data;
-				address_adapter_type::fill_send_packet(packet, *me);
-				return rx_move_packet_down(&me->my_instance->stack_endpoint, packet);
-			};
-		new_endpoint->received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 		{
-			listener_instance<addrT>* me = (listener_instance<addrT>*)reference->user_data;
-			return me->route_listeners_packet(packet);
+			listener_data_t* me = (listener_data_t*)reference->user_data;
+			address_adapter_type::fill_send_packet(packet, *me);
+			return rx_move_packet_down(&me->my_instance->stack_endpoint, packet);
 		};
+		/*new_endpoint->received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+		{
+			listener_data_t* me = (listener_data_t*)reference->user_data;
+			return me->my_instance->route_listeners_packet(packet);
+		};*/
 		new_endpoint->connected_function = [](rx_protocol_stack_endpoint* reference, rx_session* session)
 		{
-			listener_instance<addrT>* me = (listener_instance<addrT>*)reference->user_data;
-			return me->listener_connected_received(session);
+			listener_data_t* me = (listener_data_t*)reference->user_data;
+			return me->my_instance->listener_connected_received(session);
 		};
 		new_endpoint->allocate_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
 		{
-			listener_instance<addrT>* me = (listener_instance<addrT>*)entry->user_data;
-			auto result = me->my_port->alloc_io_buffer();
+			listener_data_t* me = (listener_data_t*)entry->user_data;
+			auto result = me->my_instance->my_port->alloc_io_buffer();
 			if (result)
 			{
 				result.value().detach(buffer);
@@ -742,10 +765,10 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 		};
 		new_endpoint->release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
 		{
-			listener_instance<addrT>* me = (listener_instance<addrT>*)entry->user_data;
+			listener_data_t* me = (listener_data_t*)entry->user_data;
 			rx_io_buffer temp;
 			temp.attach(buffer);
-			me->my_port->release_io_buffer(std::move(temp));
+			me->my_instance->my_port->release_io_buffer(std::move(temp));
 
 			return RX_PROTOCOL_OK;
 		};
@@ -777,7 +800,7 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 }
 
 template <typename addrT>
-rx_protocol_result_t listener_instance<addrT>::remove_listener (const key_type& key)
+rx_protocol_result_t listener_instance<addrT>::remove_listener (const listener_key_type& key)
 {
 	auto it_cli = listeners_.find(key);
 	if (it_cli != listeners_.end())

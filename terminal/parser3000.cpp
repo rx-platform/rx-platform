@@ -621,7 +621,7 @@ namespace urke
 							} while (!in.eof() && ((current != ' ' && current != '	') || (quotes == true)));
 							if (pom_if_together == false) pom_if_together = true;
 
-							if (count_bit_options > 0)
+							if (count_bit_options > 0 && form.size() != 2)
 							{
 								string_options[i].value->clear();
 								for (size_t w = count_bit_options + 1; w < form.size(); w++)

@@ -114,6 +114,13 @@ const rx_message_type_t rx_code_response_id = 0x8016;
 const rx_message_type_t rx_info_request_id = 0x0017;
 const rx_message_type_t rx_info_response_id = 0x8017;
 
+const rx_message_type_t rx_read_runtime_request_id = 0x0018;
+const rx_message_type_t rx_read_runtime_response_id = 0x8018;
+
+const rx_message_type_t rx_write_runtime_request_id = 0x0019;
+const rx_message_type_t rx_write_runtime_response_id = 0x8019;
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // subscription messages constants
 const rx_message_type_t rx_create_subscription_request_id = 0x0081;

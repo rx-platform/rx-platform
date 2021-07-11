@@ -33,17 +33,17 @@
 
 
 
-// rx_query_messages
-#include "sys_internal/rx_query_messages.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
+// rx_query_messages
+#include "sys_internal/rx_query_messages.h"
 
 namespace rx_internal {
 namespace rx_protocol {
 namespace messages {
 namespace set_messages {
-class protocol_runtime_creator_base;
 class protocol_type_creator_base;
+class protocol_runtime_creator_base;
 
 } // namespace set_messages
 } // namespace messages
@@ -722,6 +722,72 @@ class prototype_runtime_request : public rx_request_message
 
 
       std::unique_ptr<protocol_runtime_creator_base> creator_;
+
+
+};
+
+
+
+
+
+
+class read_runtime_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      rx_item_reference reference;
+
+      static string_type type_name;
+
+      static uint16_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class read_runtime_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
 
 
 };

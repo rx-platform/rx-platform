@@ -142,7 +142,7 @@ class empty
 	  }
 	  typedef std::array<typeT, 0> collection_type;
 	  collection_type collection;
-	  void copy_from(const std::vector<typeT>& source)
+	  void copy_from(const std::vector<std::pair<rx_node_id, typeT> >& source)
 	  {
 		 
 	  }
@@ -168,9 +168,13 @@ class has
 		  return true;
 	  }	  
 	  typedef const_size_vector<typeT> collection_type;
-	  void copy_from(std::vector<typeT>&& source)
+	  void copy_from(std::vector<std::pair<rx_node_id, typeT> >&& source)
 	  {
-		  collection = collection_type(std::move(source));
+          std::vector<typeT> temp;
+          temp.reserve(source.size());
+          for (auto&& one : source)
+              temp.emplace_back(std::move(one.second));
+		  collection = collection_type(std::move(temp));
 	  }
 	  collection_type collection;
   protected:

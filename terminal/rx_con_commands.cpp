@@ -1010,7 +1010,7 @@ string_type help_command::get_help () const
 				<< "kind of projects involving industrial process.\r\n"
 				<< "It enables Rapid Application Development of several types of products:\r\n"
 				<< "   - MES Systems\r\n   - Gateways\r\n   - HMI\r\n"
-				<< "   - Simulation Tools\r\n   - IoT and Industrial IoT Applications...\r\n\r\n";
+				<< "   - Simulation Tools\r\n   - General Type Industrial IoT Applications...\r\n\r\n";
 
 			out << ANSI_COLOR_GREEN ANSI_COLOR_BOLD "{rx-platform}" ANSI_COLOR_RESET
 				<< " is free software: you can redistribute it and/or \r\n"
@@ -1032,8 +1032,8 @@ string_type help_command::get_help () const
 
 			rx_dump_large_row(names, out, RX_CONSOLE_WIDTH);
 
-			out << "\r\nchoose one and type " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "help " ANSI_COLOR_YELLOW ANSI_COLOR_BOLD  "<command>" ANSI_COLOR_RESET " for more details.";
-			out << "\r\n\r\n" ANSI_COLOR_MAGENTA "Maybe this is final help implementation...\r\n" ANSI_COLOR_RESET;
+			out << "\r\n choose one and type " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "help " ANSI_COLOR_YELLOW ANSI_COLOR_BOLD  "<command>" ANSI_COLOR_RESET " for more details.";
+			out << "\r\n\r\n" ANSI_COLOR_MAGENTA " Maybe this is final help implementation...\r\n " ANSI_COLOR_RESET;
 			out << ANSI_COLOR_BOLD ANSI_COLOR_RED "/" ANSI_COLOR_YELLOW "/" ANSI_COLOR_GREEN "/" ANSI_COLOR_CYAN "/" ANSI_COLOR_RESET
 				<< "  sinclair ZX Spectrum!!!\r\n";
 			out.flush();

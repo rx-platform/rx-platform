@@ -42,6 +42,8 @@
 #include "system/runtime/rx_runtime_holder.h"
 #include "system/meta/rx_meta_algorithm.h"
 #include "system/meta/rx_types.h"
+#include "rx_async_functions.h"
+#include "model/rx_model_algorithms.h"
 
 
 namespace rx_internal {
@@ -1642,6 +1644,146 @@ const string_type& prototype_runtime_request::get_type_name ()
 }
 
 rx_message_type_t prototype_runtime_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::set_messages::read_runtime_request 
+
+string_type read_runtime_request::type_name = "readRuntimeReq";
+
+uint16_t read_runtime_request::type_id = rx_read_runtime_request_id;
+
+struct item_message_result
+{
+	string_type val;
+	operator bool() const
+	{
+		return !val.empty();
+	}
+};
+
+
+
+rx_result read_runtime_request::serialize (base_meta_writer& stream) const
+{
+	auto result = stream.write_item_reference("target", reference);
+	if (!result)
+		return stream.get_error();
+
+	return result;
+}
+
+rx_result read_runtime_request::deserialize (base_meta_reader& stream)
+{
+	auto result = stream.read_item_reference("target", reference);
+	if (!result)
+		return stream.get_error();
+
+	return result;
+}
+
+message_ptr read_runtime_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	ns::rx_directory_resolver dirs;
+	auto resolve_result = api::ns::rx_resolve_reference(reference, dirs);
+	if (!resolve_result)
+	{
+		std::ostringstream ss;
+		ss << "Error resolving reference to "
+			<< reference.to_string()
+			<< " : "
+			<< resolve_result.errors_line();
+		auto ret_value = std::make_unique<error_message>(ss.str() , 16, request_id);
+		return ret_value;
+
+	}
+
+	rx_result result = model::algorithms::do_with_runtime_item(resolve_result.value()
+		, [](rx_result_with<platform_item_ptr>&& data) -> rx_result_with<item_message_result>
+		{
+			if (data)
+			{
+				rx_value val;
+				auto read_res = data.value()->read_value("", val);
+				if (read_res)
+				{
+					item_message_result ret;
+					if (val.is_good())
+						ret.val = val.get_storage().to_string();
+					else
+						return "Bad quality!!!";
+
+					return ret;
+				}
+				else
+				{
+					return read_res.errors();
+				}
+			}
+			else
+			{
+				return data.errors();
+			}
+		}
+		, rx_result_with_callback< item_message_result>(ctx.object, [](rx_result_with<item_message_result>&& result) mutable
+			{
+			})
+			, ctx);
+
+	if (!result)
+	{
+		std::ostringstream ss;
+		ss << "Error resolving reference to "
+			<< reference.to_string()
+			<< " : "
+			<< resolve_result.errors_line();
+		auto ret_value = std::make_unique<error_message>(ss.str(), 16, request_id);
+		return ret_value;
+
+	}
+	return message_ptr();
+}
+
+const string_type& read_runtime_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t read_runtime_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::set_messages::read_runtime_response 
+
+string_type read_runtime_response::type_name = "readRuntimeResp";
+
+rx_message_type_t read_runtime_response::type_id = rx_read_runtime_response_id;
+
+
+rx_result read_runtime_response::serialize (base_meta_writer& stream) const
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result read_runtime_response::deserialize (base_meta_reader& stream)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+const string_type& read_runtime_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t read_runtime_response::get_type_id ()
 {
   return type_id;
 

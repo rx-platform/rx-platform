@@ -411,9 +411,12 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	base.emplace_back(parent_id);
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		auto base_result = inheritance_hash_.get_base_types(parent_id, base);
-		if (!base_result)
-			return base_result.errors();
+		if (parent_id)
+		{
+			auto base_result = inheritance_hash_.get_base_types(parent_id, base);
+			if (!base_result)
+				return base_result.errors();
+		}
 	}
 	else
 	{
@@ -496,9 +499,9 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	std::vector<data::runtime_values_data> overrides;
 	ret.ptr = rx_create_reference<RType>(meta, instance_data, std::move(behavior));
 	ret.ptr->implementation_ = implementation_ptr;
-	for (auto one_id : base)
+	for (auto it = base.rbegin(); it != base.rend(); it++)
 	{
-		auto my_class = get_type_definition(one_id);
+		auto my_class = get_type_definition(*it);
 		if (my_class)
 		{
 			ctx.reinit();
@@ -1063,6 +1066,17 @@ void inheritance_hash::deinitialize ()
 {
 }
 
+bool inheritance_hash::is_derived_from (rx_node_id id, rx_node_id base_id) const
+{
+	auto it = derived_hash_.find(base_id);
+	if (it != derived_hash_.end())
+	{
+		auto it2 = it->second.find(id);
+		return it2 != it->second.end();
+	}
+	return false;
+}
+
 
 // Class rx_internal::model::instance_hash 
 
@@ -1272,9 +1286,9 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 
 	std::vector<data::runtime_values_data> overrides;
 	RDataType rt_prototype;
-	for (auto one_id : base)
+	for(auto it=base.rbegin(); it!=base.rend(); it++)
 	{
-		auto my_class = get_type_definition(one_id);
+		auto my_class = get_type_definition((*it));
 		if (my_class)
 		{
 			std::unique_ptr<data::runtime_values_data> temp_values = std::make_unique<data::runtime_values_data>();
@@ -1423,6 +1437,43 @@ rx_result simple_types_repository<typeT>::update_type (typename simple_types_rep
 	{
 		return "Node Id: "s + what->meta_info.id.to_string() + " for " + what->meta_info.name + " does not exists";
 	}
+}
+
+template <class typeT>
+bool simple_types_repository<typeT>::is_derived_from (rx_node_id id, rx_node_id base_id) const
+{
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	{
+		return inheritance_hash_.is_derived_from(id, base_id);
+	}
+	else
+	{
+		ns::rx_directory_resolver resolver;
+		while (!id.is_null())
+		{
+			auto temp_type = get_type_definition(id);
+			if (temp_type)
+			{
+				resolver.add_paths({ temp_type.value()->meta_info.path });
+				auto parent_id = algorithms::resolve_reference(temp_type.value()->meta_info.parent, resolver);
+				if (parent_id)
+				{
+					id = parent_id.value();
+					if (id == base_id)
+						return true;//found it
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	return false;
 }
 
 
