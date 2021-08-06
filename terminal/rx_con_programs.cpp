@@ -82,7 +82,8 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 			server_command_base_ptr command = terminal::commands::server_command_manager::instance()->get_command_by_name(first);
 			if (command)
 			{
-				if (!command->console_execute(in, out, err, ctx))
+				if (!command->console_execute(in, out, err, ctx) 
+					&& ctx->get_result())// don raise another error, only if needed!!!
 					return false;
 			}
 			else

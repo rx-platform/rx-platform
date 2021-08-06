@@ -263,14 +263,13 @@ rx_platform_host & rx_platform_host::operator=(const rx_platform_host &right)
 rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_t& config)
 {
 	// fill paths
-	rx_host_directories host_directories;
-	rx_result ret = fill_host_directories(host_directories);
+	rx_result ret = fill_host_directories(host_directories_);
 	if (!ret)
 		return ret;
 
-	if (!host_directories.copyright_file.empty())
+	if (!host_directories_.copyright_file.empty())
 	{
-		sys_handle_t file = rx_file(host_directories.copyright_file.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		sys_handle_t file = rx_file(host_directories_.copyright_file.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 		if (file)
 		{
 			uint64_t size = 0;
@@ -285,7 +284,7 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 			rx_file_close(file);
 		}
 	}
-	lic_path_ = host_directories.license_file;
+	lic_path_ = host_directories_.license_file;
 
 	simplified_yaml_reader reader;
 
@@ -294,12 +293,12 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 	bool one_success = false;
 
 	string_array paths{
-			rx_combine_paths(host_directories.local_folder, host_file_name),
-			rx_combine_paths(host_directories.local_folder, platform_file_name),
-			rx_combine_paths(host_directories.user_config, host_file_name),
-			rx_combine_paths(host_directories.user_config, platform_file_name),
-			rx_combine_paths(host_directories.system_config, host_file_name),
-			rx_combine_paths(host_directories.system_config, platform_file_name)
+			rx_combine_paths(host_directories_.local_folder, host_file_name),
+			rx_combine_paths(host_directories_.local_folder, platform_file_name),
+			rx_combine_paths(host_directories_.user_config, host_file_name),
+			rx_combine_paths(host_directories_.user_config, platform_file_name),
+			rx_combine_paths(host_directories_.system_config, host_file_name),
+			rx_combine_paths(host_directories_.system_config, platform_file_name)
 	};
 	for (const auto& config_path : paths)
 	{
@@ -346,13 +345,13 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 	{
 
 		if (config.storage.system_storage_reference.empty())
-			config.storage.system_storage_reference = host_directories.system_storage;
+			config.storage.system_storage_reference = host_directories_.system_storage;
 		if (config.storage.user_storage_reference.empty())
-			config.storage.user_storage_reference = host_directories.user_storage;
+			config.storage.user_storage_reference = host_directories_.user_storage;
 		if (config.other.manuals_path.empty())
-			config.other.manuals_path = host_directories.manuals;
+			config.other.manuals_path = host_directories_.manuals;
 		if (config.other.http_path.empty())
-			config.other.http_path = host_directories.http;
+			config.other.http_path = host_directories_.http;
 
 		manuals_path_ = config.other.manuals_path;
 
@@ -391,13 +390,13 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			// fill paths
-			hosting::rx_host_directories host_directories;
-			rx_result fill_result = fill_host_directories(host_directories);
+			hosting::rx_host_directories host_directories_;
+			rx_result fill_result = fill_host_directories(host_directories_);
 			if (!fill_result)
 			{
 				std::cout << "\r\nERROR\r\n";
 			}
-			rx_platform_host::print_offline_manual(help_name, host_directories);
+			rx_platform_host::print_offline_manual(help_name, host_directories_);
 
 			std::ostringstream ss;
 			ss << options.help({ "" });
@@ -762,6 +761,58 @@ void rx_platform_host::dump_startup_log (std::ostream& out)
 	startup_log_->read_log(query, events);
 
 	hosting::rx_platform_host::dump_log_items(events, out);
+}
+
+std::vector<std::map<string_type, string_type> > rx_platform_host::read_config_files (const string_type& file_name)
+{
+	string_array paths{
+			rx_combine_paths(host_directories_.local_folder, file_name),
+			rx_combine_paths(host_directories_.user_config, file_name),
+			rx_combine_paths(host_directories_.system_config, file_name)
+	};
+	std::vector<std::map<string_type, string_type> > options;
+	for (const auto& config_path : paths)
+	{
+		if (config_path.empty() || !rx_file_exsist(config_path.c_str()))
+			continue;
+
+		HOST_LOG_TRACE("rx_host", 500, "Reading configuration file "s + config_path);
+
+		string_type settings_buff;
+		rx_source_file file;
+		rx_result ret;
+
+		simplified_yaml_reader reader;
+
+		if (file.open(config_path.c_str()))
+		{
+			ret  = file.read_string(settings_buff);
+		}
+		else
+		{
+			ret = rx_result::create_from_last_os_error("error opening configuration file: "s + config_path);
+		}
+
+		if (ret)
+		{
+			std::map<string_type, string_type> config_values;
+			ret = reader.parse_configuration(settings_buff, config_values);
+			if (ret)
+			{
+				options.emplace_back(std::move(config_values));
+			}
+			else
+			{
+				options.clear();
+				break;
+			}
+		}
+		else
+		{
+			HOST_LOG_ERROR("rx_host", 500, ret.errors_line());
+		}
+	}
+	return options;
 }
 
 

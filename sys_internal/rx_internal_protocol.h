@@ -33,14 +33,14 @@
 
 
 
-// rx_protocol_templates
-#include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
-// rx_protocol_messages
-#include "sys_internal/rx_protocol_messages.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_protocol_messages
+#include "sys_internal/rx_protocol_messages.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
 
@@ -180,23 +180,20 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
 
 
-
 class rx_protocol_connection : public rx::pointers::reference_object  
 {
     DECLARE_REFERENCE_PTR(rx_protocol_connection);
-
-
     typedef std::map<rx_uuid, std::unique_ptr<rx_protocol_subscription> > subscriptions_type;
 
   public:
-      rx_protocol_connection (runtime::items::port_runtime* port);
+      rx_protocol_connection();
 
       ~rx_protocol_connection();
 
 
-      void request_received (request_message_ptr&& request);
-
       void data_processed (message_ptr result);
+
+      void request_received (request_message_ptr&& request);
 
       rx_result set_current_directory (const string_type& path);
 
@@ -212,6 +209,52 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
       rx_result remove_items (const rx_uuid& id, std::vector<runtime_handle_t>&& items, std::vector<rx_result>& results);
 
+      void close_connection ();
+
+      virtual message_ptr set_context (api::rx_context ctx, const messages::rx_connection_context_request& req);
+
+
+      const string_type& get_current_directory_path () const
+      {
+        return current_directory_path_;
+      }
+
+
+
+  protected:
+
+  private:
+
+      virtual void send_message (message_ptr msg) = 0;
+
+
+
+      subscriptions_type subscriptions_;
+
+
+      rx_directory_ptr current_directory_;
+
+      string_type current_directory_path_;
+
+
+};
+
+
+
+
+
+
+
+class rx_server_connection : public rx_protocol_connection  
+{
+    DECLARE_REFERENCE_PTR(rx_server_connection);
+
+  public:
+      rx_server_connection (runtime::items::port_runtime* port);
+
+      ~rx_server_connection();
+
+
       rx_protocol_stack_endpoint* bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
 
       void close_endpoint ();
@@ -219,12 +262,6 @@ class rx_protocol_connection : public rx::pointers::reference_object
       message_ptr set_context (api::rx_context ctx, const messages::rx_connection_context_request& req);
 
       rx_result request_stream_version (uint32_t sversion);
-
-
-      const string_type& get_current_directory_path () const
-      {
-        return current_directory_path_;
-      }
 
 
       rx_thread_handle_t get_executer () const
@@ -263,14 +300,8 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
 
 
-      subscriptions_type subscriptions_;
-
       rx_protocol_stack_endpoint stack_entry_;
 
-
-      rx_directory_ptr current_directory_;
-
-      string_type current_directory_path_;
 
       rx_thread_handle_t executer_;
 
@@ -287,14 +318,14 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_internal::rx_protocol::rx_protocol_connection  > rx_json_protocol_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_server_connection  > rx_json_server_protocol_port_base;
 
 
 
 
 
 
-class rx_json_protocol_port : public rx_json_protocol_port_base  
+class rx_json_protocol_port : public rx_json_server_protocol_port_base  
 {
 	DECLARE_CODE_INFO("rx", 0, 2, 0, "\
 System protocol port class. Implementation of a rx-platform JSON protocol");
@@ -308,6 +339,45 @@ System protocol port class. Implementation of a rx-platform JSON protocol");
 
       void stack_assembled ();
 
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_client_connection : public rx_protocol_connection  
+{
+    DECLARE_REFERENCE_PTR(rx_client_connection);
+
+  public:
+      rx_client_connection();
+
+      ~rx_client_connection();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_local_subscription 
+{
+
+  public:
 
   protected:
 

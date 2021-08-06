@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -53,7 +53,7 @@ namespace interfaces {
 
 namespace ip_endpoints {
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_server_endpoint 
+// Class rx_internal::interfaces::ip_endpoints::tcp_server_endpoint
 
 tcp_server_endpoint::tcp_server_endpoint()
       : my_port_(nullptr),
@@ -75,7 +75,7 @@ tcp_server_endpoint::tcp_server_endpoint()
 
         if (me->tcp_socket_)
         {
-            bool ret = me->tcp_socket_->write(buffer_ptr::null_ptr);
+            me->tcp_socket_->write(buffer_ptr::null_ptr);
             return RX_PROTOCOL_OK;
         }
         else
@@ -249,7 +249,7 @@ void tcp_server_endpoint::socket_holder_t::disconnect()
     whose = nullptr;
     initiate_shutdown();
 }
-// Class rx_internal::interfaces::ip_endpoints::tcp_server_port 
+// Class rx_internal::interfaces::ip_endpoints::tcp_server_port
 
 
 rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -377,7 +377,7 @@ buffer_ptr tcp_server_port::get_buffer ()
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_http_port 
+// Class rx_internal::interfaces::ip_endpoints::system_http_port
 
 
 uint16_t system_http_port::get_configuration_port () const
@@ -389,7 +389,7 @@ uint16_t system_http_port::get_configuration_port () const
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_rx_port 
+// Class rx_internal::interfaces::ip_endpoints::system_rx_port
 
 
 uint16_t system_rx_port::get_configuration_port () const
@@ -401,7 +401,7 @@ uint16_t system_rx_port::get_configuration_port () const
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_server_port_base 
+// Class rx_internal::interfaces::ip_endpoints::system_server_port_base
 
 
 rx_result system_server_port_base::initialize_runtime (runtime::runtime_init_context& ctx)

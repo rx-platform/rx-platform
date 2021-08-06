@@ -114,6 +114,12 @@ rx_result data_types_algorithm::serialize_type (const data_type& whose, base_met
 	if (!stream.write_init_values("overrides", whose.complex_data.overrides_))
 		return stream.get_error();
 
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.complex_data.description_))
+			return stream.get_error();
+	}
+
 	if (!stream.end_object())
 		return stream.get_error();
 	return true;
@@ -172,6 +178,12 @@ rx_result data_types_algorithm::deserialize_type (data_type& whose, base_meta_re
 
 	if (!stream.read_init_values("overrides", whose.complex_data.overrides_))
 		return stream.get_error();
+
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.complex_data.description_))
+			return stream.get_error();
+	}
 
 	if (!stream.end_object())
 		return stream.get_error();
@@ -706,6 +718,12 @@ rx_result relation_type_algorithm::serialize_type (const relation_type& whose, b
 			return stream.get_error();
 	}
 
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.relation_data.description))
+			return stream.get_error();
+	}
+
 	if (!stream.end_object())
 		return stream.get_error();
 	return true;
@@ -734,6 +752,12 @@ rx_result relation_type_algorithm::deserialize_type (relation_type& whose, base_
 		if (!stream.read_item_reference("target", whose.relation_data.target))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.relation_data.description))
+			return stream.get_error();
+	}
+
 
 	if (!stream.end_object())
 		return stream.get_error();
@@ -1004,6 +1028,11 @@ rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_
 		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.description))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -1015,6 +1044,11 @@ rx_result relation_blocks_algorithm::deserialize_relation_attribute (object_type
 		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.description))
+			return stream.get_error();
+	}
 	return true;
 }
 

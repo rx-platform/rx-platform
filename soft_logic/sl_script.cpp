@@ -34,6 +34,9 @@
 // sl_script
 #include "soft_logic/sl_script.h"
 
+#include "terminal/ansi_codes.h"
+#define RX_ANSI_PROGRAM_LINE ANSI_COLOR_YELLOW ANSI_COLOR_BOLD "{"
+#define RX_ANSI_PROGRAM_LINE_END "}" ANSI_COLOR_RESET
 
 
 namespace sl_runtime {
@@ -69,9 +72,20 @@ void script_program_context::deinitialize (deinitialize_context* ctx)
 
 void script_program_context::raise_error ()
 {
-	reset_waiting();
-	error_ = true;
-	get_stderr() << "\r\nError in line " << current_line_ + 1 << "\r\n";
+	if (!error_)
+	{
+		reset_waiting();
+		error_ = true;
+		get_stderr() << "\r\nError in line " RX_ANSI_PROGRAM_LINE << current_line_ + 1 << RX_ANSI_PROGRAM_LINE_END "\r\n";
+	}
+	else
+	{
+		// this should not be happening
+		// anyway just do the waiting stuff as code,
+		// as bad as it is, depends on it
+		RX_ASSERT(false);
+		reset_waiting();
+	}
 }
 
 bool script_program_context::get_result () const

@@ -76,6 +76,7 @@ rx_io_manager::~rx_io_manager()
 
 rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager_data_t& data)
 {
+	auto net_maps = host->read_config_files("rx-ip4network.yml");
 	auto result_c = rx_init_protocols(nullptr);
 	rx_result result = result_c == RX_PROTOCOL_OK ? rx_result(true) : rx_result(rx_get_error_text(result_c));
 	if (result)

@@ -978,7 +978,7 @@ sys_handle_t rx_file(const char* path, int access, int creation)
 	switch (creation)
 	{
 	case RX_FILE_CREATE_ALWAYS:
-		flags |= O_CREAT;
+		flags |= (O_CREAT | O_TRUNC);
 		break;
 	case RX_FILE_CREATE_NEW:
 		flags = (O_EXCL | O_CREAT);

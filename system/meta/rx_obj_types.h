@@ -36,12 +36,12 @@
 #include "system/logic/rx_logic.h"
 #include "system/runtime/rx_runtime_instance.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -99,6 +99,8 @@ public:
       rx_item_reference relation_type;
 
       rx_item_reference target;
+
+      string_type description;
 
 
   protected:
@@ -404,6 +406,8 @@ class relation_type_data
       bool dynamic;
 
       rx_item_reference target;
+
+      string_type description;
 
 
   protected:

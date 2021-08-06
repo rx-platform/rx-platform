@@ -292,6 +292,8 @@ class rx_platform_host
 
       void host_started ();
 
+      std::vector<std::map<string_type, string_type> > read_config_files (const string_type& file_name);
+
 
       rx_platform_host * get_parent ()
       {
@@ -350,6 +352,8 @@ class rx_platform_host
       string_type copyright_cache_;
 
       string_type lic_path_;
+
+      rx_host_directories host_directories_;
 
 
 };

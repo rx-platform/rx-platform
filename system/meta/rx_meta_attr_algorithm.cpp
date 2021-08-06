@@ -96,6 +96,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_compl
 		return stream.get_error();
 	if (!whose.storage_.serialize("value", stream))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -109,6 +114,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_com
 		return stream.get_error();
 	if (!whose.storage_.deserialize("value", stream))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -146,6 +156,11 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::serialize_complex
 		return stream.get_error();
 	if (!stream.write_bool("output", whose.io_.output))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -159,6 +174,11 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::deserialize_compl
 		return stream.get_error();
 	if (!stream.read_bool("output", whose.io_.output))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -199,6 +219,11 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::serialize_complex
 		return stream.get_error();
 	if (!stream.write_bool("write", whose.io_.output))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -212,6 +237,11 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::deserialize_compl
 		return stream.get_error();
 	if (!stream.read_bool("write", whose.io_.output))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -256,6 +286,11 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::serialize_complex
 		return stream.get_error();
 	if (!stream.write_bool("output", whose.io_.output))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -269,6 +304,11 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::deserialize_compl
 		return stream.get_error();
 	if (!stream.read_bool("output", whose.io_.output))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -557,6 +597,12 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 	if (!stream.write_init_values("overrides", whose.overrides_))
 		return stream.get_error();
 
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.description_))
+			return stream.get_error();
+	}
+
 	return true;
 }
 
@@ -678,6 +724,12 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 
 	if (!stream.read_init_values("overrides", whose.overrides_))
 		return stream.get_error();
+
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
 
 	return true;//!!!! NOT DONE
 }
@@ -980,6 +1032,11 @@ rx_result data_blocks_algorithm::serialize_data_attribute (const def_blocks::dat
 		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -989,6 +1046,11 @@ rx_result data_blocks_algorithm::deserialize_data_attribute (def_blocks::data_at
 		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -1111,6 +1173,11 @@ rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT
 		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -1121,6 +1188,11 @@ rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& wh
 		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
 		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
 	return true;
 }
 

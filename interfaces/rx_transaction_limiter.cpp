@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -43,7 +43,7 @@ namespace interfaces {
 
 namespace ports_lib {
 
-// Class rx_internal::interfaces::ports_lib::limiter_endpoint 
+// Class rx_internal::interfaces::ports_lib::limiter_endpoint
 
 limiter_endpoint::limiter_endpoint (transaction_limiter_port* port)
       : port_(port),
@@ -123,7 +123,7 @@ rx_protocol_result_t limiter_endpoint::send_packet (send_protocol_packet packet)
             auto trans = create_transaction(packet);
             transactions_queue_[packet.priority].emplace(std::move(trans));
             port_->set_queue_size(get_queue_size());
-            
+
             return RX_PROTOCOL_OK;
         }
         else
@@ -182,7 +182,7 @@ rx_protocol_result_t limiter_endpoint::received_packet (recv_protocol_packet pac
                 port_->status.write_done(removed.ticks, true);
             else
                 port_->status.read_done(removed.ticks, true);
-            
+
         }
     }
     if (removed.found)
@@ -308,7 +308,7 @@ void limiter_endpoint::send_next ()
                     && options.limit > 0)
                 {
                     data->transaction_sent();
-                    place_pending(std::move(it->second.front()), options.limit); 
+                    place_pending(std::move(it->second.front()), options.limit);
                     pending++;
                     // see about the timeouts now
                     if (next_timer_tick_ == 0 || next_timer_tick_ > next_data_tick)
@@ -440,7 +440,7 @@ void limiter_endpoint::release_transaction (transaction_ptr_t trans)
 }
 
 
-// Class rx_internal::interfaces::ports_lib::limiter_transaction_data 
+// Class rx_internal::interfaces::ports_lib::limiter_transaction_data
 
 limiter_transaction_data::limiter_transaction_data()
       : sent_tick(0)
@@ -524,7 +524,7 @@ bool limiter_transaction_data::is_write () const
 }
 
 
-// Class rx_internal::interfaces::ports_lib::transaction_limiter_port 
+// Class rx_internal::interfaces::ports_lib::transaction_limiter_port
 
 transaction_limiter_port::transaction_limiter_port()
       : limit_(1),

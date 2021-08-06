@@ -37,6 +37,7 @@
 #include "asteroid.h"
 #include "xena.h"
 #include "urke.h"
+#include "hcf.h"
 
 void register_other(server_command_base_ptr cmd, std::map<string_type, server_command_base_ptr>& where_to)
 {
@@ -48,6 +49,7 @@ void register_others(std::map<string_type, server_command_base_ptr>& where_to)
 	register_other(rx_create_reference<terminal::commands::asteroid_command>(), where_to);
 	register_other(rx_create_reference<terminal::commands::xena_command>(), where_to);
 	register_other(rx_create_reference<terminal::commands::urke_command>(), where_to);
+	register_other(rx_create_reference<terminal::commands::hcf_command>(), where_to);
 }
 
 

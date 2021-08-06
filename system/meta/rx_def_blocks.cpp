@@ -152,6 +152,66 @@ rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 }
 
 
+// Class rx_platform::meta::def_blocks::const_value_def 
+
+const_value_def::const_value_def (const string_type& name, rx_simple_value&& value)
+      : config_only_(false)
+	, name_(name)
+	, storage_(std::move(value))
+{
+}
+
+const_value_def::const_value_def (const string_type& name, const rx_simple_value& value)
+      : config_only_(false)
+	, name_(name)
+	, storage_(value)
+{
+}
+
+
+
+rx_result const_value_def::serialize_definition (base_meta_writer& stream) const
+{
+	if (!stream.write_string("name", name_.c_str()))
+		return stream.get_error();
+	if (!storage_.serialize("value", stream))
+		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", description_))
+			return stream.get_error();
+		if (!stream.write_bool("config", config_only_))
+			return stream.get_error();
+	}
+	return true;
+}
+
+rx_result const_value_def::deserialize_definition (base_meta_reader& stream)
+{
+	if (!stream.read_string("name", name_))
+		return stream.get_error();
+	if (!storage_.deserialize("value", stream))
+		return stream.get_error();
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", description_))
+			return stream.get_error();
+		if (!stream.read_bool("config", config_only_))
+			return stream.get_error();
+}
+	else
+	{
+		config_only_ = false;
+	}
+	return true;
+}
+
+rx_simple_value const_value_def::get_value () const
+{
+	return storage_;
+}
+
+
 // Class rx_platform::meta::def_blocks::event_attribute 
 
 event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
@@ -267,6 +327,11 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream) cons
 		if (!stream.write_bool("persist", persistent_))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", description_))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -281,6 +346,11 @@ rx_result simple_value_def::deserialize_definition (base_meta_reader& stream)
 	if (stream.get_version() >= RX_PERSISTENCE_VERSION)
 	{
 		if (!stream.read_bool("persist", persistent_))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", description_))
 			return stream.get_error();
 	}
 	return true;
@@ -380,6 +450,22 @@ rx_result filtered_data_type::register_filter (const string_type& name, const rx
 }
 
 
+// Class rx_platform::meta::def_blocks::data_attribute 
+
+data_attribute::data_attribute (const string_type& name, const rx_node_id& id)
+      : name_(name)
+	, target_(id)
+{
+}
+
+data_attribute::data_attribute (const string_type& name, const string_type& target_name)
+      : name_(name)
+	, target_(target_name)
+{
+}
+
+
+
 // Class rx_platform::meta::def_blocks::method_attribute 
 
 method_attribute::method_attribute (const string_type& name, const rx_node_id& id)
@@ -424,62 +510,6 @@ display_attribute::display_attribute (const string_type& name, const string_type
 {
 }
 
-
-
-// Class rx_platform::meta::def_blocks::data_attribute 
-
-data_attribute::data_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name)
-	, target_(id)
-{
-}
-
-data_attribute::data_attribute (const string_type& name, const string_type& target_name)
-      : name_(name)
-	, target_(target_name)
-{
-}
-
-
-
-// Class rx_platform::meta::def_blocks::const_value_def 
-
-const_value_def::const_value_def (const string_type& name, rx_simple_value&& value)
-	: name_(name)
-	, storage_(std::move(value))
-{
-}
-
-const_value_def::const_value_def (const string_type& name, const rx_simple_value& value)
-	: name_(name)
-	, storage_(value)
-{
-}
-
-
-
-rx_result const_value_def::serialize_definition (base_meta_writer& stream) const
-{
-	if (!stream.write_string("name", name_.c_str()))
-		return stream.get_error();
-	if (!storage_.serialize("value", stream))
-		return stream.get_error();
-	return true;
-}
-
-rx_result const_value_def::deserialize_definition (base_meta_reader& stream)
-{
-	if (!stream.read_string("name", name_))
-		return stream.get_error();
-	if (!storage_.deserialize("value", stream))
-		return stream.get_error();
-	return true;
-}
-
-rx_simple_value const_value_def::get_value () const
-{
-	return storage_;
-}
 
 
 // Class rx_platform::meta::def_blocks::data_type_def 

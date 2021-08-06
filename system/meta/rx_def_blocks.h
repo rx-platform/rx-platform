@@ -177,6 +177,67 @@ enum rx_subitem_type : uint8_t
 
 
 
+class const_value_def 
+{
+public:
+	const_value_def(const const_value_def& right) = default;
+	const_value_def(const_value_def&& right) = default;
+	const_value_def() = default;
+	~const_value_def() = default;
+
+  public:
+      const_value_def (const string_type& name, rx_simple_value&& value);
+
+      const_value_def (const string_type& name, const rx_simple_value& value);
+
+
+      rx_result serialize_definition (base_meta_writer& stream) const;
+
+      rx_result deserialize_definition (base_meta_reader& stream);
+
+      rx_simple_value get_value () const;
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+      const bool get_config_only () const
+      {
+        return config_only_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      string_type description_;
+
+      bool config_only_;
+
+      values::rx_simple_value storage_;
+
+
+};
+
+
+
+
+
+
 
 class event_attribute 
 {
@@ -216,6 +277,12 @@ class event_attribute
       }
 
 
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
 
   protected:
 
@@ -227,6 +294,8 @@ class event_attribute
       rx_item_reference target_;
 
       rx_item_reference arguments_;
+
+      string_type description_;
 
 
 };
@@ -275,6 +344,12 @@ public:
       }
 
 
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
 
   protected:
 
@@ -287,600 +362,7 @@ public:
 
       bool persistent_;
 
-      values::rx_simple_value storage_;
-
-
-};
-
-
-
-
-
-
-class struct_attribute 
-{
-  public:
-	  typedef rx_platform::meta::basic_types::struct_type TargetType;
-	  template<class typeT>
-	  friend class meta_algorithm::meta_blocks_algorithm;
-      typedef meta_algorithm::meta_blocks_algorithm<struct_attribute> AlgorithmType;
-
-	  struct_attribute(const struct_attribute& right) = default;
-	  struct_attribute(struct_attribute&& right) = default;
-	  struct_attribute() = default;
-	  ~struct_attribute() = default;
-
-  public:
-      struct_attribute (const string_type& name, const rx_node_id& id);
-
-      struct_attribute (const string_type& name, const string_type& target_name);
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_type name_;
-
-      rx_item_reference target_;
-
-
-};
-
-
-
-
-
-
-class variable_attribute 
-{
-  public:
-	  typedef rx_platform::meta::basic_types::variable_type TargetType;
-	  template<class typeT>
-	  friend class meta_algorithm::meta_blocks_algorithm;
-      typedef meta_algorithm::meta_blocks_algorithm<variable_attribute> AlgorithmType;
-
-	  variable_attribute(const variable_attribute& right) = default;
-	  variable_attribute(variable_attribute&& right) = default;
-	  variable_attribute() = default;
-	  ~variable_attribute() = default;
-
-  public:
-      variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
-
-      variable_attribute (const string_type& name, const string_type& target_name);
-
-
-      rx_value get_value (rx_time now) const;
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      const bool get_read_only () const
-      {
-        return read_only_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_type name_;
-
-      bool read_only_;
-
-      values::rx_simple_value storage_;
-
-      rx_item_reference target_;
-
-
-};
-
-
-
-
-
-
-struct io_attribute 
-{
-
-
-      bool input;
-
-      bool output;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class filter_attribute 
-{
-  public:
-	  typedef rx_platform::meta::basic_types::filter_type TargetType;
-	  template<class typeT>
-	  friend class meta_algorithm::meta_blocks_algorithm;
-      typedef meta_algorithm::meta_blocks_algorithm<filter_attribute> AlgorithmType;
-
-	  filter_attribute(const filter_attribute& right) = default;
-	  filter_attribute(filter_attribute&& right) = default;
-	  filter_attribute() = default;
-	  ~filter_attribute() = default;
-
-  public:
-      filter_attribute (const string_type& name, const rx_node_id& id);
-
-      filter_attribute (const string_type& name, const string_type& target_name);
-
-
-      const io_attribute& get_io () const
-      {
-        return io_;
-      }
-
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      io_attribute io_;
-
-
-      string_type name_;
-
-      rx_item_reference target_;
-
-
-};
-
-
-
-
-
-
-class mapper_attribute 
-{
-  public:
-	  typedef rx_platform::meta::basic_types::mapper_type TargetType;
-	  template<class typeT>
-	  friend class meta_algorithm::meta_blocks_algorithm;
-      typedef meta_algorithm::meta_blocks_algorithm<mapper_attribute> AlgorithmType;
-
-	  mapper_attribute(const mapper_attribute& right) = default;
-	  mapper_attribute(mapper_attribute&& right) = default;
-	  mapper_attribute() = default;
-	  ~mapper_attribute() = default;
-
-  public:
-      mapper_attribute (const string_type& name, const rx_node_id& id);
-
-      mapper_attribute (const string_type& name, const string_type& target_name);
-
-
-      const io_attribute& get_io () const
-      {
-        return io_;
-      }
-
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      io_attribute io_;
-
-
-      string_type name_;
-
-      rx_item_reference target_;
-
-
-};
-
-
-
-
-
-
-class source_attribute 
-{
-  public:
-	  typedef rx_platform::meta::basic_types::source_type TargetType;
-	  template<class typeT>
-	  friend class meta_algorithm::meta_blocks_algorithm;
-      typedef meta_algorithm::meta_blocks_algorithm<source_attribute> AlgorithmType;
-
-	  source_attribute(const source_attribute& right) = default;
-	  source_attribute(source_attribute&& right) = default;
-	  source_attribute() = default;
-	  ~source_attribute() = default;
-
-  public:
-      source_attribute (const string_type& name, const rx_node_id& id);
-
-      source_attribute (const string_type& name, const string_type& target_name);
-
-
-      const io_attribute& get_io () const
-      {
-        return io_;
-      }
-
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      io_attribute io_;
-
-
-      string_type name_;
-
-      rx_item_reference target_;
-
-
-};
-
-
-
-
-
-
-class filtered_data_type 
-{
-    typedef std::vector<filter_attribute> filters_type;
-
-    friend class rx_platform::meta::meta_algorithm::filtered_data_algorithm;
-
-  public:
-
-      rx_result register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
-
-
-  protected:
-
-  private:
-
-
-      filters_type filters_;
-
-
-};
-
-
-
-
-
-
-class method_attribute 
-{
-public:
-    typedef rx_platform::meta::basic_types::method_type TargetType;
-    template<class typeT>
-    friend class meta_algorithm::meta_blocks_algorithm;
-    friend class meta_algorithm::method_blocks_algorithm;
-    typedef meta_algorithm::method_blocks_algorithm AlgorithmType;
-
-    method_attribute(const method_attribute& right) = default;
-    method_attribute(method_attribute && right) = default;
-    method_attribute() = default;
-    ~method_attribute() = default;
-
-  public:
-      method_attribute (const string_type& name, const rx_node_id& id);
-
-      method_attribute (const string_type& name, const string_type& target_name);
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-      rx_item_reference get_inputs () const
-      {
-        return inputs_;
-      }
-
-
-      rx_item_reference get_outputs () const
-      {
-        return outputs_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_type name_;
-
-      rx_item_reference target_;
-
-      rx_item_reference inputs_;
-
-      rx_item_reference outputs_;
-
-
-};
-
-
-
-
-
-
-class program_attribute 
-{
-public:
-    typedef rx_platform::meta::basic_types::program_type TargetType;
-    template<class typeT>
-    friend class meta_algorithm::meta_blocks_algorithm;
-    typedef meta_algorithm::meta_blocks_algorithm<program_attribute> AlgorithmType;
-
-    program_attribute(const program_attribute& right) = default;
-    program_attribute(program_attribute && right) = default;
-    program_attribute() = default;
-    ~program_attribute() = default;
-
-  public:
-      program_attribute (const string_type& name, const rx_node_id& id);
-
-      program_attribute (const string_type& name, const string_type& target_name);
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_type name_;
-
-      rx_item_reference target_;
-
-
-};
-
-
-
-
-
-
-class display_attribute 
-{
-public:
-    typedef rx_platform::meta::basic_types::display_type TargetType;
-    template<class typeT>
-    friend class meta_algorithm::meta_blocks_algorithm;
-    typedef meta_algorithm::meta_blocks_algorithm<display_attribute> AlgorithmType;
-
-    display_attribute(const display_attribute& right) = default;
-    display_attribute(display_attribute && right) = default;
-    display_attribute() = default;
-    ~display_attribute() = default;
-
-  public:
-      display_attribute (const string_type& name, const rx_node_id& id);
-
-      display_attribute (const string_type& name, const string_type& target_name);
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_type name_;
-
-      rx_item_reference target_;
-
-
-};
-
-
-
-
-
-
-class data_attribute 
-{
-public:
-    typedef rx_platform::meta::basic_types::data_type TargetType;
-    friend class meta_algorithm::data_blocks_algorithm;
-    typedef meta_algorithm::data_blocks_algorithm AlgorithmType;
-
-    data_attribute(const data_attribute& right) = default;
-    data_attribute(data_attribute&& right) noexcept = default;
-    data_attribute& operator=(const data_attribute & right) = default;
-    data_attribute& operator=(data_attribute && right) noexcept = default;
-    data_attribute() = default;
-    ~data_attribute() = default;
-
-  public:
-      data_attribute (const string_type& name, const rx_node_id& id);
-
-      data_attribute (const string_type& name, const string_type& target_name);
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-      rx_item_reference get_target () const
-      {
-        return target_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_type name_;
-
-      rx_item_reference target_;
-
-
-};
-
-
-
-
-
-
-class const_value_def 
-{
-public:
-	const_value_def(const const_value_def& right) = default;
-	const_value_def(const_value_def&& right) = default;
-	const_value_def() = default;
-	~const_value_def() = default;
-
-  public:
-      const_value_def (const string_type& name, rx_simple_value&& value);
-
-      const_value_def (const string_type& name, const rx_simple_value& value);
-
-
-      rx_result serialize_definition (base_meta_writer& stream) const;
-
-      rx_result deserialize_definition (base_meta_reader& stream);
-
-      rx_simple_value get_value () const;
-
-
-      const string_type& get_name () const
-      {
-        return name_;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_type name_;
+      string_type description_;
 
       values::rx_simple_value storage_;
 
@@ -951,6 +433,12 @@ class complex_data_type
       }
 
 
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
 
       bool is_sealed;
 
@@ -1003,6 +491,358 @@ class complex_data_type
 
 
       names_cahce_type names_cache_;
+
+      string_type description_;
+
+
+};
+
+
+
+
+
+
+class struct_attribute 
+{
+  public:
+	  typedef rx_platform::meta::basic_types::struct_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
+      typedef meta_algorithm::meta_blocks_algorithm<struct_attribute> AlgorithmType;
+
+	  struct_attribute(const struct_attribute& right) = default;
+	  struct_attribute(struct_attribute&& right) = default;
+	  struct_attribute() = default;
+	  ~struct_attribute() = default;
+
+  public:
+      struct_attribute (const string_type& name, const rx_node_id& id);
+
+      struct_attribute (const string_type& name, const string_type& target_name);
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      rx_item_reference target_;
+
+      string_type description_;
+
+
+};
+
+
+
+
+
+
+class variable_attribute 
+{
+  public:
+	  typedef rx_platform::meta::basic_types::variable_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
+      typedef meta_algorithm::meta_blocks_algorithm<variable_attribute> AlgorithmType;
+
+	  variable_attribute(const variable_attribute& right) = default;
+	  variable_attribute(variable_attribute&& right) = default;
+	  variable_attribute() = default;
+	  ~variable_attribute() = default;
+
+  public:
+      variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
+
+      variable_attribute (const string_type& name, const string_type& target_name);
+
+
+      rx_value get_value (rx_time now) const;
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      const bool get_read_only () const
+      {
+        return read_only_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      bool read_only_;
+
+      rx_item_reference target_;
+
+      string_type description_;
+
+      values::rx_simple_value storage_;
+
+
+};
+
+
+
+
+
+
+struct io_attribute 
+{
+
+
+      bool input;
+
+      bool output;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class filter_attribute 
+{
+  public:
+	  typedef rx_platform::meta::basic_types::filter_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
+      typedef meta_algorithm::meta_blocks_algorithm<filter_attribute> AlgorithmType;
+
+	  filter_attribute(const filter_attribute& right) = default;
+	  filter_attribute(filter_attribute&& right) = default;
+	  filter_attribute() = default;
+	  ~filter_attribute() = default;
+
+  public:
+      filter_attribute (const string_type& name, const rx_node_id& id);
+
+      filter_attribute (const string_type& name, const string_type& target_name);
+
+
+      const io_attribute& get_io () const
+      {
+        return io_;
+      }
+
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      io_attribute io_;
+
+
+      string_type name_;
+
+      rx_item_reference target_;
+
+      string_type description_;
+
+
+};
+
+
+
+
+
+
+class mapper_attribute 
+{
+  public:
+	  typedef rx_platform::meta::basic_types::mapper_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
+      typedef meta_algorithm::meta_blocks_algorithm<mapper_attribute> AlgorithmType;
+
+	  mapper_attribute(const mapper_attribute& right) = default;
+	  mapper_attribute(mapper_attribute&& right) = default;
+	  mapper_attribute() = default;
+	  ~mapper_attribute() = default;
+
+  public:
+      mapper_attribute (const string_type& name, const rx_node_id& id);
+
+      mapper_attribute (const string_type& name, const string_type& target_name);
+
+
+      const io_attribute& get_io () const
+      {
+        return io_;
+      }
+
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      io_attribute io_;
+
+
+      string_type name_;
+
+      rx_item_reference target_;
+
+      string_type description_;
+
+
+};
+
+
+
+
+
+
+class source_attribute 
+{
+  public:
+	  typedef rx_platform::meta::basic_types::source_type TargetType;
+	  template<class typeT>
+	  friend class meta_algorithm::meta_blocks_algorithm;
+      typedef meta_algorithm::meta_blocks_algorithm<source_attribute> AlgorithmType;
+
+	  source_attribute(const source_attribute& right) = default;
+	  source_attribute(source_attribute&& right) = default;
+	  source_attribute() = default;
+	  ~source_attribute() = default;
+
+  public:
+      source_attribute (const string_type& name, const rx_node_id& id);
+
+      source_attribute (const string_type& name, const string_type& target_name);
+
+
+      const io_attribute& get_io () const
+      {
+        return io_;
+      }
+
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      io_attribute io_;
+
+
+      string_type name_;
+
+      rx_item_reference target_;
+
+      string_type description_;
 
 
 };
@@ -1076,6 +916,278 @@ class variable_data_type
 
 
 
+class filtered_data_type 
+{
+    typedef std::vector<filter_attribute> filters_type;
+
+    friend class rx_platform::meta::meta_algorithm::filtered_data_algorithm;
+
+  public:
+
+      rx_result register_filter (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
+
+
+  protected:
+
+  private:
+
+
+      filters_type filters_;
+
+
+};
+
+
+
+
+
+
+class data_attribute 
+{
+public:
+    typedef rx_platform::meta::basic_types::data_type TargetType;
+    friend class meta_algorithm::data_blocks_algorithm;
+    typedef meta_algorithm::data_blocks_algorithm AlgorithmType;
+
+    data_attribute(const data_attribute& right) = default;
+    data_attribute(data_attribute&& right) noexcept = default;
+    data_attribute& operator=(const data_attribute & right) = default;
+    data_attribute& operator=(data_attribute && right) noexcept = default;
+    data_attribute() = default;
+    ~data_attribute() = default;
+
+  public:
+      data_attribute (const string_type& name, const rx_node_id& id);
+
+      data_attribute (const string_type& name, const string_type& target_name);
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      rx_item_reference target_;
+
+      string_type description_;
+
+
+};
+
+
+
+
+
+
+class method_attribute 
+{
+public:
+    typedef rx_platform::meta::basic_types::method_type TargetType;
+    template<class typeT>
+    friend class meta_algorithm::meta_blocks_algorithm;
+    friend class meta_algorithm::method_blocks_algorithm;
+    typedef meta_algorithm::method_blocks_algorithm AlgorithmType;
+
+    method_attribute(const method_attribute& right) = default;
+    method_attribute(method_attribute && right) = default;
+    method_attribute() = default;
+    ~method_attribute() = default;
+
+  public:
+      method_attribute (const string_type& name, const rx_node_id& id);
+
+      method_attribute (const string_type& name, const string_type& target_name);
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      rx_item_reference get_inputs () const
+      {
+        return inputs_;
+      }
+
+
+      rx_item_reference get_outputs () const
+      {
+        return outputs_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      rx_item_reference target_;
+
+      rx_item_reference inputs_;
+
+      rx_item_reference outputs_;
+
+      string_type description_;
+
+
+};
+
+
+
+
+
+
+class program_attribute 
+{
+public:
+    typedef rx_platform::meta::basic_types::program_type TargetType;
+    template<class typeT>
+    friend class meta_algorithm::meta_blocks_algorithm;
+    typedef meta_algorithm::meta_blocks_algorithm<program_attribute> AlgorithmType;
+
+    program_attribute(const program_attribute& right) = default;
+    program_attribute(program_attribute && right) = default;
+    program_attribute() = default;
+    ~program_attribute() = default;
+
+  public:
+      program_attribute (const string_type& name, const rx_node_id& id);
+
+      program_attribute (const string_type& name, const string_type& target_name);
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      rx_item_reference target_;
+
+      string_type description_;
+
+
+};
+
+
+
+
+
+
+class display_attribute 
+{
+public:
+    typedef rx_platform::meta::basic_types::display_type TargetType;
+    template<class typeT>
+    friend class meta_algorithm::meta_blocks_algorithm;
+    typedef meta_algorithm::meta_blocks_algorithm<display_attribute> AlgorithmType;
+
+    display_attribute(const display_attribute& right) = default;
+    display_attribute(display_attribute && right) = default;
+    display_attribute() = default;
+    ~display_attribute() = default;
+
+  public:
+      display_attribute (const string_type& name, const rx_node_id& id);
+
+      display_attribute (const string_type& name, const string_type& target_name);
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      rx_item_reference target_;
+
+      string_type description_;
+
+
+};
+
+
+
+
+
+
 class data_type_def 
 {
     typedef std::vector<def_blocks::const_value_def> values_type;
@@ -1119,6 +1231,12 @@ class data_type_def
       }
 
 
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
       template <typename valT>
       bool register_value_static(const string_type& name, valT&& value)
       {
@@ -1145,6 +1263,8 @@ class data_type_def
 
 
       names_cahce_type names_cache_;
+
+      string_type description_;
 
 
 };

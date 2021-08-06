@@ -3,7 +3,7 @@
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 1
 #define RX_HAL_MINOR_VERSION 0
-#define RX_HAL_BUILD_NUMBER 1
+#define RX_HAL_BUILD_NUMBER 2
 
 /*********************************************************************************
 
@@ -25,5 +25,6 @@
 0.12.0. added rx_socket_read_from and rx_socket_write_to
 1.0.0 first release version
 1.0.1 udp socket supports multicast
+1.0.2 corrected file open error with O_TRUNC flag
 
 *********************************************************************************/

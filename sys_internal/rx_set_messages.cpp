@@ -889,7 +889,7 @@ message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_prot
 	{
 		if (data)
 		{
-			result = api::meta::rx_update_relation_type(item, std::move(*data), std::move(callback));
+			result = api::meta::rx_update_relation_type(item, *data, std::move(callback));
 		}
 		else
 		{

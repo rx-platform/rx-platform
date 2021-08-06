@@ -106,7 +106,6 @@ void tcp_client_endpoint::disconnected (rx_security_handle_t identity)
     if (current_state_ == tcp_state::connected || current_state_ == tcp_state::connecting)
     {
         suspend_timer();
-        bool fire_now = current_state_ == tcp_state::connected;
         current_state_ = tcp_state::not_connected;
         start_timer(false);
     }

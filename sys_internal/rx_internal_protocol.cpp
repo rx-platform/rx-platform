@@ -81,7 +81,7 @@ rx_json_protocol_port::rx_json_protocol_port()
 {
 	construct_func = [this]()
 	{
-		auto rt = rx_create_reference<rx_protocol_connection>(this);
+		auto rt = rx_create_reference<rx_server_connection>(this);
 		auto entry = rt->bind_endpoint([this](int64_t count)
 			{
 			},
@@ -184,7 +184,7 @@ void rx_protocol_subscription::destroy ()
 		my_subscription_ = sys_runtime::subscriptions::rx_subscription::smart_ptr::null_ptr;
 	}
 	if (connection_)
-		connection_ = rx_protocol_connection::smart_ptr::null_ptr;
+		connection_ = rx_server_connection::smart_ptr::null_ptr;
 }
 
 rx_result rx_protocol_subscription::add_items (const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results)
@@ -246,29 +246,197 @@ rx_result rx_protocol_subscription::remove_items (std::vector<runtime_handle_t >
 // Class rx_internal::rx_protocol::subscription_item_data 
 
 
-// Class rx_internal::rx_protocol::rx_protocol_connection 
+// Class rx_internal::rx_protocol::rx_server_connection 
 
-rx_protocol_connection::rx_protocol_connection (runtime::items::port_runtime* port)
-      : current_directory_path_("/world"),
-        executer_(-1),
+rx_server_connection::rx_server_connection (runtime::items::port_runtime* port)
+      : executer_(-1),
         port_(port),
         stream_version_(RX_CURRENT_SERIALIZE_VERSION)
 {
-	RXCOMM_LOG_DEBUG("rx_protocol_connection", 200, "{rx-platform} communication server endpoint created.");
+	RXCOMM_LOG_DEBUG("rx_server_connection", 200, "{rx-platform} communication server endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
-	stack_entry_.received_function = &rx_protocol_connection::received_function;
+	stack_entry_.received_function = &rx_server_connection::received_function;
 
-	current_directory_ = rx_gate::instance().get_root_directory()->get_sub_directory("world");
 	executer_ = port->get_executer();
+}
+
+
+rx_server_connection::~rx_server_connection()
+{
+	RXCOMM_LOG_DEBUG("rx_server_connection", 200, "{rx-platform} communication server endpoint destroyed.");
+}
+
+
+
+rx_protocol_stack_endpoint* rx_server_connection::bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+{
+	model::platform_types_manager::instance().get_types_resolver().register_subscriber(smart_this(), [this](model::resolver_event_data data)
+		{
+			auto msg = std::make_unique<messages::rx_connection_notify_message>();
+			msg->changed_id = data.id;
+			msg->changed_path = data.path;
+			data_processed(std::move(msg));
+		});
+	return &stack_entry_;
+}
+
+rx_protocol_result_t rx_server_connection::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+{
+	rx_server_connection* self = reinterpret_cast<rx_server_connection*>(reference->user_data);
+
+	return self->received(packet);
+}
+
+rx_protocol_result_t rx_server_connection::received (recv_protocol_packet packet)
+{
+	runtime::io_types::rx_const_io_buffer received(packet.buffer);
+	uint8_t type;
+	uint8_t namespace_id;
+	uint16_t num_id;
+	auto result = received.read_from_buffer(type);
+	if (!result)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	if (type != 0x1)// has to be string value
+		return RX_PROTOCOL_PARSING_ERROR;
+	result = received.read_from_buffer(namespace_id);
+	if (!result)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	result = received.read_from_buffer(num_id);
+	if (!result)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	if (num_id != 0x7fff)// has to be exact value
+		return RX_PROTOCOL_PARSING_ERROR;
+	
+	
+	string_type json;
+	result = received.read_string(json);
+	if (result)
+	{
+		uint32_t temp_version = stream_version_ == 0 ? RX_CURRENT_SERIALIZE_VERSION : stream_version_;
+
+		messages::rx_request_id_t request_id = 0;
+		// read the header first
+		serialization::json_reader reader(temp_version);
+		if (!reader.parse_data(json))
+			return RX_PROTOCOL_PARSING_ERROR;
+		auto request = messages::rx_request_message::create_request_from_stream(request_id, reader);
+		if (request)
+		{
+			rx_post_function_to(get_executer(), smart_this(),
+				[](smart_ptr whose, request_message_ptr&& request) {
+					whose->request_received(std::move(request));
+				}, smart_this(), request.move_value());
+		}
+		else
+		{
+			auto result_msg = std::make_unique<messages::error_message>(std::move(request), 21, request_id);
+
+			send_message(std::move(result_msg));
+		}
+	}
+	return RX_PROTOCOL_OK;
+}
+
+void rx_server_connection::close_endpoint ()
+{
+	close_connection();
+}
+
+message_ptr rx_server_connection::set_context (api::rx_context ctx, const messages::rx_connection_context_request& req)
+{
+	auto base_result = rx_protocol_connection::set_context(ctx, req);
+	if (base_result)
+	{
+		return base_result;
+	}
+	auto request_id = req.request_id;
+	if (req.stream_version)
+	{
+		auto result = request_stream_version(req.stream_version);
+		if (!result)
+		{
+			auto ret_value = std::make_unique<messages::error_message>(result, 13, request_id);
+			return ret_value;
+		}
+	}
+	if (!req.directory.empty())
+	{
+		auto result = set_current_directory(req.directory);
+		if (!result)
+		{
+			auto ret_value = std::make_unique<messages::error_message>(result, 13, request_id);
+			return ret_value;
+		}
+	}
+	auto response = std::make_unique<messages::rx_connection_context_response>();
+	response->directory = get_current_directory_path();
+	response->stream_version = get_stream_version();
+	return response;
+}
+
+rx_result rx_server_connection::request_stream_version (uint32_t sversion)
+{
+	if (sversion == 0)
+		return RX_INVALID_ARGUMENT;
+	stream_version_ = std::min<uint32_t>(sversion, RX_CURRENT_SERIALIZE_VERSION);
+	return true;
+}
+
+void rx_server_connection::send_message (message_ptr msg)
+{
+	uint32_t temp_version = RX_CURRENT_SERIALIZE_VERSION;
+	if (stream_version_)
+		temp_version = stream_version_;
+	serialization::json_writer writter(temp_version);
+	auto result = serialize_message(writter, msg->request_id, *msg);
+	if (result)
+	{
+		string_type ret_data;
+		ret_data = writter.get_string();
+		auto buff_result = port_->alloc_io_buffer();
+		if(buff_result)
+		{
+			buff_result.value().write_to_buffer((uint8_t)1);
+			buff_result.value().write_to_buffer((uint8_t)1);
+			buff_result.value().write_to_buffer((uint16_t)0x7fff);
+			result = buff_result.value().write_string(ret_data);
+			send_protocol_packet packet = rx_create_send_packet(msg->request_id, &buff_result.value(), 0, 0);
+
+			auto protocol_res = rx_move_packet_down(&stack_entry_, packet);
+			if (protocol_res != RX_PROTOCOL_OK)
+			{
+				std::cout << "Error returned from move_down:"
+					<< rx_protocol_error_message(protocol_res)
+					<< "\r\n";
+			}
+			port_->release_io_buffer(buff_result.move_value());
+		}
+	}
+}
+
+
+// Class rx_internal::rx_protocol::rx_protocol_connection 
+
+rx_protocol_connection::rx_protocol_connection()
+      : current_directory_path_("/world")
+{
+	current_directory_ = rx_gate::instance().get_root_directory()->get_sub_directory("world");
 }
 
 
 rx_protocol_connection::~rx_protocol_connection()
 {
-	RXCOMM_LOG_DEBUG("rx_protocol_connection", 200, "{rx-platform} communication server endpoint destroyed.");
 }
 
 
+
+void rx_protocol_connection::data_processed (message_ptr result)
+{
+	if (current_directory_) // check if we are closed...
+	{
+		send_message(std::move(result));
+	}
+}
 
 void rx_protocol_connection::request_received (request_message_ptr&& request)
 {
@@ -276,25 +444,17 @@ void rx_protocol_connection::request_received (request_message_ptr&& request)
 	ctx.directory = current_directory_;
 	ctx.object = smart_this();
 	message_ptr result_msg;
-	if (stream_version_ == 0 && request->get_type_id() != messages::rx_connection_context_request_id)
+	/*if (stream_version_ == 0 && request->get_type_id() != messages::rx_connection_context_request_id)
 	{
 		result_msg = std::make_unique<messages::error_message>("No connection context."s, 99, request->request_id);
 	}
-	else
+	else*/
 	{
 		result_msg = request->do_job(ctx, smart_this());
 	}
 	if (result_msg)
 	{
 		send_message(std::move(result_msg));
-	}
-}
-
-void rx_protocol_connection::data_processed (message_ptr result)
-{
-	if (current_directory_) // check if we are closed...
-	{
-		send_message(std::move(result));
 	}
 }
 
@@ -394,76 +554,7 @@ rx_result rx_protocol_connection::remove_items (const rx_uuid& id, std::vector<r
 	}
 }
 
-rx_protocol_stack_endpoint* rx_protocol_connection::bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
-{
-	model::platform_types_manager::instance().get_types_resolver().register_subscriber(smart_this(), [this](model::resolver_event_data data)
-		{
-			auto msg = std::make_unique<messages::rx_connection_notify_message>();
-			msg->changed_id = data.id;
-			msg->changed_path = data.path;
-			data_processed(std::move(msg));
-		});
-	return &stack_entry_;
-}
-
-rx_protocol_result_t rx_protocol_connection::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
-{
-	rx_protocol_connection* self = reinterpret_cast<rx_protocol_connection*>(reference->user_data);
-
-	return self->received(packet);
-}
-
-rx_protocol_result_t rx_protocol_connection::received (recv_protocol_packet packet)
-{
-	runtime::io_types::rx_const_io_buffer received(packet.buffer);
-	uint8_t type;
-	uint8_t namespace_id;
-	uint16_t num_id;
-	auto result = received.read_from_buffer(type);
-	if (!result)
-		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
-	if (type != 0x1)// has to be string value
-		return RX_PROTOCOL_PARSING_ERROR;
-	result = received.read_from_buffer(namespace_id);
-	if (!result)
-		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
-	result = received.read_from_buffer(num_id);
-	if (!result)
-		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
-	if (num_id != 0x7fff)// has to be exact value
-		return RX_PROTOCOL_PARSING_ERROR;
-	
-	
-	string_type json;
-	result = received.read_string(json);
-	if (result)
-	{
-		uint32_t temp_version = stream_version_ == 0 ? RX_CURRENT_SERIALIZE_VERSION : stream_version_;
-
-		messages::rx_request_id_t request_id = 0;
-		// read the header first
-		serialization::json_reader reader(temp_version);
-		if (!reader.parse_data(json))
-			return RX_PROTOCOL_PARSING_ERROR;
-		auto request = messages::rx_request_message::create_request_from_stream(request_id, reader);
-		if (request)
-		{
-			rx_post_function_to(get_executer(), smart_this(),
-				[](smart_ptr whose, request_message_ptr&& request) {
-					whose->request_received(std::move(request));
-				}, smart_this(), request.move_value());
-		}
-		else
-		{
-			auto result_msg = std::make_unique<messages::error_message>(std::move(request), 21, request_id);
-
-			send_message(std::move(result_msg));
-		}
-	}
-	return RX_PROTOCOL_OK;
-}
-
-void rx_protocol_connection::close_endpoint ()
+void rx_protocol_connection::close_connection ()
 {
 	current_directory_ = rx_directory_ptr::null_ptr;
 	for (auto& one : subscriptions_)
@@ -474,15 +565,6 @@ void rx_protocol_connection::close_endpoint ()
 message_ptr rx_protocol_connection::set_context (api::rx_context ctx, const messages::rx_connection_context_request& req)
 {
 	auto request_id = req.request_id;
-	if (req.stream_version)
-	{
-		auto result = request_stream_version(req.stream_version);
-		if (!result)
-		{
-			auto ret_value = std::make_unique<messages::error_message>(result, 13, request_id);
-			return ret_value;
-		}
-	}
 	if (!req.directory.empty())
 	{
 		auto result = set_current_directory(req.directory);
@@ -492,51 +574,24 @@ message_ptr rx_protocol_connection::set_context (api::rx_context ctx, const mess
 			return ret_value;
 		}
 	}
-	auto response = std::make_unique<messages::rx_connection_context_response>();
-	response->directory = get_current_directory_path();
-	response->stream_version = get_stream_version();
-	return response;
+	return message_ptr();
 }
 
-rx_result rx_protocol_connection::request_stream_version (uint32_t sversion)
+
+// Class rx_internal::rx_protocol::rx_client_connection 
+
+rx_client_connection::rx_client_connection()
 {
-	if (sversion == 0)
-		return RX_INVALID_ARGUMENT;
-	stream_version_ = std::min<uint32_t>(sversion, RX_CURRENT_SERIALIZE_VERSION);
-	return true;
 }
 
-void rx_protocol_connection::send_message (message_ptr msg)
+
+rx_client_connection::~rx_client_connection()
 {
-	uint32_t temp_version = RX_CURRENT_SERIALIZE_VERSION;
-	if (stream_version_)
-		temp_version = stream_version_;
-	serialization::json_writer writter(temp_version);
-	auto result = serialize_message(writter, msg->request_id, *msg);
-	if (result)
-	{
-		string_type ret_data;
-		ret_data = writter.get_string();
-		auto buff_result = port_->alloc_io_buffer();
-		if(buff_result)
-		{
-			buff_result.value().write_to_buffer((uint8_t)1);
-			buff_result.value().write_to_buffer((uint8_t)1);
-			buff_result.value().write_to_buffer((uint16_t)0x7fff);
-			result = buff_result.value().write_string(ret_data);
-			send_protocol_packet packet = rx_create_send_packet(msg->request_id, &buff_result.value(), 0, 0);
-
-			auto protocol_res = rx_move_packet_down(&stack_entry_, packet);
-			if (protocol_res != RX_PROTOCOL_OK)
-			{
-				std::cout << "Error returned from move_down:"
-					<< rx_protocol_error_message(protocol_res)
-					<< "\r\n";
-			}
-			port_->release_io_buffer(buff_result.move_value());
-		}
-	}
 }
+
+
+
+// Class rx_internal::rx_protocol::rx_local_subscription 
 
 
 } // namespace rx_protocol

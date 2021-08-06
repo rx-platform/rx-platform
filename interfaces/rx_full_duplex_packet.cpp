@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -143,11 +143,11 @@ std::unique_ptr<listener_instance<addrT> > duplex_port_adapter<addrT>::create_li
 			data.reset();
 		}
 	}*/
-	return std::move(data);
+	return data;
 }
 
 
-// Class rx_internal::interfaces::ports_lib::byte_routing_port 
+// Class rx_internal::interfaces::ports_lib::byte_routing_port
 
 
 void byte_routing_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
@@ -183,7 +183,7 @@ void byte_routing_port::extract_bind_address (const data::runtime_values_data& b
 }
 
 
-// Parameterized Class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port 
+// Parameterized Class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port
 
 template <typename addrT>
 full_duplex_addr_packet_port<addrT>::full_duplex_addr_packet_port()
@@ -208,7 +208,6 @@ rx_protocol_stack_endpoint* full_duplex_addr_packet_port<addrT>::construct_liste
 	if (!listener_inst)
 		return nullptr;
 	rx_protocol_stack_endpoint* stack_ep = &listener_inst->stack_endpoint;
-	current_port_state new_state = port_state_inactive;
 
 	listener_inst->my_port = this;
 
@@ -382,7 +381,7 @@ rx_result_with<port_connect_result> full_duplex_addr_packet_port<addrT>::start_c
 		return "Address already occupied!";
 
 	initiators_.emplace(std::move(initiator_data));
-	
+
 	return port_connect_result(stack_ep, state_ == current_port_state::port_state_connected);
 }
 
@@ -522,7 +521,7 @@ rx_protocol_result_t full_duplex_addr_packet_port<addrT>::initiator_connected_re
 			return RX_PROTOCOL_INVALID_ADDR;
 		}
 	}
-	
+
 }
 
 template <typename addrT>
@@ -558,7 +557,7 @@ rx_protocol_result_t full_duplex_addr_packet_port<addrT>::remove_initiator (cons
 }
 
 
-// Parameterized Class rx_internal::interfaces::ports_lib::initiator_data_type 
+// Parameterized Class rx_internal::interfaces::ports_lib::initiator_data_type
 
 template <typename addrT>
 initiator_data_type<addrT>::initiator_data_type()
@@ -575,7 +574,7 @@ initiator_data_type<addrT>::~initiator_data_type()
 
 
 
-// Class rx_internal::interfaces::ports_lib::ip4_routing_port 
+// Class rx_internal::interfaces::ports_lib::ip4_routing_port
 
 
 void ip4_routing_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
@@ -621,7 +620,7 @@ void ip4_routing_port::extract_bind_address (const data::runtime_values_data& bi
 }
 
 
-// Parameterized Class rx_internal::interfaces::ports_lib::listener_data_type 
+// Parameterized Class rx_internal::interfaces::ports_lib::listener_data_type
 
 template <typename addrT>
 listener_data_type<addrT>::listener_data_type()
@@ -639,7 +638,7 @@ listener_data_type<addrT>::~listener_data_type()
 
 
 
-// Parameterized Class rx_internal::interfaces::ports_lib::listener_instance 
+// Parameterized Class rx_internal::interfaces::ports_lib::listener_instance
 
 template <typename addrT>
 listener_instance<addrT>::listener_instance()
@@ -791,10 +790,10 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 				my_port->listening_.erase(new_endpoint);
 				new_endpoint = nullptr;
 			}
-			
+
 		}
 		return new_endpoint;
-		
+
 	}
 	return nullptr;
 }
