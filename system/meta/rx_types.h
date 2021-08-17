@@ -324,6 +324,52 @@ public:
 
 
 
+class data_type : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(data_type);
+    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+rx-platform implementation of data type");
+public:
+    typedef std::vector<def_blocks::const_value_def> values_type;
+    typedef std::vector<def_blocks::data_attribute> children_type;
+
+    typedef data_blocks_prototype RDataType;
+    typedef meta_algorithm::data_types_algorithm algorithm_type;
+
+    friend class meta_algorithm::data_types_algorithm;
+
+  public:
+
+      platform_item_ptr get_item_ptr () const;
+
+
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+
+      meta_data meta_info;
+
+      def_blocks::data_type_def complex_data;
+
+
+      static rx_item_type type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class method_type : public rx::pointers::reference_object  
 {
     DECLARE_REFERENCE_PTR(method_type);
@@ -440,52 +486,6 @@ public:
       meta_data meta_info;
 
       def_blocks::complex_data_type complex_data;
-
-
-      static rx_item_type type_id;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class data_type : public rx::pointers::reference_object  
-{
-    DECLARE_REFERENCE_PTR(data_type);
-    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
-rx-platform implementation of data type");
-public:
-    typedef std::vector<def_blocks::const_value_def> values_type;
-    typedef std::vector<def_blocks::data_attribute> children_type;
-
-    typedef data_blocks_prototype RDataType;
-    typedef meta_algorithm::data_types_algorithm algorithm_type;
-
-    friend class meta_algorithm::data_types_algorithm;
-
-  public:
-
-      platform_item_ptr get_item_ptr () const;
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
-
-
-      meta_data meta_info;
-
-      def_blocks::data_type_def complex_data;
 
 
       static rx_item_type type_id;

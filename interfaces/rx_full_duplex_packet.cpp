@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -147,7 +147,7 @@ std::unique_ptr<listener_instance<addrT> > duplex_port_adapter<addrT>::create_li
 }
 
 
-// Class rx_internal::interfaces::ports_lib::byte_routing_port
+// Class rx_internal::interfaces::ports_lib::byte_routing_port 
 
 
 void byte_routing_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
@@ -183,7 +183,7 @@ void byte_routing_port::extract_bind_address (const data::runtime_values_data& b
 }
 
 
-// Parameterized Class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port
+// Parameterized Class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port 
 
 template <typename addrT>
 full_duplex_addr_packet_port<addrT>::full_duplex_addr_packet_port()
@@ -557,7 +557,7 @@ rx_protocol_result_t full_duplex_addr_packet_port<addrT>::remove_initiator (cons
 }
 
 
-// Parameterized Class rx_internal::interfaces::ports_lib::initiator_data_type
+// Parameterized Class rx_internal::interfaces::ports_lib::initiator_data_type 
 
 template <typename addrT>
 initiator_data_type<addrT>::initiator_data_type()
@@ -574,7 +574,7 @@ initiator_data_type<addrT>::~initiator_data_type()
 
 
 
-// Class rx_internal::interfaces::ports_lib::ip4_routing_port
+// Class rx_internal::interfaces::ports_lib::ip4_routing_port 
 
 
 void ip4_routing_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
@@ -590,7 +590,10 @@ void ip4_routing_port::extract_bind_address (const data::runtime_values_data& bi
 		string_type addr_str;
 		uint16_t port_val = 0;
 		if (!addr.is_null())
+		{
 			addr_str = addr.get_storage().get_string_value();
+			addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
+		}
 		if (!port.is_null())
 			port_val = (uint16_t)port.get_storage().get_integer_value();
 		if (!addr_str.empty() || port_val != 0)
@@ -607,7 +610,10 @@ void ip4_routing_port::extract_bind_address (const data::runtime_values_data& bi
 		string_type addr_str;
 		uint16_t port_val = 0;
 		if (!addr.is_null())
+		{
 			addr_str = addr.get_storage().get_string_value();
+			addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
+		}
 		if (!port.is_null())
 			port_val = (uint16_t)port.get_storage().get_integer_value();
 		if (!addr_str.empty() || port_val != 0)
@@ -620,7 +626,7 @@ void ip4_routing_port::extract_bind_address (const data::runtime_values_data& bi
 }
 
 
-// Parameterized Class rx_internal::interfaces::ports_lib::listener_data_type
+// Parameterized Class rx_internal::interfaces::ports_lib::listener_data_type 
 
 template <typename addrT>
 listener_data_type<addrT>::listener_data_type()
@@ -638,7 +644,7 @@ listener_data_type<addrT>::~listener_data_type()
 
 
 
-// Parameterized Class rx_internal::interfaces::ports_lib::listener_instance
+// Parameterized Class rx_internal::interfaces::ports_lib::listener_instance 
 
 template <typename addrT>
 listener_instance<addrT>::listener_instance()

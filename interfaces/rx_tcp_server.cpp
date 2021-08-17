@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -38,6 +38,7 @@
 #include "sys_internal/rx_security/rx_platform_security.h"
 #include "system/runtime/rx_operational.h"
 #include "lib/security/rx_security.h"
+#include "rx_endpoints.h"
 
 namespace rx
 {
@@ -53,7 +54,7 @@ namespace interfaces {
 
 namespace ip_endpoints {
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_server_endpoint
+// Class rx_internal::interfaces::ip_endpoints::tcp_server_endpoint 
 
 tcp_server_endpoint::tcp_server_endpoint()
       : my_port_(nullptr),
@@ -249,7 +250,7 @@ void tcp_server_endpoint::socket_holder_t::disconnect()
     whose = nullptr;
     initiate_shutdown();
 }
-// Class rx_internal::interfaces::ip_endpoints::tcp_server_port
+// Class rx_internal::interfaces::ip_endpoints::tcp_server_port 
 
 
 rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -262,6 +263,7 @@ rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ct
         RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
 
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
+    addr = rx_gate::instance().resolve_ip4_alias(addr);
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
     bind_address_.parse(addr, port);
 
@@ -343,7 +345,10 @@ void tcp_server_port::extract_bind_address (const data::runtime_values_data& bin
         string_type addr_str;
         uint16_t port_val = 0;
         if (!addr.is_null())
+        {
             addr_str = addr.get_storage().get_string_value();
+            addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
+        }
         if (!port.is_null())
             port_val = (uint16_t)port.get_storage().get_integer_value();
         if(!addr_str.empty() || port_val!=0)
@@ -377,7 +382,7 @@ buffer_ptr tcp_server_port::get_buffer ()
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_http_port
+// Class rx_internal::interfaces::ip_endpoints::system_http_port 
 
 
 uint16_t system_http_port::get_configuration_port () const
@@ -389,7 +394,7 @@ uint16_t system_http_port::get_configuration_port () const
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_rx_port
+// Class rx_internal::interfaces::ip_endpoints::system_rx_port 
 
 
 uint16_t system_rx_port::get_configuration_port () const
@@ -401,7 +406,7 @@ uint16_t system_rx_port::get_configuration_port () const
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_server_port_base
+// Class rx_internal::interfaces::ip_endpoints::system_server_port_base 
 
 
 rx_result system_server_port_base::initialize_runtime (runtime::runtime_init_context& ctx)

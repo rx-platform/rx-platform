@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_port_instance.h
+*  interfaces\rx_port_instance.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -33,17 +33,26 @@
 
 
 
-// rx_port_stack_data
-#include "system/runtime/rx_port_stack_data.h"
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
+// rx_port_stack_data
+#include "interfaces/rx_port_stack_data.h"
+
+namespace rx_internal {
+namespace sys_runtime {
+namespace runtime_core {
+namespace runtime_data {
+class application_instance_data;
+} // namespace runtime_data
+} // namespace runtime_core
+} // namespace sys_runtime
+} // namespace rx_internal
 
 namespace rx_platform {
 namespace runtime {
 namespace items {
-class application_instance_data;
 class port_runtime;
 
 } // namespace items
@@ -52,16 +61,17 @@ class port_runtime;
 
 
 #include "lib/rx_io_addr.h"
-#include "rx_runtime_helpers.h"
+#include "system/runtime/rx_runtime_helpers.h"
 using namespace rx_platform;
+using namespace rx_platform::runtime;
 using namespace rx_platform::meta::runtime_data;
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace interfaces {
 
-namespace io_types {
+namespace port_stack {
 
 
 
@@ -107,7 +117,6 @@ class port_passive_behavior
       virtual bool is_connect_subscriber () = 0;
 
       virtual ~port_passive_behavior() = default;
-
   protected:
 
   private:
@@ -132,7 +141,6 @@ class port_active_behavior
       virtual bool is_endpoint_user () = 0;
 
       virtual ~port_active_behavior() = default;
-
   protected:
 
   private:
@@ -141,9 +149,14 @@ class port_active_behavior
 };
 
 
-} // namespace io_types
+} // namespace port_stack
+} // namespace interfaces
 
-namespace items {
+namespace sys_runtime {
+
+namespace runtime_core {
+
+namespace runtime_data {
 
 
 
@@ -154,11 +167,11 @@ class port_behaviors
 
   public:
 
-      std::unique_ptr<io_types::port_build_behavior> build_behavior;
+      std::unique_ptr<interfaces::port_stack::port_build_behavior> build_behavior;
 
-      std::unique_ptr<io_types::port_passive_behavior> passive_behavior;
+      std::unique_ptr<interfaces::port_stack::port_passive_behavior> passive_behavior;
 
-      std::unique_ptr<io_types::port_active_behavior> active_behavior;
+      std::unique_ptr<interfaces::port_stack::port_active_behavior> active_behavior;
 
       port_behaviors() = default;
       ~port_behaviors() = default;
@@ -206,7 +219,7 @@ class port_instance_data
 
       const rx_application_ptr get_my_application () const;
 
-      const meta::runtime_data::port_data& get_data () const
+      const rx_platform::meta::runtime_data::port_data& get_data () const
       {
         return data_;
       }
@@ -222,7 +235,7 @@ class port_instance_data
 
       port_behaviors behavior;
 
-      io_types::port_stack_data stack_data;
+      interfaces::port_stack::port_stack_data stack_data;
 
       port_instance_data(port_instance_data&& right) noexcept = default;
       port_instance_data(const port_instance_data & right) = default;
@@ -233,11 +246,11 @@ class port_instance_data
 
       rx_application_ptr my_application_;
 
-      security_context_holder identity_;
+      rx_platform::runtime::items::security_context_holder identity_;
 
-      meta::runtime_data::port_data data_;
+      rx_platform::meta::runtime_data::port_data data_;
 
-      rx_reference<port_runtime> implementation_;
+      rx_reference<rx_platform::runtime::items::port_runtime> implementation_;
 
 
       rx_thread_handle_t executer_;
@@ -246,9 +259,10 @@ class port_instance_data
 };
 
 
-} // namespace items
-} // namespace runtime
-} // namespace rx_platform
+} // namespace runtime_data
+} // namespace runtime_core
+} // namespace sys_runtime
+} // namespace rx_internal
 
 
 

@@ -4,8 +4,8 @@
 
 #define RX_SERVER_NAME "Molecule" 
 #define RX_SERVER_MAJOR_VERSION 1
-#define RX_SERVER_MINOR_VERSION 3
-#define RX_SERVER_BUILD_NUMBER 1
+#define RX_SERVER_MINOR_VERSION 4
+#define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -33,5 +33,6 @@
 // version 1.2.1 block_data implemented in runtime
 // version 1.2.8 relations stuff and http protocol
 // version 1.3.0 added constraints for inheritance
-// version 1.3.0 added constraints for relation targets
+// version 1.3.1 added constraints for relation targets
+// version 1.4.0 moved a lot of runtime to internal files
 

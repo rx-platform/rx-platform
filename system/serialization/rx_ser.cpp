@@ -1538,7 +1538,8 @@ string_type json_writer_type<writerT>::get_error () const
 template class json_writer_type<json_writer_data>;
 template class json_writer_type<json_pretty_writer_data>;
 
-
+template class binary_reader<memory::std_vector_allocator, false>;
+template class binary_writer<memory::std_vector_allocator, false>;
 
 } // namespace serialization
 } // namespace rx_platform

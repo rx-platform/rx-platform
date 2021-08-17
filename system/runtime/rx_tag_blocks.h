@@ -33,6 +33,7 @@
 
 
 #include "rx_relations.h"
+#include "system/runtime/rx_value_templates.h"
 
 // rx_operational
 #include "system/runtime/rx_operational.h"

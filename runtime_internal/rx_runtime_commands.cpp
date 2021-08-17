@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -45,7 +45,7 @@ namespace sys_runtime {
 
 namespace runtime_commands {
 
-// Class rx_internal::sys_runtime::runtime_commands::read_command
+// Class rx_internal::sys_runtime::runtime_commands::read_command 
 
 read_command::read_command()
 	: runtime_command_base("read")
@@ -85,7 +85,7 @@ bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_it
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::pull_command
+// Class rx_internal::sys_runtime::runtime_commands::pull_command 
 
 pull_command::pull_command()
 	: terminal::commands::server_command("pull")
@@ -107,7 +107,7 @@ bool pull_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::write_command
+// Class rx_internal::sys_runtime::runtime_commands::write_command 
 
 write_command::write_command()
 	: runtime_command_base("write")
@@ -174,7 +174,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::turn_on_command
+// Class rx_internal::sys_runtime::runtime_commands::turn_on_command 
 
 turn_on_command::turn_on_command()
 	: terminal::commands::server_command("turn-on")
@@ -216,7 +216,7 @@ bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, s
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::turn_off_command
+// Class rx_internal::sys_runtime::runtime_commands::turn_off_command 
 
 turn_off_command::turn_off_command()
 	: terminal::commands::server_command("turn-off")
@@ -258,7 +258,7 @@ bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, 
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::browse_command
+// Class rx_internal::sys_runtime::runtime_commands::browse_command 
 
 browse_command::browse_command()
 	: runtime_command_base("brw")
@@ -364,7 +364,7 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 }
 
 
-// Class rx_internal::sys_runtime::runtime_commands::runtime_command_base
+// Class rx_internal::sys_runtime::runtime_commands::runtime_command_base 
 
 runtime_command_base::runtime_command_base (const string_type& name)
 	: server_command(name)

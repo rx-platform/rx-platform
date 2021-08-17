@@ -40,13 +40,12 @@
 
 namespace rx_platform {
 namespace runtime {
+class runtime_process_context;
 namespace relations {
 class relations_holder;
 class relation_data;
+
 } // namespace relations
-
-class runtime_process_context;
-
 } // namespace runtime
 } // namespace rx_platform
 

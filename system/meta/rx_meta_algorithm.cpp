@@ -1108,7 +1108,7 @@ rx_result relation_blocks_algorithm::construct_relation_attribute (const object_
 		if(!target_base_id.is_null())
 			data.target_base_id = target_base_id;
 		rx_timed_value str_val;
-		str_val.assign_static<string_type>("", ctx.now);
+		str_val.assign_static("", ctx.now);
 		data.value.value = str_val;
 		data.implementation_ = ret_val.value();
 		// this is something i still don't know about

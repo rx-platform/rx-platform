@@ -38,6 +38,7 @@
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
 
+#include "system/runtime/rx_value_templates.h"
 
 
 namespace rx_internal {

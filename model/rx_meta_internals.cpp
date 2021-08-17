@@ -523,7 +523,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		}
 	}
 	rx_simple_value name_value;
-	name_value.assign_static<string_type>(string_type(meta.name));
+	name_value.assign_static(meta.name.c_str());
 	rx_timed_value ts_value;
 	rx_time now = rx_time::now();
 	ts_value.assign_static(now, now);

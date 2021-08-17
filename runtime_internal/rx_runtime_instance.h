@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_runtime_instance.h
+*  runtime_internal\rx_runtime_instance.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,7 +32,7 @@
 #define rx_runtime_instance_h 1
 
 
-#include "rx_runtime_helpers.h"
+#include "system/runtime/rx_runtime_helpers.h"
 #include "lib/rx_io_addr.h"
 
 // rx_runtime_data
@@ -40,29 +40,33 @@
 // rx_identity
 #include "system/server/rx_identity.h"
 // rx_port_instance
-#include "system/runtime/rx_port_instance.h"
+#include "interfaces/rx_port_instance.h"
 // rx_security
 #include "lib/security/rx_security.h"
 
-namespace rx_platform {
-namespace runtime {
-namespace items {
+namespace rx_internal {
+namespace sys_runtime {
+namespace runtime_core {
+namespace runtime_data {
 class application_instance_data;
 class domain_instance_data;
 
-} // namespace items
-} // namespace runtime
-} // namespace rx_platform
+} // namespace runtime_data
+} // namespace runtime_core
+} // namespace sys_runtime
+} // namespace rx_internal
 
 
 using namespace rx_platform::meta::runtime_data;
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace sys_runtime {
 
-namespace items {
+namespace runtime_core {
+
+namespace runtime_data {
 
 
 
@@ -90,7 +94,7 @@ class object_instance_data
       security::security_context_ptr get_security_context () const;
 
 
-      const meta::runtime_data::object_data& get_data () const
+      const rx_platform::meta::runtime_data::object_data& get_data () const
       {
         return data_;
       }
@@ -113,7 +117,7 @@ class object_instance_data
   private:
 
 
-      meta::runtime_data::object_data data_;
+      rx_platform::meta::runtime_data::object_data data_;
 
 
       rx_thread_handle_t executer_;
@@ -157,7 +161,7 @@ class domain_instance_data
       std::vector<rx_object_ptr> get_objects ();
 
 
-      const meta::runtime_data::domain_data& get_data () const
+      const rx_platform::meta::runtime_data::domain_data& get_data () const
       {
         return data_;
       }
@@ -184,7 +188,7 @@ class domain_instance_data
 
       rx_application_ptr my_application_;
 
-      meta::runtime_data::domain_data data_;
+      rx_platform::meta::runtime_data::domain_data data_;
 
 
       rx_thread_handle_t executer_;
@@ -233,7 +237,7 @@ class application_instance_data
       std::vector<rx_port_ptr> get_ports ();
 
 
-      const meta::runtime_data::application_data& get_data () const
+      const rx_platform::meta::runtime_data::application_data& get_data () const
       {
         return data_;
       }
@@ -257,9 +261,9 @@ class application_instance_data
 
       ports_type ports_;
 
-      security_context_holder identity_;
+      rx_platform::runtime::items::security_context_holder identity_;
 
-      meta::runtime_data::application_data data_;
+      rx_platform::meta::runtime_data::application_data data_;
 
       rx_reference<rx::security::security_context> security_ctx_;
 
@@ -272,9 +276,10 @@ class application_instance_data
 };
 
 
-} // namespace items
-} // namespace runtime
-} // namespace rx_platform
+} // namespace runtime_data
+} // namespace runtime_core
+} // namespace sys_runtime
+} // namespace rx_internal
 
 
 

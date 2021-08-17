@@ -61,6 +61,28 @@ namespace runtime_data {
 
 
 
+struct basic_runtime_data 
+{
+
+
+      rx::data::runtime_values_data overrides;
+
+      meta_data meta_info;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 struct application_data 
 {
 
@@ -90,47 +112,22 @@ struct application_data
 
 
 
-struct domain_data 
+class application_runtime_data : public basic_runtime_data  
 {
+public:
+    typedef object_types::application_type targetType;
 
+  public:
 
       rx_result serialize (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
 
       rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
 
-      rx_item_reference app_ref;
+      application_data instance_data;
 
-      int processor;
-
-      rx_domain_priority priority;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-struct object_data 
-{
-
-
-      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type);
-
-
-      rx_item_reference domain_ref;
-
-  public:
 
   protected:
 
@@ -158,86 +155,6 @@ struct port_data
       byte_string identity;
 
   public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-struct basic_runtime_data 
-{
-
-
-      rx::data::runtime_values_data overrides;
-
-      meta_data meta_info;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class object_runtime_data : public basic_runtime_data  
-{
-public:
-    typedef object_types::object_type targetType;
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type);
-
-
-      object_data instance_data;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class domain_runtime_data : public basic_runtime_data  
-{
-public:
-    typedef object_types::domain_type targetType;
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type);
-
-
-      domain_data instance_data;
-
 
   protected:
 
@@ -280,10 +197,39 @@ public:
 
 
 
-class application_runtime_data : public basic_runtime_data  
+struct domain_data 
+{
+
+
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      rx_item_reference app_ref;
+
+      int processor;
+
+      rx_domain_priority priority;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class domain_runtime_data : public basic_runtime_data  
 {
 public:
-    typedef object_types::application_type targetType;
+    typedef object_types::domain_type targetType;
 
   public:
 
@@ -294,7 +240,61 @@ public:
       rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
 
-      application_data instance_data;
+      domain_data instance_data;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct object_data 
+{
+
+
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      rx_item_reference domain_ref;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class object_runtime_data : public basic_runtime_data  
+{
+public:
+    typedef object_types::object_type targetType;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      object_data instance_data;
 
 
   protected:

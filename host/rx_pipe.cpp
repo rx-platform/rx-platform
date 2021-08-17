@@ -137,7 +137,6 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 	{
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
-		debug_stop_ = do_debug_level;
 		if (do_debug_level)
 			stdout_log_->log_query = log::rx_log_debug_level;
 		else if (do_trace_level)
@@ -503,7 +502,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 
 	inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
 
-	inst_data.overrides.add_value_static<string_type>("StackTop", RX_LOCAL_PIPE_NAME);
+	inst_data.overrides.add_value_static("StackTop", RX_LOCAL_PIPE_NAME);
 
 	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
 	if (!result)
@@ -521,7 +520,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 
 	inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
 
-	inst_data.overrides.add_value_static<string_type>("StackTop", RX_LOCAL_PIPE_TRANSPORT_NAME);
+	inst_data.overrides.add_value_static("StackTop", RX_LOCAL_PIPE_TRANSPORT_NAME);
 
 	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
 	if (!result)
@@ -596,6 +595,7 @@ void rx_pipe_host::add_command_line_options (hosting::command_line_options_t& op
 		("std", "Use stdin and stderr for communication", cxxopts::value<bool>(use_std))
 		("startlog", "Dump starting log", cxxopts::value<bool>(dump_start_log_))
 		("storageref", "Dump storage references", cxxopts::value<bool>(dump_storage_references_))
+		("wait", "Wait interactive on process startup and exit", cxxopts::value<bool>(debug_stop_))
 		("d,debug", "Wait keyboard hit on start and show debug level content, all events are listed to standard output", cxxopts::value<bool>(do_debug_level))
 		("t,trace", "Show trace level content all but debug events are listed to standard output", cxxopts::value<bool>(do_trace_level))
 		("info", "Show info level content all but debug and trace events are listed to standard output", cxxopts::value<bool>(do_info_level))

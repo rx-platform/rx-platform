@@ -441,7 +441,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data.register_simple_value_static("mapperVal", "Test"s, false, false);
+	 test_type->complex_data.register_simple_value_static("mapperVal", "Test", false, false);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<mapper_type>::create_type_sync(test_type);
 	 if (result)
 	 {

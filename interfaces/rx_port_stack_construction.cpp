@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_port_stack_construction.cpp
+*  interfaces\rx_port_stack_construction.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,26 +32,26 @@
 
 
 // rx_port_stack_data
-#include "system/runtime/rx_port_stack_data.h"
+#include "interfaces/rx_port_stack_data.h"
 // rx_port_stack_construction
-#include "system/runtime/rx_port_stack_construction.h"
+#include "interfaces/rx_port_stack_construction.h"
 
 #include "sys_internal/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
-#include "rx_runtime_holder.h"
+#include "system/runtime/rx_runtime_holder.h"
 #include "rx_port_stack_passive.h"
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace interfaces {
 
-namespace io_types {
+namespace port_stack {
 
 namespace stack_build {
 
-// Class rx_platform::runtime::io_types::stack_build::assemble_sender 
+// Class rx_internal::interfaces::port_stack::stack_build::assemble_sender 
 
 
 bool assemble_sender::is_assemble_sender ()
@@ -75,7 +75,7 @@ bool assemble_sender::is_application ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_build::assemble_ignorant 
+// Class rx_internal::interfaces::port_stack::stack_build::assemble_ignorant 
 
 
 bool assemble_ignorant::is_assemble_sender ()
@@ -99,7 +99,7 @@ bool assemble_ignorant::is_application ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_build::assemble_subscriber 
+// Class rx_internal::interfaces::port_stack::stack_build::assemble_subscriber 
 
 
 bool assemble_subscriber::is_assemble_sender ()
@@ -123,7 +123,7 @@ bool assemble_subscriber::is_application ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_build::assemble_sender_subscriber 
+// Class rx_internal::interfaces::port_stack::stack_build::assemble_sender_subscriber 
 
 
 bool assemble_sender_subscriber::is_assemble_sender ()
@@ -147,7 +147,7 @@ bool assemble_sender_subscriber::is_application ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_build::stack_builder 
+// Class rx_internal::interfaces::port_stack::stack_build::stack_builder 
 
 
 rx_result stack_builder::connect_stack_top (rx_port_ptr top, rx_port_ptr who)
@@ -189,7 +189,7 @@ rx_result stack_builder::connect_stack_top (rx_port_ptr top, rx_port_ptr who)
 
 rx_result stack_builder::disconnect_stack (rx_port_ptr who)
 {
-    auto result = runtime::io_types::stack_passive::passive_builder::unbind_passive(who);
+    auto result = rx_internal::interfaces::port_stack::stack_passive::passive_builder::unbind_passive(who);
     if (!result)
     {
         RX_ASSERT(false);
@@ -305,7 +305,7 @@ void stack_builder::recursive_get_stack (rx_port_ptr top, std::vector<rx_port_pt
 
 
 } // namespace stack_build
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace port_stack
+} // namespace interfaces
+} // namespace rx_internal
 

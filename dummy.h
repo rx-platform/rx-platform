@@ -71,7 +71,7 @@ class std::streambuf
 
 
 
-class protocol_address 
+class rx_protocol_stack_endpoint 
 {
 
   public:
@@ -88,7 +88,7 @@ class protocol_address
 
 
 
-class rx_packet_buffer 
+class protocol_address 
 {
 
   public:
@@ -130,7 +130,7 @@ class opcua_transport_protocol_type
 
 
 
-class rx_protocol_stack_endpoint 
+class rx_packet_buffer 
 {
 
   public:

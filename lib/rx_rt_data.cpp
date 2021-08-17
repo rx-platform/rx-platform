@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "rx_lib.h"
 
 // rx_rt_data
 #include "lib/rx_rt_data.h"

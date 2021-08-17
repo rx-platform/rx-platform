@@ -499,7 +499,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 
 	inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
 
-	inst_data.overrides.add_value_static<string_type>("StackTop", RX_STD_IO_NAME);
+	inst_data.overrides.add_value_static("StackTop", RX_STD_IO_NAME);
 
 	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
 	if (!result)

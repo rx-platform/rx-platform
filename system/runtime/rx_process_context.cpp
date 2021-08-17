@@ -90,6 +90,18 @@ bool runtime_process_context::should_do_step()
     }
 }
 
+// Parameterized Class rx_platform::runtime::process_context_job 
+
+
+// Class rx_platform::runtime::context_job 
+
+
+// Class rx_platform::runtime::write_data 
+
+
+// Class rx_platform::runtime::relation_subscriber 
+
+
 // Class rx_platform::runtime::runtime_process_context 
 
 runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points)
@@ -496,18 +508,6 @@ rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t
 {
     return ctx->set_value(handle, std::move(val));
 }
-// Parameterized Class rx_platform::runtime::process_context_job 
-
-
-// Class rx_platform::runtime::context_job 
-
-
-// Class rx_platform::runtime::write_data 
-
-
-// Class rx_platform::runtime::relation_subscriber 
-
-
 } // namespace runtime
 } // namespace rx_platform
 

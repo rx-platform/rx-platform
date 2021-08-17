@@ -34,10 +34,10 @@
 
 #include "interfaces/rx_endpoints.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_datagram_io
 #include "lib/rx_datagram_io.h"
 

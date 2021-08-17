@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_port_stack_data.cpp
+*  interfaces\rx_port_stack_data.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,22 +32,22 @@
 
 
 // rx_port_stack_data
-#include "system/runtime/rx_port_stack_data.h"
+#include "interfaces/rx_port_stack_data.h"
 
-#include "rx_objbase.h"
-#include "rx_runtime_holder.h"
-#include "rx_holder_algorithms.h"
+#include "system/runtime/rx_objbase.h"
+#include "system/runtime/rx_runtime_holder.h"
+#include "system/runtime/rx_holder_algorithms.h"
 
 using port_algorithm_t = rx_platform::runtime::algorithms::runtime_holder_algorithms<meta::object_types::port_type>;
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace interfaces {
 
-namespace io_types {
+namespace port_stack {
 
-// Class rx_platform::runtime::io_types::port_passive_map 
+// Class rx_internal::interfaces::port_stack::port_passive_map 
 
 port_passive_map::port_passive_map()
       : stack_binded(false)
@@ -206,7 +206,7 @@ bool port_passive_map::empty () const
 }
 
 
-// Class rx_platform::runtime::io_types::port_stack_data 
+// Class rx_internal::interfaces::port_stack::port_stack_data 
 
 port_stack_data::~port_stack_data()
 {
@@ -229,7 +229,7 @@ rx_result port_stack_data::init_runtime_data (runtime::runtime_init_context& ctx
 }
 
 
-// Class rx_platform::runtime::io_types::port_active_map 
+// Class rx_internal::interfaces::port_stack::port_active_map 
 
 
 rx_result port_active_map::register_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr whose, rx_port_ptr owner)
@@ -309,7 +309,7 @@ void port_active_map::close_all_endpoints ()
 }
 
 
-// Class rx_platform::runtime::io_types::port_build_map 
+// Class rx_internal::interfaces::port_stack::port_build_map 
 
 port_build_map::port_build_map()
       : stack_ready(false)
@@ -366,7 +366,7 @@ std::vector<rx_port_ptr> port_build_map::get_registered ()
 }
 
 
-// Class rx_platform::runtime::io_types::port_buffers 
+// Class rx_internal::interfaces::port_stack::port_buffers 
 
 
 rx_result_with<io_types::rx_io_buffer> port_buffers::alloc_io_buffer (rx_port_ptr& whose)
@@ -411,7 +411,7 @@ void port_buffers::release_io_buffer (rx_port_ptr& whose, io_types::rx_io_buffer
 }
 
 
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace port_stack
+} // namespace interfaces
+} // namespace rx_internal
 

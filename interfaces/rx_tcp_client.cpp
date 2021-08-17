@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -44,7 +44,7 @@ namespace interfaces {
 
 namespace ip_endpoints {
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_client_endpoint
+// Class rx_internal::interfaces::ip_endpoints::tcp_client_endpoint 
 
 tcp_client_endpoint::tcp_client_endpoint()
       : my_port_(nullptr),
@@ -195,13 +195,20 @@ bool tcp_client_endpoint::tick ()
             if (result)
             {
                 current_state_ = tcp_state::connecting;
-                result = tcp_socket_->connect_to(remote_addr_.get_address(), sizeof(sockaddr_in), infrastructure::server_runtime::instance().get_io_pool()->get_pool());
+                const sockaddr* remote_addr = remote_addr_.get_address();
+                if (remote_addr)
+                    result = tcp_socket_->connect_to(
+                        remote_addr, sizeof(sockaddr_in)
+                        , infrastructure::server_runtime::instance().get_io_pool()->get_pool());
+                else
+                    result = "Can't connect to a " RX_NULL_ITEM_NAME " address.";
 
             }
             if (!result)
             {
                 if(tcp_socket_)
                 {
+                    ITF_LOG_WARNING("tcp_client_endpoint", 100, result.errors_line());
                     tcp_socket_->disconnect();
                     tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
                 }
@@ -329,7 +336,7 @@ void tcp_client_endpoint::socket_holder_t::disconnect()
     whose = nullptr;
     close();
 }
-// Class rx_internal::interfaces::ip_endpoints::tcp_client_port
+// Class rx_internal::interfaces::ip_endpoints::tcp_client_port 
 
 tcp_client_port::tcp_client_port()
       : recv_timeout_(2000),
@@ -357,9 +364,11 @@ rx_result tcp_client_port::initialize_runtime (runtime::runtime_init_context& ct
         RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReconnectTimeout");
 
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
+    addr = rx_gate::instance().resolve_ip4_alias(addr);
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
 
     string_type remote_addr = ctx.structure.get_root().get_local_as<string_type>("Connect.IPAddress", "");
+    remote_addr = rx_gate::instance().resolve_ip4_alias(remote_addr);
     uint16_t remote_port = ctx.structure.get_root().get_local_as<uint16_t>("Connect.IPPort", 0);
 
     bind_address_.parse(addr, port);
@@ -436,7 +445,10 @@ void tcp_client_port::extract_bind_address (const data::runtime_values_data& bin
         string_type addr_str;
         uint16_t port_val = 0;
         if (!addr.is_null())
+        {
             addr_str = addr.get_storage().get_string_value();
+            addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
+        }
         if (!port.is_null())
             port_val = (uint16_t)port.get_storage().get_integer_value();
         if (!addr_str.empty() || port_val != 0)
@@ -453,7 +465,10 @@ void tcp_client_port::extract_bind_address (const data::runtime_values_data& bin
         string_type addr_str;
         uint16_t port_val = 0;
         if (!addr.is_null())
+        {
             addr_str = addr.get_storage().get_string_value();
+            addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
+        }
         if (!port.is_null())
             port_val = (uint16_t)port.get_storage().get_integer_value();
         if (!addr_str.empty() || port_val != 0)

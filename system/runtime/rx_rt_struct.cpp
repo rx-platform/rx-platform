@@ -307,7 +307,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			string_type temp_str(writer.get_string());
 			if (!temp_str.empty())
 			{
-				val.assign_static<string_type>(string_type(temp_str), ctx->now);
+				val.assign_static(temp_str.c_str(), ctx->now);
 				result = true;
 			}
 			else
@@ -1182,7 +1182,10 @@ void variable_data::fill_data (const data::runtime_values_data& data)
 
 rx_value variable_data::get_value (runtime_process_context* ctx) const
 {
-	return ctx->adapt_value(value);
+	if (ctx)
+		return ctx->adapt_value(value);
+	else
+		return value;
 }
 
 void variable_data::set_value (rx_simple_value&& val)
@@ -2571,7 +2574,7 @@ rx_result block_data::get_value (const string_type& path, rx_value& val, runtime
 			string_type temp_str(writer.get_string());
 			if (!temp_str.empty())
 			{
-				val.assign_static<string_type>(string_type(temp_str), ctx->now);
+				val.assign_static(temp_str.c_str(), ctx->now);
 				result = true;
 			}
 			else

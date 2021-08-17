@@ -892,9 +892,9 @@ rx_result basic_types_builder::do_build (rx_directory_ptr root)
 
 void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, struct_type_ptr what)
 {
-	what->complex_data.register_const_value_static("PID", ""s);
-	what->complex_data.register_const_value_static("Description", ""s);
-	what->complex_data.register_simple_value_static("Note", ""s, false, true);
+	what->complex_data.register_const_value_static("PID", "");
+	what->complex_data.register_const_value_static("Description", "");
+	what->complex_data.register_simple_value_static("Note", "", false, true);
 	what->complex_data.register_simple_value_static("LastScanTime", 0.0, true, false);
 	what->complex_data.register_simple_value_static<uint32_t>("LoopCount", 0, true, false);
 	what->complex_data.register_simple_value_static("MaxScanTime", 0.0, true, false);
@@ -1034,7 +1034,7 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 			});
 		dtype->complex_data.register_value_static("TS", rx_time::now());
 		dtype->complex_data.register_value_static("Id", rx_node_id());
-		dtype->complex_data.register_value_static("Path", ""s);
+		dtype->complex_data.register_value_static("Path", "");
 		model::platform_types_manager::instance().get_data_types_repository().register_type(dtype);
 		dir->add_item(dtype->get_item_ptr());
 		// other system object types
@@ -1156,16 +1156,16 @@ rx_result system_types_builder::do_build (rx_directory_ptr root)
 
 void system_types_builder::build_instance_info_struct_type(rx_directory_ptr dir, struct_type_ptr what)
 {
-	what->complex_data.register_const_value_static("Instance", ""s);
-	what->complex_data.register_const_value_static("Node", ""s);
+	what->complex_data.register_const_value_static("Instance", "");
+	what->complex_data.register_const_value_static("Node", "");
 	what->complex_data.register_const_value_static("StartTime", rx_gate::instance().get_started());
 	what->complex_data.register_simple_value_static("Time", rx_time::now(), true, false);
 
-	what->complex_data.register_const_value_static("PlatformVer", ""s);
-	what->complex_data.register_const_value_static("LibraryVer", ""s);
-	what->complex_data.register_const_value_static("TerminalVer", ""s);
-	what->complex_data.register_const_value_static("HttpVer", ""s);
-	what->complex_data.register_const_value_static("CompilerVer", ""s);
+	what->complex_data.register_const_value_static("PlatformVer", "");
+	what->complex_data.register_const_value_static("LibraryVer", "");
+	what->complex_data.register_const_value_static("TerminalVer", "");
+	what->complex_data.register_const_value_static("HttpVer", "");
+	what->complex_data.register_const_value_static("CompilerVer", "");
 }
 // Class rx_internal::builders::port_types_builder 
 
@@ -1455,7 +1455,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		map->complex_data.register_const_value_static("Port", ""s);
+		map->complex_data.register_const_value_static("Port", "");
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
 		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
@@ -1474,7 +1474,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		map->complex_data.register_const_value_static("Port", ""s);
+		map->complex_data.register_const_value_static("Port", "");
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
 		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
@@ -1493,7 +1493,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_const_value_static("Port", ""s);
+		src->complex_data.register_const_value_static("Port", "");
 		add_simple_type_to_configuration<source_type>(dir, src, true);
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_USER_SOURCE_TYPE_NAME
@@ -1511,7 +1511,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_const_value_static("Path", ""s);
+		src->complex_data.register_const_value_static("Path", "");
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
@@ -1521,7 +1521,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_const_value_static("Port", ""s);
+		src->complex_data.register_const_value_static("Port", "");
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
@@ -1531,7 +1531,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_simple_value_static("Path", ""s, false, true);
+		src->complex_data.register_simple_value_static("Path", "", false, true);
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
@@ -1655,7 +1655,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		what->complex_data.register_const_value_static("IPAddress", ""s);
+		what->complex_data.register_const_value_static("IPAddress", "");
 		what->complex_data.register_const_value_static<uint16_t>("IPPort", 0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
@@ -1915,7 +1915,7 @@ rx_result system_ports_builder::do_build (rx_directory_ptr root)
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
-		port_instance_data.overrides.add_value_static<string_type>("StackTop", "./" RX_NS_SYSTEM_TCP_NAME);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_TCP_NAME);
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 		
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXJSON_NAME;
@@ -1924,7 +1924,7 @@ rx_result system_ports_builder::do_build (rx_directory_ptr root)
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
-		port_instance_data.overrides.add_value_static<string_type>("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_NAME);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_NAME);
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
 		port_instance_data.meta_info.name = RX_NS_HTTP_TCP_NAME;
@@ -1943,7 +1943,7 @@ rx_result system_ports_builder::do_build (rx_directory_ptr root)
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
-		port_instance_data.overrides.add_value_static<string_type>("StackTop", "./" RX_NS_HTTP_TCP_NAME);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_HTTP_TCP_NAME);
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
 

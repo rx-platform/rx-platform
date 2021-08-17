@@ -33,10 +33,10 @@
 
 
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -51,8 +51,8 @@ class runtime_subscriber;
 #include "rx_runtime_algorithms.h"
 #include "sys_internal/rx_inf.h"
 #include "api/rx_platform_api.h"
-using rx_platform::runtime::items::application_instance_data;
-using rx_platform::runtime::items::domain_instance_data;
+using rx_internal::sys_runtime::runtime_core::runtime_data::application_instance_data;
+using rx_internal::sys_runtime::runtime_core::runtime_data::domain_instance_data;
 using rx_platform::runtime_data_t;
 
 

@@ -301,7 +301,7 @@ void rx_platform_directory::structure_unlock () const
 
 void rx_platform_directory::get_value (rx_value& value)
 {
-	value.assign_static(get_name(), meta_.created_time);
+	value.assign_static(get_name().c_str(), meta_.created_time);
 }
 
 void rx_platform_directory::fill_dir_code_info (std::ostream& info)

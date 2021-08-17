@@ -124,6 +124,17 @@ platform_item_ptr variable_type::get_item_ptr () const
 }
 
 
+// Class rx_platform::meta::basic_types::data_type 
+
+rx_item_type data_type::type_id = rx_item_type::rx_data_type;
+
+
+platform_item_ptr data_type::get_item_ptr () const
+{
+  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
+}
+
+
 // Class rx_platform::meta::basic_types::method_type 
 
 rx_item_type method_type::type_id = rx_item_type::rx_method_type;
@@ -154,17 +165,6 @@ rx_item_type display_type::type_id = rx_item_type::rx_display_type;
 platform_item_ptr display_type::get_item_ptr () const
 {
 	return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
-}
-
-
-// Class rx_platform::meta::basic_types::data_type 
-
-rx_item_type data_type::type_id = rx_item_type::rx_data_type;
-
-
-platform_item_ptr data_type::get_item_ptr () const
-{
-  return std::make_unique<rx_internal::internal_ns::rx_meta_item_implementation<smart_ptr> >(smart_this());
 }
 
 

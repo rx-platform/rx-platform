@@ -45,6 +45,7 @@
 #include "rx_library.h"
 #include "version/rx_code_macros.h"
 #include "system/meta/rx_obj_types.h"
+#include "system/runtime/rx_value_templates.h"
 
 
 #define RX_LICENSE_MESSAGE "\

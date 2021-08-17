@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_port_stack_active.h
+*  interfaces\rx_port_stack_active.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -34,17 +34,17 @@
 
 
 // rx_port_instance
-#include "system/runtime/rx_port_instance.h"
+#include "interfaces/rx_port_instance.h"
 // rx_port_stack_data
-#include "system/runtime/rx_port_stack_data.h"
+#include "interfaces/rx_port_stack_data.h"
 
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace interfaces {
 
-namespace io_types {
+namespace port_stack {
 
 namespace stack_active {
 
@@ -178,9 +178,9 @@ class extern_behavior : public port_active_behavior
 
 
 } // namespace stack_active
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace port_stack
+} // namespace interfaces
+} // namespace rx_internal
 
 
 

@@ -47,6 +47,7 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/http_c/rx_http_c_impl.h"
 
+using namespace rx_platform::http;
 
 
 

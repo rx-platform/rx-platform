@@ -45,10 +45,10 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
-// rx_con_programs
-#include "terminal/rx_con_programs.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_con_programs
+#include "terminal/rx_con_programs.h"
 // soft_plc
 #include "soft_logic/soft_plc.h"
 

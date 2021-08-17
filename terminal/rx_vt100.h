@@ -35,12 +35,12 @@
 
 // dummy
 #include "dummy.h"
-// rx_console
-#include "terminal/rx_console.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_console
+#include "terminal/rx_console.h"
 
 
 
@@ -181,7 +181,7 @@ class vt100_endpoint : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_internal::terminal::term_ports::vt100_endpoint  > vt100_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< vt100_endpoint  > vt100_port_base;
 
 
 

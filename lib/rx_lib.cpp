@@ -618,11 +618,11 @@ rx_simple_value rx_item_reference::to_value() const
 	values::rx_simple_value temp;
 	if (is_id_)
 	{
-		temp.assign_static<rx_node_id>(rx_node_id(id_));
+		temp.assign_static(rx_node_id(id_));
 	}
 	else
 	{
-		temp.assign_static<string_type>(string_type(path_));
+		temp.assign_static(string_type(path_).c_str());
 	}
 	return temp;
 }

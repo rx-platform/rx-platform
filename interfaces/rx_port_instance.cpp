@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_port_instance.cpp
+*  interfaces\rx_port_instance.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,27 +32,29 @@
 
 
 // rx_runtime_instance
-#include "system/runtime/rx_runtime_instance.h"
+#include "runtime_internal/rx_runtime_instance.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_port_instance
-#include "system/runtime/rx_port_instance.h"
+#include "interfaces/rx_port_instance.h"
 
-#include "rx_runtime_holder.h"
+#include "system/runtime/rx_runtime_holder.h"
 #include "rx_port_stack_construction.h"
-#include "system/runtime/rx_port_stack_active.h"
-#include "system/runtime/rx_port_stack_passive.h"
+#include "rx_port_stack_active.h"
+#include "rx_port_stack_passive.h"
 #include "runtime_internal/rx_runtime_relations.h"
 #include "model/rx_meta_internals.h"
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace sys_runtime {
 
-namespace items {
+namespace runtime_core {
 
-// Class rx_platform::runtime::items::port_instance_data 
+namespace runtime_data {
+
+// Class rx_internal::sys_runtime::runtime_core::runtime_data::port_instance_data 
 
 port_instance_data::port_instance_data (const port_data& data, port_behaviors&& rt_behavior)
       : executer_(-1)
@@ -103,7 +105,7 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
             relation_ptr->name = "App";
             relation_ptr->target_relation_name = what->meta_info().name;
             rx_timed_value str_val;
-            str_val.assign_static<string_type>(string_type(relation_ptr->target_path), rx_time::now());
+            str_val.assign_static(relation_ptr->target_path.c_str(), rx_time::now());
             relation_ptr->value.value = str_val;
             relation_ptr->value.value_opt[runtime::structure::value_data::opt_readonly] = true;
 
@@ -155,7 +157,7 @@ rx_result port_instance_data::after_deinit_runtime (rx_port_ptr what, runtime::r
 
 rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
 {
-    auto result = runtime::io_types::stack_build::stack_builder::disconnect_stack(what);
+    auto result = rx_internal::interfaces::port_stack::stack_build::stack_builder::disconnect_stack(what);
     if (result)
         RUNTIME_LOG_DEBUG("port_stack_relation", 900, what->meta_info().get_full_path() + " disconnected from stack");
     else
@@ -193,23 +195,39 @@ const rx_application_ptr port_instance_data::get_my_application () const
 }
 
 
-// Class rx_platform::runtime::items::port_behaviors 
+} // namespace runtime_data
+} // namespace runtime_core
+} // namespace sys_runtime
+
+namespace interfaces {
+
+namespace port_stack {
+
+// Class rx_internal::interfaces::port_stack::port_build_behavior 
 
 
-} // namespace items
+} // namespace port_stack
+} // namespace interfaces
 
-namespace io_types {
-
-// Class rx_platform::runtime::io_types::port_build_behavior 
-
-
-// Class rx_platform::runtime::io_types::port_passive_behavior 
-
-
-// Class rx_platform::runtime::io_types::port_active_behavior 
+namespace sys_runtime {
+namespace runtime_core {
+namespace runtime_data {
+// Class rx_internal::sys_runtime::runtime_core::runtime_data::port_behaviors 
 
 
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace runtime_data
+} // namespace runtime_core
+} // namespace sys_runtime
+
+namespace interfaces {
+namespace port_stack {
+// Class rx_internal::interfaces::port_stack::port_passive_behavior 
+
+
+// Class rx_internal::interfaces::port_stack::port_active_behavior 
+
+
+} // namespace port_stack
+} // namespace interfaces
+} // namespace rx_internal
 

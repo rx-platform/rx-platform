@@ -1285,7 +1285,6 @@ bool complex_data_type::register_const_value_static(const string_type& name, val
 	temp.assign_static(std::forward<valT>(value));
 	return register_const_value(name, std::move(temp));
 }
-
 template <typename valT>
 bool complex_data_type::register_simple_value_static(const string_type& name, valT&& value, bool read_only, bool persistent)
 {

@@ -36,10 +36,6 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_value_templates.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
-// rx_callback
-#include "system/callbacks/rx_callback.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_tag_blocks
@@ -54,6 +50,10 @@
 #include "system/runtime/rx_relations.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
+// rx_callback
+#include "system/callbacks/rx_callback.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
@@ -62,6 +62,7 @@
 #include "lib/rx_job.h"
 
 #include "system/meta/rx_obj_types.h"
+#include "runtime_internal/rx_runtime_instance.h"
 namespace rx_internal
 {
 namespace model

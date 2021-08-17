@@ -1033,9 +1033,6 @@ string_type help_command::get_help () const
 			rx_dump_large_row(names, out, RX_CONSOLE_WIDTH);
 
 			out << "\r\n choose one and type " ANSI_COLOR_GREEN ANSI_COLOR_BOLD "help " ANSI_COLOR_YELLOW ANSI_COLOR_BOLD  "<command>" ANSI_COLOR_RESET " for more details.";
-			out << "\r\n\r\n" ANSI_COLOR_MAGENTA " Maybe this is final help implementation...\r\n " ANSI_COLOR_RESET;
-			out << ANSI_COLOR_BOLD ANSI_COLOR_RED "/" ANSI_COLOR_YELLOW "/" ANSI_COLOR_GREEN "/" ANSI_COLOR_CYAN "/" ANSI_COLOR_RESET
-				<< "  sinclair ZX Spectrum!!!\r\n";
 			out.flush();
 			help = out.str();
 		}

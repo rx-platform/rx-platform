@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -387,7 +387,7 @@ rx_result meta_blocks_algorithm<def_blocks::display_attribute>::construct_comple
 	}
 }
 
-// Class rx_platform::meta::meta_algorithm::variable_data_algorithm
+// Class rx_platform::meta::meta_algorithm::variable_data_algorithm 
 
 
 rx_result variable_data_algorithm::serialize_complex_attribute (const variable_data_type& whose, base_meta_writer& stream)
@@ -467,7 +467,7 @@ rx_result variable_data_algorithm::construct_complex_attribute (const variable_d
 }
 
 
-// Class rx_platform::meta::meta_algorithm::complex_data_algorithm
+// Class rx_platform::meta::meta_algorithm::complex_data_algorithm 
 
 
 rx_result complex_data_algorithm::serialize_complex_attribute (const complex_data_type& whose, base_meta_writer& stream)
@@ -819,7 +819,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 }
 
 
-// Class rx_platform::meta::meta_algorithm::filtered_data_algorithm
+// Class rx_platform::meta::meta_algorithm::filtered_data_algorithm 
 
 
 rx_result filtered_data_algorithm::serialize_complex_attribute (const filtered_data_type& whose, base_meta_writer& stream)
@@ -898,7 +898,7 @@ rx_result filtered_data_algorithm::construct_complex_attribute (const filtered_d
 }
 
 
-// Class rx_platform::meta::meta_algorithm::mapped_data_algorithm
+// Class rx_platform::meta::meta_algorithm::mapped_data_algorithm 
 
 
 rx_result mapped_data_algorithm::serialize_complex_attribute (const mapped_data_type& whose, base_meta_writer& stream)
@@ -1023,7 +1023,7 @@ rx_result mapped_data_algorithm::construct_complex_attribute (const mapped_data_
 }
 
 
-// Class rx_platform::meta::meta_algorithm::data_blocks_algorithm
+// Class rx_platform::meta::meta_algorithm::data_blocks_algorithm 
 
 
 rx_result data_blocks_algorithm::serialize_data_attribute (const def_blocks::data_attribute& whose, base_meta_writer& stream)
@@ -1105,7 +1105,7 @@ rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& 
 }
 
 
-// Class rx_platform::meta::meta_algorithm::event_blocks_algorithm
+// Class rx_platform::meta::meta_algorithm::event_blocks_algorithm 
 
 
 rx_result event_blocks_algorithm::serialize_complex_attribute (const def_blocks::event_attribute& whose, base_meta_writer& stream)
@@ -1163,7 +1163,7 @@ rx_result event_blocks_algorithm::construct_complex_attribute (const def_blocks:
 }
 
 
-// Parameterized Class rx_platform::meta::meta_algorithm::meta_blocks_algorithm
+// Parameterized Class rx_platform::meta::meta_algorithm::meta_blocks_algorithm 
 
 
 template <class typeT>
@@ -1253,7 +1253,7 @@ template class meta_blocks_algorithm<source_attribute>;
 template class meta_blocks_algorithm<mapper_attribute>;
 template class meta_blocks_algorithm<program_attribute>;
 template class meta_blocks_algorithm<display_attribute>;
-// Class rx_platform::meta::meta_algorithm::method_blocks_algorithm
+// Class rx_platform::meta::meta_algorithm::method_blocks_algorithm 
 
 
 rx_result method_blocks_algorithm::serialize_complex_attribute (const def_blocks::method_attribute& whose, base_meta_writer& stream)

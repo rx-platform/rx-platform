@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -32,7 +32,6 @@
 #define rx_values_h 1
 
 
-#include "rx_ptr.h"
 
 // union's value types
 #define RX_NULL_TYPE			0x00
@@ -52,8 +51,8 @@
 #define RX_TIME_TYPE			0x0e
 #define RX_UUID_TYPE			0x0f
 #define RX_BYTES_TYPE			0x10
-#define RX_OBJECT_TYPE			0x11
-#define RX_CLASS_TYPE			0x12
+#define RX_STRUCT_TYPE			0x11
+#define RX_TYPE_TYPE			0x12
 #define RX_NODE_ID_TYPE			0x13
 
 #define RX_SIMPLE_VALUE_MASK	0x1f
@@ -186,48 +185,56 @@ namespace values {
 const size_t rx_pointer_optimization_size = 2*sizeof(void*);
 class rx_value;
 
-template<typename typeT>
-rx_value_t inner_get_type(tl::type2type<typeT>);
-
-template<>
 rx_value_t inner_get_type(tl::type2type<bool>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<int8_t>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<char>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<uint8_t>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<int16_t>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<uint16_t>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<int32_t>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<uint32_t>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<int64_t>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<uint64_t>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<float>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<double>);
-template<>
-rx_value_t inner_get_type(tl::type2type<typename std::string>);
-template<>
-rx_value_t inner_get_type(tl::type2type<const char*>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<typename rx::rx_time>);
-template<>
+
 rx_value_t inner_get_type(tl::type2type<typename rx::rx_node_id>);
 
+rx_value_t inner_get_type(tl::type2type<const char*>);
+
+rx_value_t inner_get_type(tl::type2type<char*>);
+
+template<size_t l>
+rx_value_t inner_get_type(tl::type2type<char[l]>)
+{
+    return RX_STRING_TYPE;
+}
+
+
+template< class T >
+struct cpp17_remove_cvref {
+    typedef typename std::remove_cv_t<std::remove_reference_t<T>> type;
+};
 
 template<typename typeT>
 rx_value_t get_type()
 {
-	return inner_get_type(tl::type2type<std::remove_const_t<std::remove_reference_t<typeT> > >());
+    return inner_get_type(tl::type2type<typename cpp17_remove_cvref<typeT>::type >());
 }
+
 
 
 struct complex_value_struct
@@ -239,6 +246,33 @@ struct complex_value_struct
 	bool parse_string(const string_type& str);
 };
 
+struct string_value_struct
+{
+    size_t size;
+    char* value;
+};
+
+struct bytes_value_struct
+{
+    size_t size;
+    uint8_t* value;
+};
+
+union rx_value_union;
+
+struct array_value_struct
+{
+    size_t size;
+    rx_value_union* values;
+};
+
+struct typed_value_type;
+
+struct struct_value_type
+{
+    size_t size;
+    typed_value_type* values;
+};
 
 class rx_value_storage;
 
@@ -265,15 +299,21 @@ union rx_value_union
 	rx_uuid uuid_value;
 #else
 	complex_value_struct* complex_value;
-	rx_uuid* uuid_value;
+    rx_uuid_t* uuid_value;
 #endif
 
-	string_type* string_value;
-	byte_string* bytes_value;
-	bit_string* bits_value;
+    string_value_struct string_value;
+	bytes_value_struct bytes_value;
 	rx_node_id* node_id_value;
 
-	std::vector<rx_value_union>* array_value;
+	array_value_struct array_value;
+};
+
+
+struct typed_value_type
+{
+    rx_value_t value_type;
+    rx_value_union value;
 };
 
 #define DEFAULT_TIME_VAL (rx_time::now())
@@ -287,7 +327,7 @@ typeT extract_value(const rx_value_storage& from, const typeT& default_value);
 
 
 
-class rx_value_storage
+class rx_value_storage 
 {
 public:
 	rx_value_storage(const rx_value_storage& right);
@@ -381,8 +421,8 @@ public:
 	  template<typename T>
 	  void assign_static(T&& right)
 	  {
-		  destroy_value(value_, value_type_);
-		  value_type_ = get_type<T>();
+		  destroy_value(value_.value, value_.value_type);
+          value_.value_type = get_type<T>();
 		  assign(std::forward<T>(right));
 	  }
 
@@ -423,21 +463,14 @@ public:
 	  void assign(rx_time val);
 	  void assign(rx_uuid val);
 
-	  void assign(string_type&& val);
-	  void assign(const string_type& val);
 	  void assign(const char* val);
 
-	  void assign(byte_string&& val);
-	  void assign(const byte_string& val);
-
-	  void assign(bit_string&& val);
-	  void assign(const bit_string& val);
+	  void assign(uint8_t* val, size_t size);
 
       void assign(const rx_node_id& val);
       void assign(rx_node_id&& val);
 
-	  void assign(std::vector<rx_value_union>&& val);
-	  void assign(const std::vector<rx_value_union>& val);
+	  void assign(size_t size, rx_value_union* val);
 
 	  static void assign_value(rx_value_union& left, const rx_value_union& right, rx_value_t type);
 	  static void assign_value(rx_value_union& left, rx_value_union&& right, rx_value_t type);
@@ -450,9 +483,7 @@ public:
 
 	  static bool convert_union(rx_value_union& what, rx_value_t source, rx_value_t target);
 
-      rx_value_t value_type_;
-
-      rx_value_union value_;
+      typed_value_type value_;
 
 
 };
@@ -462,7 +493,7 @@ public:
 
 
 
-class rx_simple_value
+class rx_simple_value 
 {
   public:
       template<typename typeT>
@@ -560,7 +591,7 @@ class rx_simple_value
 
 
 
-class rx_value
+class rx_value 
 {
 public:
 	template<typename typeT>
@@ -751,7 +782,7 @@ public:
 
 
 
-class rx_timed_value
+class rx_timed_value 
 {
 public:
 	template<typename typeT>

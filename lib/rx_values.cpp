@@ -203,87 +203,116 @@ rx_result rx_parse_value_type_name(const string_type& strtype, rx_value_t& type)
 	}
 }
 
+
 namespace values {
-template<>
+namespace
+{
+void copy_string_value(string_value_struct& dest, const string_value_struct& src)
+{
+	dest = src;
+	if (dest.size > 0)
+	{
+		dest.value = new char[dest.size + 1];
+		memcpy(dest.value, src.value, dest.size + 1);
+	}
+	else
+	{
+		dest.value = nullptr;
+	}
+}
+void assign_string_value(string_value_struct& dest, const char* src)
+{
+	size_t size = src != nullptr ? strlen(src) : 0;
+	dest.size = size;
+	if (size > 0)
+	{
+		dest.value = new char[size + 1];
+		memcpy(dest.value, src, size + 1);
+	}
+	else
+	{
+		dest.value = nullptr;
+	}
+}
+
+void copy_bytes_value(bytes_value_struct& dest, const bytes_value_struct& src)
+{
+	dest = src;
+	if (dest.size > 0)
+	{
+		dest.value = new uint8_t[dest.size];
+		memcpy(dest.value, src.value, dest.size);
+	}
+	else
+	{
+		dest.value = nullptr;
+	}
+}
+}
+
 rx_value_t inner_get_type(tl::type2type<bool>)
 {
 	return RX_BOOL_TYPE;
 }
-
-template<>
 rx_value_t inner_get_type(tl::type2type<char>)
 {
 	return RX_INT8_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<int8_t>)
 {
 	return RX_INT8_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<uint8_t>)
 {
 	return RX_UINT8_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<int16_t>)
 {
 	return RX_INT16_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<uint16_t>)
 {
 	return RX_UINT16_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<int32_t>)
 {
 	return RX_INT32_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<uint32_t>)
 {
 	return RX_UINT32_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<int64_t>)
 {
 	return RX_INT64_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<uint64_t>)
 {
 	return RX_UINT64_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<float>)
 {
 	return RX_FLOAT_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<double>)
 {
 	return RX_DOUBLE_TYPE;
 }
-template<>
-rx_value_t inner_get_type(tl::type2type<typename std::string>)
-{
-	return RX_STRING_TYPE;
-}
-template<>
-rx_value_t inner_get_type(tl::type2type<const char*>)
-{
-	return RX_STRING_TYPE;
-}
-template<>
 rx_value_t inner_get_type(tl::type2type<typename rx::rx_time>)
 {
 	return RX_TIME_TYPE;
 }
-template<>
 rx_value_t inner_get_type(tl::type2type<typename rx::rx_node_id>)
 {
 	return RX_NODE_ID_TYPE;
+}
+rx_value_t inner_get_type(tl::type2type<const char*>)
+{
+	return RX_STRING_TYPE;
+}
+rx_value_t inner_get_type(tl::type2type<char*>)
+{
+	return RX_STRING_TYPE;
 }
 
 double complex_value_struct::amplitude() const
@@ -841,20 +870,20 @@ rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 // Class rx::values::rx_value_storage 
 
 rx_value_storage::rx_value_storage()
-	: value_type_(RX_NULL_TYPE)
 {
+	value_.value_type = RX_NULL_TYPE;
 }
 
 
 rx_value_storage::~rx_value_storage()
 {
-	destroy_value(value_, value_type_);
+	destroy_value(value_.value, value_.value_type);
 }
 
 
 bool rx_value_storage::operator==(const rx_value_storage &right) const
 {
-	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	if (is_simple_type(value_.value_type) && right.is_simple_type(right.value_.value_type))
 	{
 		if (is_numeric() && right.is_numeric())
 		{
@@ -864,36 +893,36 @@ bool rx_value_storage::operator==(const rx_value_storage &right) const
 				return get_float_value() == right.get_float_value();
 		}
 		else
-			return value_type_ == right.value_type_;
+			return value_.value_type == right.value_.value_type;
 	}
-	else if (value_type_ == right.value_type_)
+	else if (value_.value_type == right.value_.value_type)
 	{
-		if (value_type_ == RX_STRING_TYPE)
+		if (value_.value_type == RX_STRING_TYPE)
 		{
-			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+			if (value_.value.string_value.size == 0 && right.value_.value.string_value.size == 0)
 				return true;
-			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
-				return *value_.string_value == *right.value_.string_value;
+			else if (value_.value.string_value.size != 0 && right.value_.value.string_value.size != 0)
+				return string_type(value_.value.string_value.value) == string_type(right.value_.value.string_value.value);
 			else
 				return false;
 		}
-		else if (value_type_ == RX_BYTES_TYPE)
+		else if (value_.value_type == RX_BYTES_TYPE)
 		{
-			if (value_.bytes_value->size() == right.value_.bytes_value->size())
-				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) == 0;
+			if (value_.value.bytes_value.size == right.value_.value.bytes_value.size)
+				return memcmp(value_.value.bytes_value.value, right.value_.value.bytes_value.value, value_.value.bytes_value.size) == 0;
 			else
 				return false;
 		}
-		else if (value_type_ == RX_UUID_TYPE)
+		else if (value_.value_type == RX_UUID_TYPE)
 		{
 #ifndef RX_VALUE_SIZE_16
-			*value_.uuid_value == *right.value_.uuid_value;
+			return memcpy(value_.value.uuid_value, right.value_.value.uuid_value, sizeof(rx_uuid_t)) == 0;
 #else
-			value_.uuid_value == right.value_.uuid_value;
+            return memcpy(&value_.value.uuid_value, &right.value_.value.uuid_value, sizeof(rx_uuid_t)) == 0;
 #endif
 		}
 	}
-	return value_type_ == right.value_type_;
+	return value_.value_type == right.value_.value_type;
 }
 
 bool rx_value_storage::operator!=(const rx_value_storage &right) const
@@ -904,7 +933,7 @@ bool rx_value_storage::operator!=(const rx_value_storage &right) const
 
 bool rx_value_storage::operator<(const rx_value_storage &right) const
 {
-	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	if (is_simple_type(value_.value_type) && right.is_simple_type(right.value_.value_type))
 	{
 		if (is_numeric() && right.is_numeric())
 		{
@@ -914,41 +943,42 @@ bool rx_value_storage::operator<(const rx_value_storage &right) const
 				return get_float_value() < right.get_float_value();
 		}
 		else
-			return value_type_ < right.value_type_;
+			return value_.value_type < right.value_.value_type;
 	}
-	else if (value_type_ == right.value_type_)
+	else if (value_.value_type == right.value_.value_type)
 	{
-		if (value_type_ == RX_STRING_TYPE)
+		if (value_.value_type == RX_STRING_TYPE)
 		{
-			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+
+			if (value_.value.string_value.size == 0 && right.value_.value.string_value.size == 0)
 				return false;
-			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
-				return *value_.string_value < *right.value_.string_value;
+			else if (value_.value.string_value.size != 0 && right.value_.value.string_value.size != 0)
+				return string_type(value_.value.string_value.value) < string_type(right.value_.value.string_value.value);
 			else
 				return true;
 		}
-		else if (value_type_ == RX_BYTES_TYPE)
+		else if (value_.value_type == RX_BYTES_TYPE)
 		{
-			if (value_.bytes_value->size() == right.value_.bytes_value->size())
-				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) < 0;
+			if (value_.value.bytes_value.size == right.value_.value.bytes_value.size)
+				return memcmp(value_.value.bytes_value.value, right.value_.value.bytes_value.value, value_.value.bytes_value.size) < 0;
 			else
-				return value_.bytes_value->size() < right.value_.bytes_value->size();
+				return value_.value.bytes_value.size < right.value_.value.bytes_value.size;
 		}
-		else if (value_type_ == RX_UUID_TYPE)
+		else if (value_.value_type == RX_UUID_TYPE)
 		{
 #ifndef RX_VALUE_SIZE_16
-			*value_.uuid_value < *right.value_.uuid_value;
+			rx_uuid(*value_.value.uuid_value) < rx_uuid(*right.value_.value.uuid_value);
 #else
-			value_.uuid_value < right.value_.uuid_value;
+			value_.value.uuid_value < right.value_.value.uuid_value;
 #endif
 		}
 	}
-	return value_type_ < right.value_type_;
+	return value_.value_type < right.value_.value_type;
 }
 
 bool rx_value_storage::operator>(const rx_value_storage &right) const
 {
-	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	if (is_simple_type(value_.value_type) && right.is_simple_type(right.value_.value_type))
 	{
 		if (is_numeric() && right.is_numeric())
 		{
@@ -958,41 +988,41 @@ bool rx_value_storage::operator>(const rx_value_storage &right) const
 				return get_float_value() > right.get_float_value();
 		}
 		else
-			return value_type_ > right.value_type_;
+			return value_.value_type > right.value_.value_type;
 	}
-	else if (value_type_ == right.value_type_)
+	else if (value_.value_type == right.value_.value_type)
 	{
-		if (value_type_ == RX_STRING_TYPE)
+		if (value_.value_type == RX_STRING_TYPE)
 		{
-			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+			if (value_.value.string_value.size == 0 && right.value_.value.string_value.size == 0)
 				return false;
-			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
-				return *value_.string_value > *right.value_.string_value;
+			else if (value_.value.string_value.size != 0 && right.value_.value.string_value.size != 0)
+				return string_type(value_.value.string_value.value) > string_type(right.value_.value.string_value.value);
 			else
 				return true;
 		}
-		else if (value_type_ == RX_BYTES_TYPE)
+		else if (value_.value_type == RX_BYTES_TYPE)
 		{
-			if (value_.bytes_value->size() == right.value_.bytes_value->size())
-				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) > 0;
+			if (value_.value.bytes_value.size == right.value_.value.bytes_value.size)
+				return memcmp(value_.value.bytes_value.value, right.value_.value.bytes_value.value, value_.value.bytes_value.size) > 0;
 			else
-				return value_.bytes_value->size() > right.value_.bytes_value->size();
+				return value_.value.bytes_value.size > right.value_.value.bytes_value.size;
 		}
-		else if (value_type_ == RX_UUID_TYPE)
+		else if (value_.value_type == RX_UUID_TYPE)
 		{
 #ifndef RX_VALUE_SIZE_16
-			*value_.uuid_value > *right.value_.uuid_value;
+			rx_uuid(*value_.value.uuid_value) > rx_uuid(*right.value_.value.uuid_value);
 #else
-			value_.uuid_value > right.value_.uuid_value;
+			value_.value.uuid_value > right.value_.value.uuid_value;
 #endif
 		}
 	}
-	return value_type_ > right.value_type_;
+	return value_.value_type > right.value_.value_type;
 }
 
 bool rx_value_storage::operator<=(const rx_value_storage &right) const
 {
-	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	if (is_simple_type(value_.value_type) && right.is_simple_type(right.value_.value_type))
 	{
 		if (is_numeric() && right.is_numeric())
 		{
@@ -1002,42 +1032,42 @@ bool rx_value_storage::operator<=(const rx_value_storage &right) const
 				return get_float_value() <= right.get_float_value();
 		}
 		else
-			return value_type_ <= right.value_type_;
+			return value_.value_type <= right.value_.value_type;
 	}
-	else if (value_type_ == right.value_type_)
+	else if (value_.value_type == right.value_.value_type)
 	{
-		if (value_type_ == RX_STRING_TYPE)
+		if (value_.value_type == RX_STRING_TYPE)
 		{
-			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+			if (value_.value.string_value.size == 0 && right.value_.value.string_value.size == 0)
 				return true;
-			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
-				return *value_.string_value <= *right.value_.string_value;
+			else if (value_.value.string_value.size != 0 && right.value_.value.string_value.size != 0)
+				return string_type(value_.value.string_value.value) <= string_type(right.value_.value.string_value.value);
 			else
-				return value_.string_value == nullptr && right.value_.string_value != nullptr;
+				return value_.value.string_value.size == 0 && right.value_.value.string_value.size != 0;
 		}
-		else if (value_type_ == RX_BYTES_TYPE)
+		else if (value_.value_type == RX_BYTES_TYPE)
 		{
-			if (value_.bytes_value->size() == right.value_.bytes_value->size())
-				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) <= 0;
+			if (value_.value.bytes_value.size == right.value_.value.bytes_value.size)
+				return memcmp(value_.value.bytes_value.value, right.value_.value.bytes_value.value, value_.value.bytes_value.size) <= 0;
 			else
-				return value_.bytes_value->size() < right.value_.bytes_value->size();
+				return value_.value.bytes_value.size < right.value_.value.bytes_value.size;
 		}
-		else if (value_type_ == RX_UUID_TYPE)
+		else if (value_.value_type == RX_UUID_TYPE)
 		{
 #ifndef RX_VALUE_SIZE_16
-			*value_.uuid_value <= *right.value_.uuid_value;
+			rx_uuid(*value_.value.uuid_value) <= rx_uuid(*right.value_.value.uuid_value);
 #else
-			value_.uuid_value <= right.value_.uuid_value;
+			value_.value.uuid_value <= right.value_.value.uuid_value;
 #endif
 		}
 	}
-	return value_type_ <= right.value_type_;
+	return value_.value_type <= right.value_.value_type;
 }
 
 bool rx_value_storage::operator>=(const rx_value_storage &right) const
 {
 
-	if (is_simple_type(value_type_) && right.is_simple_type(right.value_type_))
+	if (is_simple_type(value_.value_type) && right.is_simple_type(right.value_.value_type))
 	{
 		if (is_numeric() && right.is_numeric())
 		{
@@ -1047,45 +1077,45 @@ bool rx_value_storage::operator>=(const rx_value_storage &right) const
 				return get_float_value() >= right.get_float_value();
 		}
 		else
-			return value_type_ >= right.value_type_;
+			return value_.value_type >= right.value_.value_type;
 	}
-	else if (value_type_ == right.value_type_)
+	else if (value_.value_type == right.value_.value_type)
 	{
-		if (value_type_ == RX_STRING_TYPE)
+		if (value_.value_type == RX_STRING_TYPE)
 		{
-			if (value_.string_value == nullptr && right.value_.string_value == nullptr)
+			if (value_.value.string_value.size == 0 && right.value_.value.string_value.size == 0)
 				return true;
-			else if (value_.string_value != nullptr && right.value_.string_value != nullptr)
-				return *value_.string_value >= *right.value_.string_value;
+			else if (value_.value.string_value.size != 0 && right.value_.value.string_value.size != 0)
+				return string_type(value_.value.string_value.value) >= string_type(right.value_.value.string_value.value);
 			else
-				return value_.string_value != nullptr && right.value_.string_value == nullptr;
+				return value_.value.string_value.size != 0 && right.value_.value.string_value.size == 0;
 		}
-		else if (value_type_ == RX_BYTES_TYPE)
+		else if (value_.value_type == RX_BYTES_TYPE)
 		{
-			if (value_.bytes_value->size() == right.value_.bytes_value->size())
-				return memcmp(&(*(value_.bytes_value))[0], &(*(right.value_.bytes_value))[0], value_.bytes_value->size()) >= 0;
+			if (value_.value.bytes_value.size == right.value_.value.bytes_value.size)
+				return memcmp(value_.value.bytes_value.value, right.value_.value.bytes_value.value, value_.value.bytes_value.size) >= 0;
 			else
-				return value_.bytes_value->size() > right.value_.bytes_value->size();
+				return value_.value.bytes_value.size > right.value_.value.bytes_value.size;
 		}
-		else if (value_type_ == RX_UUID_TYPE)
+		else if (value_.value_type == RX_UUID_TYPE)
 		{
 #ifndef RX_VALUE_SIZE_16
-			*value_.uuid_value >= *right.value_.uuid_value;
+			rx_uuid(*value_.value.uuid_value) >= rx_uuid(*right.value_.value.uuid_value);
 #else
-			value_.uuid_value >= right.value_.uuid_value;
+			value_.value.uuid_value >= right.value_.value.uuid_value;
 #endif
 		}
 	}
-	return value_type_ >= right.value_type_;
+	return value_.value_type >= right.value_.value_type;
 }
 
 
 
 bool rx_value_storage::serialize (base_meta_writer& writer) const
 {
-	if (!writer.write_value_type("type", value_type_))
+	if (!writer.write_value_type("type", value_.value_type))
 		return false;
-	if (!serialize_value(writer, value_, value_type_, "val"))
+	if (!serialize_value(writer, value_.value, value_.value_type, "val"))
 		return false;
 	return true;
 }
@@ -1093,11 +1123,11 @@ bool rx_value_storage::serialize (base_meta_writer& writer) const
 bool rx_value_storage::deserialize (base_meta_reader& reader)
 {
 	// first destroy eventual values already inside
-	destroy_value(value_, value_type_);
-	value_type_ = RX_NULL_TYPE;
-	if (!reader.read_value_type("type", value_type_))
+	destroy_value(value_.value, value_.value_type);
+	value_.value_type = RX_NULL_TYPE;
+	if (!reader.read_value_type("type", value_.value_type))
 		return false;
-	if (!deserialize_value(reader, value_, value_type_))
+	if (!deserialize_value(reader, value_.value, value_.value_type))
 		return false;
 	return true;
 }
@@ -1105,15 +1135,15 @@ bool rx_value_storage::deserialize (base_meta_reader& reader)
 string_type rx_value_storage::to_string (bool simple) const
 {
 	char buff[0x20];
-	switch (value_type_)
+	switch (value_.value_type)
 	{
 	case RX_NULL_TYPE:
 		return "<null>";
 	case RX_BOOL_TYPE:
-		return (value_.bool_value ? "true" : "false");
+		return (value_.value.bool_value ? "true" : "false");
 	case RX_INT8_TYPE:
 		{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int8_value);
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.int8_value);
 			if(ret.ec== std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
@@ -1123,7 +1153,7 @@ string_type rx_value_storage::to_string (bool simple) const
 		}
 	case RX_UINT8_TYPE:
 		{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint8_value);
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.uint8_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
@@ -1133,7 +1163,7 @@ string_type rx_value_storage::to_string (bool simple) const
 		}
 	case RX_INT16_TYPE:
 		{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int16_value);
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.int16_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
@@ -1143,7 +1173,7 @@ string_type rx_value_storage::to_string (bool simple) const
 		}
 	case RX_UINT16_TYPE:
 		{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint16_value);
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.uint16_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
@@ -1153,7 +1183,7 @@ string_type rx_value_storage::to_string (bool simple) const
 		}
 	case RX_INT32_TYPE:
 		{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int32_value);
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.int32_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
@@ -1163,7 +1193,7 @@ string_type rx_value_storage::to_string (bool simple) const
 		}
 	case RX_UINT32_TYPE:
 		{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint32_value);
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.uint32_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
@@ -1173,7 +1203,7 @@ string_type rx_value_storage::to_string (bool simple) const
 		}
 	case RX_INT64_TYPE:
 		{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.int64_value);
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.int64_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
@@ -1183,7 +1213,7 @@ string_type rx_value_storage::to_string (bool simple) const
 		}
 	case RX_UINT64_TYPE:
 		{
-			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.uint64_value);
+			auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.uint64_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';
 			string_type ret_str(buff);
@@ -1193,10 +1223,10 @@ string_type rx_value_storage::to_string (bool simple) const
 		}
 	case RX_FLOAT_TYPE:
 		{
-			/*auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.float_value, std::chars_format::general);
+			/*auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.float_value, std::chars_format::general);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';*/
-			sprintf(buff, "%g", (double)value_.float_value);
+			sprintf(buff, "%g", (double)value_.value.float_value);
 			string_type ret_str(buff);
 			if (!simple)
 				ret_str += "f";
@@ -1204,24 +1234,24 @@ string_type rx_value_storage::to_string (bool simple) const
 		}
 	case RX_DOUBLE_TYPE:
 		{
-			/*auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.double_value);
+			/*auto ret = std::to_chars(buff, buff + sizeof(buff) / sizeof(buff[0]), value_.value.double_value);
 			if (ret.ec == std::errc())
 				*ret.ptr = '\0';*/
-			sprintf(buff, "%g", value_.double_value);
+			sprintf(buff, "%g", value_.value.double_value);
 			string_type ret_str(buff);
 			if (!simple)
 				ret_str += "d";
 			return ret_str;
 		}
 	case RX_STRING_TYPE:
-		return "\""s + *value_.string_value + "\"";
+		return "\""s + string_type(value_.value.string_value.value) + "\"";
 	case RX_UUID_TYPE:
-		return value_.uuid_value->to_string();
+		return rx_uuid(*value_.value.uuid_value).to_string();
 
 	case RX_TIME_TYPE:
 		{
 			rx_time temp;
-			temp = value_.time_value;
+			temp = value_.value.time_value;
 			return temp.get_string();
 		}
 	default:
@@ -1251,26 +1281,26 @@ void rx_value_storage::parse (const string_type& str)
 			assign_static(dbl_num);
 			return;
 		}
-		assign_static(str);
+		assign_static(str.c_str());
 	}
 }
 
 rx_value_t rx_value_storage::get_value_type () const
 {
-	return value_type_;
+	return value_.value_type;
 }
 
 string_type rx_value_storage::get_type_string () const
 {
-	if (value_type_&RX_ARRAY_VALUE_MASK)
+	if (value_.value_type&RX_ARRAY_VALUE_MASK)
 	{
-		return rx_get_value_type_name(value_type_ & RX_SIMPLE_VALUE_MASK) + "[]";
+		return rx_get_value_type_name(value_.value_type & RX_SIMPLE_VALUE_MASK) + "[]";
 	}
 	else
 	{
-		return rx_get_value_type_name(value_type_ & RX_SIMPLE_VALUE_MASK);
+		return rx_get_value_type_name(value_.value_type & RX_SIMPLE_VALUE_MASK);
 	}
-/*	switch (value_type_&RX_SIMPLE_VALUE_MASK)
+/*	switch (value_.value_type&RX_SIMPLE_VALUE_MASK)
 	{
 	case RX_NULL_TYPE:
 		return "null"s;
@@ -1310,7 +1340,7 @@ string_type rx_value_storage::get_type_string () const
 		return "complex";
 	case RX_CLASS_TYPE:
 	{
-		switch (value_type_&RX_DEFINITION_TYPE_MASK)
+		switch (value_.value_type&RX_DEFINITION_TYPE_MASK)
 		{
 		case RX_BINARY_VALUE:
 			return "binary type definition";
@@ -1327,7 +1357,7 @@ string_type rx_value_storage::get_type_string () const
 	break;
 	case RX_OBJECT_TYPE:
 	{
-		switch (value_type_&RX_DEFINITION_TYPE_MASK)
+		switch (value_.value_type&RX_DEFINITION_TYPE_MASK)
 		{
 		case RX_BINARY_VALUE:
 			return "binary object data";
@@ -1355,89 +1385,89 @@ bool rx_value_storage::expresion_equality (const rx_value_storage& right) const
 
 bool rx_value_storage::exact_equality (const rx_value_storage& right) const
 {
-	if (value_type_ != right.value_type_)
+	if (value_.value_type != right.value_.value_type)
 		return false;
-	return exact_equality(value_, right.value_, value_type_);
+	return exact_equality(value_.value, right.value_.value, value_.value_type);
 }
 
 bool rx_value_storage::convert_to (rx_value_t type)
 {
-	if (value_type_ == type)
+	if (value_.value_type == type)
 		return true;// nothing to do
 	if (type == RX_NULL_TYPE)
 	{// clear value here
-		destroy_value(value_, value_type_);
-		value_type_ = RX_NULL_TYPE;
+		destroy_value(value_.value, value_.value_type);
+		value_.value_type = RX_NULL_TYPE;
 		return true;
 	}
 	bool target_is_array = (type&RX_ARRAY_VALUE_MASK) == RX_ARRAY_VALUE_MASK;
-	bool current_is_array = (value_type_&RX_ARRAY_VALUE_MASK) == RX_ARRAY_VALUE_MASK;
+	bool current_is_array = (value_.value_type&RX_ARRAY_VALUE_MASK) == RX_ARRAY_VALUE_MASK;
 	if (!target_is_array && !current_is_array)
 	{// normal values
-		if (!convert_union(value_, value_type_, type))
+		if (!convert_union(value_.value, value_.value_type, type))
 			return false;
-		value_type_ = type;
+		value_.value_type = type;
 		return true;
 	}
 	else if (target_is_array && current_is_array)
 	{// both are arrays convert individual items
-		for (auto& one : *value_.array_value)
+		for (size_t i =0; i<value_.value.array_value.size; i++)
 		{
-			if (!convert_union(one, value_type_&RX_STRIP_ARRAY_MASK, type&RX_STRIP_ARRAY_MASK))
+			if (!convert_union(value_.value.array_value.values[i], value_.value_type&RX_STRIP_ARRAY_MASK, type&RX_STRIP_ARRAY_MASK))
 				return false;
 		}
-		value_type_ = type;
+		value_.value_type = type;
 		return true;
 	}
 	else if (!target_is_array && current_is_array)
 	{// from array to simple value
-		if (value_.array_value->empty())
+		if (value_.value.array_value.size == 0)
 		{// empty array only to null type, checked before
 			return false;
 		}
-		if (!convert_union(value_.array_value->at(0), value_type_&RX_STRIP_ARRAY_MASK, type))
+		if (!convert_union(value_.value.array_value.values[0], value_.value_type&RX_STRIP_ARRAY_MASK, type))
 			return false;
 		rx_value_union temp;
-		assign_value(temp, value_.array_value->at(0), type);
-		destroy_value(value_, type&RX_STRIP_ARRAY_MASK);
-		assign_value(value_, std::move(temp), type);
-		value_type_ = type;
+		assign_value(temp, value_.value.array_value.values[0], type);
+		destroy_value(value_.value, type&RX_STRIP_ARRAY_MASK);
+		assign_value(value_.value, std::move(temp), type);
+		value_.value_type = type;
 		return true;
 	}
 	else //(target_is_array && !current_is_array)
 	{// from simple value to array
-		if (!convert_union(value_, value_type_, type&RX_STRIP_ARRAY_MASK))
+		if (!convert_union(value_.value, value_.value_type, type&RX_STRIP_ARRAY_MASK))
 			return false;
-		std::vector<rx_value_union>* temp_array = new std::vector<rx_value_union>{ value_ };
-		value_.array_value = temp_array;
-		value_type_ = type;
+		value_.value.array_value.values = new rx_value_union{ value_.value };
+		value_.value.array_value.size = 1;
+		value_.value_type = type;
 		return true;
 	}
 }
 
 bool rx_value_storage::is_complex () const
 {
-	return value_type_ == RX_COMPLEX_TYPE;
+	return value_.value_type == RX_COMPLEX_TYPE;
 }
 
 bool rx_value_storage::is_numeric () const
 {
-	return (value_type_ > RX_NULL_TYPE && value_type_ <= RX_COMPLEX_TYPE);
+	return (value_.value_type > RX_NULL_TYPE && value_.value_type <= RX_COMPLEX_TYPE);
 }
 
 bool rx_value_storage::is_integer () const
 {
-	return value_type_ > RX_NULL_TYPE && value_type_ <= RX_UINT64_TYPE;
+	return value_.value_type > RX_NULL_TYPE && value_.value_type <= RX_UINT64_TYPE;
 }
 
 bool rx_value_storage::is_float () const
 {
-	return value_type_ == RX_FLOAT_TYPE || value_type_ == RX_DOUBLE_TYPE || value_type_ == RX_COMPLEX_TYPE;
+	return value_.value_type == RX_FLOAT_TYPE || value_.value_type == RX_DOUBLE_TYPE || value_.value_type == RX_COMPLEX_TYPE;
 }
 
 bool rx_value_storage::is_null () const
 {
-	return value_type_ == RX_NULL_TYPE;
+	return value_.value_type == RX_NULL_TYPE;
 }
 
 complex_value_struct rx_value_storage::get_complex_value () const
@@ -1446,16 +1476,16 @@ complex_value_struct rx_value_storage::get_complex_value () const
 	{
 
 #ifdef RX_VALUE_SIZE_16
-		return value_.complex_value;
+		return value_.value.complex_value;
 #else
-		return *value_.complex_value;
+		return *value_.value.complex_value;
 #endif
 	}
 	complex_value_struct ret;
 	ret.imag = 0;
 	ret.real = 0;
 	if (is_integer())
-		ret.real = (double)get_int_value(value_type_, value_);
+		ret.real = (double)get_int_value(value_.value_type, value_.value);
 	else if (is_float())
 		ret.real = get_float_value();
 	return ret;
@@ -1463,26 +1493,26 @@ complex_value_struct rx_value_storage::get_complex_value () const
 
 double rx_value_storage::get_float_value () const
 {
-	return get_float_value(value_type_, value_);
+	return get_float_value(value_.value_type, value_.value);
 }
 
 int64_t rx_value_storage::get_integer_value (rx_value_t* min_type) const
 {
-	return get_int_value(value_type_, value_);
+	return get_int_value(value_.value_type, value_.value);
 }
 
 bool rx_value_storage::get_bool_value () const
 {
-	return get_bool_value(value_type_, value_);
+	return get_bool_value(value_.value_type, value_.value);
 }
 
 int64_t rx_value_storage::get_int_value (rx_value_t type, const rx_value_union& value, rx_value_t* min_type, size_t idx) const
 {
 	if (IS_ARRAY_VALUE(type))
 	{
-		if (idx < value.array_value->size())
+		if (idx < value.array_value.size)
 		{
-			return get_int_value(RX_SIMPLE_TYPE(type), value.array_value->at(idx));
+			return get_int_value(RX_SIMPLE_TYPE(type), value.array_value.values[idx]);
 		}
 		else
 		{
@@ -1549,14 +1579,11 @@ int64_t rx_value_storage::get_int_value (rx_value_t type, const rx_value_union& 
 		case RX_STRING_TYPE:
 			if (min_type)
 				*min_type = RX_UINT32_TYPE;
-			if (value.string_value)
-				return value.string_value->size();
-			else
-				return 0;
+			return value.string_value.size;
 		case RX_BYTES_TYPE:
 			if (min_type)
 				*min_type = RX_UINT32_TYPE;
-			return value.bytes_value->size();
+			return value.bytes_value.size;
 		case RX_UUID_TYPE:
 			if (min_type)
 				*min_type = RX_UINT32_TYPE;
@@ -1575,9 +1602,9 @@ double rx_value_storage::get_float_value (rx_value_t type, const rx_value_union&
 {
 	if (IS_ARRAY_VALUE(type))
 	{
-		if (idx < value.array_value->size())
+		if (idx < value.array_value.size)
 		{
-			return get_float_value(RX_SIMPLE_TYPE(type), value.array_value->at(idx));
+			return get_float_value(RX_SIMPLE_TYPE(type), value.array_value.values[idx]);
 		}
 		else
 		{
@@ -1616,12 +1643,9 @@ double rx_value_storage::get_float_value (rx_value_t type, const rx_value_union&
 		case RX_FLOAT_TYPE:
 			return value.float_value;
 		case RX_STRING_TYPE:
-			if (value.string_value)
-				return (double)value.string_value->size();
-			else
-				return 0;
+			return (double)value.string_value.size;
 		case RX_BYTES_TYPE:
-			return (double)value.bytes_value->size();
+			return (double)value.bytes_value.size;
 		case RX_UUID_TYPE:
 			return 0;
 		case RX_TIME_TYPE:
@@ -1634,16 +1658,16 @@ double rx_value_storage::get_float_value (rx_value_t type, const rx_value_union&
 
 bool rx_value_storage::is_array () const
 {
-	return IS_ARRAY_VALUE(value_type_);
+	return IS_ARRAY_VALUE(value_.value_type);
 }
 
 bool rx_value_storage::get_bool_value (rx_value_t type, const rx_value_union& value, size_t idx) const
 {
 	if (IS_ARRAY_VALUE(type))
 	{
-		if (idx < value.array_value->size())
+		if (idx < value.array_value.size)
 		{
-			return get_bool_value(RX_SIMPLE_TYPE(type), value.array_value->at(idx));
+			return get_bool_value(RX_SIMPLE_TYPE(type), value.array_value.values[idx]);
 		}
 		else
 		{
@@ -1678,12 +1702,9 @@ bool rx_value_storage::get_bool_value (rx_value_t type, const rx_value_union& va
 		case RX_FLOAT_TYPE:
 			return (int64_t)value.float_value != 0;;
 		case RX_STRING_TYPE:
-			if (value.string_value)
-				return !value.string_value->empty();
-			else
-				return false;
+			return value.string_value.size > 0;
 		case RX_BYTES_TYPE:
-			return !value.bytes_value->empty();
+			return value.bytes_value.size > 0;
 		case RX_UUID_TYPE:
 			return false;
 		case RX_TIME_TYPE:
@@ -1696,23 +1717,23 @@ bool rx_value_storage::get_bool_value (rx_value_t type, const rx_value_union& va
 
 bool rx_value_storage::set_from_complex (const complex_value_struct& val, rx_value_t type)
 {
-	destroy_value(value_, value_type_);
-	value_type_ = type;
-	return set_from_complex(val, type, value_);
+	destroy_value(value_.value, value_.value_type);
+	value_.value_type = type;
+	return set_from_complex(val, type, value_.value);
 }
 
 bool rx_value_storage::set_from_float (double val, rx_value_t type)
 {
-	destroy_value(value_, value_type_);
-	value_type_ = type;
-	return set_from_float(val, type, value_);
+	destroy_value(value_.value, value_.value_type);
+	value_.value_type = type;
+	return set_from_float(val, type, value_.value);
 }
 
 bool rx_value_storage::set_from_integer (int64_t val, rx_value_t type)
 {
-	destroy_value(value_, value_type_);
-	value_type_ = type;
-	return set_from_integer(val, type, value_);
+	destroy_value(value_.value, value_.value_type);
+	value_.value_type = type;
+	return set_from_integer(val, type, value_.value);
 }
 
 bool rx_value_storage::set_from_complex (const complex_value_struct& val, rx_value_t type, rx_value_union& where)
@@ -1763,18 +1784,18 @@ bool rx_value_storage::set_from_complex (const complex_value_struct& val, rx_val
 		{
 			char buff[0x100];
 			snprintf(buff, 0x100, "%.15g+%.15gi", val.real, val.imag);
-			where.string_value = new string_type(buff);
+			assign_string_value(where.string_value, buff);
 		}
 		break;
 	case RX_BYTES_TYPE:
-		where.bytes_value = new byte_string();
+		where.bytes_value.size = 0;
 		return false;
 		break;
 	case RX_UUID_TYPE:
 #ifdef RX_VALUE_SIZE_16
-		where.uuid_value = rx_uuid::null_uuid();
+		where.uuid_value = rx_uuid::null_uuid().uuid();
 #else
-		where.uuid_value = new rx_uuid(rx_uuid::null_uuid());
+		where.uuid_value = new rx_uuid_t(rx_uuid::null_uuid().uuid());
 #endif
 		return false;
 		break;
@@ -1833,18 +1854,18 @@ bool rx_value_storage::set_from_float (double val, rx_value_t type, rx_value_uni
 		{
 			char buff[0x20];
 			snprintf(buff, 0x20, "%.15g", val);
-			where.string_value = new string_type(buff);
+			assign_string_value(where.string_value, buff);
 		}
 		break;
 	case RX_BYTES_TYPE:
-		where.bytes_value = new byte_string();
+		where.bytes_value.size = 0;
 		return false;
 		break;
 	case RX_UUID_TYPE:
 #ifdef RX_VALUE_SIZE_16
 		where.uuid_value = rx_uuid::null_uuid();
 #else
-		where.uuid_value = new rx_uuid(rx_uuid::null_uuid());
+		where.uuid_value = new rx_uuid_t(rx_uuid::null_uuid().uuid());
 #endif
 		return false;
 		break;
@@ -1903,18 +1924,18 @@ bool rx_value_storage::set_from_integer (int64_t val, rx_value_t type, rx_value_
 		{
 			char buff[0x20];
 			snprintf(buff, 0x20, "%d", (int)val);
-			where.string_value = new string_type(buff);
+			assign_string_value(where.string_value, buff);
 		}
 		break;
 	case RX_BYTES_TYPE:
-		where.bytes_value = new byte_string();
+		where.bytes_value.size = 0;
 		return false;
 		break;
 	case RX_UUID_TYPE:
 #ifdef RX_VALUE_SIZE_16
 		where.uuid_value = rx_uuid::null_uuid();
 #else
-		where.uuid_value = new rx_uuid(rx_uuid::null_uuid());
+		where.uuid_value = new rx_uuid_t(rx_uuid::null_uuid().uuid());
 #endif
 		return false;
 		break;
@@ -1930,10 +1951,10 @@ bool rx_value_storage::is_simple_type (rx_value_t type) const
 	return !IS_ARRAY_VALUE(type) && type < RX_TIME_TYPE && type != RX_STRING_TYPE;
 }
 
-rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
 {
 	rx_value_storage result;
-	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, true);
+	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, true);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
@@ -1954,26 +1975,73 @@ rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) co
 		}
 		else if (ret_type == RX_TIME_TYPE)
 		{// time
-			result.value_type_ = RX_TIME_TYPE;
-			result.value_.time_value = rx_time(value_.time_value) + right.get_integer_value();
+			result.value_.value_type = RX_TIME_TYPE;
+			result.value_.value.time_value = rx_time(value_.value.time_value) + right.get_integer_value();
 		}
-		else if (ret_type == RX_BYTES_TYPE && value_type_ == RX_BYTES_TYPE && right.value_type_ == RX_BYTES_TYPE)
+		else if (ret_type == RX_BYTES_TYPE && value_.value_type == RX_BYTES_TYPE && right.value_.value_type == RX_BYTES_TYPE)
 		{
-			result.value_type_ = RX_BYTES_TYPE;
-			result.value_.bytes_value = new byte_string(*value_.bytes_value);
-			result.value_.bytes_value->insert(result.value_.bytes_value->end(), right.value_.bytes_value->begin(), right.value_.bytes_value->end());
+			result.value_.value_type = RX_BYTES_TYPE;
+			size_t size1 = value_.value.bytes_value.value != nullptr ? value_.value.bytes_value.size : 0;
+
+			size_t size2 = right.value_.value.bytes_value.value != nullptr ? right.value_.value.bytes_value.size : 0;
+			size_t new_size = size1 + size2;
+			result.value_.value.bytes_value.size = new_size;
+			uint8_t* temp_buff = nullptr;
+			if (new_size)
+			{
+				temp_buff = new uint8_t[new_size];
+				if (size1 > 0)
+					memcpy(temp_buff, value_.value.bytes_value.value, size1);
+
+				if (size2 > 0)
+					memcpy(&temp_buff[size1], right.value_.value.bytes_value.value, size2);
+			}
+			result.value_.value.bytes_value.value = temp_buff;
 		}
-		else if (ret_type == RX_STRING_TYPE && value_type_ == RX_STRING_TYPE)
+		else if (ret_type == RX_STRING_TYPE && value_.value_type == RX_STRING_TYPE)
 		{
-			result.value_type_ = RX_STRING_TYPE;
-			result.value_.string_value = new string_type(*value_.string_value);
-			if (right.value_type_ == RX_STRING_TYPE)
+			result.value_.value_type = RX_STRING_TYPE;
+			size_t size1 = value_.value.string_value.value != nullptr ? value_.value.string_value.size : 0;
+			if (right.value_.value_type == RX_STRING_TYPE)
 			{// do dynamic stuff
-				*result.value_.string_value += *right.value_.string_value;
+				size_t size2 = right.value_.value.string_value.value != nullptr ? right.value_.value.string_value.size : 0;
+				size_t new_size = size1 + size2;
+				char* temp_buff = nullptr;
+				result.value_.value.string_value.size = new_size;
+				if (new_size)
+				{
+					temp_buff = new char[new_size + 1];
+					if (size1 > 0)
+						memcpy(temp_buff, value_.value.string_value.value, size1 + 1);
+					else
+						result.value_.value.string_value.value[0] = '\0';
+
+					if (size2 > 0)
+						strcat(temp_buff, right.value_.value.string_value.value);
+				}
+				result.value_.value.string_value.value = temp_buff;				
 			}
 			else
 			{
-				*result.value_.string_value += right.to_string();
+				std::string right_str = right.to_string();
+				size_t size2 = right_str.size();
+				size_t new_size = size1 + size2;
+				result.value_.value.string_value.size = new_size;
+				if (new_size)
+				{
+					result.value_.value.string_value.value = new char[new_size + 1];
+					if (size1 > 0)
+						memcpy(result.value_.value.string_value.value, value_.value.string_value.value, size1 + 1);
+					else
+						result.value_.value.string_value.value[0] = '\0';
+
+					if (size2 > 0)
+						strcat(result.value_.value.string_value.value, right_str.c_str());
+				}
+				else
+				{
+					result.value_.value.string_value.value = nullptr;
+				}
 			}
 		}
 
@@ -2018,10 +2086,10 @@ rx_value_t rx_value_storage::get_arithmetic_result_type (rx_value_t left, rx_val
 	return RX_NULL_TYPE;
 }
 
-rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
 {
 	rx_value_storage result;
-	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
+	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, false);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
@@ -2042,17 +2110,17 @@ rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) co
 		}
 		else if (ret_type == RX_TIME_TYPE)
 		{// time
-			result.value_type_ = RX_TIME_TYPE;
-			result.value_.time_value = rx_time(value_.time_value) - right.get_integer_value();
+			result.value_.value_type = RX_TIME_TYPE;
+			result.value_.value.time_value = rx_time(value_.value.time_value) - right.get_integer_value();
 		}
 	}
 	return result;
 }
 
-rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
 {
 	rx_value_storage result;
-	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
+	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, false);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
@@ -2076,10 +2144,10 @@ rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) co
 	return result;
 }
 
-rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
 {
 	rx_value_storage result;
-	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
+	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, false);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
@@ -2111,10 +2179,10 @@ rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) co
 	return result;
 }
 
-rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
+rx::values::rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
 {
 	rx_value_storage result;
-	rx_value_t ret_type = get_arithmetic_result_type(value_type_, right.value_type_, false);
+	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, false);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type > RX_NULL_TYPE && ret_type <= RX_UINT64_TYPE)
@@ -2129,9 +2197,9 @@ rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) co
 
 rx_node_id rx_value_storage::get_id_value () const
 {
-	if (value_type_ == RX_NODE_ID_TYPE)
+	if (value_.value_type == RX_NODE_ID_TYPE)
 	{
-		return *value_.node_id_value;
+		return *value_.value.node_id_value;
 	}
 	else
 	{
@@ -2141,16 +2209,19 @@ rx_node_id rx_value_storage::get_id_value () const
 
 string_type rx_value_storage::get_string_value () const
 {
-	if (value_type_ == RX_STRING_TYPE)
+	if (value_.value_type == RX_STRING_TYPE)
 	{
-		return *value_.string_value;
+		if (value_.value.string_value.size == 0)
+			return string_type();
+		else
+			return value_.value.string_value.value;
 	}
 	else
 	{
 		rx_value_storage conv(*this);
 		if (conv.convert_to(RX_STRING_TYPE))
 		{
-			return *conv.value_.string_value;
+			return conv.get_string_value();
 		}
 		else
 		{
@@ -2161,7 +2232,7 @@ string_type rx_value_storage::get_string_value () const
 
 bool rx_value_storage::weak_serialize_value (const string_type& name, base_meta_writer& writer) const
 {
-	if (!serialize_value(writer, value_, value_type_, name))
+	if (!serialize_value(writer, value_.value, value_.value_type, name))
 		return false;
 	return true;
 }
@@ -2173,125 +2244,117 @@ bool rx_value_storage::weak_deserialize_value (const string_type& name, base_met
 
 void rx_value_storage::assign(bool val)
 {
-	value_.bool_value = val;
+	value_.value.bool_value = val;
 }
 void rx_value_storage::assign(int8_t val)
 {
-	value_.int8_value = val;
+	value_.value.int8_value = val;
 }
 void rx_value_storage::assign(uint8_t val)
 {
-	value_.uint8_value = val;
+	value_.value.uint8_value = val;
 }
 void rx_value_storage::assign(int16_t val)
 {
-	value_.int16_value = val;
+	value_.value.int16_value = val;
 }
 void rx_value_storage::assign(uint16_t val)
 {
-	value_.uint16_value = val;
+	value_.value.uint16_value = val;
 }
 void rx_value_storage::assign(int32_t val)
 {
-	value_.int32_value = val;
+	value_.value.int32_value = val;
 }
 void rx_value_storage::assign(uint32_t val)
 {
-	value_.uint32_value = val;
+	value_.value.uint32_value = val;
 }
 void rx_value_storage::assign(int64_t val)
 {
-	value_.int64_value = val;
+	value_.value.int64_value = val;
 }
 void rx_value_storage::assign(uint64_t val)
 {
-	value_.uint64_value = val;
+	value_.value.uint64_value = val;
 }
 void rx_value_storage::assign(float val)
 {
-	value_.float_value = val;
+	value_.value.float_value = val;
 }
 void rx_value_storage::assign(double val)
 {
-	value_.double_value = val;
+	value_.value.double_value = val;
 }
 void rx_value_storage::assign(std::complex<double> val)
 {
 #ifdef RX_SIZE_16
-	value_.complex_value = complex_value_struct{ val.real(), val.imag() };
+	value_.value.complex_value = complex_value_struct{ val.real(), val.imag() };
 #else
-	value_.complex_value = new complex_value_struct{ val.real(), val.imag() };
+	value_.value.complex_value = new complex_value_struct{ val.real(), val.imag() };
 #endif
 }
 void rx_value_storage::assign(rx_time val)
 {
-	value_.time_value = val;
+	value_.value.time_value = val;
 }
 void rx_value_storage::assign(rx_uuid val)
 {
 #ifdef RX_SIZE_16
-	uuid_value = val;
+	uuid_value = val.uuid();
 #else
-	value_.uuid_value = new rx_uuid(val);
+	value_.value.uuid_value = new rx_uuid_t(val.uuid());
 #endif
-}
-void rx_value_storage::assign(string_type&& val)
-{
-	value_.string_value = new string_type(std::move(val));
-}
-void rx_value_storage::assign(const string_type& val)
-{
-	value_.string_value = new string_type(val);
 }
 void rx_value_storage::assign(const char* val)
 {
-	value_.string_value = new string_type(val);
+	assign_string_value(value_.value.string_value, val);
 }
-void rx_value_storage::assign(byte_string&& val)
+void rx_value_storage::assign(uint8_t* val, size_t size)
 {
-	value_.bytes_value = new byte_string(std::move(val));
-}
-void rx_value_storage::assign(const byte_string& val)
-{
-	value_.bytes_value = new byte_string(val);
+	value_.value.bytes_value.size = size;
+	if (size > 0)
+	{
+		value_.value.bytes_value.value = new uint8_t[size];
+		memcpy(value_.value.bytes_value.value, val, size);
+	}
 }
 void rx_value_storage::assign(const rx_node_id& val)
 {
-	value_.node_id_value = new rx_node_id(val);
+	value_.value.node_id_value = new rx_node_id(val);
 }
 void rx_value_storage::assign(rx_node_id&& val)
 {
-	value_.node_id_value = new rx_node_id(std::move(val));
+	value_.value.node_id_value = new rx_node_id(std::move(val));
 }
-void rx_value_storage::assign(bit_string&& val)
+void rx_value_storage::assign(size_t size, rx_value_union* val)
 {
-	value_.bits_value = new bit_string(std::move(val));
-}
-void rx_value_storage::assign(const bit_string& val)
-{
-	value_.bits_value = new bit_string(val);
-}
-void rx_value_storage::assign(std::vector<rx_value_union>&& val)
-{
-	value_.array_value = new std::vector<rx_value_union>(std::move(val));
-}
-void rx_value_storage::assign(const std::vector<rx_value_union>& val)
-{
-	value_.array_value = new std::vector<rx_value_union>(val);
+	value_.value.array_value.size = size;
+	if (size > 0)
+	{
+		value_.value.array_value.values = new rx_value_union[size];
+		memcpy(value_.value.array_value.values, val, sizeof(rx_value_union) * size);
+	}
+	else
+	{
+		value_.value.array_value.values = nullptr;
+	}
 }
 void rx_value_storage::assign_value(rx_value_union& left, const rx_value_union& right, rx_value_t type)
 {
 	// now do the actual copy of pointer members
 	if (type&RX_ARRAY_VALUE_MASK)
 	{// we have an array
-		left.array_value = new std::vector<rx_value_union>(*right.array_value);
-		// check to see pointers stuff
-		size_t count = left.array_value->size();
-		for (size_t i = 0; i < count; i++)
+		size_t count = left.array_value.size;
+		left.array_value = right.array_value;
+		if (count > 0)
 		{
-			assign_value(left.array_value->at(i), right.array_value->at(i), RX_STRIP_ARRAY_MASK&type);
+			left.array_value.values = new rx_value_union[count];
+			for (size_t i = 0; i < count; i++)
+			{
+				assign_value(left.array_value.values[i], right.array_value.values[i], RX_STRIP_ARRAY_MASK & type);
+			}
 		}
-		delete left.array_value;
 	}
 	else
 	{//simple union stuff
@@ -2302,35 +2365,18 @@ void rx_value_storage::assign_value(rx_value_union& left, const rx_value_union& 
 			left.complex_value = new complex_value_struct(*right.complex_value);
 			break;
 		case RX_UUID_TYPE:
-			left.uuid_value = new rx_uuid(*right.uuid_value);
+			left.uuid_value = new rx_uuid_t(*right.uuid_value);
 			break;
 #endif
 		case RX_STRING_TYPE:
-			left.string_value = new string_type(*right.string_value);
+			copy_string_value(left.string_value, right.string_value);
 			break;
 		case RX_BYTES_TYPE:
-			left.bytes_value = new byte_string(*right.bytes_value);
+			copy_bytes_value(left.bytes_value, right.bytes_value);
 			break;
 		case RX_NODE_ID_TYPE:
 			left.node_id_value = new rx_node_id(*right.node_id_value);
 			break;
-		case RX_OBJECT_TYPE:
-		case RX_CLASS_TYPE:
-		{
-			switch (type&RX_DEFINITION_TYPE_MASK)
-			{
-			case RX_BINARY_VALUE:
-				left.bytes_value = new byte_string(*right.bytes_value);
-				break;
-			case RX_JSON_VALUE:
-			case RX_SCRIPT_VALUE:
-				left.string_value = new string_type(*right.string_value);
-				break;
-			default:
-				RX_ASSERT(false);
-				// shouldn't happened
-			}
-		}
 		break;
 		default:
 			// others are just plain copy
@@ -2350,11 +2396,14 @@ void rx_value_storage::destroy_value(rx_value_union& who, rx_value_t type)
 
 	if (type&RX_ARRAY_VALUE_MASK)
 	{// we have an array
-		for (auto& one : *who.array_value)
+		if (who.array_value.size > 0)
 		{
-			destroy_value(one, RX_STRIP_ARRAY_MASK&type);
+			for (size_t i = 0; i < who.array_value.size; i++)
+			{
+				destroy_value(who.array_value.values[i], RX_STRIP_ARRAY_MASK & type);
+			}
+			delete[] who.array_value.values;
 		}
-		delete who.array_value;
 	}
 	else
 	{//simple union stuff
@@ -2369,32 +2418,16 @@ void rx_value_storage::destroy_value(rx_value_union& who, rx_value_t type)
 			break;
 #endif
 		case RX_STRING_TYPE:
-			delete who.string_value;
+			if (who.string_value.size > 0)
+				delete[] who.string_value.value;
 			break;
 		case RX_BYTES_TYPE:
-			delete who.bytes_value;
+			if (who.bytes_value.size > 0)
+				delete[] who.bytes_value.value;
 			break;
 		case RX_NODE_ID_TYPE:
 			delete who.node_id_value;
 			break;
-		case RX_OBJECT_TYPE:
-		case RX_CLASS_TYPE:
-		{
-			switch (type&RX_DEFINITION_TYPE_MASK)
-			{
-			case RX_BINARY_VALUE:
-				delete who.bytes_value;
-				break;
-			case RX_JSON_VALUE:
-			case RX_SCRIPT_VALUE:
-				delete who.string_value;
-				break;
-			default:
-				RX_ASSERT(false);
-				// shouldn't happened
-			}
-		}
-		break;
 		}
 	}
 }
@@ -2406,11 +2439,11 @@ bool rx_value_storage::serialize_value(base_meta_writer& writer, const rx_value_
 {
 	if (type&RX_ARRAY_VALUE_MASK)
 	{// array of values
-		writer.start_array(name.c_str(), who.array_value->size());
-		for (const auto& one : *who.array_value)
+		writer.start_array(name.c_str(), who.array_value.size);
+		for (size_t i=0; i< who.array_value.size; i++)
 		{
 			writer.start_object("item");
-			serialize_value(writer, one, type&RX_STRIP_ARRAY_MASK, "val");
+			serialize_value(writer, who.array_value.values[i], type&RX_STRIP_ARRAY_MASK, "val");
 			writer.end_object();
 		}
 		writer.end_array();
@@ -2455,16 +2488,16 @@ bool rx_value_storage::serialize_value(base_meta_writer& writer, const rx_value_
 			writer.write_double(name.c_str(), who.double_value);
 			break;
 		case RX_STRING_TYPE:
-			writer.write_string(name.c_str(), who.string_value->c_str());
+			writer.write_string(name.c_str(), who.string_value.size > 0 ? who.string_value.value : "");
 			break;
 		case RX_TIME_TYPE:
 			writer.write_time(name.c_str(), who.time_value);
 			break;
 		case RX_UUID_TYPE:
-			writer.write_uuid(name.c_str(), who.uuid_value->uuid());
+			writer.write_uuid(name.c_str(), *who.uuid_value);
 			break;
 		case RX_BYTES_TYPE:
-			writer.write_bytes(name.c_str(), &who.bytes_value->at(0),who.bytes_value->size());
+			writer.write_bytes(name.c_str(), who.bytes_value.value,who.bytes_value.size);
 			break;
 		case RX_COMPLEX_TYPE:
 		{
@@ -2477,24 +2510,6 @@ bool rx_value_storage::serialize_value(base_meta_writer& writer, const rx_value_
 		case RX_NODE_ID_TYPE:
 			writer.write_id(name.c_str(), *who.node_id_value);
 			break;
-		case RX_OBJECT_TYPE:
-		case RX_CLASS_TYPE:
-		{
-			switch (type&RX_DEFINITION_TYPE_MASK)
-			{
-			case RX_BINARY_VALUE:
-				writer.write_bytes(name.c_str(), &who.bytes_value->at(0), who.bytes_value->size());
-				break;
-			case RX_JSON_VALUE:
-			case RX_SCRIPT_VALUE:
-				writer.write_string(name.c_str(), who.string_value->c_str());
-				break;
-			default:
-				RX_ASSERT(false);
-				// shouldn't happened
-			}
-		}
-		break;
 		}
 	}
 	return true;
@@ -2503,7 +2518,7 @@ bool rx_value_storage::deserialize_value(base_meta_reader& reader, rx_value_unio
 {
 	if (RX_ARRAY_VALUE_MASK&type)
 	{
-		who.array_value = new std::vector<rx_value_union>;
+		std::vector<rx_value_union> temp_array;
 		if (!reader.start_array("Vals"))
 			return false;
 		while(!reader.array_end())
@@ -2511,7 +2526,17 @@ bool rx_value_storage::deserialize_value(base_meta_reader& reader, rx_value_unio
 			rx_value_union temp;
 			if (!deserialize_value(reader, temp, type&RX_STRIP_ARRAY_MASK))
 				return false;
-			who.array_value->emplace_back(temp);
+			temp_array.emplace_back(temp);
+		}
+		who.array_value.size = temp_array.size();
+		if (!temp_array.empty())
+		{
+			who.array_value.values = new rx_value_union[who.array_value.size];
+			memcpy(who.array_value.values, &temp_array[0], sizeof(rx_value_union)* who.array_value.size);
+		}
+		else
+		{
+			who.array_value.values = nullptr;
 		}
 	}
 	else
@@ -2579,39 +2604,11 @@ bool rx_value_storage::deserialize_value(base_meta_reader& reader, rx_value_unio
 			string_type val;
 			if(!reader.read_string("val", val))
 				return false;
-			who.string_value = new string_type(std::move(val));
+			assign_string_value(who.string_value, val.c_str());
 			return true;
 		}
 		case RX_TIME_TYPE:
 			return reader.read_time("val", who.time_value);
-		case RX_OBJECT_TYPE:
-		case RX_CLASS_TYPE:
-		{
-			switch (type&RX_DEFINITION_TYPE_MASK)
-			{
-			case RX_BINARY_VALUE:
-			{
-				byte_string val;
-				if (!reader.read_bytes("val", val))
-					return false;
-				who.bytes_value = new byte_string(std::move(val));
-				return true;
-			}
-			case RX_JSON_VALUE:
-			case RX_SCRIPT_VALUE:
-			{
-				string_type val;
-				if (!reader.read_string("val", val))
-					return false;
-				who.string_value = new string_type(std::move(val));
-				return true;
-			}
-			default:
-				RX_ASSERT(false);
-				// shouldn't happened
-			}
-		}
-		break;
 		default:
 			RX_ASSERT(false);
 			// shouldn't happened
@@ -2623,22 +2620,6 @@ bool rx_value_storage::deserialize_value(base_meta_reader& reader, rx_value_unio
 bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx_value_t target)
 {
 	rx_value_t simple = target & RX_SIMPLE_VALUE_MASK;
-	if (simple == RX_OBJECT_TYPE || simple == RX_CLASS_TYPE)
-	{
-		switch (target&RX_DEFINITION_TYPE_MASK)
-		{
-		case RX_BINARY_VALUE:
-			simple = RX_BYTES_TYPE;
-			break;
-		case RX_JSON_VALUE:
-		case RX_SCRIPT_VALUE:
-			simple = RX_STRING_TYPE;
-			break;
-		default:
-			RX_ASSERT(false);
-			// shouldn't happened
-		}
-	}
 	target = simple;
 	switch (target)
 	{
@@ -2691,7 +2672,7 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 		}
 		case RX_UUID_TYPE:
 		{
-			bool temp = !what.uuid_value->is_null();
+			bool temp = !rx_uuid(*what.uuid_value).is_null();
 			delete what.uuid_value;
 			what.bool_value = temp;
 			return true;
@@ -2712,15 +2693,17 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			bool temp = !what.string_value->empty();
-			delete what.string_value;
+			bool temp = what.string_value.size > 0;
+			if (temp)
+				delete[] what.string_value.value;
 			what.bool_value = temp;
 			return true;
 		}
 		case RX_BYTES_TYPE:
 		{
-			bool temp = !what.bytes_value->empty();
-			delete what.bytes_value;
+			bool temp = what.bytes_value.size > 0;
+			if (temp)
+				delete[] what.bytes_value.value;
 			what.bool_value = temp;
 			return true;
 		}
@@ -2795,16 +2778,19 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			int8_t temp;
-			try
+			int8_t temp = 0;
+			if (what.string_value.size > 0)
 			{
-				temp = (int8_t)std::stoi(*what.string_value);
+				try
+				{
+					temp = (int8_t)std::stoi(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
 			what.int8_value = temp;
 			return true;
 		}
@@ -2876,16 +2862,19 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			int16_t temp;
-			try
+			int16_t temp = 0;
+			if (what.string_value.size > 0)
 			{
-				temp = (int16_t)std::stoi(*what.string_value);
+				try
+				{
+					temp = (int16_t)std::stoi(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
 			what.int16_value = temp;
 			return true;
 		}
@@ -2957,16 +2946,19 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			int32_t temp;
-			try
+			int32_t temp = 0;
+			if (what.string_value.size > 0)
 			{
-				temp = (int32_t)std::stoi(*what.string_value);
+				try
+				{
+					temp = (int32_t)std::stoi(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
 			what.int32_value = temp;
 			return true;
 		}
@@ -3038,16 +3030,19 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			int64_t temp;
-			try
+			int64_t temp = 0;
+			if (what.string_value.size > 0)
 			{
-				temp = std::stoll(*what.string_value);
+				try
+				{
+					temp = std::stoll(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
 			what.int64_value = temp;
 			return true;
 		}
@@ -3119,16 +3114,19 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			uint8_t temp;
-			try
+			uint8_t temp = 0;
+			if (what.string_value.size > 0)
 			{
-				temp = (uint8_t)std::stoul(*what.string_value);
+				try
+				{
+					temp = (uint8_t)std::stoul(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
 			what.uint8_value = temp;
 			return true;
 		}
@@ -3200,16 +3198,19 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			uint16_t temp;
-			try
+			uint16_t temp = 0;
+			if (what.string_value.size > 0)
 			{
-				temp = (uint16_t)std::stoul(*what.string_value);
+				try
+				{
+					temp = (uint16_t)std::stoul(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
 			what.uint16_value = temp;
 			return true;
 		}
@@ -3281,17 +3282,20 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			uint32_t temp;
-			try
+			uint32_t temp = 0;
+			if (what.string_value.size > 0)
 			{
-				temp = (uint32_t)std::stoul(*what.string_value);
+				try
+				{
+					temp = (uint32_t)std::stoul(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
-			what.uint32_value =temp;
+			what.uint32_value = temp;
 			return true;
 		}
 		case RX_BYTES_TYPE:
@@ -3362,16 +3366,19 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			uint64_t temp;
-			try
+			uint64_t temp = 0;
+			if (what.string_value.size > 0)
 			{
-				temp = (uint64_t)std::stoull(*what.string_value);
+				try
+				{
+					temp = (uint64_t)std::stoull(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
 			what.uint64_value = temp;
 			return true;
 		}
@@ -3444,16 +3451,19 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 		case RX_STRING_TYPE:
 		{
 			float temp;
-			try
+			if (what.string_value.size > 0)
 			{
-				temp = std::stof(*what.string_value);
+				try
+				{
+					temp = std::stof(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
-			what.float_value =temp;
+			what.float_value = temp;
 			return true;
 		}
 		case RX_BYTES_TYPE:
@@ -3525,15 +3535,18 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 		case RX_STRING_TYPE:
 		{
 			double temp;
-			try
+			if (what.string_value.size > 0)
 			{
-				temp = (double)std::stod(*what.string_value);
+				try
+				{
+					temp = std::stod(what.string_value.value);
+				}
+				catch (std::exception&)
+				{
+					return false;
+				}
+				delete[] what.string_value.value;
 			}
-			catch (std::exception&)
-			{
-				return false;
-			}
-			delete what.string_value;
 			what.double_value = temp;
 			return true;
 		}
@@ -3592,10 +3605,13 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 		case RX_STRING_TYPE:
 		{
 			complex_value_struct temp;
-			if (!temp.parse_string(*what.string_value))
-				return false;
-			delete what.string_value;
-			what.complex_value = new complex_value_struct(std::move(temp));
+			if (what.string_value.size > 0)
+			{
+				if (!temp.parse_string(what.string_value.value))
+					return false;
+				delete[] what.string_value.value;
+			}
+			what.complex_value = new complex_value_struct(temp);
 			return true;
 		}
 		case RX_BYTES_TYPE:
@@ -3653,10 +3669,13 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 		case RX_STRING_TYPE:
 		{
 			complex_value_struct temp;
-			if (!temp.parse_string(*what.string_value))
-				return false;
-			delete what.string_value;
-			what.complex_value = complex_value_struct(std::move(temp));
+			if (what.string_value.size > 0)
+			{
+				if (!temp.parse_string(what.string_value.value))
+					return false;
+				delete[] what.string_value.value;
+			}
+			what.complex_value = complex_value_struct(temp);
 			return true;
 		}
 		case RX_BYTES_TYPE:
@@ -3689,9 +3708,13 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 			return false;
 		case RX_STRING_TYPE:
 		{
-			rx_uuid temp = rx_uuid::create_from_string(*what.string_value);
-			delete what.string_value;
-			what.uuid_value = new rx_uuid(std::move(temp));
+			rx_uuid temp;
+			if (what.string_value.size > 0)
+			{
+				temp = rx_uuid::create_from_string(what.string_value.value);
+				delete[] what.string_value.value;
+			}
+			what.uuid_value = new rx_uuid_t(temp.uuid());
 			return true;
 		}
 		case RX_BYTES_TYPE:
@@ -3722,9 +3745,13 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 			return false;
 		case RX_STRING_TYPE:
 		{
-			rx_uuid temp = rx_uuid::create_from_string(*what.string_value);
-			delete what.string_value;
-			what.uuid_value = std::move(temp);
+			rx_uuid temp;
+			if (what.string_value.size > 0)
+			{
+				rx_uuid temp = rx_uuid::create_from_string(what.string_value.value);
+				delete[] what.string_value.value;
+			}
+			what.uuid_value = temp.uuid();
 			return true;
 		}
 		case RX_BYTES_TYPE:
@@ -3795,10 +3822,12 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 #endif
 		case RX_STRING_TYPE:
 		{
-			rx_time temp = rx_time::from_IEC_string(what.string_value->c_str());
+			if (what.string_value.size == 0)
+				return false;
+			rx_time temp = rx_time::from_IEC_string(what.string_value.value);
 			if(temp.is_null())
 				return false;
-			delete what.string_value;
+			delete[] what.string_value.value;
 			what.time_value = temp;
 			return true;
 		}
@@ -3811,115 +3840,169 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 	break;
 	case RX_STRING_TYPE:
 	{
+		char temp_buff[0x20];
+
 		switch (source)
 		{
 		case RX_BOOL_TYPE:
-			what.string_value = new string_type(what.bool_value ? "true" : "false");
+			if (what.bool_value)
+			{
+				what.string_value.size = 4;
+				what.string_value.value = new char[4 + 1];
+				memcpy(what.string_value.value, "true", 4 + 1);
+			}
+			else
+			{
+				what.string_value.size = 4;
+				what.string_value.value = new char[4 + 1];
+				memcpy(what.string_value.value, "true", 4 + 1);
+			}
 			return true;
 		case RX_INT8_TYPE:
 		{
-			std::ostringstream stream;
-			stream << what.int8_value;
-			what.string_value = new string_type(stream.str());
+			auto fc_result = std::to_chars(temp_buff, &temp_buff[sizeof(temp_buff) - 1], what.int8_value);
+			if (fc_result.ec != std::errc{})
+				return false;
+			// add null termination
+			*fc_result.ptr = '\0';
+			what.string_value.size = fc_result.ptr - temp_buff;
+			what.string_value.value = new char[what.string_value.size + 1];
+			memcpy(what.string_value.value, temp_buff, what.string_value.size + 1);
 			return true;
 		}
 		case RX_INT16_TYPE:
 		{
-			std::ostringstream stream;
-			stream << what.int16_value;
-			what.string_value = new string_type(stream.str());
-			return true;
+				auto fc_result = std::to_chars(temp_buff, &temp_buff[sizeof(temp_buff) - 1], what.int16_value);
+				if (fc_result.ec != std::errc{})
+					return false;
+				// add null termination
+				*fc_result.ptr = '\0';
+				what.string_value.size = fc_result.ptr - temp_buff;
+				what.string_value.value = new char[what.string_value.size + 1];
+				memcpy(what.string_value.value, temp_buff, what.string_value.size + 1);
+				return true;
 		}
 		case RX_INT32_TYPE:
 		{
-			std::ostringstream stream;
-			stream << what.int32_value;
-			what.string_value = new string_type(stream.str());
+			auto fc_result = std::to_chars(temp_buff, &temp_buff[sizeof(temp_buff) - 1], what.int32_value);
+			if (fc_result.ec != std::errc{})
+				return false;
+			// add null termination
+			*fc_result.ptr = '\0';
+			what.string_value.size = fc_result.ptr - temp_buff;
+			what.string_value.value = new char[what.string_value.size + 1];
+			memcpy(what.string_value.value, temp_buff, what.string_value.size + 1);
 			return true;
 		}
 		case RX_INT64_TYPE:
 		{
-			std::ostringstream stream;
-			stream << what.int64_value;
-			what.string_value = new string_type(stream.str());
+			auto fc_result = std::to_chars(temp_buff, &temp_buff[sizeof(temp_buff) - 1], what.int64_value);
+			if (fc_result.ec != std::errc{})
+				return false;
+			// add null termination
+			*fc_result.ptr = '\0';
+			what.string_value.size = fc_result.ptr - temp_buff;
+			what.string_value.value = new char[what.string_value.size + 1];
+			memcpy(what.string_value.value, temp_buff, what.string_value.size + 1);
 			return true;
 		}
 		case RX_UINT8_TYPE:
 		{
-			std::ostringstream stream;
-			stream << what.uint8_value;
-			what.string_value = new string_type(stream.str());
+			auto fc_result = std::to_chars(temp_buff, &temp_buff[sizeof(temp_buff) - 1], what.uint8_value);
+			if (fc_result.ec != std::errc{})
+				return false;
+			// add null termination
+			*fc_result.ptr = '\0';
+			what.string_value.size = fc_result.ptr - temp_buff;
+			what.string_value.value = new char[what.string_value.size + 1];
+			memcpy(what.string_value.value, temp_buff, what.string_value.size + 1);
 			return true;
 		}
 		case RX_UINT16_TYPE:
 		{
-			std::ostringstream stream;
-			stream << what.uint16_value;
-			what.string_value = new string_type(stream.str());
+			auto fc_result = std::to_chars(temp_buff, &temp_buff[sizeof(temp_buff) - 1], what.uint16_value);
+			if (fc_result.ec != std::errc{})
+				return false;
+			// add null termination
+			*fc_result.ptr = '\0';
+			what.string_value.size = fc_result.ptr - temp_buff;
+			what.string_value.value = new char[what.string_value.size + 1];
+			memcpy(what.string_value.value, temp_buff, what.string_value.size + 1);
 			return true;
 		}
 		case RX_UINT32_TYPE:
 		{
-			std::ostringstream stream;
-			stream << what.uint32_value;
-			what.string_value = new string_type(stream.str());
+			auto fc_result = std::to_chars(temp_buff, &temp_buff[sizeof(temp_buff) - 1], what.uint32_value);
+			if (fc_result.ec != std::errc{})
+				return false;
+			// add null termination
+			*fc_result.ptr = '\0';
+			what.string_value.size = fc_result.ptr - temp_buff;
+			what.string_value.value = new char[what.string_value.size + 1];
+			memcpy(what.string_value.value, temp_buff, what.string_value.size + 1);
 			return true;
 		}
 		case RX_UINT64_TYPE:
 		{
-			std::ostringstream stream;
-			stream << what.uint64_value;
-			what.string_value = new string_type(stream.str());
+			auto fc_result = std::to_chars(temp_buff, &temp_buff[sizeof(temp_buff) - 1], what.uint64_value);
+			if (fc_result.ec != std::errc{})
+				return false;
+			// add null termination
+			*fc_result.ptr = '\0';
+			what.string_value.size = fc_result.ptr - temp_buff;
+			what.string_value.value = new char[what.string_value.size + 1];
+			memcpy(what.string_value.value, temp_buff, what.string_value.size + 1);
 			return true;
 		}
 		case RX_FLOAT_TYPE:
 		{
+			// GCC does not implement std::to_chars for floating point values
 			std::ostringstream stream;
 			stream << what.float_value;
-			what.string_value = new string_type(stream.str());
+			assign_string_value(what.string_value, stream.str().c_str());
 			return true;
 		}
 		case RX_DOUBLE_TYPE:
 		{
+			// GCC does not implement std::to_chars for floating point values
 			std::ostringstream stream;
 			stream << what.double_value;
-			what.string_value = new string_type(stream.str());
+			assign_string_value(what.string_value, stream.str().c_str());
 			return true;
 		}
 		case RX_TIME_TYPE:
 		{
-			std::ostringstream stream;
-			stream << what.float_value;
-			what.string_value = new string_type(stream.str());
+			rx_time tm(what.time_value);
+			auto temp = tm.get_IEC_string();
+			assign_string_value(what.string_value, temp.c_str());
 			return true;
 		}
 #ifndef RX_VALUE_SIZE_16
 		case RX_COMPLEX_TYPE:
 		{
-			auto temp = new string_type(what.complex_value->to_string());
+			auto temp = what.complex_value->to_string();
 			delete what.complex_value;
-			what.string_value = temp;
+			assign_string_value(what.string_value, temp.c_str());
 			return true;
 		}
 		case RX_UUID_TYPE:
 		{
-			auto temp = new string_type(what.uuid_value->to_string());
+			auto temp = rx_uuid(*what.uuid_value).to_string();
 			delete what.uuid_value;
-			what.string_value = temp;
+			assign_string_value(what.string_value, temp.c_str());
 			return true;
 		}
 #else
 		case RX_COMPLEX_TYPE:
 		{
-			auto temp = new string_type(what.complex_value.to_string());
-			what.string_value = temp;
+			auto temp = what.complex_value.to_string();
+			assign_string_value(what.string_value, temp.c_str());
 			return true;
 		}
 		case RX_UUID_TYPE:
 		{
-			auto temp = new string_type(what.uuid_value.to_string());
-			delete what.uuid_value;
-			what.string_value = temp;
+			auto temp = rx_uuid(what.uuid_value).to_string();
+			assign_string_value(what.string_value, temp.c_str());
 			return true;
 		}
 #endif
@@ -3927,10 +4010,12 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 			return true;
 		case RX_BYTES_TYPE:
 		{
-			string_type* temp = new string_type(what.bytes_value->begin()
-				, what.bytes_value->end());
-			delete what.bytes_value;
-			what.string_value = temp;
+			string_type temp;
+			if (what.bytes_value.size > 0)
+				temp = string_type(&what.bytes_value.value[0]
+					, &what.bytes_value.value[what.bytes_value.size]);
+			delete[] what.bytes_value.value;
+			assign_string_value(what.string_value, temp.c_str());
 			return true;
 		}
 		case RX_NODE_ID_TYPE:
@@ -3959,10 +4044,13 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 			return false;
 		case RX_STRING_TYPE:
 		{
-			rx_node_id temp = rx_node_id::from_string(what.string_value->c_str());
+			rx_node_id temp;
+			if(what.string_value.size > 0)
+				temp = rx_node_id::from_string(what.string_value.value);
 			if (temp.is_null())
 				return false;
-			delete what.string_value;
+			if (what.string_value.value != nullptr)
+				delete[] what.string_value.value;
 			what.node_id_value = new rx_node_id(std::move(temp));
 			return true;
 		}
@@ -3992,9 +4080,17 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 			return false;
 		case RX_STRING_TYPE:
 		{
-			byte_string* temp = new byte_string(what.string_value->begin(),
-				what.string_value->end());
-			delete what.string_value;
+			bytes_value_struct temp;
+			if (what.string_value.size == 0)
+			{
+				temp.size = 0;
+			}
+			else
+			{
+				temp.value = new uint8_t[what.string_value.size];
+				memcpy(temp.value, what.string_value.value, what.string_value.size);
+				delete[] what.string_value.value;
+			}
 			what.bytes_value = temp;
 			return true;
 		}
@@ -4010,29 +4106,29 @@ bool rx_value_storage::convert_union(rx_value_union& what, rx_value_t source, rx
 	return false;
 }
 rx_value_storage::rx_value_storage(const rx_value_storage& right)
-	: value_type_(right.value_type_)
 {
-	assign_value(value_, right.value_, value_type_);
+	value_.value_type = right.value_.value_type;
+	assign_value(value_.value, right.value_.value, value_.value_type);
 }
 rx_value_storage::rx_value_storage(rx_value_storage&& right) noexcept
-	: value_type_(right.value_type_)
 {
-	assign_value(value_, std::move(right.value_), value_type_);
-	right.value_type_ = RX_NULL_TYPE;
+	value_.value_type = right.value_.value_type;
+	assign_value(value_.value, std::move(right.value_.value), value_.value_type);
+	right.value_.value_type = RX_NULL_TYPE;
 }
 rx_value_storage& rx_value_storage::operator=(const rx_value_storage& right)
 {
-	destroy_value(value_, value_type_);
-	value_type_ = right.value_type_;
-	assign_value(value_, right.value_, value_type_);
+	destroy_value(value_.value, value_.value_type);
+	value_.value_type = right.value_.value_type;
+	assign_value(value_.value, right.value_.value, value_.value_type);
 	return *this;
 }
 rx_value_storage& rx_value_storage::operator=(rx_value_storage&& right) noexcept
 {
-	destroy_value(value_, value_type_);
-	value_type_ = right.value_type_;
-	assign_value(value_, std::move(right.value_), value_type_);
-	right.value_type_ = RX_NULL_TYPE;
+	destroy_value(value_.value, value_.value_type);
+	value_.value_type = right.value_.value_type;
+	assign_value(value_.value, std::move(right.value_.value), value_.value_type);
+	right.value_.value_type = RX_NULL_TYPE;
 	return *this;
 }
 
@@ -4042,13 +4138,13 @@ bool extract_value(const rx_value_storage& from, const bool& default_value)
 {
 	if (from.get_value_type() == RX_BOOL_TYPE)
 	{
-		return from.value_.bool_value;
+		return from.value_.value.bool_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if(temp_val.convert_to(RX_BOOL_TYPE))
-			return temp_val.value_.bool_value;
+			return temp_val.value_.value.bool_value;
 	}
 	return default_value;
 }
@@ -4058,13 +4154,13 @@ int8_t extract_value(const rx_value_storage& from, const int8_t& default_value)
 {
 	if (from.get_value_type() == RX_INT8_TYPE)
 	{
-		return from.value_.int8_value;
+		return from.value_.value.int8_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_INT8_TYPE))
-			return temp_val.value_.int8_value;
+			return temp_val.value_.value.int8_value;
 	}
 	return default_value;
 }
@@ -4074,13 +4170,13 @@ uint8_t extract_value(const rx_value_storage& from, const uint8_t& default_value
 {
 	if (from.get_value_type() == RX_UINT8_TYPE)
 	{
-		return from.value_.uint8_value;
+		return from.value_.value.uint8_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_UINT8_TYPE))
-			return temp_val.value_.uint8_value;
+			return temp_val.value_.value.uint8_value;
 	}
 	return default_value;
 }
@@ -4090,13 +4186,13 @@ int16_t extract_value(const rx_value_storage& from, const int16_t& default_value
 {
 	if (from.get_value_type() == RX_INT16_TYPE)
 	{
-		return from.value_.int16_value;
+		return from.value_.value.int16_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_INT16_TYPE))
-			return temp_val.value_.int16_value;
+			return temp_val.value_.value.int16_value;
 	}
 	return default_value;
 }
@@ -4106,13 +4202,13 @@ uint16_t extract_value(const rx_value_storage& from, const uint16_t& default_val
 {
 	if (from.get_value_type() == RX_UINT16_TYPE)
 	{
-		return from.value_.uint16_value;
+		return from.value_.value.uint16_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_UINT16_TYPE))
-			return temp_val.value_.uint16_value;
+			return temp_val.value_.value.uint16_value;
 	}
 	return default_value;
 }
@@ -4122,13 +4218,13 @@ int32_t extract_value(const rx_value_storage& from, const int32_t& default_value
 {
 	if (from.get_value_type() == RX_INT32_TYPE)
 	{
-		return from.value_.int32_value;
+		return from.value_.value.int32_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_INT32_TYPE))
-			return temp_val.value_.int32_value;
+			return temp_val.value_.value.int32_value;
 	}
 	return default_value;
 }
@@ -4138,13 +4234,13 @@ uint32_t extract_value(const rx_value_storage& from, const uint32_t& default_val
 {
 	if (from.get_value_type() == RX_UINT32_TYPE)
 	{
-		return from.value_.uint32_value;
+		return from.value_.value.uint32_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_UINT32_TYPE))
-			return temp_val.value_.uint32_value;
+			return temp_val.value_.value.uint32_value;
 	}
 	return default_value;
 }
@@ -4154,13 +4250,13 @@ int64_t extract_value(const rx_value_storage& from, const int64_t& default_value
 {
 	if (from.get_value_type() == RX_INT64_TYPE)
 	{
-		return from.value_.int64_value;
+		return from.value_.value.int64_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_INT64_TYPE))
-			return temp_val.value_.int64_value;
+			return temp_val.value_.value.int64_value;
 	}
 	return default_value;
 }
@@ -4170,13 +4266,13 @@ uint64_t extract_value(const rx_value_storage& from, const uint64_t& default_val
 {
 	if (from.get_value_type() == RX_UINT64_TYPE)
 	{
-		return from.value_.uint64_value;
+		return from.value_.value.uint64_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_UINT64_TYPE))
-			return temp_val.value_.uint64_value;
+			return temp_val.value_.value.uint64_value;
 	}
 	return default_value;
 }
@@ -4187,13 +4283,13 @@ float extract_value(const rx_value_storage& from, const float& default_value)
 {
 	if (from.get_value_type() == RX_FLOAT_TYPE)
 	{
-		return from.value_.float_value;
+		return from.value_.value.float_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_FLOAT_TYPE))
-			return temp_val.value_.float_value;
+			return temp_val.value_.value.float_value;
 	}
 	return default_value;
 }
@@ -4204,13 +4300,13 @@ double extract_value(const rx_value_storage& from, const double& default_value)
 {
 	if (from.get_value_type() == RX_DOUBLE_TYPE)
 	{
-		return from.value_.double_value;
+		return from.value_.value.double_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_DOUBLE_TYPE))
-			return temp_val.value_.double_value;
+			return temp_val.value_.value.double_value;
 	}
 	return default_value;
 }
@@ -4221,13 +4317,16 @@ string_type extract_value(const rx_value_storage& from, const string_type& defau
 {
 	if (from.get_value_type() == RX_STRING_TYPE)
 	{
-		return *from.value_.string_value;
+		if (from.value_.value.string_value.size > 0)
+			return from.value_.value.string_value.value;
+		else
+			return string_type();
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_STRING_TYPE))
-			return std::move(*temp_val.value_.string_value);
+			return extract_value(temp_val, default_value);
 	}
 	return default_value;
 }
@@ -4235,17 +4334,19 @@ string_type extract_value(const rx_value_storage& from, const string_type& defau
 template<>
 byte_string extract_value(const rx_value_storage& from, const byte_string& default_value)
 {
-	if (from.get_value_type() == RX_BYTES_TYPE)
+	RX_ASSERT(false);
+	return byte_string();
+	/*if (from.get_value_type() == RX_BYTES_TYPE)
 	{
-		return *from.value_.bytes_value;
+		return *from.value_.value.bytes_value;
 	}
 	else
 	{
 		rx_value_storage temp_val(from);
 		if (temp_val.convert_to(RX_BYTES_TYPE))
-			return std::move(*temp_val.value_.bytes_value);
+			return std::move(*temp_val.value_.value.bytes_value);
 	}
-	return default_value;
+	return default_value;*/
 }
 // Class rx::values::rx_timed_value 
 

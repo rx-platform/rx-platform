@@ -1666,7 +1666,6 @@ struct item_message_result
 };
 
 
-
 rx_result read_runtime_request::serialize (base_meta_writer& stream) const
 {
 	auto result = stream.write_item_reference("target", reference);

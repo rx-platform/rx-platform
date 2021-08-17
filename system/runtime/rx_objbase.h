@@ -47,6 +47,7 @@
 #include "lib/rx_ptr.h"
 
 #include "lib/security/rx_security.h"
+#include "lib/rx_io.h"
 #include "system/callbacks/rx_callback.h"
 #include "rx_process_context.h"
 using namespace rx;
@@ -57,12 +58,24 @@ namespace rx_internal
 {
 namespace sys_runtime
 {
+namespace runtime_core
+{
+namespace runtime_data
+{
+class application_instance_data;
+class port_instance_data;
+class domain_instance_data;
+class object_instance_data;
+}
+}
 namespace algorithms
 {
 class application_algorithms;
 }
 }
 }
+
+using namespace rx_platform::meta::def_blocks;
 
 
 namespace rx_platform {
@@ -134,7 +147,7 @@ object class. basic implementation of an object");
 	DECLARE_REFERENCE_PTR(object_runtime);
 
     friend class algorithms::runtime_holder<meta::object_types::object_type>;
-    friend class object_instance_data;
+    friend class rx_internal::sys_runtime::runtime_core::runtime_data::object_instance_data;
 
   public:
       object_runtime();
@@ -224,20 +237,20 @@ object class. basic implementation of an object");
 
 
 
-class application_runtime : public rx::pointers::reference_object  
+class domain_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
-system application class. basic implementation of a application");
+system domain class. basic implementation of a domain");
 
-	DECLARE_REFERENCE_PTR(application_runtime);
+	DECLARE_REFERENCE_PTR(domain_runtime);
 
-    friend class algorithms::runtime_holder<meta::object_types::application_type>;
-    friend class application_instance_data;
+    friend class algorithms::runtime_holder<meta::object_types::domain_type>;
+    friend class rx_internal::sys_runtime::runtime_core::runtime_data::domain_instance_data;
 
   public:
-      application_runtime();
+      domain_runtime();
 
-      ~application_runtime();
+      ~domain_runtime();
 
 
       virtual rx_result initialize_runtime (runtime_init_context& ctx);
@@ -315,20 +328,20 @@ system application class. basic implementation of a application");
 
 
 
-class domain_runtime : public rx::pointers::reference_object  
+class application_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0,5,1, "\
-system domain class. basic implementation of a domain");
+system application class. basic implementation of a application");
 
-	DECLARE_REFERENCE_PTR(domain_runtime);
+	DECLARE_REFERENCE_PTR(application_runtime);
 
-    friend class algorithms::runtime_holder<meta::object_types::domain_type>;
-    friend class domain_instance_data;
+    friend class algorithms::runtime_holder<meta::object_types::application_type>;
+    friend class rx_internal::sys_runtime::runtime_core::runtime_data::application_instance_data;
 
   public:
-      domain_runtime();
+      application_runtime();
 
-      ~domain_runtime();
+      ~application_runtime();
 
 
       virtual rx_result initialize_runtime (runtime_init_context& ctx);
@@ -415,7 +428,7 @@ system port class. basic implementation of a port");
 	DECLARE_REFERENCE_PTR(port_runtime);
 
     friend class algorithms::runtime_holder<meta::object_types::port_type>;
-    friend class port_instance_data;
+    friend class rx_internal::sys_runtime::runtime_core::runtime_data::port_instance_data;
     template <typename translatorT, typename addrT>
     friend class io_types::ports_templates::routing_endpoint;
 

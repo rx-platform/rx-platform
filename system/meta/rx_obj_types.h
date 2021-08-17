@@ -34,7 +34,6 @@
 
 // rx_logic
 #include "system/logic/rx_logic.h"
-#include "system/runtime/rx_runtime_instance.h"
 
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
@@ -46,20 +45,28 @@
 #include "lib/rx_ptr.h"
 
 #include "system/runtime/rx_rt_struct.h"
+#include "system/meta/rx_runtime_data.h"
 using namespace rx_platform::meta::def_blocks;
-
-
-namespace rx_platform {
-namespace runtime
+namespace rx_internal
 {
-namespace items
+namespace sys_runtime
+{
+namespace runtime_core
+{
+namespace runtime_data
 {
 class application_instance_data;
 class port_instance_data;
 class domain_instance_data;
-class port_instance_data;
+class object_instance_data;
+class port_behaviors;
 }
 }
+}
+}
+
+
+namespace rx_platform {
 
 namespace meta {
 class construct_context;
@@ -215,7 +222,7 @@ public:
     typedef runtime::items::application_runtime RImplType;
     typedef rx_reference<RImplType> RImplPtr;
 	typedef typename runtime_data::application_runtime_data instance_data_t;
-    typedef typename runtime::items::application_instance_data runtime_data_t;
+    typedef typename rx_internal::sys_runtime::runtime_core::runtime_data::application_instance_data runtime_data_t;
     typedef int runtime_behavior_t;
     typedef meta_algorithm::object_types_algorithm<application_type> algorithm_type;
 
@@ -260,7 +267,7 @@ public:
     typedef runtime::items::domain_runtime RImplType;
     typedef rx_reference<RImplType> RImplPtr;
     typedef typename runtime_data::domain_runtime_data instance_data_t;
-    typedef typename runtime::items::domain_instance_data runtime_data_t;
+    typedef typename rx_internal::sys_runtime::runtime_core::runtime_data::domain_instance_data runtime_data_t;
     typedef int runtime_behavior_t;
     typedef meta_algorithm::object_types_algorithm<domain_type> algorithm_type;
 
@@ -305,7 +312,7 @@ public:
     typedef runtime::items::object_runtime RImplType;
     typedef rx_reference<RImplType> RImplPtr;
     typedef typename runtime_data::object_runtime_data instance_data_t;
-    typedef typename runtime::items::object_instance_data runtime_data_t;
+    typedef typename rx_internal::sys_runtime::runtime_core::runtime_data::object_instance_data runtime_data_t;
     typedef int runtime_behavior_t;
     typedef meta_algorithm::object_types_algorithm<object_type> algorithm_type;
 
@@ -352,8 +359,8 @@ public:
     typedef runtime::items::port_runtime RImplType;
     typedef rx_reference<RImplType> RImplPtr;
     typedef typename runtime_data::port_runtime_data instance_data_t;
-    typedef typename runtime::items::port_instance_data runtime_data_t;
-    typedef typename runtime::items::port_behaviors runtime_behavior_t;
+    typedef typename rx_internal::sys_runtime::runtime_core::runtime_data::port_instance_data runtime_data_t;
+    typedef typename rx_internal::sys_runtime::runtime_core::runtime_data::port_behaviors runtime_behavior_t;
     typedef meta_algorithm::object_types_algorithm<port_type> algorithm_type;
 
   public:

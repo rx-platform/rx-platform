@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_port_stack_construction.h
+*  interfaces\rx_port_stack_construction.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -34,27 +34,27 @@
 
 
 // rx_port_instance
-#include "system/runtime/rx_port_instance.h"
+#include "interfaces/rx_port_instance.h"
 
-namespace rx_platform {
-namespace runtime {
-namespace io_types {
+namespace rx_internal {
+namespace interfaces {
+namespace port_stack {
 class port_stack_data;
 
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace port_stack
+} // namespace interfaces
+} // namespace rx_internal
 
 
 #include "lib/rx_io_addr.h"
-#include "rx_objbase.h"
+#include "system/runtime/rx_objbase.h"
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace interfaces {
 
-namespace io_types {
+namespace port_stack {
 
 namespace stack_build {
 
@@ -193,9 +193,9 @@ class stack_builder
 
 
 } // namespace stack_build
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace port_stack
+} // namespace interfaces
+} // namespace rx_internal
 
 
 

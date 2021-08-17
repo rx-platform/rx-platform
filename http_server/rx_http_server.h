@@ -38,10 +38,10 @@
 #include "system/http_support/rx_http_request.h"
 // rx_http
 #include "system/http_support/rx_http.h"
-// rx_http_handlers
-#include "http_server/rx_http_handlers.h"
 // rx_http_mapping
 #include "protocols/http/rx_http_mapping.h"
+// rx_http_handlers
+#include "http_server/rx_http_handlers.h"
 
 /////////////////////////////////////////////////////////////
 // logging macros for http library

@@ -37,12 +37,12 @@
 #define RX_NO_INVERSE_NAME_FOUND 0x802
 
 
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
 // rx_display_blocks
 #include "system/runtime/rx_display_blocks.h"
 // rx_runtime_logic
 #include "system/runtime/rx_runtime_logic.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 
 #include "system/server/rx_ns.h"
 
@@ -508,7 +508,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      rx_platform::meta::runtime_data_prototype pop_rt_name ();
+      runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 

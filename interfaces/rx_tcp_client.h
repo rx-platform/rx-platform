@@ -32,11 +32,12 @@
 #define rx_tcp_client_h 1
 
 
+#include "system/runtime/rx_value_templates.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
 #include "lib/rx_stream_io.h"
 

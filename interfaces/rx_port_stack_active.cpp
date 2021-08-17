@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_port_stack_active.cpp
+*  interfaces\rx_port_stack_active.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,10 +32,10 @@
 
 
 // rx_port_stack_active
-#include "system/runtime/rx_port_stack_active.h"
+#include "interfaces/rx_port_stack_active.h"
 
 #include "sys_internal/rx_async_functions.h"
-#include "rx_runtime_holder.h"
+#include "system/runtime/rx_runtime_holder.h"
 #include "interfaces/rx_endpoints.h"
 
 namespace rx
@@ -46,15 +46,15 @@ bool rx_pop_security_context();
 }
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace interfaces {
 
-namespace io_types {
+namespace port_stack {
 
 namespace stack_active {
 
-// Class rx_platform::runtime::io_types::stack_active::active_builder 
+// Class rx_internal::interfaces::port_stack::stack_active::active_builder 
 
 
 rx_result active_builder::bind_stack_endpoint (rx_port_ptr who, rx_protocol_stack_endpoint* what, const io::any_address& local_addr, const io::any_address& remote_addr)
@@ -347,7 +347,7 @@ rx_result active_builder::disconnect_stack_endpoint (rx_port_ptr who, rx_protoco
 }
 
 
-// Class rx_platform::runtime::io_types::stack_active::active_transport_behavior 
+// Class rx_internal::interfaces::port_stack::stack_active::active_transport_behavior 
 
 
 bool active_transport_behavior::is_extern ()
@@ -366,7 +366,7 @@ bool active_transport_behavior::is_endpoint_user ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_active::application_behavior 
+// Class rx_internal::interfaces::port_stack::stack_active::application_behavior 
 
 
 bool application_behavior::is_extern ()
@@ -385,7 +385,7 @@ bool application_behavior::is_endpoint_user ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_active::passive_transport_behavior 
+// Class rx_internal::interfaces::port_stack::stack_active::passive_transport_behavior 
 
 
 bool passive_transport_behavior::is_extern ()
@@ -404,7 +404,7 @@ bool passive_transport_behavior::is_endpoint_user ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_active::extern_behavior 
+// Class rx_internal::interfaces::port_stack::stack_active::extern_behavior 
 
 
 bool extern_behavior::is_extern ()
@@ -424,7 +424,7 @@ bool extern_behavior::is_endpoint_user ()
 
 
 } // namespace stack_active
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace port_stack
+} // namespace interfaces
+} // namespace rx_internal
 

@@ -57,7 +57,6 @@ class http_request_filter
       virtual rx_result handle_request_after (http_request& req, http_response& resp) = 0;
 
       virtual ~http_request_filter() = default;
-
   protected:
 
   private:
@@ -81,7 +80,6 @@ class http_handler
       virtual const char* get_extension () = 0;
 
       virtual ~http_handler() = default;
-
   protected:
 
   private:

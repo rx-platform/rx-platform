@@ -200,7 +200,6 @@ namespace
 {
 data_source_factory* g_obj = nullptr;
 }
-
 // Class rx_internal::sys_runtime::data_source::data_source_factory 
 
 data_source_factory::data_source_factory()

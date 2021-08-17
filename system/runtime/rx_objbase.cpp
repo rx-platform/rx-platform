@@ -35,12 +35,12 @@
 #include "system/runtime/rx_objbase.h"
 
 #include "rx_configuration.h"
-#include "rx_runtime_instance.h"
+#include "runtime_internal/rx_runtime_instance.h"
 #include "sys_internal/rx_inf.h"
 #include "rx_runtime_holder.h"
-#include "rx_port_stack_construction.h"
-#include "rx_port_stack_passive.h"
-#include "rx_port_stack_active.h"
+#include "interfaces/rx_port_stack_construction.h"
+#include "interfaces/rx_port_stack_passive.h"
+#include "interfaces/rx_port_stack_active.h"
 
 
 namespace rx_platform {
@@ -128,54 +128,6 @@ void object_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
 }
 
 
-// Class rx_platform::runtime::items::application_runtime 
-
-rx_item_type application_runtime::type_id = rx_item_type::rx_application;
-
-application_runtime::application_runtime()
-      : context_(nullptr),
-        executer_(-1)
-{
-}
-
-
-application_runtime::~application_runtime()
-{
-}
-
-
-
-rx_result application_runtime::initialize_runtime (runtime_init_context& ctx)
-{
-    return true;
-}
-
-rx_result application_runtime::deinitialize_runtime (runtime_deinit_context& ctx)
-{
-	return true;
-}
-
-rx_result application_runtime::start_runtime (runtime_start_context& ctx)
-{
-	return true;
-}
-
-rx_result application_runtime::stop_runtime (runtime_stop_context& ctx)
-{
-	return true;
-}
-
-threads::job_thread* application_runtime::get_jobs_queue ()
-{
-	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
-}
-
-void application_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
-{
-	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
-}
-
-
 // Class rx_platform::runtime::items::domain_runtime 
 
 rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
@@ -225,6 +177,54 @@ void domain_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
 
 // has to be before call
 
+// Class rx_platform::runtime::items::application_runtime 
+
+rx_item_type application_runtime::type_id = rx_item_type::rx_application;
+
+application_runtime::application_runtime()
+      : context_(nullptr),
+        executer_(-1)
+{
+}
+
+
+application_runtime::~application_runtime()
+{
+}
+
+
+
+rx_result application_runtime::initialize_runtime (runtime_init_context& ctx)
+{
+    return true;
+}
+
+rx_result application_runtime::deinitialize_runtime (runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+rx_result application_runtime::start_runtime (runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result application_runtime::stop_runtime (runtime_stop_context& ctx)
+{
+	return true;
+}
+
+threads::job_thread* application_runtime::get_jobs_queue ()
+{
+	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
+}
+
+void application_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
+}
+
+
 // Class rx_platform::runtime::items::port_runtime 
 
 rx_item_type port_runtime::type_id = rx_item_type::rx_port;
@@ -272,12 +272,12 @@ void port_runtime::stack_disassembled ()
 
 rx_result port_runtime::listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
-	return io_types::stack_passive::passive_builder::send_listen(runtime_, local_address, remote_address);
+	return rx_internal::interfaces::port_stack::stack_passive::passive_builder::send_listen(runtime_, local_address, remote_address);
 }
 
 rx_result port_runtime::connect (const protocol_address* local_address, const protocol_address* remote_address)
 {
-	return io_types::stack_passive::passive_builder::send_connect(runtime_, local_address, remote_address);
+	return rx_internal::interfaces::port_stack::stack_passive::passive_builder::send_connect(runtime_, local_address, remote_address);
 }
 
 rx_result port_runtime::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
@@ -309,28 +309,28 @@ rx_protocol_stack_endpoint* port_runtime::construct_initiator_endpoint ()
 
 rx_result port_runtime::add_stack_endpoint (rx_protocol_stack_endpoint* what, const io::any_address& local_addr, const io::any_address& remote_addr)
 {
-	return io_types::stack_active::active_builder::add_stack_endpoint(runtime_, what, local_addr, remote_addr);
+	return rx_internal::interfaces::port_stack::stack_active::active_builder::add_stack_endpoint(runtime_, what, local_addr, remote_addr);
 }
 
 rx_result port_runtime::register_routing_endpoint (rx_protocol_stack_endpoint* what)
 {
-	return io_types::stack_active::active_builder::register_routing_endpoint(runtime_, what);
+	return rx_internal::interfaces::port_stack::stack_active::active_builder::register_routing_endpoint(runtime_, what);
 }
 
 rx_result port_runtime::close_all_endpoints ()
 {
-	io_types::stack_active::active_builder::close_all_endpoints(runtime_);
+	rx_internal::interfaces::port_stack::stack_active::active_builder::close_all_endpoints(runtime_);
 	return true;
 }
 
 rx_result port_runtime::unbind_stack_endpoint (rx_protocol_stack_endpoint* what)
 {
-	return io_types::stack_active::active_builder::unbind_stack_endpoint(runtime_, what);
+	return rx_internal::interfaces::port_stack::stack_active::active_builder::unbind_stack_endpoint(runtime_, what);
 }
 
 rx_result port_runtime::disconnect_stack_endpoint (rx_protocol_stack_endpoint* what)
 {
-	return io_types::stack_active::active_builder::disconnect_stack_endpoint(runtime_, what);
+	return rx_internal::interfaces::port_stack::stack_active::active_builder::disconnect_stack_endpoint(runtime_, what);
 }
 
 threads::job_thread* port_runtime::get_jobs_queue ()
@@ -359,12 +359,12 @@ rx_result_with<security::security_context_ptr> port_runtime::create_security_con
 
 rx_result_with<io_types::rx_io_buffer> port_runtime::alloc_io_buffer ()
 {
-	return io_types::port_buffers::alloc_io_buffer(runtime_);
+	return rx_internal::interfaces::port_stack::port_buffers::alloc_io_buffer(runtime_);
 }
 
 void port_runtime::release_io_buffer (io_types::rx_io_buffer buff)
 {
-	return io_types::port_buffers::release_io_buffer(runtime_, std::move(buff));
+	return rx_internal::interfaces::port_stack::port_buffers::release_io_buffer(runtime_, std::move(buff));
 }
 
 

@@ -280,7 +280,7 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
 #ifndef RX_MIN_MEMORY
         if (!whose.json_cache_.empty())
         {
-            value.assign_static<string_type>(string_type(whose.json_cache_), whose.meta_info_.modified_time);
+            value.assign_static(whose.json_cache_.c_str(), whose.meta_info_.modified_time);
         }
         else
         {
@@ -298,7 +298,7 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
                     const_cast<string_type&>(whose.json_cache_) = writer.get_string();
 #endif
                     if (!whose.json_cache_.empty())
-                        value.assign_static<string_type>(string_type(whose.json_cache_), whose.meta_info_.modified_time);
+                        value.assign_static(whose.json_cache_.c_str(), whose.meta_info_.modified_time);
                 }
             }
         }
@@ -311,7 +311,7 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
             string_type temp_str;
             if (writer.get_string(const_cast<string_type&>(temp_str), true))
             {
-                value.assign_static<string_type>(string_type(temp_str), meta_info_.modified_time);
+                value.assign_static(temp_str.c_str(), meta_info_.modified_time);
             }
         }
 #endif
@@ -329,7 +329,7 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
                 string_type temp_str(writer.get_string());
                 if (!temp_str.empty())
                 {
-                    value.assign_static<string_type>(string_type(temp_str), whose.meta_info_.modified_time);
+                    value.assign_static(temp_str.c_str(), whose.meta_info_.modified_time);
                 }
             }
         }

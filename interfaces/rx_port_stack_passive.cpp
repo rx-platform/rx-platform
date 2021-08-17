@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_port_stack_passive.cpp
+*  interfaces\rx_port_stack_passive.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,24 +32,24 @@
 
 
 // rx_port_stack_passive
-#include "system/runtime/rx_port_stack_passive.h"
+#include "interfaces/rx_port_stack_passive.h"
 
 #include "sys_internal/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
-#include "rx_runtime_holder.h"
+#include "system/runtime/rx_runtime_holder.h"
 #include "rx_port_stack_active.h"
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace interfaces {
 
-namespace io_types {
+namespace port_stack {
 
 namespace stack_passive {
 
-// Class rx_platform::runtime::io_types::stack_passive::passive_builder 
+// Class rx_internal::interfaces::port_stack::stack_passive::passive_builder 
 
 
 rx_result passive_builder::send_listen (rx_port_ptr who, const io::any_address& local_addr, const io::any_address& remote_addr)
@@ -300,7 +300,7 @@ rx_result passive_builder::unbind_passive (rx_port_ptr who)
         if (!result)
             return result;
     }
-    runtime::io_types::stack_active::active_builder::close_all_endpoints(who);
+    rx_internal::interfaces::port_stack::stack_active::active_builder::close_all_endpoints(who);
     auto result = send_unbind_up_recursive(who);
     if (!result)
         return result;
@@ -327,7 +327,7 @@ rx_result passive_builder::send_unbind_up_recursive (rx_port_ptr who)
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::listen_sender 
+// Class rx_internal::interfaces::port_stack::stack_passive::listen_sender 
 
 
 bool listen_sender::is_listen_sender ()
@@ -351,7 +351,7 @@ bool listen_sender::is_connect_subscriber ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::connect_sender 
+// Class rx_internal::interfaces::port_stack::stack_passive::connect_sender 
 
 
 bool connect_sender::is_listen_sender ()
@@ -375,7 +375,7 @@ bool connect_sender::is_connect_subscriber ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::passive_ignorant 
+// Class rx_internal::interfaces::port_stack::stack_passive::passive_ignorant 
 
 
 bool passive_ignorant::is_listen_sender ()
@@ -399,7 +399,7 @@ bool passive_ignorant::is_connect_subscriber ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::listen_subscriber 
+// Class rx_internal::interfaces::port_stack::stack_passive::listen_subscriber 
 
 
 bool listen_subscriber::is_listen_sender ()
@@ -423,7 +423,7 @@ bool listen_subscriber::is_connect_subscriber ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::connect_subscriber 
+// Class rx_internal::interfaces::port_stack::stack_passive::connect_subscriber 
 
 
 bool connect_subscriber::is_listen_sender ()
@@ -447,7 +447,7 @@ bool connect_subscriber::is_connect_subscriber ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::listen_connect_subscriber 
+// Class rx_internal::interfaces::port_stack::stack_passive::listen_connect_subscriber 
 
 
 bool listen_connect_subscriber::is_listen_sender ()
@@ -471,7 +471,7 @@ bool listen_connect_subscriber::is_connect_subscriber ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::server_master_router 
+// Class rx_internal::interfaces::port_stack::stack_passive::server_master_router 
 
 
 bool server_master_router::is_listen_sender ()
@@ -495,7 +495,7 @@ bool server_master_router::is_connect_subscriber ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::client_slave_router 
+// Class rx_internal::interfaces::port_stack::stack_passive::client_slave_router 
 
 
 bool client_slave_router::is_listen_sender ()
@@ -519,7 +519,7 @@ bool client_slave_router::is_connect_subscriber ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::full_router 
+// Class rx_internal::interfaces::port_stack::stack_passive::full_router 
 
 
 bool full_router::is_listen_sender ()
@@ -543,7 +543,7 @@ bool full_router::is_connect_subscriber ()
 }
 
 
-// Class rx_platform::runtime::io_types::stack_passive::listen_connect_sender 
+// Class rx_internal::interfaces::port_stack::stack_passive::listen_connect_sender 
 
 
 bool listen_connect_sender::is_listen_sender ()
@@ -568,7 +568,7 @@ bool listen_connect_sender::is_connect_subscriber ()
 
 
 } // namespace stack_passive
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace port_stack
+} // namespace interfaces
+} // namespace rx_internal
 

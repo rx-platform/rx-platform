@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_port_stack_data.h
+*  interfaces\rx_port_stack_data.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -33,20 +33,22 @@
 
 
 #include "lib/rx_io_addr.h"
-#include "rx_runtime_helpers.h"
-#include "rx_value_templates.h"
+#include "system/runtime/rx_runtime_helpers.h"
+#include "system/runtime/rx_value_templates.h"
 using namespace rx_platform;
+using namespace rx_platform::runtime;
 
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
 
+using rx_platform::runtime::io_types::rx_io_buffer;
 
 
-namespace rx_platform {
+namespace rx_internal {
 
-namespace runtime {
+namespace interfaces {
 
-namespace io_types {
+namespace port_stack {
 
 
 
@@ -232,9 +234,9 @@ class port_stack_data
 };
 
 
-} // namespace io_types
-} // namespace runtime
-} // namespace rx_platform
+} // namespace port_stack
+} // namespace interfaces
+} // namespace rx_internal
 
 
 

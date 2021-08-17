@@ -295,6 +295,11 @@ runtime_data_t rx_gate::get_cpu_data ()
 	return rx_internal::infrastructure::server_runtime::instance().get_cpu_data();
 }
 
+string_type rx_gate::resolve_ip4_alias (const string_type& what) const
+{
+	return io_manager_->resolve_ip4_alias(what);
+}
+
 template <class typeT>
 rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
 {

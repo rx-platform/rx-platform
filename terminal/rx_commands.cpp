@@ -319,7 +319,7 @@ string_type server_command::get_type_name () const
 values::rx_value server_command::get_value () const
 {
 	values::rx_value temp;
-	temp.assign_static(get_console_name(), time_stamp_);
+	temp.assign_static(get_console_name().c_str(), time_stamp_);
 	return temp;
 }
 

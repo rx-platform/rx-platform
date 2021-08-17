@@ -37,6 +37,7 @@
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 
+#include "rx_value_templates.h"
 
 
 namespace rx_platform {

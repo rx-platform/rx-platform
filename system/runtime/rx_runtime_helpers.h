@@ -57,16 +57,16 @@ class mapper_data;
 class variable_data;
 } // namespace structure
 
-namespace relations {
-class relations_holder;
-} // namespace relations
-
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
 
-class relation_subscriber;
 class runtime_process_context;
+namespace relations {
+class relations_holder;
+} // namespace relations
+
+class relation_subscriber;
 namespace tag_blocks {
 class binded_tags;
 

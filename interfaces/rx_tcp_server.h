@@ -33,11 +33,12 @@
 
 
 #include "interfaces/rx_endpoints.h"
+#include "system/runtime/rx_value_templates.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
 #include "lib/rx_stream_io.h"
 

@@ -207,10 +207,10 @@ system_object::smart_ptr system_object::instance ()
 
 rx_result system_object::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    ctx.set_item_static("Info.Instance", rx_gate::instance().get_rx_name());
-    ctx.set_item_static("Info.Node", rx_gate::instance().get_host()->get_default_name());
+    ctx.set_item_static("Info.Instance", rx_gate::instance().get_rx_name().c_str());
+    ctx.set_item_static("Info.Node", rx_gate::instance().get_host()->get_default_name().c_str());
     ctx.set_item_static("Info.StartTime", rx_gate::instance().get_started());
-    ctx.set_item_static("Info.Instance", rx_gate::instance().get_rx_name());
+    ctx.set_item_static("Info.Instance", rx_gate::instance().get_rx_name().c_str());
 
     auto result = current_time_.bind("Info.Time", ctx);
     if (result)
@@ -221,15 +221,15 @@ rx_result system_object::initialize_runtime (runtime::runtime_init_context& ctx)
             });
     }
 
-    ctx.set_item_static("Info.PlatformVer", rx_gate::instance().get_rx_version());
-    ctx.set_item_static("Info.LibraryVer", rx_gate::instance().get_lib_version());
+    ctx.set_item_static("Info.PlatformVer", rx_gate::instance().get_rx_version().c_str());
+    ctx.set_item_static("Info.LibraryVer", rx_gate::instance().get_lib_version().c_str());
     hosting::hosts_type hosts;
     rx_gate::instance().get_host()->get_host_info(hosts);
     if (hosts.size() > 0)
-        ctx.set_item_static("Info.HostVer", hosts[0]);
-    ctx.set_item_static("Info.TerminalVer", rx_internal::terminal::term_ports::vt100_endpoint::get_terminal_info());
-    ctx.set_item_static("Info.HttpVer", rx_internal::rx_http_server::http_server::get_server_info());
-    ctx.set_item_static("Info.CompilerVer", rx_gate::instance().get_comp_version());
+        ctx.set_item_static("Info.HostVer", hosts[0].c_str());
+    ctx.set_item_static("Info.TerminalVer", rx_internal::terminal::term_ports::vt100_endpoint::get_terminal_info().c_str());
+    ctx.set_item_static("Info.HttpVer", rx_internal::rx_http_server::http_server::get_server_info().c_str());
+    ctx.set_item_static("Info.CompilerVer", rx_gate::instance().get_comp_version().c_str());
 
     return true;
 }

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -292,7 +292,7 @@ class tcp_client_socket : public tcp_socket<buffT>
 typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_client_socket_std_buffer;
 
 
-// Parameterized Class rx::io::full_duplex_comm 
+// Parameterized Class rx::io::full_duplex_comm
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm()
@@ -603,7 +603,7 @@ void full_duplex_comm<buffT>::set_send_timeout (uint32_t val)
 }
 
 
-// Parameterized Class rx::io::tcp_socket 
+// Parameterized Class rx::io::tcp_socket
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
@@ -642,7 +642,7 @@ tcp_socket<buffT>::~tcp_socket()
 
 
 
-// Parameterized Class rx::io::tcp_listen_socket 
+// Parameterized Class rx::io::tcp_listen_socket
 
 template <class buffT>
 tcp_listen_socket<buffT>::tcp_listen_socket (make_function_t make_function)
@@ -687,16 +687,35 @@ int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, soc
 template <class buffT>
 rx_result tcp_listen_socket<buffT>::start_tcpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
 {
+    rx_transaction_type trans;
     this->dispatcher_data_.handle = ::rx_create_and_bind_ip4_tcp_socket(addr);
     if (this->dispatcher_data_.handle)
     {
+        trans.push([this]() {
+                rx_close_socket(this->dispatcher_data_.handle);
+                this->dispatcher_data_.handle = 0;
+            });
         if (rx_socket_listen(this->dispatcher_data_.handle))
         {
             connected_ = true;
             if (this->connect_dispatcher(dispatcher))
             {
+                trans.push([this]() {
+                        this->disconnect_dispatcher();
+                    });
                 if (accept_new())
+                {
+                    trans.commit();
                     return true;
+                }
+                else
+                {
+                    return "**********NEEEE jbg";
+                }
+            }
+            else
+            {
+                return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
             }
         }
         else
@@ -704,10 +723,10 @@ rx_result tcp_listen_socket<buffT>::start_tcpip_4 (const sockaddr_in* addr, thre
             return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
         }
     }
-    auto result = rx_result::create_from_last_os_error("Unable to bind to endpoint.");
-    if (this->dispatcher_data_.handle)
-        rx_close_socket(this->dispatcher_data_.handle);
-    return result;
+    else
+    {
+        return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
+    }
 }
 
 template <class buffT>
@@ -716,6 +735,7 @@ void tcp_listen_socket<buffT>::stop ()
     connected_ = false;
     disconnect_dispatcher();
     rx_close_socket(dispatcher_data_.handle);
+    dispatcher_data_.handle = 0;
 }
 
 template <class buffT>
@@ -739,7 +759,7 @@ int tcp_listen_socket<buffT>::internal_shutdown_callback (uint32_t status)
 }
 
 
-// Parameterized Class rx::io::tcp_client_socket 
+// Parameterized Class rx::io::tcp_client_socket
 
 template <class buffT>
 tcp_client_socket<buffT>::tcp_client_socket()

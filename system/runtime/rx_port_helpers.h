@@ -37,6 +37,7 @@
 #include "system/runtime/rx_runtime_helpers.h"
 
 #include "rx_value_templates.h"
+using namespace rx_platform::runtime;
 
 
 namespace rx_platform {

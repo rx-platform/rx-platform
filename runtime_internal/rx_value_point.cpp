@@ -393,7 +393,7 @@ void value_point::primitive (rx_value& result, char*& prog, char*& token, char& 
 	}
 	else if (tok_type == STRING)
 	{
-		result.assign_static<string_type>(string_type(token));
+		result.assign_static(token);
 		get_token(prog, token, tok_type, expres);
 		return;
 	}

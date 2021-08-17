@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -122,7 +122,7 @@ typename T::instance_data_t create_runtime_prototype(string_type& name, const rx
 }
 }
 
-// Class rx_internal::model::meta_commands::create_command
+// Class rx_internal::model::meta_commands::create_command 
 
 create_command::create_command()
 	: server_command("create")
@@ -689,7 +689,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 		return false;
 	}
 }
-// Class rx_internal::model::meta_commands::dump_types_command
+// Class rx_internal::model::meta_commands::dump_types_command 
 
 dump_types_command::dump_types_command()
 	: server_command("dump-types")
@@ -758,7 +758,7 @@ bool dump_types_command::dump_types_recursive(tl::type2type<T>, rx_node_id start
 	}
 	return true;
 }
-// Class rx_internal::model::meta_commands::delete_command
+// Class rx_internal::model::meta_commands::delete_command 
 
 delete_command::delete_command (const string_type& console_name)
 	: server_command(console_name)
@@ -1019,7 +1019,7 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 	ctx->set_waiting();
 	return true;
 }
-// Class rx_internal::model::meta_commands::rm_command
+// Class rx_internal::model::meta_commands::rm_command 
 
 rm_command::rm_command()
 	: delete_command("rm")
@@ -1028,7 +1028,7 @@ rm_command::rm_command()
 
 
 
-// Class rx_internal::model::meta_commands::del_command
+// Class rx_internal::model::meta_commands::del_command 
 
 del_command::del_command()
 	: delete_command("del")
@@ -1037,7 +1037,7 @@ del_command::del_command()
 
 
 
-// Class rx_internal::model::meta_commands::check_command
+// Class rx_internal::model::meta_commands::check_command 
 
 check_command::check_command()
 	: server_command("check")
@@ -1238,7 +1238,7 @@ bool check_command::check_simple_type(std::istream& in, std::ostream& out, std::
 		return false;
 	}
 }
-// Class rx_internal::model::meta_commands::prototype_command
+// Class rx_internal::model::meta_commands::prototype_command 
 
 prototype_command::prototype_command()
 	: server_command("proto")
@@ -1395,7 +1395,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 		return false;
 	}
 }
-// Class rx_internal::model::meta_commands::save_command
+// Class rx_internal::model::meta_commands::save_command 
 
 save_command::save_command()
 	: server_command("save")
@@ -1456,7 +1456,7 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 }
 
 
-// Class rx_internal::model::meta_commands::update_command
+// Class rx_internal::model::meta_commands::update_command 
 
 update_command::update_command()
 	: server_command("update")

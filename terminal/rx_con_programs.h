@@ -33,10 +33,10 @@
 
 
 
-// rx_mem
-#include "lib/rx_mem.h"
 // sl_script
 #include "soft_logic/sl_script.h"
+// rx_mem
+#include "lib/rx_mem.h"
 
 #include "lib/security/rx_security.h"
 #include "system/server/rx_ns.h"

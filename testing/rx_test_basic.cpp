@@ -196,7 +196,7 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 		simples[0].assign_static(true);
 		simples[1].assign_static(8);
 		simples[2].assign_static(6.7);
-		simples[3].assign_static("string"s);
+		simples[3].assign_static("string");
 
 		rx_time now = rx::rx_time::now();
 
@@ -204,7 +204,7 @@ bool values_test::run_test (std::istream& in, std::ostream& out, std::ostream& e
 		timed[0].assign_static(false, now);
 		timed[1].assign_static(9, now);
 		timed[2].assign_static(6.8, now);
-		timed[3].assign_static("string2"s, now);
+		timed[3].assign_static("string2", now);
 
 
 		std::vector<rx::values::rx_value> fulls;

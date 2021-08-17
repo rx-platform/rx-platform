@@ -1,6 +1,7 @@
 
 #include "terminal/rx_con_programs.h"
 #include "terminal/rx_commands.h"
+#include "terminal/ansi_codes.h"
 
 class hcf_command : public rx_internal::terminal::commands::server_command
 {
@@ -18,10 +19,12 @@ public:
 	bool do_console_command(std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx)
 	{
 		out << "\r\n"
-			"HCF...\r\n"
-			"===================\r\n"
-			"   " ANSI_COLOR_YELLOW ANSI_COLOR_BOLD "still not implemented!!!" ANSI_COLOR_RESET "\r\n"
-			"\r\n\r\n";
+			" " ANSI_COLOR_BOLD ANSI_COLOR_RED "H" ANSI_COLOR_RESET "alt and " ANSI_COLOR_BOLD ANSI_COLOR_RED "C" ANSI_COLOR_RESET "atch " ANSI_COLOR_BOLD ANSI_COLOR_RED "F" ANSI_COLOR_RESET "ire\r\n"
+			" ===================\r\n";
+		out << "\r\n\r\n" ANSI_COLOR_MAGENTA " Well this is just for fun...\r\n " ANSI_COLOR_RESET;
+		out << ANSI_COLOR_BOLD ANSI_COLOR_RED "/" ANSI_COLOR_YELLOW "/" ANSI_COLOR_GREEN "/" ANSI_COLOR_CYAN "/" ANSI_COLOR_RESET
+			<< "  sinclair ZX Spectrum!!!\r\n";
+
 		return true;
 	}
 };

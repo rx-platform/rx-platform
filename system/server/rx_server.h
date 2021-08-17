@@ -171,6 +171,8 @@ class rx_gate
 
       runtime_data_t get_cpu_data ();
 
+      string_type resolve_ip4_alias (const string_type& what) const;
+
 
       hosting::rx_platform_host * get_host ()
       {

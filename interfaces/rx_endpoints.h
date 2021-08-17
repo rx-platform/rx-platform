@@ -44,13 +44,14 @@
 #define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
 #define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
+#include "system/runtime/rx_value_templates.h"
 
 using namespace rx_platform;
 using namespace rx_platform::runtime;
@@ -85,6 +86,8 @@ class rx_io_manager : public rx_platform::runtime::items::object_runtime
 
       void stop ();
 
+      string_type resolve_ip4_alias (const string_type& what) const;
+
 
   protected:
 
@@ -94,6 +97,9 @@ class rx_io_manager : public rx_platform::runtime::items::object_runtime
       //	These endpoints include COM ports, Console and UDP
       //	communications
       endpoints_type endpoints_;
+
+
+      std::map<string_type, string_type> ip4_aliases_;
 
 
 };

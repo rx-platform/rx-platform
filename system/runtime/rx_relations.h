@@ -45,14 +45,14 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace relations {
-class relation_connector;
-} // namespace relations
-
 namespace algorithms {
 template <class typeT> class runtime_holder_algorithms;
-
 } // namespace algorithms
+
+namespace relations {
+class relation_connector;
+
+} // namespace relations
 } // namespace runtime
 } // namespace rx_platform
 

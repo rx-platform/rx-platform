@@ -33,14 +33,14 @@
 
 
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_platform_item
 #include "system/server/rx_platform_item.h"
 // rx_ns
 #include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "system/runtime/rx_internal_objects.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "api/rx_platform_api.h"
