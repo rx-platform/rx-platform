@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -68,7 +68,7 @@ protected:
       ~full_duplex_comm();
 
 
-      void timer_tick (uint32_t tick);
+      void timer_tick (rx_timer_ticks_t tick);
 
       virtual bool on_startup (rx_thread_handle_t destination);
 
@@ -121,9 +121,9 @@ protected:
 
       uint32_t receive_timeout_;
 
-      uint32_t send_tick_;
+      rx_timer_ticks_t send_tick_;
 
-      uint32_t receive_tick_;
+      rx_timer_ticks_t receive_tick_;
 
       queue_type sending_queue_;
 
@@ -249,7 +249,7 @@ class tcp_client_socket : public tcp_socket<buffT>
 
       rx_result connect_to_tcpip_4 (const string_type& address, uint16_t port, threads::dispatcher_pool& dispatcher);
 
-      void timer_tick (uint32_t tick);
+      void timer_tick (rx_timer_ticks_t tick);
 
       void close ();
 
@@ -279,7 +279,7 @@ class tcp_client_socket : public tcp_socket<buffT>
 
       bool connecting_;
 
-      uint32_t connect_tick_;
+      rx_timer_ticks_t connect_tick_;
 
 
 };
@@ -292,7 +292,7 @@ class tcp_client_socket : public tcp_socket<buffT>
 typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_client_socket_std_buffer;
 
 
-// Parameterized Class rx::io::full_duplex_comm
+// Parameterized Class rx::io::full_duplex_comm 
 
 template <class buffT>
 full_duplex_comm<buffT>::full_duplex_comm()
@@ -389,15 +389,15 @@ int full_duplex_comm<buffT>::internal_shutdown_callback (uint32_t status)
 }
 
 template <class buffT>
-void full_duplex_comm<buffT>::timer_tick (uint32_t tick)
+void full_duplex_comm<buffT>::timer_tick (rx_timer_ticks_t tick)
 {
     read_lock_.lock();
-    uint32_t rec_diff = tick - receive_tick_;
+    auto rec_diff = tick - receive_tick_;
     bool receiving = receiving_;
     read_lock_.unlock();
 
     write_lock_.lock();
-    uint32_t send_diff = tick - send_tick_;
+    auto send_diff = tick - send_tick_;
     bool sending = sending_;
     write_lock_.unlock();
 
@@ -603,7 +603,7 @@ void full_duplex_comm<buffT>::set_send_timeout (uint32_t val)
 }
 
 
-// Parameterized Class rx::io::tcp_socket
+// Parameterized Class rx::io::tcp_socket 
 
 template <class buffT>
 tcp_socket<buffT>::tcp_socket()
@@ -642,7 +642,7 @@ tcp_socket<buffT>::~tcp_socket()
 
 
 
-// Parameterized Class rx::io::tcp_listen_socket
+// Parameterized Class rx::io::tcp_listen_socket 
 
 template <class buffT>
 tcp_listen_socket<buffT>::tcp_listen_socket (make_function_t make_function)
@@ -759,7 +759,7 @@ int tcp_listen_socket<buffT>::internal_shutdown_callback (uint32_t status)
 }
 
 
-// Parameterized Class rx::io::tcp_client_socket
+// Parameterized Class rx::io::tcp_client_socket 
 
 template <class buffT>
 tcp_client_socket<buffT>::tcp_client_socket()
@@ -868,7 +868,7 @@ int tcp_client_socket<buffT>::internal_connect_callback (sockaddr_in* addr, sock
 }
 
 template <class buffT>
-void tcp_client_socket<buffT>::timer_tick (uint32_t tick)
+void tcp_client_socket<buffT>::timer_tick (rx_timer_ticks_t tick)
 {
     full_duplex_comm<buffT>::timer_tick(tick);
 
@@ -876,7 +876,7 @@ void tcp_client_socket<buffT>::timer_tick (uint32_t tick)
         return;// don't have to lock here because we have double lock bellow
 
     this->write_lock_.lock();
-    uint32_t conn_diff = tick - this->connect_tick_;
+    auto conn_diff = tick - this->connect_tick_;
     bool connecting = this->connecting_;
 
     this->write_lock_.unlock();

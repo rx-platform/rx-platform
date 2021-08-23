@@ -10,16 +10,14 @@
 
 
 
+#include "pch.h"
+#include "rx_common.h"
 
-
-#include <stdio.h>
-#include <ctype.h>
 
 int ConvertCase(int c, int bCaseSensitive)
 {
 	return bCaseSensitive ? c : toupper(c);
 }
-
 
 
 //*************************************************************************
@@ -125,6 +123,11 @@ int match_pattern(const char *string, const char *Pattern, int bCaseSensitive)
 	}
 }
 
+
+RX_COMMON_API int rx_match_pattern(const char* string, const char* Pattern, int bCaseSensitive)
+{
+	return match_pattern(string, Pattern, bCaseSensitive);
+}
 
 
 

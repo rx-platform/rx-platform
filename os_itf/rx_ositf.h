@@ -38,19 +38,14 @@
 #include "rx_errors.h"
 
 
-
-#define RX_ERROR 0
-#define RX_OK 1
-#define RX_ASYNC 2
+// include common shared library
+#include "common/rx_common.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-	// match pattern function
-	int match_pattern(const char *string, const char *Pattern, int bCaseSensitive);
 
 
 	extern const char* g_ositf_version;
@@ -133,35 +128,6 @@ extern "C" {
 	void rx_collect_memory_info(size_t* total, size_t* free, size_t* process);
 	/////////////////////////////////////////////////////////////////////////////////////////////////
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
-	//time related functions
-	typedef struct rx_time_struct_t
-	{
-		uint64_t t_value;
-	} rx_time_struct;
-
-	typedef struct rx_full_time_t
-	{
-		uint32_t year;
-		uint32_t month;
-		uint32_t day;
-		uint32_t w_day;
-		uint32_t hour;
-		uint32_t minute;
-		uint32_t second;
-		uint32_t milliseconds;
-
-	} rx_full_time;
-
-
-
-	int rx_os_get_system_time(struct rx_time_struct_t* st);
-	int rx_os_to_local_time(struct rx_time_struct_t* st);
-	int rx_os_to_utc_time(struct rx_time_struct_t* st);
-	int rx_os_split_time(const struct rx_time_struct_t* st, struct rx_full_time_t* full);
-	int rx_os_collect_time(const struct rx_full_time_t* full, struct rx_time_struct_t* st);
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//directories stuff
 	typedef struct rx_file_directory_entry_t
@@ -329,17 +295,10 @@ extern "C" {
 	int rx_thread_join(sys_handle_t what);
 	int rx_thread_close(sys_handle_t what);
 	sys_handle_t rx_current_thread();
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// basic abstractions
 	void rx_ms_sleep(uint32_t timeout);
 	void rx_us_sleep(uint64_t timeout);
-	uint32_t rx_get_tick_count();
-	uint64_t rx_get_us_ticks();
-
-	typedef uint64_t rx_timer_ticks_t;
 	///////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////

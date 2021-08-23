@@ -537,7 +537,7 @@ void timer::append_job (timer_job_ptr job, job_thread* executer)
 
 void timer::init_random_sequences ()
 {
-	srand(rx_get_tick_count());
+	srand((unsigned int)rx_get_tick_count());
 	for (auto i = 0; i < RX_OFFSET_TIMES_SIZE; i++)
 	{
 		medium_randoms_[i] = (rx_timer_ticks_t)rx_border_rand(0, rx_medium_time_offset);

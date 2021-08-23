@@ -135,7 +135,7 @@ bool log_event_data::is_included(log_query_type query) const
 			return false;
 		break;
 	}
-	if (!query.pattern.empty() && match_pattern(message.c_str(), query.pattern.c_str(), 1) == 0)
+	if (!query.pattern.empty() && rx_match_pattern(message.c_str(), query.pattern.c_str(), 1) == 0)
 		return false;
 
 	return true;

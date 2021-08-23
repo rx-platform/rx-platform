@@ -102,8 +102,16 @@ void rx_init_hal_version()
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
 }
+
+int init_common_result = RX_ERROR;
+
 void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls,const char* server_name)
 {
+    rx_platform_init_data common_data;
+    common_data.rx_hd_timer = hdt;
+
+    init_common_result = rx_init_common_library(&common_data);
+
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
 
@@ -160,6 +168,8 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls,const char* server_n
 }
 void rx_deinitialize_os()
 {
+    if (init_common_result)
+        rx_deinit_common_library();
 }
 ///////////////////////////////////////////////////////////////////
 // errors support pipes
@@ -360,97 +370,6 @@ uint32_t rx_string_to_uuid(const char* str, rx_uuid_t* u)
 	uuid_parse(str, uuid);
 	linux_uuid_to_uuid(&uuid, u);
 	return RX_OK;
-}
-
-#define TIME_CONVERSION_CONST  116444736000000000ull
-
-uint64_t timeval_to_rx_time(const struct timespec* tv)
-{
-    if (tv->tv_sec == 0 && tv->tv_nsec == 0)
-        return 0;
-    else
-    {
-        uint64_t temp = ((uint64_t)tv->tv_nsec) / 100 + ((uint64_t)tv->tv_sec) * 10000000;
-        temp += TIME_CONVERSION_CONST;
-        return temp;
-    }
-
-}
-
-void rx_time_to_timeval(uint64_t rx_time,struct timespec* tv)
-{
-    if (rx_time==0)
-    {
-        tv->tv_sec=0;
-        tv->tv_nsec=0;
-    }
-    else
-    {
-
-        uint64_t temp = rx_time-TIME_CONVERSION_CONST;
-        tv->tv_sec=temp/10000000;
-        tv->tv_nsec=temp%10000000;
-        tv->tv_nsec=tv->tv_nsec*100;
-    }
-
-}
-
-int rx_os_get_system_time(struct rx_time_struct_t* st)
-{
-    struct timespec tv;
-    int ret=clock_gettime(CLOCK_REALTIME,&tv);
-    if(ret==-1)
-        return RX_ERROR;
-    else
-    {
-        st->t_value=timeval_to_rx_time(&tv);
-        return RX_OK;
-    }
-}
-int rx_os_to_local_time(struct rx_time_struct_t* st)
-{
-    RX_ASSERT(0);
-    return RX_ERROR;
-}
-int rx_os_to_utc_time(struct rx_time_struct_t* st)
-{
-    RX_ASSERT(0);
-    return RX_ERROR;
-}
-int rx_os_split_time(const struct rx_time_struct_t* st, struct rx_full_time_t* full)
-{
-    struct tm tm;
-    struct timespec tv;
-    rx_time_to_timeval(st->t_value,&tv);
-    time_t tt=tv.tv_sec;
-    gmtime_r(&tt,&tm);
-    full->year=tm.tm_year+1900;
-    full->month=tm.tm_mon+1;
-    full->day=tm.tm_mday;
-    full->w_day=tm.tm_wday;
-    full->hour=tm.tm_hour;
-    full->minute=tm.tm_min;
-    full->second=tm.tm_sec;
-    full->milliseconds=tv.tv_nsec/1000000;
-    return RX_OK;
-}
-int rx_os_collect_time(const struct rx_full_time_t* full, struct rx_time_struct_t* st)
-{
-    struct timespec tv;
-    struct tm tm;
-    tm.tm_year=full->year-1900;
-    tm.tm_mon=full->month;
-    tm.tm_mday=full->day;
-    tm.tm_hour=full->hour;
-    tm.tm_min=full->minute;
-    tm.tm_sec=full->second;
-    time_t tt=mktime(&tm);
-
-    tv.tv_nsec=full->milliseconds*1000000ll;
-    tv.tv_sec=tt;
-    st->t_value=timeval_to_rx_time(&tv);
-
-    return RX_OK;
 }
 
 
@@ -922,22 +841,7 @@ void rx_us_sleep(uint64_t timeout)
 	else//sleep 0 just give over the procesor
 		sched_yield();
 }
-uint32_t rx_get_tick_count()
-{
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	uint64_t ret = ts.tv_sec * 1000;
-	ret = ret + ts.tv_nsec / 1000000ul;
-	return (uint32_t)ret;
-}
-uint64_t rx_get_us_ticks()
-{
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	uint64_t ret = ts.tv_sec * 1000000ul;
-	ret = ret + ts.tv_nsec / 1000ul;
-	return ret;
-}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1188,7 +1092,7 @@ find_file_handle_t rx_open_find_file_list(const char* ipath, struct rx_file_dire
 					struct dirent* pentry = readdir(dir);
 					if (pentry)
 					{
-						while (pentry != NULL && !match_pattern(pentry->d_name, filter, 1))
+						while (pentry != NULL && !rx_match_pattern(pentry->d_name, filter, 1))
 							pentry = readdir(dir);
 						if (pentry)
 						{
@@ -1232,7 +1136,7 @@ int rx_get_next_file(find_file_handle_t hndl, struct rx_file_directory_entry_t* 
 		{
 			if (ff->filter)
 			{
-				while (pentry != NULL && !match_pattern(pentry->d_name, ff->filter, 1))
+				while (pentry != NULL && !rx_match_pattern(pentry->d_name, ff->filter, 1))
 					pentry = readdir(ff->pdir);
 				if (pentry == NULL)
 					break;

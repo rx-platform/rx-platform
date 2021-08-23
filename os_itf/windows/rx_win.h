@@ -61,6 +61,7 @@
 
 
 
+
 #include "rx_win32_version.h"
 
 
@@ -89,6 +90,8 @@
 #include <wincrypt.h>
 #include <IPHlpApi.h>
 #include <io.h>
+
+
 
 typedef HCRYPTKEY crypt_key_t;
 typedef HCRYPTHASH  crypt_hash_t;

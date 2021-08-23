@@ -964,7 +964,7 @@ sl_monostabile::~sl_monostabile()
 
 void sl_monostabile::process_instruction (io_program_data& io_data, program_context* context, const rx_time& now)
 {
-	uint32_t tick=rx_get_tick_count();
+	uint32_t tick=(uint32_t)rx_get_tick_count();
 	begin(context);
 	if(io_data.get_input(0) && !prev_c_state_)
 	{// up so do the counting
@@ -1032,7 +1032,7 @@ sl_timer_inst::~sl_timer_inst()
 
 void sl_timer_inst::process_instruction (io_program_data& io_data, program_context* context, const rx_time& now)
 {
-	uint32_t tick=rx_get_tick_count();
+	uint32_t tick=(uint32_t)rx_get_tick_count();
 	begin(context);
 	if(!io_data.get_input(1))
 	{// enable is down so rest stuff

@@ -74,7 +74,7 @@ class dispatcher_subscriber : public pointers::reference_object
 
       static void propagate_timer ();
 
-      virtual void timer_tick (uint32_t tick);
+      virtual void timer_tick (rx_timer_ticks_t tick);
 
       void set_identity (rx_security_handle_t identity);
 

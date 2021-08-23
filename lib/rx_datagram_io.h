@@ -127,9 +127,9 @@ protected:
 
       uint32_t receive_timeout_;
 
-      uint32_t send_tick_;
+      rx_timer_ticks_t send_tick_;
 
-      uint32_t receive_tick_;
+      rx_timer_ticks_t receive_tick_;
 
       queue_type sending_queue_;
 

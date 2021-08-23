@@ -136,7 +136,7 @@ void rx_platform_directory::get_content (platform_directories_type& sub_director
 	{
 		if (!is_pattern_empty)
 		{
-			if (!match_pattern(one.first.c_str(), c_pattern, 0))
+			if (!rx_match_pattern(one.first.c_str(), c_pattern, 0))
 				continue;
 		}
 		sub_directories.emplace_back(one.second);
@@ -145,7 +145,7 @@ void rx_platform_directory::get_content (platform_directories_type& sub_director
 	{
 		if (!is_pattern_empty)
 		{
-			if (!match_pattern(one.first.c_str(), c_pattern, 0))
+			if (!rx_match_pattern(one.first.c_str(), c_pattern, 0))
 				continue;
 		}
 		sub_items.emplace_back(one.second);

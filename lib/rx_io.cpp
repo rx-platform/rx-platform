@@ -150,7 +150,7 @@ void dispatcher_subscriber::unregister_timed ()
 
 void dispatcher_subscriber::propagate_timer ()
 {
-	uint32_t tick = rx_get_tick_count();
+	auto tick = rx_get_tick_count();
 	time_aware_subscribers_lock_.lock();
 	std::vector<dispatcher_subscriber::smart_ptr> helper;
 	helper.reserve(time_aware_subscribers_.size());
@@ -163,7 +163,7 @@ void dispatcher_subscriber::propagate_timer ()
 		one->timer_tick(tick);
 }
 
-void dispatcher_subscriber::timer_tick (uint32_t tick)
+void dispatcher_subscriber::timer_tick (rx_timer_ticks_t tick)
 {
 }
 

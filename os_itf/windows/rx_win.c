@@ -149,88 +149,6 @@ typedef DWORD(__stdcall *
 	);
 
 
-uint64_t g_res_m;
-uint64_t g_res_u;
-uint64_t g_start;
-
-int rx_os_get_system_time(struct rx_time_struct_t* st)
-{
-	FILETIME ft;
-
-	GetSystemTimeAsFileTime(&ft);
-	st->t_value = (((uint64_t)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
-	return RX_OK;
-}
-
-
-int rx_os_to_local_time(struct rx_time_struct_t* st)
-{
-	FILETIME mine, local;
-
-	mine.dwLowDateTime = (DWORD)(st->t_value & 0xFFFFFFFF);
-	mine.dwHighDateTime = (DWORD)(st->t_value >> 32);
-
-	FileTimeToLocalFileTime(&mine, &local);
-
-	st->t_value = (((uint64_t)local.dwHighDateTime) << 32) + local.dwLowDateTime;
-	return RX_OK;
-}
-
-
-int rx_os_to_utc_time(struct rx_time_struct_t* st)
-{
-	FILETIME mine, utc;
-
-	mine.dwLowDateTime = (DWORD)(st->t_value & 0xFFFFFFFF);
-	mine.dwHighDateTime = (DWORD)(st->t_value >> 32);
-
-	LocalFileTimeToFileTime(&mine, &utc);
-
-	st->t_value = (((uint64_t)utc.dwHighDateTime) << 32) + utc.dwLowDateTime;
-	return RX_OK;
-}
-
-int rx_os_split_time(const struct rx_time_struct_t* st, struct rx_full_time_t* full)
-{
-	FILETIME ft;
-	SYSTEMTIME sys;
-	ft.dwLowDateTime = (DWORD)(st->t_value & 0xFFFFFFFF);
-	ft.dwHighDateTime = (DWORD)(st->t_value >> 32);
-	if (!FileTimeToSystemTime(&ft, &sys))
-		return RX_ERROR;
-
-	full->year = sys.wYear;
-	full->month = sys.wMonth;
-	full->day = sys.wDay;
-	full->w_day = sys.wDayOfWeek;
-	full->hour = sys.wHour;
-	full->minute = sys.wMinute;
-	full->second = sys.wSecond;
-	full->milliseconds = sys.wMilliseconds;
-
-	return RX_OK;
-}
-int rx_os_collect_time(const struct rx_full_time_t* full, struct rx_time_struct_t* st)
-{
-	FILETIME ft;
-	SYSTEMTIME sys;
-
-	sys.wYear = full->year;
-	sys.wMonth = full->month;
-	sys.wDay = full->day;
-	sys.wDayOfWeek = 0;
-	sys.wHour = full->hour;
-	sys.wMinute = full->minute;
-	sys.wSecond = full->second;
-	sys.wMilliseconds = full->milliseconds;
-
-	if (!SystemTimeToFileTime(&sys, &ft))
-		return RX_ERROR;
-
-	st->t_value = (((uint64_t)ft.dwHighDateTime) << 32) + ft.dwLowDateTime;
-
-	return RX_OK;
-}
 
 uint32_t rx_border_rand(uint32_t min, uint32_t max)
 {
@@ -529,10 +447,14 @@ void rx_init_hal_version()
 }
 
 struct WSAData wsaData;
+int init_common_result = RX_ERROR;
 
 void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, const char* server_name)
 {
+	rx_platform_init_data common_data;
+	common_data.rx_hd_timer = hdt;
 
+	init_common_result = rx_init_common_library(&common_data);
 
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
@@ -553,13 +475,6 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, const char* server_
 	GetSystemInfo(&sys);
 	g_page_size = sys.dwPageSize;
 
-	LARGE_INTEGER res;
-	LARGE_INTEGER start;
-	QueryPerformanceFrequency(&res);
-	QueryPerformanceCounter(&start);
-	g_res_m = ((1ULL << 32) * 1'000ULL) / res.QuadPart;
-	g_res_u = ((1ULL << 32) * 1'000'000ULL) / res.QuadPart;
-	g_start = start.QuadPart;
 
 	DWORD err = 0;
 
@@ -630,6 +545,9 @@ void rx_deinitialize_os()
 	if(hcrypt)
 		CryptReleaseContext(hcrypt,0);
 	WSACleanup();
+
+	if (init_common_result)
+		rx_deinit_common_library();
 }
 
 
@@ -1163,7 +1081,7 @@ unsigned _stdcall _inner_handler(void* arg)
 
 		Sleep(0);// i don't know why, maybe microsoft does!!!
 
-		srand(rx_get_tick_count());
+		srand((unsigned int)rx_get_tick_count());
 		
 		(inner_arg->start_address)(inner_arg->arg);
 		
@@ -1265,42 +1183,6 @@ void rx_ms_sleep(uint32_t timeout)
 void rx_usleep(uint64_t timeout)
 {
 	Sleep((DWORD)(timeout/1000));
-}
-uint32_t rx_get_tick_count()
-{
-	if (rx_hd_timer)
-	{
-		LARGE_INTEGER ret;
-		QueryPerformanceCounter(&ret);
-		uint64_t low_ticks = ret.LowPart;
-		uint64_t high_ticks = ret.HighPart;
-		low_ticks *= g_res_m;
-		high_ticks *= g_res_m;
-		return (uint32_t)((low_ticks >> 32) + high_ticks);
-	}
-	else
-	{
-		return GetTickCount();
-	}
-
-}
-uint64_t rx_get_us_ticks()
-{
-	if (rx_hd_timer)
-	{
-		LARGE_INTEGER ret;
-		QueryPerformanceCounter(&ret);
-		uint64_t low_ticks = ret.LowPart;
-		uint64_t high_ticks = ret.HighPart;
-		low_ticks *= g_res_u;
-		high_ticks *= g_res_u;
-
-		return (low_ticks >> 32) + high_ticks;
-	}
-	else
-	{
-		return GetTickCount64() * 1000ULL;
-	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

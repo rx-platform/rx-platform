@@ -4,7 +4,7 @@
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 1
 #define RX_HAL_MINOR_VERSION 0
-#define RX_HAL_BUILD_NUMBER 4
+#define RX_HAL_BUILD_NUMBER 5
 
 /*********************************************************************************
 
@@ -37,5 +37,6 @@
 1.0.2 implemented hd-timer option
 1.0.3 ERROR_PORT_UNREACHABLE does not generate error on UDP
 1.0.4 wait for single object is callculated as (t-50)/1000 + 1
+1.0.5 support for rx-common shared library
 
 *********************************************************************************/
