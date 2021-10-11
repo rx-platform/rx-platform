@@ -32,6 +32,7 @@
 #define rx_rt_struct_h 1
 
 
+#include "lib/rx_rt_data.h"
 
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
@@ -62,7 +63,6 @@ using rx_platform::runtime_item_attribute;
 
 
 namespace rx_platform {
-
 namespace meta
 {
 class runtime_data_prototype;
@@ -95,6 +95,13 @@ class relation_attribute;
 namespace runtime {
 
 namespace structure {
+
+// value options bitset
+constexpr static int value_opt_readonly = 0;
+constexpr static int value_opt_persistent = 1;
+
+// internal status for state ignorant values (On, Test, Status Simulate)
+constexpr static int opt_state_ignorant = 30;
 
 // typedefs for masks
 constexpr uint_fast8_t rt_const_index_type		= 0x01;
@@ -223,12 +230,6 @@ class const_value_data
 
 class value_data 
 {
-public:
-    constexpr static int opt_readonly = 0;
-    constexpr static int opt_persistent = 1;
-
-    // internal status for state ignorant values (On, Test, Status Simulate)
-    constexpr static int opt_state_ignorant = 30;
 
   public:
 
@@ -277,7 +278,7 @@ class runtime_item
 
       virtual void fill_data (const data::runtime_values_data& data) = 0;
 
-      virtual rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const = 0;
+      virtual rx_result get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const = 0;
 
       virtual void object_state_changed (runtime_process_context* ctx) = 0;
 
@@ -289,13 +290,11 @@ class runtime_item
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx) = 0;
 
-      virtual rx_result get_value_ref (const string_type& path, rt_value_ref& ref) = 0;
-
-      const runtime_item* get_child_item (const string_type& path) const;
+      virtual rx_result get_value_ref (string_view_type path, rt_value_ref& ref) = 0;
 
       virtual rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const = 0;
 
-      virtual const runtime_item* internal_get_child_item (const char* path, size_t& idx) const = 0;
+      virtual const runtime_item* get_child_item (string_view_type path) const = 0;
 
       virtual runtime_filters_type& get_filters () = 0;
 
@@ -311,7 +310,11 @@ class runtime_item
 
       virtual rx_result get_local_value (const string_type& path, rx_simple_value& val) const = 0;
 
-      virtual bool is_this_yours (const string_type& path) const = 0;
+      virtual bool is_this_yours (string_view_type path) const = 0;
+
+      virtual void read_struct (string_view_type path, read_struct_data data) const = 0;
+
+      virtual void write_struct (string_view_type path, write_struct_data data) = 0;
 
 	  template<typename T>
 	  T get_local_as(const string_type& path, const T& default_value)
@@ -373,7 +376,7 @@ class struct_data
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
 
@@ -389,7 +392,7 @@ class struct_data
 	  typedef std::unique_ptr<struct_data> smart_ptr;
   protected:
 
-      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+      const runtime_item* get_child_item (string_view_type path) const;
 
 
   private:
@@ -451,7 +454,7 @@ public:
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
 
@@ -467,7 +470,7 @@ public:
 	  typedef std::unique_ptr<filter_data> smart_ptr;
   protected:
 
-      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+      const runtime_item* get_child_item (string_view_type path) const;
 
 
   private:
@@ -522,14 +525,14 @@ class indirect_value_data
 
 
 
-class variable_write_task 
+class write_task 
 {
 
   public:
-      virtual ~variable_write_task();
+      virtual ~write_task();
 
 
-      virtual void process_result (runtime_transaction_id_t id, rx_result&& result) = 0;
+      virtual void process_result (rx_result&& result) = 0;
 
 
   protected:
@@ -559,7 +562,7 @@ class variable_data
 	  }
       friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::variable_attribute>;
       friend class meta::basic_types::variable_type;
-      typedef std::unique_ptr<std::map<runtime_transaction_id_t, variable_write_task*> > pending_tasks_type;
+      typedef std::unique_ptr<std::map<runtime_transaction_id_t, write_task*> > pending_tasks_type;
 
   public:
       variable_data();
@@ -575,7 +578,7 @@ class variable_data
 
       void set_value (rx_simple_value&& val);
 
-      rx_result write_value (write_data&& data, variable_write_task* task, runtime_process_context* ctx);
+      rx_result write_value (write_data&& data, write_task* task, runtime_process_context* ctx);
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
@@ -591,13 +594,15 @@ class variable_data
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
 
-      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+      const runtime_item* get_child_item (string_view_type path) const;
 
       rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      void variable_result_pending (runtime_process_context* ctx, rx_result&& result, runtime_transaction_id_t id);
 
 
       rx::values::rx_value value;
@@ -608,6 +613,8 @@ class variable_data
       static string_type type_name;
 
       variable_runtime_ptr variable_ptr;
+
+      std::bitset<32> value_opt;
 
 
   protected:
@@ -678,7 +685,7 @@ public:
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
 
@@ -696,7 +703,7 @@ public:
 	  typedef std::unique_ptr<mapper_data> smart_ptr;
   protected:
 
-      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+      const runtime_item* get_child_item (string_view_type path) const;
 
 
   private:
@@ -776,7 +783,7 @@ class source_data
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
 
@@ -794,7 +801,7 @@ class source_data
 	  typedef std::unique_ptr<source_data> smart_ptr;
   protected:
 
-      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+      const runtime_item* get_child_item (string_view_type path) const;
 
 
   private:
@@ -817,14 +824,14 @@ class source_data
 
 
 
-class mapper_write_task : public variable_write_task  
+class mapper_write_task : public write_task  
 {
 
   public:
       mapper_write_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id);
 
 
-      void process_result (runtime_transaction_id_t id, rx_result&& result);
+      void process_result (rx_result&& result);
 
 
   protected:
@@ -859,15 +866,15 @@ class block_data : public runtime_item
 
       void fill_data (const data::runtime_values_data& data);
 
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+      rx_result get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const;
 
       void object_state_changed (runtime_process_context* ctx);
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
 
-      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+      const runtime_item* get_child_item (string_view_type path) const;
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
@@ -891,7 +898,11 @@ class block_data : public runtime_item
 
       rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
 
-      bool is_this_yours (const string_type& path) const;
+      bool is_this_yours (string_view_type path) const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void write_struct (string_view_type path, write_struct_data data);
 
 
       values_type values;
@@ -906,7 +917,7 @@ class block_data : public runtime_item
 
   private:
 
-      members_index_type internal_get_index (const string_type& name) const;
+      members_index_type internal_get_index (string_view_type name) const;
 
       bool is_value_index (members_index_type idx) const;
 
@@ -958,7 +969,7 @@ public:
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
 
@@ -977,7 +988,7 @@ public:
 	  typedef std::unique_ptr<event_data> smart_ptr;
   protected:
 
-      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+      const runtime_item* get_child_item (string_view_type path) const;
 
 
   private:
@@ -1037,7 +1048,7 @@ class runtime_data : public runtime_item
 
       void fill_data (const data::runtime_values_data& data);
 
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+      rx_result get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const;
 
       void object_state_changed (runtime_process_context* ctx);
 
@@ -1049,11 +1060,11 @@ class runtime_data : public runtime_item
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
 
-      const runtime_item* internal_get_child_item (const char* path, size_t& idx) const;
+      const runtime_item* get_child_item (string_view_type path) const;
 
       runtime_filters_type& get_filters ();
 
@@ -1069,7 +1080,11 @@ class runtime_data : public runtime_item
 
       rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
 
-      bool is_this_yours (const string_type& path) const;
+      bool is_this_yours (string_view_type path) const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void write_struct (string_view_type path, write_struct_data data);
 
 
       variables_type variables;
@@ -1096,7 +1111,7 @@ class runtime_data : public runtime_item
 
   private:
 
-      members_index_type internal_get_index (const string_type& name) const;
+      members_index_type internal_get_index (string_view_type name) const;
 
       bool is_value_index (members_index_type idx) const;
 

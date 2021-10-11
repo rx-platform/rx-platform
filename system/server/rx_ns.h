@@ -34,10 +34,10 @@
 
 #include "lib/rx_lock.h"
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // rx_storage
 #include "system/storage_base/rx_storage.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_values

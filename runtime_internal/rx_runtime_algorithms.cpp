@@ -122,39 +122,34 @@ rx_result init_runtime<meta::object_types::relation_type>(rx_relation_ptr what, 
 //////////////////////////////////////////////////////////////////////////////////////
 // deinit_runtime
 template<>
-rx_result deinit_runtime<meta::object_types::object_type, rx_reference_ptr>(rx_object_ptr what
-	, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback
-	, runtime::runtime_deinit_context& ctx)
+rx_result deinit_runtime<meta::object_types::object_type>(rx_object_ptr what
+	, rx_result_callback&& callback)
 {
-	return object_algorithms::deinit_runtime(what, ref, result_target, std::move(callback), ctx);
+	return object_algorithms::deinit_runtime(what, std::move(callback));
 }
 template<>
-rx_result deinit_runtime<meta::object_types::application_type, rx_reference_ptr>(rx_application_ptr what
-	, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback
-	, runtime::runtime_deinit_context& ctx)
+rx_result deinit_runtime<meta::object_types::application_type>(rx_application_ptr what
+	, rx_result_callback&& callback)
 {
-	return application_algorithms::deinit_runtime(what, ref, result_target, std::move(callback), ctx);
+	return application_algorithms::deinit_runtime(what, std::move(callback));
 }
 template<>
-rx_result deinit_runtime<meta::object_types::port_type, rx_reference_ptr>(rx_port_ptr what
-	, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback
-	, runtime::runtime_deinit_context& ctx)
+rx_result deinit_runtime<meta::object_types::port_type>(rx_port_ptr what
+	, rx_result_callback&& callback)
 {
-	return port_algorithms::deinit_runtime(what, ref, result_target, std::move(callback), ctx);
+	return port_algorithms::deinit_runtime(what, std::move(callback));
 }
 template<>
-rx_result deinit_runtime<meta::object_types::domain_type, rx_reference_ptr>(rx_domain_ptr what
-	, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback
-	, runtime::runtime_deinit_context& ctx)
+rx_result deinit_runtime<meta::object_types::domain_type>(rx_domain_ptr what
+	, rx_result_callback&& callback)
 {
-	return domain_algorithms::deinit_runtime(what, ref, result_target, std::move(callback), ctx);
+	return domain_algorithms::deinit_runtime(what, std::move(callback));
 }
 template<>
-rx_result deinit_runtime<meta::object_types::relation_type, rx_reference_ptr>(rx_relation_ptr what
-	, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback
-	, runtime::runtime_deinit_context& ctx)
+rx_result deinit_runtime<meta::object_types::relation_type>(rx_relation_ptr what
+	, rx_result_callback&& callback)
 {
-	return relations_algorithms::deinit_runtime(what, ref, result_target, std::move(callback), ctx);
+	return relations_algorithms::deinit_runtime(what, std::move(callback));
 }
 
 // Class rx_internal::sys_runtime::algorithms::object_algorithms 
@@ -213,10 +208,10 @@ rx_result object_algorithms::start_runtime (rx_object_ptr what, runtime::runtime
 	return ret;
 }
 
-rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx)
+rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_result_callback&& callback)
 {
 	rx_post_function_to(what->get_executer(), what, 
-		[](rx_object_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
+		[](rx_object_ptr whose, rx_result_callback&& callback)
 		{
 			runtime::runtime_stop_context stop_ctx;
 			auto result = stop_runtime(whose, stop_ctx);
@@ -225,16 +220,15 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_reference_pt
 				result = algorithms::delete_runtime_structure<object_type>(whose);
 				RUNTIME_LOG_TRACE("object_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function_to(RX_DOMAIN_META, whose, 
-					[](rx_object_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
+					[](rx_object_ptr whose, rx_result_callback&& callback)
 					{
 						runtime::runtime_deinit_context deinit_ctx;
 						auto result = whose->deinitialize_runtime(deinit_ctx);
-						callback.set_arguments(std::move(result));
-						if (result_target == RX_DOMAIN_META)
-							callback.call();
-						else
-							rx_post_packed_to(result_target, std::move(callback));
-					}, whose, ref, result_target, std::move(callback));
+						if(result)
+							result = whose->get_instance_data().after_deinit_runtime(whose, deinit_ctx);
+						callback(std::move(result));
+
+					}, whose, std::move(callback));
 			}
 			else
 			{
@@ -242,13 +236,9 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_reference_pt
 					RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
 				RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
 
-				callback.set_arguments(std::move(result));
-				if (result_target == RX_DOMAIN_META)
-					callback.call();
-				else
-					rx_post_packed_to(result_target, std::move(callback));
+				callback(std::move(result));
 			}
-		}, what, ref, result_target, std::move(callback));
+		}, what, std::move(callback));
 
 	return true;
 }
@@ -259,7 +249,7 @@ rx_result object_algorithms::stop_runtime (rx_object_ptr what, runtime::runtime_
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
-		what->get_instance_data().after_stop_runtime(what, ctx);
+		ret = what->get_instance_data().after_stop_runtime(what, ctx);
 	}
 	return ret;
 }
@@ -401,9 +391,9 @@ rx_result domain_algorithms::start_runtime (rx_domain_ptr what, runtime::runtime
 	return ret;
 }
 
-rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx)
+rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, rx_result_callback&& callback)
 {
-	rx_post_function_to(what->get_executer(), what, [](rx_domain_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
+	rx_post_function_to(what->get_executer(), what, [](rx_domain_ptr whose, rx_result_callback&& callback)
 		{
 			runtime::runtime_stop_context stop_ctx;
 			auto result = stop_runtime(whose, stop_ctx);
@@ -412,36 +402,24 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, rx_reference_pt
 				result = algorithms::delete_runtime_structure<domain_type>(whose);
 				RUNTIME_LOG_TRACE("domain_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function_to(RX_DOMAIN_META, whose,
-					[](rx_domain_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
+					[](rx_domain_ptr whose, rx_result_callback&& callback)
 					{
 						runtime::runtime_deinit_context deinit_ctx;
 						auto result = whose->deinitialize_runtime(deinit_ctx);
 						if (result)
-						{
-							whose->get_instance_data().after_deinit_runtime(whose, deinit_ctx);
-							callback.set_arguments(std::move(result));
-							if (result_target == RX_DOMAIN_META)
-								callback.call();
-							else
-								rx_post_packed_to(result_target, std::move(callback));
-						}
-						else
-						{
-							callback.set_arguments(std::move(result));
-							if (result_target == RX_DOMAIN_META)
-								callback.call();
-							else
-								rx_post_packed_to(result_target, std::move(callback));
-						}
-					}, whose, ref, result_target, std::move(callback));
+							result = whose->get_instance_data().after_deinit_runtime(whose, deinit_ctx);
+						callback(std::move(result));
+					}, whose, std::move(callback));
 			}
 			else
 			{
 				for (const auto& error : result.errors())
 					RUNTIME_LOG_ERROR("domain_algorithms", 800, error.c_str());
 				RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
+				
+				callback(std::move(result));
 			}
-		}, what, ref, result_target, std::move(callback));
+		}, what, std::move(callback));
 
 	return true;
 }
@@ -591,9 +569,9 @@ rx_result port_algorithms::start_runtime (rx_port_ptr what, runtime::runtime_sta
 	return ret;
 }
 
-rx_result port_algorithms::deinit_runtime (rx_port_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx)
+rx_result port_algorithms::deinit_runtime (rx_port_ptr what, rx_result_callback&& callback)
 {
-	rx_post_function_to(what->get_executer(), what, [](rx_port_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
+	rx_post_function_to(what->get_executer(), what, [](rx_port_ptr whose, rx_result_callback&& callback)
 		{
 			runtime::runtime_stop_context stop_ctx;
 			auto result = stop_runtime(whose, stop_ctx);
@@ -602,24 +580,25 @@ rx_result port_algorithms::deinit_runtime (rx_port_ptr what, rx_reference_ptr re
 				result = algorithms::delete_runtime_structure<port_type>(whose);
 				RUNTIME_LOG_TRACE("port_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function_to(RX_DOMAIN_META, whose,
-					[](rx_port_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
+					[](rx_port_ptr whose, rx_result_callback&& callback)
 					{
 						runtime::runtime_deinit_context deinit_ctx;
 						auto result = whose->deinitialize_runtime(deinit_ctx);
-						callback.set_arguments(std::move(result));
-						if (result_target == RX_DOMAIN_META)
-							callback.call();
-						else
-							rx_post_packed_to(result_target, std::move(callback));
-					}, whose, ref, result_target, std::move(callback));
+						if(result)
+							result = whose->get_instance_data().after_deinit_runtime(whose, deinit_ctx);
+						callback(std::move(result));
+
+					}, whose, std::move(callback));
 			}
 			else
 			{
 				for (const auto& error : result.errors())
 					RUNTIME_LOG_ERROR("port_algorithms", 800, error.c_str());
 				RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
+
+				callback(std::move(result));
 			}
-		}, what, ref, result_target, std::move(callback));
+		}, what, std::move(callback));
 
 	return true;
 }
@@ -780,9 +759,9 @@ rx_result application_algorithms::start_runtime (rx_application_ptr what, runtim
 	return ret;
 }
 
-rx_result application_algorithms::deinit_runtime (rx_application_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx)
+rx_result application_algorithms::deinit_runtime (rx_application_ptr what, rx_result_callback&& callback)
 {
-	rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
+	rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, rx_result_callback&& callback)
 		{
 			runtime::runtime_stop_context stop_ctx;
 			auto result = stop_runtime(whose, stop_ctx);
@@ -791,7 +770,7 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, rx_re
 				result = algorithms::delete_runtime_structure<application_type>(whose);
 				RUNTIME_LOG_TRACE("application_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
 				rx_post_function_to(RX_DOMAIN_META, whose,
-					[](rx_application_ptr whose, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback)
+					[](rx_application_ptr whose, rx_result_callback&& callback)
 						{
 
 							runtime::runtime_deinit_context deinit_ctx;
@@ -805,20 +784,19 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, rx_re
 							{
 								RUNTIME_LOG_CRITICAL("application_algorithms", 500, "this application is not registered in cache!!!");
 							}
-							callback.set_arguments(std::move(result));
-							if (result_target == RX_DOMAIN_META)
-								callback.call();
-							else
-								rx_post_packed_to(result_target, std::move(callback));
-						}, whose, ref, result_target, std::move(callback));
+							callback(std::move(result));
+
+						}, whose, std::move(callback));
 			}
 			else
 			{
 				for (const auto& error : result.errors())
 					RUNTIME_LOG_ERROR("application_algorithms", 800, error.c_str());
 				RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
+
+				callback(std::move(result));
 			}
-		}, what, ref, result_target, std::move(callback));
+		}, what, std::move(callback));
 
 	return true;
 }
@@ -848,7 +826,7 @@ rx_result relations_algorithms::start_runtime (rx_relation_ptr what, runtime::ru
 	return RX_NOT_IMPLEMENTED;
 }
 
-rx_result relations_algorithms::deinit_runtime (rx_relation_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx)
+rx_result relations_algorithms::deinit_runtime (rx_relation_ptr what, rx_result_callback&& callback)
 {
 	return RX_NOT_IMPLEMENTED;
 }

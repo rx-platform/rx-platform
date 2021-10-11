@@ -47,6 +47,188 @@ namespace interfaces {
 
 namespace port_stack {
 
+// Class rx_internal::interfaces::port_stack::port_active_map 
+
+
+rx_result port_active_map::register_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr whose, rx_port_ptr owner)
+{
+    int16_t count;
+    {
+        locks::auto_slim_lock _(&map_lock_);
+        endpoints_map_.emplace(what, whose);
+        count = (int16_t)endpoints_map_.size();
+    }
+    active_endpoints = count;
+    if(whose)
+        RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " registered endpoint for " + whose->meta_info().get_full_path());
+    else
+        RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " registered endpoint");
+    //dump_active_map(owner->meta_info().get_full_path());
+    return true;
+}
+
+rx_result port_active_map::unregister_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr owner)
+{
+    int16_t count;
+    map_lock_.lock();
+    auto it = endpoints_map_.find(what);
+    if (it != endpoints_map_.end())
+    {
+        auto whose = it->second;
+        endpoints_map_.erase(what);
+        count = (int16_t)endpoints_map_.size();
+        map_lock_.unlock();
+        active_endpoints = count;
+        if(whose)
+            RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " removed endpoint for " + whose->meta_info().get_full_path());
+        else
+            RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " removed endpoint");
+        return true;
+    }
+    else
+    {
+        map_lock_.unlock();
+        RX_ASSERT(false);
+        return "Entry not found!";
+    }
+}
+
+void port_active_map::close_all_endpoints ()
+{
+    map_lock_.lock();
+    if (!endpoints_map_.empty())
+    {
+        map_lock_.unlock();
+        int counter = (int)endpoints_map_.size();
+        while (counter>0)
+        {
+            rx_protocol_stack_endpoint* ep = nullptr;
+            map_lock_.lock();
+            if (!endpoints_map_.empty())
+            {
+                ep = endpoints_map_.begin()->first;
+            }
+            map_lock_.unlock();
+            active_endpoints = 0;
+            if (ep)
+            {
+                counter--;
+                rx_close(ep, RX_PROTOCOL_OK);
+            }
+            else
+                break;
+        }
+        RX_ASSERT(counter <= 0);
+    }
+    else
+    {
+        map_lock_.unlock();
+    }
+}
+
+
+// Class rx_internal::interfaces::port_stack::port_buffers 
+
+
+rx_result_with<io_types::rx_io_buffer> port_buffers::alloc_io_buffer (rx_port_ptr& whose)
+{
+    rx_io_buffer ret;
+    port_buffers& buffers = whose->get_instance_data().stack_data.buffers;
+    buffers.buffers_lock_.lock();
+    if (buffers.free_buffers.empty())
+    {
+        buffers.buffers_lock_.unlock();
+        auto result = rx_init_packet_buffer(&ret, buffers.buffer_back_capacity, buffers.buffer_front_capacity);
+        if (result != RX_PROTOCOL_OK)
+        {
+            memzero(&ret, sizeof(ret));
+            return "Out of memory";
+        }
+        buffers.buffer_count += 1;
+    }
+    else
+    {
+        buffers.free_buffers.back().detach(&ret);
+        buffers.free_buffers.pop_back();
+        buffers.buffers_lock_.unlock();
+    }
+    return ret;
+}
+
+void port_buffers::release_io_buffer (rx_port_ptr& whose, io_types::rx_io_buffer buff)
+{
+    port_buffers& buffers = whose->get_instance_data().stack_data.buffers;
+    if (buff.size > buffers.buffer_discard_size)
+    {// this buffer is to big so discard it
+        buffers.discard_buffer_count += 1;
+        buffers.buffer_count -= 1;
+    }
+    else
+    {
+        rx_reinit_packet_buffer(&buff);
+        locks::auto_lock_t _(&buffers.buffers_lock_);
+        buffers.free_buffers.emplace_back(std::move(buff));
+    }
+}
+
+
+// Class rx_internal::interfaces::port_stack::port_build_map 
+
+port_build_map::port_build_map()
+      : stack_ready(false)
+{
+}
+
+
+
+rx_result port_build_map::register_port (rx_port_ptr who, rx_port_ptr owner)
+{
+    auto it = registered_.find(who);
+    if (it == registered_.end())
+    {
+        registered_.emplace(who);
+        RUNTIME_LOG_DEBUG("port_build_map", 900, "Port " + who->meta_info().get_full_path() + " connected to " + owner->meta_info().get_full_path());
+        return true;
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return "Port already connected!";
+    }
+}
+
+rx_result port_build_map::unregister_port (rx_port_ptr who, rx_port_ptr owner)
+{
+    auto it = registered_.find(who);
+    if (it != registered_.end())
+    {
+        registered_.erase(it);
+        stack_ready = !registered_.empty();
+        RUNTIME_LOG_DEBUG("port_build_map", 900, "Port " + who->meta_info().get_full_path() + " disconnected from " + owner->meta_info().get_full_path());
+        return true;
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return "Port not connected!";
+    }
+}
+
+std::vector<rx_port_ptr> port_build_map::get_registered ()
+{
+    std::vector<rx_port_ptr> ret;
+    if (!registered_.empty())
+    {
+        ret.reserve(registered_.size());
+        for (auto& one : registered_)
+        {
+            ret.push_back(one);
+        }
+    }
+    return ret;
+}
+
+
 // Class rx_internal::interfaces::port_stack::port_passive_map 
 
 port_passive_map::port_passive_map()
@@ -226,188 +408,6 @@ rx_result port_stack_data::init_runtime_data (runtime::runtime_init_context& ctx
     build_map.stack_ready.bind("Status.Assembled", ctx);
     active_map.active_endpoints.bind("Status.Endpoints", ctx);
     return true;
-}
-
-
-// Class rx_internal::interfaces::port_stack::port_active_map 
-
-
-rx_result port_active_map::register_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr whose, rx_port_ptr owner)
-{
-    int16_t count;
-    {
-        locks::auto_slim_lock _(&map_lock_);
-        endpoints_map_.emplace(what, whose);
-        count = (int16_t)endpoints_map_.size();
-    }
-    active_endpoints = count;
-    if(whose)
-        RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " registered endpoint for " + whose->meta_info().get_full_path());
-    else
-        RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " registered endpoint");
-    //dump_active_map(owner->meta_info().get_full_path());
-    return true;
-}
-
-rx_result port_active_map::unregister_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr owner)
-{
-    int16_t count;
-    map_lock_.lock();
-    auto it = endpoints_map_.find(what);
-    if (it != endpoints_map_.end())
-    {
-        auto whose = it->second;
-        endpoints_map_.erase(what);
-        count = (int16_t)endpoints_map_.size();
-        map_lock_.unlock();
-        active_endpoints = count;
-        if(whose)
-            RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " removed endpoint for " + whose->meta_info().get_full_path());
-        else
-            RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " removed endpoint");
-        return true;
-    }
-    else
-    {
-        map_lock_.unlock();
-        RX_ASSERT(false);
-        return "Entry not found!";
-    }
-}
-
-void port_active_map::close_all_endpoints ()
-{
-    map_lock_.lock();
-    if (!endpoints_map_.empty())
-    {
-        map_lock_.unlock();
-        int counter = (int)endpoints_map_.size();
-        while (counter>0)
-        {
-            rx_protocol_stack_endpoint* ep = nullptr;
-            map_lock_.lock();
-            if (!endpoints_map_.empty())
-            {
-                ep = endpoints_map_.begin()->first;
-            }
-            map_lock_.unlock();
-            active_endpoints = 0;
-            if (ep)
-            {
-                counter--;
-                rx_close(ep, RX_PROTOCOL_OK);
-            }
-            else
-                break;
-        }
-        RX_ASSERT(counter <= 0);
-    }
-    else
-    {
-        map_lock_.unlock();
-    }
-}
-
-
-// Class rx_internal::interfaces::port_stack::port_build_map 
-
-port_build_map::port_build_map()
-      : stack_ready(false)
-{
-}
-
-
-
-rx_result port_build_map::register_port (rx_port_ptr who, rx_port_ptr owner)
-{
-    auto it = registered_.find(who);
-    if (it == registered_.end())
-    {
-        registered_.emplace(who);
-        RUNTIME_LOG_DEBUG("port_build_map", 900, "Port " + who->meta_info().get_full_path() + " connected to " + owner->meta_info().get_full_path());
-        return true;
-    }
-    else
-    {
-        RX_ASSERT(false);
-        return "Port already connected!";
-    }
-}
-
-rx_result port_build_map::unregister_port (rx_port_ptr who, rx_port_ptr owner)
-{
-    auto it = registered_.find(who);
-    if (it != registered_.end())
-    {
-        registered_.erase(it);
-        stack_ready = !registered_.empty();
-        RUNTIME_LOG_DEBUG("port_build_map", 900, "Port " + who->meta_info().get_full_path() + " disconnected from " + owner->meta_info().get_full_path());
-        return true;
-    }
-    else
-    {
-        RX_ASSERT(false);
-        return "Port not connected!";
-    }
-}
-
-std::vector<rx_port_ptr> port_build_map::get_registered ()
-{
-    std::vector<rx_port_ptr> ret;
-    if (!registered_.empty())
-    {
-        ret.reserve(registered_.size());
-        for (auto& one : registered_)
-        {
-            ret.push_back(one);
-        }
-    }
-    return ret;
-}
-
-
-// Class rx_internal::interfaces::port_stack::port_buffers 
-
-
-rx_result_with<io_types::rx_io_buffer> port_buffers::alloc_io_buffer (rx_port_ptr& whose)
-{
-    rx_io_buffer ret;
-    port_buffers& buffers = whose->get_instance_data().stack_data.buffers;
-    buffers.buffers_lock_.lock();
-    if (buffers.free_buffers.empty())
-    {
-        buffers.buffers_lock_.unlock();
-        auto result = rx_init_packet_buffer(&ret, buffers.buffer_back_capacity, buffers.buffer_front_capacity);
-        if (result != RX_PROTOCOL_OK)
-        {
-            memzero(&ret, sizeof(ret));
-            return "Out of memory";
-        }
-        buffers.buffer_count += 1;
-    }
-    else
-    {
-        buffers.free_buffers.back().detach(&ret);
-        buffers.free_buffers.pop_back();
-        buffers.buffers_lock_.unlock();
-    }
-    return ret;
-}
-
-void port_buffers::release_io_buffer (rx_port_ptr& whose, io_types::rx_io_buffer buff)
-{
-    port_buffers& buffers = whose->get_instance_data().stack_data.buffers;
-    if (buff.size > buffers.buffer_discard_size)
-    {// this buffer is to big so discard it
-        buffers.discard_buffer_count += 1;
-        buffers.buffer_count -= 1;
-    }
-    else
-    {
-        rx_reinit_packet_buffer(&buff);
-        locks::auto_lock_t _(&buffers.buffers_lock_);
-        buffers.free_buffers.emplace_back(std::move(buff));
-    }
 }
 
 

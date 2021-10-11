@@ -107,7 +107,7 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
             rx_timed_value str_val;
             str_val.assign_static(relation_ptr->target_path.c_str(), rx_time::now());
             relation_ptr->value.value = str_val;
-            relation_ptr->value.value_opt[runtime::structure::value_data::opt_readonly] = true;
+            relation_ptr->value.value_opt[runtime::structure::value_opt_readonly] = true;
 
             auto result = what->add_implicit_relation(relation_ptr);
             if (!result)
@@ -195,23 +195,6 @@ const rx_application_ptr port_instance_data::get_my_application () const
 }
 
 
-} // namespace runtime_data
-} // namespace runtime_core
-} // namespace sys_runtime
-
-namespace interfaces {
-
-namespace port_stack {
-
-// Class rx_internal::interfaces::port_stack::port_build_behavior 
-
-
-} // namespace port_stack
-} // namespace interfaces
-
-namespace sys_runtime {
-namespace runtime_core {
-namespace runtime_data {
 // Class rx_internal::sys_runtime::runtime_core::runtime_data::port_behaviors 
 
 
@@ -220,11 +203,16 @@ namespace runtime_data {
 } // namespace sys_runtime
 
 namespace interfaces {
-namespace port_stack {
-// Class rx_internal::interfaces::port_stack::port_passive_behavior 
 
+namespace port_stack {
 
 // Class rx_internal::interfaces::port_stack::port_active_behavior 
+
+
+// Class rx_internal::interfaces::port_stack::port_build_behavior 
+
+
+// Class rx_internal::interfaces::port_stack::port_passive_behavior 
 
 
 } // namespace port_stack

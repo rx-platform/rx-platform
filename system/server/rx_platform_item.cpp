@@ -34,6 +34,7 @@
 // rx_platform_item
 #include "system/server/rx_platform_item.h"
 
+#include "sys_internal/rx_async_functions.h"
 
 
 namespace rx_platform {

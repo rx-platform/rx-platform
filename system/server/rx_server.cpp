@@ -271,9 +271,9 @@ bool rx_gate::shutdown (const string_type& msg)
 bool rx_gate::read_log (const string_type& log, const log::log_query_type& query, std::function<void(rx_result_with<log::log_events_type>&&)> callback)
 {
 	auto current_executer = rx_thread_context();
-	return log::log_object::instance().read_log(log, query, [current_executer, callback](rx_result_with<log::log_events_type>&& result)
+	return log::log_object::instance().read_log(log, query, [current_executer, callback = std::move(callback)](rx_result_with<log::log_events_type>&& result)
 		{
-			rx_post_function_to(current_executer, rx_reference_ptr(), callback, std::move(result));
+			rx_post_function_to(current_executer, rx_reference_ptr(), std::move(callback), std::move(result));
 		});
 }
 

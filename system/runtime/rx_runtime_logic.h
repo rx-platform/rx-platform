@@ -159,11 +159,13 @@ class logic_holder
 
       rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
-      bool is_this_yours (const string_type& path) const;
+      bool is_this_yours (string_view_type path) const;
 
       void process_programs (runtime_process_context& ctx);
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result get_struct_value (string_view_type item, string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const;
 
 
   protected:

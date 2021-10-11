@@ -35,7 +35,7 @@
 
 
 #include "rx_platform_api.h"
-#include "lib/rx_func_to_go.h"
+#include "system/callbacks/rx_callback.h"
 
 namespace rx_platform
 {

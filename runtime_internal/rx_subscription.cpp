@@ -376,11 +376,6 @@ void rx_subscription::transaction_complete (runtime_transaction_id_t transaction
 {
 }
 
-rx_thread_handle_t rx_subscription::get_target ()
-{
-	return target_;
-}
-
 runtime_connection_data* rx_subscription::get_connection (runtime_handle_t handle)
 {
 	size_t idx = ((handle >> 16) & 0xffff);
@@ -422,23 +417,29 @@ rx_result rx_subscription::write_items (runtime_transaction_id_t transaction_id,
 		auto tag = get_tag(one.first);
 		if (connection && tag)
 		{
-			RX_ASSERT(connection->item);
-			auto single_trans_id = transaction.add_write(master_id, transactions_map_, one.first);
-			rx_thread_handle_t target = connection->item->get_executer();
-			auto it = pending_writes_.find(target);
-			if (it != pending_writes_.end())
+			if (connection->item)
 			{
-				it->second.emplace_back(pending_write_data{ single_trans_id , one.first, std::move(one.second)});
+				auto single_trans_id = transaction.add_write(master_id, transactions_map_, one.first);
+				rx_thread_handle_t target = connection->item->get_executer();
+				auto it = pending_writes_.find(target);
+				if (it != pending_writes_.end())
+				{
+					it->second.emplace_back(pending_write_data{ single_trans_id , one.first, std::move(one.second) });
+				}
+				else
+				{
+					auto ret_val = pending_writes_.emplace(target, pending_writes_type::mapped_type());
+					if (ret_val.second)
+					{
+						ret_val.first->second.emplace_back(pending_write_data{ single_trans_id , one.first, std::move(one.second) });
+					}
+				}
+				result.emplace_back(true);
 			}
 			else
 			{
-				auto ret_val = pending_writes_.emplace(target, pending_writes_type::mapped_type());
-				if (ret_val.second)
-				{
-					ret_val.first->second.emplace_back(pending_write_data{ single_trans_id , one.first, std::move(one.second) });
-				}
+				result.emplace_back(RX_NOT_CONNECTED);
 			}
-			result.emplace_back(true);
 		}
 		else
 		{
@@ -813,3 +814,11 @@ std::vector<std::pair<runtime_handle_t, rx_result> > subscription_write_transact
 } // namespace sys_runtime
 } // namespace rx_internal
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return target_;
+
+#endif

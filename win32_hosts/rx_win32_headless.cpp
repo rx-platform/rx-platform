@@ -78,7 +78,7 @@ string_type win32_headless_host::get_win32_headless_info ()
 	return ret;
 }
 
-rx_result win32_headless_host::fill_host_directories (rx_host_directories& data)
+rx_result win32_headless_host::fill_host_directories (hosting::rx_host_directories& data)
 {
 	return build_directories(data);
 }

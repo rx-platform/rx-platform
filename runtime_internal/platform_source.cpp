@@ -50,6 +50,7 @@ namespace data_source {
 
 platform_source::platform_source()
       : path_("")
+    , point_(this)
 {
 }
 
@@ -78,10 +79,7 @@ rx_result platform_source::stop_source (runtime::runtime_stop_context& ctx)
 
 rx_result platform_source::connect (const string_type& path)
 {
-    point_.connect(path, 200, [this](const rx_value& val)
-        {
-            source_value_changed(rx_value(val));
-        });
+    point_.connect(path, 200);
     return true;
 }
 
@@ -93,6 +91,36 @@ void platform_source::disconnect ()
 rx_result platform_source::source_write (write_data&& data, runtime_process_context* ctx)
 {
     return RX_NOT_IMPLEMENTED;
+}
+
+void platform_source::value_changed (rx_value&& val)
+{
+    source_value_changed(std::move(val));
+}
+
+void platform_source::result_received (rx_result&& result, runtime_transaction_id_t id)
+{
+    source_result_received(std::move(result), id);
+}
+
+
+// Class rx_internal::sys_runtime::data_source::platform_source_point 
+
+platform_source_point::platform_source_point (platform_source* my_source)
+      : my_source_(my_source)
+{
+}
+
+
+
+void platform_source_point::value_changed (const rx_value& val)
+{
+    my_source_->value_changed(rx_value(val));
+}
+
+void platform_source_point::result_received (rx_result&& result, runtime_transaction_id_t id)
+{
+    my_source_->result_received(std::move(result), id);
 }
 
 

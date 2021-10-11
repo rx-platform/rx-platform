@@ -50,10 +50,6 @@ class mapper_attribute;
 } // namespace rx_platform
 
 
-#include "system/server/rx_ns.h"
-#include "system/serialization/rx_ser.h"
-#include "system/callbacks/rx_callback.h"
-#include "system/runtime/rx_blocks.h"
 
 using namespace rx;
 using namespace rx::values;
@@ -186,9 +182,9 @@ public:
 	~const_value_def() = default;
 
   public:
-      const_value_def (const string_type& name, rx_simple_value&& value);
+      const_value_def (const string_type& name, rx_simple_value&& value, bool config_only);
 
-      const_value_def (const string_type& name, const rx_simple_value& value);
+      const_value_def (const string_type& name, const rx_simple_value& value, bool config_only);
 
 
       rx_result serialize_definition (base_meta_writer& stream) const;
@@ -393,17 +389,17 @@ class complex_data_type
 
       rx_result register_struct (const string_type& name, const rx_node_id& id);
 
-      rx_result register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
+      rx_result register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only, bool persistent);
 
       rx_result register_event (const def_blocks::event_attribute& what);
 
       rx_result register_simple_value (const string_type& name, rx_simple_value&& val, bool read_only, bool persistent);
 
-      rx_result register_const_value (const string_type& name, rx_simple_value&& val);
+      rx_result register_const_value (const string_type& name, rx_simple_value&& val, bool config_only = false);
 
       rx_result register_simple_value (const string_type& name, const rx_simple_value& val, bool read_only, bool persistent);
 
-      rx_result register_const_value (const string_type& name, const rx_simple_value& val);
+      rx_result register_const_value (const string_type& name, const rx_simple_value& val, bool config_only = false);
 
       rx_result check_name (const string_type& name, int rt_index);
 
@@ -445,11 +441,11 @@ class complex_data_type
       bool is_abstract;
 
 	  template <typename constT>
-	  bool register_const_value_static(const string_type& name, constT&& value);
+	  bool register_const_value_static(const string_type& name, constT&& value, bool config_only = false);
 	  template <typename valT>
 	  bool register_simple_value_static(const string_type& name, valT&& value, bool read_only, bool persistent);
 	  template <typename valT>
-	  bool register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only);
+	  bool register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only, bool persistent);
 
 	  
 	  static constexpr const int structs_mask =			0x01000000;
@@ -587,15 +583,21 @@ class variable_attribute
       }
 
 
+      rx_item_reference get_target () const
+      {
+        return target_;
+      }
+
+
       const bool get_read_only () const
       {
         return read_only_;
       }
 
 
-      rx_item_reference get_target () const
+      const bool get_persistent () const
       {
-        return target_;
+        return persistent_;
       }
 
 
@@ -613,9 +615,11 @@ class variable_attribute
 
       string_type name_;
 
+      rx_item_reference target_;
+
       bool read_only_;
 
-      rx_item_reference target_;
+      bool persistent_;
 
       string_type description_;
 
@@ -1279,11 +1283,11 @@ namespace meta {
 namespace def_blocks {
 
 template <typename valT>
-bool complex_data_type::register_const_value_static(const string_type& name, valT&& value)
+bool complex_data_type::register_const_value_static(const string_type& name, valT&& value, bool config_only)
 {
 	rx_simple_value temp;
 	temp.assign_static(std::forward<valT>(value));
-	return register_const_value(name, std::move(temp));
+	return register_const_value(name, std::move(temp), config_only);
 }
 template <typename valT>
 bool complex_data_type::register_simple_value_static(const string_type& name, valT&& value, bool read_only, bool persistent)
@@ -1293,11 +1297,11 @@ bool complex_data_type::register_simple_value_static(const string_type& name, va
 	return register_simple_value(name, std::move(temp), read_only, persistent);
 }
 template <typename valT>
-bool complex_data_type::register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only)
+bool complex_data_type::register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only, bool persistent)
 {
 	rx_simple_value temp;
 	temp.assign_static<valT>(std::forward<valT>(value));
-	return register_variable(name, id, std::move(temp), read_only);
+	return register_variable(name, id, std::move(temp), read_only, persistent);
 }
 
 

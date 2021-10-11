@@ -150,6 +150,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::ls_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::cd_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::mkdir_command>());
+	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::rmdir_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::move_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_command>());
 	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_system_command>());
@@ -166,6 +167,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<model::meta_commands::save_command>());
 	// runtime commands
 	register_command(rx_create_reference<sys_runtime::runtime_commands::read_command>());
+	register_command(rx_create_reference<sys_runtime::runtime_commands::struct_command>());
 	register_command(rx_create_reference<sys_runtime::runtime_commands::write_command>());
 	register_command(rx_create_reference<sys_runtime::runtime_commands::pull_command>());
 	register_command(rx_create_reference<sys_runtime::runtime_commands::turn_on_command>());

@@ -233,6 +233,30 @@ command for browsing inside of object, domain, port or application");
 };
 
 
+
+
+
+
+class struct_command : public runtime_command_base  
+{
+
+  public:
+      struct_command();
+
+      ~struct_command();
+
+
+  protected:
+
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer);
+
+
+  private:
+
+
+};
+
+
 } // namespace runtime_commands
 } // namespace sys_runtime
 } // namespace rx_internal

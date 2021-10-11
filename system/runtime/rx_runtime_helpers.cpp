@@ -46,6 +46,7 @@
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 
+#include "system/runtime/rx_blocks.h"
 #include "rx_configuration.h"
 
 

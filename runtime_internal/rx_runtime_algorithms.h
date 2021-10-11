@@ -53,9 +53,8 @@ template<class typeT>
 rx_result delete_runtime_structure(typename typeT::RTypePtr what);
 template<class typeT>
 rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx);
-template<class typeT, class refT>
-rx_result deinit_runtime(typename typeT::RTypePtr what, refT ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback
-    ,runtime::runtime_deinit_context& ctx);
+template<class typeT>
+rx_result deinit_runtime(typename typeT::RTypePtr what, rx_result_callback&& callback);
 
 
 
@@ -69,7 +68,7 @@ class object_algorithms
 
       static rx_result init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_object_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_object_ptr what, rx_result_callback&& callback);
 
       static rx_result stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx);
 
@@ -100,7 +99,7 @@ class domain_algorithms
 
       static rx_result init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_domain_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_domain_ptr what, rx_result_callback&& callback);
 
       static rx_result stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
 
@@ -131,7 +130,7 @@ class port_algorithms
 
       static rx_result init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_port_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_port_ptr what, rx_result_callback&& callback);
 
       static rx_result stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
 
@@ -162,7 +161,7 @@ class application_algorithms
 
       static rx_result init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_application_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_application_ptr what, rx_result_callback&& callback);
 
       static rx_result stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
 
@@ -189,7 +188,7 @@ class relations_algorithms
 
       static rx_result init_runtime (rx_relation_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result deinit_runtime (rx_relation_ptr what, rx_reference_ptr ref, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback, runtime::runtime_deinit_context& ctx);
+      static rx_result deinit_runtime (rx_relation_ptr what, rx_result_callback&& callback);
 
 
   protected:

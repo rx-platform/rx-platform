@@ -246,15 +246,10 @@ class platform_runtime_manager
 		  result = algorithms::init_runtime<typeT>(what, ctx);
 		  return result;
 	  }
-	  template<class typeT, class refT, class funcT>
-	  rx_result deinit_runtime(typename typeT::RTypePtr what, refT ref, rx_thread_handle_t result_target
-          , funcT&& callback)
+	  template<class typeT>
+	  rx_result deinit_runtime(typename typeT::RTypePtr what, rx_result_callback&& callback)
 	  {
-          rx_result_callback wrapper;
-          wrapper.anchor = ref;
-          wrapper.function = std::forward<funcT>(callback);
-          runtime::runtime_deinit_context ctx;
-		  auto result = algorithms::deinit_runtime<typeT>(what, ref, result_target, std::move(wrapper), ctx);
+		  auto result = algorithms::deinit_runtime<typeT>(what, std::move(callback));
 		  return result;
 	  }
   protected:

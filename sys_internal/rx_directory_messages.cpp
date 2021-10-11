@@ -35,6 +35,7 @@
 #include "sys_internal/rx_directory_messages.h"
 
 #include "sys_internal/rx_internal_protocol.h"
+#include "sys_internal/rx_namespace_algorithms.h"
 
 
 namespace rx_internal {
@@ -68,7 +69,7 @@ rx_result rx_make_directory_request::deserialize (base_meta_reader& stream)
 
 message_ptr rx_make_directory_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
-	auto ret = ctx.safe_directory()->add_sub_directory(path);
+	auto ret = internal_ns::namespace_algorithms::get_or_create_direcotry(ctx.safe_directory(), path);
 	if (!ret)
 	{
 		auto ret_value = std::make_unique<error_message>(ret, 17, request_id);
@@ -77,6 +78,7 @@ message_ptr rx_make_directory_request::do_job (api::rx_context ctx, rx_protocol_
 	else
 	{
 		auto response = std::make_unique<rx_make_directory_response>();
+		response->request_id = request_id;
 		return response;
 	}
 }
@@ -126,6 +128,7 @@ message_ptr rx_remove_directory_request::do_job (api::rx_context ctx, rx_protoco
 	else
 	{
 		auto response = std::make_unique<rx_remove_directory_response>();
+		response->request_id = request_id;
 		return response;
 	}
 }

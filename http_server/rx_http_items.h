@@ -88,7 +88,7 @@ class http_rx_item_handler : public rx_platform::http::http_handler
 
   private:
 
-      virtual rx_result do_with_item (http_request& req, http_response& resp, platform_item_ptr item) = 0;
+      virtual rx_result do_with_item (string_view_type sub_item, http_request& req, http_response& resp, platform_item_ptr item) = 0;
 
 
 
@@ -113,7 +113,7 @@ class http_json_object_reader : public http_rx_item_handler
 
   private:
 
-      rx_result do_with_item (http_request& req, http_response& resp, platform_item_ptr item);
+      rx_result do_with_item (string_view_type sub_item, http_request& req, http_response& resp, platform_item_ptr item);
 
 
 

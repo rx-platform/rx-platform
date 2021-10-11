@@ -45,7 +45,7 @@
 
 using namespace rx_platform;
 using namespace rx::values;
-using namespace rx_platform::runtime::tag_blocks;
+using namespace rx_platform::runtime;
 
 
 namespace rx_internal {
@@ -254,8 +254,6 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
       void items_changed (const std::vector<update_item>& items);
 
       void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
-
-      rx_thread_handle_t get_target ();
 
       rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& result);
 

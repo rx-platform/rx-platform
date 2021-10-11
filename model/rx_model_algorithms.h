@@ -82,83 +82,92 @@ rx_result_with<platform_item_ptr> get_working_runtime(const rx_node_id& id);
 template<class resultT, class funcT>
 rx_result do_with_item(
 	const rx_node_id& id
-    , funcT&& what
-    , rx_result_with_callback<resultT>&& callback
-	, rx_platform::api::rx_context ctx)
+    , funcT what
+    , rx_result_with_callback<resultT>&& callback)
 {
-    using my_result_type = rx_function_to_go<rx_result_with<platform_item_ptr>&&, rx_result_with_callback<resultT>&&>;
-	auto ret_executer = rx_thread_context();
-
-	auto func2 = my_result_type(ctx.object,
-        [what = std::forward<funcT>(what), ret_executer, ctx]
-        (rx_result_with<platform_item_ptr>&& who, rx_result_with_callback<resultT> && callback) mutable
-	    {
-		    auto ret_val = what(std::move(who));
-            callback.set_arguments(std::move(ret_val));
-		    rx_platform::rx_post_packed_to(ret_executer, ctx.object, std::move(callback));
-	    });
-
-	rx_platform::rx_post_function_to(RX_DOMAIN_META, ctx.object
-        , [ret_executer](rx_node_id id, my_result_type&& func2, rx_result_callback&& callback) mutable
+	rx_platform::rx_post_function_to(RX_DOMAIN_META, callback.get_anchor()
+        , [](rx_node_id id, funcT what, rx_result_with_callback<resultT>&& callback) mutable
         {
             auto result = get_platform_item_sync(id);
             if (!result)
             {
-                rx_platform::rx_post_packed_to(ret_executer, std::move(callback));
+                callback(rx_result_with_callback<resultT>(rx_result_with<resultT>(result.errors())));
             }
             else
             {
                 auto executer = result.value()->get_executer();
-                func2.set_arguments(std::move(result), std::move(callback));
-                rx_post_packed_to(executer, std::move(func2));
+                rx_platform::rx_post_function_to(executer, callback.get_anchor()
+                    , [](platform_item_ptr item, funcT&& what, rx_result_with_callback<resultT>&& callback) mutable
+                    {
+                        auto result = what(item);
+                        callback(std::move(result));
+                    }, result.value(), std::move(what), std::move(callback));
             }
-        }, id, std::move(func2), std::move(callback));
+        }, id, std::move, std::move(callback));
 	return true;
 }
 
 template<class funcT>
 rx_result do_with_item(
     const rx_node_id& id
-    , funcT&& what
-    , rx_result_callback&& callback
+    , funcT what
+    , rx_result_callback callback
     , rx_platform::api::rx_context ctx)
 {
-    using my_result_type = rx_function_to_go<rx_result_with<platform_item_ptr>&&, rx_result_callback&&>;
-    auto ret_executer = rx_thread_context();
+    using remote_func_type_t = rx_platform::callback::rx_remote_function<rx_result, platform_item_ptr>;
 
-    auto func2 = my_result_type(ctx.object,
-        [what = std::forward<funcT>(what), ret_executer, ctx]
-        (rx_result_with<platform_item_ptr>&& who, rx_result_callback&& callback) mutable
-        {
-            auto ret_val = what(std::move(who));
-            callback.set_arguments(std::move(ret_val));
-            rx_platform::rx_post_packed_to(ret_executer, std::move(callback));
-        });
+    auto anchor = callback.get_anchor();
 
-    rx_platform::rx_post_function_to(RX_DOMAIN_META, ctx.object
-        , [ret_executer](rx_node_id id, my_result_type&& func2, rx_result_callback&& callback) mutable
+    remote_func_type_t remote(ctx.object, RX_DOMAIN_META, std::move(what), std::move(callback));
+
+
+    rx_platform::rx_post_function_to(RX_DOMAIN_META, anchor
+        , [](rx_node_id id, remote_func_type_t&& remote)
         {
             auto result = get_platform_item_sync(id);
-            if (!result)
+            if (result)
             {
-                callback.set_arguments(rx_result(result.errors()));
-                rx_platform::rx_post_packed_to(ret_executer, std::move(callback));
+                auto executer = result.value()->get_executer();
+                remote.set_target(executer);
+                remote(result.move_value());
             }
             else
             {
-                auto executer = result.value()->get_executer();
-                func2.set_arguments(std::move(result), std::move(callback));
-                rx_post_packed_to(executer, std::move(func2));
+                remote.send_result(result.errors());
             }
-        }, id, std::move(func2), std::move(callback));
+        }, std::move(id), std::move(remote));
+	return true;
+}
+
+template<class callbackT, class funcT>
+rx_result do_with_runtime_item(
+    const rx_node_id& id
+    , funcT what
+    , callbackT callback
+    , rx_platform::api::rx_context ctx)
+{
+    auto item_result = get_working_runtime(id);
+    if (!item_result)
+    {
+        return item_result.errors();
+    }
+    auto item = item_result.move_value();
+    using resultT = decltype(what(std::move(item)));
+    auto item_executer = item->get_executer();
+
+    rx_platform::callback::rx_remote_function<resultT, platform_item_ptr> remote(ctx.object, item_executer, std::move(what), std::move(callback));
+
+    remote(std::move(item));
+
     return true;
 }
 
-template<class resultT, class funcT>
+
+template<class funcT>
 rx_result do_with_runtime_item(
     const rx_node_id& id
-    , funcT&& what
-    , rx_result_with_callback<resultT>&& callback
+    , funcT what
+    , rx_result_callback callback
     , rx_platform::api::rx_context ctx)
 {
 
@@ -178,12 +187,10 @@ rx_result do_with_runtime_item(
     return true;
 }
 
-
 template<class funcT>
 rx_result do_with_runtime_item(
     const rx_node_id& id
-    , funcT&& what
-    , rx_result_callback&& callback
+    , funcT what
     , rx_platform::api::rx_context ctx)
 {
 
@@ -196,8 +203,8 @@ rx_result do_with_runtime_item(
 
     auto item_executer = item->get_executer();
 
-    rx_platform::rx_do_with_callback<rx_reference_ptr, funcT>(item_executer, ctx.object
-        , std::forward<funcT>(what), std::move(callback)
+    rx_platform::rx_post_function_to<funcT, platform_item_ptr >(item_executer, ctx.object
+        , std::move(what)
         , std::move(item));
 
     return true;
@@ -209,7 +216,7 @@ template<class resultT, class refT, class... Args>
 rx_result do_with_items(
 	const rx_node_ids& ids
 	, std::function<resultT(Args...)> what
-	, rx_result_callback&& callback
+	, rx_result_callback callback
 	, rx_platform::api::rx_context ctx);
 
 
@@ -231,7 +238,7 @@ class types_model_algorithm
 
       static void update_type (typename typeT::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
+      static void delete_type (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
       static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
 
@@ -271,7 +278,7 @@ class simple_types_model_algorithm
 
       static void update_type (typename typeT::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename typeT::smart_ptr>&& callback);
 
-      static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
+      static void delete_type (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
       static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
 
@@ -315,7 +322,7 @@ class runtime_model_algorithm
 
       static void update_runtime (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
-      static void delete_runtime (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
+      static void delete_runtime (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
       static rx_result init_runtime (typename typeT::RTypePtr what);
 
@@ -332,7 +339,7 @@ class runtime_model_algorithm
 
       static void update_runtime_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target);
 
-      static rx_result delete_runtime_sync (const rx_item_reference& item_reference, rx_thread_handle_t result_target, rx_function_to_go<rx_result&&>&& callback);
+      static rx_result delete_runtime_sync (const rx_item_reference& item_reference, rx_thread_handle_t result_target, rx_result_callback&& callback);
 
 
 
@@ -354,7 +361,7 @@ class relation_types_algorithm
 
       static void update_type (relation_type::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename relation_type::smart_ptr>&& callback);
 
-      static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
+      static void delete_type (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
       static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
 
@@ -393,7 +400,7 @@ class data_types_model_algorithm
 
       static void update_type (data_type::smart_ptr prototype, rx_update_type_data update_data, rx_result_with_callback<typename data_type::smart_ptr>&& callback);
 
-      static void delete_type (const rx_item_reference& item_reference, rx_function_to_go<rx_result&&>&& callback);
+      static void delete_type (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
       static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
 

@@ -41,7 +41,6 @@
 #include "rx_write_transaction.h"
 #include "rx_scan_algorithms.h"
 #include "rx_holder_algorithms.h"
-using rx_internal::sys_runtime::data_source::value_point;
 
 
 namespace rx_platform {

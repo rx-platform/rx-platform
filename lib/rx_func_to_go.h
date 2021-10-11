@@ -61,7 +61,7 @@ struct tuple_wrapper
 
 
 
-template <typename anchorT, typename... Args>
+template <typename funcT, typename... Args>
 struct function_to_go 
 {
 
@@ -69,17 +69,16 @@ struct function_to_go
 
     using data_tuple_type = std::tuple<std::decay_t<Args>...>;
 
-    template<typename funcT>
-    function_to_go(anchorT anc, funcT&& f)
+    function_to_go(rx_reference_ptr anc, funcT f)
         : anchor(anc)
-        , function(std::forward<funcT>(f))
+        , function(std::move(f))
     {
     }
 
     function_to_go() = default;
     function_to_go(const function_to_go&) = delete;
-    function_to_go(function_to_go&& right) = default;
-    function_to_go& operator=(function_to_go&& right) = default;
+    function_to_go(function_to_go&& right) noexcept = default;
+    function_to_go& operator=(function_to_go&& right) noexcept = default;
 
     void set_arguments(Args&&... args)
     {
@@ -95,9 +94,9 @@ struct function_to_go
       }
 
 
-      anchorT anchor;
+      rx_reference_ptr anchor;
 
-      std::function<void(Args...)> function;
+      funcT function;
 
       data_tuple_type data;
 
@@ -111,21 +110,21 @@ struct function_to_go
 };
 
 
-template <typename refT>
-struct function_to_go<refT>
+template <typename funcT>
+struct function_to_go<funcT>
 {
     typedef std::false_type has_arguments;
 
-    template<typename funcT>
-    function_to_go(refT ref, funcT&& f)
-        : reference(ref)
-        , function(std::forward<funcT>(f))
+    function_to_go(rx_reference_ptr anc, funcT f)
+        : anchor(anc)
+        , function(std::move(f))
     {
     }
 
     function_to_go() = default;
     function_to_go(const function_to_go&) = delete;
     function_to_go(function_to_go&&) noexcept = default;
+    function_to_go& operator=(function_to_go && right) noexcept = default;
 
     void call()
     {
@@ -137,20 +136,98 @@ struct function_to_go<refT>
         // nothing to do!!!
     }
 
-    std::function<void(void)> function;
+    rx_reference_ptr anchor;
 
-    refT reference;
+    funcT function;
+};
+
+
+
+
+
+
+
+
+template <typename funcT, typename resultT, typename... Args>
+class result_function_to_go 
+{
+public:
+
+    typedef std::true_type has_arguments;
+
+    using data_tuple_type = std::tuple<std::decay_t<Args>...>;
+
+    result_function_to_go(rx_reference_ptr anc, funcT f)
+        : anchor(anc)
+        , function(std::move(f))
+    {
+    }
+
+    result_function_to_go() = default;
+    result_function_to_go(const result_function_to_go&) = delete;
+    result_function_to_go(result_function_to_go && right) noexcept = default;
+    result_function_to_go& operator=(result_function_to_go && right) noexcept = default;
+
+    void set_arguments(Args&&... args)
+    {
+        data = std::move(data_tuple_type(std::decay_t<Args>(std::forward<Args>(args))...));
+    }
+
+  public:
+
+      resultT call ()
+      {
+          return std::apply(function, loose_call<std::tuple<Args&&...> >(data));
+      }
+
+
+      rx_reference_ptr anchor;
+
+      funcT function;
+
+      data_tuple_type data;
+
+
+  protected:
+
+  private:
+
 
 };
 
-template <typename... Args>
-using rx_function_to_go = function_to_go<rx_reference_ptr, Args...>;
 
+template <typename funcT, typename resultT>
+struct result_function_to_go<funcT, resultT>
+{
+public:
+    typedef std::false_type has_arguments;
 
-template <typename resultT>
-using rx_result_with_callback = function_to_go<rx_reference_ptr, rx_result_with<resultT>&& >;
+    result_function_to_go(rx_reference_ptr anc, funcT f)
+        : anchor(anc)
+        , function(std::move(f))
+    {
+    }
 
-using rx_result_callback = function_to_go<rx_reference_ptr, rx_result&& >;
+    result_function_to_go() = default;
+    result_function_to_go(const result_function_to_go&) = delete;
+    result_function_to_go(result_function_to_go&&) noexcept = default;
+    result_function_to_go& operator=(result_function_to_go&& right) noexcept = default;
+
+    resultT call()
+    {
+        return function();
+    }
+
+    void set_arguments()
+    {
+        // nothing to do!!!
+    }
+
+    funcT function;
+
+    rx_reference_ptr anchor;
+
+};
 
 
 } // namespace rx

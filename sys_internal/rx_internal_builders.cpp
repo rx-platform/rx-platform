@@ -1550,6 +1550,7 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		src->complex_data.register_const_value_static("Persist", false, true);
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
 		// standard filters
@@ -1598,6 +1599,15 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, full_path
 			});
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+
+		auto variable = create_type<basic_types::variable_type>(meta::type_creation_data{
+			RX_REGISTER_VARIABLE_TYPE_NAME
+			, RX_REGISTER_VARIABLE_TYPE_ID
+			, RX_CLASS_VARIABLE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<variable_type>(dir, variable, false);
 
 		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
 			RX_HI_CUTOFF_FILTER_TYPE_NAME

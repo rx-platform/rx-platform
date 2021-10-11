@@ -41,6 +41,7 @@
 #include <valarray>
 #include "lib/rx_const_size_vector.h"
 #include "sys_internal/rx_async_functions.h"
+#include "system/runtime/rx_blocks.h"
 #define ANSI_RX_OBJECT_SIZE ANSI_COLOR_GREEN ANSI_COLOR_BOLD
 #define ANSI_RX_OBJECT_NAME ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
 
@@ -275,7 +276,7 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 
 				};
 
-			rx_post_delayed_function(smart_this(), 5000, std::move(func)
+			rx_post_delayed_function(5000, smart_this(), std::move(func)
 				, path, no_subscription ? 0 : results[0].value());
 
 			ctx->set_current_test_case(smart_this());

@@ -121,6 +121,7 @@ void displays_holder::collect_data (data::runtime_values_data& data, runtime_val
         data::runtime_values_data one_data;
         one.item->collect_data(one_data, type);
         data.add_child(one.name, std::move(one_data));
+
     }
 }
 
@@ -176,10 +177,9 @@ bool displays_holder::deserialize (base_meta_reader& stream, uint8_t type)
 	return false;
 }
 
-bool displays_holder::is_this_yours (const string_type& path) const
+bool displays_holder::is_this_yours (string_view_type path) const
 {
     size_t idx = path.find(RX_OBJECT_DELIMETER);
-    string_type name;
     if (idx == string_type::npos)
     {
         for (const auto& one : displays_)
@@ -190,32 +190,54 @@ bool displays_holder::is_this_yours (const string_type& path) const
     }
     else
     {
-        size_t len = idx;
+        string_view_type name = path.substr(0, idx);
         for (const auto& one : displays_)
         {
-            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+            if (one.name == name)
                 return true;
         }
     }
     return false;
 }
 
-rx_result displays_holder::get_value_ref (const string_type& path, rt_value_ref& ref)
+rx_result displays_holder::get_value_ref (string_view_type path, rt_value_ref& ref)
 {
     size_t idx = path.find(RX_OBJECT_DELIMETER);
-    string_type name;
+    string_view_type name;
     if (idx != string_type::npos)
     {
         size_t len = idx;
         for (const auto& one : displays_)
         {
-            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+            if (one.name == name)
             {
-                return one.item->get_value_ref(&path.c_str()[idx + 1], ref);
+                return one.item->get_value_ref(path.substr(idx+1), ref);
             }
         }
     }
-    return path + " not found!";
+    return "Invalid path";
+}
+
+rx_result displays_holder::get_struct_value (string_view_type item, string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const
+{
+    const structure::runtime_item* item_ptr = nullptr;
+    for (const auto& one : displays_)
+    {
+        if (one.name == item)
+        {
+            item_ptr = one.item->get_child_item(path);
+            break;
+        }
+    }
+    if (item_ptr)
+    {
+        item_ptr->collect_data(data, type);
+        return true;
+    }
+    else
+    {
+        return "Invalid path";
+    }
 }
 
 

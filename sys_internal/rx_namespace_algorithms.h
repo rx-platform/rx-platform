@@ -52,6 +52,9 @@ class namespace_algorithms
 
   public:
 
+      static rx_result_with<rx_directory_ptr> get_or_create_direcotry (rx_directory_ptr from, const string_type& path);
+
+
   protected:
 
   private:

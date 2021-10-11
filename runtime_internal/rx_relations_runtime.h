@@ -35,13 +35,17 @@
 
 // rx_relations
 #include "system/runtime/rx_relations.h"
+// rx_operational
+#include "system/runtime/rx_operational.h"
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 
 namespace rx_internal {
 namespace sys_runtime {
-namespace subscriptions {
-class rx_subscription;
+namespace relations_runtime {
+class remote_relation_connector;
 
-} // namespace subscriptions
+} // namespace relations_runtime
 } // namespace sys_runtime
 } // namespace rx_internal
 
@@ -59,22 +63,67 @@ namespace relations_runtime {
 
 
 
+
 class local_relation_connector : public rx_platform::runtime::relations::relation_connector  
 {
 
+    class local_relation_callback : public tag_blocks::rx_tags_callback
+    {
+        local_relation_connector* parent_;
+    public:
+        local_relation_callback(local_relation_connector* parent)
+            : parent_(parent)
+        {
+        }
+        void items_changed(const std::vector<update_item>& items)
+        {
+            if (parent_)
+                parent_->items_changed(items);
+        }
+        void transaction_complete(runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
+        {
+            if (parent_)
+                parent_->transaction_complete(transaction_id, std::move(result), std::move(items));
+        }
+        void write_complete(runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result)
+        {
+            if (parent_)
+                parent_->write_complete(transaction_id, item, std::move(result));
+        }
+        void parent_destroyed()
+        {
+            parent_ = nullptr;
+        }
+    };
+
+
+    typedef std::map<runtime_handle_t, runtime_handle_t> handles_type;// target_handle -> mine handles
+    typedef std::map<string_type, runtime_handle_t> tags_type;// path -> mine handle
+    typedef std::map<runtime_handle_t, string_type> inverse_tags_type;// mine handle -> path
+
   public:
-      local_relation_connector (platform_item_ptr&& item);
+      local_relation_connector (platform_item_ptr&& item, relations::relation_connections* whose);
+
+      ~local_relation_connector();
 
 
-      rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor, runtime_process_context* ctx);
+      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths);
 
-      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, runtime_process_context* ctx);
+      rx_result disconnect_items (const std::vector<runtime_handle_t>& items);
 
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx);
+      rx_result write_tag (runtime_transaction_id_t trans, runtime_handle_t item, rx_simple_value&& value);
 
-      rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
+      void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      void read_value (const string_type& path, read_result_callback_t callback) const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void items_changed (const std::vector<update_item>& items);
+
+      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+
+      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
 
 
   protected:
@@ -83,6 +132,46 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
 
 
       platform_item_ptr item_ptr_;
+
+      handles_type handles_;
+
+      inverse_tags_type inverse_tags_;
+
+      tags_type tag_paths_;
+
+      rx_reference<local_relation_callback> monitor_;
+
+      relations::relation_connections* parent_;
+
+
+};
+
+
+
+
+
+
+class relation_value_point : public data_source::value_point_impl  
+{
+
+  public:
+      relation_value_point (remote_relation_connector* connector, runtime_handle_t handle);
+
+
+  protected:
+
+  private:
+
+      void value_changed (const rx_value& val);
+
+      void result_received (rx_result&& result, runtime_transaction_id_t id);
+
+
+
+      remote_relation_connector *connector_;
+
+
+      runtime_handle_t handle_;
 
 
 };
@@ -94,19 +183,29 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
 
 class remote_relation_connector : public rx_platform::runtime::relations::relation_connector  
 {
-    typedef std::map<runtime_handle_t, data_source::value_point> values_type;
+    typedef std::map<runtime_handle_t, std::unique_ptr<relation_value_point> > values_type;
 
   public:
+      remote_relation_connector (platform_item_ptr&& item, relations::relation_connections* whose);
 
-      rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor, runtime_process_context* ctx);
+      ~remote_relation_connector();
 
-      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, runtime_process_context* ctx);
 
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx);
+      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths);
 
-      rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
+      rx_result disconnect_items (const std::vector<runtime_handle_t>& items);
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      rx_result write_tag (runtime_transaction_id_t trans, runtime_handle_t item, rx_simple_value&& value);
+
+      void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
+
+      void read_value (const string_type& path, read_result_callback_t callback) const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void value_changed (runtime_handle_t handle, const rx_value& val);
+
+      void result_received (runtime_handle_t handle, rx_result&& result, runtime_transaction_id_t id);
 
 
   protected:
@@ -114,7 +213,14 @@ class remote_relation_connector : public rx_platform::runtime::relations::relati
   private:
 
 
-      rx_reference<subscriptions::rx_subscription> my_subscription_;
+      values_type values_;
+
+
+      string_type item_path_;
+
+      platform_item_ptr item_ptr_;
+
+      relations::relation_connections* parent_;
 
 
 };

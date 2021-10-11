@@ -34,6 +34,8 @@
 // rx_internal_protocol
 #include "sys_internal/rx_internal_protocol.h"
 
+#include "system/serialization/rx_ser.h"
+#include "system/runtime/rx_blocks.h"
 #include "sys_internal/rx_async_functions.h"
 #include "system/runtime/rx_io_buffers.h"
 #include "rx_internal_subscription.h"

@@ -56,6 +56,7 @@ string_type _not_implemented_func(const char* fname);
 #define RX_NOT_SUPPORTED "Operation not supported."
 #define RX_NOT_CONNECTED "Not connected."
 #define RX_ALREADY_CONNECTED "Already connected."
+#define RX_INVALID_PATH "Invalid path."
 
 namespace rx
 {
@@ -387,6 +388,8 @@ public:
 	rx_uuid(const rx_uuid& rigth);
 	rx_uuid(const rx_uuid_t& right);
 	rx_uuid& operator=(const rx_uuid& right);
+	rx_uuid(rx_uuid&& right) noexcept;
+	rx_uuid& operator=(rx_uuid&& right) noexcept;
 
 	static rx_uuid create_new();
 	static rx_uuid create_from_string(const string_type& str);

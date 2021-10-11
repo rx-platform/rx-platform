@@ -76,7 +76,7 @@ rx_result complex_data_type::register_struct (const string_type& name, const rx_
 	return ret;
 }
 
-rx_result complex_data_type::register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
+rx_result complex_data_type::register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only, bool persistent)
 {
 	auto ret = check_name(name, (static_cast<int>(variables_.size() | variables_mask)));
 	if(ret)
@@ -106,12 +106,12 @@ rx_result complex_data_type::register_simple_value (const string_type& name, rx_
 	return ret;
 }
 
-rx_result complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val)
+rx_result complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val, bool config_only)
 {
 	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
 	if (ret)
 	{
-		const_values_.emplace_back(name, std::move(val));
+		const_values_.emplace_back(name, std::move(val), config_only);
 	}
 	return ret;
 }
@@ -126,12 +126,12 @@ rx_result complex_data_type::register_simple_value (const string_type& name, con
 	return ret;
 }
 
-rx_result complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val)
+rx_result complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val, bool config_only)
 {
 	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
 	if(ret)
 	{
-		const_values_.emplace_back(name, val);
+		const_values_.emplace_back(name, val, config_only);
 	}
 	return ret;
 }
@@ -154,17 +154,17 @@ rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 
 // Class rx_platform::meta::def_blocks::const_value_def 
 
-const_value_def::const_value_def (const string_type& name, rx_simple_value&& value)
-      : config_only_(false)
-	, name_(name)
+const_value_def::const_value_def (const string_type& name, rx_simple_value&& value, bool config_only)
+	: name_(name)
 	, storage_(std::move(value))
+	, config_only_(config_only)
 {
 }
 
-const_value_def::const_value_def (const string_type& name, const rx_simple_value& value)
-      : config_only_(false)
-	, name_(name)
+const_value_def::const_value_def (const string_type& name, const rx_simple_value& value, bool config_only)
+	: name_(name)
 	, storage_(value)
+	, config_only_(config_only)
 {
 }
 
@@ -532,7 +532,7 @@ rx_result data_type_def::register_value (const string_type& name, rx_simple_valu
 	auto ret = check_name(name, (static_cast<int>(values_.size() | simple_values_mask)));
 	if (!ret)
 		return ret;
-	values_.emplace_back(name, std::move(val));
+	values_.emplace_back(name, std::move(val), false);
 	return true;
 }
 
@@ -541,7 +541,7 @@ rx_result data_type_def::register_value (const string_type& name, const rx_simpl
 	auto ret = check_name(name, (static_cast<int>(values_.size() | simple_values_mask)));
 	if (!ret)
 		return ret;
-	values_.emplace_back(name, val);
+	values_.emplace_back(name, val, false);
 	return true;
 }
 

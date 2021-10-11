@@ -242,7 +242,7 @@ rx_result logic_holder::deserialize (base_meta_reader& stream, uint8_t type)
     return true;
 }
 
-bool logic_holder::is_this_yours (const string_type& path) const
+bool logic_holder::is_this_yours (string_view_type path) const
 {
     size_t idx = path.find(RX_OBJECT_DELIMETER);
     if (idx == string_type::npos)
@@ -260,15 +260,15 @@ bool logic_holder::is_this_yours (const string_type& path) const
     }
     else
     {
-        size_t len = idx;
+        string_view_type name = path.substr(0, idx);
         for (const auto& one : runtime_programs_)
         {
-            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+            if (one.name == name)
                 return true;
         }
         for (const auto& one : runtime_methods_)
         {
-            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+            if (one.name == name)
                 return true;
         }
     }
@@ -279,29 +279,60 @@ void logic_holder::process_programs (runtime_process_context& ctx)
 {
 }
 
-rx_result logic_holder::get_value_ref (const string_type& path, rt_value_ref& ref)
+rx_result logic_holder::get_value_ref (string_view_type path, rt_value_ref& ref)
 {
     size_t idx = path.find(RX_OBJECT_DELIMETER);
-    string_type name;
+    string_view_type name = path.substr(0, idx);
     if (idx != string_type::npos)
     {
-        size_t len = idx;
         for (const auto& one : runtime_programs_)
         {
-            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+            if (one.name == name)
             {
-                return one.item->get_value_ref(&path.c_str()[idx + 1], ref);
+                return one.item->get_value_ref(path.substr(idx+1), ref);
             }
         }
         for (const auto& one : runtime_methods_)
         {
-            if (one.name.size() == len && memcmp(one.name.c_str(), path.c_str(), len) == 0)
+            if (one.name == name)
             {
-                return one.item->get_value_ref(&path.c_str()[idx + 1], ref);
+                return one.item->get_value_ref(path.substr(idx + 1), ref);
             }
         }
     }
-    return path + " not found!";
+    return RX_INVALID_PATH;
+}
+
+rx_result logic_holder::get_struct_value (string_view_type item, string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const
+{
+    const structure::runtime_item* item_ptr = nullptr;
+    for (const auto& one : runtime_programs_)
+    {
+        if (one.name == item)
+        {
+            item_ptr = one.item->get_child_item(path);
+            break;
+        }
+    }
+    if (!item_ptr)
+    {
+        for (const auto& one : runtime_methods_)
+        {
+            if (one.name == item)
+            {
+                item_ptr = one.item->get_child_item(path);
+            }
+        }
+    }
+    if (item_ptr)
+    {
+        item_ptr->collect_data(data, type);
+        return true;
+    }
+    else
+    {
+        return "Invalid path";
+    }
 }
 
 

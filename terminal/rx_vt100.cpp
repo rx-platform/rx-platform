@@ -236,8 +236,8 @@ bool vt100_endpoint::char_received_normal (const char ch, bool eof, string_type&
 						api::rx_context ctx;
 						ctx.directory = console_program_->get_current_directory();
 						ctx.object = smart_this();
-						
-						rx_function_to_go<rx_result_with<api::query_result>&&> callback(ctx.object,
+
+						rx_result_with_callback<api::query_result> callback(ctx.object,
 							[this, what](rx_result_with<api::query_result>&& result) mutable
 							{
 								if (result)
@@ -287,9 +287,9 @@ bool vt100_endpoint::char_received_normal (const char ch, bool eof, string_type&
 												}
 											}
 
-											
 
-											int idx = 0;
+
+											size_t idx = 0;
 											auto sug_size = result.value().items.size();
 											bool done = false;
 											while(!done)
@@ -354,13 +354,13 @@ bool vt100_endpoint::char_received_normal (const char ch, bool eof, string_type&
 								}
 
 							});
-						
+
 						rx_result result = api::ns::rx_query_model({ query }, std::move(callback), ctx);
 
 					}
 				}
 			}
-		}	
+		}
 		break;
 	default:
 		if (ch >= 0x20)

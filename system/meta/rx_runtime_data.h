@@ -61,28 +61,6 @@ namespace runtime_data {
 
 
 
-struct basic_runtime_data 
-{
-
-
-      rx::data::runtime_values_data overrides;
-
-      meta_data meta_info;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 struct application_data 
 {
 
@@ -99,91 +77,6 @@ struct application_data
       byte_string identity;
 
   public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class application_runtime_data : public basic_runtime_data  
-{
-public:
-    typedef object_types::application_type targetType;
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type);
-
-
-      application_data instance_data;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-struct port_data 
-{
-
-
-      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type);
-
-
-      rx_item_reference app_ref;
-
-      byte_string identity;
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class port_runtime_data : public basic_runtime_data  
-{
-public:
-    typedef object_types::port_type targetType;
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type);
-
-
-      port_data instance_data;
-
 
   protected:
 
@@ -226,22 +119,18 @@ struct domain_data
 
 
 
-class domain_runtime_data : public basic_runtime_data  
+struct object_data 
 {
-public:
-    typedef object_types::domain_type targetType;
 
-  public:
 
       rx_result serialize (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
 
       rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
 
-      domain_data instance_data;
+      rx_item_reference domain_ref;
 
+  public:
 
   protected:
 
@@ -255,7 +144,7 @@ public:
 
 
 
-struct object_data 
+struct port_data 
 {
 
 
@@ -264,7 +153,31 @@ struct object_data
       rx_result deserialize (base_meta_reader& stream, uint8_t type);
 
 
-      rx_item_reference domain_ref;
+      rx_item_reference app_ref;
+
+      byte_string identity;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct basic_runtime_data 
+{
+
+
+      rx::data::runtime_values_data overrides;
+
+      meta_data meta_info;
 
   public:
 
@@ -295,6 +208,93 @@ public:
 
 
       object_data instance_data;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class domain_runtime_data : public basic_runtime_data  
+{
+public:
+    typedef object_types::domain_type targetType;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      domain_data instance_data;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class port_runtime_data : public basic_runtime_data  
+{
+public:
+    typedef object_types::port_type targetType;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      port_data instance_data;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class application_runtime_data : public basic_runtime_data  
+{
+public:
+    typedef object_types::application_type targetType;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta);
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
+
+
+      application_data instance_data;
 
 
   protected:

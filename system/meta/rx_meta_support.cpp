@@ -351,8 +351,8 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 		members_index_type new_idx = static_cast<members_index_type>(values.size());
 		value_data temp_val;
 		temp_val.value = std::move(value);
-		temp_val.value_opt[value_data::opt_readonly] = read_only;
-		temp_val.value_opt[value_data::opt_persistent] = persistent;
+		temp_val.value_opt[runtime::structure::value_opt_readonly] = read_only;
+		temp_val.value_opt[runtime::structure::value_opt_persistent] = persistent;
 		values.emplace_back(std::move(temp_val));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_index_type });
 		return true;
@@ -370,8 +370,8 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 				members_index_type new_idx = static_cast<members_index_type>(values.size());
 				value_data temp_val;
 				temp_val.value = std::move(value);
-				temp_val.value_opt[value_data::opt_readonly] = read_only;
-				temp_val.value_opt[value_data::opt_persistent] = persistent;
+				temp_val.value_opt[runtime::structure::value_opt_readonly] = read_only;
+				temp_val.value_opt[runtime::structure::value_opt_persistent] = persistent;
 				values.push_back({ temp_val });
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}
@@ -384,8 +384,8 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 				members_index_type new_idx = static_cast<members_index_type>(values.size());
 				value_data temp_val;
 				temp_val.value = std::move(value);
-				temp_val.value_opt[value_data::opt_readonly] = read_only;
-				temp_val.value_opt[value_data::opt_persistent] = persistent;
+				temp_val.value_opt[runtime::structure::value_opt_readonly] = read_only;
+				temp_val.value_opt[runtime::structure::value_opt_persistent] = persistent;
 				values.push_back({ temp_val });
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}

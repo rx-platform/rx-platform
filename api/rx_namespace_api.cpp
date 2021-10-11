@@ -155,31 +155,21 @@ rx_result rx_list_runtime(
 	rx_node_id id
 	, const string_type& path // item's path
 	, const string_type& pattern // search pattern
-	, rx_result_with_callback<runtime_browse_result>&& callback
+	, browse_result_callback_t&& callback
 	, rx_context ctx, tl::type2type<typeT>)
 {
-	auto result = rx_internal::model::algorithms::do_with_runtime_item<runtime_browse_result>(id, 
-		[=] (rx_result_with<platform_item_ptr>&& item) -> rx_result_with<runtime_browse_result>
+	auto result = rx_internal::model::algorithms::do_with_runtime_item(id,
+		[path=path, pattern=pattern, callback=std::move(callback)] (platform_item_ptr&& item) mutable
 		{
-			runtime_browse_result items;
 			if (item)
 			{
-				auto result = item.value()->browse("", path, pattern, items.items);
-				if (result)
-				{
-					items.success = result;
-				}
-				else
-				{
-					return result.errors();
-				}
+				item->browse("", path, pattern, std::move(callback));
 			}
 			else
 			{
-				return item.errors();
+				callback("Item not found", std::vector<runtime_item_attribute>());
 			}
-			return items;
-		}, std::move(callback), ctx);
+		}, ctx);
 
 	return result;
 }
@@ -187,25 +177,25 @@ template rx_result rx_list_runtime(
 	rx_node_id id
 	, const string_type& path // item's path
 	, const string_type& pattern // search pattern
-	, rx_result_with_callback<runtime_browse_result>&& callback
+	, browse_result_callback_t&& callback
 	, rx_context ctx, tl::type2type<object_type>);
 template rx_result rx_list_runtime(
 	rx_node_id id
 	, const string_type& path // item's path
 	, const string_type& pattern // search pattern
-	, rx_result_with_callback<runtime_browse_result>&& callback
+	, browse_result_callback_t&& callback
 	, rx_context ctx, tl::type2type<port_type>);
 template rx_result rx_list_runtime(
 	rx_node_id id
 	, const string_type& path // item's path
 	, const string_type& pattern // search pattern
-	, rx_result_with_callback<runtime_browse_result>&& callback
+	, browse_result_callback_t&& callback
 	, rx_context ctx, tl::type2type<domain_type>);
 template rx_result rx_list_runtime(
 	rx_node_id id
 	, const string_type& path // item's path
 	, const string_type& pattern // search pattern
-	, rx_result_with_callback<runtime_browse_result>&& callback
+	, browse_result_callback_t&& callback
 	, rx_context ctx, tl::type2type<application_type>);
 
 
@@ -214,7 +204,7 @@ rx_result rx_query_model(std::vector<meta::query_ptr> queries
 	, rx_result_with_callback<query_result>&& callback
 	, rx_context ctx)
 {
-	rx_do_with_callback(RX_DOMAIN_META, ctx.object, [] (std::vector<rx_platform::meta::query_ptr> queries, rx_directory_ptr dir) -> rx_result_with<query_result>
+	rx_post_function_to(RX_DOMAIN_META, ctx.object, [] (rx_result_with_callback<query_result>&& callback, std::vector<rx_platform::meta::query_ptr> queries, rx_directory_ptr dir)
 		{
 
 			query_result ret_val;
@@ -228,11 +218,14 @@ rx_result rx_query_model(std::vector<meta::query_ptr> queries
 				query_result temp;
 				auto one_ret = queries[i]->do_query(temp, from);
 				if (!one_ret)
-					return one_ret.errors();
+				{
+					callback(one_ret.errors());
+					return;
+				}
 				std::copy(temp.items.begin(), temp.items.end(), std::back_inserter(ret_val.items));
 			}
 			ret_val.success = true;
-			return ret_val;
+			callback(std::move(ret_val));
 
 		}, std::move(callback), queries, ctx.directory);
 

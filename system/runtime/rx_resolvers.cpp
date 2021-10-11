@@ -100,7 +100,29 @@ void runtime_resolver<typeT>::runtime_appeared (platform_item_ptr&& item)
         if (my_state_ != resolver_state::querying)
             my_state_ = resolver_state::querying;
 
-        auto callback = rx_result_with_callback<resolve_result>(user_->get_reference(), [this](rx_result_with<resolve_result>&& result)
+        callback::rx_remote_function<rx_result_with<resolve_result>, rx_item_reference> rmt(user_->get_reference(), RX_DOMAIN_META,
+            [this](rx_item_reference ref) -> rx_result_with<resolve_result>
+            {
+                auto ref_result = rx_internal::model::algorithms::resolve_reference(ref, *directories_);
+                if (!ref_result)
+                {
+                    return ref_result.errors();
+                }
+                rx_node_id id = ref_result.move_value();
+
+                auto rt_result = platform_runtime_manager::instance().get_cache().get_runtime<typeT>(id);
+                if (!rt_result)
+                {
+                    return "Item not registered as running runtime.";
+                }
+                else
+                {
+                    resolve_result result;
+                    result.item = rt_result->get_item_ptr();
+                    result.implementation = rt_result->get_implementation();
+                    return result;
+                }
+            }, [this](rx_result_with<resolve_result>&& result)
             {
                 if (my_state_ == resolver_state::querying)
                 {
@@ -123,31 +145,8 @@ void runtime_resolver<typeT>::runtime_appeared (platform_item_ptr&& item)
                     }
                 }
             });
-
-        // this one is path based so do all the things
-        rx_do_with_callback(RX_DOMAIN_META, user_->get_reference(),
-            [this](rx_item_reference ref) -> rx_result_with<resolve_result>
-            {
-                auto ref_result = rx_internal::model::algorithms::resolve_reference(ref, *directories_);
-                if (!ref_result)
-                {
-                    return ref_result.errors();
-                }
-                rx_node_id id = ref_result.move_value();
-
-                auto rt_result = platform_runtime_manager::instance().get_cache().get_runtime<typeT>(id);
-                if (!rt_result)
-                {
-                    return "Item not registered as running runtime.";
-                }
-                else
-                {
-                    resolve_result result;
-                    result.item = rt_result->get_item_ptr();
-                    result.implementation = rt_result->get_implementation();
-                    return result;
-                }
-            }, std::move(callback), runtime_reference_);
+        rmt(runtime_reference_);
+               
     }
 }
 
@@ -238,7 +237,24 @@ void runtime_item_resolver::runtime_appeared (platform_item_ptr&& item)
         if (my_state_ != resolver_state::querying)
             my_state_ = resolver_state::querying;
 
-        auto callback = rx_result_with_callback<platform_item_ptr>(user_->get_reference(), [this](rx_result_with<platform_item_ptr>&& result)
+        callback::rx_remote_function< rx_result_with<platform_item_ptr>, rx_item_reference> rmt(user_->get_reference(), RX_DOMAIN_META,
+            [this](const rx_item_reference ref) mutable -> rx_result_with<platform_item_ptr>
+            {
+                auto ref_result = rx_internal::model::algorithms::resolve_reference(ref, *directories_);
+                if (!ref_result)
+                {
+                    return ref_result.errors();
+                }
+                else
+                {
+                    auto item = platform_runtime_manager::instance().get_cache().get_item(ref_result.value());
+                    if (!item)
+                        return "Item not registered as running runtime.";
+
+                    return item;
+                }
+            },
+            [this](rx_result_with<platform_item_ptr>&& result) mutable
             {
                 if (my_state_ == resolver_state::querying)
                 {
@@ -261,24 +277,7 @@ void runtime_item_resolver::runtime_appeared (platform_item_ptr&& item)
                     }
                 }
             });
-        // this one is path based so do all the things
-        rx_do_with_callback(RX_DOMAIN_META, user_->get_reference(),
-            [this](rx_item_reference ref)-> rx_result_with<platform_item_ptr>
-            {
-                auto ref_result = rx_internal::model::algorithms::resolve_reference(ref, *directories_);
-                if (!ref_result)
-                {
-                    return ref_result.errors();
-                }
-                else
-                {
-                    auto item = platform_runtime_manager::instance().get_cache().get_item(ref_result.value());
-                    if (!item)
-                        return "Item not registered as running runtime.";
-
-                    return item;
-                }
-            }, std::move(callback), runtime_reference_);
+        rmt(runtime_reference_);
     }    
 }
 

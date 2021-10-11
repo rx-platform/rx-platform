@@ -250,9 +250,14 @@ rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_en
 	if (packet.buffer && packet.buffer->buffer_ptr && packet.buffer->size > 0)
 	{
 		anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference->user_data);
-		using job_type = rx::jobs::function_job<rx_reference_ptr, rx_packet_buffer>;
+		using job_type = rx::jobs::function_job<rx_packet_buffer>;
 		auto packet_id = packet.id;
-		rx::function_to_go<rx_reference_ptr, rx_packet_buffer> send_func(rx_reference_ptr(), [self, packet_id](rx_packet_buffer buffer)
+
+		rx_packet_buffer copy_buff;
+		rx_init_packet_buffer(&copy_buff, packet.buffer->size, 0);
+		rx_push_to_packet(&copy_buff, packet.buffer->buffer_ptr, packet.buffer->size);
+
+		auto job = rx_create_func_job(rx_reference_ptr(), [self, packet_id](rx_packet_buffer buffer)
 			{
 				auto result = self->pipes_->write_pipe(&buffer);
 				if (result)
@@ -266,14 +271,8 @@ rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_en
 						std::cout << one << "\r\n";
 				}
 				rx_deinit_packet_buffer(&buffer);
-			});
+			}, std::move(copy_buff));
 
-		rx_packet_buffer copy_buff;
-		rx_init_packet_buffer(&copy_buff, packet.buffer->size, 0);
-		rx_push_to_packet(&copy_buff, packet.buffer->buffer_ptr, packet.buffer->size);
-
-		send_func.set_arguments(std::move(copy_buff));
-		auto job = rx_create_reference<job_type>(std::move(send_func));
 
 		self->pipe_sender_.append(job);
 	}

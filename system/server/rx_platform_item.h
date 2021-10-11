@@ -38,6 +38,7 @@
 // rx_values
 #include "lib/rx_values.h"
 
+#include "system/callbacks/rx_callback.h"
 
 
 namespace rx_platform {
@@ -61,6 +62,27 @@ enum class runtime_value_type
 
     persistent_runtime_value = 0x40,
 };
+
+
+typedef callback::rx_any_callback<rx_result, rx_value> read_result_callback_t;
+typedef callback::rx_any_callback<rx_result> write_result_callback_t;
+typedef callback::rx_any_callback<rx_result, std::vector<runtime_item_attribute>> browse_result_callback_t;
+
+
+typedef callback::rx_any_callback<rx_result, data::runtime_values_data> read_struct_callback_t;
+struct read_struct_data
+{
+    read_struct_callback_t callback;
+    runtime_value_type type;
+};
+typedef callback::rx_any_callback<rx_result, std::vector<rx_result> > write_struct_callback_t;
+struct write_struct_data
+{
+    write_struct_callback_t callback;
+    runtime_value_type type;
+};
+
+
 
 namespace ns {
 
@@ -92,13 +114,17 @@ private:
 
       virtual const meta_data_t& meta_info () const = 0;
 
-      virtual rx_result read_value (const string_type& path, rx_value& value) const = 0;
+      virtual void read_value (const string_type& path, read_result_callback_t callback) const = 0;
 
-      virtual rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx) = 0;
+      virtual void read_struct (string_view_type path, read_struct_data data) const = 0;
+
+      virtual void write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx) = 0;
+
+      virtual void write_struct (string_view_type path, write_struct_data data) = 0;
 
       virtual rx_result do_command (rx_object_command_t command_type) = 0;
 
-      virtual rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items) = 0;
+      virtual void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback) = 0;
 
       virtual std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 

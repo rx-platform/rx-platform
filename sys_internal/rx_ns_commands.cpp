@@ -35,6 +35,7 @@
 #include "sys_internal/rx_ns_commands.h"
 
 #include "terminal/rx_console.h"
+#include "sys_internal/rx_namespace_algorithms.h"
 
 
 namespace rx_internal {
@@ -388,7 +389,7 @@ bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std
 	string_type path;
 	in >> path;
 
-	auto ret = ctx->get_current_directory()->add_sub_directory(path);
+	auto ret = internal_ns::namespace_algorithms::get_or_create_direcotry(ctx->get_current_directory(), path);
 	if (!ret)
 	{
 		err << "Error adding directory!\r\n";
@@ -415,6 +416,9 @@ rmdir_command::~rmdir_command()
 
 bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
+	
+  // TODO rmdir is now a just for empty directories
+	
 	string_type path;
 	in >> path;
 

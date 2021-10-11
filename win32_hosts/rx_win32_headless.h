@@ -68,7 +68,7 @@ class win32_headless_host : public host::headless::headless_platform_host
 
       static string_type get_win32_headless_info ();
 
-      rx_result fill_host_directories (rx_host_directories& data);
+      rx_result fill_host_directories (hosting::rx_host_directories& data);
 
 
   private:

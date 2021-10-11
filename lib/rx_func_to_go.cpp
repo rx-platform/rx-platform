@@ -41,5 +41,8 @@ namespace rx {
 // Parameterized Class rx::function_to_go 
 
 
+// Parameterized Class rx::result_function_to_go 
+
+
 } // namespace rx
 

@@ -379,7 +379,7 @@ message_ptr get_type_request::do_relation_job(api::rx_context ctx, rx_protocol_c
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = rx_function_to_go<rx_result_with<typename object_types::relation_type::smart_ptr> &&>(ctx.object, [request_id, conn](rx_result_with<typename object_types::relation_type::smart_ptr>&& result) mutable
+	auto callback = rx_result_with_callback<typename object_types::relation_type::smart_ptr>(ctx.object, [request_id, conn](rx_result_with<typename object_types::relation_type::smart_ptr>&& result) mutable
 	{
 		if (result)
 		{
@@ -416,7 +416,7 @@ message_ptr get_type_request::do_data_job(api::rx_context ctx, rx_protocol_conne
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = rx_function_to_go<rx_result_with<typename basic_types::data_type::smart_ptr>&&>(ctx.object, [request_id, conn](rx_result_with<typename basic_types::data_type::smart_ptr>&& result) mutable
+	auto callback = rx_result_with_callback<typename basic_types::data_type::smart_ptr>(ctx.object, [request_id, conn](rx_result_with<typename basic_types::data_type::smart_ptr>&& result) mutable
 		{
 			if (result)
 			{
@@ -520,7 +520,7 @@ message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_conn
 	auto request_id = this->request_id;
 	rx_node_id id = rx_node_id::null_id;
 
-	rx_function_to_go<rx_result_with<api::query_result>&&> callback(ctx.object,
+	rx_result_with_callback<api::query_result> callback(ctx.object,
 		[request_id, conn](rx_result_with<api::query_result>&& result) mutable
 		{
 			if (result)
@@ -946,12 +946,12 @@ message_ptr browse_runtime_request::do_concrete_job(api::rx_context ctx, rx_prot
 {
 	auto request_id = this->request_id;
 	auto result = api::ns::rx_list_runtime(id, path, filter,
-		rx_result_with_callback< api::runtime_browse_result>(ctx.object, [request_id, conn](rx_result_with<api::runtime_browse_result>&& result) mutable
+		browse_result_callback_t(ctx.object, [request_id, conn](rx_result result, std::vector<runtime_item_attribute> items) mutable
 		{
 			if (result)
 			{
 				auto response = std::make_unique<browse_runtime_response_message>();
-				response->items = std::move(result.value().items);
+				response->items = std::move(items);
 				response->request_id = request_id;
 				conn->data_processed(std::move(response));
 
@@ -1113,7 +1113,7 @@ message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_conn
 		auto ret_value = std::make_unique<error_message>(resolve_result, 15, request_id);
 		return ret_value;
 	}
-	rx_result result = model::algorithms::do_with_runtime_item<string_result_wrapper>(resolve_result.value(), [](rx_result_with<platform_item_ptr>&& data)
+	rx_result result = model::algorithms::do_with_runtime_item(resolve_result.value(), [](rx_result_with<platform_item_ptr>&& data)
 		-> rx_result_with<string_result_wrapper>
 		{
 			if (data)
@@ -1133,7 +1133,7 @@ message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_conn
 				return ss.str();
 			}
 		}, 
-		rx_result_with_callback<string_result_wrapper>(ctx.object, [request, conn]  (rx_result_with<string_result_wrapper>&& result) mutable
+		[request, conn]  (rx_result_with<string_result_wrapper>&& result) mutable
 			{
 				if (result)
 				{
@@ -1147,7 +1147,7 @@ message_ptr get_code_info_request::do_job (api::rx_context ctx, rx_protocol_conn
 					auto ret_value = std::make_unique<error_message>(result, 14, request);
 					conn->data_processed(std::move(ret_value));
 				}
-			}), ctx);
+			}, ctx);
 
 	return message_ptr();
 }

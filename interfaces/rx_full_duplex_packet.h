@@ -41,8 +41,8 @@
 namespace rx_internal {
 namespace interfaces {
 namespace ports_lib {
-template <typename addrT> class full_duplex_addr_packet_port;
 template <typename addrT> class listener_instance;
+template <typename addrT> class full_duplex_addr_packet_port;
 
 } // namespace ports_lib
 } // namespace interfaces

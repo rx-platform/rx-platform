@@ -2,7 +2,7 @@
 
 
 #define RX_LIB_MAJOR_VERSION 2
-#define RX_LIB_MINOR_VERSION 0
+#define RX_LIB_MINOR_VERSION 1
 #define RX_LIB_BUILD_NUMBER 0
 
 
@@ -45,5 +45,6 @@
 // version 1.0.10 added atomic values for some job flags
 // version 1.1.0 prepared rx_value_union for ABI
 // version 2.0.0 first version with rx-common shared library
+// version 2.1.0 added argument job template
 
 

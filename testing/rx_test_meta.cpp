@@ -277,7 +277,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 	 }
 	 auto test_type = proto_result.value();
 	 test_type->complex_data.register_simple_value_static("structVal", false, false, false);
-	 test_type->complex_data.register_variable_static("variableName", variable_id, 456u, true);
+	 test_type->complex_data.register_variable_static("variableName", variable_id, 456u, true, false);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<rx_platform::meta::basic_types::struct_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -570,7 +570,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 	 }
 	 auto test_type = proto_result.value();
 	 test_type->complex_data.register_simple_value_static("structVal", false, false, false);
-	 test_type->complex_data.register_variable_static("variableName", variable_id, 456u, true);
+	 test_type->complex_data.register_variable_static("variableName", variable_id, 456u, true, false);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<struct_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -625,7 +625,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 dump_error_result(out, proto_result);
 	 }
 	 auto test_type = proto_result.value();
-	 test_type->complex_data.register_variable_static("simpleVal", variable_id, 114.8, false);
+	 test_type->complex_data.register_variable_static("simpleVal", variable_id, 114.8, false, false);
 	 auto result = rx_internal::model::algorithms::types_model_algorithm<object_type>::create_type_sync(test_type);
 	 if (result)
 	 {
@@ -786,7 +786,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 	 }
 	 auto test_type = proto_result.value();
 	 test_type->complex_data.register_simple_value_static("structVal", false, false, false);
-	 test_type->complex_data.register_variable_static("variableName", variable_id, 'a', true);
+	 test_type->complex_data.register_variable_static("variableName", variable_id, 'a', true, false);
 	 auto result = rx_internal::model::algorithms::simple_types_model_algorithm<struct_type>::create_type_sync(test_type);
 	 if (result)
 	 {

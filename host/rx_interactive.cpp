@@ -706,7 +706,7 @@ rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_st
 	std::vector<uint8_t> captured(packet.buffer->buffer_ptr, packet.buffer->buffer_ptr + packet.buffer->size);
 	auto packet_id = packet.id;
 
-	rx::function_to_go<rx_reference_ptr, std::vector<uint8_t>&&> send_func(rx_reference_ptr(), [self, packet_id](std::vector<uint8_t>&& buffer)
+	auto job = rx_create_func_job(rx_reference_ptr(), [self, packet_id](std::vector<uint8_t>&& buffer)
 		{
 			auto result = self->host_->write_stdout(&buffer[0], buffer.size());
 			if (result)
@@ -718,10 +718,7 @@ rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_st
 			{
 				std::cout << "Error sending data to std out\r\n";
 			}
-		});
-
-	send_func.set_arguments(std::move(captured));
-	auto job = rx_create_reference<job_type>(std::move(send_func));
+		}, std::move(captured));
 
 	self->std_out_sender_.append(job);
 

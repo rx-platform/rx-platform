@@ -315,6 +315,8 @@
 #define RX_SYSTEM_SOURCE_TYPE_ID 0xc000048
 #define RX_REGISTER_SOURCE_TYPE_NAME "RegisterSource"
 #define RX_REGISTER_SOURCE_TYPE_ID 0xc000035
+#define RX_REGISTER_VARIABLE_TYPE_NAME "RegisterVariable"
+#define RX_REGISTER_VARIABLE_TYPE_ID 0xc000069
 #define RX_PLATFORM_SOURCE_TYPE_NAME "PlatformSource"
 #define RX_PLATFORM_SOURCE_TYPE_ID 0xc000049
  
@@ -368,7 +370,7 @@
 #define RX_TCP_RX_PORT_TYPE_NAME "SystemRxPort"
 
 
-// last is 0xc000068!!!! 
+// last is 0xc000069!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

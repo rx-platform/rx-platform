@@ -137,85 +137,6 @@ rx_result deserialize_runtime_data(typeT& what, base_meta_reader& stream, rx_ite
 }
 }
 
-// Class rx_platform::meta::runtime_data::basic_runtime_data 
-
-
-// Class rx_platform::meta::runtime_data::object_runtime_data 
-
-
-rx_result object_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-    return serialize_runtime_data(*this, stream, type);
-}
-
-rx_result object_runtime_data::deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta)
-{
-    return deserialize_runtime_data(*this, stream, type, meta);
-}
-
-rx_result object_runtime_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    return deserialize_runtime_data(*this, stream, rx_item_type::rx_object, type);
-}
-
-
-// Class rx_platform::meta::runtime_data::domain_runtime_data 
-
-
-rx_result domain_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-    return serialize_runtime_data(*this, stream, type);
-}
-
-rx_result domain_runtime_data::deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta)
-{
-    return deserialize_runtime_data(*this, stream, type, meta);
-}
-
-rx_result domain_runtime_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    return deserialize_runtime_data(*this, stream, rx_item_type::rx_domain, type);
-}
-
-
-// Class rx_platform::meta::runtime_data::port_runtime_data 
-
-
-rx_result port_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-    return serialize_runtime_data(*this, stream, type);
-}
-
-rx_result port_runtime_data::deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta)
-{
-    return deserialize_runtime_data(*this, stream, type, meta);
-}
-
-rx_result port_runtime_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    return deserialize_runtime_data(*this, stream, rx_item_type::rx_port, type);
-}
-
-
-// Class rx_platform::meta::runtime_data::application_runtime_data 
-
-
-rx_result application_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-    return serialize_runtime_data(*this, stream, type);
-}
-
-rx_result application_runtime_data::deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta)
-{
-    return deserialize_runtime_data(*this, stream, type, meta);
-}
-
-rx_result application_runtime_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    return deserialize_runtime_data(*this, stream, rx_item_type::rx_application, type);
-}
-
-
 // Class rx_platform::meta::runtime_data::application_data 
 
 
@@ -252,70 +173,6 @@ rx_result application_data::deserialize (base_meta_reader& stream, uint8_t type)
     if (!stream.read_byte("priority", temp) || temp > (uint8_t)rx_domain_priority::priority_count)
         return stream.get_error();
     priority = (rx_domain_priority)temp;
-    if (!stream.read_bytes("identity", identity))
-        return stream.get_error();
-    if (!stream.end_object())
-        return stream.get_error();
-    return true;
-}
-
-
-// Class rx_platform::meta::runtime_data::port_data 
-
-
-rx_result port_data::serialize (base_meta_writer& stream, uint8_t type) const
-{
-    if (!stream.start_object("instance"))
-        return stream.get_error();
-    if (stream.get_version() >= RX_PARENT_REF_VERSION)
-    {
-        if (!stream.write_item_reference("app", app_ref))
-            return stream.get_error();
-    }
-    else
-    {// old version <= RX_FIRST_SERIZALIZE_VERSION
-        if (app_ref.is_node_id())
-        {
-            if (!stream.write_id("app", app_ref.get_node_id()))
-                return stream.get_error();
-        }
-        else
-        {
-            if (!stream.write_id("app", rx_node_id::null_id))
-                return stream.get_error();
-        }
-    }
-    if (identity.empty())
-    {
-        if (!stream.write_bytes("identity", nullptr, 0))
-            return stream.get_error();
-    }
-    else
-    {
-        if (!stream.write_bytes("identity", &identity[0], identity.size()))
-            return stream.get_error();
-    }
-    if (!stream.end_object())
-        return stream.get_error();
-    return true;
-}
-
-rx_result port_data::deserialize (base_meta_reader& stream, uint8_t type)
-{
-    if (!stream.start_object("instance"))
-        return stream.get_error();
-    if (stream.get_version() >= RX_PARENT_REF_VERSION)
-    {
-        if (!stream.read_item_reference("app", app_ref))
-            return stream.get_error();
-    }
-    else
-    {// old version <= RX_FIRST_SERIZALIZE_VERSION
-        rx_node_id id;
-        if (!stream.read_id("app", id))
-            return stream.get_error();
-        app_ref = id;
-    }
     if (!stream.read_bytes("identity", identity))
         return stream.get_error();
     if (!stream.end_object())
@@ -436,6 +293,149 @@ rx_result object_data::deserialize (base_meta_reader& stream, uint8_t type)
     if (!stream.end_object())
         return stream.get_error();
     return true;
+}
+
+
+// Class rx_platform::meta::runtime_data::port_data 
+
+
+rx_result port_data::serialize (base_meta_writer& stream, uint8_t type) const
+{
+    if (!stream.start_object("instance"))
+        return stream.get_error();
+    if (stream.get_version() >= RX_PARENT_REF_VERSION)
+    {
+        if (!stream.write_item_reference("app", app_ref))
+            return stream.get_error();
+    }
+    else
+    {// old version <= RX_FIRST_SERIZALIZE_VERSION
+        if (app_ref.is_node_id())
+        {
+            if (!stream.write_id("app", app_ref.get_node_id()))
+                return stream.get_error();
+        }
+        else
+        {
+            if (!stream.write_id("app", rx_node_id::null_id))
+                return stream.get_error();
+        }
+    }
+    if (identity.empty())
+    {
+        if (!stream.write_bytes("identity", nullptr, 0))
+            return stream.get_error();
+    }
+    else
+    {
+        if (!stream.write_bytes("identity", &identity[0], identity.size()))
+            return stream.get_error();
+    }
+    if (!stream.end_object())
+        return stream.get_error();
+    return true;
+}
+
+rx_result port_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+    if (!stream.start_object("instance"))
+        return stream.get_error();
+    if (stream.get_version() >= RX_PARENT_REF_VERSION)
+    {
+        if (!stream.read_item_reference("app", app_ref))
+            return stream.get_error();
+    }
+    else
+    {// old version <= RX_FIRST_SERIZALIZE_VERSION
+        rx_node_id id;
+        if (!stream.read_id("app", id))
+            return stream.get_error();
+        app_ref = id;
+    }
+    if (!stream.read_bytes("identity", identity))
+        return stream.get_error();
+    if (!stream.end_object())
+        return stream.get_error();
+    return true;
+}
+
+
+// Class rx_platform::meta::runtime_data::basic_runtime_data 
+
+
+// Class rx_platform::meta::runtime_data::object_runtime_data 
+
+
+rx_result object_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
+{
+    return serialize_runtime_data(*this, stream, type);
+}
+
+rx_result object_runtime_data::deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta)
+{
+    return deserialize_runtime_data(*this, stream, type, meta);
+}
+
+rx_result object_runtime_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+    return deserialize_runtime_data(*this, stream, rx_item_type::rx_object, type);
+}
+
+
+// Class rx_platform::meta::runtime_data::domain_runtime_data 
+
+
+rx_result domain_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
+{
+    return serialize_runtime_data(*this, stream, type);
+}
+
+rx_result domain_runtime_data::deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta)
+{
+    return deserialize_runtime_data(*this, stream, type, meta);
+}
+
+rx_result domain_runtime_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+    return deserialize_runtime_data(*this, stream, rx_item_type::rx_domain, type);
+}
+
+
+// Class rx_platform::meta::runtime_data::port_runtime_data 
+
+
+rx_result port_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
+{
+    return serialize_runtime_data(*this, stream, type);
+}
+
+rx_result port_runtime_data::deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta)
+{
+    return deserialize_runtime_data(*this, stream, type, meta);
+}
+
+rx_result port_runtime_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+    return deserialize_runtime_data(*this, stream, rx_item_type::rx_port, type);
+}
+
+
+// Class rx_platform::meta::runtime_data::application_runtime_data 
+
+
+rx_result application_runtime_data::serialize (base_meta_writer& stream, uint8_t type) const
+{
+    return serialize_runtime_data(*this, stream, type);
+}
+
+rx_result application_runtime_data::deserialize (base_meta_reader& stream, uint8_t type, const meta_data& meta)
+{
+    return deserialize_runtime_data(*this, stream, type, meta);
+}
+
+rx_result application_runtime_data::deserialize (base_meta_reader& stream, uint8_t type)
+{
+    return deserialize_runtime_data(*this, stream, rx_item_type::rx_application, type);
 }
 
 

@@ -402,6 +402,7 @@ rx_result struct_runtime::deinitialize_struct (runtime::runtime_deinit_context& 
 string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
 
 variable_runtime::variable_runtime()
+      : container_(nullptr)
 {
 }
 
@@ -438,7 +439,17 @@ rx_result variable_runtime::stop_variable (runtime::runtime_stop_context& ctx)
 	return true;
 }
 
-rx_value variable_runtime::select_variable_input (runtime_process_context* ctx, runtime_sources_type& sources)
+void variable_runtime::process_variable (runtime_process_context* ctx)
+{
+    ctx->variable_pending(container_);
+}
+
+void variable_runtime::variable_result_pending (runtime_process_context* ctx, rx_result&& result, runtime_transaction_id_t id)
+{
+    container_->variable_result_pending(ctx, std::move(result), id);
+}
+
+rx_value variable_runtime::get_variable_input (runtime_process_context* ctx, runtime_sources_type& sources)
 {
     rx_value ret;
     for (auto& one : sources)
@@ -454,14 +465,13 @@ rx_value variable_runtime::select_variable_input (runtime_process_context* ctx, 
 
 rx_result variable_runtime::variable_write (write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources)
 {
-    RX_ASSERT(!sources.empty());
     rx_result ret = RX_NOT_SUPPORTED;
     if (sources.size() == 1)
     {
         if (sources[0].is_output())
             ret = sources[0].write_value(std::move(data));
     }
-    else
+    else if(!sources.empty())
     {
         write_data data_copy(data);
         for (auto& one : sources)

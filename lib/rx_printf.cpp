@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_write_transaction.cpp
+*  lib\rx_printf.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -31,41 +31,8 @@
 #include "pch.h"
 
 
-// rx_write_transaction
-#include "system/runtime/rx_write_transaction.h"
+// rx_printf
+#include "lib/rx_printf.h"
 
 
-
-namespace rx_platform {
-
-namespace runtime {
-
-namespace algorithms {
-
-// Class rx_platform::runtime::algorithms::write_item_transaction 
-
-write_item_transaction::write_item_transaction (write_result_callback_t&& callback)
-      : callback_(std::move(callback))
-{
-}
-
-
-
-void write_item_transaction::items_changed (const std::vector<update_item>& items)
-{
-}
-
-void write_item_transaction::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
-{
-}
-
-void write_item_transaction::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result)
-{
-    callback_(std::move(result));
-}
-
-
-} // namespace algorithms
-} // namespace runtime
-} // namespace rx_platform
 

@@ -308,6 +308,7 @@ void runtime_scan_algorithms<typeT>::process_status_change (typename typeT::RTyp
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_source_inputs (typename typeT::RType& whose, runtime_process_context& ctx)
 {
+    // order here is very important 
     source_results_type* source_results = &ctx.get_source_results();
     source_updates_type* source_updates = &ctx.get_source_updates();
     while (!source_updates->empty() || !source_results->empty())
@@ -351,12 +352,16 @@ void runtime_scan_algorithms<typeT>::process_subscription_inputs (typename typeT
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_variables (typename typeT::RType& whose, runtime_process_context& ctx)
 {
-    auto variables = &ctx.get_variables_for_process();
-    while (!variables->empty())
+    // order here is very important 
+    auto to_process = ctx.get_variables_for_process();
+    while (!to_process.first->empty() || !to_process.second->empty())
     {
-        for (auto& one : *variables)
+        for (auto& one : *to_process.first)
+            one.whose->process_result(one.transaction_id, std::move(one.result));
+
+        for (auto& one : *to_process.second)
             one->process_runtime(&ctx);
-        variables = &ctx.get_variables_for_process();
+        to_process = ctx.get_variables_for_process();
     }
 }
 
@@ -458,4 +463,6 @@ template class runtime_scan_algorithms<meta::object_types::domain_type>;
 } // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
+
+
 

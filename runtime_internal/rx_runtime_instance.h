@@ -35,21 +35,21 @@
 #include "system/runtime/rx_runtime_helpers.h"
 #include "lib/rx_io_addr.h"
 
-// rx_runtime_data
-#include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
-// rx_port_instance
-#include "interfaces/rx_port_instance.h"
+// rx_runtime_data
+#include "system/meta/rx_runtime_data.h"
 // rx_security
 #include "lib/security/rx_security.h"
+// rx_port_instance
+#include "interfaces/rx_port_instance.h"
 
 namespace rx_internal {
 namespace sys_runtime {
 namespace runtime_core {
 namespace runtime_data {
-class application_instance_data;
 class domain_instance_data;
+class application_instance_data;
 
 } // namespace runtime_data
 } // namespace runtime_core

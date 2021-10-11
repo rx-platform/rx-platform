@@ -241,18 +241,6 @@ rx_result system_object::start_runtime (runtime::runtime_start_context& ctx)
     {
         timer_->start(200, true);
     }
-
-    /*
-    what->complex_data.register_const_value_static("Instance", rx_gate::instance().get_rx_name());
-    what->complex_data.register_const_value_static("Node", rx_gate::instance().get_host()->get_default_name());
-    what->complex_data.register_const_value_static("StartTime", rx_gate::instance().get_started());
-    what->complex_data.register_simple_value_static("Time", rx_time::now(), true, false);
-
-    what->complex_data.register_const_value_static("PlatformVer", rx_gate::instance().get_rx_version());
-    what->complex_data.register_const_value_static("LibraryVer", rx_gate::instance().get_lib_version());
-    what->complex_data.register_const_value_static("TerminalVer", terminal::console::console_runtime::get_terminal_info());
-    what->complex_data.register_const_value_static("CompilerVer", rx_gate::instance().get_comp_version());
-    */
     return true;
 }
 

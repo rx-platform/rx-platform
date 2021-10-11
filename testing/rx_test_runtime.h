@@ -136,7 +136,7 @@ basic testing subscription connect/disconnect.");
 	{
 	public:
 		runtime_connect_test* parent = nullptr;
-		void items_changed(const std::vector<runtime::tag_blocks::update_item>& items)
+		void items_changed(const std::vector<runtime::update_item>& items)
 		{
 			printf("\r\n**********Items changed fired!!!");
 			for (const auto& one : items)
@@ -144,7 +144,7 @@ basic testing subscription connect/disconnect.");
 				printf("Handle = %d  Value = %s\r\n", (int)one.handle, one.value.get_storage().to_string().c_str());
 			}
 		}
-		void transaction_complete(runtime_transaction_id_t transaction_id, rx_result result, std::vector<runtime::tag_blocks::update_item>&& items)
+		void transaction_complete(runtime_transaction_id_t transaction_id, rx_result result, std::vector<runtime::update_item>&& items)
 		{
 			printf("\r\n**********Transaction complete fired!!!\r\n");
 		}

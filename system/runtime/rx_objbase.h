@@ -35,14 +35,14 @@
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "system/server/rx_server.h"
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // dummy
 #include "dummy.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -75,7 +75,6 @@ class application_algorithms;
 }
 }
 
-using namespace rx_platform::meta::def_blocks;
 
 
 namespace rx_platform {
@@ -215,100 +214,9 @@ object class. basic implementation of an object");
       template<typename funcT, typename... Args>
       rx_timer_ptr create_timer_function(funcT&& func, Args&&... args)
       {
-          auto job = rx_create_timer_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
+          auto job = rx_create_timer_job<funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
           add_periodic_job(job);
           return job;
-      }
-  protected:
-
-  private:
-
-
-      runtime_process_context *context_;
-
-
-      rx_thread_handle_t executer_;
-
-
-};
-
-
-
-
-
-
-class domain_runtime : public rx::pointers::reference_object  
-{
-	DECLARE_CODE_INFO("rx", 0,5,1, "\
-system domain class. basic implementation of a domain");
-
-	DECLARE_REFERENCE_PTR(domain_runtime);
-
-    friend class algorithms::runtime_holder<meta::object_types::domain_type>;
-    friend class rx_internal::sys_runtime::runtime_core::runtime_data::domain_instance_data;
-
-  public:
-      domain_runtime();
-
-      ~domain_runtime();
-
-
-      virtual rx_result initialize_runtime (runtime_init_context& ctx);
-
-      virtual rx_result deinitialize_runtime (runtime_deinit_context& ctx);
-
-      virtual rx_result start_runtime (runtime_start_context& ctx);
-
-      virtual rx_result stop_runtime (runtime_stop_context& ctx);
-
-      threads::job_thread* get_jobs_queue ();
-
-      void add_periodic_job (jobs::periodic_job::smart_ptr job);
-
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
-
-      rx_thread_handle_t get_executer () const
-      {
-        return executer_;
-      }
-
-      void set_executer (rx_thread_handle_t value)
-      {
-        executer_ = value;
-      }
-
-
-
-      static rx_item_type type_id;
-
-      template<typename valT>
-      valT get_binded_as(runtime_handle_t handle, const valT& default_value)
-      {
-          if (context_)
-          {
-              values::rx_simple_value temp_val;
-              auto result = context_->get_value(handle, temp_val);
-              if (result)
-              {
-                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
-              }
-          }
-          return default_value;
-      }
-      template<typename valT>
-      void set_binded_as(runtime_handle_t handle, valT&& value)
-      {
-          if (context_)
-          {
-              values::rx_simple_value temp_val;
-              temp_val.assign_static<valT>(std::forward<valT>(value));
-              auto result = context_->set_value(handle, std::move(temp_val));
-          }
       }
   protected:
 
@@ -419,12 +327,103 @@ system application class. basic implementation of a application");
 
 
 
+class domain_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0,5,1, "\
+system domain class. basic implementation of a domain");
+
+	DECLARE_REFERENCE_PTR(domain_runtime);
+
+    friend class algorithms::runtime_holder<meta::object_types::domain_type>;
+    friend class rx_internal::sys_runtime::runtime_core::runtime_data::domain_instance_data;
+
+  public:
+      domain_runtime();
+
+      ~domain_runtime();
+
+
+      virtual rx_result initialize_runtime (runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime_deinit_context& ctx);
+
+      virtual rx_result start_runtime (runtime_start_context& ctx);
+
+      virtual rx_result stop_runtime (runtime_stop_context& ctx);
+
+      threads::job_thread* get_jobs_queue ();
+
+      void add_periodic_job (jobs::periodic_job::smart_ptr job);
+
+
+      static rx_item_type get_type_id ()
+      {
+        return type_id;
+      }
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+      void set_executer (rx_thread_handle_t value)
+      {
+        executer_ = value;
+      }
+
+
+
+      static rx_item_type type_id;
+
+      template<typename valT>
+      valT get_binded_as(runtime_handle_t handle, const valT& default_value)
+      {
+          if (context_)
+          {
+              values::rx_simple_value temp_val;
+              auto result = context_->get_value(handle, temp_val);
+              if (result)
+              {
+                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+              }
+          }
+          return default_value;
+      }
+      template<typename valT>
+      void set_binded_as(runtime_handle_t handle, valT&& value)
+      {
+          if (context_)
+          {
+              values::rx_simple_value temp_val;
+              temp_val.assign_static<valT>(std::forward<valT>(value));
+              auto result = context_->set_value(handle, std::move(temp_val));
+          }
+      }
+  protected:
+
+  private:
+
+
+      runtime_process_context *context_;
+
+
+      rx_thread_handle_t executer_;
+
+
+};
+
+
+
+
+
+
 
 class port_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0,5,0, "\
 system port class. basic implementation of a port");
-    
+
 	DECLARE_REFERENCE_PTR(port_runtime);
 
     friend class algorithms::runtime_holder<meta::object_types::port_type>;
@@ -530,19 +529,19 @@ system port class. basic implementation of a port");
       template<typename funcT, typename... Args>
       void send_function(funcT&& func, Args&&... args)
       {
-          auto job = rx_create_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
+          auto job = rx_create_job<funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
           get_jobs_queue()->append(job);
       }
       template<typename funcT, typename... Args>
       void send_io_function(funcT&& func, Args&&... args)
       {
-          auto job = rx_create_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
+          auto job = rx_create_job<funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
           get_io_queue()->append(job);
       }
       template<typename funcT, typename... Args>
       rx_timer_ptr create_timer_function(funcT&& func, Args&&... args)
       {
-          auto job = rx_create_timer_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
+          auto job = rx_create_timer_job<funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
           add_periodic_job(job);
           return job;
       }

@@ -38,6 +38,9 @@
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
 
+#include "rx_configuration.h"
+#include "system/server/rx_ns.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace rx_internal {
@@ -149,9 +152,9 @@ int isdelim(char c)
 	return 0;
 }
 
-// Class rx_internal::sys_runtime::data_source::value_point 
+// Class rx_internal::sys_runtime::data_source::value_point_impl 
 
-value_point::value_point()
+value_point_impl::value_point_impl()
       : context_(nullptr),
         state_(value_point_not_connected),
         rate_(0)
@@ -159,27 +162,25 @@ value_point::value_point()
 }
 
 
-value_point::~value_point()
+value_point_impl::~value_point_impl()
 {
 }
 
 
 
-void value_point::connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, data_controler* controler, char* buffer)
+void value_point_impl::connect (const string_type& path, uint32_t rate, data_controler* controler, char* buffer)
 {
 	if (!controler)
 		controler = data_controler::get_controler();
 	if (state_ != value_point_not_connected)
 		disconnect(controler);
 
-	callback_ = callback;
-
 	rate_ = rate;
 	parse_and_connect(path.c_str(), buffer, rx_time::now(), controler);
 
 }
 
-void value_point::disconnect (data_controler* controler)
+void value_point_impl::disconnect (data_controler* controler)
 {
 	if (!controler)
 		controler = data_controler::get_controler();
@@ -199,7 +200,354 @@ void value_point::disconnect (data_controler* controler)
 	}
 }
 
-void value_point::level0 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::write (rx_simple_value val, runtime_transaction_id_t id, data_controler* controler)
+{
+	switch (state_)
+	{
+	case value_point_not_connected:
+		{
+			if (id)
+			{// we should callback the negative result
+				result_received(RX_NOT_CONNECTED, id);
+			}
+		}
+		break;
+	case value_point_connected:
+		{
+			if (id)
+			{// we should callback the negative result
+				result_received(RX_NOT_SUPPORTED, id);
+			}
+		}
+		break;
+	case value_point_connected_simple:
+		{
+			RX_ASSERT(tag_handles_.size() == 1);
+			if (tag_handles_.empty() && id)
+			{
+				result_received(RX_NOT_SUPPORTED, id);
+			}
+			else
+			{
+				runtime_transaction_id_t new_id = id ? platform_runtime_manager::get_new_transaction_id() : 0u;
+				if (id)
+				{
+					auto res = pending_writes_.emplace(new_id, id);
+					RX_ASSERT(res.second);
+				}
+				if (!controler)
+					controler = data_controler::get_controler();
+				controler->write_item(tag_handles_.begin()->first, std::move(val), new_id);
+			}
+		}
+		break;
+	default:
+		RX_ASSERT(false);
+	}
+}
+
+void value_point_impl::parse_and_connect (const char* path, char* tbuff, const rx_time& now, data_controler* controler)
+{
+	char* token_buff = tbuff;
+	auto path_len = strlen(path);
+	if (path_len == 0)
+		path_len = 0x10;
+	if (!tbuff)
+		token_buff = new char[path_len * 2];
+
+	std::map<string_type, char> vars;
+
+	string_type expres;
+	size_t tags_count = 0;
+	tag_variables_type tag_variables;
+
+	const char* prog = path;
+
+	char* write_to = token_buff;
+
+	char current_var = (char)TAG_ID_OFFSET;
+
+	while (*prog != '\0')
+	{
+		// skip blanks first
+		if (iswhite(*prog))
+			prog++;
+		//find operators now
+		if (*prog == '!' || *prog == '<' || *prog == '>')
+		{
+			if (*(prog + 1) == '=')
+			{
+				switch (*prog)
+				{
+				case '>':
+					*write_to = (char)GE_CODE;
+					break;
+				case '<':
+					*write_to = (char)LE_CODE;
+					break;
+				case '!':
+					*write_to = (char)NE_CODE;
+					break;
+				default:
+					assert(false);
+				}
+				write_to++;
+				prog += 2;
+			}
+			else
+				*write_to++ = *prog++;
+		}
+		else if (*prog == '|' && *(prog + 1) == '|')
+		{
+			*write_to = (char)OR_CODE;
+			write_to++;
+			prog += 2;
+		}
+		else if (*prog == '&' && *(prog + 1) == '&')
+		{
+			*write_to = (char)AND_CODE;
+			write_to++;
+			prog += 2;
+		}
+		else if (isoper(*prog))
+			*write_to++ = *prog++;
+		else if (iswdigit(*prog))
+		{// found number here
+			while (!isdelim(*prog))
+				*write_to++ = *prog++;
+		}
+		else if (*prog == '\"')
+		{// found string here
+			*write_to++ = *prog++;
+			while (!(*prog == '\"') && !(*prog == '\0'))
+				*write_to++ = *prog++;
+			if (*prog != '\0')
+				*write_to++ = *prog++;
+		}
+		else if (*prog == '{')
+		{// explicit variable declaration
+			prog++;
+			char* temp_ptr = write_to;
+			while (!(*prog == '}') && !(*prog == '\0'))
+				*write_to++ = *prog++;
+			if (*prog != '\0')
+				prog++;
+			size_t my_size = write_to - temp_ptr;
+			string_type var_name(temp_ptr, my_size);
+			auto itv = vars.find(var_name);
+			if (itv == vars.end())
+			{
+				tags_count++;
+				rx_value dummy;
+				dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
+				dummy.set_time(now);
+				tag_variables.push_back(dummy);
+				*temp_ptr = current_var++;
+				vars.emplace(var_name, *temp_ptr);
+			}
+			else
+				*temp_ptr = itv->second;
+			temp_ptr++;
+			write_to = temp_ptr;
+
+		}
+		else
+		{// custom stuff, check for operations
+			char* temp_ptr = write_to;
+			while (!isdelim(*prog))
+				*write_to++ = *prog++;
+			bool found = false;
+			size_t count = sizeof(operations) / sizeof(operations[0]);
+			size_t my_size = write_to - temp_ptr;
+			for (size_t idx = 0; idx < count; idx++)
+			{
+				if (my_size == operations[idx].len && memcmp(temp_ptr, operations[idx].name, operations[idx].mem_len) == 0)
+				{
+					found = true;
+					*temp_ptr = operations[idx].code;
+					temp_ptr++;
+					write_to = temp_ptr;
+					break;
+				}
+			}
+			if (!found)
+			{// this is variable do it now
+				string_type var_name(temp_ptr, my_size);
+				auto itv = vars.find(var_name);
+				if (itv == vars.end())
+				{
+					tags_count++;
+					rx_value dummy;
+					dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
+					dummy.set_time(now);
+					tag_variables.push_back(dummy);
+					*temp_ptr = current_var++;
+					vars.emplace(var_name, *temp_ptr);
+				}
+				else
+					*temp_ptr = itv->second;
+				temp_ptr++;
+				write_to = temp_ptr;
+			}
+		}
+	}
+	*write_to = '\0';
+	expres = token_buff;
+	bool simple = false;
+	if (expres.size() == 1 && isvariable(expres[0]))
+		simple = true;
+
+	tag_handles_.clear();
+	tag_variables_ = tag_variables;
+
+	expression_ = expres;
+
+	state_ = simple ? value_point_connected_simple : value_point_connected;
+
+	calculate(token_buff);
+
+	if (!vars.empty())
+	{
+		string_type buffer;
+		for (auto it = vars.begin(); it != vars.end(); it++)
+		{
+			value_handle_type temp = 0;
+			if(translate_path(it->first, buffer))
+				temp = controler->add_item(buffer, rate_);
+			else
+				temp = controler->add_item(it->first, rate_);
+
+			if (temp)
+			{
+				tag_handles_[temp] = (it->second & TAG_ID_MASK);
+				controler->register_value(temp, this);
+			}
+		}
+	}
+
+	if (!tbuff)
+		delete[] token_buff;
+}
+
+void value_point_impl::calculate (char* token_buff)
+{
+	uint32_t quality = 0;
+	uint32_t bad_quality = 0;
+	rx_time last_time;
+	rx_time last_bad_time;
+	rx_value res;
+	bool bad = false;
+	auto count = tag_variables_.size();
+	for (size_t i = 0; i < count; i++)
+	{
+		if (tag_variables_[i].is_good())
+		{
+			if (tag_variables_[i].get_time() > last_time)
+			{
+				last_time = tag_variables_[i].get_time();
+				quality = tag_variables_[i].get_quality();
+				res = tag_variables_[i];
+			}
+		}
+		else // (!tag_variables_[i].is_good())
+		{// we're bad
+			bad = true;
+			if (tag_variables_[i].get_time() > last_time)
+			{
+				last_time = tag_variables_[i].get_time();
+				res = tag_variables_[i];
+			}
+			if (tag_variables_[i].get_time() > last_bad_time)
+			{
+				last_bad_time = tag_variables_[i].get_time();
+				bad_quality = tag_variables_[i].get_quality();
+			}
+		}
+	}
+	if (last_time.is_null())
+		last_time = rx_time::now();
+	if (bad)
+	{
+		res.set_quality(bad_quality);
+		res.set_time(last_time);
+		value_changed(res);
+	}
+	else
+	{
+		res.set_quality(RX_GOOD_QUALITY);
+		try
+		{
+			get_expression(res, token_buff);
+		}
+		catch (std::runtime_error&)
+		{
+			res.set_quality(RX_BAD_QUALITY);
+		}
+		if (res.is_good())
+			res.set_quality(quality);
+		res.set_time(last_time);
+		value_changed(res);
+	}
+}
+
+void value_point_impl::value_changed (value_handle_type handle, const rx_value& val)
+{
+	auto it = tag_handles_.find(handle);
+	if (it != tag_handles_.end())
+	{
+		tag_variables_[it->second] = val;
+	}
+}
+
+bool value_point_impl::shared_result_received (const rx_result& result, runtime_transaction_id_t id)
+{
+	auto it = pending_writes_.find(id);
+	if (it != pending_writes_.end())
+	{
+		if (result)
+			result_received(true, it->second);
+		else
+			result_received(result.errors(), it->second);
+		pending_writes_.erase(it);
+		return true;
+	}
+	return false;
+}
+
+bool value_point_impl::single_result_received (rx_result result, runtime_transaction_id_t id)
+{
+	auto it = pending_writes_.find(id);
+	if (it != pending_writes_.end())
+	{
+		result_received(std::move(result), it->second);
+		pending_writes_.erase(it);
+		return true;
+	}
+	return false;
+}
+
+void value_point_impl::result_received (rx_result&& result, runtime_transaction_id_t id)
+{
+}
+
+bool value_point_impl::translate_path (const string_type& path, string_type& translated)
+{
+	if (context_)
+	{
+		if (path.size() > 2 && path[0] == RX_OBJECT_DELIMETER && path[1] != RX_DIR_DELIMETER)
+		{
+			translated = context_->meta_info.get_full_path() + path;
+			return true;
+		}
+		else if (path.size() > 1 && path[0] != RX_DIR_DELIMETER)
+		{
+			context_->get_directory_resolver()->resolve_path(path);
+		}
+	}
+	return false;
+}
+
+void value_point_impl::level0 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	char op;
 	rx_value hold;
@@ -214,7 +562,7 @@ void value_point::level0 (rx_value& result, char*& prog, char*& token, char& tok
 	}
 }
 
-void value_point::level05 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::level05 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	char op;
 	rx_value hold;
@@ -229,7 +577,7 @@ void value_point::level05 (rx_value& result, char*& prog, char*& token, char& to
 	}
 }
 
-void value_point::level07 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::level07 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	char op;
 	rx_value hold;
@@ -244,7 +592,7 @@ void value_point::level07 (rx_value& result, char*& prog, char*& token, char& to
 	}
 }
 
-void value_point::level1 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::level1 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	char op;
 	rx_value hold;
@@ -259,7 +607,7 @@ void value_point::level1 (rx_value& result, char*& prog, char*& token, char& tok
 	}
 }
 
-void value_point::level2 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::level2 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	char op;
 	rx_value hold;
@@ -274,7 +622,7 @@ void value_point::level2 (rx_value& result, char*& prog, char*& token, char& tok
 	}
 }
 
-void value_point::level3 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::level3 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	char op;
 	rx_value hold;
@@ -289,7 +637,7 @@ void value_point::level3 (rx_value& result, char*& prog, char*& token, char& tok
 	}
 }
 
-void value_point::level4 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::level4 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	rx_value hold;
 	hold.set_quality(RX_GOOD_QUALITY);
@@ -303,7 +651,7 @@ void value_point::level4 (rx_value& result, char*& prog, char*& token, char& tok
 	}
 }
 
-void value_point::level5 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::level5 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	char op;
 	op = '\0';
@@ -321,7 +669,7 @@ void value_point::level5 (rx_value& result, char*& prog, char*& token, char& tok
 		unary(op, result, prog, token, tok_type, expres);
 }
 
-void value_point::level6 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::level6 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	if ((*token == '(') && (tok_type == DELIMETER))
 	{
@@ -339,7 +687,7 @@ void value_point::level6 (rx_value& result, char*& prog, char*& token, char& tok
 		primitive(result, prog, token, tok_type, expres);
 }
 
-void value_point::primitive (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::primitive (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	if (tok_type == NUMBER)
 	{
@@ -419,7 +767,7 @@ void value_point::primitive (rx_value& result, char*& prog, char*& token, char& 
 	}
 }
 
-void value_point::get_token (char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::get_token (char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	char* temp;
 
@@ -460,14 +808,14 @@ void value_point::get_token (char*& prog, char*& token, char& tok_type, char*& e
 	*temp = '\0';
 }
 
-void value_point::put_back (char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::put_back (char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	char* t;
 	t = token;
 	for (; *t; t++) prog--;
 }
 
-void value_point::unary (char o, rx_value& r, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	if (o == '-')
 	{
@@ -690,7 +1038,7 @@ void value_point::unary (char o, rx_value& r, char*& prog, char*& token, char& t
 		RX_ASSERT(false);
 }
 
-void value_point::arith (char o, rx_value& r, rx_value& h, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::arith (char o, rx_value& r, rx_value& h, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	switch ((uint8_t)o)
 	{
@@ -788,7 +1136,7 @@ void value_point::arith (char o, rx_value& r, rx_value& h, char*& prog, char*& t
 	}
 }
 
-void value_point::get_expression (rx_value& result, char* tok)
+void value_point_impl::get_expression (rx_value& result, char* tok)
 {
 	if (state_ == value_point_connected_simple)
 	{// simple just tag here
@@ -818,284 +1166,8 @@ void value_point::get_expression (rx_value& result, char* tok)
 	}
 }
 
-void value_point::parse_and_connect (const char* path, char* tbuff, const rx_time& now, data_controler* controler)
-{
-	char* token_buff = tbuff;
-	auto path_len = strlen(path);
-	if (path_len == 0)
-		path_len = 0x10;
-	if (!tbuff)
-		token_buff = new char[path_len * 2];
 
-	std::map<string_type, char> vars;
-
-	string_type expres;
-	size_t tags_count = 0;
-	tag_variables_type tag_variables;
-
-	const char* prog = path;
-
-	char* write_to = token_buff;
-
-	char current_var = (char)TAG_ID_OFFSET;
-
-	while (*prog != '\0')
-	{
-		// skip blanks first
-		if (iswhite(*prog))
-			prog++;
-		//find operators now
-		if (*prog == '!' || *prog == '<' || *prog == '>')
-		{
-			if (*(prog + 1) == '=')
-			{
-				switch (*prog)
-				{
-				case '>':
-					*write_to = (char)GE_CODE;
-					break;
-				case '<':
-					*write_to = (char)LE_CODE;
-					break;
-				case '!':
-					*write_to = (char)NE_CODE;
-					break;
-				default:
-					assert(false);
-				}
-				write_to++;
-				prog += 2;
-			}
-			else
-				*write_to++ = *prog++;
-		}
-		else if (*prog == '|' && *(prog + 1) == '|')
-		{
-			*write_to = (char)OR_CODE;
-			write_to++;
-			prog += 2;
-		}
-		else if (*prog == '&' && *(prog + 1) == '&')
-		{
-			*write_to = (char)AND_CODE;
-			write_to++;
-			prog += 2;
-		}
-		else if (isoper(*prog))
-			*write_to++ = *prog++;
-		else if (iswdigit(*prog))
-		{// found number here
-			while (!isdelim(*prog))
-				*write_to++ = *prog++;
-		}
-		else if (*prog == '\"')
-		{// found string here
-			*write_to++ = *prog++;
-			while (!(*prog == '\"') && !(*prog == '\0'))
-				*write_to++ = *prog++;
-			if (*prog != '\0')
-				*write_to++ = *prog++;
-		}
-		else if (*prog == '{')
-		{// explicit variable declaration
-			prog++;
-			char* temp_ptr = write_to;
-			while (!(*prog == '}') && !(*prog == '\0'))
-				*write_to++ = *prog++;
-			if (*prog != '\0')
-				prog++;
-			size_t my_size = write_to - temp_ptr;
-			string_type var_name(temp_ptr, my_size);
-			auto itv = vars.find(var_name);
-			if (itv == vars.end())
-			{
-				tags_count++;
-				rx_value dummy;
-				dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
-				dummy.set_time(now);
-				tag_variables.push_back(dummy);
-				*temp_ptr = current_var++;
-				vars.emplace(var_name, *temp_ptr);
-			}
-			else
-				*temp_ptr = itv->second;
-			temp_ptr++;
-			write_to = temp_ptr;
-
-		}
-		else
-		{// custom stuff, check for operations
-			char* temp_ptr = write_to;
-			while (!isdelim(*prog))
-				*write_to++ = *prog++;
-			bool found = false;
-			size_t count = sizeof(operations) / sizeof(operations[0]);
-			size_t my_size = write_to - temp_ptr;
-			for (size_t idx = 0; idx < count; idx++)
-			{
-				if (my_size == operations[idx].len && memcmp(temp_ptr, operations[idx].name, operations[idx].mem_len) == 0)
-				{
-					found = true;
-					*temp_ptr = operations[idx].code;
-					temp_ptr++;
-					write_to = temp_ptr;
-					break;
-				}
-			}
-			if (!found)
-			{// this is variable do it now
-				string_type var_name(temp_ptr, my_size);
-				auto itv = vars.find(var_name);
-				if (itv == vars.end())
-				{
-					tags_count++;
-					rx_value dummy;
-					dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
-					dummy.set_time(now);
-					tag_variables.push_back(dummy);
-					*temp_ptr = current_var++;
-					vars.emplace(var_name, *temp_ptr);
-				}
-				else
-					*temp_ptr = itv->second;
-				temp_ptr++;
-				write_to = temp_ptr;
-			}
-		}
-	}
-	*write_to = '\0';
-	expres = token_buff;
-	bool simple = false;
-	if (expres.size() == 1 && isvariable(expres[0]))
-		simple = true;
-
-	tag_handles_.clear();
-	tag_variables_ = tag_variables;
-
-	expression_ = expres;
-
-	state_ = simple ? value_point_connected_simple : value_point_connected;
-
-	calculate(token_buff);
-
-	if (!vars.empty())
-	{
-		string_type buffer;
-		for (auto it = vars.begin(); it != vars.end(); it++)
-		{
-			value_handle_type temp = 0;
-			if(translate_path(it->first, buffer))
-				temp = controler->add_item(buffer, rate_);
-			else
-				temp = controler->add_item(it->first, rate_);
-
-			if (temp)
-			{
-				tag_handles_[temp] = (it->second & TAG_ID_MASK);
-				controler->register_value(temp, this);
-			}
-		}
-	}
-
-	if (!tbuff)
-		delete[] token_buff;
-}
-
-void value_point::calculate (char* token_buff)
-{
-	uint32_t quality = 0;
-	uint32_t bad_quality = 0;
-	rx_time last_time;
-	rx_time last_bad_time;
-	rx_value res;
-	bool bad = false;
-	auto count = tag_variables_.size();
-	for (size_t i = 0; i < count; i++)
-	{
-		if (tag_variables_[i].is_good())
-		{
-			if (tag_variables_[i].get_time() > last_time)
-			{
-				last_time = tag_variables_[i].get_time();
-				quality = tag_variables_[i].get_quality();
-				res = tag_variables_[i];
-			}
-		}
-		else // (!tag_variables_[i].is_good())
-		{// we're bad
-			bad = true;
-			if (tag_variables_[i].get_time() > last_time)
-			{
-				last_time = tag_variables_[i].get_time();
-				res = tag_variables_[i];
-			}
-			if (tag_variables_[i].get_time() > last_bad_time)
-			{
-				last_bad_time = tag_variables_[i].get_time();
-				bad_quality = tag_variables_[i].get_quality();
-			}
-		}
-	}
-	if (last_time.is_null())
-		last_time = rx_time::now();
-	if (bad)
-	{
-		res.set_quality(bad_quality);
-		res.set_time(last_time);
-		value_changed(res);
-	}
-	else
-	{
-		res.set_quality(RX_GOOD_QUALITY);
-		try
-		{
-			get_expression(res, token_buff);
-		}
-		catch (std::runtime_error&)
-		{
-			res.set_quality(RX_BAD_QUALITY);
-		}
-		if (res.is_good())
-			res.set_quality(quality);
-		res.set_time(last_time);
-		value_changed(res);
-	}
-}
-
-void value_point::value_changed (const rx_value& val)
-{
-	if (callback_)
-		callback_(val);
-}
-
-void value_point::value_changed (value_handle_type handle, const rx_value& val)
-{
-	auto it = tag_handles_.find(handle);
-	if (it != tag_handles_.end())
-	{
-		tag_variables_[it->second] = val;
-	}
-}
-
-bool value_point::translate_path (const string_type& path, string_type& translated)
-{
-	if (context_)
-	{
-		if (path.size() > 2 && path[0] == RX_OBJECT_DELIMETER && path[1] != RX_DIR_DELIMETER)
-		{
-			translated = context_->meta_info.get_full_path() + path;
-			return true;
-		}
-		else if (path.size() > 1 && path[0] != RX_DIR_DELIMETER)
-		{
-			context_->get_directory_resolver()->resolve_path(path);
-		}
-	}
-	return false;
-}
-
-
-void value_point::set_context (rx_platform::runtime::runtime_process_context * value)
+void value_point_impl::set_context (rx_platform::runtime::runtime_process_context * value)
 {
   context_ = value;
 }

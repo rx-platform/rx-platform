@@ -69,6 +69,8 @@ class data_source
 
       virtual void add_item (const string_type& path, uint32_t rate, value_handle_extended& handle) = 0;
 
+      virtual void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id) = 0;
+
       virtual void remove_item (const value_handle_extended& handle) = 0;
 
       virtual bool is_empty () const = 0;
@@ -129,7 +131,7 @@ class data_source_factory
 
 class data_controler 
 {
-	typedef std::unordered_set<value_point*> registered_objects_type;
+	typedef std::unordered_set<value_point_impl*> registered_objects_type;
 	typedef std::unordered_map<value_handle_type, registered_objects_type> registered_values_type;
 
 	struct source_data
@@ -151,17 +153,21 @@ class data_controler
       ~data_controler();
 
 
-      void register_value (value_handle_type handle, value_point* whose);
+      void register_value (value_handle_type handle, value_point_impl* whose);
 
-      void unregister_value (value_handle_type handle, value_point* whose);
+      void unregister_value (value_handle_type handle, value_point_impl* whose);
 
       value_handle_type add_item (const string_type& path, uint32_t rate);
+
+      void write_item (value_handle_type handle, rx_simple_value val, runtime_transaction_id_t id);
 
       void remove_item (value_handle_type handle);
 
       static data_controler* get_controler ();
 
       void items_changed (const std::vector<std::pair<value_handle_type, rx_value> >& values);
+
+      void result_received (value_handle_type handle, rx_result&& result, runtime_transaction_id_t id);
 
 
   protected:
@@ -182,7 +188,7 @@ class data_controler
 
       uint16_t next_source_id_;
 
-      std::vector<value_point*> changed_points_;
+      std::vector<value_point_impl*> changed_points_;
 
       char token_buffer_[0x40];
 

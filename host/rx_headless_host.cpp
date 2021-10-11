@@ -371,7 +371,7 @@ int headless_platform_host::start_platform ()
 			}
 
 			std::cout << "\r\n{rx-platform} Headless Module is running.";
-			std::cout << "\r\n=================================\r\n";
+			std::cout << "\r\n=============================================>>\r\n";
 
 			host_started();
 
@@ -385,7 +385,7 @@ int headless_platform_host::start_platform ()
 		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, result);
 	}
-	std::cout << "De-initializing{rx-platform} ...";
+	std::cout << "De-initializing {rx-platform} ...";
 	if(host_security_context_)
 		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
 	if (result)

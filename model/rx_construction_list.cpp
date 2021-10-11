@@ -34,6 +34,7 @@
 // rx_construction_list
 #include "model/rx_construction_list.h"
 
+#include "system/meta/rx_def_blocks.h"
 #include "model/rx_meta_internals.h"
 #include "interfaces/rx_udp.h"
 

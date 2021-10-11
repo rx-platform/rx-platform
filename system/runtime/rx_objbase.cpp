@@ -128,6 +128,54 @@ void object_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
 }
 
 
+// Class rx_platform::runtime::items::application_runtime 
+
+rx_item_type application_runtime::type_id = rx_item_type::rx_application;
+
+application_runtime::application_runtime()
+      : context_(nullptr),
+        executer_(-1)
+{
+}
+
+
+application_runtime::~application_runtime()
+{
+}
+
+
+
+rx_result application_runtime::initialize_runtime (runtime_init_context& ctx)
+{
+    return true;
+}
+
+rx_result application_runtime::deinitialize_runtime (runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+rx_result application_runtime::start_runtime (runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result application_runtime::stop_runtime (runtime_stop_context& ctx)
+{
+	return true;
+}
+
+threads::job_thread* application_runtime::get_jobs_queue ()
+{
+	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
+}
+
+void application_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
+}
+
+
 // Class rx_platform::runtime::items::domain_runtime 
 
 rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
@@ -176,54 +224,6 @@ void domain_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
 }
 
 // has to be before call
-
-// Class rx_platform::runtime::items::application_runtime 
-
-rx_item_type application_runtime::type_id = rx_item_type::rx_application;
-
-application_runtime::application_runtime()
-      : context_(nullptr),
-        executer_(-1)
-{
-}
-
-
-application_runtime::~application_runtime()
-{
-}
-
-
-
-rx_result application_runtime::initialize_runtime (runtime_init_context& ctx)
-{
-    return true;
-}
-
-rx_result application_runtime::deinitialize_runtime (runtime_deinit_context& ctx)
-{
-	return true;
-}
-
-rx_result application_runtime::start_runtime (runtime_start_context& ctx)
-{
-	return true;
-}
-
-rx_result application_runtime::stop_runtime (runtime_stop_context& ctx)
-{
-	return true;
-}
-
-threads::job_thread* application_runtime::get_jobs_queue ()
-{
-	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
-}
-
-void application_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
-{
-	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
-}
-
 
 // Class rx_platform::runtime::items::port_runtime 
 

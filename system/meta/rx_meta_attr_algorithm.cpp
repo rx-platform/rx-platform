@@ -36,6 +36,7 @@
 // rx_meta_attr_algorithm
 #include "system/meta/rx_meta_attr_algorithm.h"
 
+#include "system/runtime/rx_blocks.h"
 #include "model/rx_model_algorithms.h"
 #include "system/runtime/rx_runtime_logic.h"
 #include "system/runtime/rx_display_blocks.h"
@@ -101,6 +102,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_compl
 		if (!stream.write_string("description", whose.description_))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_VARIABLE_PERSISTENCE_VERSION)
+	{
+		if (!stream.write_bool("persist", whose.persistent_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -117,6 +123,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_com
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_VARIABLE_PERSISTENCE_VERSION)
+	{
+		if (!stream.read_bool("persist", whose.persistent_))
 			return stream.get_error();
 	}
 	return true;
@@ -137,6 +148,8 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 	if (temp)
 	{
 		temp.value().value = whose.get_value(ctx.now);
+		temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
+		temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
 		return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target);
 	}
 	else

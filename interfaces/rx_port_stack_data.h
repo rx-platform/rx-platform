@@ -54,51 +54,6 @@ namespace port_stack {
 
 
 
-class port_passive_map 
-{
-    typedef std::pair<io::any_address, io::any_address> addr_pair_t;    
-    typedef std::map<addr_pair_t, rx_port_ptr> passive_map_type;
-    typedef std::map<rx_port_ptr, addr_pair_t> inverse_passive_map_type;
-
-  public:
-      port_passive_map();
-
-
-      rx_result register_passive (rx_port_ptr who, io::any_address& local_addr, io::any_address& remote_addr, rx_port_ptr owner);
-
-      rx_result unregister_passive (rx_port_ptr who, rx_port_ptr owner);
-
-      rx_port_ptr get_binded_port (const io::any_address& local_addr, const io::any_address& remote_addr);
-
-      std::vector<rx_port_ptr> get_binded ();
-
-      bool empty () const;
-
-
-      remote_owned_value<bool> stack_binded;
-
-      rx_port_ptr bind_port;
-
-
-  protected:
-
-  private:
-
-
-      passive_map_type passive_map_;
-
-      inverse_passive_map_type inverse_passive_map_;
-
-      locks::slim_lock map_lock_;
-
-
-};
-
-
-
-
-
-
 class port_active_map 
 {
     typedef std::map<rx_protocol_stack_endpoint*, rx_port_ptr> endpoints_map_type;
@@ -123,6 +78,46 @@ class port_active_map
       endpoints_map_type endpoints_map_;
 
       locks::slim_lock map_lock_;
+
+
+};
+
+
+
+
+
+
+class port_buffers 
+{
+    typedef std::vector<rx_io_buffer> free_buffers_type;
+
+  public:
+
+      static rx_result_with<io_types::rx_io_buffer> alloc_io_buffer (rx_port_ptr& whose);
+
+      static void release_io_buffer (rx_port_ptr& whose, io_types::rx_io_buffer buff);
+
+
+      free_buffers_type free_buffers;
+
+
+      size_t buffer_back_capacity;
+
+      size_t buffer_front_capacity;
+
+      size_t buffer_discard_size;
+
+      remote_owned_value<uint32_t> buffer_count;
+
+      remote_owned_value<int64_t> discard_buffer_count;
+
+
+  protected:
+
+  private:
+
+
+      locks::slim_lock buffers_lock_;
 
 
 };
@@ -167,29 +162,30 @@ class port_build_map
 
 
 
-class port_buffers 
+class port_passive_map 
 {
-    typedef std::vector<rx_io_buffer> free_buffers_type;
+    typedef std::pair<io::any_address, io::any_address> addr_pair_t;    
+    typedef std::map<addr_pair_t, rx_port_ptr> passive_map_type;
+    typedef std::map<rx_port_ptr, addr_pair_t> inverse_passive_map_type;
 
   public:
-
-      static rx_result_with<io_types::rx_io_buffer> alloc_io_buffer (rx_port_ptr& whose);
-
-      static void release_io_buffer (rx_port_ptr& whose, io_types::rx_io_buffer buff);
+      port_passive_map();
 
 
-      free_buffers_type free_buffers;
+      rx_result register_passive (rx_port_ptr who, io::any_address& local_addr, io::any_address& remote_addr, rx_port_ptr owner);
+
+      rx_result unregister_passive (rx_port_ptr who, rx_port_ptr owner);
+
+      rx_port_ptr get_binded_port (const io::any_address& local_addr, const io::any_address& remote_addr);
+
+      std::vector<rx_port_ptr> get_binded ();
+
+      bool empty () const;
 
 
-      size_t buffer_back_capacity;
+      remote_owned_value<bool> stack_binded;
 
-      size_t buffer_front_capacity;
-
-      size_t buffer_discard_size;
-
-      remote_owned_value<uint32_t> buffer_count;
-
-      remote_owned_value<int64_t> discard_buffer_count;
+      rx_port_ptr bind_port;
 
 
   protected:
@@ -197,7 +193,11 @@ class port_buffers
   private:
 
 
-      locks::slim_lock buffers_lock_;
+      passive_map_type passive_map_;
+
+      inverse_passive_map_type inverse_passive_map_;
+
+      locks::slim_lock map_lock_;
 
 
 };

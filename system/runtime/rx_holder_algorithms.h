@@ -65,8 +65,6 @@ class runtime_holder_algorithms
 
       static std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
 
-      static rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, typename typeT::RType& whose);
-
       static void save_runtime (typename typeT::RType& whose);
 
       static runtime_process_context create_context (typename typeT::RType& whose);
@@ -77,13 +75,19 @@ class runtime_holder_algorithms
 
       static rx_result get_value_ref (const string_type& path, rt_value_ref& ref, typename typeT::RType& whose);
 
-      static rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, typename typeT::RType& whose);
+      static void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback, typename typeT::RType& whose);
 
       static void fill_data (const data::runtime_values_data& data, typename typeT::RType& whose);
 
       static void collect_data (data::runtime_values_data& data, runtime_value_type type, const typename typeT::RType& whose);
 
-      static rx_result read_value (const string_type& path, rx_value& value, const typename typeT::RType& whose);
+      static void read_value (const string_type& path, read_result_callback_t callback, const typename typeT::RType& whose);
+
+      static void write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx, typename typeT::RType& whose);
+
+      static void read_struct (string_view_type path, read_struct_data data, const typename typeT::RType& whose);
+
+      static void write_struct (string_view_type path, write_struct_data data, typename typeT::RType& whose);
 
       static rx_result serialize_runtime_value (base_meta_writer& stream, runtime_value_type type, const typename typeT::RType& whose);
 
@@ -108,6 +112,8 @@ class runtime_relation_algorithms
       static void notify_relation_connected (const string_type& name, const platform_item_ptr& item, runtime_process_context* ctx);
 
       static void notify_relation_disconnected (const string_type& name, runtime_process_context* ctx);
+
+      static void relation_value_change (relations::relation_value_data* whose, const rx_value& val, runtime_process_context* ctx);
 
 
   protected:

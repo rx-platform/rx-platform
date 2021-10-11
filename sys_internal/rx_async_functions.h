@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -98,26 +98,26 @@ void rx_post_packed_to(rx_thread_handle_t target, function_to_go<refT, Args...>&
 		RX_ASSERT(false);
 }
 
-template<class refT, class funcT, class... Args>
-void rx_post_function_to(rx_thread_handle_t target, refT ref, funcT&& what, Args&&... args)
+template<class funcT, class... Args>
+void rx_post_function_to(rx_thread_handle_t target, rx_reference_ptr ref, funcT what, Args&&... args)
 {
 	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(target);
-	auto job = rx_create_job<refT, funcT, Args...>()(std::forward<refT>(ref), std::forward<funcT>(what), std::forward<Args>(args)...);
+	auto job = rx_create_job<funcT, Args...>()(ref, std::move(what), std::forward<Args>(args)...);
 	if (job)
 		et->append(job);
 	else
 		RX_ASSERT(false);
 }
 
-template<class refT, class funcT, class... Args>
-void rx_post_function(refT&& ref, funcT&& what, Args&&... args)
+template<class funcT, class... Args>
+void rx_post_function(rx_reference_ptr ref, funcT what, Args&&... args)
 {
-	rx_post_function_to(rx_thread_context(), std::forward<refT>(ref), std::forward<funcT>(what), std::forward<Args>(args)...);
+	rx_post_function_to(rx_thread_context(), ref, std::move(what), std::forward<Args>(args)...);
 }
-template<class refT, class funcT, class... Args>
-post_period_job::smart_ptr  rx_post_delayed_function_to(rx_thread_handle_t target,refT ref, uint32_t period, funcT&& what, Args... args)
+template<class funcT, class... Args>
+post_period_job::smart_ptr  rx_post_delayed_function_to(rx_thread_handle_t target,rx_reference_ptr ref, uint32_t period, funcT what, Args... args)
 {
-	auto job = rx_create_period_job<refT, funcT, Args...>()(std::forward<refT>(ref), std::forward<funcT>(what), std::forward<Args>(args)...);
+	auto job = rx_create_period_job<funcT, Args...>()(ref, std::move(what), std::forward<Args>(args)...);
 	if (job)
 	{
 		rx_internal::infrastructure::server_runtime::instance().append_timer_job(job);
@@ -127,17 +127,17 @@ post_period_job::smart_ptr  rx_post_delayed_function_to(rx_thread_handle_t targe
 		RX_ASSERT(false);
 	return job;
 }
-template<class refT, class funcT, class... Args>
-post_period_job::smart_ptr  rx_post_delayed_function(refT ref, uint32_t period, funcT&& what, Args... args)
+template<class funcT, class... Args>
+post_period_job::smart_ptr  rx_post_delayed_function(uint32_t period, rx_reference_ptr ref, funcT what, Args... args)
 {
-    return rx_post_delayed_function_to(rx_thread_context(), ref, period, std::forward<funcT>(what), std::forward<Args>(args)...);
+    return rx_post_delayed_function_to(rx_thread_context(), ref, period, std::move(what), std::forward<Args>(args)...);
 }
 
-template<class refT, class funcT, class... Args>
-periodic_job::smart_ptr rx_create_periodic_function(uint32_t period, refT ref, funcT&& what, Args... args)
+template<class funcT, class... Args>
+periodic_job::smart_ptr rx_create_periodic_function(uint32_t period, rx_reference_ptr ref, funcT what, Args... args)
 {
 	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(rx_thread_context());
-	auto job = rx_create_timer_job<refT, decltype(what), Args...>()(std::forward<refT>(ref), std::forward<funcT>(what), std::forward<Args>(args)...);
+	auto job = rx_create_timer_job<funcT, Args...>()(ref, std::move(what), std::forward<Args>(args)...);
 	if (job)
 		rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, period);
 	else
@@ -145,10 +145,10 @@ periodic_job::smart_ptr rx_create_periodic_function(uint32_t period, refT ref, f
 	return job;
 }
 
-template<class refT, class funcT>
-periodic_job::smart_ptr rx_create_periodic_function(uint32_t period, refT ref, funcT&& what)
+template<class funcT>
+periodic_job::smart_ptr rx_create_periodic_function(uint32_t period, rx_reference_ptr ref, funcT what)
 {
-	auto job = rx_create_timer_job<refT, decltype(what)>()(std::forward<refT>(ref), std::forward<funcT>(what));
+	auto job = rx_create_timer_job<funcT>()(ref, std::move(what));
 	if (job)
 	{
 		rx_internal::infrastructure::server_runtime::instance().append_timer_job(job);
@@ -271,70 +271,29 @@ struct rx_transaction_slot
 //}
 
 
-template<class anchorT, class funcT, class callbackT, class... Args>
-void rx_do_with_callback(rx_thread_handle_t where, anchorT anchor, funcT&& what, callbackT&& callback, Args&&... args)
+template<class funcT, class callbackT, class... Args>
+void rx_do_with_callback(rx_thread_handle_t where, funcT what, callbackT&& callback, Args&&... args)
 {
-	using result_type = decltype(what(std::forward<Args>(args)...));
-	using function_type = std::function<result_type(Args...)>;
-
-	auto ret_thread = rx_thread_context();
+	using result_type = typename std::invoke_result<funcT, Args...>::type;
+	rx_reference_ptr anchor = callback.get_anchor();
 
 
-	function_type what_fn = std::forward<funcT>(what);
-	if (where == ret_thread)
-	{
-		rx_post_function_to(where, anchor, [](function_type&& what, callbackT&& callback, Args&&... args)
-			{
-				result_type ret(what(std::forward<Args>(args)...));
-				callback.set_arguments(std::move(ret));
-				callback.call();
+	callback::rx_remote_function<result_type, Args...> rmt(anchor, where, what, std::move(callback));
 
-			}, std::move(what_fn), std::forward<callbackT>(callback), std::forward<Args>(args)...);
-	}
-	else
-	{
-		//auto result_job = rx_create_job()(std::forward<refT>(ref), std::forward<function_type>(what_fn), std::forward<Args>(args)...);
-		rx_post_function_to(where, anchor, [](anchorT ref, rx_thread_handle_t ret_thread, function_type&& what, callbackT&& callback, Args&&... args)
-			{
-				result_type ret(what(std::forward<Args>(args)...));
-				callback.set_arguments(std::move(ret));
-				rx_post_packed_to(ret_thread, std::move(callback));
-
-			}, anchor, ret_thread, std::move(what_fn), std::forward<callbackT>(callback), std::forward<Args>(args)...);
-
-	}
+	rmt(std::forward<Args>(args)...);
 }
-template<class anchorT, class funcT, class callbackT>
-void rx_do_with_callback(rx_thread_handle_t where, anchorT anchor, funcT&& what, callbackT&& callback)
+template<class funcT, class callbackT>
+void rx_do_with_callback(rx_thread_handle_t where, funcT&& what, callbackT callback)
 {
 	using result_type = decltype(what());
-	using function_type = std::function<result_type()>;
+	auto anchor = callback.get_anchor();
 
-	auto ret_thread = rx_thread_context();
+	rx_post_function_to(where, anchor, [](funcT&& what, callbackT&& callback)
+		{
+			result_type ret(what());
+			callback(std::move(ret));
 
-
-	function_type what_fn = std::forward<funcT>(what);
-	if (where == ret_thread)
-	{
-		rx_post_function_to(where, anchor, [](function_type&& what, callbackT&& callback)
-			{
-				result_type ret(what());
-				callback.set_arguments(std::move(ret));
-				callback.call();
-
-			}, std::move(what_fn), std::move(callback));
-	}
-	else
-	{
-		rx_post_function_to(where, anchor, [](anchorT ref, rx_thread_handle_t ret_thread, function_type&& what, callbackT&& callback)
-			{
-				result_type ret(what());
-				callback.set_arguments(std::move(ret));
-				rx_post_packed_to(ret_thread, std::move(callback));
-
-			}, anchor, ret_thread, std::move(what_fn), std::move(callback));
-
-	}
+		}, std::forward< funcT>(what), std::move(callback));
 }
 
 }// rx_platform

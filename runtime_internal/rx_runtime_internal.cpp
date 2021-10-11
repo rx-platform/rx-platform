@@ -43,6 +43,7 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_simulation.h"
 #include "rx_filters.h"
+#include "rx_variables.h"
 #include "rx_runtime_relations.h"
 #include "sys_internal/rx_async_functions.h"
 
@@ -153,6 +154,7 @@ rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host,
 		result = simulation::register_simulation_constructors();
 		result = relations_runtime::register_internal_relations_constructors();
 		result = filters::register_filter_constructors();
+		result = variables::register_variables_constructors();
 	}
 	return result;
 }
@@ -225,7 +227,7 @@ void platform_runtime_manager::stop_all ()
 {
 	std::map<rx_thread_handle_t, std::vector<rx_application_ptr> > apps;
 	std::map<rx_thread_handle_t, std::vector<rx_domain_ptr> > domains;
-	for (auto one : applications_)
+	for (auto& one : applications_)
 	{
 		apps[one.first].push_back(one.second);
 		std::vector<rx_domain_ptr> temp = one.second->get_instance_data().get_domains();
@@ -833,7 +835,11 @@ rx_result runtime_cache::remove_target_relation (const rx_node_id& id, const str
 	else
 	{
 		lock_.unlock();
-		result = "Not found in cache!";
+		// not found in cache, so it is lost anyway
+		// I'll just return true!!!
+
+		result = true;
+		//result = "Not found in cache!"; // old stuff, seems not right
 	}
 	return result;
 }

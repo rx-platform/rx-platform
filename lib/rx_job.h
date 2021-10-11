@@ -265,18 +265,18 @@ class periodic_job : public timer_job
 };
 
 
-template<typename refT, typename funcT, typename... Args>
+template<typename funcT, typename... Args>
 struct rx_create_period_job;
 
 
 
 
-template <typename refT, typename... Args>
+template <typename funcT, typename... Args>
 class function_period_job : public post_period_job  
 {
 	DECLARE_REFERENCE_PTR(function_period_job);
 
-    template <typename otherRefT, typename funcT, typename... OtherArgs>
+    template <typename otherFuncT, typename... OtherArgs>
     friend struct rx_create_period_job;
 public:
     template <typename... FwdArgs>
@@ -299,37 +299,36 @@ public:
   private:
 
 
-      function_to_go<refT,Args...> function_data_;
+      function_to_go<funcT, Args...> function_data_;
 
 
 };
 
-template<typename refT, typename funcT, typename... Args>
+template<typename funcT, typename... Args>
 struct rx_create_period_job
 {
-    post_period_job::smart_ptr operator()(refT&& ref, funcT&& f, Args&&... args)
+    post_period_job::smart_ptr operator()(rx_reference_ptr ref, funcT f, Args&&... args)
     {
-        using wrapped_type = function_to_go<refT, Args...>;
-        auto wrapped = wrapped_type();
+        using wrapped_type = function_to_go<funcT, Args...>;
+        auto wrapped = wrapped_type(ref, std::move(f));
         wrapped.set_arguments(std::forward<Args>(args)...);
-        wrapped.function = std::forward<funcT>(f);
-        auto job = rx_create_reference<function_period_job<refT, Args...> >(std::forward<wrapped_type>(wrapped));
+        auto job = rx_create_reference<function_period_job<funcT, Args...> >(std::forward<wrapped_type>(wrapped));
         return job;
     }
 };
 
-template<typename refT, typename funcT, typename... Args>
+template<typename funcT, typename... Args>
 struct rx_create_timer_job;
 
 
 
 
-template <typename refT, typename... Args>
+template <typename funcT, typename... Args>
 class function_timer_job : public periodic_job  
 {
 	DECLARE_REFERENCE_PTR(function_timer_job);
 
-    template <typename otherRefT, typename funcT, typename... OtherArgs>
+    template <typename otherFuncT, typename... OtherArgs>
     friend struct rx_create_timer_job;
 public:
     template <typename... FwdArgs>
@@ -351,55 +350,85 @@ public:
   private:
 
 
-      function_to_go<refT,Args...> function_data_;
+      function_to_go<funcT, Args...> function_data_;
 
 
 };
 
-template<typename refT, typename funcT, typename... Args>
+template<typename funcT, typename... Args>
 struct rx_create_timer_job
 {
-    periodic_job::smart_ptr operator()(refT&& ref, funcT&& f, Args&&... args)
+    periodic_job::smart_ptr operator()(rx_reference_ptr ref, funcT f, Args&&... args)
     {
-        using wrapped_type = function_to_go<refT, Args...>;
-        auto wrapped = wrapped_type();
-        wrapped.function = std::forward<funcT>(f);
+        using wrapped_type = function_to_go<funcT, Args...>;
+        auto wrapped = wrapped_type(ref, std::move(f));
         wrapped.set_arguments(std::forward<Args>(args)...);
-        auto job = rx_create_reference<function_timer_job<refT, Args...> >(std::move(wrapped));
+        auto job = rx_create_reference<function_timer_job<funcT, Args...> >(std::move(wrapped));
         return job;
     }
 };
-template<typename refT, typename funcT>
-struct rx_create_timer_job<refT, funcT>
+template<typename funcT>
+struct rx_create_timer_job<funcT>
 {
-    periodic_job::smart_ptr operator()(refT&& ref, funcT&& f)
+    periodic_job::smart_ptr operator()(rx_reference_ptr ref, funcT f)
     {
-        using wrapped_type = function_to_go<refT>;
-        auto wrapped = wrapped_type();
-        wrapped.function = std::forward<funcT>(f);
-        auto job = rx_create_reference<function_timer_job<refT> >(std::move(wrapped));
+        using wrapped_type = function_to_go<funcT>;
+        auto wrapped = wrapped_type(ref, std::move(f));
+        auto job = rx_create_reference<function_timer_job<funcT> >(std::move(wrapped));
         return job;
     }
 };
 
-template<typename refT, typename funcT, typename... Args>
+
+
+
+
+template <typename... Args>
+class args_job : public job  
+{
+    DECLARE_REFERENCE_PTR(args_job);
+
+  public:
+
+      virtual void set_arguments (Args... args) = 0;
+
+      virtual rx_reference_ptr get_anchor () = 0;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+template<typename funcT, typename... Args>
 struct rx_create_job;
 
 
 
 
-template <typename refT, typename... Args>
-class function_job : public job  
+template <typename funcT, typename... Args>
+class function_job : public args_job<Args...>  
 {
     DECLARE_REFERENCE_PTR(function_job);
 
-    template <typename otherRefT, typename funcT, typename... OtherArgs>
+    template <typename otherFuncT, typename... OtherArgs>
     friend struct rx_create_job;
   public:
       template <typename... FwdArgs>
       function_job(FwdArgs&&... args)
           : function_data_(std::forward<FwdArgs>(args)...)
       {
+      }
+      void set_arguments(Args... args)
+      {
+          function_data_.set_arguments(std::forward<Args>(args)...);
+      }
+      ~function_job()
+      {
+
       }
 
   public:
@@ -409,46 +438,49 @@ class function_job : public job
           function_data_.call();
       }
 
+      rx_reference_ptr get_anchor ()
+      {
+          return function_data_.anchor;
+      }
+
 
   protected:
 
   private:
 
 
-      function_to_go<refT,Args...> function_data_;
+      function_to_go<funcT, Args...> function_data_;
 
 
 };
 
 
-template<typename refT, typename funcT, typename... Args>
-job_ptr rx_create_func_job(refT&& ref, funcT&& f, Args&&... args)
+template<typename funcT, typename... Args>
+job_ptr rx_create_func_job(rx_reference_ptr ref, funcT f, Args&&... args)
 {
-    return rx_create_job< refT, funcT, Args...>()(std::move(ref), std::move(f), std::forward<Args>(args)...);
+    return rx_create_job<funcT, Args...>()(ref, std::move(f), std::forward<Args>(args)...);
 }
-template<typename refT, typename funcT, typename... Args>
+template<typename funcT, typename... Args>
 struct rx_create_job
 {
-    job_ptr operator()(refT&& ref, funcT&& f, Args&&... args)
+    job_ptr operator()(rx_reference_ptr ref, funcT f, Args&&... args)
     {
-        using wrapped_type = function_to_go<refT, Args...>;
-        auto wrapped = wrapped_type();
-        wrapped.function = std::forward<funcT>(f);
+        using wrapped_type = function_to_go<funcT, Args...>;
+        auto wrapped = wrapped_type(ref, std::move(f));
         wrapped.set_arguments(std::forward<Args>(args)...);
-        auto job = rx_create_reference<function_job<refT, Args...> >(std::move(wrapped));
+        auto job = rx_create_reference<function_job<funcT, Args...> >(std::move(wrapped));
         return job;
     }
 };
 
-template<typename refT, typename funcT, typename... Args>
+template<typename funcT, typename... Args>
 struct rx_create_empty_job
 {
-    job_ptr operator()(refT&& ref, funcT&& f)
+    job_ptr operator()(rx_reference_ptr ref, funcT f)
     {
-        using wrapped_type = function_to_go<refT, Args...>;
-        auto wrapped = wrapped_type();
-        wrapped.function = std::forward<funcT>(f);
-        auto job = rx_create_reference<function_job<refT, Args...> >(std::move(wrapped));
+        using wrapped_type = function_to_go<funcT, Args...>;
+        auto wrapped = wrapped_type(ref, std::move(f));
+        auto job = rx_create_reference<function_job<funcT, Args...> >(std::move(wrapped));
         return job;
     }
 };
@@ -481,6 +513,84 @@ public:
 };
 
 
+
+
+
+
+template <typename resultT, typename... Args>
+class remote_args_job : public job  
+{
+    DECLARE_REFERENCE_PTR(remote_args_job);
+
+  public:
+
+      virtual void set_arguments (Args... args) = 0;
+
+      virtual void send_result_callback (resultT result) = 0;
+
+      void process ()
+      {
+          execute();
+      }
+
+
+  protected:
+
+  private:
+
+      virtual void execute () = 0;
+
+
+
+};
+
+
+
+
+
+
+template <typename funcT, typename callableResultT, typename resultT, typename... Args>
+class remote_function_job : public remote_args_job<resultT, Args...>  
+{
+    DECLARE_REFERENCE_PTR(remote_function_job);
+
+public:
+    template <typename... FwdArgs>
+    remote_function_job(callableResultT&& result_call, FwdArgs&&... args)
+        : function_data_(std::forward<FwdArgs>(args)...)
+        , result_call_(std::forward< callableResultT>(result_call))
+    {
+    }
+    void set_arguments(Args... args)
+    {
+        function_data_.set_arguments(std::forward<Args>(args)...);
+    }
+    void send_result_callback(resultT result)
+    {
+        result_call_(std::forward<resultT>(result));
+    }
+
+  public:
+
+  protected:
+
+  private:
+      void execute()
+      {
+          auto&& result = function_data_.call();
+          result_call_(std::forward<decltype(result)>(result));
+
+      }
+
+      result_function_to_go<funcT,resultT,  Args...> function_data_;
+
+
+      callableResultT result_call_;
+
+
+};
+
+
 // Parameterized Class rx::jobs::function_period_job 
 
 
@@ -488,6 +598,9 @@ public:
 
 
 // Parameterized Class rx::jobs::function_job 
+
+
+// Parameterized Class rx::jobs::remote_function_job 
 
 
 } // namespace jobs

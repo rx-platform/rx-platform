@@ -35,24 +35,18 @@
 #include "rx_runtime_helpers.h"
 #include "system/meta/rx_meta_data.h"
 
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 
 namespace rx_platform {
 namespace runtime {
 namespace tag_blocks {
 class connected_tags;
 class binded_tags;
+
 } // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
-
-namespace rx_internal {
-namespace sys_runtime {
-namespace data_source {
-class value_point;
-
-} // namespace data_source
-} // namespace sys_runtime
-} // namespace rx_internal
 
 
 
@@ -194,6 +188,28 @@ class relation_subscriber
 };
 
 
+
+
+
+
+class context_value_point : public rx_internal::sys_runtime::data_source::value_point_impl  
+{
+
+  public:
+
+  protected:
+
+  private:
+
+      void value_changed (const rx_value& val);
+
+      void result_received (rx_result&& result, runtime_transaction_id_t id);
+
+
+
+};
+
+
 enum class runtime_process_step : uint_fast8_t
 {
     idle = 0,
@@ -269,6 +285,7 @@ typedef std::vector<update_data_struct<structure::source_data> > source_updates_
 typedef std::vector<write_data_struct<structure::mapper_data> > mapper_writes_type;
 typedef std::vector<write_data_struct<structure::source_data> > source_writes_type;
 typedef std::vector<write_result_struct<structure::source_data> > source_results_type;
+typedef std::vector<write_result_struct<structure::variable_data> > variable_results_type;
 typedef std::vector<remotes_data> remotes_data_type;
 
 typedef std::vector<structure::variable_data*> variables_type;
@@ -291,11 +308,10 @@ class runtime_process_context
     friend class algorithms::runtime_relation_algorithms;
 
     typedef std::function<void()> fire_callback_func_t;
-    typedef std::vector<rx_internal::sys_runtime::data_source::value_point>* points_type;
-    points_type points_;
+    typedef std::vector<context_value_point*> points_type;
 
   public:
-      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points);
+      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs);
 
 
       bool should_repeat ();
@@ -338,7 +354,9 @@ class runtime_process_context
 
       void variable_pending (structure::variable_data* whose);
 
-      variables_type& get_variables_for_process ();
+      void variable_result_pending (write_result_struct<structure::variable_data> data);
+
+      std::pair<variable_results_type*, variables_type*> get_variables_for_process ();
 
       bool should_process_status_change ();
 
@@ -460,6 +478,8 @@ class runtime_process_context
 
       tag_blocks::binded_tags& binded_;
 
+      points_type points_;
+
 
       runtime_process_step current_step_;
 
@@ -478,6 +498,8 @@ class runtime_process_context
       double_collection<source_results_type> source_results_;
 
       double_collection<variables_type> variables_;
+
+      double_collection<variable_results_type> variable_results_;
 
       double_collection<filters_type> filters_;
 

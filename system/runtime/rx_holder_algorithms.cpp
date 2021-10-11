@@ -38,6 +38,8 @@
 #include "api/rx_platform_api.h"
 #include "rx_write_transaction.h"
 #include "rx_process_context.h"
+#include "system/runtime/rx_blocks.h"
+#include "system/serialization/rx_ser.h"
 
 
 namespace rx_platform {
@@ -130,24 +132,6 @@ std::vector<rx_result> runtime_holder_algorithms<typeT>::disconnect_items (const
 }
 
 template <class typeT>
-rx_result runtime_holder_algorithms<typeT>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx, typename typeT::RType& whose)
-{
-    auto transaction_ptr = rx_create_reference<write_item_transaction>(std::move(callback), rx_thread_context());
-    auto connect_result = whose.tags_.connected_tags_.connect_tag(path, *whose.tags_.item_, transaction_ptr);
-    if (!connect_result)
-    {
-        connect_result.register_error("Error writing to item "s + path);
-        return connect_result.errors();
-    }
-    auto result = whose.tags_.connected_tags_.write_tag(1, connect_result.value(), std::move(val), transaction_ptr);
-    if (!result)
-    {
-        whose.tags_.connected_tags_.disconnect_tag(connect_result.value(), transaction_ptr);
-    }
-    return result;
-}
-
-template <class typeT>
 void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whose)
 {
     auto storage_result = whose.meta_info_.resolve_storage();
@@ -187,7 +171,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
 template <class typeT>
 runtime_process_context runtime_holder_algorithms<typeT>::create_context (typename typeT::RType& whose)
 {
-    return runtime_process_context(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.tags_.points_.get());
+    return runtime_process_context(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_);
 }
 
 template <class typeT>
@@ -217,15 +201,17 @@ rx_result runtime_holder_algorithms<typeT>::get_value_ref (const string_type& pa
 }
 
 template <class typeT>
-rx_result runtime_holder_algorithms<typeT>::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, typename typeT::RType& whose)
+void runtime_holder_algorithms<typeT>::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback, typename typeT::RType& whose)
 {
     rx_result result;
+    static std::vector<runtime_item_attribute> g_empty_result;
     if (path.empty())
     {
+        std::vector<runtime_item_attribute> items;
         auto ret = whose.tags_.browse(prefix, path, filter, items, &whose.context_);
         if (ret)
         {
-            ret = whose.relations_.browse(prefix, path, filter, items);
+            ret = whose.relations_.browse(prefix, filter, items);
             if (ret)
             {
                 ret = whose.logic_.browse(prefix, path, filter, items, &whose.context_);
@@ -235,20 +221,37 @@ rx_result runtime_holder_algorithms<typeT>::browse (const string_type& prefix, c
                 }
             }
         }
-        return ret;
+        callback(std::move(ret), std::move(items));
     }
     else
     {
         if (whose.tags_.is_this_yours(path))
-            return whose.tags_.browse(prefix, path, filter, items, &whose.context_);
+        {
+            std::vector<runtime_item_attribute> items;
+            auto result = whose.tags_.browse(prefix, path, filter, items, &whose.context_);
+            callback(std::move(result), std::move(items));
+        }
         else if (whose.relations_.is_this_yours(path))
-            return whose.relations_.browse(prefix, path, filter, items);
+        {
+            // this one sends it's own callback, it can be remote!!!
+            whose.relations_.browse(prefix, path, filter, std::move(callback));
+        }
         else if (whose.logic_.is_this_yours(path))
-            return whose.logic_.browse(prefix, path, filter, items, &whose.context_);
+        {
+            std::vector<runtime_item_attribute> items;
+            auto result = whose.logic_.browse(prefix, path, filter, items, &whose.context_);
+            callback(std::move(result), std::move(items));
+        }
         else if (whose.displays_.is_this_yours(path))
-            return whose.displays_.browse(prefix, path, filter, items, &whose.context_);
+        {
+            std::vector<runtime_item_attribute> items;
+            auto result = whose.displays_.browse(prefix, path, filter, items, &whose.context_);
+            callback(std::move(result), std::move(items));
+        }
         else
-            return path + " not found!";
+        {
+            callback(path + " not found!", g_empty_result);
+        }
     }
 }
 
@@ -271,12 +274,13 @@ void runtime_holder_algorithms<typeT>::collect_data (data::runtime_values_data& 
 }
 
 template <class typeT>
-rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path, rx_value& value, const typename typeT::RType& whose)
+void runtime_holder_algorithms<typeT>::read_value (const string_type& path, read_result_callback_t callback, const typename typeT::RType& whose)
 {
 
     rx_result result;
     if (path.empty())
     {// our value
+        values::rx_value value;
 #ifndef RX_MIN_MEMORY
         if (!whose.json_cache_.empty())
         {
@@ -299,6 +303,7 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
 #endif
                     if (!whose.json_cache_.empty())
                         value.assign_static(whose.json_cache_.c_str(), whose.meta_info_.modified_time);
+                                        
                 }
             }
         }
@@ -315,9 +320,11 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
             }
         }
 #endif
+        callback(std::move(result), std::move(value));
     }
     else if (path == "Storage")
     {// our runtime value
+        values::rx_value value;
         serialization::json_writer writer;
         writer.write_header(STREAMING_TYPE_MESSAGE, 0);
         result = serialize_runtime_value(writer, runtime_value_type::persistent_runtime_value, whose);
@@ -333,21 +340,99 @@ rx_result runtime_holder_algorithms<typeT>::read_value (const string_type& path,
                 }
             }
         }
+        callback(std::move(result), std::move(value));
     }
     else
     {
-        if (whose.tags_.is_this_yours(path))
-            return whose.tags_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
-        else if (whose.relations_.is_this_yours(path))
-            whose.relations_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
-        else if (whose.logic_.is_this_yours(path))
-            whose.logic_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
-        else if (whose.displays_.is_this_yours(path))
-            whose.displays_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
-        return path + " not found!";
-    }
+        values::rx_value value;
 
-    return result;
+        if (whose.tags_.is_this_yours(path))
+            result = whose.tags_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
+        else if (whose.relations_.is_this_yours(path))
+        {
+            whose.relations_.read_value(path, std::move(callback), const_cast<runtime_process_context*>(&whose.context_));
+            return;// relations will do callback!!!
+        }
+        else if (whose.logic_.is_this_yours(path))
+            result = whose.logic_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
+        else if (whose.displays_.is_this_yours(path))
+            result = whose.displays_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
+        else
+            result = path + " not found!";
+
+        callback(std::move(result), std::move(value));
+    }
+}
+
+template <class typeT>
+void runtime_holder_algorithms<typeT>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx, typename typeT::RType& whose)
+{
+    auto connect_result = whose.tags_.connected_tags_.connect_tag(path, *whose.tags_.item_);
+    if (!connect_result)
+    {
+        connect_result.register_error("Error writing to item "s + path);
+        callback(connect_result.errors());
+        return;
+    }
+    auto transaction_ptr = rx_create_reference<write_item_transaction>(std::move(callback));
+    auto result = whose.tags_.connected_tags_.write_tag(1, connect_result.value(), std::move(val), transaction_ptr);
+    if (!result)
+    {
+        whose.tags_.connected_tags_.disconnect_tag(connect_result.value());
+        (*transaction_ptr)(std::move(result));
+        return;
+    }
+}
+
+template <class typeT>
+void runtime_holder_algorithms<typeT>::read_struct (string_view_type path, read_struct_data data, const typename typeT::RType& whose)
+{
+    rx_result result;
+    data::runtime_values_data collected_data;
+    if (path.empty())
+    {// our value
+        whose.tags_.collect_data(collected_data, data.type);
+        whose.relations_.collect_data(collected_data, data.type);
+        whose.logic_.collect_data(collected_data, data.type);
+        whose.displays_.collect_data(collected_data, data.type);
+        result = true;
+    }
+    else
+    {
+        // someone's else
+        string_view_type item;
+        auto idx = path.find(RX_OBJECT_DELIMETER);
+        if (idx == string_view_type::npos)
+            item = path;
+        else
+            item = path.substr(0, idx);
+
+        if (whose.tags_.is_this_yours(item))
+        {
+            result = whose.tags_.get_struct_value(path, collected_data, data.type, const_cast<runtime_process_context*>(&whose.context_));
+        }
+        else if (whose.relations_.is_this_yours(item))
+        {
+            whose.relations_.read_struct(path, std::move(data));
+            return;// relations will do callback!!!
+        }
+        else if (whose.logic_.is_this_yours(item))
+        {
+            result = whose.logic_.get_struct_value(item, path.substr(idx+1), collected_data, data.type, const_cast<runtime_process_context*>(&whose.context_));
+        }
+        else if (whose.displays_.is_this_yours(item))
+        {
+            result = whose.displays_.get_struct_value(item, path.substr(idx + 1), collected_data, data.type, const_cast<runtime_process_context*>(&whose.context_));
+        }
+        else
+            result = string_type(path) + " not found!";
+    }
+    data.callback(std::move(result), std::move(collected_data));
+}
+
+template <class typeT>
+void runtime_holder_algorithms<typeT>::write_struct (string_view_type path, write_struct_data data, typename typeT::RType& whose)
+{
 }
 
 template <class typeT>
@@ -434,6 +519,20 @@ void runtime_relation_algorithms::notify_relation_disconnected (const string_typ
     {
         for (auto& one : it->second)
             one->relation_disconnected(name);
+    }
+}
+
+void runtime_relation_algorithms::relation_value_change (relations::relation_value_data* whose, const rx_value& val, runtime_process_context* ctx)
+{
+    if (val.is_dead())
+    {// avoid sending dead to others
+        rx_value local_val(val);
+        local_val.set_quality(RX_NOT_CONNECTED_QUALITY);
+        ctx->tags_.relation_value_change(whose, val);
+    }
+    else
+    {
+        ctx->tags_.relation_value_change(whose, val);
     }
 }
 

@@ -37,6 +37,7 @@
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
 #include "system/meta/rx_meta_algorithm.h"
+#include "sys_internal/rx_namespace_algorithms.h"
 
 
 namespace rx_internal {
@@ -226,8 +227,7 @@ rx_result configuration_storage_builder::create_object_from_storage (rx_storage_
 		META_LOG_WARNING("configuration_storage_builder", 250, "Created new instance of an object " + meta.get_full_path());
 	}
 
-	directory_creator creator;
-	auto dir = creator.get_or_create_direcotry(root, meta.path);
+	auto dir = storage_get_direcotry(root, meta.path);
 	if (dir)
 	{
 		switch (target_type)
@@ -280,8 +280,7 @@ rx_result configuration_storage_builder::create_type_from_storage (rx_storage_it
 		META_LOG_WARNING("configuration_storage_builder", 250, "Created new type " + meta.get_full_path());
 	}
 
-	directory_creator creator;
-	auto dir = creator.get_or_create_direcotry(root, meta.path);
+	auto dir = storage_get_direcotry(root, meta.path);
 	if (dir)
 	{
 		switch (target_type)
@@ -356,6 +355,48 @@ void configuration_storage_builder::dump_errors_to_log (const string_array& erro
 {
 	for (auto& err : errors)
 		BUILD_LOG_ERROR("configuration_storage_builder", 800, err.c_str());
+}
+
+rx_result_with<rx_directory_ptr> configuration_storage_builder::storage_get_direcotry (rx_directory_ptr root, const string_type& path)
+{
+	rx_result_with<rx_directory_ptr> result;
+	rx_directory_ptr current_dir = root;
+	rx_directory_ptr temp_dir;
+	string_type temp_path;
+	size_t last = 0;
+	size_t next = 0;
+	while ((next = path.find(RX_DIR_DELIMETER, last)) != string_type::npos)
+	{
+		temp_path = path.substr(last, next - last);
+		temp_dir = current_dir->get_sub_directory(temp_path);
+		if (temp_dir)
+		{
+			current_dir = temp_dir;
+		}
+		else
+		{
+			result = current_dir->add_sub_directory(temp_path);
+			if (!result)
+				return result;
+			current_dir = result.value();
+
+		}
+		last = next + 1;
+	}
+	temp_path = path.substr(last);
+	temp_dir = current_dir->get_sub_directory(temp_path);
+	if (temp_dir)
+	{
+		current_dir = temp_dir;
+	}
+	else
+	{
+		result = current_dir->add_sub_directory(temp_path);
+		if (!result)
+			return result;
+		current_dir = result.value();
+	}
+	return current_dir;
 }
 
 
@@ -484,52 +525,6 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 	}
 	return result;
 }
-
-// Class rx_internal::builders::storage::directory_creator 
-
-
-rx_result_with<rx_directory_ptr> directory_creator::get_or_create_direcotry (rx_directory_ptr from, const string_type& path)
-{
-	rx_result_with<rx_directory_ptr> result;
-	rx_directory_ptr current_dir = from;
-	rx_directory_ptr temp_dir;
-	string_type temp_path;
-	size_t last = 0;
-	size_t next = 0;
-	while ((next = path.find(RX_DIR_DELIMETER, last)) != string_type::npos)
-	{
-		temp_path = path.substr(last, next - last);
-		temp_dir = current_dir->get_sub_directory(temp_path);
-		if (temp_dir)
-		{
-			current_dir = temp_dir;
-		}
-		else
-		{
-			result = current_dir->add_sub_directory(temp_path);
-			if (!result)
-				return result;
-			current_dir = result.value();
-
-		}
-		last = next + 1;
-	}
-	temp_path = path.substr(last);
-	temp_dir = current_dir->get_sub_directory(temp_path);
-	if (temp_dir)
-	{
-		current_dir = temp_dir;
-	}
-	else
-	{
-		result = current_dir->add_sub_directory(temp_path);
-			if (!result)
-				return result;
-			current_dir = result.value();
-	}
-	return current_dir;
-}
-
 
 } // namespace storage
 } // namespace builders

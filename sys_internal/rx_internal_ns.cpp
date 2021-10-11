@@ -34,6 +34,8 @@
 // rx_internal_ns
 #include "sys_internal/rx_internal_ns.h"
 
+#include "system/serialization/rx_ser.h"
+#include "system/runtime/rx_blocks.h"
 #include "system/meta/rx_obj_types.h"
 #include "testing/rx_test.h"
 #include "sys_internal/rx_internal_builders.h"
@@ -207,15 +209,15 @@ void rx_item_implementation<TImpl>::fill_code_info (std::ostream& info, const st
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::read_value (const string_type& path, rx_value& value) const
+void rx_item_implementation<TImpl>::read_value (const string_type& path, read_result_callback_t callback) const
 {
-	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::read_value(path, value, *impl_);
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::read_value(path, std::move(callback), *impl_);
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx)
+void rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx)
 {
-	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, std::move(val), std::move(callback), ctx, *impl_);
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, std::move(val), std::move(callback), ctx, *impl_);
 }
 
 template <class TImpl>
@@ -225,9 +227,9 @@ rx_result rx_item_implementation<TImpl>::do_command (rx_object_command_t command
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+void rx_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback)
 {
-	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::browse(prefix, path, filter, items, *impl_);
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::browse(prefix, path, filter, std::move(callback), *impl_);
 }
 
 template <class TImpl>
@@ -298,6 +300,18 @@ rx_result rx_item_implementation<TImpl>::save () const
 	return rx_save_platform_item(*this);
 }
 
+template <class TImpl>
+void rx_item_implementation<TImpl>::read_struct (string_view_type path, read_struct_data data) const
+{
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::read_struct(path, std::move(data), *impl_);
+}
+
+template <class TImpl>
+void rx_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
+{
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_struct(path, std::move(data), *impl_);
+}
+
 
 // Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
 
@@ -362,15 +376,15 @@ const meta_data_t& rx_meta_item_implementation<TImpl>::meta_info () const
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::read_value (const string_type& path, rx_value& value) const
+void rx_meta_item_implementation<TImpl>::read_value (const string_type& path, read_result_callback_t callback) const
 {
-	return RX_NOT_IMPLEMENTED;
+	callback(RX_NOT_IMPLEMENTED, rx_value());
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx)
+void rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	callback(RX_NOT_IMPLEMENTED);
 }
 
 template <class TImpl>
@@ -380,9 +394,9 @@ rx_result rx_meta_item_implementation<TImpl>::do_command (rx_object_command_t co
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+void rx_meta_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback)
 {
-	return "Not valid for this type!";
+	callback("Not valid for this type!", std::vector<runtime_item_attribute>());
 }
 
 template <class TImpl>
@@ -466,6 +480,18 @@ rx_result rx_meta_item_implementation<TImpl>::save () const
 	return rx_save_platform_item(*this);
 }
 
+template <class TImpl>
+void rx_meta_item_implementation<TImpl>::read_struct (string_view_type path, read_struct_data data) const
+{
+	data.callback(RX_NOT_IMPLEMENTED, data::runtime_values_data());
+}
+
+template <class TImpl>
+void rx_meta_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
+{
+	data.callback(RX_NOT_IMPLEMENTED, std::vector<rx_result>());
+}
+
 
 // Class rx_internal::internal_ns::internal_directory 
 
@@ -540,15 +566,15 @@ const meta_data_t& rx_other_implementation<TImpl>::meta_info () const
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::read_value (const string_type& path, rx_value& value) const
+void rx_other_implementation<TImpl>::read_value (const string_type& path, read_result_callback_t callback) const
 {
-	return RX_NOT_IMPLEMENTED;
+	callback(RX_NOT_IMPLEMENTED, rx_value());
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx)
+void rx_other_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	callback(RX_NOT_IMPLEMENTED);
 }
 
 template <class TImpl>
@@ -558,9 +584,9 @@ rx_result rx_other_implementation<TImpl>::do_command (rx_object_command_t comman
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items)
+void rx_other_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback)
 {
-	return "Not valid for this type!";
+	callback("Not valid for this type!", std::vector<runtime_item_attribute>());
 }
 
 template <class TImpl>
@@ -633,6 +659,18 @@ template <class TImpl>
 rx_result rx_other_implementation<TImpl>::save () const
 {
 	return rx_save_platform_item(*this);
+}
+
+template <class TImpl>
+void rx_other_implementation<TImpl>::read_struct (string_view_type path, read_struct_data data) const
+{
+	data.callback(RX_NOT_IMPLEMENTED, data::runtime_values_data());
+}
+
+template <class TImpl>
+void rx_other_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
+{
+	data.callback(RX_NOT_IMPLEMENTED, std::vector<rx_result>());
 }
 
 

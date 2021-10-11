@@ -49,17 +49,6 @@ namespace api
 {
 
 
-struct runtime_browse_result
-{
-	std::vector<runtime_item_attribute> items;
-
-	bool success = false;
-	operator bool() const
-	{
-		return success;
-	}
-};
-
 struct query_result_detail
 {
 	query_result_detail(const rx_item_type type, const meta_data& data)

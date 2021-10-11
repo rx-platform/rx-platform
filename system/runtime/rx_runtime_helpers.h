@@ -57,16 +57,16 @@ class mapper_data;
 class variable_data;
 } // namespace structure
 
-namespace algorithms {
-template <class typeT> class runtime_holder;
-} // namespace algorithms
-
-class runtime_process_context;
 namespace relations {
 class relations_holder;
 } // namespace relations
 
+namespace algorithms {
+template <class typeT> class runtime_holder;
+} // namespace algorithms
+
 class relation_subscriber;
+class runtime_process_context;
 namespace tag_blocks {
 class binded_tags;
 
@@ -119,6 +119,8 @@ class complex_data_algorithm;
 }
 }
 namespace runtime {
+
+struct write_data;
 struct runtime_init_context;
 namespace relations
 {
@@ -194,6 +196,7 @@ class event_runtime;
 namespace relations
 {
 class relation_data;
+class relation_value_data;
 class relation_runtime;
 }
 
@@ -239,6 +242,7 @@ union rt_value_ref_union
 	structure::value_data* value;
 	structure::variable_data* variable;
     relations::relation_data* relation;
+    relations::relation_value_data* relation_value;
 };
 enum class rt_value_ref_type
 {
@@ -246,7 +250,8 @@ enum class rt_value_ref_type
 	rt_const_value = 1,
 	rt_value = 2,
 	rt_variable = 3,
-    rt_relation = 4/// !!!!!!/// CHECK switches
+    rt_relation = 4,
+    rt_relation_value = 5
 };
 struct rt_value_ref
 {
@@ -255,6 +260,34 @@ struct rt_value_ref
 };
 
 typedef std::unique_ptr<structure::runtime_item> rx_runtime_item_ptr;
+
+
+
+struct update_item
+{
+    runtime_handle_t handle;
+    rx_value value;
+};
+
+struct write_result_item
+{
+    runtime_handle_t handle;
+    rx_result result;
+};
+struct write_result_data
+{
+    runtime_transaction_id_t transaction_id;
+    runtime_handle_t item;
+    rx_result result;
+};
+
+struct write_tag_data
+{
+    runtime_transaction_id_t transaction_id;
+    runtime_handle_t item;
+    rx_simple_value value;
+    tags_callback_ptr callback;
+};
 
 
 

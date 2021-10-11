@@ -67,6 +67,8 @@ class internal_data_subscription : public subscriptions::rx_subscription_callbac
 
       void add_item (const string_type& path, value_handle_extended& handle);
 
+      void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id);
+
       void remove_item (const value_handle_extended& handle);
 
       bool is_empty () const;
@@ -112,6 +114,8 @@ class internal_data_source : public data_source
 
 
       void add_item (const string_type& path, uint32_t rate, value_handle_extended& handle);
+
+      void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id);
 
       void remove_item (const value_handle_extended& handle);
 

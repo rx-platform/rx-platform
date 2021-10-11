@@ -1244,7 +1244,7 @@ string_type rx_value_storage::to_string (bool simple) const
 			return ret_str;
 		}
 	case RX_STRING_TYPE:
-		return "\""s + string_type(value_.value.string_value.value) + "\"";
+		return "\""s + string_type(value_.value.string_value.size > 0 ? value_.value.string_value.value : "") + "\"";
 	case RX_UUID_TYPE:
 		return rx_uuid(*value_.value.uuid_value).to_string();
 
@@ -1951,7 +1951,7 @@ bool rx_value_storage::is_simple_type (rx_value_t type) const
 	return !IS_ARRAY_VALUE(type) && type < RX_TIME_TYPE && type != RX_STRING_TYPE;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator + (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, true);
@@ -2086,7 +2086,7 @@ rx_value_t rx_value_storage::get_arithmetic_result_type (rx_value_t left, rx_val
 	return RX_NULL_TYPE;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator - (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, false);
@@ -2117,7 +2117,7 @@ rx::values::rx_value_storage rx_value_storage::operator - (const rx_value_storag
 	return result;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator * (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, false);
@@ -2144,7 +2144,7 @@ rx::values::rx_value_storage rx_value_storage::operator * (const rx_value_storag
 	return result;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator / (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, false);
@@ -2179,7 +2179,7 @@ rx::values::rx_value_storage rx_value_storage::operator / (const rx_value_storag
 	return result;
 }
 
-rx::values::rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
+rx_value_storage rx_value_storage::operator % (const rx_value_storage& right) const
 {
 	rx_value_storage result;
 	rx_value_t ret_type = get_arithmetic_result_type(value_.value_type, right.value_.value_type, false);

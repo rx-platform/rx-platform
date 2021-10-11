@@ -34,6 +34,8 @@
 // rx_set_messages
 #include "sys_internal/rx_set_messages.h"
 
+#include "system/serialization/rx_ser.h"
+#include "system/runtime/rx_blocks.h"
 #include "sys_internal/rx_internal_protocol.h"
 #include "system/serialization/rx_ser.h"
 #include "api/rx_namespace_api.h"
@@ -856,7 +858,7 @@ message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_prot
 {
 	rx_node_id id = rx_node_id::null_id;
 
-	auto callback = rx_function_to_go<rx_result_with<object_types::relation_type::smart_ptr>&&>(ctx.object, [create, request, conn](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
+	auto callback = rx_result_with_callback<object_types::relation_type::smart_ptr>(ctx.object, [create, request, conn](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
 	{
 		if (result)
 		{
@@ -1656,15 +1658,6 @@ string_type read_runtime_request::type_name = "readRuntimeReq";
 
 uint16_t read_runtime_request::type_id = rx_read_runtime_request_id;
 
-struct item_message_result
-{
-	string_type val;
-	operator bool() const
-	{
-		return !val.empty();
-	}
-};
-
 
 rx_result read_runtime_request::serialize (base_meta_writer& stream) const
 {
@@ -1700,10 +1693,12 @@ message_ptr read_runtime_request::do_job (api::rx_context ctx, rx_protocol_conne
 
 	}
 
-	rx_result result = model::algorithms::do_with_runtime_item(resolve_result.value()
-		, [](rx_result_with<platform_item_ptr>&& data) -> rx_result_with<item_message_result>
-		{
-			if (data)
+	rx_result result = RX_NOT_IMPLEMENTED;// model::algorithms::do_with_runtime_item(resolve_result.value()
+		//, [](rx_result_with<platform_item_ptr>&& data) -> rx_result_with<item_message_result>
+		//{
+			// asyncread
+			
+			/*if (data)
 			{
 				rx_value val;
 				auto read_res = data.value()->read_value("", val);
@@ -1726,11 +1721,12 @@ message_ptr read_runtime_request::do_job (api::rx_context ctx, rx_protocol_conne
 			{
 				return data.errors();
 			}
-		}
+			*/
+		/*}
 		, rx_result_with_callback< item_message_result>(ctx.object, [](rx_result_with<item_message_result>&& result) mutable
 			{
 			})
-			, ctx);
+			, ctx);*/
 
 	if (!result)
 	{

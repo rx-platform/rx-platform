@@ -52,8 +52,6 @@
 #include "system/runtime/rx_operational.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_callback
-#include "system/callbacks/rx_callback.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr

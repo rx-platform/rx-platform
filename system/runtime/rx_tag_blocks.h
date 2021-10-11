@@ -37,19 +37,13 @@
 
 // rx_operational
 #include "system/runtime/rx_operational.h"
-// rx_value_point
-#include "runtime_internal/rx_value_point.h"
 
 namespace rx_platform {
 namespace runtime {
 namespace structure {
 class runtime_item;
+
 } // namespace structure
-
-namespace relations {
-class relation_data;
-
-} // namespace relations
 } // namespace runtime
 } // namespace rx_platform
 
@@ -109,11 +103,10 @@ class common_runtime_tags
 
 
 
-
 class tags_holder 
 {
 
-    typedef std::unique_ptr<std::vector<rx_internal::sys_runtime::data_source::value_point> > points_type;
+    //typedef std::unique_ptr<std::vector<rx_internal::sys_runtime::data_source::value_point> > points_type;
     template <class typeT>
     friend class algorithms::runtime_scan_algorithms;
     template <class typeT>
@@ -121,7 +114,9 @@ class tags_holder
 
   public:
 
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+      rx_result get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_struct_value (string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const;
 
       void fill_data (const data::runtime_values_data& data, runtime_process_context* ctx);
 
@@ -143,11 +138,11 @@ class tags_holder
 
       void set_runtime_data (structure::runtime_item::smart_ptr&& prototype);
 
-      bool is_this_yours (const string_type& path) const;
+      bool is_this_yours (string_view_type path) const;
 
       void target_relation_removed (relations::relation_data::smart_ptr what);
 
-      rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       template<typename valT>
       valT get_binded_as(runtime_handle_t handle, const valT& default_value)
@@ -180,8 +175,6 @@ class tags_holder
       connected_tags connected_tags_;
 
       std::unique_ptr<structure::runtime_item> item_;
-
-      points_type points_;
 
       binded_tags binded_tags_;
 

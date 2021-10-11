@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -466,7 +466,7 @@ const rx_item_reference rx_item_reference::null_ref;
 
 
 // placement new and MSVC debug heap problem
-#ifdef _MSC_VER 
+#ifdef _MSC_VER
 #ifdef _DEBUG
 #undef new
 #endif
@@ -743,6 +743,15 @@ rx_uuid::rx_uuid(const rx_uuid_t& rigth)
 	memcpy(&m_uuid, &rigth, sizeof(rx_uuid_t));
 }
 rx_uuid& rx_uuid::operator=(const rx_uuid& right)
+{
+	memcpy(&m_uuid, &right.m_uuid, sizeof(rx_uuid_t));
+	return *this;
+}
+rx_uuid::rx_uuid(rx_uuid&& right) noexcept
+{
+	memcpy(&m_uuid, &right.m_uuid, sizeof(rx_uuid_t));
+}
+rx_uuid& rx_uuid::operator=(rx_uuid&& right) noexcept
 {
 	memcpy(&m_uuid, &right.m_uuid, sizeof(rx_uuid_t));
 	return *this;
@@ -1289,7 +1298,7 @@ void rx_node_id::set_node_type(rx_node_id_type value)
 	node_type_ = value;
 }
 
-#ifdef _MSC_VER 
+#ifdef _MSC_VER
 #ifdef _DEBUG
 #define new DEBUG_CLIENTBLOCK
 #endif

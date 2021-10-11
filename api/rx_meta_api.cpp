@@ -327,11 +327,12 @@ rx_result save_item_helper(string_type path)
 rx_result rx_save_item(const string_type& path
 	, rx_result_callback&& callback)
 {
-	rx_do_with_callback(RX_DOMAIN_META, callback.anchor, [](string_type path) -> rx_result
+	rx_post_function_to(RX_DOMAIN_META, callback.get_anchor(), [](string_type path, rx_result_callback&& callback)
 		{
-			return save_item_helper(path);
+			auto result = save_item_helper(path);
+			callback(std::move(result));
 		}
-		, std::move(callback), path);
+		, std::move(path), std::move(callback));
 
 	return true;
 }

@@ -35,22 +35,31 @@
 #include "rx_runtime_helpers.h"
 #include "rx_objbase.h"
 #include "rx_rt_struct.h"
+#include "rx_operational.h"
 
 // rx_relation_impl
 #include "system/runtime/rx_relation_impl.h"
 // rx_resolvers
 #include "system/runtime/rx_resolvers.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_values
+#include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace runtime {
+namespace relations {
+class relation_connector;
+} // namespace relations
+
 namespace algorithms {
 template <class typeT> class runtime_holder_algorithms;
 } // namespace algorithms
 
 namespace relations {
-class relation_connector;
+class relation_connections;
 
 } // namespace relations
 } // namespace runtime
@@ -91,20 +100,117 @@ class relation_connector
       virtual ~relation_connector();
 
 
-      virtual rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
+      virtual std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths) = 0;
 
-      virtual rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
+      virtual rx_result disconnect_items (const std::vector<runtime_handle_t>& items) = 0;
 
-      virtual rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx) = 0;
+      virtual rx_result write_tag (runtime_transaction_id_t trans, runtime_handle_t item, rx_simple_value&& value) = 0;
 
-      virtual rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor) = 0;
+      virtual void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback) = 0;
 
-      virtual rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items) = 0;
+      virtual void read_value (const string_type& path, read_result_callback_t callback) const = 0;
+
+      virtual void read_struct (string_view_type path, read_struct_data data) const = 0;
 
 
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class relation_value_data 
+{
+
+  public:
+
+      rx_value get_value (runtime_process_context* ctx) const;
+
+      rx_result write_value (write_data&& data, structure::write_task* task, runtime_process_context* ctx);
+
+
+      rx::values::rx_value value;
+
+      relation_connections *parent;
+
+
+      runtime_handle_t handle;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class relation_connections 
+{
+    typedef std::map<runtime_transaction_id_t, structure::write_task*> pending_tasks_type;
+    // connection handles types
+    typedef std::vector<std::unique_ptr<relation_value_data> > values_cache_type;
+    typedef std::map<runtime_handle_t, relation_value_data*> handles_type;// target_handle -> value index
+    typedef std::map<string_type, relation_value_data*> tags_type;// path -> value index
+    typedef std::map<runtime_handle_t, string_type> inverse_tags_type;// mine handle -> path
+
+  public:
+
+      rx_result_with<relations::relation_value_data*> connect_tag (const string_type& path, runtime_handle_t handle);
+
+      rx_result write_tag (runtime_handle_t item, write_data&& data, structure::write_task* task, runtime_process_context* ctx);
+
+      void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
+
+      void write_value (const string_type& path, write_data&& data, structure::write_task* task, runtime_process_context* ctx);
+
+      void write_struct (string_view_type path, write_struct_data data);
+
+      void read_value (const string_type& path, read_result_callback_t callback, runtime_process_context* ctx) const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void local_relation_connected (platform_item_ptr item);
+
+      void remote_relation_connected (platform_item_ptr item);
+
+      void relation_disconnected ();
+
+      void items_changed (const std::vector<update_item>& items);
+
+      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+
+      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
+
+
+      runtime_process_context* context;
+
+
+  protected:
+
+  private:
+
+
+      std::unique_ptr<relation_connector> connector_;
+
+      values_cache_type values_cache_;
+
+      pending_tasks_type pending_tasks_;
+
+
+      tags_type tag_paths_;
+
+      handles_type handles_map_;
 
 
 };
@@ -155,6 +261,7 @@ class relation_data : public rx::pointers::reference_object
     relation_resolver_user resolver_user_;
     friend class relation_data::relation_resolver_user;
 
+
   public:
       relation_data();
 
@@ -171,25 +278,16 @@ class relation_data : public rx::pointers::reference_object
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      rx_result read_value (const string_type& path, std::function<void(rx_value)> callback, api::rx_context ctx) const;
-
-      rx_result write_value (const string_type& path, rx_simple_value&& val, std::function<void(rx_result)> callback, api::rx_context ctx);
-
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
-
-      rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor, runtime_process_context* ctx);
-
-      rx_result write_tag (runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, runtime_process_context* ctx);
-
-      rx_result_with<runtime_handle_t> connect_tag (const string_type& path, tags_callback_ptr monitor, runtime_process_context* ctx);
-
-      rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor);
-
       relation_data::smart_ptr make_target_relation (const string_type& path);
 
       virtual rx_result start_target_relation (runtime::runtime_start_context& ctx);
 
       virtual rx_result stop_target_relation (runtime::runtime_stop_context& ctx);
+
+      rx_result write_value (write_data&& data, runtime_process_context* ctx);
+
+
+      relation_connections connections;
 
 
       string_type name;
@@ -210,6 +308,8 @@ class relation_data : public rx::pointers::reference_object
 
       string_type parent_path;
 
+      std::bitset<32> value_opt;
+
       relation_data(const relation_data&) = delete;
       relation_data& operator=(const relation_data&) = delete;
       relation_data(relation_data&&) noexcept = default;
@@ -229,8 +329,6 @@ class relation_data : public rx::pointers::reference_object
 
 
       rx_reference<relation_runtime> implementation_;
-
-      std::unique_ptr<relation_connector> connector_;
 
       resolvers::runtime_item_resolver resolver_;
 
@@ -265,8 +363,6 @@ class relations_holder
 
   public:
 
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
-
       virtual rx_result initialize_relations (runtime::runtime_init_context& ctx);
 
       virtual rx_result deinitialize_relations (runtime::runtime_deinit_context& ctx);
@@ -279,7 +375,9 @@ class relations_holder
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      rx_result browse (const string_type& prefix, const string_type& filter, std::vector<runtime_item_attribute>& items);
+
+      void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
 
       relation_data::smart_ptr get_relation (const string_type& name);
 
@@ -289,11 +387,19 @@ class relations_holder
 
       rx_result add_implicit_relation (relations::relation_data::smart_ptr data);
 
-      bool is_this_yours (const string_type& path) const;
+      bool is_this_yours (string_view_type path) const;
 
       rx_result get_value_ref (const string_type& path, rt_value_ref& ref);
 
       rx_result register_relation_subscriber (const string_type& name, relation_subscriber* who);
+
+      void read_value (const string_type& path, read_result_callback_t callback, runtime_process_context* ctx) const;
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void write_struct (string_view_type path, write_struct_data data);
 
 
   protected:

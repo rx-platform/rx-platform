@@ -762,7 +762,7 @@ bool sleep_command::do_console_command (std::istream& in, std::ostream& out, std
 		uint64_t started = rx_get_us_ticks();;
 		auto api_ctx = ctx->create_api_context();
 		ctx->set_waiting();
-		rx_post_delayed_function(api_ctx.object, period, [started](console_context_ptr ctx)
+		rx_post_delayed_function(period, api_ctx.object, [started](console_context_ptr ctx)
 			{
 				auto& out = ctx->get_stdout();
 				uint64_t lasted = rx_get_us_ticks() - started;
@@ -845,17 +845,17 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 		}
 		ctx->set_waiting();
 		rx_result result = model::algorithms::do_with_item(resolve_result.move_value()
-			, [ctx, this](rx_result_with<platform_item_ptr>&& data) mutable -> rx_result
+			, [ctx, this](platform_item_ptr data) mutable -> rx_result
 			{
 				auto& out = ctx->get_stdout();
 				auto& err = ctx->get_stderr();
 				if (data)
 				{
-					return do_with_item(data.move_value(), out, err);
+					return do_with_item(std::move(data), out, err);
 				}
 				else
 				{
-					return data.errors();
+					return "Item not found!";
 				}
 			}
 			, rx_result_callback(context.object, [ctx, this](rx_result&& result) mutable

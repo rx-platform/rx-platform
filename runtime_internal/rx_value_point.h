@@ -32,7 +32,8 @@
 #define rx_value_point_h 1
 
 
-#include "system/server/rx_server.h"
+#include "system/runtime/rx_runtime_helpers.h"
+using namespace rx_platform;
 
 
 namespace rx_platform {
@@ -80,24 +81,31 @@ enum value_point_state
 
 
 
-class value_point 
+class value_point_impl 
 {
     typedef std::vector<rx_value> tag_variables_type;
     typedef std::map<value_handle_type, int> tag_handles_type;
+    typedef std::map<runtime_transaction_id_t, runtime_transaction_id_t> pending_writes_type;
 
   public:
-      value_point();
+      value_point_impl();
 
-      ~value_point();
+      ~value_point_impl();
 
 
-      void connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, data_controler* controler = nullptr, char* buffer = nullptr);
+      void connect (const string_type& path, uint32_t rate, data_controler* controler = nullptr, char* buffer = nullptr);
 
       void disconnect (data_controler* controler = nullptr);
+
+      void write (rx_simple_value val, runtime_transaction_id_t id, data_controler* controler = nullptr);
 
       void calculate (char* token_buff);
 
       void value_changed (value_handle_type handle, const rx_value& val);
+
+      bool shared_result_received (const rx_result& result, runtime_transaction_id_t id);
+
+      bool single_result_received (rx_result result, runtime_transaction_id_t id);
 
 
       void set_context (rx_platform::runtime::runtime_process_context * value);
@@ -107,11 +115,15 @@ class value_point
 
   private:
 
-      void value_changed (const rx_value& val);
+      virtual void value_changed (const rx_value& val) = 0;
+
+      virtual void result_received (rx_result&& result, runtime_transaction_id_t id);
 
       bool translate_path (const string_type& path, string_type& translated);
 
 
+
+      void parse_and_connect (const char* path, char* tbuff, const rx_time& now, data_controler* controler);
 
       void level0 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres);
 
@@ -143,8 +155,6 @@ class value_point
 
       void get_expression (rx_value& result, char* tok);
 
-      void parse_and_connect (const char* path, char* tbuff, const rx_time& now, data_controler* controler);
-
 
       rx_platform::runtime::runtime_process_context *context_;
 
@@ -159,7 +169,7 @@ class value_point
 
       string_type expression_;
 
-      std::function<void(const rx_value&)> callback_;
+      pending_writes_type pending_writes_;
 
 
 };

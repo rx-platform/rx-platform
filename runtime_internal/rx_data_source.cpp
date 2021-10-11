@@ -79,7 +79,7 @@ data_controler::~data_controler()
 
 
 
-void data_controler::register_value (value_handle_type handle, value_point* whose)
+void data_controler::register_value (value_handle_type handle, value_point_impl* whose)
 {
 	auto it = registered_values_.find(handle);
 	if (it != registered_values_.end())
@@ -92,7 +92,7 @@ void data_controler::register_value (value_handle_type handle, value_point* whos
 	}
 }
 
-void data_controler::unregister_value (value_handle_type handle, value_point* whose)
+void data_controler::unregister_value (value_handle_type handle, value_point_impl* whose)
 {
 	auto it = registered_values_.find(handle);
 	if (it != registered_values_.end())
@@ -147,6 +147,20 @@ value_handle_type data_controler::add_item (const string_type& path, uint32_t ra
 	return 0;
 }
 
+void data_controler::write_item (value_handle_type handle, rx_simple_value val, runtime_transaction_id_t id)
+{
+	auto ex_handle = value_handle_extended::fill_from_handle(handle);
+	auto it = sources_.find(ex_handle.source);
+	if (it != sources_.end())
+	{
+		it->second.source->write_item(ex_handle, std::move(val), id);
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
+}
+
 void data_controler::remove_item (value_handle_type handle)
 {
 	auto ex_handle = value_handle_extended::fill_from_handle(handle);
@@ -185,6 +199,34 @@ void data_controler::items_changed (const std::vector<std::pair<value_handle_typ
 	{
 		for (auto one : changed_points_)
 			one->calculate(token_buffer_);
+	}
+}
+
+void data_controler::result_received (value_handle_type handle, rx_result&& result, runtime_transaction_id_t id)
+{
+	if (id == 0)
+		return;// nothing to do
+	auto it = registered_values_.find(handle);
+	if (it != registered_values_.end())
+	{
+		size_t count = it->second.size();
+		if (count == 1)
+		{// just move the result
+			(*it->second.begin())->single_result_received(std::move(result), id);
+		}
+		else if (count > 0)
+		{
+			size_t last = count - 1;// it is more readable this way
+			size_t counter = 0;
+			bool done = false;
+			for (auto itv = it->second.begin(); itv != it->second.end() && !done; itv++, counter++)
+			{
+				if(counter== last)
+					done = (*itv)->single_result_received(std::move(result), id);
+				else
+					done = (*itv)->shared_result_received(result, id);
+			}
+		}
 	}
 }
 

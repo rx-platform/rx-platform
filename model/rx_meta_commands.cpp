@@ -42,6 +42,8 @@
 #include "system/runtime/rx_runtime_holder.h"
 #include "api/rx_namespace_api.h"
 #include "terminal/rx_console.h"
+#include "system/serialization/rx_ser.h"
+#include "system/runtime/rx_blocks.h"
 
 
 using namespace rx_platform::api;
@@ -904,7 +906,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 	string_type path;
 	ctx->get_current_directory()->fill_path(path);
 	auto result = rx_platform::api::meta::rx_delete_runtime<T>(rx_item_reference(rx_combine_paths(path, name)),
-		rx_function_to_go<rx_result&&>(api_ctx.object, [ctx, name, this](rx_result&& result)
+		rx_result_callback(api_ctx.object, [ctx, name, this](rx_result&& result)
 		{
 			if (!result)
 			{
@@ -957,7 +959,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 	auto api_ctx = ctx->create_api_context();
 
 	algorithms::types_model_algorithm<T>::delete_type(rx_combine_paths(path, name),
-		rx_function_to_go<rx_result&&>(api_ctx.object, [ctx, name, this](rx_result result)
+		rx_result_callback(api_ctx.object, [ctx, name, this](rx_result result)
 		{
 			if (!result)
 			{
@@ -999,7 +1001,7 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 	string_type path;
 	ctx->get_current_directory()->fill_path(path);
 	algorithms::simple_types_model_algorithm<T>::delete_type(rx_item_reference(rx_combine_paths(path, name)),
-		rx_function_to_go<rx_result&&>(api_ctx.object, [ctx, name, this](rx_result result)
+		rx_result_callback(api_ctx.object, [ctx, name, this](rx_result result)
 		{
 			if (!result)
 			{
@@ -1421,7 +1423,7 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 			api::rx_context rx_ctx = ctx->create_api_context();
 			ctx->set_waiting();
 			auto result = rx_platform::api::meta::rx_save_item(path,
-				rx_function_to_go<rx_result&&>(rx_ctx.object, [ctx, path, this](rx_result&& result)
+				rx_result_callback(rx_ctx.object, [ctx, path, this](rx_result&& result)
 				{
 					if (!result)
 					{

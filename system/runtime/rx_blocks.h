@@ -42,6 +42,7 @@
 #include "system/runtime/rx_rt_struct.h"
 using namespace rx_platform::ns;
 using namespace rx::values;
+using rx_platform::runtime::write_data;
 
 
 namespace rx_platform {
@@ -166,7 +167,7 @@ source runtime. basic implementation of an source runtime");
       template<typename funcT, typename... Args>
       rx_timer_ptr create_timer_function(funcT&& func, Args&&... args)
       {
-          auto job = rx_create_timer_job<smart_ptr, funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
+          auto job = rx_create_timer_job<funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
           add_periodic_job(job);
           return job;
       }
@@ -289,12 +290,20 @@ variable runtime. basic implementation of an variable runtime");
 
   protected:
 
+      void process_variable (runtime_process_context* ctx);
+
+      void variable_result_pending (runtime_process_context* ctx, rx_result&& result, runtime_transaction_id_t id);
+
+
   private:
 
-      virtual rx_value select_variable_input (runtime_process_context* ctx, runtime_sources_type& sources);
+      virtual rx_value get_variable_input (runtime_process_context* ctx, runtime_sources_type& sources);
 
       virtual rx_result variable_write (write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources);
 
+
+
+      structure::variable_data* container_;
 
 
 };

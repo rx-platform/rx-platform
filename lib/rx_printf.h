@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  system\runtime\rx_write_transaction.cpp
+*  lib\rx_printf.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,44 +28,45 @@
 ****************************************************************************/
 
 
-#include "pch.h"
-
-
-// rx_write_transaction
-#include "system/runtime/rx_write_transaction.h"
+#ifndef rx_printf_h
+#define rx_printf_h 1
 
 
 
-namespace rx_platform {
 
-namespace runtime {
-
-namespace algorithms {
-
-// Class rx_platform::runtime::algorithms::write_item_transaction 
-
-write_item_transaction::write_item_transaction (write_result_callback_t&& callback)
-      : callback_(std::move(callback))
+namespace rx
 {
+
+template<typename T1>
+void rx_sprintf_internal(std::ostringstream& ss, T1 t1)
+{
+	ss << t1;
+}
+
+template<typename T1, typename... Args>
+void rx_sprintf_internal(std::ostringstream& ss, T1 t1, Args... args)
+{
+	ss << t1;
+	rx_sprintf_internal(ss, args...);
+}
+
+template<typename... Args>
+std::string rx_sprintf(Args&&... args)
+{
+	string_type str;
+	str.reserve(0x100);
+	std::ostringstream ss(str);
+
+	rx_sprintf_internal(ss, args...);
+
+	return ss.str();
+	
 }
 
 
 
-void write_item_transaction::items_changed (const std::vector<update_item>& items)
-{
-}
 
-void write_item_transaction::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
-{
-}
-
-void write_item_transaction::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result)
-{
-    callback_(std::move(result));
-}
+}// namespace rx
 
 
-} // namespace algorithms
-} // namespace runtime
-} // namespace rx_platform
-
+#endif

@@ -33,14 +33,14 @@
 
 
 
-// rx_platform_item
-#include "system/server/rx_platform_item.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_internal_objects
 #include "system/runtime/rx_internal_objects.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_platform_item
+#include "system/server/rx_platform_item.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "api/rx_platform_api.h"
@@ -236,13 +236,13 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       void fill_code_info (std::ostream& info, const string_type& name);
 
-      rx_result read_value (const string_type& path, rx_value& value) const;
+      void read_value (const string_type& path, read_result_callback_t callback) const;
 
-      rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx);
+      void write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx);
 
       rx_result do_command (rx_object_command_t command_type);
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
 
       std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -263,6 +263,10 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
       rx_result save () const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void write_struct (string_view_type path, write_struct_data data);
 
 
   protected:
@@ -308,13 +312,13 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       const meta_data_t& meta_info () const;
 
-      rx_result read_value (const string_type& path, rx_value& value) const;
+      void read_value (const string_type& path, read_result_callback_t callback) const;
 
-      rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx);
+      void write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx);
 
       rx_result do_command (rx_object_command_t command_type);
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
 
       std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -335,6 +339,10 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
       rx_result save () const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void write_struct (string_view_type path, write_struct_data data);
 
 
   protected:
@@ -406,13 +414,13 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       const meta_data_t& meta_info () const;
 
-      rx_result read_value (const string_type& path, rx_value& value) const;
+      void read_value (const string_type& path, read_result_callback_t callback) const;
 
-      rx_result write_value (const string_type& path, rx_simple_value&& val, rx_result_callback callback, api::rx_context ctx);
+      void write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx);
 
       rx_result do_command (rx_object_command_t command_type);
 
-      rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items);
+      void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
 
       std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -433,6 +441,10 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
       rx_result save () const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void write_struct (string_view_type path, write_struct_data data);
 
 
   protected:

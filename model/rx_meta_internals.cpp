@@ -1653,7 +1653,7 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 		}
 	}
 
-	data.value.value_opt[runtime::structure::value_data::opt_readonly] = !relation_type_ptr->relation_data.dynamic;
+	data.value.value_opt[runtime::structure::value_opt_readonly] = !relation_type_ptr->relation_data.dynamic;
 
 	data.implementation_ = ret.value();
 	if (!relation_type_ptr->relation_data.symmetrical)

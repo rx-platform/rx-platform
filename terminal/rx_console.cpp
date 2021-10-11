@@ -209,7 +209,7 @@ void console_runtime_program_executer::schedule_scan (uint32_t interval)
 {
 	if (interval)
 	{
-		rx_post_delayed_function(host_, interval,
+		rx_post_delayed_function(interval, host_,
 			[this]()
 			{
 				do_scan();

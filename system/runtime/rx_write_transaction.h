@@ -53,26 +53,26 @@ class write_item_transaction : public tag_blocks::rx_tags_callback
     DECLARE_REFERENCE_PTR(write_item_transaction);
 
   public:
-      write_item_transaction (rx_result_callback&& callback, rx_thread_handle_t whose);
+      write_item_transaction (write_result_callback_t&& callback);
 
 
-      void items_changed (const std::vector<tag_blocks::update_item>& items);
+      void items_changed (const std::vector<update_item>& items);
 
-      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<tag_blocks::update_item>&& items);
-
-      rx_thread_handle_t get_target ();
+      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
 
       void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
 
-
+      template<typename... FwdArgs>
+      void operator () (FwdArgs&&... args)
+      {
+          this->callback_(std::forward<FwdArgs>(args)...);
+      }
   protected:
 
   private:
 
 
-      rx_result_callback callback_;
-
-      rx_thread_handle_t whose_;
+      write_result_callback_t callback_;
 
 
 };

@@ -33,31 +33,31 @@
 
 
 
-// rx_runtime_data
-#include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
+// rx_runtime_data
+#include "system/meta/rx_runtime_data.h"
 // rx_port_stack_data
 #include "interfaces/rx_port_stack_data.h"
+
+namespace rx_platform {
+namespace runtime {
+namespace items {
+class port_runtime;
+} // namespace items
+} // namespace runtime
+} // namespace rx_platform
 
 namespace rx_internal {
 namespace sys_runtime {
 namespace runtime_core {
 namespace runtime_data {
 class application_instance_data;
+
 } // namespace runtime_data
 } // namespace runtime_core
 } // namespace sys_runtime
 } // namespace rx_internal
-
-namespace rx_platform {
-namespace runtime {
-namespace items {
-class port_runtime;
-
-} // namespace items
-} // namespace runtime
-} // namespace rx_platform
 
 
 #include "lib/rx_io_addr.h"
@@ -72,6 +72,30 @@ namespace rx_internal {
 namespace interfaces {
 
 namespace port_stack {
+
+
+
+
+
+class port_active_behavior 
+{
+
+  public:
+
+      virtual bool is_extern () = 0;
+
+      virtual bool is_endpoit_binder () = 0;
+
+      virtual bool is_endpoint_user () = 0;
+
+      virtual ~port_active_behavior() = default;
+  protected:
+
+  private:
+
+
+};
+
 
 
 
@@ -117,30 +141,6 @@ class port_passive_behavior
       virtual bool is_connect_subscriber () = 0;
 
       virtual ~port_passive_behavior() = default;
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class port_active_behavior 
-{
-
-  public:
-
-      virtual bool is_extern () = 0;
-
-      virtual bool is_endpoit_binder () = 0;
-
-      virtual bool is_endpoint_user () = 0;
-
-      virtual ~port_active_behavior() = default;
   protected:
 
   private:

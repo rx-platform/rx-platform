@@ -35,12 +35,12 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_meta_data
+#include "system/meta/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -71,6 +71,7 @@ namespace rx_platform {
 namespace meta {
 class construct_context;
 class type_check_context;
+class runtime_data_prototype;
 using ::rx_platform::meta::construct_context;
 namespace meta_algorithm
 {
@@ -118,30 +119,30 @@ public:
 };
 
 
-template<class T>
-bool generate_json(T whose, std::ostream& def, std::ostream& err)
-{
-	rx_platform::serialization::pretty_json_writer writer;
-
-	writer.write_header(STREAMING_TYPE_OBJECT, 0);
-
-	bool out = whose->serialize_definition(writer, STREAMING_TYPE_OBJECT);
-
-    string_type result;
-	if (out)
-	{
-		writer.write_footer();
-
-		result = writer.get_string();
-	}
-
-	if (!result.empty())
-		def << result;
-	else
-		def << "Error in JSON deserialization.";
-
-	return out;
-}
+//template<class T>
+//bool generate_json(T whose, std::ostream& def, std::ostream& err)
+//{
+//	rx_platform::serialization::pretty_json_writer writer;
+//
+//	writer.write_header(STREAMING_TYPE_OBJECT, 0);
+//
+//	bool out = whose->serialize_definition(writer, STREAMING_TYPE_OBJECT);
+//
+//    string_type result;
+//	if (out)
+//	{
+//		writer.write_footer();
+//
+//		result = writer.get_string();
+//	}
+//
+//	if (!result.empty())
+//		def << result;
+//	else
+//		def << "Error in JSON deserialization.";
+//
+//	return out;
+//}
 
 
 

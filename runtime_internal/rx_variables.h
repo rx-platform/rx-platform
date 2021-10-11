@@ -1,9 +1,8 @@
 
-//	Just don't ask why :)
 
 /****************************************************************************
 *
-*  dummy.h
+*  runtime_internal\rx_variables.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -29,121 +28,66 @@
 ****************************************************************************/
 
 
-#ifndef dummy_h
-#define dummy_h 1
+#ifndef rx_variables_h
+#define rx_variables_h 1
+
+
+
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
+// rx_values
+#include "lib/rx_values.h"
+
+
+
+namespace rx_internal {
+
+namespace sys_runtime {
+
+namespace variables {
+rx_result register_variables_constructors();
 
 
 
 
-/*
 
-
-namespace rx {
-
-namespace memory {
-
-
-//	this one iz from std library
-
-
-
-class std::streambuf 
+class register_variable : public rx_platform::runtime::blocks::variable_runtime  
 {
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation of register variable.");
+
+    DECLARE_REFERENCE_PTR(register_variable);
 
   public:
-      std::streambuf();
 
-      ~std::streambuf();
+      rx_result initialize_variable (runtime::runtime_init_context& ctx);
+
+      rx_result start_variable (runtime::runtime_start_context& ctx);
 
 
   protected:
 
   private:
 
+      rx_value get_variable_input (runtime_process_context* ctx, runtime_sources_type& sources);
 
-};
-
-
-} // namespace memory
-} // namespace rx
+      rx_result variable_write (write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources);
 
 
 
+      rx::values::rx_timed_value value_;
 
 
-class rx_protocol_stack_endpoint 
-{
-
-  public:
-
-  protected:
-
-  private:
+      local_value<bool> persist_;
 
 
 };
 
 
+} // namespace variables
+} // namespace sys_runtime
+} // namespace rx_internal
 
-
-
-
-class protocol_address 
-{
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rx_packet_buffer 
-{
-
-  public:
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class opcua_transport_protocol_type 
-{
-
-  public:
-      opcua_transport_protocol_type();
-
-      opcua_transport_protocol_type(const opcua_transport_protocol_type &right);
-
-      virtual ~opcua_transport_protocol_type();
-
-      opcua_transport_protocol_type & operator=(const opcua_transport_protocol_type &right);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-*/
 
 
 #endif

@@ -31,8 +31,6 @@
 #include "pch.h"
 
 
-// rx_value_point
-#include "runtime_internal/rx_value_point.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_process_context
@@ -41,7 +39,6 @@
 #include "rx_blocks.h"
 #include "system/logic/rx_logic.h"
 
-using rx_internal::sys_runtime::data_source::value_point;
 
 
 namespace rx_platform {
@@ -55,6 +52,7 @@ structs_type g_empty_structs;
 source_writes_type g_empty_source_writes;
 source_updates_type g_empty_source_updates;
 source_results_type g_empty_source_results;
+variable_results_type g_empty_variable_results;
 programs_type g_empty_programs;
 owner_jobs_type g_empty_jobs;
 mapper_writes_type g_empty_mapper_writes;
@@ -90,28 +88,15 @@ bool runtime_process_context::should_do_step()
     }
 }
 
-// Parameterized Class rx_platform::runtime::process_context_job 
-
-
-// Class rx_platform::runtime::context_job 
-
-
-// Class rx_platform::runtime::write_data 
-
-
-// Class rx_platform::runtime::relation_subscriber 
-
-
 // Class rx_platform::runtime::runtime_process_context 
 
-runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, points_type points)
+runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs)
       : tags_(tags),
         binded_(binded),
         current_step_(runtime_process_step::idle),
         meta_info(info),
         directory_resolver_(dirs),
         serialize_value_(false)
-    , points_(points)
 {
     mode_.turn_off();
     now = rx_time::now();
@@ -259,13 +244,20 @@ void runtime_process_context::variable_pending (structure::variable_data* whose)
     variables_.emplace_back(std::move(whose));
 }
 
-variables_type& runtime_process_context::get_variables_for_process ()
+void runtime_process_context::variable_result_pending (write_result_struct<structure::variable_data> data)
+{
+    locks::auto_lock_t _(&context_lock_);
+    turn_on_pending<runtime_process_step::variables>();
+    variable_results_.emplace_back(std::move(data));
+}
+
+std::pair<variable_results_type*, variables_type*> runtime_process_context::get_variables_for_process ()
 {
     locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::variables>())
-        return variables_.get_and_swap();
+        return { &variable_results_.get_and_swap() , &variables_.get_and_swap() };
     else
-        return g_empty_variables;
+        return { &g_empty_variable_results, &g_empty_variables };
 }
 
 bool runtime_process_context::should_process_status_change ()
@@ -447,14 +439,14 @@ owner_jobs_type& runtime_process_context::get_for_own_process ()
 
 runtime_handle_t runtime_process_context::connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, runtime_start_context& ctx)
 {
-    if (points_)
-    {
-        runtime_handle_t ret = (runtime_handle_t)points_->size() + 1;// avoid zero
-        auto point = points_->emplace_back(value_point());
-        point.connect(path, rate, callback);
-        return ret;
-    }
-    else
+    //if (points_)
+    //{
+    //    runtime_handle_t ret = (runtime_handle_t)points_->size() + 1;// avoid zero
+    //    auto point = points_->emplace_back(value_point());
+    //    point.connect(path, rate, callback);
+    //    return ret;
+    //}
+    //else
     {
         return 0;
     }
@@ -508,6 +500,30 @@ rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t
 {
     return ctx->set_value(handle, std::move(val));
 }
+// Parameterized Class rx_platform::runtime::process_context_job 
+
+
+// Class rx_platform::runtime::context_job 
+
+
+// Class rx_platform::runtime::write_data 
+
+
+// Class rx_platform::runtime::relation_subscriber 
+
+
+// Class rx_platform::runtime::context_value_point 
+
+
+void context_value_point::value_changed (const rx_value& val)
+{
+}
+
+void context_value_point::result_received (rx_result&& result, runtime_transaction_id_t id)
+{
+}
+
+
 } // namespace runtime
 } // namespace rx_platform
 

@@ -33,10 +33,10 @@
 
 
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
@@ -105,7 +105,7 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::opcua::opcua_transport_endpoint  > opcua_transport_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_transport_endpoint  > opcua_transport_base;
 
 
 

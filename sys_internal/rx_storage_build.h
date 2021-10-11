@@ -74,6 +74,8 @@ class configuration_storage_builder : public rx_platform_builder
 
       void dump_errors_to_log (const string_array& errors);
 
+      static rx_result_with<rx_directory_ptr> storage_get_direcotry (rx_directory_ptr root, const string_type& path);
+
 
 
       rx_storage_ptr storage_;
@@ -92,26 +94,6 @@ class configuration_storage_builder : public rx_platform_builder
 	  rx_result create_concrete_object_from_storage(meta::meta_data& meta
           , rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage
           , rx_directory_ptr dir, bool save, tl::type2type<T>);
-};
-
-
-
-
-
-
-class directory_creator 
-{
-
-  public:
-
-      rx_result_with<rx_directory_ptr> get_or_create_direcotry (rx_directory_ptr from, const string_type& path);
-
-
-  protected:
-
-  private:
-
-
 };
 
 

@@ -38,6 +38,16 @@
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
 
+namespace rx_internal {
+namespace sys_runtime {
+namespace data_source {
+class platform_source;
+
+} // namespace data_source
+} // namespace sys_runtime
+} // namespace rx_internal
+
+
 #include "system/runtime/rx_value_templates.h"
 
 
@@ -46,6 +56,33 @@ namespace rx_internal {
 namespace sys_runtime {
 
 namespace data_source {
+
+
+
+
+
+class platform_source_point : public value_point_impl  
+{
+
+  public:
+      platform_source_point (platform_source* my_source);
+
+
+  protected:
+
+  private:
+
+      void value_changed (const rx_value& val);
+
+      void result_received (rx_result&& result, runtime_transaction_id_t id);
+
+
+
+      platform_source *my_source_;
+
+
+};
+
 
 
 
@@ -68,6 +105,10 @@ Platform Source. Source implementation for platform connection, may include diff
 
       rx_result stop_source (runtime::runtime_stop_context& ctx);
 
+      void value_changed (rx_value&& val);
+
+      void result_received (rx_result&& result, runtime_transaction_id_t id);
+
 
   protected:
 
@@ -81,7 +122,7 @@ Platform Source. Source implementation for platform connection, may include diff
 
 
 
-      value_point point_;
+      platform_source_point point_;
 
 
       runtime::local_value<string_type> path_;

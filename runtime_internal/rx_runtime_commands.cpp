@@ -37,6 +37,7 @@
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
 #include "terminal/rx_console.h"
+#include "system/serialization/rx_ser.h"
 
 
 namespace rx_internal {
@@ -61,27 +62,36 @@ read_command::~read_command()
 
 bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
-	rx_value my_value;
-	auto result = rt_item->read_value(sub_item, my_value);
-	if (result)
+	string_type full_path = rt_item->meta_info().get_full_path();
+	if (!sub_item.empty())
 	{
-		out << rt_item->get_name();
-		if (!sub_item.empty())
-		{
-			out << ".";
-			out << sub_item;
-		}
-		out << " = ";
-		rx_dump_value(my_value, out, false);
+		full_path += ".";
+		full_path += sub_item;
 	}
-	else
-	{
-		out << "Error reading item "
-			<< sub_item;
-		for (const auto& one : result.errors())
-			out << "\r\n" << one;
-	}
-	return true;
+	auto rctx = ctx->create_api_context();
+	rt_item->read_value(sub_item,
+		read_result_callback_t(rctx.object, [anchor = rctx.object, ctx, full_path=std::move(full_path), executer](rx_result&& result, rx_value&& value)
+			{				
+				auto& out = ctx->get_stdout();
+				if (result)
+				{
+					out << full_path;
+					out << " = ";
+					rx_dump_value(value, out, false);
+					out << "\r\n";
+				}
+				else
+				{
+					out << "Error reading item "
+						<< full_path;
+					for (const auto& one : result.errors())
+						out << "\r\n" << one;
+					out << "\r\n";
+				}
+				ctx->continue_scan();
+			}, executer));
+	
+	return false;
 }
 
 
@@ -134,43 +144,29 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 	uint64_t us1 = rx_get_us_ticks();
 	auto rctx = ctx->create_api_context();
 	ctx->set_waiting();
-	auto result = rt_item->write_value(sub_item, std::move(value),
-		rx_result_callback(rctx.object, [ctx, this, sub_item, value, my_copy, us1, executer](rx_result&& result)
-		{
-			///////////////////////////////////////////////
-			rx_post_function_to(executer, smart_this()
-					,[us1, this](rx_result result, string_type full_path, rx_simple_value value, console_context_ptr ctx) -> void
-					{
-						uint64_t us2 = rx_get_us_ticks() - us1;
-						auto& out = ctx->get_stdout();
-						if (result)
-						{
-							out << "Write to "
-								<< full_path
-								<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
-							out << "Time elapsed: " ANSI_RX_GOOD_COLOR << us2 << ANSI_COLOR_RESET " us\r\n";
-						}
-						else
-						{
-							out << "Write " ANSI_COLOR_BOLD ANSI_COLOR_GREEN "failed" ANSI_COLOR_RESET ". \r\n";
-							ctx->raise_error(result);
-						}
-						ctx->continue_scan();
-					} , std::move(result), sub_item, my_copy, ctx);
-			//////////////////////////////////////////////
 
-		}), ctx->create_api_context());
-	if (!result)
-	{
-		out << "Error writing item "
-			<< sub_item << "\r\n";
-		err << result.errors_line();
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	rt_item->write_value(sub_item, std::move(value),
+		write_result_callback_t(rctx.object, [ctx, this, sub_item, value, my_copy, us1](rx_result&& result)
+		{
+			uint64_t us2 = rx_get_us_ticks() - us1;
+			auto& out = ctx->get_stdout();
+			if (result)
+			{
+				out << "Write to "
+					<< sub_item
+					<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
+				out << "Time elapsed: " ANSI_RX_GOOD_COLOR << us2 << ANSI_COLOR_RESET " us\r\n";
+			}
+			else
+			{
+				out << "Write " ANSI_COLOR_BOLD ANSI_COLOR_RED "failed" ANSI_COLOR_RESET ". \r\n";
+				ctx->raise_error(result);
+			}
+			ctx->continue_scan();
+
+		}, executer), ctx->create_api_context());
+
+	return false;	
 }
 
 
@@ -274,93 +270,101 @@ browse_command::~browse_command()
 
 bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
-	std::vector<runtime_item_attribute> items;
-	auto result = rt_item->browse("", sub_item, "", items);
-	if (result)
-	{
-		rx_table_type table(items.size() + 1);
-		size_t idx = 0;
-		table[0].emplace_back("Name");
-		table[0].emplace_back("Value");
-		table[0].emplace_back("Type");
-		idx++;
-		for (const auto& one : items)
-		{
-			bool is_value = false;
-			string_type postfix;
-			string_type value = one.value.get_storage().to_string();
-			if(one.value.is_null())
-				value = RX_TERMINAL_STRUCT_SYMBOL;
-			switch (one.type)
-			{
-			case rx_attribute_type::const_attribute_type:
-				is_value = true;
-				table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
-				break;
-			case rx_attribute_type::value_attribute_type:
-				is_value = true;
-				table[idx].emplace_back(one.name, ANSI_RX_VALUE_COLOR, ANSI_COLOR_RESET);
-				break;
-			case rx_attribute_type::variable_attribute_type:
-				is_value = true;
-				//postfix = RX_TERMINAL_STRUCT_SYMBOL;
-				table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
-				break;
-			case rx_attribute_type::struct_attribute_type:
-				table[idx].emplace_back(one.name, ANSI_RX_STRUCT_COLOR, ANSI_COLOR_RESET);
-				break;
-			case rx_attribute_type::filter_attribute_type:
-				table[idx].emplace_back(one.name, ANSI_RX_FILTER_COLOR, ANSI_COLOR_RESET);
-				break;
-			case rx_attribute_type::event_attribute_type:
-				table[idx].emplace_back(one.name, ANSI_RX_EVENT_COLOR, ANSI_COLOR_RESET);
-				break;
-			case rx_attribute_type::source_attribute_type:
-				table[idx].emplace_back(one.name, ANSI_RX_SOURCE_COLOR, ANSI_COLOR_RESET);
-				break;
-			case rx_attribute_type::mapper_attribute_type:
-				table[idx].emplace_back(one.name, ANSI_RX_MAPPER_COLOR, ANSI_COLOR_RESET);
-				break;
-			case rx_attribute_type::relation_attribute_type:
-				table[idx].emplace_back(one.name, ANSI_RX_RELATION_COLOR, ANSI_COLOR_RESET);
-				if (one.value.get_type() == RX_STRING_TYPE)
-					value = RX_TERMINAL_RELATION_SYMBOL + one.value.get_storage().get_string_value();
-				else if (one.value.is_null())
-					value = RX_TERMINAL_RELATION_SYMBOL;
-				else
-					value = RX_TERMINAL_RELATION_SYMBOL + one.value.get_storage().to_string();
-				break;
-			case rx_attribute_type::relation_target_attribute_type:
-				table[idx].emplace_back(one.name, ANSI_RX_RELATION_TARGET_COLOR, ANSI_COLOR_RESET);
-				if (one.value.get_type() == RX_STRING_TYPE)
-					value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.get_storage().get_string_value();
-				else if (one.value.is_null())
-					value = RX_TERMINAL_RELATION_TARGET_SYMBOL;
-				else
-					value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.get_storage().to_string();
-				break;
-			default:
-				table[idx].emplace_back(one.name);
-				break;
-			}
-			if (is_value)
-				table[idx].emplace_back(value, ANSI_COLOR_WHITE ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
-			else
-				table[idx].emplace_back(value, ANSI_COLOR_WHITE, ANSI_COLOR_RESET);
 
-			if(!postfix.empty())
-				table[idx].emplace_back(postfix + rx_runtime_attribute_type_name(one.type));
+	auto rctx = ctx->create_api_context();
+	
+	rt_item->browse("", sub_item, "", browse_result_callback_t(rctx.object
+		, [ctx](rx_result&& result, std::vector<runtime_item_attribute>&& items)
+		{
+			auto& out = ctx->get_stdout();
+			if (result)
+			{
+				rx_table_type table(items.size() + 1);
+				size_t idx = 0;
+				table[0].emplace_back("Name");
+				table[0].emplace_back("Value");
+				table[0].emplace_back("Type");
+				idx++;
+				for (const auto& one : items)
+				{
+					bool is_value = false;
+					string_type postfix;
+					string_type value = one.value.get_storage().to_string();
+					if (one.value.is_null())
+						value = RX_TERMINAL_STRUCT_SYMBOL;
+					switch (one.type)
+					{
+					case rx_attribute_type::const_attribute_type:
+						is_value = true;
+						table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::value_attribute_type:
+						is_value = true;
+						table[idx].emplace_back(one.name, ANSI_RX_VALUE_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::variable_attribute_type:
+						is_value = true;
+						//postfix = RX_TERMINAL_STRUCT_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::struct_attribute_type:
+						table[idx].emplace_back(one.name, ANSI_RX_STRUCT_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::filter_attribute_type:
+						table[idx].emplace_back(one.name, ANSI_RX_FILTER_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::event_attribute_type:
+						table[idx].emplace_back(one.name, ANSI_RX_EVENT_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::source_attribute_type:
+						table[idx].emplace_back(one.name, ANSI_RX_SOURCE_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::mapper_attribute_type:
+						table[idx].emplace_back(one.name, ANSI_RX_MAPPER_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::relation_attribute_type:
+						table[idx].emplace_back(one.name, ANSI_RX_RELATION_COLOR, ANSI_COLOR_RESET);
+						if (one.value.get_type() == RX_STRING_TYPE)
+							value = RX_TERMINAL_RELATION_SYMBOL + one.value.get_storage().get_string_value();
+						else if (one.value.is_null())
+							value = RX_TERMINAL_RELATION_SYMBOL;
+						else
+							value = RX_TERMINAL_RELATION_SYMBOL + one.value.get_storage().to_string();
+						break;
+					case rx_attribute_type::relation_target_attribute_type:
+						table[idx].emplace_back(one.name, ANSI_RX_RELATION_TARGET_COLOR, ANSI_COLOR_RESET);
+						if (one.value.get_type() == RX_STRING_TYPE)
+							value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.get_storage().get_string_value();
+						else if (one.value.is_null())
+							value = RX_TERMINAL_RELATION_TARGET_SYMBOL;
+						else
+							value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.get_storage().to_string();
+						break;
+					default:
+						table[idx].emplace_back(one.name);
+						break;
+					}
+					if (is_value)
+						table[idx].emplace_back(value, ANSI_COLOR_WHITE ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+					else
+						table[idx].emplace_back(value, ANSI_COLOR_WHITE, ANSI_COLOR_RESET);
+
+					if (!postfix.empty())
+						table[idx].emplace_back(postfix + rx_runtime_attribute_type_name(one.type));
+					else
+						table[idx].emplace_back(/*string_type(RX_TERMINAL_STRUCT_SYMBOL_SIZE, ' ') + */rx_runtime_attribute_type_name(one.type));
+					idx++;
+				}
+				rx_dump_table(table, out, true, false);
+				ctx->continue_scan();
+			}
 			else
-				table[idx].emplace_back(/*string_type(RX_TERMINAL_STRUCT_SYMBOL_SIZE, ' ') + */rx_runtime_attribute_type_name(one.type));
-			idx++;
-		}
-		rx_dump_table(table, out, true, false);
-	}
-	else
-	{
-		ctx->raise_error(result);
-	}
-	return true;
+			{
+				ctx->raise_error(result);
+			}
+		}, executer));
+
+	return false;
 }
 
 
@@ -426,7 +430,7 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 					return true;
 				}
 			}
-			, rx_result_callback(context.object, [ctx](bool done) mutable
+			, callback::rx_any_callback<bool>(context.object, [ctx](bool done) mutable
 				{
 					if(done)
 						ctx->continue_scan();
@@ -444,6 +448,65 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 		err << "Please, define item!";
 		return false;
 	}
+}
+
+
+// Class rx_internal::sys_runtime::runtime_commands::struct_command 
+
+struct_command::struct_command()
+	: runtime_command_base("json")
+{
+}
+
+
+struct_command::~struct_command()
+{
+}
+
+
+
+bool struct_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
+{
+	string_type full_path = rt_item->meta_info().get_full_path();
+	if (!sub_item.empty())
+	{
+		full_path += ".";
+		full_path += sub_item;
+	}
+	auto rctx = ctx->create_api_context();
+	read_struct_data data;
+	data.type = runtime_value_type::simple_runtime_value;
+	data.callback = read_struct_callback_t(rctx.object, [ctx, full_path = std::move(full_path)](rx_result&& result, data::runtime_values_data&& data)
+	{
+		auto& out = ctx->get_stdout();
+		if (result)
+		{
+			serialization::json_writer writer;
+			writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+			if (writer.write_init_values(nullptr, data))
+			{
+				result = writer.write_footer();
+			}
+			else
+			{
+				result = writer.get_error();
+			}
+			out << writer.get_string();
+			out << "\r\n";
+		}
+		if(!result)
+		{
+			out << "Error reading structure "
+				<< full_path;
+			for (const auto& one : result.errors())
+				out << "\r\n" << one;
+			out << "\r\n";
+		}
+		ctx->continue_scan();
+	}, executer);
+	rt_item->read_struct(sub_item, std::move(data));
+
+	return false;
 }
 
 
