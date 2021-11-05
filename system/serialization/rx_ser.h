@@ -116,8 +116,6 @@ class json_reader : public rx::base_meta_reader
 
       bool read_item_reference (const char* name, rx_item_reference& ref);
 
-      bool read_value (const char* name, rx_simple_value& val);
-
       bool read_value_type (const char* name, rx_value_t& val);
 
       string_type get_error () const;
@@ -157,9 +155,9 @@ class json_writer_type : public rx::base_meta_writer
       ~json_writer_type();
 
 
-      bool write_id (const char* name, const rx_node_id& id);
+      bool write_id (const char* name, const rx_node_id_struct& id);
 
-      bool write_string (const char* name, const string_type& str);
+      bool write_string (const char* name, const char* str);
 
       bool write_bool (const char* name, bool val);
 
@@ -204,8 +202,6 @@ class json_writer_type : public rx::base_meta_writer
       bool is_string_based () const;
 
       bool write_item_reference (const char* name, const rx_item_reference& ref);
-
-      bool write_value (const char* name, const rx_simple_value& val);
 
       bool write_value_type (const char* name, rx_value_t val);
 
@@ -312,8 +308,6 @@ class binary_reader : public rx::base_meta_reader
 
       bool read_item_reference (const char* name, rx_item_reference& ref);
 
-      bool read_value (const char* name, rx_simple_value& val);
-
       bool read_value_type (const char* name, rx_value_t& val);
 
       string_type get_error () const;
@@ -359,9 +353,9 @@ class binary_writer : public rx::base_meta_writer
       ~binary_writer();
 
 
-      bool write_id (const char* name, const rx_node_id& id);
+      bool write_id (const char* name, const rx_node_id_struct& id);
 
-      bool write_string (const char* name, const string_type& str);
+      bool write_string (const char* name, const char* str);
 
       bool write_bool (const char* name, bool val);
 
@@ -406,8 +400,6 @@ class binary_writer : public rx::base_meta_writer
       bool is_string_based () const;
 
       bool write_item_reference (const char* name, const rx_item_reference& ref);
-
-      bool write_value (const char* name, const rx_simple_value& val);
 
       bool write_value_type (const char* name, rx_value_t val);
 
@@ -749,12 +741,6 @@ bool binary_reader<allocT,swap_bytes>::read_item_reference (const char* name, rx
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_reader<allocT,swap_bytes>::read_value (const char* name, rx_simple_value& val)
-{
-    return false;
-}
-
-template <typename allocT, bool swap_bytes>
 bool binary_reader<allocT,swap_bytes>::read_value_type (const char* name, rx_value_t& val)
 {
     return false;
@@ -785,15 +771,14 @@ binary_writer<allocT,swap_bytes>::~binary_writer()
 
 
 template <typename allocT, bool swap_bytes>
-bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node_id& id)
+bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node_id_struct& id)
 {
-	switch (id.get_node_type())
+	switch (id.node_type)
 	{
-	case rx_node_id_type::numeric:
+	case rx_node_id_numeric:
 	{
-		uint16_t namesp = id.get_namespace();
-		uint32_t val = 0;
-		id.get_numeric(val);
+            uint16_t namesp = id.namespace_index;
+		uint32_t val = id.value.int_value;
 		if (namesp == 0 && (val<0x100))
 		{// two uint8_ts encoding 0
 			uint8_t vals[]{ 0,(uint8_t)val };
@@ -817,29 +802,27 @@ bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node
 		}
 	}
 	break;
-	case rx_node_id_type::string:
+	case rx_node_id_string:
 	{
-		uint16_t namesp = id.get_namespace();
-		string_type val;
-		id.get_string(val);
+		uint16_t namesp = id.namespace_index;
+		rx_string_wrapper val(id.value.string_value);
 
 		buffer_.push_data(((uint8_t)3));
 		buffer_.push_data(namesp);
-		buffer_.push_data(val);
+		buffer_.push_data(val.c_str());
 	}
 	break;
-	case rx_node_id_type::uuid:
+	case rx_node_id_uuid:
 	{
-		uint16_t namesp = id.get_namespace();
-		rx_uuid_t val;
-		id.get_uuid(val);
+		uint16_t namesp = id.namespace_index;
+        rx_uuid_t val(id.value.uuid_value);
 
 		buffer_.push_data((uint8_t)4);
 		buffer_.push_data(namesp);
 		buffer_.push_data(val);
 	}
 	break;
-	case rx_node_id_type::bytes:
+	case rx_node_id_bytes:
 	{
 		return false;// not implemented yet!!!
 	}
@@ -849,7 +832,7 @@ bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writer<allocT,swap_bytes>::write_string (const char* name, const string_type& str)
+bool binary_writer<allocT,swap_bytes>::write_string (const char* name, const char* str)
 {
 	buffer_.push_data(string_type(str));
 	return true;
@@ -1007,12 +990,6 @@ bool binary_writer<allocT,swap_bytes>::write_item_reference (const char* name, c
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writer<allocT,swap_bytes>::write_value (const char* name, const rx_simple_value& val)
-{
-    return false;
-}
-
-template <typename allocT, bool swap_bytes>
 bool binary_writer<allocT,swap_bytes>::write_value_type (const char* name, rx_value_t val)
 {
     return false;
@@ -1031,3 +1008,4 @@ string_type binary_writer<allocT,swap_bytes>::get_error () const
 
 
 #endif
+

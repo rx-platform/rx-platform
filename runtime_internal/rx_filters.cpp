@@ -91,15 +91,14 @@ rx_result linear_scaling_filter::filter_input (rx_value& val)
 	double low_eu = low_eu_;
 	double hi_raw = hi_raw_;
 	double low_raw = low_raw_;
-	double in = val.get_float_value();
+	double in = val.get_float();
 	if (abs(hi_raw - low_raw) == 0)
 	{
 		val.set_quality(RX_BAD_QUALITY_DIVISION_BY_ZERO);
 		return true;
 	}
 	double result = ((in - low_raw) * (hi_eu - low_eu)) / (hi_raw - low_raw) + low_eu;
-	if (!val.set_from_float(result, val.get_type()))
-		val.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+	val.set_float(result, val.get_type());
 	return true;
 }
 
@@ -109,14 +108,13 @@ rx_result linear_scaling_filter::filter_output (rx_simple_value& val)
 	double low_eu = low_eu_;
 	double hi_raw = hi_raw_;
 	double low_raw = low_raw_;
-	double in = val.get_float_value();
+	double in = val.get_float();
 	if (abs(hi_raw - low_raw) == 0)
 	{
 		return "Division by zero";
 	}
 	double result = ((in - low_eu) * (hi_raw - low_raw)) / (hi_eu - low_eu) + low_raw;
-	if (!val.set_from_float(result, val.get_type()))
-		return "Invalid conversion";
+	val.set_float(result, val.get_type());
 	return true;
 }
 
@@ -146,15 +144,14 @@ rx_result cutoff_scaling::initialize_filter (runtime::runtime_init_context& ctx)
 rx_result cutoff_scaling::filter_input (rx_value& val)
 {
 	double cutoff_value = input_cutoff_;
-	double numeric_val = val.get_float_value();
+	double numeric_val = val.get_float();
 
 	if (lo_cutoff_)
 		numeric_val = numeric_val < cutoff_value ? cutoff_value : numeric_val;
 	else
 		numeric_val = numeric_val > cutoff_value ? cutoff_value : numeric_val;
 
-	if (!val.set_from_float(numeric_val, val.get_type()))
-		val.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+	val.set_float(numeric_val, val.get_type());
 
 	return true;
 }
@@ -162,15 +159,14 @@ rx_result cutoff_scaling::filter_input (rx_value& val)
 rx_result cutoff_scaling::filter_output (rx_simple_value& val)
 {
 	double cutoff_value = output_cutoff_;
-	double numeric_val = val.get_float_value();
+	double numeric_val = val.get_float();
 
 	if (lo_cutoff_)
 		numeric_val = numeric_val < cutoff_value ? cutoff_value : numeric_val;
 	else
 		numeric_val = numeric_val > cutoff_value ? cutoff_value : numeric_val;
 
-	if (!val.set_from_float(numeric_val, val.get_type()))
-		return "Invalid conversion";
+	val.set_float(numeric_val, val.get_type());
 
 	return true;
 }
@@ -200,7 +196,7 @@ rx_result limit_filter::filter_input (rx_value& val)
 {
 	double hi_val = hi_input_;
 	double low_val = low_input_;
-	double numeric_val = val.get_float_value();
+	double numeric_val = val.get_float();
 	if(numeric_val<low_val || numeric_val>hi_val)
 		val.set_quality(RX_UNCERTAIN_QUALITY_OUT_OF_RANGE);
 	return true;
@@ -210,7 +206,7 @@ rx_result limit_filter::filter_output (rx_simple_value& val)
 {
 	double hi_val = hi_output_;
 	double low_val = low_output_;
-	double numeric_val = val.get_float_value();
+	double numeric_val = val.get_float();
 	if (numeric_val<low_val || numeric_val>hi_val)
 		return "Value out of range.";
 	else

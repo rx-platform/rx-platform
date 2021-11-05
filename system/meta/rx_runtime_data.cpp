@@ -331,6 +331,13 @@ rx_result port_data::serialize (base_meta_writer& stream, uint8_t type) const
         if (!stream.write_bytes("identity", &identity[0], identity.size()))
             return stream.get_error();
     }
+    if (stream.get_version() >= RX_SIMULATE_VERSION)
+    {
+        if (!stream.write_bool("sim", simulation))
+            return stream.get_error();
+        if (!stream.write_bool("proc", process))
+            return stream.get_error();
+    }
     if (!stream.end_object())
         return stream.get_error();
     return true;
@@ -351,6 +358,18 @@ rx_result port_data::deserialize (base_meta_reader& stream, uint8_t type)
         if (!stream.read_id("app", id))
             return stream.get_error();
         app_ref = id;
+    }
+    if (stream.get_version() >= RX_SIMULATE_VERSION)
+    {
+        if (!stream.read_bool("sim", simulation))
+            return stream.get_error();
+        if (!stream.read_bool("proc", process))
+            return stream.get_error();
+    }
+    else
+    {
+        simulation = true;
+        process = true;
     }
     if (!stream.read_bytes("identity", identity))
         return stream.get_error();

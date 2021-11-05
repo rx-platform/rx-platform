@@ -300,6 +300,16 @@ string_type rx_gate::resolve_ip4_alias (const string_type& what) const
 	return io_manager_->resolve_ip4_alias(what);
 }
 
+string_type rx_gate::resolve_ip6_alias (const string_type& what) const
+{
+	return what;
+}
+
+string_type rx_gate::resolve_serial_alias (const string_type& what) const
+{
+	return io_manager_->resolve_serial_alias(what);
+}
+
 template <class typeT>
 rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
 {

@@ -99,7 +99,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_compl
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.description_))
+		if (!stream.write_string("description", whose.description_.c_str()))
 			return stream.get_error();
 	}
 	if (stream.get_version() >= RX_VARIABLE_PERSISTENCE_VERSION)
@@ -171,7 +171,14 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::serialize_complex
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.description_))
+		if (!stream.write_string("description", whose.description_.c_str()))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SIMULATE_VERSION)
+	{
+		if (!stream.write_bool("sim", whose.io_.simulation))
+			return stream.get_error();
+		if (!stream.write_bool("proc", whose.io_.process))
 			return stream.get_error();
 	}
 	return true;
@@ -191,6 +198,18 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::deserialize_compl
 	{
 		if (!stream.read_string("description", whose.description_))
 			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SIMULATE_VERSION)
+	{
+		if (!stream.read_bool("sim", whose.io_.simulation))
+			return stream.get_error();
+		if (!stream.read_bool("proc", whose.io_.process))
+			return stream.get_error();
+	}
+	else
+	{
+		whose.io_.simulation = true;
+		whose.io_.process = true;
 	}
 	return true;
 }
@@ -234,7 +253,14 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::serialize_complex
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.description_))
+		if (!stream.write_string("description", whose.description_.c_str()))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SIMULATE_VERSION)
+	{
+		if (!stream.write_bool("sim", whose.io_.simulation))
+			return stream.get_error();
+		if (!stream.write_bool("proc", whose.io_.process))
 			return stream.get_error();
 	}
 	return true;
@@ -254,6 +280,18 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::deserialize_compl
 	{
 		if (!stream.read_string("description", whose.description_))
 			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SIMULATE_VERSION)
+	{
+		if (!stream.read_bool("sim", whose.io_.simulation))
+			return stream.get_error();
+		if (!stream.read_bool("proc", whose.io_.process))
+			return stream.get_error();
+	}
+	else
+	{
+		whose.io_.simulation = true;
+		whose.io_.process = true;
 	}
 	return true;
 }
@@ -301,7 +339,14 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::serialize_complex
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.description_))
+		if (!stream.write_string("description", whose.description_.c_str()))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SIMULATE_VERSION)
+	{
+		if (!stream.write_bool("sim", whose.io_.simulation))
+			return stream.get_error();
+		if (!stream.write_bool("proc", whose.io_.process))
 			return stream.get_error();
 	}
 	return true;
@@ -321,6 +366,18 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::deserialize_compl
 	{
 		if (!stream.read_string("description", whose.description_))
 			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SIMULATE_VERSION)
+	{
+		if (!stream.read_bool("sim", whose.io_.simulation))
+			return stream.get_error();
+		if (!stream.read_bool("proc", whose.io_.process))
+			return stream.get_error();
+	}
+	else
+	{
+		whose.io_.simulation = true;
+		whose.io_.process = true;
 	}
 	return true;
 }
@@ -505,7 +562,7 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 					return stream.get_error();
 				if (stream.is_string_based())
 				{
-					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_struct_subitem)))
+					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_struct_subitem).c_str()))
 						return stream.get_error();
 				}
 				else
@@ -526,7 +583,7 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 					return stream.get_error();
 				if (stream.is_string_based())
 				{
-					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_variable_subitem)))
+					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_variable_subitem).c_str()))
 						return stream.get_error();
 				}
 				else
@@ -547,7 +604,7 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 					return stream.get_error();
 				if (stream.is_string_based())
 				{
-					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_event_subitem)))
+					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_event_subitem).c_str()))
 						return stream.get_error();
 				}
 				else
@@ -567,7 +624,7 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 					return stream.get_error();
 				if (stream.is_string_based())
 				{
-					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_value_subitem)))
+					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_value_subitem).c_str()))
 						return stream.get_error();
 				}
 				else
@@ -587,7 +644,7 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 					return stream.get_error();
 				if (stream.is_string_based())
 				{
-					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_const_value_subitem)))
+					if (!stream.write_string("type", get_subitem_type_name(rx_subitem_type::rx_const_value_subitem).c_str()))
 						return stream.get_error();
 				}
 				else
@@ -612,7 +669,7 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.description_))
+		if (!stream.write_string("description", whose.description_.c_str()))
 			return stream.get_error();
 	}
 
@@ -1041,13 +1098,13 @@ rx_result mapped_data_algorithm::construct_complex_attribute (const mapped_data_
 
 rx_result data_blocks_algorithm::serialize_data_attribute (const def_blocks::data_attribute& whose, base_meta_writer& stream)
 {
-	if (!stream.write_string("name", whose.name_))
+	if (!stream.write_string("name", whose.name_.c_str()))
 		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.description_))
+		if (!stream.write_string("description", whose.description_.c_str()))
 			return stream.get_error();
 	}
 	return true;
@@ -1182,13 +1239,13 @@ rx_result event_blocks_algorithm::construct_complex_attribute (const def_blocks:
 template <class typeT>
 rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT& whose, base_meta_writer& stream)
 {
-	if (!stream.write_string("name", whose.name_))
+	if (!stream.write_string("name", whose.name_.c_str()))
 		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.description_))
+		if (!stream.write_string("description", whose.description_.c_str()))
 			return stream.get_error();
 	}
 	return true;

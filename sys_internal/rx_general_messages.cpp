@@ -59,35 +59,35 @@ rx_result rx_system_info_response::serialize (base_meta_writer& stream) const
 {
     if (!stream.start_object("general"))
         return stream.get_error();
-    if(!stream.write_string("instance", instance))
+    if(!stream.write_string("instance", instance.c_str()))
         return stream.get_error();
-    if (!stream.write_string("node", node))
+    if (!stream.write_string("node", node.c_str()))
         return stream.get_error();
     if (!stream.write_time("started", start_time))
         return stream.get_error();
     if (!stream.write_time("current", current_time))
         return stream.get_error();
-    if (!stream.write_string("platform", platform))
+    if (!stream.write_string("platform", platform.c_str()))
         return stream.get_error();
-    if (!stream.write_string("lib", library))
+    if (!stream.write_string("lib", library.c_str()))
         return stream.get_error();
-    if (!stream.write_string("term", terminal))
+    if (!stream.write_string("term", terminal.c_str()))
         return stream.get_error();
-    if (!stream.write_string("http", http))
+    if (!stream.write_string("http", http.c_str()))
         return stream.get_error();
-    if (!stream.write_string("comp", compiler))
+    if (!stream.write_string("comp", compiler.c_str()))
         return stream.get_error();
-    if (!stream.write_string("platform_host", platform_host))
+    if (!stream.write_string("platform_host", platform_host.c_str()))
         return stream.get_error();
-    if (!stream.write_string("os_host", os_host))
+    if (!stream.write_string("os_host", os_host.c_str()))
         return stream.get_error();
-    if (!stream.write_string("os_itf", os_itf))
+    if (!stream.write_string("os_itf", os_itf.c_str()))
         return stream.get_error();
-    if (!stream.write_string("os", os))
+    if (!stream.write_string("os", os.c_str()))
         return stream.get_error();
-    if (!stream.write_string("cpu", cpu))
+    if (!stream.write_string("cpu", cpu.c_str()))
         return stream.get_error();
-    if (!stream.write_string("memory", memory))
+    if (!stream.write_string("memory", memory.c_str()))
         return stream.get_error();
     if (!stream.end_object())
         return stream.get_error();

@@ -37,6 +37,8 @@
 #include "rx_terminal_version.h"
 #include "system/meta/rx_useful_queries.h"
 #include "api/rx_namespace_api.h"
+#include "rx_term_table.h"
+using namespace rx;
 #define VT100_CURCOR_UP ""
 
 

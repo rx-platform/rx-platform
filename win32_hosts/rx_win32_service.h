@@ -33,13 +33,12 @@
 
 
 
-// rx_win32_headless
-#include "win32_hosts/rx_win32_headless.h"
 // rx_lock
 #include "lib/rx_lock.h"
+// rx_win32_headless
+#include "win32_hosts/rx_win32_headless.h"
 
 
-#define SERVICE_NAME "rx-platform"
 #define SERVICE_DESC "{rx-platform} Win32 Service"
 
 
@@ -66,20 +65,24 @@ class win32_service_host : public win32_headless_host
 
       void get_host_info (string_array& hosts);
 
-      rx_result start_service (string_view_type svc_name, int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins);
+      rx_result start_service (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins);
 
       rx_result stop_service ();
 
-      rx_result install_service (string_view_type name, string_view_type descr);
+      static rx_result install_service ();
 
-      rx_result uninstall_service (string_view_type name);
+      static rx_result uninstall_service ();
 
       static win32_service_host& instance ();
+
+      string_type get_host_name ();
 
 
   protected:
 
       static string_type get_win32_service_info ();
+
+      rx_result fill_host_directories (hosting::rx_host_directories& data);
 
 
   private:
@@ -101,7 +104,7 @@ class win32_service_host : public win32_headless_host
 
       string_type service_name_;
 
-      std::vector<library::rx_plugin_base*>* plugins_;
+      std::vector<library::rx_plugin_base*> plugins_;
 
 
 };

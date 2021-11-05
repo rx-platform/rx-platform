@@ -143,6 +143,81 @@ class opcua_transport_protocol_type
 };
 
 
+
+
+
+
+class typed_value_type 
+{
+
+  public:
+      typed_value_type();
+
+      typed_value_type(const typed_value_type &right);
+
+      virtual ~typed_value_type();
+
+      typed_value_type & operator=(const typed_value_type &right);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class timed_value_type 
+{
+
+  public:
+      timed_value_type();
+
+      timed_value_type(const timed_value_type &right);
+
+      virtual ~timed_value_type();
+
+      timed_value_type & operator=(const timed_value_type &right);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class full_value_type 
+{
+
+  public:
+      full_value_type();
+
+      full_value_type(const full_value_type &right);
+
+      virtual ~full_value_type();
+
+      full_value_type & operator=(const full_value_type &right);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 */
 
 

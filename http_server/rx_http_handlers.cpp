@@ -36,6 +36,7 @@
 
 #include "http_server/rx_http_server.h"
 #include "rx_http_items.h"
+#include "system/server/rx_file_helpers.h"
 
 
 namespace rx_internal {

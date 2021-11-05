@@ -39,7 +39,7 @@
 #include "system/hosting/rx_yaml.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
 #include "sys_internal/rx_plugin_manager.h"
-#include "lib/rx_io.h"
+#include "interfaces/rx_io.h"
 
 // rx_interactive
 #include "host/rx_interactive.h"
@@ -376,7 +376,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			rx_dump_error_result(std::cout, ret);
 		}
 	}
-	rx::io::dispatcher_subscriber::deinitialize();
+	rx_internal::interfaces::io_endpoints::dispatcher_subscriber::deinitialize();
 	rx::threads::thread::deinitialize();
 	restore_console();
 	std::cout << "\r\n";

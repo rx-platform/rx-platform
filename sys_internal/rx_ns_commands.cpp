@@ -36,6 +36,7 @@
 
 #include "terminal/rx_console.h"
 #include "sys_internal/rx_namespace_algorithms.h"
+#include "terminal/rx_term_table.h"
 
 
 namespace rx_internal {

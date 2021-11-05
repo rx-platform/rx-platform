@@ -237,7 +237,7 @@ void tcp_server_endpoint::socket_holder_t::on_shutdown(rx_security_handle_t iden
 }
 tcp_server_endpoint::socket_holder_t::socket_holder_t(tcp_server_endpoint* whose, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr)
     : whose(whose)
-    , rx::io::tcp_socket_std_buffer(handle, addr, local_addr, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool())
+    , tcp_socket_std_buffer(handle, addr, local_addr, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool())
 {
 }
 tcp_server_endpoint::socket_holder_t::socket_holder_t(socket_holder_t&& right) noexcept
@@ -272,8 +272,8 @@ rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ct
 
 rx_result tcp_server_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
-     listen_socket_ = rx_create_reference<io::tcp_listent_std_buffer>(
-        [this](sys_handle_t handle, sockaddr_in* his, sockaddr_in* mine, rx_security_handle_t identity) -> io::tcp_socket_std_buffer::smart_ptr
+     listen_socket_ = rx_create_reference<tcp_listent_std_buffer>(
+        [this](sys_handle_t handle, sockaddr_in* his, sockaddr_in* mine, rx_security_handle_t identity) -> tcp_socket_std_buffer::smart_ptr
         {
              auto new_endpoint = std::make_unique<tcp_server_endpoint>();
              auto sec_result = create_security_context();
@@ -295,7 +295,7 @@ rx_result tcp_server_port::start_listen (const protocol_address* local_address, 
                 auto result = add_stack_endpoint(stack_ptr, std::move(new_endpoint), &local_addr, &remote_addr);
                 if (!result)
                 {
-                    return io::tcp_socket_std_buffer::smart_ptr::null_ptr;
+                    return tcp_socket_std_buffer::smart_ptr::null_ptr;
                 }
             }
             return ret_ptr.value();
@@ -331,7 +331,7 @@ rx_result tcp_server_port::stop_passive ()
     if (listen_socket_)
     {
         listen_socket_->stop();
-        listen_socket_ = rx_reference<io::tcp_listent_std_buffer>::null_ptr;
+        listen_socket_ = rx_reference<tcp_listent_std_buffer>::null_ptr;
     }
     return true;
 }
@@ -346,11 +346,11 @@ void tcp_server_port::extract_bind_address (const data::runtime_values_data& bin
         uint16_t port_val = 0;
         if (!addr.is_null())
         {
-            addr_str = addr.get_storage().get_string_value();
+            addr_str = addr.get_string();
             addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
         }
         if (!port.is_null())
-            port_val = (uint16_t)port.get_storage().get_integer_value();
+            port_val = (uint16_t)port.get_unassigned();
         if(!addr_str.empty() || port_val!=0)
         {
             io::ip4_address ip_addr(addr_str, port_val);

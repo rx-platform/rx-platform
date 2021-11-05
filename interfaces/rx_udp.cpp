@@ -146,11 +146,11 @@ void udp_port::extract_bind_address (const data::runtime_values_data& binder_dat
         uint16_t port_val = 0;
         if (!addr.is_null())
         {
-            addr_str = addr.get_storage().get_string_value();
+            addr_str = addr.get_string();
             addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
         }
         if (!port.is_null())
-            port_val = (uint16_t)port.get_storage().get_integer_value();
+            port_val = (uint16_t)port.get_unassigned();
         if (!addr_str.empty() || port_val != 0)
         {
             io::ip4_address ip_addr(addr_str, port_val);
@@ -166,11 +166,11 @@ void udp_port::extract_bind_address (const data::runtime_values_data& binder_dat
         uint16_t port_val = 0;
         if (!addr.is_null())
         {
-            addr_str = addr.get_storage().get_string_value();
+            addr_str = addr.get_string();
             addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
         }
         if (!port.is_null())
-            port_val = (uint16_t)port.get_storage().get_integer_value();
+            port_val = (uint16_t)port.get_unassigned();
         if (!addr_str.empty() || port_val != 0)
         {
             io::ip4_address ip_addr(addr_str, port_val);

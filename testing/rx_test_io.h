@@ -35,7 +35,7 @@
 #ifndef EXCLUDE_TEST_CODE
 
 // rx_stream_io
-#include "lib/rx_stream_io.h"
+#include "interfaces/rx_stream_io.h"
 // rx_test
 #include "testing/rx_test.h"
 
@@ -50,7 +50,7 @@ namespace ip_test {
 
 
 
-class tcp_test_client : public rx::io::tcp_client_socket_std_buffer  
+class tcp_test_client : public rx_internal::interfaces::ip_endpoints::tcp_client_socket_std_buffer  
 {
 	DECLARE_REFERENCE_PTR(tcp_test_client);
 

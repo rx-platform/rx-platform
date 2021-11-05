@@ -41,6 +41,8 @@
 #include "model/rx_meta_internals.h"
 #include "rx_tcp_server.h"
 #include "rx_udp.h"
+#include "rx_serial.h"
+#include "rx_inverter_ports.h"
 #include "rx_tcp_client.h"
 #include "sys_internal/rx_async_functions.h"
 #include "terminal/rx_commands.h"
@@ -53,6 +55,7 @@
 #include "rx_port_stack_active.h"
 #include "interfaces/rx_full_duplex_packet.h"
 #include "interfaces/rx_transaction_limiter.h"
+#include "interfaces/rx_stxetx.h"
 
 
 namespace rx_internal {
@@ -80,6 +83,11 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 	for (const auto& one : alias_result)
 		for (const auto& alias : one)
 			ip4_aliases_[alias.first] = alias.second;
+
+	alias_result = host->read_config_files("rx-serial.yml");
+	for (const auto& one : alias_result)
+		for (const auto& alias : one)
+			serial_aliases_[alias.first] = alias.second;
 
 	auto result_c = rx_init_protocols(nullptr);
 	rx_result result = result_c == RX_PROTOCOL_OK ? rx_result(true) : rx_result(rx_get_error_text(result_c));
@@ -136,6 +144,10 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 			RX_UDP_PORT_TYPE_ID, [] {
 				return rx_create_reference<ip_endpoints::udp_port>();
 			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_SERIAL_PORT_TYPE_ID, [] {
+				return rx_create_reference<serial::serial_port>();
+			});
         result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
             RX_TCP_SERVER_PORT_TYPE_ID, [] {
                 return rx_create_reference<ip_endpoints::tcp_server_port>();
@@ -164,7 +176,18 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 			RX_TRANS_LIMITER_TYPE_ID, [] {
 				return rx_create_reference<rx_internal::interfaces::ports_lib::transaction_limiter_port>();
 			});
-		
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_LISTENER_TO_INITIATOR_PORT_TYPE_ID, [] {
+				return rx_create_reference<rx_internal::interfaces::ports_lib::listener_to_initiator_port>();
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_INITIATOR_TO_LISTENER_PORT_TYPE_ID, [] {
+				return rx_create_reference<rx_internal::interfaces::ports_lib::initiator_to_listener_port>();
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_STXETX_TYPE_ID, [] {
+				return rx_create_reference<rx_internal::interfaces::ports_lib::stxetx_port>();
+			});
 
         rx_internal::terminal::commands::server_command_manager::instance()->register_internal_commands();
 	}
@@ -190,6 +213,15 @@ string_type rx_io_manager::resolve_ip4_alias (const string_type& what) const
 {
 	auto it = ip4_aliases_.find(what);
 	if (it != ip4_aliases_.end())
+		return it->second;
+	else
+		return what;
+}
+
+string_type rx_io_manager::resolve_serial_alias (const string_type& what) const
+{
+	auto it = serial_aliases_.find(what);
+	if (it != serial_aliases_.end())
 		return it->second;
 	else
 		return what;

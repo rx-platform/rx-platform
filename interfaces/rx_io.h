@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  lib\rx_io.h
+*  interfaces\rx_io.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -39,30 +39,73 @@
 // rx_thread
 #include "lib/rx_thread.h"
 
-namespace rx {
-namespace io {
+namespace rx_internal {
+namespace interfaces {
+namespace io_endpoints {
 class dispatcher_subscriber;
 
-} // namespace io
-} // namespace rx
+} // namespace io_endpoints
+} // namespace interfaces
+} // namespace rx_internal
 
 
-#include "rx_io_addr.h"
+#include "lib/rx_io_addr.h"
 
 
-namespace rx {
+namespace rx_internal {
 
-namespace io {
-typedef std::set<io::dispatcher_subscriber> dispatcher_subscriber_ptr;
+namespace interfaces {
+
+namespace io_endpoints {
+typedef std::set<dispatcher_subscriber> dispatcher_subscriber_ptr;
 typedef std::set<rx::pointers::reference<dispatcher_subscriber> > time_aware_subscribers_type;
 
 
 
 
 
+template <class headerT, class bufferT>
+class stream_chuks_decoder 
+{
+
+  public:
+      stream_chuks_decoder (std::function<bool(const bufferT&)> callback);
 
 
-class dispatcher_subscriber : public pointers::reference_object  
+      bool push_bytes (const void* data, size_t count);
+
+
+  protected:
+
+  private:
+
+
+      std::function<bool(const bufferT&)> chunk_callback_;
+
+      bufferT receive_buffer_;
+
+      headerT* header_;
+
+      uint8_t* temp_byte_header_;
+
+      int collected_header_;
+
+      uint32_t collected_;
+
+      uint32_t expected_;
+
+      headerT temp_header_;
+
+
+};
+
+
+
+
+
+
+
+class dispatcher_subscriber : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(dispatcher_subscriber);
 
@@ -148,47 +191,7 @@ class dispatcher_subscriber : public pointers::reference_object
 };
 
 
-
-
-
-
-template <class headerT, class bufferT>
-class stream_chuks_decoder 
-{
-
-  public:
-      stream_chuks_decoder (std::function<bool(const bufferT&)> callback);
-
-
-      bool push_bytes (const void* data, size_t count);
-
-
-  protected:
-
-  private:
-
-
-      std::function<bool(const bufferT&)> chunk_callback_;
-
-      bufferT receive_buffer_;
-
-      headerT* header_;
-
-      uint8_t* temp_byte_header_;
-
-      int collected_header_;
-
-      uint32_t collected_;
-
-      uint32_t expected_;
-
-      headerT temp_header_;
-
-
-};
-
-
-// Parameterized Class rx::io::stream_chuks_decoder 
+// Parameterized Class rx_internal::interfaces::io_endpoints::stream_chuks_decoder 
 
 template <class headerT, class bufferT>
 stream_chuks_decoder<headerT,bufferT>::stream_chuks_decoder (std::function<bool(const bufferT&)> callback)
@@ -317,8 +320,9 @@ bool stream_chuks_decoder<headerT,bufferT>::push_bytes (const void* data, size_t
 }
 
 
-} // namespace io
-} // namespace rx
+} // namespace io_endpoints
+} // namespace interfaces
+} // namespace rx_internal
 
 
 

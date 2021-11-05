@@ -228,7 +228,7 @@ struct limit_options_t
 
 class transaction_limiter_port : public transaction_limiter_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 Transaction limiter port, limits the transactions sent by master/client.\r\n\
 Use limit value 1 for enabling half-duplex connection, or 0 for no limit.");
 

@@ -50,9 +50,10 @@ using namespace rx;
 #define RX_RELATION_TARGET_VERSION 0x10003
 #define RX_DESCRIPTIONS_VERSION 0x10004
 #define RX_VARIABLE_PERSISTENCE_VERSION 0x10005
-#define RX_VALUE_TYPE_VERSION 0x10006
+#define RX_SIMULATE_VERSION 0x10006
+#define RX_VALUE_TYPE_VERSION 0x10007
 
-#define RX_CURRENT_SERIALIZE_VERSION RX_VARIABLE_PERSISTENCE_VERSION
+#define RX_CURRENT_SERIALIZE_VERSION RX_SIMULATE_VERSION
 
 //////////////////////////////////////////////////
 // streaming constants from header
@@ -91,9 +92,9 @@ public:
       virtual ~base_meta_writer();
 
 
-      virtual bool write_id (const char* name, const rx_node_id& id) = 0;
+      virtual bool write_id (const char* name, const rx_node_id_struct& id) = 0;
 
-      virtual bool write_string (const char* name, const string_type& str) = 0;
+      virtual bool write_string (const char* name, const char* str) = 0;
 
       virtual bool write_bool (const char* name, bool val) = 0;
 
@@ -136,8 +137,6 @@ public:
       virtual bool is_string_based () const = 0;
 
       virtual bool write_item_reference (const char* name, const rx_item_reference& ref) = 0;
-
-      virtual bool write_value (const char* name, const rx_simple_value& val) = 0;
 
       virtual bool write_value_type (const char* name, rx_value_t val) = 0;
 
@@ -230,8 +229,6 @@ class base_meta_reader
       virtual bool is_string_based () const = 0;
 
       virtual bool read_item_reference (const char* name, rx_item_reference& ref) = 0;
-
-      virtual bool read_value (const char* name, rx_simple_value& val) = 0;
 
       virtual bool read_value_type (const char* name, rx_value_t& val) = 0;
 

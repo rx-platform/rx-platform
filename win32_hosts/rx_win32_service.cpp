@@ -53,8 +53,7 @@ rx::locks::event win32_service_host::stop_ = false;
 
 win32_service_host::win32_service_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : supports_ansi_(false),
-        is_service_(false),
-        plugins_(nullptr)
+        is_service_(false)
 	, win32_headless_host(storages)
 {
 	g_host = this;
@@ -84,15 +83,15 @@ string_type win32_service_host::get_win32_service_info ()
     
 }
 
-rx_result win32_service_host::start_service (string_view_type svc_name, int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
+rx_result win32_service_host::start_service (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_result ret;
 	printf("Opening SCM on localhost...\r\n");
 	SC_HANDLE scm = OpenSCManager(NULL, NULL, GENERIC_READ);
 	if (scm)
 	{
-		printf("Opening service %s...\r\n", string_type(svc_name).c_str());
-		SC_HANDLE svc = OpenServiceA(scm, string_type(svc_name).c_str(), GENERIC_READ);
+		printf("Opening service %s...\r\n", RX_WIN32_SERVICE_HOST);
+		SC_HANDLE svc = OpenServiceA(scm, RX_WIN32_SERVICE_HOST, GENERIC_READ);
 		if (svc)
 		{
 			is_service_ = true;
@@ -102,9 +101,10 @@ rx_result win32_service_host::start_service (string_view_type svc_name, int argc
 
 	if (is_service_)
 	{
-		char* name_buff = new char[svc_name.size() + 1];
-		strcpy(name_buff, string_type(svc_name).c_str());
-		OutputDebugStringA("GSS_Service: GSS_Service: Registering SCD...");
+		plugins_ = plugins;
+		char* name_buff = new char[strlen(RX_WIN32_SERVICE_HOST) + 1];
+		strcpy(name_buff, RX_WIN32_SERVICE_HOST);
+		OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Registering SCD...");
 		SERVICE_TABLE_ENTRYA ServiceTable[] =
 		{
 			{ name_buff, (LPSERVICE_MAIN_FUNCTIONA)ServiceMain },
@@ -114,7 +114,7 @@ rx_result win32_service_host::start_service (string_view_type svc_name, int argc
 		if (!StartServiceCtrlDispatcherA(ServiceTable))
 		{
 			char buff[0x100];
-			_snprintf(buff, sizeof(buff) / sizeof(buff[0]), "GSS_Service: Unable to register SCD! Error code:0x%08x", GetLastError());
+			_snprintf(buff, sizeof(buff) / sizeof(buff[0]), RX_WIN32_SERVICE_HOST " : Unable to register SCD! Error code:0x%08x", GetLastError());
 			OutputDebugStringA(buff);
 		}
 		delete[] name_buff;
@@ -136,7 +136,7 @@ rx_result win32_service_host::stop_service ()
 	rx_result ret;
 	if (is_service_)
 	{
-		OutputDebugStringA("GSS_Service: Stopping service...\r\n");
+		OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Stopping service...\r\n");
 		if (g_ServiceStatus.dwCurrentState == SERVICE_RUNNING)
 		{
 			g_ServiceStatus.dwControlsAccepted = 0;
@@ -146,7 +146,7 @@ rx_result win32_service_host::stop_service ()
 
 			if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
 			{
-				OutputDebugStringA("GSS_Service: ServiceCtrlHandler: SetServiceStatus returned error");
+				OutputDebugStringA(RX_WIN32_SERVICE_HOST " : ServiceCtrlHandler: SetServiceStatus returned error");
 			}
 			stop_.set();
 		}
@@ -162,7 +162,7 @@ rx_result win32_service_host::stop_service ()
 	return ret;
 }
 
-rx_result win32_service_host::install_service (string_view_type name, string_view_type descr)
+rx_result win32_service_host::install_service ()
 {
 	rx_result ret;
 	printf("Opening SCM on localhost...\r\n");
@@ -177,11 +177,11 @@ rx_result win32_service_host::install_service (string_view_type name, string_vie
 			full_path += path;
 			full_path += "\"";
 			SC_HANDLE svc = CreateServiceA(scm
-				, string_type(name).c_str()
-				, string_type(descr).c_str()
+				, RX_WIN32_SERVICE_HOST
+				, ("rx-platform "s + get_win32_service_info()).c_str()
 				, SC_MANAGER_ALL_ACCESS
 				, SERVICE_WIN32_OWN_PROCESS
-				, SERVICE_DEMAND_START
+				, SERVICE_AUTO_START
 				, SERVICE_ERROR_NORMAL
 				, full_path.c_str()
 				, nullptr
@@ -191,7 +191,7 @@ rx_result win32_service_host::install_service (string_view_type name, string_vie
 				, nullptr);
 			if (svc)
 			{
-				printf("Created service %s.\r\n", string_type(name).c_str());
+				printf("Created service %s.\r\n", RX_WIN32_SERVICE_HOST);
 				CloseServiceHandle(svc);
 			}
 			else
@@ -208,7 +208,7 @@ rx_result win32_service_host::install_service (string_view_type name, string_vie
 	return ret;
 }
 
-rx_result win32_service_host::uninstall_service (string_view_type name)
+rx_result win32_service_host::uninstall_service ()
 {
 	rx_result ret;
 	printf("Opening SCM on localhost...\r\n");
@@ -216,13 +216,13 @@ rx_result win32_service_host::uninstall_service (string_view_type name)
 	if (scm)
 	{
 		printf("Opening service...\r\n");
-		SC_HANDLE svc = OpenServiceA(scm, string_type(name).c_str(), SC_MANAGER_ALL_ACCESS);
+		SC_HANDLE svc = OpenServiceA(scm, RX_WIN32_SERVICE_HOST, SC_MANAGER_ALL_ACCESS);
 		if (svc)
 		{
 			printf("Deleting service...\r\n");
 			if (DeleteService(svc))
 			{
-				printf("Deleted service %s.\r\n", string_type(name).c_str());
+				printf("Deleted service %s.\r\n", RX_WIN32_SERVICE_HOST);
 			}
 			else
 			{
@@ -264,7 +264,7 @@ VOID WINAPI win32_service_host::ServiceCtrlHandler (DWORD ctrlCode, DWORD eventT
 
 		if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
 		{
-			OutputDebugStringA("GSS_Service: ServiceCtrlHandler: SetServiceStatus returned error");
+			OutputDebugStringA(RX_WIN32_SERVICE_HOST " : ServiceCtrlHandler: SetServiceStatus returned error");
 		}
 
 		// This will signal the worker thread to start shutting down
@@ -286,7 +286,7 @@ VOID WINAPI win32_service_host::ServiceCtrlHandler (DWORD ctrlCode, DWORD eventT
 
 					if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
 					{
-						OutputDebugStringA("GSS_Service: ServiceCtrlHandler: SetServiceStatus returned error");
+						OutputDebugStringA(RX_WIN32_SERVICE_HOST " : ServiceCtrlHandler: SetServiceStatus returned error");
 					}
 
 					// This will signal the worker thread to start shutting down
@@ -310,7 +310,7 @@ VOID WINAPI win32_service_host::ServiceMain (DWORD argc, LPSTR* argv)
 
 	if (g_StatusHandle == NULL)
 	{
-		OutputDebugStringA("GSS_Service: ServiceMain: RegisterServiceCtrlHandler returned error");
+		OutputDebugStringA(RX_WIN32_SERVICE_HOST " : ServiceMain: RegisterServiceCtrlHandler returned error");
 		return;
 	}
 
@@ -325,7 +325,7 @@ VOID WINAPI win32_service_host::ServiceMain (DWORD argc, LPSTR* argv)
 
 	if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
 	{
-		OutputDebugStringA("GSS_Service: ServiceMain: SetServiceStatus returned error");
+		OutputDebugStringA(RX_WIN32_SERVICE_HOST " : ServiceMain: SetServiceStatus returned error");
 	}
 
 	/*
@@ -340,19 +340,25 @@ VOID WINAPI win32_service_host::ServiceMain (DWORD argc, LPSTR* argv)
 
 	if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
 	{
-		OutputDebugStringA("GSS_Service: ServiceMain: SetServiceStatus returned error");
+		OutputDebugStringA(RX_WIN32_SERVICE_HOST " : ServiceMain: SetServiceStatus returned error");
 	}
 
-	OutputDebugStringA("GSS_Service: Starting application");
+	OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Initializing application");
 
 	win32_service_host::instance().initialize_platform(argc, argv, "rx_win32_service"
 		, log::log_subscriber::smart_ptr::null_ptr
-		, host::headless::synchronize_callback_t(), *win32_service_host::instance().plugins_);
+		, host::headless::synchronize_callback_t(), win32_service_host::instance().plugins_);
+
+	OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Starting application");
+
 	win32_service_host::instance().start_platform();
+
+
+	OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Application started");
 
 	stop_.wait_handle();
 
-	OutputDebugStringA("GSS_Service: Stopping application");
+	OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Stopping application");
 	win32_service_host::instance().stop_platform();
 	win32_service_host::instance().deinitialize_platform();
 
@@ -364,7 +370,7 @@ VOID WINAPI win32_service_host::ServiceMain (DWORD argc, LPSTR* argv)
 
 	if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
 	{
-		OutputDebugStringA("GSS_Service: ServiceMain: SetServiceStatus returned error");
+		OutputDebugStringA(RX_WIN32_SERVICE_HOST " : ServiceMain: SetServiceStatus returned error");
 	}
 
 	return;
@@ -373,6 +379,25 @@ VOID WINAPI win32_service_host::ServiceMain (DWORD argc, LPSTR* argv)
 win32_service_host& win32_service_host::instance ()
 {
 	return *g_host;
+}
+
+string_type win32_service_host::get_host_name ()
+{
+	return RX_WIN32_SERVICE_HOST;
+}
+
+rx_result win32_service_host::fill_host_directories (hosting::rx_host_directories& data)
+{
+	auto result = win32_headless_host::fill_host_directories(data);
+	if (result && is_service_)
+	{
+		string_type temp = data.system_storage;
+		auto idx = temp.rfind('/');
+		if (idx != string_type::npos)
+			temp = temp.substr(0, idx + 1) + RX_WIN32_SERVICE_HOST;
+		data.user_storage = temp;
+	}
+	return result;
 }
 
 

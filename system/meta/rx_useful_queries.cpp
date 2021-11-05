@@ -50,13 +50,13 @@ string_type ns_suggetions_query::query_name = "suggestion";
 
 rx_result ns_suggetions_query::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_string("typeName", type_name))
+	if (!stream.write_string("typeName", type_name.c_str()))
 		return stream.get_error();
-	if (!stream.write_string("instanceName", instance_name))
+	if (!stream.write_string("instanceName", instance_name.c_str()))
 		return stream.get_error();
 	if (!stream.write_id("instance", instance))
 		return stream.get_error();
-	if (!stream.write_string("subfolder", suggested_path))
+	if (!stream.write_string("subfolder", suggested_path.c_str()))
 		return stream.get_error();
 
 	return true;

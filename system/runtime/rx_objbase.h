@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -34,6 +34,7 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "system/server/rx_server.h"
+#include "lib/rx_io_addr.h"
 
 // dummy
 #include "dummy.h"
@@ -47,7 +48,6 @@
 #include "lib/rx_ptr.h"
 
 #include "lib/security/rx_security.h"
-#include "lib/rx_io.h"
 #include "system/callbacks/rx_callback.h"
 #include "rx_process_context.h"
 using namespace rx;
@@ -196,7 +196,7 @@ object class. basic implementation of an object");
               auto result = context_->get_value(handle, temp_val);
               if (result)
               {
-                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+                  return temp_val.extract_static(default_value);
               }
           }
           return default_value;
@@ -294,7 +294,7 @@ system application class. basic implementation of a application");
               auto result = context_->get_value(handle, temp_val);
               if (result)
               {
-                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+                  return temp_val.extract_static(default_value);
               }
           }
           return default_value;
@@ -385,7 +385,7 @@ system domain class. basic implementation of a domain");
               auto result = context_->get_value(handle, temp_val);
               if (result)
               {
-                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+                  return temp_val.extract_static(default_value);
               }
           }
           return default_value;
@@ -511,7 +511,7 @@ system port class. basic implementation of a port");
               auto result = context_->get_value(handle, temp_val);
               if (result)
               {
-                  return values::extract_value<valT>(temp_val.get_storage(), default_value);
+                  return temp_val.extract_static(default_value);
               }
           }
           return default_value;

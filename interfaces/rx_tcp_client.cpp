@@ -320,7 +320,7 @@ bool tcp_client_endpoint::socket_holder_t::connect_complete(sockaddr_in* addr, s
     else
         return false;
 
-    return rx::io::tcp_client_socket_std_buffer::connect_complete(addr, local_addr);
+    return tcp_client_socket_std_buffer::connect_complete(addr, local_addr);
 }
 tcp_client_endpoint::socket_holder_t::socket_holder_t(tcp_client_endpoint* whose)
     : whose(whose)
@@ -446,11 +446,11 @@ void tcp_client_port::extract_bind_address (const data::runtime_values_data& bin
         uint16_t port_val = 0;
         if (!addr.is_null())
         {
-            addr_str = addr.get_storage().get_string_value();
+            addr_str = addr.get_string();
             addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
         }
         if (!port.is_null())
-            port_val = (uint16_t)port.get_storage().get_integer_value();
+            port_val = (uint16_t)port.get_unassigned();
         if (!addr_str.empty() || port_val != 0)
         {
             io::ip4_address ip_addr(addr_str, port_val);
@@ -466,11 +466,11 @@ void tcp_client_port::extract_bind_address (const data::runtime_values_data& bin
         uint16_t port_val = 0;
         if (!addr.is_null())
         {
-            addr_str = addr.get_storage().get_string_value();
+            addr_str = addr.get_string();
             addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
         }
         if (!port.is_null())
-            port_val = (uint16_t)port.get_storage().get_integer_value();
+            port_val = (uint16_t)port.get_unassigned();
         if (!addr_str.empty() || port_val != 0)
         {
             io::ip4_address ip_addr(addr_str, port_val);

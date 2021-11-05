@@ -198,6 +198,44 @@ source runtime. basic implementation of an source runtime");
           }
           return ret;
       }
+      template<typename T>
+      T get_sourced_cumulative(runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path, const T& default_value)
+      {
+          T ret(default_value);
+          auto vals = get_sourced_values_as<T>(ctx, id, path, default_value);
+          for (const auto& one : vals)
+          {
+              ret += one;
+          }
+          return ret;
+      }
+      string_type get_sourced_first_string(runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path)
+      {
+          string_type def;
+          auto vals = get_sourced_values_as(ctx, id, path, def);
+          for (const auto& one : vals)
+              if (!one.empty())
+                  return one;
+          return def;
+      }
+      string_type get_sourced_path_string(runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path, char delim)
+      {
+          string_type def;
+          auto vals = get_sourced_values_as(ctx, id, path, def);
+          std::ostringstream stream;
+          bool had_delim = true;
+          for (const auto& one : vals)
+          {
+              if (!one.empty())
+              {
+                  if (!had_delim)
+                      stream << delim;
+                  stream << one;
+                  had_delim = (*one.rbegin() == delim);
+              }
+          }
+          return stream.str();
+      }
   private:
 
       virtual bool supports_input () const;
@@ -454,6 +492,45 @@ mapper runtime. basic implementation of an mapper runtime");
               }
           }
           return ret;
+      }
+
+      template<typename T>
+      T get_mapped_cumulative(runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path, const T& default_value)
+      {
+          T ret(default_value);
+          auto vals = get_mapped_values_as<T>(ctx, id, path, default_value);
+          for (const auto& one : vals)
+          {
+              ret += one;
+          }
+          return ret;
+      }
+      string_type get_mapped_first_string(runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path)
+      {
+          string_type def;
+          auto vals = get_mapped_values_as(ctx, id, path, def);
+          for (const auto& one : vals)
+              if (!one.empty())
+                  return one;
+          return def;
+      }
+      string_type get_mapped_path_string(runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path, char delim)
+      {
+          string_type def;
+          auto vals = get_mapped_values_as(ctx, id, path, def);
+          std::ostringstream stream;
+          bool had_delim = true;
+          for (const auto& one : vals)
+          {
+              if (!one.empty())
+              {
+                  if (!had_delim)
+                      stream << delim;
+                  stream << one;
+                  had_delim = (*one.rbegin() == delim);
+              }
+          }
+          return stream.str();
       }
   private:
 

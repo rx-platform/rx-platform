@@ -174,6 +174,7 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
 template <class typeT>
 rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
 {
+    
     auto result = tags_.start_runtime(ctx);
     if (result)
     {

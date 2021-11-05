@@ -66,31 +66,51 @@ class base_meta_reader;
 namespace values
 {
 class rx_simple_value;
+class rx_timed_value;
 class rx_value;
 }
 
-struct rx_table_cell_struct
+// string and byte array helpers
+class rx_string_wrapper : public string_value_struct
 {
-	rx_table_cell_struct(const string_type& vvalue)
-		: value(vvalue)
-	{
-	}
-	rx_table_cell_struct(const string_type& vvalue, const string_type& vprefix, const string_type& vpostfix)
-		: prefix(vprefix), value(vvalue), postfix(vpostfix)
-	{
-	}
-	rx_table_cell_struct(const rx_table_cell_struct& right) = default;
-	rx_table_cell_struct(rx_table_cell_struct&& right) noexcept = default;
-	string_type prefix;
-	string_type value;
-	string_type postfix;
+public:
+	rx_string_wrapper();
+	rx_string_wrapper(const string_value_struct& val);
+	rx_string_wrapper(const string_type& val);
+	rx_string_wrapper(const char* val);
+	rx_string_wrapper(string_view_type val);
+
+	bool empty() const;
+	size_t size() const;
+	const char* c_str() const;
+
+	string_type to_string() const;
+	string_view_type to_string_view() const;
+
+	~rx_string_wrapper();
 };
 
-typedef std::vector<rx_table_cell_struct> rx_row_type;
-typedef std::vector<rx_row_type> rx_table_type;
+string_type rx_to_std_string(const string_value_struct& str);
 
-void rx_dump_large_row(rx_row_type row, std::ostream& out, size_t console_width);
-void rx_dump_table(const rx_table_type& table, std::ostream& out, bool column_names,bool dot_lines);
+class rx_bytes_wrapper : public bytes_value_struct
+{
+public:
+	rx_bytes_wrapper();
+	rx_bytes_wrapper(const bytes_value_struct& val);
+	rx_bytes_wrapper(const byte_string& val);
+	rx_bytes_wrapper(const uint8_t* data, size_t count);
+
+	bool empty() const;
+	size_t size() const;
+	const uint8_t* data() const;
+
+	byte_string to_bytes() const;
+
+	~rx_bytes_wrapper();
+};
+
+byte_string rx_to_std_bytes(const bytes_value_struct& str);
+
 
 //template <typename resultT>
 class rx_transaction_type
@@ -286,26 +306,6 @@ public:
 
 
 
-rx_result rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files, std::vector<std::string>& directories);
-std::string rx_combine_paths(const std::string& path1, const std::string& path2);
-std::string rx_get_extension(const std::string& path);
-std::string rx_remove_extension(const std::string& path);
-
-rx_result create_directory(const std::string& dir, bool fail_on_exsists);
-rx_result rx_delete_all_files(const std::string& dir, const std::string& pattern);
-
-class rx_source_file
-{
-	sys_handle_t m_handle;
-public:
-	rx_source_file();
-	rx_result open(const char* file_name);
-	rx_result open_write(const char* file_name);
-	rx_result read_string(std::string& buff);
-	rx_result write_string(const std::string& buff);
-	~rx_source_file();
-
-};
 
 extern const char* g_complie_time;
 extern const char* g_lib_version;
@@ -354,35 +354,10 @@ struct IP_interface
 	}
 };
 
-///////////////////////////////////////////////////////////////
-// TIMES FOR ASN1 MMS IEC TIME VALUES
-///////////////////////////////////////////////////////////////
 
-struct asn_generalized_time
+
+class rx_uuid : public rx_uuid_t
 {
-	uint16_t year;
-	uint16_t month;
-	uint16_t day;
-
-	uint16_t hour;
-	uint16_t minute;
-	uint16_t second;
-
-	uint32_t fraction;
-};
-
-
-struct asn_binary_time
-{
-	bool full;
-	uint32_t mstime;
-	uint16_t days;
-};
-
-class rx_uuid
-{
-private:
-	rx_uuid_t m_uuid;
 public:
 	rx_uuid();
 	rx_uuid(const rx_uuid& rigth);
@@ -395,11 +370,6 @@ public:
 	static rx_uuid create_from_string(const string_type& str);
 
 	static const rx_uuid& null_uuid();
-
-	const rx_uuid_t& uuid() const
-	{
-		return m_uuid;
-	}
 
 	bool operator==(const rx_uuid& right) const;
 	bool operator!=(const rx_uuid& right) const;
@@ -419,34 +389,18 @@ typedef rx_uuid rx_id;
 typedef std::complex<double> complex_type;
 
 
-union rx_node_id_union
-{
-	uint32_t int_value;
-	string_type* string_value;
-	byte_string* bstring_value;
-	rx_uuid_t uuid_value;
-};
 
 
-
-enum class rx_node_id_type
-{
-	numeric = 0,
-	string = 1,
-	uuid = 2,
-	bytes = 3
-};
-
-
-class rx_node_id
+class rx_node_id : public rx_node_id_struct
 {
 	friend struct std::hash<rx::rx_node_id>;
 public:
 	rx_node_id() noexcept;
+	rx_node_id(const rx_node_id_struct* right);
 	rx_node_id(const rx_node_id &right);
 	rx_node_id(uint32_t id, uint16_t namesp = DEFAULT_NAMESPACE);
 	rx_node_id(const char* id, uint16_t namesp = DEFAULT_NAMESPACE);
-	rx_node_id(rx_uuid_t id, uint16_t namesp = DEFAULT_NAMESPACE);
+	rx_node_id(rx_uuid_t& id, uint16_t namesp = DEFAULT_NAMESPACE);
 	rx_node_id(const byte_string& id, uint16_t namesp = DEFAULT_NAMESPACE);
 	rx_node_id(rx_node_id&& right)  noexcept;
 	~rx_node_id();
@@ -477,23 +431,14 @@ public:
 
 	const rx_uuid_t& get_uuid() const;
 	uint32_t get_numeric() const;
-	const string_type& get_string() const;
-	const byte_string& get_bytes() const;
 
 
 	const uint16_t get_namespace() const;
 	void set_namespace(uint16_t value);
 
 	const rx_node_id_type get_node_type() const;
-	void set_node_type(rx_node_id_type value);
 
 	static const rx_node_id null_id;
-private:
-	bool is_simple() const;
-	void clear_content();
-	uint16_t namespace_;
-	rx_node_id_type node_type_;
-	rx_node_id_union value_;
 
 };
 
@@ -503,57 +448,42 @@ typedef std::vector<rx_node_id> rx_node_ids;
 
 
 
-class rx_item_reference
+class rx_item_reference : public rx_reference_struct
 {
-	union
-	{
-		string_type path_;
-		rx_node_id id_;
-	};
 
 public:
 
 	rx_item_reference();
+	rx_item_reference(const rx_reference_struct* data);
 
 	rx_item_reference(const rx_item_reference& right);
 	rx_item_reference(const rx_node_id& right);
-	rx_item_reference(const string_type& right);
 	rx_item_reference(const char* right);
-	rx_item_reference(const values::rx_simple_value& right);
+	rx_item_reference(const string_type& right);
+	rx_item_reference(string_view_type right);
+
+	rx_item_reference(rx_item_reference&& right) noexcept;
 	~rx_item_reference();
 
 	bool is_null() const;
 
 	rx_item_reference& operator=(const rx_item_reference& right);
-	rx_item_reference& operator = (const rx_node_id& right);
-	rx_item_reference& operator = (const string_type& right);
+	rx_item_reference& operator=(rx_item_reference&& right) noexcept;
+	rx_item_reference& operator=(const rx_node_id& right);
+	rx_item_reference& operator=(const string_type& right);
+	rx_item_reference& operator=(string_view_type right);
 
 	bool is_node_id() const;
 
 	string_type to_string() const;
 
-	const string_type& get_path() const;
+	string_type get_path() const;
 
-	const rx_node_id& get_node_id() const;
+	rx_node_id get_node_id() const;
 
-	values::rx_simple_value to_value() const;
 
-	rx_item_reference& operator = (const values::rx_simple_value& right);
-	rx_item_reference(rx_item_reference&& right) noexcept;
-	rx_item_reference& operator=(rx_item_reference&& right) noexcept;
-
-	rx_item_reference(rx_node_id&& right) noexcept;
-	rx_item_reference(string_type&& right) noexcept;
-	rx_item_reference(values::rx_simple_value&& right) noexcept;
-
-	rx_item_reference& operator= (rx_node_id&& right) noexcept;
-	rx_item_reference& operator= (string_type&& right) noexcept;
-	rx_item_reference& operator= (values::rx_simple_value&& right) noexcept;
 
 	static const rx_item_reference null_ref;
-private:
-	void clear_content();
-	bool is_id_;
 
 };
 
@@ -598,6 +528,7 @@ class rx_time : public rx_time_struct
 {
 public:
 	rx_time() noexcept;
+	rx_time(rx_time_struct tm) noexcept;
 	rx_time(const rx_time&) = default;
 	rx_time(rx_time&&) noexcept = default;
 	rx_time& operator=(const rx_time&) = default;
@@ -605,7 +536,6 @@ public:
 	rx_time(const timeval& tv);
 	rx_time(const asn_binary_time& bt);
 	rx_time(const asn_generalized_time& bt);
-	rx_time(const rx_time_struct& ft);
 	rx_time(const uint64_t interval);
 	rx_time& operator=(const rx_time_struct& right) noexcept;
 	rx_time& operator=(const uint64_t interval) noexcept;
@@ -706,41 +636,6 @@ string_type rx_trim(const string_type str);
 }// namespace rx
 
 
-namespace std
-{
-template<>
-struct hash<rx::rx_node_id>
-{
-	size_t operator()(const rx::rx_node_id& id) const noexcept
-	{
-		switch (id.node_type_)
-		{
-		case rx::rx_node_id_type::numeric:
-			return (hash<int32_t>()(id.value_.int_value)
-				^ (hash<uint16_t>()(id.namespace_) << 1));
-		case rx::rx_node_id_type::string:
-			return (hash<string_type>()(*id.value_.string_value)
-				^ (hash<uint16_t>()(id.namespace_) << 1));
-		case rx::rx_node_id_type::uuid:
-			return (hash<uint64_t>()(*((int64_t*)(&id.value_.uuid_value))))
-				^ (hash<uint64_t>()(((int64_t*)(&id.value_.uuid_value))[1] << 1))
-				^ (hash<uint16_t>()(id.namespace_) << 2);
-		case rx::rx_node_id_type::bytes:
-		{
-			size_t ret = 0;
-			size_t count = id.value_.bstring_value->size();
-			for (size_t i = 0; i < count; i++)
-			{
-				ret ^= ((hash<uint8_t>()((*(id.value_.bstring_value))[i])) << i & 0xffff);
-			}
-			return ret;
-		}
-		default:
-			RX_ASSERT(false);
-			return 0;
-		}
-	}
-};
 
 //very useful, maybe it exists in standard already still...
 struct null_deleter
@@ -750,7 +645,6 @@ struct null_deleter
 	}
 };
 
-}
 
 
 #endif

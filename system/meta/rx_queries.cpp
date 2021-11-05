@@ -51,13 +51,13 @@ string_type derived_types_query::query_name = "derived";
 
 rx_result derived_types_query::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_string("typeName", type_name))
+	if (!stream.write_string("typeName", type_name.c_str()))
 		return stream.get_error();
-	if (!stream.write_string("baseType", base_type))
+	if (!stream.write_string("baseType", base_type.c_str()))
 		return stream.get_error();
 	if(!stream.write_bool("subTypes", include_subtypes))
 		return stream.get_error();
-	if (!stream.write_string("subfolder", subfolder))
+	if (!stream.write_string("subfolder", subfolder.c_str()))
 		return stream.get_error();
 
 	return true;
@@ -275,13 +275,13 @@ string_type runtime_objects_query::query_name = "runtime";
 
 rx_result runtime_objects_query::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_string("typeName", type_name))
+	if (!stream.write_string("typeName", type_name.c_str()))
 		return stream.get_error();
-	if (!stream.write_string("instanceName", instance_name))
+	if (!stream.write_string("instanceName", instance_name.c_str()))
 		return stream.get_error();
 	if (!stream.write_id("instance", instance))
 		return stream.get_error();
-	if (!stream.write_string("subfolder", subfolder))
+	if (!stream.write_string("subfolder", subfolder.c_str()))
 		return stream.get_error();
 
 	return true;
@@ -459,13 +459,13 @@ string_type port_stack_query::query_name = "io";
 
 rx_result port_stack_query::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_string("typeName", type_name))
+	if (!stream.write_string("typeName", type_name.c_str()))
 		return stream.get_error();
-	if (!stream.write_string("instanceName", instance_name))
+	if (!stream.write_string("instanceName", instance_name.c_str()))
 		return stream.get_error();
 	if (!stream.write_id("instance", instance))
 		return stream.get_error();
-	if (!stream.write_string("subfolder", subfolder))
+	if (!stream.write_string("subfolder", subfolder.c_str()))
 		return stream.get_error();
 
 	return true;

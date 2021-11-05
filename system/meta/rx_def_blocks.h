@@ -641,6 +641,10 @@ struct io_attribute
 
       bool output;
 
+      bool simulation;
+
+      bool process;
+
   public:
 
   protected:

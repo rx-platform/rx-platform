@@ -85,7 +85,7 @@ void tcp_test_client::release_buffer (buffer_ptr what)
 
 bool tcp_test_client::connect_complete (sockaddr_in* addr, sockaddr_in* local_addr)
 {
-	rx::io::tcp_client_socket_std_buffer::connect_complete(addr, local_addr);
+	rx_internal::interfaces::ip_endpoints::tcp_client_socket_std_buffer::connect_complete(addr, local_addr);
 	printf("Callback arrived\r\n");
 	return true;
 }

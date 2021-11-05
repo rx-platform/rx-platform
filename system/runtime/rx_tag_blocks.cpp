@@ -86,7 +86,7 @@ rx_result tags_holder::initialize_runtime (runtime_init_context& ctx, relations:
 	auto result = item_->initialize_runtime(ctx);
 	if (result)
 	{
-		connected_tags_.init_tags(ctx.context, relations);
+		connected_tags_.init_tags(ctx.context, relations, &binded_tags_);
 
 		result = common_tags_.initialize_runtime(ctx);
 	}
@@ -102,6 +102,8 @@ rx_result tags_holder::deinitialize_runtime (runtime_deinit_context& ctx)
 rx_result tags_holder::start_runtime (runtime_start_context& ctx)
 {
 	ctx.structure.push_item(*item_);
+	ctx.simulation |= item_->get_local_as("Object.Simulate", false);
+	ctx.set_item_static("Object.SimActive", ctx.simulation);
 	auto result = item_->start_runtime(ctx);
 	return result;
 }

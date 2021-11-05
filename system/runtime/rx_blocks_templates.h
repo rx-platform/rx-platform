@@ -38,6 +38,7 @@
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
 
+#include "system/meta/rx_construction_templates.h"
 
 
 namespace rx_platform {

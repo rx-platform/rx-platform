@@ -129,6 +129,16 @@ rx_result rx_io_buffer::write (const void* data, size_t size)
 		return rx_protocol_error_message(result);
 }
 
+bool rx_io_buffer::empty () const
+{
+	return this->size == 0;
+}
+
+void rx_io_buffer::reinit ()
+{
+	rx_reinit_packet_buffer(this);
+}
+
 rx_io_buffer::rx_io_buffer(rx_io_buffer&& right) noexcept
 {
 	if (right.buffer_ptr)
@@ -161,6 +171,10 @@ rx_io_buffer& rx_io_buffer::operator=(rx_io_buffer&& right) noexcept
 
 rx_const_io_buffer::rx_const_io_buffer (rx_const_packet_buffer* buffer)
 	: buffer_(buffer)
+{
+}
+
+rx_const_io_buffer::rx_const_io_buffer (rx_packet_buffer* buffer)
 {
 }
 

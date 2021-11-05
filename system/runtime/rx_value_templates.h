@@ -61,7 +61,7 @@ public:
         callback_ = callback;
         auto result = ctx.bind_item(path, [this](const rx_value& val)
             {
-                value_ = values::extract_value(val.get_storage(), value_);
+                value_ = val.extract_static(value_);
                 if (callback_)
                 {
                     callback_(value_);
@@ -358,7 +358,7 @@ public:
                 typeT temp_val;
                 {
                     locks::auto_lock_t<lockT> _(&lock_);
-                    value_ = values::extract_value(val.get_storage(), value_);
+                    value_ = val.extract_static(value_);
                     temp_val = value_;
                 }
                 if (callback_)

@@ -48,10 +48,10 @@
 #include "system/libraries/rx_plugin.h"
 #include "lib/security/rx_security.h"
 
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_ns
+#include "system/server/rx_ns.h"
 
 namespace rx_platform {
 namespace prog {
@@ -172,6 +172,10 @@ class rx_gate
       runtime_data_t get_cpu_data ();
 
       string_type resolve_ip4_alias (const string_type& what) const;
+
+      string_type resolve_ip6_alias (const string_type& what) const;
+
+      string_type resolve_serial_alias (const string_type& what) const;
 
 
       hosting::rx_platform_host * get_host ()

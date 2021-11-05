@@ -210,8 +210,8 @@
 #define RX_APPLICATION_PORT_TYPE_NAME "ApplicationPort"
 #define RX_APPLICATION_PORT_TYPE_ID 0xc00000e
 
-#define RX_TTY_PORT_TYPE_NAME "TTYPort"
-#define RX_TTY_PORT_TYPE_ID 0xc000010
+#define RX_SERIAL_PORT_TYPE_NAME "SerialPort"
+#define RX_SERIAL_PORT_TYPE_ID 0xc000010
 #define RX_UDP_PORT_TYPE_NAME "UDPPort"
 #define RX_UDP_PORT_TYPE_ID 0xc000011
 #define RX_TCP_SERVER_PORT_TYPE_NAME "TCPServerPort"
@@ -227,9 +227,16 @@
 #define RX_BYTE_ROUTER_TYPE_NAME "ByteRouterPort"
 #define RX_BYTE_ROUTER_TYPE_ID 0xc00005b
 
-
 #define RX_TRANS_LIMITER_TYPE_NAME "TransactionLimiterPort"
 #define RX_TRANS_LIMITER_TYPE_ID 0xc00005c
+
+#define RX_INITIATOR_TO_LISTENER_PORT_TYPE_NAME "Initiator2ListenerPort"
+#define RX_INITIATOR_TO_LISTENER_PORT_TYPE_ID 0xc00006c
+#define RX_LISTENER_TO_INITIATOR_PORT_TYPE_NAME "Listener2InitiatorPort"
+#define RX_LISTENER_TO_INITIATOR_PORT_TYPE_ID 0xc00006d
+
+#define RX_STXETX_TYPE_NAME "STXETXPort"
+#define RX_STXETX_TYPE_ID 0xc00006a
 
 #define RX_VT00_TYPE_NAME "VT100Port"
 #define RX_VT00_TYPE_ID 0xc000017
@@ -272,6 +279,14 @@
 #define RX_BRIDGE_PORT_OPTIONS_TYPE_ID 0xc000063
 #define RX_LIMITER_PORT_OPTIONS_TYPE_NAME "LimiterPortOptions"
 #define RX_LIMITER_PORT_OPTIONS_TYPE_ID 0xc000064
+
+
+#define RX_STXETX_PORT_OPTIONS_TYPE_NAME "STXETXPortOptions"
+#define RX_STXETX_PORT_OPTIONS_TYPE_ID 0xc00006e
+
+
+#define RX_SERIAL_PORT_OPTIONS_TYPE_NAME "SerialPortOptions"
+#define RX_SERIAL_PORT_OPTIONS_TYPE_ID 0xc00006b
 
 // runtime support structures
 #define RX_POOL_DATA_TYPE_NAME "PoolData"
@@ -370,7 +385,7 @@
 #define RX_TCP_RX_PORT_TYPE_NAME "SystemRxPort"
 
 
-// last is 0xc000069!!!! 
+// last is 0xc00006e!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

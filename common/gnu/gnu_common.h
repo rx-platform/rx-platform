@@ -40,6 +40,35 @@
 #define RX_COMMON_API
 #endif
 
+#ifdef _DEBUG
+#define RX_ASSERT(v) assert(v)
+#else
+#define RX_ASSERT(v) ((void)0)
+#endif
+
+#ifndef __cplusplus
+#ifndef max
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+#endif
+
+#define memzero(S, N) memset((S), 0, (N))
+
+#pragma pack(push)
+#pragma pack(1)
+typedef struct _GUID {
+	unsigned int  Data1;
+	unsigned short Data2;
+	unsigned short Data3;
+	unsigned char  Data4[8];
+} GUID;
+#pragma pack(pop)
+
+
+typedef GUID rx_uuid_;
+typedef GUID rx_uuid_t;
+
 
 
 

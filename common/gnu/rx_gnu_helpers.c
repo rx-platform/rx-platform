@@ -165,5 +165,46 @@ RX_COMMON_API int rx_os_collect_time(const struct rx_full_time_t* full, struct r
     return RX_OK;
 }
 
+/////////////////////////////////////
+// uuid code
+
+
+void linux_uuid_to_uuid(const uuid_t* uuid, rx_uuid_t* u)
+{
+    memcpy(u->Data4, &(*uuid)[8], 8);
+    u->Data1 = ntohl(*((uint32_t*)&(*uuid)[0]));
+    u->Data2 = ntohs(*((uint16_t*)&(*uuid)[4]));
+    u->Data3 = ntohs(*((uint16_t*)&(*uuid)[6]));
+}
+
+void uuid_to_linux_uuid(const rx_uuid_t* u, uuid_t* uuid)
+{
+    memcpy(&(*uuid)[8], u->Data4, 8);
+    *((uint32_t*)&(*uuid)[0]) = htonl(u->Data1);
+    *((uint16_t*)&(*uuid)[4]) = ntohs(u->Data2);
+    *((uint16_t*)&(*uuid)[6]) = ntohs(u->Data3);
+}
+
+RX_COMMON_API void rx_generate_new_uuid(rx_uuid_t* u)
+{
+    uuid_t uuid;
+    uuid_generate(uuid);
+    linux_uuid_to_uuid(&uuid, u);
+}
+RX_COMMON_API int rx_uuid_to_string(const rx_uuid_t* u, char* str)
+{
+    uuid_t uuid;
+    uuid_to_linux_uuid(u, &uuid);
+    uuid_unparse(uuid, str);
+    return RX_OK;
+}
+RX_COMMON_API int rx_string_to_uuid(const char* str, rx_uuid_t* u)
+{
+    uuid_t uuid;
+    uuid_parse(str, uuid);
+    linux_uuid_to_uuid(&uuid, u);
+    return RX_OK;
+}
+
 
 

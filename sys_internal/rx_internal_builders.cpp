@@ -902,7 +902,8 @@ void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, st
 	what->complex_data.register_simple_value_static("On", true, false, true);
 	what->complex_data.register_simple_value_static("Test", false, false, true);
 	what->complex_data.register_simple_value_static("Blocked", false, false, true);
-	what->complex_data.register_simple_value_static("Simulate", false, false, true);
+	what->complex_data.register_const_value_static("Simulate", false);
+	what->complex_data.register_const_value_static("SimActive", false);
 	add_simple_type_to_configuration<struct_type>(dir, what, false);
 }
 template<class T>
@@ -1188,13 +1189,15 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 		add_type_to_configuration(dir, port, true);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
-			RX_TTY_PORT_TYPE_NAME
-			, RX_TTY_PORT_TYPE_ID
+			RX_SERIAL_PORT_TYPE_NAME
+			, RX_SERIAL_PORT_TYPE_ID
 			, RX_EXTERNAL_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		port->complex_data.register_struct("Options", RX_SERIAL_PORT_OPTIONS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
+
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_ETHERNET_PORT_TYPE_NAME
 			, RX_ETHENERT_PORT_TYPE_ID
@@ -1304,6 +1307,24 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_INITIATOR_TO_LISTENER_PORT_TYPE_NAME
+			, RX_INITIATOR_TO_LISTENER_PORT_TYPE_ID
+			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_LISTENER_TO_INITIATOR_PORT_TYPE_NAME
+			, RX_LISTENER_TO_INITIATOR_PORT_TYPE_ID
+			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TRANS_LIMITER_TYPE_NAME
 			, RX_TRANS_LIMITER_TYPE_ID
 			, RX_TRANSPORT_PORT_TYPE_ID
@@ -1313,6 +1334,18 @@ rx_result port_types_builder::do_build (rx_directory_ptr root)
 		port->complex_data.register_struct("Timeouts", RX_MASTER_TIMEOUTS_TYPE_ID);
 		port->complex_data.register_struct("Status", RX_MASTER_PORT_STATUS_TYPE_ID);
 		port->complex_data.register_struct("Options", RX_LIMITER_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_STXETX_TYPE_NAME
+			, RX_STXETX_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		//port->complex_data.register_struct("Timeouts", RX_MASTER_TIMEOUTS_TYPE_ID);
+		//port->complex_data.register_struct("Status", RX_MASTER_PORT_STATUS_TYPE_ID);
+		port->complex_data.register_struct("Options", RX_STXETX_PORT_OPTIONS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		// protocol ports
@@ -1746,6 +1779,32 @@ rx_result support_types_builder::do_build (rx_directory_ptr root)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_STXETX_PORT_OPTIONS_TYPE_NAME
+			, RX_STXETX_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+				});
+		what->complex_data.register_const_value_static("MaxPacketSize", 0x1000u);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_SERIAL_PORT_OPTIONS_TYPE_NAME
+			, RX_SERIAL_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("Port", "");
+		what->complex_data.register_const_value_static<uint32_t>("BaudRate", 19200);
+		what->complex_data.register_const_value_static<uint8_t>("DataBits", 8);
+		what->complex_data.register_const_value_static<uint8_t>("StopBits", 0);
+		what->complex_data.register_const_value_static<uint8_t>("Parity", 0);
+		what->complex_data.register_const_value_static<bool>("Handshake", false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{

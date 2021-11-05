@@ -1200,7 +1200,7 @@ void variable_data::fill_data (const data::runtime_values_data& data)
 	if (it != data.values.end())
 	{
 		rx_value_t my_type = value.get_type();
-		value = rx_value::from_simple(it->second.value, rx_time::now());
+		value = rx_value(it->second.value, rx_time::now());
 		value.convert_to(my_type);
 	}
 	item->fill_data(data);
@@ -1218,7 +1218,7 @@ void variable_data::set_value (rx_simple_value&& val)
 {
 	if (val.convert_to(value.get_type()))
 	{
-		value = rx_value::from_simple(std::move(val), rx_time::now());
+		value = rx_value(std::move(val), rx_time::now());
 	}
 }
 
@@ -1318,7 +1318,7 @@ void variable_data::process_runtime (runtime_process_context* ctx)
 		return;
 	if (prepared_value.is_null())
 	{
-		rx_value temp_val(value.get_storage());
+		rx_value temp_val(value);
 		temp_val.set_quality(prepared_value.get_quality());
 		temp_val.set_time(prepared_value.get_time());
 		prepared_value = std::move(temp_val);
@@ -1350,7 +1350,7 @@ void variable_data::process_runtime (runtime_process_context* ctx)
 
 
 	}
-	if (value != prepared_value)
+	if (!value.compare(prepared_value, time_compare_type::skip))
 	{
 		// value has changed
 		value = prepared_value;
@@ -1644,7 +1644,7 @@ void mapper_data::process_update (values::rx_value&& value)
 			}
 			if (!prepared_value.convert_to(mapper_ptr->value_type_))
 				quality = RX_BAD_QUALITY_TYPE_MISMATCH;
-			rx_value filtered_value = rx_value::from_simple(std::move(prepared_value), value.get_time());
+			rx_value filtered_value = rx_value(std::move(prepared_value), value.get_time());
 			filtered_value.set_quality(quality);
 			mapper_ptr->mapped_value_changed(std::move(filtered_value));
 		}
@@ -1662,7 +1662,7 @@ void mapper_data::process_write (write_data&& data)
 	if (my_variable_)
 	{
 		auto trans_id = data.transaction_id;
-		rx_value prepared_value = rx_value::from_simple(std::move(data.value), rx_time());
+		rx_value prepared_value = rx_value(std::move(data.value), rx_time());
 		if (!prepared_value.convert_to(my_variable_->value.get_type()))
 		{
 			mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, trans_id);
@@ -2389,7 +2389,7 @@ rx_value value_data::get_value (runtime_process_context* ctx) const
 	{
 		static rx_mode_type on_mode;
 
-		rx_value ret(value.get_storage());
+		rx_value ret(value);
 		value.get_value(ret, ctx->get_mode_time(), on_mode);
 		return ret;
 	}
@@ -2403,7 +2403,7 @@ void value_data::set_value (rx_simple_value&& val, const rx_time& time)
 {
 	if (val.convert_to(value.get_type()))
 	{
-		value = rx_timed_value::from_simple(std::move(val), time);
+		value = rx_timed_value(std::move(val), time);
 	}
 }
 
@@ -2419,7 +2419,7 @@ rx_result value_data::write_value (write_data&& data, runtime_process_context* c
 		return "Access Denied!";
 	if (data.value.convert_to(value.get_type()))
 	{
-		value = rx_timed_value::from_simple(std::move(data.value), rx_time::now());
+		value = rx_timed_value(std::move(data.value), rx_time::now());
 		if (value_opt[runtime::structure::value_opt_persistent])
 			ctx->runtime_dirty();
 		return true;
@@ -2439,7 +2439,7 @@ rx_result value_data::simple_set_value (rx_simple_value&& val, runtime_process_c
 {
 	if (val.convert_to(value.get_type()))
 	{
-		value = rx_timed_value::from_simple(std::move(val), rx_time::now());
+		value = rx_timed_value(std::move(val), rx_time::now());
 		if (value_opt[runtime::structure::value_opt_persistent])
 			ctx->runtime_dirty();
 		return true;
@@ -2469,7 +2469,7 @@ void indirect_value_data::set_value (rx_simple_value&& val, const rx_time& time)
 	if (val.convert_to(value.get_type()))
 	{
 		default_value_ = val;
-		value = rx_timed_value::from_simple(std::move(val), time);
+		value = rx_timed_value(std::move(val), time);
 	}
 }
 

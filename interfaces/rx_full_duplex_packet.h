@@ -218,7 +218,7 @@ class listener_instance
 template <typename addrT>
 class full_duplex_addr_packet_port : public rx_platform::runtime::items::port_runtime  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 standard single endpoint transport port implementation");
 
     DECLARE_REFERENCE_PTR(full_duplex_addr_packet_port);

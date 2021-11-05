@@ -37,7 +37,7 @@
 #include "terminal/parser3000.h"
 #include "terminal/rx_terminal_style.h"
 #include "testing/testing.h"
-
+#include "terminal/rx_term_table.h"
 #include "system/server/rx_server.h"
 #include "system/python/py_support.h"
 #include "system/server/rx_cmds.h"
@@ -87,7 +87,7 @@ bool dump_info(std::ostream& out, rx_namespace_item& item)
 	out << "Storage Ref: " << storage_reference << "\r\n\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
 	out << "Value      : ";
-	out << val.get_storage().to_string();
+	out << val.to_string();
 	out << "\r\n";
 	out << "Quality	   : " << quality_string << "\r\n";
 	out << "Time stamp : " << val.get_time().get_string() << "\r\n\r\n";

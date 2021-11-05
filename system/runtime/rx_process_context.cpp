@@ -512,18 +512,6 @@ rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t
 // Class rx_platform::runtime::relation_subscriber 
 
 
-// Class rx_platform::runtime::context_value_point 
-
-
-void context_value_point::value_changed (const rx_value& val)
-{
-}
-
-void context_value_point::result_received (rx_result&& result, runtime_transaction_id_t id)
-{
-}
-
-
 } // namespace runtime
 } // namespace rx_platform
 

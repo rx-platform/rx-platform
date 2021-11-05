@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  lib\rx_io.cpp
+*  interfaces\rx_io.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -32,13 +32,16 @@
 
 
 // rx_io
-#include "lib/rx_io.h"
+#include "interfaces/rx_io.h"
 
 
 
-namespace rx {
+namespace rx_internal {
 
-namespace io {
+namespace interfaces {
+
+namespace io_endpoints {
+
 int dispatcher_accept_callback(void* data, uint32_t status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr)
 {
 	dispatcher_subscriber* whose = (dispatcher_subscriber*)data;
@@ -84,9 +87,7 @@ int dispatcher_connect_callback(void* data, uint32_t status, struct sockaddr* ad
 }
 
 
-
-
-// Class rx::io::dispatcher_subscriber 
+// Class rx_internal::interfaces::io_endpoints::dispatcher_subscriber 
 
 time_aware_subscribers_type dispatcher_subscriber::time_aware_subscribers_;
 
@@ -239,6 +240,8 @@ void dispatcher_subscriber::deinitialize ()
 }
 
 
-} // namespace io
-} // namespace rx
+} // namespace io_endpoints
+} // namespace interfaces
+} // namespace rx_internal
+
 

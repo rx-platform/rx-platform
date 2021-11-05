@@ -66,7 +66,7 @@ rx_result register_variable::initialize_variable (runtime::runtime_init_context&
 rx_result register_variable::start_variable (runtime::runtime_start_context& ctx)
 {
 	rx_value value = ctx.variables.get_current_variable()->get_value(ctx.context);
-	value_.from_simple(value.to_simple(), value.get_time());
+	value_ = rx_timed_value(value.to_simple(), value.get_time());
 	process_variable(ctx.context);
 	return true;
 }
@@ -78,7 +78,7 @@ rx_value register_variable::get_variable_input (runtime_process_context* ctx, ru
 
 rx_result register_variable::variable_write (write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources)
 {
-	value_ = rx_timed_value::from_simple(std::move(data.value), rx_time::now());
+	value_ = rx_timed_value(std::move(data.value), rx_time::now());
 	if (persist_)
 		ctx->runtime_dirty();
 	process_variable(ctx);

@@ -67,7 +67,7 @@ rx_result delete_type_request::serialize (base_meta_writer& stream) const
 {
 	if (stream.is_string_based())
 	{
-		if (!stream.write_string("type", rx_item_type_name(item_type)))
+		if (!stream.write_string("type", rx_item_type_name(item_type).c_str()))
 			return stream.get_error();
 	}
 	else
@@ -596,7 +596,7 @@ rx_result update_type_request::serialize (base_meta_writer& stream) const
 	if (!stream.start_object("update"))
 		return stream.get_error();
 
-	if (!stream.write_uuid("checkout", update_data.checkout.uuid()))
+	if (!stream.write_uuid("checkout", update_data.checkout))
 		return stream.get_error();
 
 	if (!stream.write_bool("version", update_data.increment_version))
@@ -1033,7 +1033,7 @@ rx_result delete_runtime_request::serialize (base_meta_writer& stream) const
 {
 	if (stream.is_string_based())
 	{
-		if (!stream.write_string("type", rx_item_type_name(item_type)))
+		if (!stream.write_string("type", rx_item_type_name(item_type).c_str()))
 			return stream.get_error();
 	}
 	else
@@ -1400,7 +1400,7 @@ rx_result update_runtime_request::serialize (base_meta_writer& stream) const
 	if (!stream.start_object("update"))
 		return stream.get_error();
 
-	if (!stream.write_uuid("checkout", update_data.checkout.uuid()))
+	if (!stream.write_uuid("checkout", update_data.checkout))
 		return stream.get_error();
 
 	if (!stream.write_bool("version", update_data.increment_version))

@@ -34,6 +34,8 @@
 // rx_win32_common
 #include "win32_hosts/rx_win32_common.h"
 
+#include "system/server/rx_file_helpers.h"
+
 namespace win32
 {
 

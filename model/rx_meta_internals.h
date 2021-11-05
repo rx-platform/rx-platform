@@ -365,8 +365,8 @@ public:
 		runtime_state state;
         checkout_data checkout;
 	};
-	typedef typename std::unordered_map<rx_node_id, runtime_data_t> registered_objects_type;
-	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
+	typedef typename std::map<rx_node_id, runtime_data_t> registered_objects_type;
+	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> > constructors_type;
     typedef typename std::map<rx_node_id, std::function<RBeh()> > behaviors_type;
 
@@ -455,7 +455,7 @@ public:
 	typedef typename typeT::smart_ptr Tptr;
 	typedef rx_result_with<Tptr> TdefRes;
 
-	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
+	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
@@ -623,8 +623,8 @@ public:
 		runtime_state state;
 	};
 
-	typedef typename std::unordered_map<rx_node_id, runtime_data_t> registered_objects_type;
-	typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
+	typedef typename std::map<rx_node_id, runtime_data_t> registered_objects_type;
+	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
     typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
@@ -692,7 +692,7 @@ public:
     typedef typename data_type::smart_ptr Tptr;
     typedef rx_result_with<Tptr> TdefRes;
 
-    typedef typename std::unordered_map<rx_node_id, Tptr> registered_types_type;
+    typedef typename std::map<rx_node_id, Tptr> registered_types_type;
 
   public:
       data_type_repository();

@@ -59,7 +59,10 @@ platform_source::platform_source()
 rx_result platform_source::initialize_source (runtime::runtime_init_context& ctx)
 {
     point_.set_context(ctx.context);
-    auto result = path_.bind(".Path", ctx);
+    auto result = path_.bind(".Path", ctx, [this](const string_type& val)
+        {
+            connect(val);
+        });
     
     return true;
 }

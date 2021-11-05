@@ -3,7 +3,7 @@
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 1
 #define RX_HAL_MINOR_VERSION 0
-#define RX_HAL_BUILD_NUMBER 3
+#define RX_HAL_BUILD_NUMBER 4
 
 /*********************************************************************************
 

@@ -210,8 +210,16 @@ rx_result binded_tags::pool_value (runtime_handle_t handle, std::function<void(c
 	return RX_NOT_IMPLEMENTED;
 }
 
-void binded_tags::connected_tags_change (structure::value_data* whose, const rx_value& val)
+void binded_tags::value_change (structure::value_data* whose, const rx_value& val)
 {
+	auto it = values_.find(whose);
+	if (it != values_.end())
+	{
+		for (auto& one : it->second.second)
+		{
+			one(val);
+		}
+	}
 }
 
 rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what, runtime_start_context& ctx)
@@ -328,7 +336,8 @@ rx_result binded_tags::get_item (const string_type& path, rx_simple_value& what,
 // Class rx_platform::runtime::tag_blocks::connected_tags 
 
 connected_tags::connected_tags()
-      : parent_relations_(nullptr)
+      : binded_(nullptr),
+        parent_relations_(nullptr)
 {
 }
 
@@ -339,10 +348,11 @@ connected_tags::~connected_tags()
 
 
 
-void connected_tags::init_tags (runtime_process_context* ctx, relations::relations_holder* relations)
+void connected_tags::init_tags (runtime_process_context* ctx, relations::relations_holder* relations, binded_tags* binded)
 {
 	context_ = ctx;
 	parent_relations_ = relations;
+	binded_ = binded;
 }
 
 void connected_tags::runtime_stopped (const rx_time& now)
@@ -724,6 +734,8 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 					write_results_[monitor].emplace_back(write_result_data{trans_id, item, std::move(result)});
 					for(const auto& one : it->second.monitors)
 						next_send_[one].insert_or_assign(item, val);
+					if (binded_)
+						binded_->value_change(it->second.reference.ref_value_ptr.value, val);
 					context_->tag_updates_pending();
 				}
 				return result;

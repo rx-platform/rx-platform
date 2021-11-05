@@ -39,7 +39,7 @@
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
-#include "lib/rx_stream_io.h"
+#include "interfaces/rx_stream_io.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -76,7 +76,7 @@ class tcp_client_endpoint
         connected = 3,
         stopped = 4
     };
-    struct socket_holder_t : public rx::io::tcp_client_socket_std_buffer
+    struct socket_holder_t : public tcp_client_socket_std_buffer
     {
         DECLARE_REFERENCE_PTR(tcp_client_endpoint::socket_holder_t);
         friend class tcp_client_endpoint;

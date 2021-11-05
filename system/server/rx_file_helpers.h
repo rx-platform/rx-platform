@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  lib\rx_datagram_io.cpp
+*  system\server\rx_file_helpers.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,19 +28,40 @@
 ****************************************************************************/
 
 
-#include "pch.h"
-
-#include "rx_mem.h"
-
-// rx_datagram_io
-#include "lib/rx_datagram_io.h"
+#ifndef rx_file_helpers_h
+#define rx_file_helpers_h 1
 
 
 
-namespace rx {
 
-namespace io {
+namespace rx
+{
 
-} // namespace io
+rx_result rx_list_files(const std::string& dir, const std::string& pattern, std::vector<std::string>& files, std::vector<std::string>& directories);
+std::string rx_combine_paths(const std::string& path1, const std::string& path2);
+std::string rx_get_extension(const std::string& path);
+std::string rx_remove_extension(const std::string& path);
+
+rx_result create_directory(const std::string& dir, bool fail_on_exsists);
+rx_result rx_delete_all_files(const std::string& dir, const std::string& pattern);
+
+class rx_source_file
+{
+	sys_handle_t m_handle;
+public:
+	rx_source_file();
+	rx_result open(const char* file_name);
+	rx_result open_write(const char* file_name);
+	rx_result read_string(std::string& buff);
+	rx_result write_string(const std::string& buff);
+	~rx_source_file();
+
+};
+
+
 } // namespace rx
 
+
+
+
+#endif

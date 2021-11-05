@@ -57,7 +57,7 @@ rx_result serialize_message(base_meta_writer& stream, int requestId, messages::r
 		return stream.get_error();
 	if (!stream.write_int("requestId", requestId))
 		return stream.get_error();
-	if (!stream.write_string("msgType", what.get_type_name()))
+	if (!stream.write_string("msgType", what.get_type_name().c_str()))
 		return stream.get_error();
 	if (!stream.end_object())
 		return stream.get_error();

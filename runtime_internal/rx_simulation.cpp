@@ -66,7 +66,7 @@ local_register_source::local_register_source()
 
 rx_result local_register_source::source_write (write_data&& data, runtime_process_context* ctx)
 {
-    rx_value value = rx_value::from_simple(std::move(data.value), rx_time::now());
+    rx_value value(std::move(data.value), rx_time::now());
     value.set_quality(RX_GOOD_QUALITY);
     source_value_changed(std::move(value));
     source_result_received(true, data.transaction_id);

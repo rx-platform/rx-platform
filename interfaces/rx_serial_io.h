@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  lib\rx_datagram_io.h
+*  interfaces\rx_serial_io.h
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,42 +28,61 @@
 ****************************************************************************/
 
 
-#ifndef rx_datagram_io_h
-#define rx_datagram_io_h 1
+#ifndef rx_serial_io_h
+#define rx_serial_io_h 1
 
 
 
 // rx_io
-#include "lib/rx_io.h"
+#include "interfaces/rx_io.h"
 
 
 
-namespace rx {
+namespace rx_internal {
 
-namespace io {
+namespace interfaces {
+
+namespace serial {
+
+struct serial_port_data_t
+{
+    serial_port_data_t()
+        : baud_rate(19200)
+        , stop_bits(0)
+        , parity(0)
+        , data_bits(8)
+        , handshake(false)
+    {
+    }
+    string_type port;
+    uint32_t baud_rate;
+    int stop_bits;
+    int parity;
+    uint8_t data_bits;
+    bool handshake;
+};
 
 
 
 
 
 template <class buffT>
-class udp_socket : public dispatcher_subscriber  
+class serial_comm : public io_endpoints::dispatcher_subscriber  
 {
-    DECLARE_REFERENCE_PTR(udp_socket);
+    DECLARE_REFERENCE_PTR(serial_comm);
 public:
 
     typedef typename buffT::smart_ptr buffer_ptr;
     typedef buffT buffer_t;
 
 protected:
-    typedef std::function<bool(const void*, size_t, rx_thread_handle_t)> readed_function_t;
-    typedef std::queue<std::pair<sockaddr_storage, buffer_ptr> > queue_type;
+    typedef std::queue<buffer_ptr> queue_type;
 
   public:
-      ~udp_socket();
+      ~serial_comm();
 
 
-      rx_result bind_socket_udpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
+      rx_result open_serial (const serial_port_data_t& data, threads::dispatcher_pool& dispatcher);
 
       void close ();
 
@@ -73,7 +92,7 @@ protected:
 
       void initiate_shutdown ();
 
-      bool write (buffer_ptr what, const struct sockaddr* addr, size_t addrsize);
+      bool write (buffer_ptr what);
 
       bool start_loops ();
 
@@ -86,14 +105,14 @@ protected:
 
 
   protected:
-      udp_socket();
+      serial_comm();
 
 
       bool read_loop ();
 
       virtual void release_buffer (buffer_ptr what) = 0;
 
-      virtual bool readed (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity) = 0;
+      virtual bool readed (const void* data, size_t count, rx_security_handle_t identity) = 0;
 
 
       bool sending_;
@@ -109,7 +128,7 @@ protected:
 
   private:
 
-      int internal_read_from_callback (size_t count, uint32_t status, struct sockaddr* addr, size_t addrsize);
+      int internal_read_callback (size_t count, uint32_t status);
 
       int internal_write_callback (uint32_t status);
 
@@ -120,8 +139,6 @@ protected:
 
 
       uint8_t* buffer_;
-
-      string_type peer_name_;
 
       uint32_t send_timeout_;
 
@@ -143,13 +160,13 @@ protected:
 
 
 
-typedef udp_socket< memory::std_strbuff<memory::std_vector_allocator>  > udp_socket_std_buffer;
+typedef serial_comm< memory::std_strbuff<memory::std_vector_allocator>  > serial_comm_std_buffer;
 
 
-// Parameterized Class rx::io::udp_socket 
+// Parameterized Class rx_internal::interfaces::serial::serial_comm 
 
 template <class buffT>
-udp_socket<buffT>::udp_socket()
+serial_comm<buffT>::serial_comm()
       : send_timeout_(2000),
         receive_timeout_(10000),
         sending_(false),
@@ -158,43 +175,52 @@ udp_socket<buffT>::udp_socket()
         receive_tick_(0),
         shutdown_called_(false)
 {
-    buffer_ = (uint8_t*)rx_allocate_os_memory(UDP_BUFFER_SIZE);
+    buffer_ = (uint8_t*)rx_allocate_os_memory(SERIAL_BUFFER_SIZE);
+
+    this->dispatcher_data_.handle = 0;
     this->dispatcher_data_.read_buffer = buffer_;
-    this->dispatcher_data_.read_buffer_size = UDP_BUFFER_SIZE;
+    this->dispatcher_data_.read_buffer_size = SERIAL_BUFFER_SIZE;
     this->dispatcher_data_.data = this;
-    register_timed();
+
+    this->register_timed();
 }
 
 
 template <class buffT>
-udp_socket<buffT>::~udp_socket()
+serial_comm<buffT>::~serial_comm()
 {
+    rx_deallocate_os_memory(buffer_, SERIAL_BUFFER_SIZE);
 }
 
 
 
 template <class buffT>
-rx_result udp_socket<buffT>::bind_socket_udpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
+rx_result serial_comm<buffT>::open_serial (const serial_port_data_t& data, threads::dispatcher_pool& dispatcher)
 {
-    this->dispatcher_data_.handle = rx_create_and_bind_ip4_udp_socket(addr);
-    if (this->dispatcher_data_.handle)
+    auto handle = ::rx_open_serial_port(data.port.c_str(), data.baud_rate, data.stop_bits, data.parity, data.data_bits, data.handshake ? 1 : 0);
+    if (handle)
     {
+        this->dispatcher_data_.handle = handle;
+        this->dispatcher_data_.data = this;
         this->connect_dispatcher(dispatcher);
         this->start_loops();
         return true;
     }
-    return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
+    else
+    {
+        return rx_result::create_from_last_os_error("Error opening serial port.");
+    }
 }
 
 template <class buffT>
-void udp_socket<buffT>::close ()
+void serial_comm<buffT>::close ()
 {
     this->disconnect_dispatcher();
-    ::rx_close_socket(this->dispatcher_data_.handle);
+    ::rx_close_serial_port(this->dispatcher_data_.handle);
 }
 
 template <class buffT>
-int udp_socket<buffT>::internal_read_from_callback (size_t count, uint32_t status, struct sockaddr* addr, size_t addrsize)
+int serial_comm<buffT>::internal_read_callback (size_t count, uint32_t status)
 {
     bool receiving;
     bool ret = false;
@@ -209,7 +235,7 @@ int udp_socket<buffT>::internal_read_from_callback (size_t count, uint32_t statu
     {
         if (count != 0)
         {
-            if (readed(dispatcher_data_.read_buffer, count, addr, get_identity()))
+            if (readed(dispatcher_data_.read_buffer, count, get_identity()))
             {
                 ret = read_loop();
                 if (!ret)
@@ -227,7 +253,7 @@ int udp_socket<buffT>::internal_read_from_callback (size_t count, uint32_t statu
 }
 
 template <class buffT>
-int udp_socket<buffT>::internal_write_callback (uint32_t status)
+int serial_comm<buffT>::internal_write_callback (uint32_t status)
 {
     buffer_ptr current;
     bool ret = true;
@@ -248,7 +274,7 @@ int udp_socket<buffT>::internal_write_callback (uint32_t status)
 }
 
 template <class buffT>
-int udp_socket<buffT>::internal_shutdown_callback (uint32_t status)
+int serial_comm<buffT>::internal_shutdown_callback (uint32_t status)
 {
     if (shutdown_called_)
         return 0;
@@ -263,7 +289,7 @@ int udp_socket<buffT>::internal_shutdown_callback (uint32_t status)
     receiving_ = false;
     sending_ = false;
     disconnect_dispatcher();
-    rx_close_socket(dispatcher_data_.handle);
+    rx_close_serial_port(dispatcher_data_.handle);
     shutdown_called_ = true;
     write_lock_.unlock();
     read_lock_.unlock();
@@ -273,12 +299,12 @@ int udp_socket<buffT>::internal_shutdown_callback (uint32_t status)
 }
 
 template <class buffT>
-bool udp_socket<buffT>::write_loop ()
+bool serial_comm<buffT>::write_loop ()
 {
     uint32_t result = RX_OK;
     bool ret = true;
     bool shutdown = false;
-    std::pair<sockaddr_storage, buffer_ptr> packet_data;
+    buffer_ptr packet_data;
 
     write_lock_.lock();
 
@@ -289,7 +315,7 @@ bool udp_socket<buffT>::write_loop ()
         if (!current_buffer_ && !sending_queue_.empty())
         {
             packet_data = sending_queue_.front();
-            current_buffer_ = packet_data.second;
+            current_buffer_ = packet_data;
             sending_queue_.pop();
             if (!current_buffer_)
             {// close sign
@@ -309,7 +335,7 @@ bool udp_socket<buffT>::write_loop ()
             send_tick_ = rx_get_tick_count();
             sending_ = true;
             bind();
-            result = rx_socket_write_to(&dispatcher_data_, data, size, (sockaddr*)&packet_data.first, SOCKET_ADDR_SIZE);
+            result = rx_io_write(&dispatcher_data_, data, size);
             if (result != RX_ASYNC)
             {
                 release();
@@ -355,7 +381,7 @@ bool udp_socket<buffT>::write_loop ()
 }
 
 template <class buffT>
-bool udp_socket<buffT>::read_loop ()
+bool serial_comm<buffT>::read_loop ()
 {
     uint32_t result = RX_OK;
     bool ret = true;
@@ -368,8 +394,7 @@ bool udp_socket<buffT>::read_loop ()
         receiving_ = true;
         receive_tick_ = rx_get_tick_count();
         bind();
-        sockaddr_storage addr;
-        result = rx_socket_read_from(&dispatcher_data_, &bytes, &addr);
+        result = rx_io_read(&dispatcher_data_, &bytes);
         if (result != RX_ASYNC)
         {
             release();
@@ -381,7 +406,7 @@ bool udp_socket<buffT>::read_loop ()
                     ret = false;
                     break;
                 }
-                if (!readed(dispatcher_data_.read_buffer, bytes,(sockaddr*)&addr, get_identity()))
+                if (!readed(dispatcher_data_.read_buffer, bytes, get_identity()))
                 {
                     ret = false;
                     break;
@@ -402,33 +427,30 @@ bool udp_socket<buffT>::read_loop ()
 }
 
 template <class buffT>
-bool udp_socket<buffT>::on_startup (rx_thread_handle_t destination)
+bool serial_comm<buffT>::on_startup (rx_thread_handle_t destination)
 {
     return true;
 }
 
 template <class buffT>
-void udp_socket<buffT>::on_shutdown (rx_security_handle_t identity)
+void serial_comm<buffT>::on_shutdown (rx_security_handle_t identity)
 {
 }
 
 template <class buffT>
-void udp_socket<buffT>::initiate_shutdown ()
+void serial_comm<buffT>::initiate_shutdown ()
 {
     internal_shutdown_callback(255);
 }
 
 template <class buffT>
-bool udp_socket<buffT>::write (buffer_ptr what, const struct sockaddr* addr, size_t addrsize)
+bool serial_comm<buffT>::write (buffer_ptr what)
 {
     if (what && what->empty())
         return true;
-    if (addr == nullptr || addrsize > sizeof(sockaddr_storage))
-        return false;
 
-    std::pair<sockaddr_storage, buffer_ptr> entry;
-    memcpy(&entry.first, addr, addrsize);
-    entry.second = what;
+    buffer_ptr entry;
+    entry = what;
     write_lock_.lock();
     sending_queue_.push(entry);
     write_lock_.unlock();
@@ -437,15 +459,18 @@ bool udp_socket<buffT>::write (buffer_ptr what, const struct sockaddr* addr, siz
 }
 
 template <class buffT>
-bool udp_socket<buffT>::start_loops ()
+bool serial_comm<buffT>::start_loops ()
 {
     return read_loop();
 }
 
 
-} // namespace io
-} // namespace rx
+} // namespace serial
+} // namespace interfaces
+} // namespace rx_internal
 
 
 
 #endif
+
+

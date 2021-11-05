@@ -208,10 +208,6 @@ class memory_buffer_base : public pointers::reference_object
           if (!val.empty())
 		    push_data(val.c_str(), val.size());
 	  }
-	  void push_data(const rx_uuid& val)
-	  {
-		  push_data(&val.uuid(),sizeof(rx_uuid_t));
-	  }
       void push_data(const rx_uuid_t& val)
       {
           push_data(&val, sizeof(rx_uuid_t));

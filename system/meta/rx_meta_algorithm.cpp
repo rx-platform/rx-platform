@@ -116,7 +116,7 @@ rx_result data_types_algorithm::serialize_type (const data_type& whose, base_met
 
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.complex_data.description_))
+		if (!stream.write_string("description", whose.complex_data.description_.c_str()))
 			return stream.get_error();
 	}
 
@@ -707,7 +707,7 @@ rx_result relation_type_algorithm::serialize_type (const relation_type& whose, b
 		return stream.get_error();
 	if (!stream.write_bool("symmetrical", whose.relation_data.symmetrical))
 		return stream.get_error();
-	if (!stream.write_string("inverse", whose.relation_data.inverse_name))
+	if (!stream.write_string("inverse", whose.relation_data.inverse_name.c_str()))
 		return stream.get_error();
 	if (!stream.write_bool("dynamic", whose.relation_data.dynamic))
 		return stream.get_error();
@@ -720,7 +720,7 @@ rx_result relation_type_algorithm::serialize_type (const relation_type& whose, b
 
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.relation_data.description))
+		if (!stream.write_string("description", whose.relation_data.description.c_str()))
 			return stream.get_error();
 	}
 
@@ -1022,7 +1022,7 @@ rx_result object_data_algorithm<typeT>::construct_object_data (const object_type
 
 rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_types::relation_attribute& whose, base_meta_writer& stream)
 {
-	if (!stream.write_string("name", whose.name))
+	if (!stream.write_string("name", whose.name.c_str()))
 		return stream.get_error();
 	if (!stream.write_item_reference("relation", whose.relation_type))
 		return stream.get_error();
@@ -1030,7 +1030,7 @@ rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.description))
+		if (!stream.write_string("description", whose.description.c_str()))
 			return stream.get_error();
 	}
 	return true;

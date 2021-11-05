@@ -43,7 +43,10 @@
 namespace rx_platform {
 namespace runtime {
 class runtime_process_context;
+namespace tag_blocks {
+class binded_tags;
 
+} // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -120,7 +123,7 @@ class connected_tags
       ~connected_tags();
 
 
-      void init_tags (runtime_process_context* ctx, relations::relations_holder* relations);
+      void init_tags (runtime_process_context* ctx, relations::relations_holder* relations, binded_tags* binded);
 
       void runtime_stopped (const rx_time& now);
 
@@ -169,6 +172,8 @@ class connected_tags
 
       relation_values_type relation_values_;
 
+      binded_tags *binded_;
+
 
       handles_map_type handles_map_;
 
@@ -215,7 +220,7 @@ class binded_tags
 
       rx_result pool_value (runtime_handle_t handle, std::function<void(const rx_value&)> callback) const;
 
-      void connected_tags_change (structure::value_data* whose, const rx_value& val);
+      void value_change (structure::value_data* whose, const rx_value& val);
 
       rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_start_context& ctx);
 

@@ -87,11 +87,6 @@ extern "C" {
 	int rx_remove_ip_address(ip_addr_ctx_t ctx);
 	int rx_is_valid_ip_address(uint32_t addr, uint32_t mask);
 
-
-	void rx_generate_new_uuid(rx_uuid_t* u);
-	uint32_t rx_uuid_to_string(const rx_uuid_t* u, char* str);
-	uint32_t rx_string_to_uuid(const char* str, rx_uuid_t* u);
-
 	extern int rx_big_endian;
 	extern rx_thread_data_t rx_tls;
 	extern rx_pid_t rx_pid;
@@ -236,8 +231,8 @@ extern "C" {
 	uint32_t rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data);
 	int rx_dispatcher_unregister(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data);
 
-	uint32_t rx_socket_read(struct rx_io_register_data_t* what, size_t* readed);
-	uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count);
+	uint32_t rx_io_read(struct rx_io_register_data_t* what, size_t* readed);
+	uint32_t rx_io_write(struct rx_io_register_data_t* what, const void* data, size_t count);
 
 	uint32_t rx_socket_read_from(struct rx_io_register_data_t* what, size_t* readed, struct sockaddr_storage* addr);
 	uint32_t rx_socket_write_to(struct rx_io_register_data_t* what, const void* data, size_t count, const struct sockaddr* addr, size_t addrsize);
@@ -250,6 +245,21 @@ extern "C" {
 	sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr);
 	uint32_t rx_socket_listen(sys_handle_t handle);
 	void rx_close_socket(sys_handle_t handle);
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	// COM port abstractions
+#define RX_ONESTOPBIT 0
+#define RX_ONE5STOPBITS 1
+#define RX_TWOSTOPBITS 2
+
+#define RX_NOPARITY 0
+#define RX_ODDPARITY 1
+#define RX_EVENPARITY 2
+#define RX_MARKPARITY 3
+#define RX_SPACEPARITY 4
+
+	sys_handle_t rx_open_serial_port(const char* port, uint32_t baud_rate, int stop_bits, int parity, uint8_t data_bits, int handshake);
+	void rx_close_serial_port(sys_handle_t handle);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// slim lock abstraction

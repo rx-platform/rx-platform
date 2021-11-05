@@ -237,9 +237,9 @@ built_in_security_context::~built_in_security_context()
 
 rx_result built_in_security_context::serialize (base_meta_writer& stream) const
 {
-    if (!stream.write_string("name", user_name_))
+    if (!stream.write_string("name", user_name_.c_str()))
         return stream.get_error();
-    if (!stream.write_string("description", description_))
+    if (!stream.write_string("description", description_.c_str()))
         return stream.get_error();
     return true;
 }

@@ -39,7 +39,7 @@
 #include "sys_internal/rx_inf.h"
 
 #include "system/server/rx_server.h"
-#include "lib/rx_io.h"
+#include "interfaces/rx_io.h"
 #include "api/rx_meta_api.h"
 #include "model/rx_meta_internals.h"
 #include "runtime_internal/rx_runtime_internal.h"
@@ -445,7 +445,7 @@ dispatcher_subscribers_job::~dispatcher_subscribers_job()
 
 void dispatcher_subscribers_job::process ()
 {
-	io::dispatcher_subscriber::propagate_timer();
+	interfaces::io_endpoints::dispatcher_subscriber::propagate_timer();
 }
 
 

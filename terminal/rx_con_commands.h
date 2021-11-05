@@ -37,6 +37,7 @@
 #include "terminal/rx_commands.h"
 
 #include <lib/rx_mem.h>
+#include "terminal/rx_term_table.h"
 using namespace rx;
 using namespace rx_platform;
 using namespace rx_platform::ns;

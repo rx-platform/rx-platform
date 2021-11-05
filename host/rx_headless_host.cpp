@@ -38,7 +38,7 @@
 #include "system/hosting/rx_yaml.h"
 #include "terminal/rx_terminal_style.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
-#include "lib/rx_io.h"
+#include "interfaces/rx_io.h"
 
 
 namespace host {
@@ -295,7 +295,7 @@ int headless_platform_host::deinitialize_platform ()
 
 	deinitialize_storages();
 
-	rx::io::dispatcher_subscriber::deinitialize();
+	rx_internal::interfaces::io_endpoints::dispatcher_subscriber::deinitialize();
 	rx::threads::thread::deinitialize();
 
 	rx_deinitialize_os();
@@ -412,11 +412,6 @@ int headless_platform_host::stop_platform ()
 	return 1;
 }
 
-string_type headless_platform_host::get_host_name ()
-{
-	return RX_SIMPLE_HOST;
-}
-
 rx_result headless_platform_host::register_constructors ()
 {
 	return true;
@@ -446,3 +441,11 @@ void rx_thread_synchronizer::deinit_callback ()
 } // namespace headless
 } // namespace host
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return RX_SIMPLE_HOST;
+
+#endif

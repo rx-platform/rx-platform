@@ -90,41 +90,6 @@ rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_siz
 	return err;
 }
 
-uuid_t g_null_uuid = { 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 } };
-
-void rx_generate_new_uuid(uuid_t* u)
-{
-	UuidCreate(u);
-}
-uint32_t rx_uuid_to_string(const uuid_t* u, char* str)
-{
-	RPC_CSTR lbuff = NULL;
-	if (RPC_S_OK == UuidToStringA(u, &lbuff))
-	{
-		//{9466850F-0DBF-4C81-89CD-AC633F5182B4}
-		strcpy_s(str,0x40,lbuff);
-		RpcStringFreeA(&lbuff);
-		return RX_OK;
-	}
-	else
-		return RX_ERROR;
-}
-uint32_t rx_string_to_uuid(const char* str, uuid_t* u)
-{
-	char buff[0x40];
-	sprintf_s(buff, sizeof(buff), "%s", str);
-	uuid_t ret = g_null_uuid;
-	if (RPC_S_OK == UuidFromStringA((RPC_CSTR)buff, &ret))
-	{
-		*u = ret;
-		return RX_OK;
-	}
-	else
-	{
-		*u = g_null_uuid;
-		return RX_OK;
-	}
-}
 
 typedef DWORD(__stdcall * 
 	NtSetInformationProcess_t)(
@@ -1616,7 +1581,7 @@ int rx_dispatcher_unregister(rx_kernel_dispather_t disp, struct rx_io_register_d
 	return 0;// nothing here on windows closing handle is enougth
 }
 
-uint32_t rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
+uint32_t rx_io_read(struct rx_io_register_data_t* what, size_t* readed)
 {
 	struct windows_overlapped_t* internal_data;
 	internal_data = (struct windows_overlapped_t*)what->internal;
@@ -1634,7 +1599,7 @@ uint32_t rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
 	}
 	return RX_ASYNC;
 }
-uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
+uint32_t rx_io_write(struct rx_io_register_data_t* what, const void* data, size_t count)
 {
 	struct windows_overlapped_t* internal_data;
 	internal_data = (struct windows_overlapped_t*)what->internal;
@@ -1896,6 +1861,72 @@ void rx_close_socket(sys_handle_t handle)
 	closesocket((SOCKET)handle);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// COM port abstractions
+
+void fill_dbc(DCB* dcb, uint32_t baud_rate, int stop_bits, int parity, uint8_t data_bits, int handshake)
+{
+	/*
+	dcb->ByteSize=7;
+	dcb->BaudRate=4800;
+	dcb->StopBits=ONESTOPBIT;
+	dcb->Parity=EVENPARITY;
+	dcb->fRtsControl=RTS_CONTROL_ENABLE;
+	dcb->fDtrControl=DTR_CONTROL_ENABLE;
+	dcb->fOutxCtsFlow=FALSE;
+	dcb->fOutxDsrFlow=FALSE;
+	dcb->fOutX=FALSE;
+	dcb->fInX=FALSE;
+	dcb->fDsrSensitivity=FALSE;
+	dcb->fAbortOnError=FALSE;
+	*/
+	dcb->ByteSize = data_bits;
+	dcb->BaudRate = baud_rate;
+	dcb->StopBits = stop_bits;
+	dcb->Parity = parity;
+	dcb->fRtsControl = handshake ? RTS_CONTROL_ENABLE : RTS_CONTROL_DISABLE;
+	dcb->fDtrControl = handshake ? DTR_CONTROL_ENABLE : RTS_CONTROL_DISABLE;;
+	dcb->fOutxCtsFlow = FALSE;//(m_rts==RTS_CONTROL_DISABLE ? FALSE : TRUE);
+	dcb->fOutxDsrFlow = FALSE;//(m_rts==RTS_CONTROL_DISABLE ? FALSE : TRUE);
+	dcb->fOutX = FALSE;
+	dcb->fInX = FALSE;
+	dcb->fDsrSensitivity = FALSE;
+	dcb->fAbortOnError = FALSE;
+}
+
+sys_handle_t rx_open_serial_port(const char* port, uint32_t baud_rate, int stop_bits, int parity, uint8_t data_bits, int handshake)
+{
+	char name[64];
+	sprintf_s(name, 64, "\\\\.\\%s", port);
+	sys_handle_t ret = CreateFileA(name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	if (ret != INVALID_HANDLE_VALUE)
+	{
+		BOOL success = FALSE;
+		DCB dcb;
+		ZeroMemory(&dcb, sizeof(dcb));
+		dcb.DCBlength = sizeof(dcb);
+		if (GetCommState(ret, &dcb))
+		{
+			fill_dbc(&dcb, baud_rate, stop_bits, parity, data_bits, handshake);
+			dcb.fAbortOnError = 0;
+			success = SetCommState(ret, &dcb);
+		}
+		if (!success)
+		{
+			CloseHandle(ret);
+			ret = NULL;
+		}
+	}
+	else
+	{
+		ret = NULL;
+	}
+	return ret;
+}
+void rx_close_serial_port(sys_handle_t handle)
+{
+	CloseHandle(handle);
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // TLS code

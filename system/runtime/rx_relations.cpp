@@ -165,7 +165,7 @@ void relation_data::fill_data (const data::runtime_values_data& data, runtime_pr
 	auto it = data.values.find(name);
 	if (it != data.values.end())
 	{
-		target_path = it->second.value.get_storage().get_string_value();
+		target_path = it->second.value.get_string();
 	}
 	rx_simple_value val;
 	val.assign_static(target_path.c_str());
@@ -376,7 +376,7 @@ rx_result relation_data::write_value (write_data&& data, runtime_process_context
 	if (result)
 	{
 		auto val = value.simple_get_value();
-		target_path = val.get_storage().get_string_value();
+		target_path = val.get_string();
 
 		if (!target_path.empty())
 		{

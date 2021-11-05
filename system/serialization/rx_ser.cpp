@@ -367,7 +367,7 @@ bool json_reader::read_uuid (const char* name, rx_uuid_t& val)
 
 	if (data_->safe_read_string(index, name, str, object))
 	{
-		val = rx_uuid::create_from_string(str.c_str()).uuid();
+		val = rx_uuid::create_from_string(str.c_str());
 		return true;
 	}
 	return false;
@@ -485,7 +485,7 @@ bool json_reader::start_array (const char* name)
 			return true;// empty array
 		}
 	}
-
+	errors_.emplace_back("Error reading array "s + name);
 	return false;
 }
 
@@ -682,6 +682,7 @@ bool json_reader::start_object (const char* name)
 			return true;
 		}
 	}
+	errors_.emplace_back("Error reading object "s + name);
 	return false;
 }
 
@@ -732,10 +733,7 @@ bool json_reader::read_byte (const char* name, uint8_t& val)
 
 bool json_reader::read_value (const char* name, rx_value& val)
 {
-	if (!val.deserialize(name, *this))
-		return false;
-
-	return true;
+	return val.deserialize(name, *this);
 }
 
 bool json_reader::read_int64 (const char* name, int64_t& val)
@@ -952,15 +950,6 @@ bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
 
 }
 
-bool json_reader::read_value (const char* name, rx_simple_value& val)
-{
-
-	if (!val.deserialize(name, *this))
-		return false;
-
-	return true;
-}
-
 bool json_reader::read_value_type (const char* name, rx_value_t& val)
 {
 	if (get_version() >= RX_VALUE_TYPE_VERSION)
@@ -970,7 +959,7 @@ bool json_reader::read_value_type (const char* name, rx_value_t& val)
 		if (!ret)
 			return ret;
 		rx_value_t type;
-		auto parse_result = rx_parse_value_type_name(str_type, type);
+		auto parse_result = rx_parse_value_type_name(str_type.c_str(), &type);
 		if (parse_result)
 		{
 			val = type;
@@ -1062,25 +1051,28 @@ json_writer_type<writerT>::~json_writer_type()
 
 
 template <class writerT>
-bool json_writer_type<writerT>::write_id (const char* name, const rx_node_id& id)
+bool json_writer_type<writerT>::write_id (const char* name, const rx_node_id_struct& id)
 {
-	string_type buff;
-	id.to_string(buff);
+	rx_string_wrapper buff;
+	rx_node_id_to_string(&id, &buff);
 
 	if (!is_current_array())
 		data_->writer.Key(name);
-	data_->writer.String(buff.c_str());
+	if (buff.empty())
+		data_->writer.String("");
+	else
+		data_->writer.String(buff.c_str());
 
 	return true;
 }
 
 template <class writerT>
-bool json_writer_type<writerT>::write_string (const char* name, const string_type& str)
+bool json_writer_type<writerT>::write_string (const char* name, const char* str)
 {
 
 	if (!is_current_array())
 		data_->writer.Key(name);
-	data_->writer.String(str.c_str());
+	data_->writer.String(str ? str : "");
 
 	return true;
 }
@@ -1439,7 +1431,7 @@ bool json_writer_type<writerT>::write_init_values (const char* name, const data:
 	}
 	for (const auto& one : values.values)
 	{
-		if (!one.second.value.get_storage().weak_serialize_value(one.first, *this))
+		if (!one.second.value.weak_serialize(one.first.c_str(), *this))
 			return false;
 	}
 	if (name)
@@ -1472,7 +1464,7 @@ bool json_writer_type<writerT>::write_item_reference (const char* name, const rx
 		}
 		else
 		{
-			if (!write_string("path", ref.get_path()))
+			if (!write_string("path", ref.get_path().c_str()))
 				return false;
 		}
 		if (!end_object())
@@ -1486,19 +1478,11 @@ bool json_writer_type<writerT>::write_item_reference (const char* name, const rx
 }
 
 template <class writerT>
-bool json_writer_type<writerT>::write_value (const char* name, const rx_simple_value& val)
-{
-	if (!val.serialize(name, *this))
-		return false;
-	return true;
-}
-
-template <class writerT>
 bool json_writer_type<writerT>::write_value_type (const char* name, rx_value_t val)
 {
 	if (get_version() >= RX_VALUE_TYPE_VERSION)
 	{
-		string_type str_type = rx_get_value_type_name(val);
+		const char* str_type = rx_get_value_type_name(val);
 		return write_string(name, str_type);
 	}
 	else
@@ -1543,4 +1527,6 @@ template class binary_writer<memory::std_vector_allocator, false>;
 
 } // namespace serialization
 } // namespace rx_platform
+
+
 

@@ -157,6 +157,10 @@ struct port_data
 
       byte_string identity;
 
+      bool simulation;
+
+      bool process;
+
   public:
 
   protected:

@@ -185,7 +185,8 @@ runtime_start_context::runtime_start_context (structure::runtime_item& root, run
         relations_(relations),
         tags(binded),
         directories(directories),
-        now(rx_time::now())
+        now(rx_time::now()),
+        simulation(false)
     , structure(root)
 {
 }
@@ -316,7 +317,7 @@ std::vector<rx_value> mappers_stack::get_mapped_values (const rx_node_id& id, co
 		{
 			rx_simple_value val;
 			if (one->item->get_local_value(path, val))
-				ret_value.emplace_back(rx_value::from_simple(std::move(val), rx_time::now()));
+				ret_value.emplace_back(rx_value(std::move(val), rx_time::now()));
 		}
 	}
 	return ret_value;
@@ -359,11 +360,11 @@ std::vector<rx_value> sources_stack::get_sourced_values (const rx_node_id& id, c
 	auto it = sources_.find(id);
 	if (it != sources_.end() && !it->second.empty())
 	{
-		for (auto& one : it->second)
+		for (auto one_it = it->second.rbegin(); one_it != it->second.rend(); one_it++)
 		{
 			rx_simple_value val;
-			if (one->item->get_local_value(path, val))
-				ret_value.emplace_back(rx_value::from_simple(std::move(val), rx_time::now()));
+			if ((*one_it)->item->get_local_value(path, val))
+				ret_value.emplace_back(rx_value(std::move(val), rx_time::now()));
 		}
 	}
 	return ret_value;

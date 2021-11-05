@@ -2,7 +2,7 @@
 
 
 #define RX_LIB_MAJOR_VERSION 2
-#define RX_LIB_MINOR_VERSION 1
+#define RX_LIB_MINOR_VERSION 3
 #define RX_LIB_BUILD_NUMBER 0
 
 
@@ -46,5 +46,7 @@
 // version 1.1.0 prepared rx_value_union for ABI
 // version 2.0.0 first version with rx-common shared library
 // version 2.1.0 added argument job template
+// version 2.2.0 added serial port support
+// version 2.2.1 added assign_defult to value storage
 
 

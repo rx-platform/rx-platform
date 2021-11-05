@@ -54,7 +54,7 @@ rx_message_type_t create_subscription_request::type_id = rx_create_subscription_
 
 rx_result create_subscription_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.write_uint("rate", publish_rate))
 		return stream.get_error();
@@ -131,7 +131,7 @@ rx_message_type_t create_subscriptions_response::type_id = rx_create_subscriptio
 
 rx_result create_subscriptions_response::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.write_uint("rate", revised_publish_rate))
 		return stream.get_error();
@@ -175,7 +175,7 @@ rx_message_type_t delete_subscription_request::type_id = rx_delete_subscription_
 
 rx_result delete_subscription_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	return true;
 }
@@ -227,7 +227,7 @@ rx_message_type_t update_subscription_request::type_id = rx_update_subscription_
 
 rx_result update_subscription_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.write_uint("rate", publish_rate))
 		return stream.get_error();
@@ -284,7 +284,7 @@ rx_message_type_t delete_subscription_response::type_id = rx_delete_subscription
 
 rx_result delete_subscription_response::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	return true;
 }
@@ -320,7 +320,7 @@ rx_message_type_t update_subscription_response::type_id = rx_update_subscription
 
 rx_result update_subscription_response::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.write_uint("rate", revised_publish_rate))
 		return stream.get_error();
@@ -364,7 +364,7 @@ rx_message_type_t subscription_items_change::type_id = rx_subscription_items_not
 
 rx_result subscription_items_change::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.start_array("items", items.size()))
 		return stream.get_error();
@@ -434,7 +434,7 @@ rx_message_type_t subscription_write_done::type_id = rx_subscription_write_done_
 
 rx_result subscription_write_done::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.write_uint("transId", transaction_id))
 		return stream.get_error();
@@ -451,7 +451,7 @@ rx_result subscription_write_done::serialize (base_meta_writer& stream) const
 		if (!stream.write_uint("errCode", std::get<1>(one)))
 			return stream.get_error();
 
-		if (!stream.write_string("errMsg", std::move(std::get<2>(one))))
+		if (!stream.write_string("errMsg", std::move(std::get<2>(one)).c_str()))
 			return stream.get_error();
 
 		if (!stream.end_object())

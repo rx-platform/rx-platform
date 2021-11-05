@@ -211,3 +211,41 @@ RX_COMMON_API int rx_os_collect_time(const struct rx_full_time_t* full, struct r
 }
 
 
+uuid_t g_null_uuid = { 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 } };
+
+RX_COMMON_API void rx_generate_new_uuid(uuid_t* u)
+{
+	UuidCreate(u);
+}
+RX_COMMON_API int rx_uuid_to_string(const uuid_t* u, char* str)
+{
+	RPC_CSTR lbuff = NULL;
+	if (RPC_S_OK == UuidToStringA(u, &lbuff))
+	{
+		//{9466850F-0DBF-4C81-89CD-AC633F5182B4}
+		strcpy(str, lbuff);
+		RpcStringFreeA(&lbuff);
+		return RX_OK;
+	}
+	else
+		return RX_ERROR;
+}
+RX_COMMON_API int rx_string_to_uuid(const char* str, uuid_t* u)
+{
+	char buff[0x40];
+	sprintf_s(buff, sizeof(buff), "%s", str);
+	uuid_t ret = g_null_uuid;
+	if (RPC_S_OK == UuidFromStringA((RPC_CSTR)buff, &ret))
+	{
+		*u = ret;
+		return RX_OK;
+	}
+	else
+	{
+		*u = g_null_uuid;
+		return RX_OK;
+	}
+}
+
+
+

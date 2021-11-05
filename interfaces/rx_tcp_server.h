@@ -40,7 +40,7 @@
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
-#include "lib/rx_stream_io.h"
+#include "interfaces/rx_stream_io.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -67,7 +67,7 @@ namespace ip_endpoints {
 
 class tcp_server_endpoint 
 {
-    struct socket_holder_t : public rx::io::tcp_socket_std_buffer
+    struct socket_holder_t : public tcp_socket_std_buffer
     {
         DECLARE_REFERENCE_PTR(tcp_server_endpoint::socket_holder_t);
         friend class tcp_server_endpoint;
@@ -190,7 +190,7 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
   private:
 
 
-      rx_reference<rx::io::tcp_listent_std_buffer> listen_socket_;
+      rx_reference<tcp_listent_std_buffer> listen_socket_;
 
 
       io::ip4_address bind_address_;

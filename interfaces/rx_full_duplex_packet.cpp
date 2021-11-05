@@ -160,8 +160,8 @@ void byte_routing_port::extract_bind_address (const data::runtime_values_data& b
 	{
 		auto addr = binder_data.get_value("Bind.Address");
 		uint8_t addr_val = 0;
-		if (!addr.is_null())
-			addr_val = (uint8_t)addr.get_storage().get_integer_value();
+		if (addr.is_unassigned())
+			addr_val = addr.extract_static(0);
 		if (addr_val != 0)
 		{
 			io::numeric_address<uint8_t> num_addr(addr_val);
@@ -172,8 +172,8 @@ void byte_routing_port::extract_bind_address (const data::runtime_values_data& b
 	{
 		auto addr = binder_data.get_value("Connect.Address");
 		uint8_t addr_val = 0;
-		if (!addr.is_null())
-			addr_val = (uint8_t)addr.get_storage().get_integer_value();
+		if (addr.is_unassigned())
+			addr_val = addr.extract_static(addr_val);
 		if (addr_val != 0)
 		{
 			io::numeric_address<uint8_t> num_addr(addr_val);
@@ -591,11 +591,11 @@ void ip4_routing_port::extract_bind_address (const data::runtime_values_data& bi
 		uint16_t port_val = 0;
 		if (!addr.is_null())
 		{
-			addr_str = addr.get_storage().get_string_value();
+			addr_str = addr.extract_static(""s);
 			addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
 		}
-		if (!port.is_null())
-			port_val = (uint16_t)port.get_storage().get_integer_value();
+		if (port.is_unassigned())
+			port_val = port.extract_static(port_val);
 		if (!addr_str.empty() || port_val != 0)
 		{
 			io::ip4_address ip_addr(addr_str, port_val);
@@ -611,11 +611,11 @@ void ip4_routing_port::extract_bind_address (const data::runtime_values_data& bi
 		uint16_t port_val = 0;
 		if (!addr.is_null())
 		{
-			addr_str = addr.get_storage().get_string_value();
+			addr_str = addr.extract_static(""s);
 			addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
 		}
-		if (!port.is_null())
-			port_val = (uint16_t)port.get_storage().get_integer_value();
+		if (port.is_unassigned())
+			port_val = port.extract_static(port_val);
 		if (!addr_str.empty() || port_val != 0)
 		{
 			io::ip4_address ip_addr(addr_str, port_val);

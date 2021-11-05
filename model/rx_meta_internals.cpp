@@ -1032,7 +1032,7 @@ rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& id)
 
 rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items)
 {
-	std::unordered_set<rx_node_id> to_add;
+	std::set<rx_node_id> to_add;
 	std::vector<std::pair<rx_node_id, rx_node_id> > local_to_add(items);
 	// first add all items to set for faster search
 	for (const auto& one : items)

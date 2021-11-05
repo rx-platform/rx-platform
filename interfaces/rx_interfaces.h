@@ -34,76 +34,10 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
-// rx_udp
-#include "interfaces/rx_udp.h"
 
 
-
-namespace rx_internal {
-
-namespace interfaces {
-
-namespace ip_endpoints {
-
-
-
-
-
-
-class rx_ip_address 
-{
-
-  public:
-      rx_ip_address();
-
-      rx_ip_address(const rx_ip_address &right);
-
-      virtual ~rx_ip_address();
-
-      rx_ip_address & operator=(const rx_ip_address &right);
-
-	  rx_ip_address & operator=(rx_ip_address &&right);
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rx_ethernet_card 
-{
-	typedef std::vector<rx_ip_address> addresses_type;
-
-  public:
-      rx_ethernet_card();
-
-      virtual ~rx_ethernet_card();
-
-	  rx_ethernet_card & operator=(rx_ethernet_card &&right);
-  protected:
-
-  private:
-      rx_ethernet_card(const rx_ethernet_card &right);
-
-      rx_ethernet_card & operator=(const rx_ethernet_card &right);
-
-
-
-      addresses_type addresses_;
-
-
-};
-
-
-} // namespace ip_endpoints
-} // namespace interfaces
-} // namespace rx_internal
 
 
 
 #endif
+

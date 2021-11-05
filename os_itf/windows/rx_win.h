@@ -145,7 +145,6 @@ typedef struct find_file_struct_t* find_file_handle_t;
 typedef DWORD rx_pid_t;
 typedef DWORD rx_os_error_t;
 
-#define memzero(S, N) ZeroMemory(S,N) 
 
 #ifdef _MSC_VER
 // windows slim lock size
@@ -159,6 +158,7 @@ typedef DWORD rx_os_error_t;
 
 #define TCP_BUFFER_SIZE 0x8000
 #define UDP_BUFFER_SIZE 0x800
+#define SERIAL_BUFFER_SIZE 0x800
 
 typedef struct windows_overlapped_t
 {

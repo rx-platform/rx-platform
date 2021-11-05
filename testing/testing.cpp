@@ -4,7 +4,7 @@
 #include "testing.h"
 #include "lib/rx_thread.h"
 #include "lib/rx_job.h"
-#include "lib/rx_io.h"
+#include "interfaces/rx_io.h"
 #include "lib/rx_std.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/callbacks/rx_callback.h"
@@ -12,7 +12,7 @@
 #include "lib/rx_log.h"
 #include "system/server/rx_server.h"
 #include "lib/rx_ptr.h"
-#include "lib/rx_stream_io.h"
+#include "interfaces/rx_stream_io.h"
 #include "system/meta/rx_obj_types.h"
 
 
@@ -266,7 +266,7 @@ void test_classes()
 
 namespace tcp_connect_test
 {
-class tcp_test_client : public rx::io::tcp_client_socket<rx::memory::std_buffer>
+class tcp_test_client : public rx_internal::interfaces::ip_endpoints::tcp_client_socket<rx::memory::std_buffer>
 {
 	DECLARE_REFERENCE_PTR(tcp_test_client);
 public:

@@ -47,6 +47,7 @@
 // rx_file_storage
 #include "storage/rx_file_storage.h"
 
+#include "system/server/rx_file_helpers.h"
 #include "rx_configuration.h"
 #include "rx_file_storage_version.h"
 #include "system/hosting/rx_host.h"

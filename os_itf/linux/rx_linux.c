@@ -331,46 +331,7 @@ int rx_is_valid_ip_address(uint32_t addr, uint32_t mask)
 {
     return 0;
 }
-/////////////////////////////////////
-// uuid code
 
-
-void linux_uuid_to_uuid(const uuid_t* uuid, rx_uuid_t* u)
-{
-	memcpy(u->Data4, &(*uuid)[8], 8);
-	u->Data1 = ntohl(*((uint32_t*)&(*uuid)[0]));
-	u->Data2 = ntohs(*((uint16_t*)&(*uuid)[4]));
-	u->Data3 = ntohs(*((uint16_t*)&(*uuid)[6]));
-}
-
-void uuid_to_linux_uuid(const rx_uuid_t* u, uuid_t* uuid)
-{
-	memcpy(&(*uuid)[8], u->Data4, 8);
-	*((uint32_t*)&(*uuid)[0]) = htonl(u->Data1);
-	*((uint16_t*)&(*uuid)[4]) = ntohs(u->Data2);
-	*((uint16_t*)&(*uuid)[6]) = ntohs(u->Data3);
-}
-
-void rx_generate_new_uuid(rx_uuid_t* u)
-{
-	uuid_t uuid;
-	uuid_generate(uuid);
-	linux_uuid_to_uuid(&uuid, u);
-}
-uint32_t rx_uuid_to_string(const rx_uuid_t* u, char* str)
-{
-	uuid_t uuid;
-	uuid_to_linux_uuid(u, &uuid);
-	uuid_unparse(uuid, str);
-	return RX_OK;
-}
-uint32_t rx_string_to_uuid(const char* str, rx_uuid_t* u)
-{
-	uuid_t uuid;
-	uuid_parse(str, uuid);
-	linux_uuid_to_uuid(&uuid, u);
-	return RX_OK;
-}
 
 
 uint8_t pipe_dummy_buffer[0x100];
@@ -1193,7 +1154,7 @@ rx_kernel_dispather_t rx_create_kernel_dispathcer(int max)
     }
     return NULL;
 }
-uint32_t rx_socket_read(struct rx_io_register_data_t* what, size_t* readed)
+uint32_t rx_io_read(struct rx_io_register_data_t* what, size_t* readed)
 {
 	struct linux_epoll_subscriber_t* internal = (struct linux_epoll_subscriber_t*)what->internal;
 	internal->read_type = EPOLL_READ_TYPE;
@@ -1257,7 +1218,7 @@ uint32_t rx_socket_read_from(struct rx_io_register_data_t* what, size_t* readed,
 
 	return RX_OK;
 }
-uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
+uint32_t rx_io_write(struct rx_io_register_data_t* what, const void* data, size_t count)
 {
 	struct linux_epoll_subscriber_t* internal = (struct linux_epoll_subscriber_t*)what->internal;
 	internal->write_buffer = data;
@@ -1304,7 +1265,7 @@ uint32_t rx_socket_write(struct rx_io_register_data_t* what, const void* data, s
 
 			uint8_t* temp = (uint8_t*)data;
 			temp += written;
-			return rx_socket_write(what, temp, count - written);
+			return rx_io_write(what, temp, count - written);
 		}
 		else
 		{
@@ -1898,6 +1859,15 @@ void rx_close_socket(sys_handle_t handle)
 {
     shutdown(handle,SHUT_RDWR);
     close(handle);
+}
+
+sys_handle_t rx_open_serial_port(const char* port, uint32_t baud_rate, int stop_bits, int parity, uint8_t data_bits, int handshake)
+{
+    errno = ENOSYS;
+    return 0;
+}
+void rx_close_serial_port(sys_handle_t handle)
+{
 }
 
 

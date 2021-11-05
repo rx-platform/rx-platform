@@ -88,6 +88,8 @@ class rx_io_manager : public rx_platform::runtime::items::object_runtime
 
       string_type resolve_ip4_alias (const string_type& what) const;
 
+      string_type resolve_serial_alias (const string_type& what) const;
+
 
   protected:
 
@@ -100,6 +102,8 @@ class rx_io_manager : public rx_platform::runtime::items::object_runtime
 
 
       std::map<string_type, string_type> ip4_aliases_;
+
+      std::map<string_type, string_type> serial_aliases_;
 
 
 };

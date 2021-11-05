@@ -35,10 +35,10 @@
 
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_security
-#include "lib/security/rx_security.h"
 // rx_thread
 #include "lib/rx_thread.h"
+// rx_security
+#include "lib/security/rx_security.h"
 
 #include "system/server/rx_server.h"
 using rx_platform::hosting::hosts_type;
@@ -139,8 +139,6 @@ class headless_platform_host : public rx_platform::hosting::rx_platform_host
       int start_platform ();
 
       int stop_platform ();
-
-      string_type get_host_name ();
 
       virtual rx_result register_constructors ();
 

@@ -178,7 +178,7 @@ rx_result const_value_def::serialize_definition (base_meta_writer& stream) const
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", description_))
+		if (!stream.write_string("description", description_.c_str()))
 			return stream.get_error();
 		if (!stream.write_bool("config", config_only_))
 			return stream.get_error();
@@ -329,7 +329,7 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream) cons
 	}
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", description_))
+		if (!stream.write_string("description", description_.c_str()))
 			return stream.get_error();
 	}
 	return true;
@@ -358,7 +358,7 @@ rx_result simple_value_def::deserialize_definition (base_meta_reader& stream)
 
 rx_timed_value simple_value_def::get_value (rx_time now) const
 {
-	return rx_timed_value::from_simple(storage_, now);
+	return rx_timed_value(storage_, now);
 }
 
 
@@ -415,7 +415,7 @@ variable_attribute::variable_attribute (const string_type& name, const string_ty
 
 rx_value variable_attribute::get_value (rx_time now) const
 {
-	return rx_value::from_simple(storage_, now);
+	return rx_value(storage_, now);
 }
 
 

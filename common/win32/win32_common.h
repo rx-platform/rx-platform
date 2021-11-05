@@ -41,6 +41,32 @@
 #endif
 
 
+#ifndef __cplusplus
+#ifndef max
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+#endif
+
+#define MAX max
+
+#ifdef _DEBUG
+#define RX_ASSERT(v) _ASSERT(v)
+#else
+#define RX_ASSERT(v) ((void)0)
+#endif
+
+#define memzero(S, N) ZeroMemory(S,N) 
+
+typedef uuid_t rx_uuid_t;
+
+#define ltoa _ltoa
+#define ultoa _ultoa
+#define lltoa _i64toa
+#define ulltoa _ui64toa
+#define gcvt _gcvt
+
+
 
 
 #endif

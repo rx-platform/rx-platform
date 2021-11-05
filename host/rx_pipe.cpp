@@ -44,7 +44,7 @@
 #include "api/rx_meta_api.h"
 #include "terminal/rx_terminal_style.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
-#include "lib/rx_io.h"
+#include "interfaces/rx_io.h"
 
 
 namespace host {
@@ -300,7 +300,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 		}
 	}
 	std::cout << "\r\n";
-	rx::io::dispatcher_subscriber::deinitialize();
+	rx_internal::interfaces::io_endpoints::dispatcher_subscriber::deinitialize();
 	rx::threads::thread::deinitialize();
 	restore_console();
 

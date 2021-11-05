@@ -41,6 +41,7 @@
 #include "model/rx_model_algorithms.h"
 #include "system/runtime/rx_holder_algorithms.h"
 #include "api/rx_namespace_api.h"
+#include "system/server/rx_file_helpers.h"
 
 
 namespace testing {

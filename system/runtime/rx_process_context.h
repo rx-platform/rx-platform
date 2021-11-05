@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -35,8 +35,6 @@
 #include "rx_runtime_helpers.h"
 #include "system/meta/rx_meta_data.h"
 
-// rx_value_point
-#include "runtime_internal/rx_value_point.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -59,7 +57,7 @@ namespace runtime {
 
 
 
-class context_job 
+class context_job
 {
 
   public:
@@ -114,7 +112,7 @@ class process_context_job : public context_job
 
 
 
-struct write_data 
+struct write_data
 {
 
 
@@ -170,7 +168,7 @@ struct write_result_struct
 
 
 
-class relation_subscriber 
+class relation_subscriber
 {
 
   public:
@@ -183,28 +181,6 @@ class relation_subscriber
   protected:
 
   private:
-
-
-};
-
-
-
-
-
-
-class context_value_point : public rx_internal::sys_runtime::data_source::value_point_impl  
-{
-
-  public:
-
-  protected:
-
-  private:
-
-      void value_changed (const rx_value& val);
-
-      void result_received (rx_result&& result, runtime_transaction_id_t id);
-
 
 
 };
@@ -299,7 +275,7 @@ typedef std::vector<method_runtime_ptr> methods_type;
 
 
 
-class runtime_process_context 
+class runtime_process_context
 {
     template<typename typeT>
     friend class algorithms::runtime_holder_algorithms;
@@ -308,7 +284,7 @@ class runtime_process_context
     friend class algorithms::runtime_relation_algorithms;
 
     typedef std::function<void()> fire_callback_func_t;
-    typedef std::vector<context_value_point*> points_type;
+    //typedef std::vector<context_value_point*> points_type;
 
   public:
       runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs);
@@ -444,7 +420,7 @@ class runtime_process_context
           auto result = this->get_value(handle, temp_val);
           if (result)
           {
-              return values::extract_value<valT>(temp_val.get_storage(), default_value);
+              return temp_val.extract_static(default_value);
           }
           return default_value;
       }
@@ -477,8 +453,6 @@ class runtime_process_context
       tag_blocks::connected_tags& tags_;
 
       tag_blocks::binded_tags& binded_;
-
-      points_type points_;
 
 
       runtime_process_step current_step_;

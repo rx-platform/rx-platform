@@ -98,8 +98,11 @@ void runtime_holder_algorithms<typeT>::fire_job (typename typeT::RType& whose)
     {
         whose.job_pending_ = true;
         RX_ASSERT(whose.my_job_ptr_);
-        auto executer = rx_internal::infrastructure::server_runtime::instance().get_executer(whose.get_executer());
-        executer->append(whose.my_job_ptr_);
+        if (whose.my_job_ptr_)
+        {
+            auto executer = rx_internal::infrastructure::server_runtime::instance().get_executer(whose.get_executer());
+            executer->append(whose.my_job_ptr_);
+        }
     }
 }
 

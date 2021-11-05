@@ -201,7 +201,7 @@ rx_result get_type_request::serialize (base_meta_writer& stream) const
 {
 	if (stream.is_string_based())
 	{
-		if (!stream.write_string("type", rx_item_type_name(item_type)))
+		if (!stream.write_string("type", rx_item_type_name(item_type).c_str()))
 			return stream.get_error();
 	}
 	else
@@ -680,7 +680,7 @@ rx_result get_runtime_request::serialize (base_meta_writer& stream) const
 {
 	if (stream.is_string_based())
 	{
-		if (!stream.write_string("type", rx_item_type_name(item_type)))
+		if (!stream.write_string("type", rx_item_type_name(item_type).c_str()))
 			return stream.get_error();
 	}
 	else
@@ -863,7 +863,7 @@ rx_result browse_runtime_request::serialize (base_meta_writer& stream) const
 {
 	if (stream.is_string_based())
 	{
-		if (!stream.write_string("type", rx_item_type_name(item_type)))
+		if (!stream.write_string("type", rx_item_type_name(item_type).c_str()))
 			return stream.get_error();
 	}
 	else
@@ -873,9 +873,9 @@ rx_result browse_runtime_request::serialize (base_meta_writer& stream) const
 	}
 	if (!stream.write_id("id", id))
 		return stream.get_error();
-	if (!stream.write_string("path", path))
+	if (!stream.write_string("path", path.c_str()))
 		return stream.get_error();
-	if (!stream.write_string("filter", filter))
+	if (!stream.write_string("filter", filter.c_str()))
 		return stream.get_error();
 	return true;
 }
@@ -992,9 +992,9 @@ rx_result browse_runtime_response_message::serialize (base_meta_writer& stream) 
 			return stream.get_error();
 		if (!stream.write_byte("type", (uint8_t)one.type))
 			return stream.get_error();
-		if (!stream.write_string("name", one.name))
+		if (!stream.write_string("name", one.name.c_str()))
 			return stream.get_error();
-		if (!stream.write_string("path", one.full_path))
+		if (!stream.write_string("path", one.full_path.c_str()))
 			return stream.get_error();
 		if (!stream.end_object())
 			return stream.get_error();
@@ -1060,7 +1060,7 @@ rx_result get_code_info_request::serialize (base_meta_writer& stream) const
 {
 	if (stream.is_string_based())
 	{
-		if (!stream.write_string("type", rx_item_type_name(item_type)))
+		if (!stream.write_string("type", rx_item_type_name(item_type).c_str()))
 			return stream.get_error();
 	}
 	else
@@ -1174,7 +1174,7 @@ rx_message_type_t get_code_info_response_message::type_id = rx_code_response_id;
 
 rx_result get_code_info_response_message::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_string("code", code_info))
+	if (!stream.write_string("code", code_info.c_str()))
 		return stream.get_error();
 
 	return true;

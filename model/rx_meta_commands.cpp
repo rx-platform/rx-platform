@@ -44,6 +44,7 @@
 #include "terminal/rx_console.h"
 #include "system/serialization/rx_ser.h"
 #include "system/runtime/rx_blocks.h"
+#include "system/server/rx_file_helpers.h"
 
 
 using namespace rx_platform::api;

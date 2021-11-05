@@ -76,6 +76,10 @@ class rx_io_buffer : public rx_packet_buffer
 
       rx_result write (const void* data, size_t size);
 
+      bool empty () const;
+
+      void reinit ();
+
 	  // disable copy semantics
 	  rx_io_buffer(const rx_io_buffer&) = delete;
 	  rx_io_buffer& operator=(const rx_io_buffer&) = delete;
@@ -112,6 +116,8 @@ class rx_const_io_buffer
 
   public:
       rx_const_io_buffer (rx_const_packet_buffer* buffer);
+
+      rx_const_io_buffer (rx_packet_buffer* buffer);
 
 
       rx_result read_string (string_type& val);

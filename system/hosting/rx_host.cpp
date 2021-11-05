@@ -46,6 +46,9 @@
 #include "terminal/rx_con_commands.h"
 #include "model/rx_model_algorithms.h"
 #include "sys_internal/rx_storage_build.h"
+#include "terminal/rx_term_table.h"
+#include "system/server/rx_file_helpers.h"
+using namespace rx;
 
 
 namespace rx_platform {

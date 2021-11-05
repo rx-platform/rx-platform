@@ -124,9 +124,15 @@ int match_pattern(const char *string, const char *Pattern, int bCaseSensitive)
 }
 
 
-RX_COMMON_API int rx_match_pattern(const char* string, const char* Pattern, int bCaseSensitive)
+RX_COMMON_API int rx_match_pattern(const char* string, const char* pattern, int case_sensitive)
 {
-	return match_pattern(string, Pattern, bCaseSensitive);
+	return match_pattern(string, pattern, case_sensitive);
+}
+
+// this implementation bellow is default currently this works for me for both Win and Linux kernel
+RX_COMMON_API rx_timer_ticks_t rx_os_get_ms(struct rx_time_struct_t* st)
+{
+	return st->t_value / 1000000;
 }
 
 

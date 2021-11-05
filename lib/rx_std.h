@@ -75,24 +75,8 @@ using namespace std::string_literals;
 #include "version/rx_version.h"
 #include "lib/rx_lib_version.h"
 
-#include "lib/type_lists.h"
+#include "type_lists.h"
 
-#define DEFAULT_NAMESPACE 1
-#define DEFAULT_OPC_NAMESPACE 0
-#define RX_USER_NAMESPACE 999
-
-
-#define TIME_QUALITY_LEAP_SECONDS_KNOWN 0x80
-#define TIME_QUALITY_CLOCK_FALIURE 0x40
-#define TIME_QUALITY_NOT_SYNCHRONIZED 0x20
-
-#define TIME_QUALITY_CLASS_UNKNOWN 0x1f
-#define TIME_QUALITY_CLASS_T0 7
-#define TIME_QUALITY_CLASS_T1 10
-#define TIME_QUALITY_CLASS_T2 14
-#define TIME_QUALITY_CLASS_T3 16
-#define TIME_QUALITY_CLASS_T4 18
-#define TIME_QUALITY_CLASS_T5 20
 
 
 template<int> struct compile_time_error;

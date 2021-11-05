@@ -39,7 +39,7 @@
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
 // rx_datagram_io
-#include "lib/rx_datagram_io.h"
+#include "interfaces/rx_datagram_io.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -75,7 +75,7 @@ class udp_endpoint
         stopped = 3
     };
 
-    struct socket_holder_t : public rx::io::udp_socket_std_buffer
+    struct socket_holder_t : public udp_socket_std_buffer
     {
         DECLARE_REFERENCE_PTR(udp_endpoint::socket_holder_t);
         friend class udp_endpoint;

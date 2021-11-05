@@ -151,6 +151,346 @@ int isdelim(char c)
 	if (isoper(c) || iswhite(c) || c == '\0') return 1;
 	return 0;
 }
+rx_value_t get_arithmetic_result_type(rx_value_t left, rx_value_t right, bool add)
+{
+	if (left > RX_NULL_TYPE && left <= RX_UINT64_TYPE
+		&& right > RX_NULL_TYPE && right <= RX_UINT64_TYPE)
+	{// integer values
+		return std::max(left, right);// just return max
+	}
+	else if (left > RX_NULL_TYPE && left <= RX_DOUBLE_TYPE
+		&& right > RX_NULL_TYPE && right <= RX_DOUBLE_TYPE)
+	{// has floating point values
+		if (left == RX_DOUBLE_TYPE || right == RX_DOUBLE_TYPE)
+			return RX_DOUBLE_TYPE;
+		else
+			return RX_FLOAT_TYPE;
+	}
+	else if (left == RX_COMPLEX_TYPE || right == RX_COMPLEX_TYPE)
+	{
+		return RX_COMPLEX_TYPE;
+	}
+	else if (left == RX_TIME_TYPE && right > RX_NULL_TYPE && right <= RX_DOUBLE_TYPE)
+	{// do time and numeric
+		return RX_TIME_TYPE;
+	}
+	else if (add)
+	{
+		if (left == RX_STRING_TYPE)
+		{// add string and any other
+			return RX_STRING_TYPE;
+		}
+		else if (left == RX_BYTES_TYPE && right == RX_BYTES_TYPE)
+		{// add two byte arrays
+			return RX_BYTES_TYPE;
+		}
+	}
+	return RX_NULL_TYPE;
+}
+rx_value add_values(const rx_value& left, const rx_value& right)
+{
+	rx_value result;
+	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, true);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type == RX_BOOL_TYPE)
+		{
+			result.assign_static(left.get_bool() | right.get_bool());
+		}
+		else if(ret_type == RX_INT8_TYPE || ret_type == RX_INT16_TYPE || ret_type == RX_INT32_TYPE || ret_type == RX_INT64_TYPE)
+		{// integers stuff
+			result.set_integer(left.get_integer() + right.get_integer(), ret_type);
+		}
+		else if (ret_type == RX_UINT8_TYPE || ret_type == RX_UINT16_TYPE || ret_type == RX_UINT32_TYPE || ret_type == RX_UINT64_TYPE)
+		{// integers stuff
+			result.set_unassigned(left.get_unassigned() + right.get_unassigned(), ret_type);
+		}
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE)
+		{// floating point stuff
+			result.set_float(left.get_float() + right.get_float(), ret_type);
+		}
+		else if (ret_type == RX_COMPLEX_TYPE)
+		{
+			complex_value_struct one = left.get_complex();
+			complex_value_struct two = right.get_complex();
+			one.imag = one.imag + two.imag;
+			one.real = one.real + two.real;
+			result.assign_static(one);
+		}
+		else if (ret_type == RX_TIME_TYPE)
+		{// time
+			result.assign_static(rx_time(left.value.value.time_value) + right.get_unassigned());
+		}
+		else if (ret_type == RX_BYTES_TYPE && left.value.value_type == RX_BYTES_TYPE && right.value.value_type == RX_BYTES_TYPE)
+		{
+			size_t size1 = 0;
+			size_t size2 = 0;
+			const uint8_t* ptr1 = rx_c_ptr(&left.value.value.bytes_value, &size1);
+			const uint8_t* ptr2 = rx_c_ptr(&right.value.value.bytes_value, &size2);
+			size_t new_size = size1 + size2;
+			byte_string temp_buff;
+			if (new_size)
+			{
+				temp_buff.assign(new_size, 0);
+				if (size1 > 0)
+					memcpy(&temp_buff[0], ptr1, size1);
+
+				if (size2 > 0)
+					memcpy(&temp_buff[size1], ptr2, size2);
+			}
+			result.assign_static(temp_buff);
+		}
+		else if (ret_type == RX_STRING_TYPE && left.value.value_type == RX_STRING_TYPE)
+		{
+			size_t size1 = left.value.value.string_value.size;
+			const char* ptr1 = rx_c_str(&left.value.value.string_value);
+			if (right.value.value_type == RX_STRING_TYPE)
+			{// do dynamic stuff
+				size_t size2 = right.value.value.string_value.size;
+				const char* ptr2 = rx_c_str(&right.value.value.string_value);
+				size_t new_size = size1 + size2;
+				string_type temp_buff;
+				if (new_size)
+				{
+					temp_buff.reserve(new_size);
+					if (ptr1)
+						temp_buff += ptr1;
+					if (ptr2)
+						temp_buff += ptr2;
+				}
+				result.assign_static(temp_buff);
+			}
+			else
+			{
+				std::string right_str = right.to_string();
+				size_t size2 = right_str.size();
+				size_t new_size = size1 + size2;
+				string_type temp_buff;
+				if (new_size)
+				{
+					temp_buff.reserve(new_size);
+					if (ptr1)
+						temp_buff += ptr1;
+					temp_buff += right_str;
+				}
+				result.assign_static(temp_buff);
+			}
+		}
+		else
+		{
+			throw std::invalid_argument("Syntax error in add");
+		}
+	}
+	else
+	{
+		throw std::invalid_argument("Syntax error in add");
+	}
+	return result;
+}
+
+
+rx_value sub_values(const rx_value& left, const rx_value& right)
+{
+	rx_value result;
+	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, false);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type == RX_BOOL_TYPE)
+		{
+			throw std::invalid_argument("Can not subtract bool values");
+		}
+		else if (ret_type == RX_INT8_TYPE || ret_type == RX_INT16_TYPE || ret_type == RX_INT32_TYPE || ret_type == RX_INT64_TYPE)
+		{// integers stuff
+			result.set_integer(left.get_integer() - right.get_integer(), ret_type);
+		}
+		else if (ret_type == RX_UINT8_TYPE || ret_type == RX_UINT16_TYPE || ret_type == RX_UINT32_TYPE || ret_type == RX_UINT64_TYPE)
+		{// integers stuff
+			result.set_unassigned(left.get_unassigned() - right.get_unassigned(), ret_type);
+		}
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE)
+		{// floating point stuff
+			result.set_float(left.get_float() - right.get_float(), ret_type);
+		}
+		else if (ret_type == RX_COMPLEX_TYPE)
+		{
+			complex_value_struct one = left.get_complex();
+			complex_value_struct two = right.get_complex();
+			one.imag = one.imag - two.imag;
+			one.real = one.real - two.real;
+			result.assign_static(one);
+		}
+		else if (ret_type == RX_TIME_TYPE)
+		{// time
+			result.assign_static(rx_time(left.value.value.time_value) - right.get_unassigned());
+		}
+		else
+		{
+			throw std::invalid_argument("Syntax error in subtract");
+		}
+	}
+	else
+	{
+		throw std::invalid_argument("Syntax error in subtract");
+	}
+	return result;
+}
+
+
+rx_value mul_values(const rx_value& left, const rx_value& right)
+{
+	rx_value result;
+	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, false);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type == RX_BOOL_TYPE)
+		{
+			result.assign_static(left.get_bool() & right.get_bool());
+		}
+		else if (ret_type == RX_INT8_TYPE || ret_type == RX_INT16_TYPE || ret_type == RX_INT32_TYPE || ret_type == RX_INT64_TYPE)
+		{// integers stuff
+			result.set_integer(left.get_integer() * right.get_integer(), ret_type);
+		}
+		else if (ret_type == RX_UINT8_TYPE || ret_type == RX_UINT16_TYPE || ret_type == RX_UINT32_TYPE || ret_type == RX_UINT64_TYPE)
+		{// integers stuff
+			result.set_unassigned(left.get_unassigned() * right.get_unassigned(), ret_type);
+		}
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE)
+		{// floating point stuff
+			result.set_float(left.get_float() * right.get_float(), ret_type);
+		}
+		else if (ret_type == RX_COMPLEX_TYPE)
+		{
+			complex_value_struct one = left.get_complex();
+			complex_value_struct two = right.get_complex();
+			complex_type z1{ one.real, one.imag };
+			complex_type z2{ two.real, two.imag };
+			z1 = z1 * z2;
+			result.assign_static(complex_value_struct{ z1.real(), z1.imag() });
+		}
+		else
+		{
+			throw std::invalid_argument("Syntax error in multiplying");
+		}
+	}
+	else
+	{
+		throw std::invalid_argument("Syntax error in multiplying");
+	}
+	return result;
+}
+
+rx_value div_values(const rx_value& left, const rx_value& right)
+{
+	rx_value result;
+	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, false);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type == RX_BOOL_TYPE)
+		{
+			throw std::invalid_argument("Can not divide bool values");
+		}
+		else if (ret_type == RX_INT8_TYPE || ret_type == RX_INT16_TYPE || ret_type == RX_INT32_TYPE || ret_type == RX_INT64_TYPE)
+		{// integers stuff
+			auto temp = right.get_integer();
+			if (temp != 0)
+				result.set_integer(left.get_integer() / temp, ret_type);
+			else
+				throw std::runtime_error("Division by zero!");
+		}
+		else if (ret_type == RX_UINT8_TYPE || ret_type == RX_UINT16_TYPE || ret_type == RX_UINT32_TYPE || ret_type == RX_UINT64_TYPE)
+		{// integers stuff
+			auto temp = right.get_unassigned();
+			if (temp != 0)
+				result.set_unassigned(left.get_unassigned() / temp, ret_type);
+			else
+				throw std::runtime_error("Division by zero!");
+		}
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE)
+		{// floating point stuff
+			auto temp = right.get_float();
+			if (temp != 0)
+				result.set_float(left.get_float() / temp, ret_type);
+			else
+				throw std::runtime_error("Division by zero!");
+		}
+		else if (ret_type == RX_COMPLEX_TYPE)
+		{
+			complex_value_struct one = left.get_complex();
+			complex_value_struct two = right.get_complex();
+			complex_type z1{ one.real, one.imag };
+			complex_type z2{ two.real, two.imag };
+			if (std::abs(z2) != 0)
+			{
+				z1 = z1 / z2;
+				result.assign_static(complex_value_struct{ z1.real(), z1.imag() });
+			}
+			else
+			{
+				throw std::runtime_error("Division by zero!");
+			}
+		}
+		else
+		{
+			throw std::invalid_argument("Syntax error in dividing");
+		}
+	}
+	else
+	{
+		throw std::invalid_argument("Syntax error in dividing");
+	}
+	return result;
+}
+
+
+rx_value mod_values(const rx_value& left, const rx_value& right)
+{
+	rx_value result;
+	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, false);
+	if (ret_type != RX_NULL_TYPE)
+	{
+		if (ret_type == RX_BOOL_TYPE)
+		{
+			throw std::invalid_argument("Can not divide bool values");
+		}
+		else if (ret_type == RX_INT8_TYPE || ret_type == RX_INT16_TYPE || ret_type == RX_INT32_TYPE || ret_type == RX_INT64_TYPE)
+		{// integers stuff
+			auto temp = right.get_integer();
+			if (temp != 0)
+				result.set_integer(left.get_integer() % temp, ret_type);
+			else
+				throw std::runtime_error("Division by zero!");
+		}
+		else if (ret_type == RX_UINT8_TYPE || ret_type == RX_UINT16_TYPE || ret_type == RX_UINT32_TYPE || ret_type == RX_UINT64_TYPE)
+		{// integers stuff
+			auto temp = right.get_unassigned();
+			if (temp != 0)
+				result.set_unassigned(left.get_unassigned() % temp, ret_type);
+			else
+				throw std::runtime_error("Division by zero!");
+		}
+		else if (ret_type == RX_FLOAT_TYPE || ret_type == RX_DOUBLE_TYPE || ret_type==RX_COMPLEX_TYPE)
+		{// floating point stuff
+			rx_value_t res_type = 0;
+			auto temp = right.get_integer(&res_type);
+			if(res_type==0)
+				throw std::runtime_error("Syntax error!");
+			if (temp != 0)
+				result.set_integer(left.get_integer() % temp, res_type);
+			else
+				throw std::runtime_error("Division by zero!");
+		}
+		else
+		{
+			throw std::invalid_argument("Syntax error in dividing");
+		}
+	}
+	else
+	{
+		throw std::invalid_argument("Syntax error in dividing");
+	}
+	return result;
+}
+
 
 // Class rx_internal::sys_runtime::data_source::value_point_impl 
 
@@ -481,6 +821,7 @@ void value_point_impl::calculate (char* token_buff)
 		}
 		catch (std::runtime_error&)
 		{
+			res = rx_value();
 			res.set_quality(RX_BAD_QUALITY);
 		}
 		if (res.is_good())
@@ -679,7 +1020,7 @@ void value_point_impl::level6 (rx_value& result, char*& prog, char*& token, char
 		{
 			char err[256];
 			snprintf(err, sizeof(err), "Unbalanced parentheses at char %d", (int)(prog - expres));
-			throw new std::runtime_error("Parser error!");
+			throw std::runtime_error("Parser error!");
 		}
 		get_token(prog, token, tok_type, expres);
 	}
@@ -697,7 +1038,7 @@ void value_point_impl::primitive (rx_value& result, char*& prog, char*& token, c
 		{// float value
 
 			if (endptr - token != (int)(sz - 1))
-				throw new std::runtime_error("Syntax error!!!");
+				throw std::runtime_error("Syntax error!!!");
 			result.assign_static<double>(strtod(token, &endptr));
 			get_token(prog, token, tok_type, expres);
 			return;
@@ -752,7 +1093,7 @@ void value_point_impl::primitive (rx_value& result, char*& prog, char*& token, c
 		{
 			char err[256];
 			snprintf(err, sizeof(err), "Undefined tag at char %d", (int)(prog - expres));
-			throw new std::runtime_error(err);
+			throw std::runtime_error(err);
 		}
 		result = tag_variables_[index];
 
@@ -794,7 +1135,7 @@ void value_point_impl::get_token (char*& prog, char*& token, char& tok_type, cha
 		{
 			char err[256];
 			snprintf(err, sizeof(err), "Unbalanced tag commas at char %d", (int)(prog - expres));
-			throw new std::runtime_error("Parser error!");
+			throw std::runtime_error("Parser error!");
 		}
 		tok_type = STRING;
 		prog++;
@@ -819,65 +1160,65 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 {
 	if (o == '-')
 	{
-		uint8_t type = r.get_type();
+		rx_value_t type = r.get_type();
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			temp.real = -temp.real;
 			temp.imag = -temp.imag;
-			r.set_from_complex(temp, type);
+			r.assign_static(temp);
 		}
 		else if (r.is_integer())
 		{
-			r.set_from_integer(-r.get_integer_value(), type);
+			r.set_integer(-r.get_integer(), type);
 		}
 		else if (r.is_float())
 		{
-			r.set_from_float(-r.get_float_value(), type);
+			r.set_float(-r.get_float(), type);
 		}
-		else
+		else if (!r.is_unassigned())
 			throw std::runtime_error("Parser error, invalid op!");
 	}
 	else if (o == '!')
 	{
-		bool val = r.get_bool_value();
-		r.set_from_integer(val ? 0 : 1, RX_BOOL_TYPE);
+		bool val = r.get_bool();
+		r.assign_static(val);
 	}
 	else if (o == ABS_CODE)
 	{
 		uint8_t type = r.get_type();
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			temp.real = -temp.real;
 			temp.imag = -temp.imag;
-			r.set_from_float(sqrt(temp.real * temp.real + temp.imag * temp.imag), RX_DOUBLE_TYPE);
+			r.set_float(sqrt(temp.real * temp.real + temp.imag * temp.imag), RX_DOUBLE_TYPE);
 		}
 		else if (r.is_integer())
 		{
-			r.set_from_integer(abs(r.get_integer_value()), type);
+			r.set_integer(abs(r.get_integer()), type);
 		}
 		else if (r.is_float())
 		{
-			r.set_from_float(abs(r.get_float_value()), type);
+			r.set_float(abs(r.get_float()), type);
 		}
-		else
+		else if (!r.is_unassigned())
 			throw std::runtime_error("Parser error, invalid op!");
 	}
 	else if (o == LOG_CODE)
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = log10(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(log10(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(log10(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -885,16 +1226,16 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = std::log(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(std::log(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(std::log(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -902,16 +1243,16 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = exp(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(exp(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(exp(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -919,16 +1260,16 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = sqrt(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(sqrt(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(sqrt(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -936,16 +1277,16 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = sin(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(sin(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(sin(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -953,16 +1294,16 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = cos(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(cos(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(cos(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -970,16 +1311,16 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = tan(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(tan(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(tan(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -987,16 +1328,16 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = asin(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(asin(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(asin(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -1004,16 +1345,16 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = acos(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(acos(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(acos(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -1021,16 +1362,16 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 	{
 		if (r.is_complex())
 		{
-			complex_value_struct temp = r.get_complex_value();
+			complex_value temp = r.get_complex();
 			complex_type arg(temp.real, temp.imag);
 			complex_type res = atan(arg);
 			complex_value_struct temp3;
 			temp3.real = res.real();
 			temp3.imag = res.imag();
-			r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+			r.assign_static(temp3);
 		}
 		else if (r.is_numeric())
-			r.set_from_float(atan(r.get_float_value()), RX_DOUBLE_TYPE);
+			r.set_float(atan(r.get_float()), RX_DOUBLE_TYPE);
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
@@ -1043,42 +1384,48 @@ void value_point_impl::arith (char o, rx_value& r, rx_value& h, char*& prog, cha
 	switch ((uint8_t)o)
 	{
 	case '>':
-		r.assign_static<bool>(r > h);
+		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) > 0);
 		break;
 	case GE_CODE:
-		r.assign_static<bool>(r >= h);
+		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) >= 0);
 		break;
 	case LE_CODE:
-		r.assign_static<bool>(r <= h);
+		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) <= 0);
 		break;
 	case NE_CODE:
-		r.assign_static<bool>(r != h);
+		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) != 0);
 		break;
 	case '<':
-		r.assign_static<bool>(r < h);
+		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) < 0);
 		break;
 	case '=':
-		r.assign_static<bool>(r == h);
-		break;
-	case '-':
-		r = r - h;
+		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) == 0);
 		break;
 	case '+':
-		r = r + h;
+		r = add_values(r, h);
+		break;
+	case '-':
+		r = sub_values(r, h);
 		break;
 	case '*':
-		r = r * h;
+		r = mul_values(r, h);
 		break;
 	case '/':
-		r = r / h;
+		r = div_values(r, h);
 		break;
 	case '%':
-		r = r % h;
+		r = mod_values(r, h);
 		break;
 	case BIT_CODE:
 		{
-			int64_t res = r.get_integer_value();
-			uint8_t hl = (uint8_t)h.get_integer_value();
+			rx_value_t t1;
+			rx_value_t t2;
+			uint64_t res = r.get_unassigned(&t1);
+			uint8_t hl = (uint8_t)h.get_unassigned(&t2);
+			if (t1 == 0 || t2 == 0)
+			{
+				throw std::runtime_error("Syntax error, operator (|).");
+			}
 			uint64_t rl = (uint64_t)res;
 			if (hl > 63)
 				res = 0;
@@ -1088,48 +1435,56 @@ void value_point_impl::arith (char o, rx_value& r, rx_value& h, char*& prog, cha
 
 	case '&':
 		{
-			uint8_t t1;
-			uint8_t t2;
-			int64_t h1 = r.get_integer_value(&t1);
-			int64_t h2 = h.get_integer_value(&t2);
-			r.set_from_integer((h1 & h2), std::max(t1, t2));
+			rx_value_t t1;
+			rx_value_t t2;
+			uint64_t h1 = r.get_unassigned(&t1);
+			uint64_t h2 = h.get_unassigned(&t2);
+			if (t1 == 0 || t2 == 0)
+			{
+				throw std::runtime_error("Syntax error, operator (|).");
+			}
+			r.set_unassigned((h1 & h2), std::max(t1, t2));
 		}
 		break;
 
 	case '|':
 		{
-			uint8_t t1;
-			uint8_t t2;
-			int64_t h1 = r.get_integer_value(&t1);
-			int64_t h2 = h.get_integer_value(&t2);
-			r.set_from_integer((h1 | h2), std::max(t1, t2));
+			rx_value_t t1;
+			rx_value_t t2;
+			uint64_t h1 = r.get_unassigned(&t1);
+			uint64_t h2 = h.get_unassigned(&t2);
+			if (t1 == 0 || t2 == 0)
+			{
+				throw std::runtime_error("Syntax error, operator (|).");
+			}
+			r.set_unassigned((h1 | h2), std::max(t1, t2));
 		}
 		break;
 	case '^':
 		{
 			if (r.is_complex() || h.is_complex())
 			{
-				complex_value_struct temp1 = r.get_complex_value();
-				complex_value_struct temp2 = r.get_complex_value();
+				complex_value_struct temp1 = r.get_complex();
+				complex_value_struct temp2 = r.get_complex();
 				complex_type arg1(temp1.real, temp1.imag);
 				complex_type arg2(temp2.real, temp2.imag);
 				complex_type res = pow(arg1, arg2);
 				complex_value_struct temp3;
 				temp3.real = res.real();
 				temp3.imag = res.imag();
-				r.set_from_complex(temp3, RX_COMPLEX_TYPE);
+				r.assign_static(temp3);
 			}
 			else
 			{
-				r.set_from_float(pow(r.get_float_value(), h.get_float_value()), RX_DOUBLE_TYPE);
+				r.set_float(pow(r.get_float(), h.get_float()), RX_DOUBLE_TYPE);
 			}
 		}
 		break;
 	case AND_CODE:
-		r.assign_static<bool>(r.get_bool_value() && h.get_bool_value());
+		r.assign_static<bool>(r.get_bool() && h.get_bool());
 		break;
 	case OR_CODE:
-		r.assign_static<bool>(r.get_bool_value() || h.get_bool_value());
+		r.assign_static<bool>(r.get_bool() || h.get_bool());
 		break;
 	default:
 		RX_ASSERT(false);

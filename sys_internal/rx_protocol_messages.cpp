@@ -271,11 +271,11 @@ rx_message_type_t rx_connection_context_request::type_id = rx_connection_context
 
 rx_result rx_connection_context_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_string("dir", directory))
+	if (!stream.write_string("dir", directory.c_str()))
 		return stream.get_error();
-	if (!stream.write_string("app", application))
+	if (!stream.write_string("app", application.c_str()))
 		return stream.get_error();
-	if (!stream.write_string("domain", domain))
+	if (!stream.write_string("domain", domain.c_str()))
 		return stream.get_error();
 	if (!stream.write_version("sversion", stream_version))
 		return stream.get_error();
@@ -322,11 +322,11 @@ rx_message_type_t rx_connection_context_response::type_id = rx_connection_contex
 
 rx_result rx_connection_context_response::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_string("dir", directory))
+	if (!stream.write_string("dir", directory.c_str()))
 		return stream.get_error();
-	if (!stream.write_string("app", application))
+	if (!stream.write_string("app", application.c_str()))
 		return stream.get_error();
-	if (!stream.write_string("domain", domain))
+	if (!stream.write_string("domain", domain.c_str()))
 		return stream.get_error();
 	if (!stream.write_id("appid", application_id))
 		return stream.get_error();
@@ -415,7 +415,7 @@ rx_result rx_connection_notify_message::serialize (base_meta_writer& stream) con
 {
 	if (!stream.write_id("changed_id", changed_id))
 		return stream.get_error();
-	if (!stream.write_string("changed_path", changed_path))
+	if (!stream.write_string("changed_path", changed_path.c_str()))
 		return stream.get_error();
 	return true;
 }

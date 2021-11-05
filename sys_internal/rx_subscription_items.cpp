@@ -55,7 +55,7 @@ rx_message_type_t add_items_request::type_id = rx_add_items_request_id;
 
 rx_result add_items_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.start_array("items", items.size()))
 		return stream.get_error();
@@ -160,7 +160,7 @@ rx_message_type_t remove_items_request::type_id = rx_remove_items_request_id;
 
 rx_result remove_items_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	return true;
 }
@@ -221,7 +221,7 @@ rx_message_type_t execute_item_request::type_id = rx_execute_item_request_id;
 
 rx_result execute_item_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	return true;
 }
@@ -274,7 +274,7 @@ rx_message_type_t add_items_response::get_type_id ()
 
 rx_result add_items_response::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.start_array("results", results.size()))
 		return stream.get_error();
@@ -352,7 +352,7 @@ rx_message_type_t write_items_request::type_id = rx_write_items_request_id;
 
 rx_result write_items_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.write_uint("trans_id", transaction_id))
 		return stream.get_error();
@@ -391,7 +391,7 @@ rx_result write_items_request::deserialize (base_meta_reader& stream)
 			return stream.get_error();
 		if (!stream.read_uint("handle", one.first))
 			return stream.get_error();
-		if (!stream.read_value("value", one.second))
+		if (!one.second.deserialize("value", stream))
 			return stream.get_error();
 		if (!stream.end_object())
 			return stream.get_error();
@@ -470,7 +470,7 @@ rx_message_type_t execute_item_response::type_id = rx_execute_item_response_id;
 
 rx_result execute_item_response::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	return true;
 }
@@ -526,7 +526,7 @@ rx_message_type_t modify_items_request::type_id = rx_modify_items_request_id;
 
 rx_result modify_items_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	return true;
 }
@@ -567,7 +567,7 @@ rx_message_type_t read_items_request::type_id = rx_read_items_request_id;
 
 rx_result read_items_request::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	return true;
 }
@@ -624,7 +624,7 @@ rx_message_type_t read_items_response::get_type_id ()
 
 rx_result subscription_items_response::serialize (base_meta_writer& stream) const
 {
-	if (!stream.write_uuid("id", subscription_id.uuid()))
+	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
 	if (!stream.start_array("results", results.size()))
 		return stream.get_error();
@@ -680,7 +680,7 @@ rx_result add_item_data::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uint("client", client_handle))
 		return stream.get_error();
-	if (!stream.write_string("path", path))
+	if (!stream.write_string("path", path.c_str()))
 		return stream.get_error();
 	if (!stream.write_bool("active", active))
 		return stream.get_error();
@@ -743,7 +743,7 @@ rx_result add_item_result_data::serialize (base_meta_writer& stream) const
 		return stream.get_error();
 	if (!stream.write_uint("errCode", error_code))
 		return stream.get_error();
-	if (!stream.write_string("errMsg", error_text))
+	if (!stream.write_string("errMsg", error_text.c_str()))
 		return stream.get_error();
 	return true;
 }
@@ -789,7 +789,7 @@ rx_result item_result_data::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uint("errCode", error_code))
 		return stream.get_error();
-	if (!stream.write_string("errMsg", error_text))
+	if (!stream.write_string("errMsg", error_text.c_str()))
 		return stream.get_error();
 	return true;
 }

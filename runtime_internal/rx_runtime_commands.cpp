@@ -38,6 +38,7 @@
 #include "model/rx_model_algorithms.h"
 #include "terminal/rx_console.h"
 #include "system/serialization/rx_ser.h"
+#include "terminal/rx_term_table.h"
 
 
 namespace rx_internal {
@@ -289,7 +290,7 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 				{
 					bool is_value = false;
 					string_type postfix;
-					string_type value = one.value.get_storage().to_string();
+					string_type value = one.value.extract_static<string_type>(""s);
 					if (one.value.is_null())
 						value = RX_TERMINAL_STRUCT_SYMBOL;
 					switch (one.type)
@@ -324,21 +325,21 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 						break;
 					case rx_attribute_type::relation_attribute_type:
 						table[idx].emplace_back(one.name, ANSI_RX_RELATION_COLOR, ANSI_COLOR_RESET);
-						if (one.value.get_type() == RX_STRING_TYPE)
-							value = RX_TERMINAL_RELATION_SYMBOL + one.value.get_storage().get_string_value();
+						if (one.value.is_string())
+							value = RX_TERMINAL_RELATION_SYMBOL + one.value.get_string();
 						else if (one.value.is_null())
 							value = RX_TERMINAL_RELATION_SYMBOL;
 						else
-							value = RX_TERMINAL_RELATION_SYMBOL + one.value.get_storage().to_string();
+							value = RX_TERMINAL_RELATION_SYMBOL + one.value.to_string();
 						break;
 					case rx_attribute_type::relation_target_attribute_type:
 						table[idx].emplace_back(one.name, ANSI_RX_RELATION_TARGET_COLOR, ANSI_COLOR_RESET);
-						if (one.value.get_type() == RX_STRING_TYPE)
-							value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.get_storage().get_string_value();
+						if (one.value.is_string())
+							value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.get_string();
 						else if (one.value.is_null())
 							value = RX_TERMINAL_RELATION_TARGET_SYMBOL;
 						else
-							value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.get_storage().to_string();
+							value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.to_string();
 						break;
 					default:
 						table[idx].emplace_back(one.name);

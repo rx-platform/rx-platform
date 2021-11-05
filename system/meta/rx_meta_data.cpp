@@ -289,7 +289,7 @@ rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type
 		return stream.get_error();
 	if (stream.is_string_based())
 	{
-		if (!stream.write_string("type", rx_item_type_name(object_type)))
+		if (!stream.write_string("type", rx_item_type_name(object_type).c_str()))
 			return stream.get_error();
 	}
 	else
@@ -327,7 +327,7 @@ rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type
 		return stream.get_error();
 	if (!stream.write_version("ver", version))
 		return stream.get_error();
-	if (!stream.write_string("path", path))
+	if (!stream.write_string("path", path.c_str()))
 		return stream.get_error();
 	if (!stream.end_object())
 		return stream.get_error();
