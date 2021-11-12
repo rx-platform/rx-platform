@@ -1884,8 +1884,11 @@ void fill_dbc(DCB* dcb, uint32_t baud_rate, int stop_bits, int parity, uint8_t d
 	dcb->BaudRate = baud_rate;
 	dcb->StopBits = stop_bits;
 	dcb->Parity = parity;
-	dcb->fRtsControl = handshake ? RTS_CONTROL_ENABLE : RTS_CONTROL_DISABLE;
-	dcb->fDtrControl = handshake ? DTR_CONTROL_ENABLE : RTS_CONTROL_DISABLE;;
+	if (!handshake)
+	{
+		dcb->fRtsControl = RTS_CONTROL_ENABLE;
+		dcb->fDtrControl = DTR_CONTROL_ENABLE;
+	}
 	dcb->fOutxCtsFlow = FALSE;//(m_rts==RTS_CONTROL_DISABLE ? FALSE : TRUE);
 	dcb->fOutxDsrFlow = FALSE;//(m_rts==RTS_CONTROL_DISABLE ? FALSE : TRUE);
 	dcb->fOutX = FALSE;

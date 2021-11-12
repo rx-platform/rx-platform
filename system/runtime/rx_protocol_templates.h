@@ -137,6 +137,9 @@ public:
 
   protected:
 
+      rx_reference<endpointT> active_endpoint ();
+
+
   private:
 
 
@@ -233,6 +236,7 @@ rx_protocol_stack_endpoint* master_client_port_impl<endpointT>::construct_initia
         endpoint_data.first->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
         {
             endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
+            whose->close_endpoint();
             whose->get_port()->disconnect_stack_endpoint(entry);
         };
     }
@@ -273,7 +277,16 @@ rx_protocol_stack_endpoint* master_client_port_impl<endpointT>::construct_initia
 template <typename endpointT>
 void master_client_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
 {
-    active_endpoint_ = rx_reference<endpointT>();
+    if (active_endpoint_)
+    {
+        active_endpoint_ = rx_reference<endpointT>();
+    }
+}
+
+template <typename endpointT>
+rx_reference<endpointT> master_client_port_impl<endpointT>::active_endpoint ()
+{
+    return active_endpoint_;
 }
 
 

@@ -33,10 +33,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
 // rx_serial_io
 #include "interfaces/rx_serial_io.h"
 
@@ -129,6 +129,8 @@ public:
 
       void suspend_timer ();
 
+      rx_result check_port_data ();
+
 
 
       rx_protocol_stack_endpoint stack_endpoint_;
@@ -157,7 +159,7 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< serial_endpoint  > serial_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::serial::serial_endpoint  > serial_port_base;
 
 
 

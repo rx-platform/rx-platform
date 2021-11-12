@@ -67,10 +67,14 @@ rx_result local_pipe_port::initialize_runtime (runtime::runtime_init_context& ct
 rx_result local_pipe_port::receive_loop (rx_pipe_host* host)
 {
 	auto ticks = rx_get_tick_count();
+	rx_timer_ticks_t wait_period = 2000;
+#ifdef _DEBUG
+	wait_period = 2000000;
+#endif
 	while (!active_)
 	{
 		rx_ms_sleep(50);
-		if ((rx_get_tick_count() - ticks) > 2000u)
+		if ((rx_get_tick_count() - ticks) > wait_period)
 		{
 			break;
 		}

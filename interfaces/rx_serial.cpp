@@ -88,6 +88,11 @@ rx_protocol_result_t serial_endpoint::send_packet (send_protocol_packet packet)
 {
     if (my_port_)
     {
+        /*char buff[0x100];
+        memcpy(buff, packet.buffer->buffer_ptr, packet.buffer->size);
+        buff[packet.buffer->size] = '\0';
+        printf("\r\n***********Sent:%s\r\n", buff);*/
+
         auto io_buffer = my_port_->get_buffer();
         io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
         bool ret = serial_port_->write(io_buffer);
@@ -123,7 +128,11 @@ void serial_endpoint::disconnected (rx_security_handle_t identity)
 
 bool serial_endpoint::readed (const void* data, size_t count, rx_security_handle_t identity)
 {
-    security::secured_scope auto_sec(identity);
+    /*char bufft[0x100];
+    memcpy(bufft, data, count);
+    bufft[count] = '\0';
+    printf("\r\n***********Recevied:%s\r\n", bufft);
+    */
     rx_const_packet_buffer buff{};
     rx_init_const_packet_buffer(&buff, data, count);
     recv_protocol_packet up = rx_create_recv_packet(0, &buff, 0, 0);
@@ -140,15 +149,19 @@ rx_result serial_endpoint::open (const serial_port_data_t& port_data, security::
     identity_->login();
     my_port_ = port;
     port_data_ = port_data;
-    timer_ = my_port_->create_timer_function([this]()
-        {
-            if (!tick())
+    auto res = check_port_data();
+    if (res)
+    {
+        timer_ = my_port_->create_timer_function([this]()
             {
-                suspend_timer();
-            }
-        });
-    start_timer(true);
-    return true;
+                if (!tick())
+                {
+                    suspend_timer();
+                }
+            });
+        start_timer(true);
+    }
+    return res;
 }
 
 rx_result serial_endpoint::close ()
@@ -251,6 +264,14 @@ void serial_endpoint::release_buffer (buffer_ptr what)
     return my_port_->release_buffer(what);
 }
 
+rx_result serial_endpoint::check_port_data ()
+{
+    if (port_data_.port.empty())
+        return "Invalid port name specified";
+
+    return true;
+}
+
 
 void serial_endpoint::port_holder_t::release_buffer(buffer_ptr what)
 {
@@ -300,7 +321,13 @@ serial_port::serial_port()
 rx_result serial_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
     
-    port_data_.port = rx_gate::instance().resolve_serial_alias("com1");
+
+    port_data_.port = rx_gate::instance().resolve_serial_alias(ctx.get_item_static("Options.Port", ""s));
+    port_data_.baud_rate = ctx.get_item_static<uint32_t>("Options.BaudRate", 19200);
+    port_data_.data_bits = ctx.get_item_static<uint8_t>("Options.DataBits", 8);
+    port_data_.stop_bits = ctx.get_item_static<uint8_t>("Options.StopBits", 0);
+    port_data_.parity = ctx.get_item_static<uint8_t>("Options.Parity", 0);
+    port_data_.handshake = ctx.get_item_static<bool>("Options.Handshake", false);
    
     return true;
 }
