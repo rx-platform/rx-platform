@@ -36,6 +36,16 @@
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
 
+namespace rx_internal {
+namespace model {
+namespace dependency {
+class dependency_cache;
+
+} // namespace dependency
+} // namespace model
+} // namespace rx_internal
+
+
 #include "system/meta/rx_types.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/runtime/rx_objbase.h"
@@ -417,6 +427,9 @@ public:
 
   private:
 
+      void collect_and_add_depedencies (const typeT& what, const rx_node_id& parent_id);
+
+
 
       inheritance_hash inheritance_hash_;
 
@@ -490,6 +503,9 @@ public:
   protected:
 
   private:
+
+      void collect_and_add_depedencies (const typeT& what, const rx_node_id& parent_id);
+
 
 
       inheritance_hash inheritance_hash_;
@@ -660,6 +676,8 @@ public:
 
       rx_result_with<relations_type_repository::RTypePtr> create_relation_runtime (relations_type_repository::Tptr form_what);
 
+      void collect_and_add_depedencies (const relations_type_repository::Tptr& what, const rx_node_id& parent_id);
+
 
 
       inheritance_hash inheritance_hash_;
@@ -722,6 +740,9 @@ public:
   protected:
 
   private:
+
+      void collect_and_add_depedencies (const data_type_repository::Tptr& what, const rx_node_id& parent_id);
+
 
 
       inheritance_hash inheritance_hash_;
@@ -849,6 +870,8 @@ class platform_types_manager
 
       void stop ();
 
+      dependency::dependency_cache& get_dependecies_cache ();
+
 
       types_resolver& get_types_resolver ()
       {
@@ -886,6 +909,8 @@ class platform_types_manager
       relations_type_repository relations_repository_;
 
       data_type_repository data_types_repository_;
+
+      std::unique_ptr<dependency::dependency_cache> dependecies_cache_;
 
 	  template <class typeT>
 	  friend class algorithms::types_model_algorithm;

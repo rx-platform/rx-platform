@@ -54,6 +54,13 @@ rx_result_with<rx_node_id> rx_resolve_reference(const rx_item_reference& ref, co
 }
 
 
+meta_data rx_resolve_reference(const rx_item_reference& ref, rx_item_type& type,  const rx_directory_resolver& directories)
+{
+	return rx_internal::model::algorithms::resolve_reference(ref, type, directories);
+}
+
+
+
 template<typename typeT>
 rx_result_with<rx_node_id> rx_resolve_type_reference(const rx_item_reference& ref
 	, const rx_directory_resolver& directories, tl::type2type<typeT> _)
@@ -148,6 +155,34 @@ rx_result_with<directory_browse_result> rx_list_directory(const string_type& nam
 	}
 }
 
+void do_recursive_list(rx_directory_ptr who, std::vector<rx_namespace_item>& items, const string_type& pattern)
+{
+	directory_browse_result ret_val;
+	who->get_content(ret_val.directories, ret_val.items, pattern);
+	for (const auto& one : ret_val.items)
+		items.emplace_back(one);
+	for (auto sub : ret_val.directories)
+		do_recursive_list(sub, items, pattern);
+}
+
+rx_result_with<directory_browse_result> rx_recursive_list_items(const string_type& name // directory's path
+	, const string_type& pattern // search pattern
+	, rx_context ctx)
+{
+	directory_browse_result ret_val;
+	rx_directory_ptr from = ctx.directory ? ctx.directory : rx_gate::instance().get_root_directory();
+	rx_directory_ptr who = from->get_sub_directory(name);
+	if (who)
+	{
+		do_recursive_list(who, ret_val.items, pattern);
+		ret_val.success = true;
+		return ret_val;
+	}
+	else
+	{
+		return (name + " not found!");
+	}
+}
 
 // !!!!!!!!rx_list_runtime has to be with two hoops
 template<typename typeT>

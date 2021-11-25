@@ -822,6 +822,9 @@ bool rx_value::convert_to (rx_value_t type)
 
 void rx_value::parse (const string_type& str)
 {
+	rx_destroy_value(&value);
+	if (!rx_parse_string(&value, str.c_str()))
+		rx_init_null_value(&value);
 }
 
 bool rx_value::is_array () const
@@ -1232,6 +1235,9 @@ bool rx_simple_value::convert_to (rx_value_t type)
 
 void rx_simple_value::parse (const string_type& str)
 {
+	rx_destroy_value(this);
+	if (!rx_parse_string(this, str.c_str()))
+		rx_init_null_value(this);
 }
 
 bool rx_simple_value::is_array () const
@@ -1514,6 +1520,9 @@ bool rx_timed_value::convert_to (rx_value_t type)
 
 void rx_timed_value::parse (const string_type& str)
 {
+	rx_destroy_value(&value);
+	if (!rx_parse_string(&value, str.c_str()))
+		rx_init_null_value(&value);
 }
 
 bool rx_timed_value::is_array () const

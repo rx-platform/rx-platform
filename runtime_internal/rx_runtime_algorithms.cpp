@@ -40,6 +40,7 @@
 #include "model/rx_meta_internals.h"
 #include "system/server/rx_platform_item.h"
 #include "api/rx_namespace_api.h"
+#include "model/rx_model_dependencies.h"
 
 
 namespace rx_internal {
@@ -287,6 +288,9 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 				RUNTIME_LOG_ERROR("object_algorithms", 900, message.str());
 				return rx_result(message.str());
 			}
+			if (domain_ptr && !connect_unassigned)
+				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
+					what->meta_info().id, domain_ptr.value()->meta_info().id);
 		}
 		else
 		{
@@ -313,6 +317,10 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 			if (what->get_instance_data().connect_domain(std::move(temp_ptr), what))
 				RUNTIME_LOG_INFO("object_algorithms", 100, what->meta_info().get_full_path()
 					+ " connected to domain " + domain_ptr.value()->meta_info().get_full_path());
+
+			if (domain_ptr)
+				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
+					what->meta_info().id, domain_ptr.value()->meta_info().id);
 		}
 		else
 		{
@@ -469,6 +477,9 @@ rx_result domain_algorithms::connect_application (rx_domain_ptr what)
 				RUNTIME_LOG_ERROR("domain_algorithms", 900, message.str());
 				return rx_result(message.str());
 			}
+			if(application_ptr && !connect_unassigned)
+				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
+					what->meta_info().id, application_ptr.value()->meta_info().id);
 		}
 		else
 		{
@@ -495,6 +506,10 @@ rx_result domain_algorithms::connect_application (rx_domain_ptr what)
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_INFO("domain_algorithms", 100, what->meta_info().get_full_path()
 					+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
+
+			if (application_ptr)
+				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
+					what->meta_info().id, application_ptr.value()->meta_info().id);
 		}
 		else
 		{
@@ -647,6 +662,9 @@ rx_result port_algorithms::connect_application (rx_port_ptr what)
 				message << application_ptr.errors_line();
 				return rx_result(message.str());
 			}
+			if (application_ptr && !connect_unassigned)
+				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
+					what->meta_info().id, application_ptr.value()->meta_info().id);
 		}
 		else
 		{
@@ -673,6 +691,10 @@ rx_result port_algorithms::connect_application (rx_port_ptr what)
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_INFO("port_algorithms", 100, what->meta_info().get_full_path()
 					+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
+
+			if (application_ptr)
+				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
+					what->meta_info().id, application_ptr.value()->meta_info().id);
 		}
 		else
 		{

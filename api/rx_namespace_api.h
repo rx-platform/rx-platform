@@ -51,6 +51,11 @@ rx_result_with<rx_node_id> rx_resolve_reference(
 	const rx_item_reference& ref
 	, const rx_directory_resolver& directories);
 
+meta_data rx_resolve_reference(
+	const rx_item_reference& ref
+	, rx_item_type& type
+	, const rx_directory_resolver& directories);
+
 template<typename typeT>
 rx_result_with<rx_node_id> rx_resolve_type_reference(
 	const rx_item_reference& ref
@@ -92,6 +97,13 @@ struct directory_browse_result
 };
 
 rx_result_with<directory_browse_result> rx_list_directory(
+	const string_type& name // directory's path
+	, const string_type& pattern // search pattern
+	, rx_context ctx);
+
+
+
+rx_result_with<directory_browse_result> rx_recursive_list_items(
 	const string_type& name // directory's path
 	, const string_type& pattern // search pattern
 	, rx_context ctx);

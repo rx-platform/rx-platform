@@ -121,6 +121,10 @@ const rx_message_type_t rx_write_runtime_request_id = 0x0019;
 const rx_message_type_t rx_write_runtime_response_id = 0x8019;
 
 
+const rx_message_type_t rx_update_directory_request_id = 0x001a;
+const rx_message_type_t rx_update_directory_response_id = 0x801a;
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // subscription messages constants
 const rx_message_type_t rx_create_subscription_request_id = 0x0081;

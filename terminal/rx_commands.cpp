@@ -165,6 +165,7 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<model::meta_commands::dump_types_command>());
 	register_command(rx_create_reference<model::meta_commands::check_command>());
 	register_command(rx_create_reference<model::meta_commands::save_command>());
+	register_command(rx_create_reference<model::meta_commands::query_command>());
 	// runtime commands
 	register_command(rx_create_reference<sys_runtime::runtime_commands::read_command>());
 	register_command(rx_create_reference<sys_runtime::runtime_commands::struct_command>());

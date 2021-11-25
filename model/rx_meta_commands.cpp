@@ -2002,6 +2002,32 @@ bool update_command::update_simple_type(std::istream& in, std::ostream& out, std
 		return false;
 	}
 }
+// Class rx_internal::model::meta_commands::query_command 
+
+query_command::query_command()
+	: server_command("update")
+{
+}
+
+
+query_command::~query_command()
+{
+}
+
+
+
+bool query_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	return do_depends_command(in, out, err, ctx);
+}
+
+bool query_command::do_depends_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	err << RX_NOT_IMPLEMENTED;
+	return false;
+}
+
+
 } // namespace meta_commands
 } // namespace model
 } // namespace rx_internal

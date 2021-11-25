@@ -293,7 +293,16 @@ bool basic_types_algorithm<typeT>::check_type (typeT& whose, type_check_context&
 template <class typeT>
 rx_result basic_types_algorithm<typeT>::construct (const typeT& whose, construct_context& ctx, typename typeT::RDataType& prototype)
 {
+	ctx.get_directories().add_paths({ whose.meta_info.path });
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
+	return ret;
+}
+
+template <class typeT>
+rx_result basic_types_algorithm<typeT>::get_depends (const typeT& whose, dependencies_context& ctx)
+{
+	ctx.directories.add_paths({ whose.meta_info.path });
+	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
 	return ret;
 }
 
@@ -602,6 +611,65 @@ rx_result basic_types_algorithm<event_type>::construct(const event_type& whose, 
 }
 
 
+template <>
+rx_result basic_types_algorithm<variable_type>::get_depends(const variable_type& whose, dependencies_context& ctx)
+{
+	ctx.directories.add_paths({ whose.meta_info.path });
+	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
+	if (ret)
+	{
+		ret = variable_data_algorithm::get_depends(whose.variable_data, ctx);
+		if(ret)
+			ret = mapped_data_algorithm::get_depends(whose.mapping_data, ctx);
+	}
+	return ret;
+}
+template <>
+rx_result basic_types_algorithm<struct_type>::get_depends(const struct_type& whose, dependencies_context& ctx)
+{
+	ctx.directories.add_paths({ whose.meta_info.path });
+	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
+	if (ret)
+		ret = mapped_data_algorithm::get_depends(whose.mapping_data, ctx);
+	return ret;
+}
+
+template <>
+rx_result basic_types_algorithm<source_type>::get_depends(const source_type& whose, dependencies_context& ctx)
+{
+	ctx.directories.add_paths({ whose.meta_info.path });
+	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
+	if (ret)
+		ret = filtered_data_algorithm::get_depends(whose.filter_data, ctx);
+	return ret;
+}
+template <>
+rx_result basic_types_algorithm<mapper_type>::get_depends(const mapper_type& whose, dependencies_context& ctx)
+{
+	ctx.directories.add_paths({ whose.meta_info.path });
+	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
+	if (ret)
+		ret = filtered_data_algorithm::get_depends(whose.filter_data, ctx);
+	return ret;
+}
+
+
+template <>
+rx_result basic_types_algorithm<event_type>::get_depends(const event_type& whose, dependencies_context& ctx)
+{
+	ctx.directories.add_paths({ whose.meta_info.path });
+	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
+	if (ret && !whose.arguments.is_null())
+	{
+		auto res = rx_internal::model::algorithms::resolve_reference(whose.arguments, ctx.directories);
+		if(res)
+			ctx.cache.emplace(res.move_value());
+
+	}
+	return ret;
+}
+
+
 
 template class basic_types_algorithm<basic_types::struct_type>;
 template class basic_types_algorithm<basic_types::variable_type>;
@@ -680,6 +748,14 @@ rx_result object_types_algorithm<typeT>::construct_runtime (const typeT& whose, 
 			ret = object_data_algorithm<typeT>::construct_object_data(whose.object_data, what, whose.complex_data.get_names_cache(), ctx);
 		}
 	}
+	return ret;
+}
+
+template <class typeT>
+rx_result object_types_algorithm<typeT>::get_depends (const typeT& whose, dependencies_context& ctx)
+{
+	ctx.directories.add_paths({ whose.meta_info.path });
+	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
 	return ret;
 }
 

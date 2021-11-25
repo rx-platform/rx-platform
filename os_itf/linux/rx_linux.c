@@ -1556,9 +1556,10 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                     int ops=remove_pending_op(type_data);
                                     if(ops>=0)
                                     {
-                                        if(err==0)// closed up
-                                            (io_data->shutdown_callback)(io_data->data, errno);
-                                        else
+                                        // READLOOP
+                                        //if(err==0)// closed up
+                                        //    (io_data->shutdown_callback)(io_data->data, errno);
+                                       // else
                                             (io_data->read_callback)(io_data->data, 0, err);
                                     }
                                 }
@@ -1590,9 +1591,10 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                     int ops=remove_pending_op(type_data);
                                     if(ops>=0)
                                     {
-                                        if(err==0)// closed up
-                                            (io_data->shutdown_callback)(io_data->data, errno);
-                                        else
+                                        // READLOOP
+                                        //if(err==0)// closed up
+                                        //    (io_data->shutdown_callback)(io_data->data, errno);
+                                        //else
                                             (io_data->read_from_callback)(io_data->data, 0, err, (struct sockaddr*)&addr, addr_len);
                                     }
                                 }

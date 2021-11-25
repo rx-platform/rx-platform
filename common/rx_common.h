@@ -465,6 +465,9 @@ RX_COMMON_API int rx_init_time_value(struct typed_value_type* val, const rx_time
 RX_COMMON_API int rx_init_node_id_value(struct typed_value_type* val, const rx_node_id_struct* data);
 
 
+RX_COMMON_API int rx_parse_string(struct typed_value_type* val, const char* data);
+
+
 RX_COMMON_API void rx_assign_value(struct typed_value_type* val, const struct typed_value_type* right);
 RX_COMMON_API void rx_copy_value(struct typed_value_type* val, const struct typed_value_type* right);
 RX_COMMON_API void rx_move_value(struct typed_value_type* val, struct typed_value_type* right);

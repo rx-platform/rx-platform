@@ -243,7 +243,7 @@ RX_COMMON_API int rx_string_to_uuid(const char* str, uuid_t* u)
 	else
 	{
 		*u = g_null_uuid;
-		return RX_OK;
+		return RX_ERROR;
 	}
 }
 

@@ -1838,4 +1838,55 @@ RX_COMMON_API int rx_convert_value(struct typed_value_type* val, rx_value_t type
 	}
 }
 
+RX_COMMON_API int rx_parse_string(struct typed_value_type* val, const char* data)
+{
+	if (data == NULL)
+	{
+		return rx_init_null_value(val);
+	}
+	else if (!(*data))
+	{
+		return rx_init_string_value(val, NULL, 0);
+	}
+	else
+	{
+		uint_fast8_t temp;
+		uint64_t temp_uint;
+		int64_t temp_int;
+		double temp_dbl;
+		rx_uuid_t temp_uuid;
+		// try bool first
+		if (parse_bool(data, &temp))
+		{
+			return rx_init_bool_value(val, temp);
+		}
+		else if (parse_uint64(data, &temp_uint))
+		{
+			if (temp_uint < UINT_MAX)
+				return rx_init_uint32_value(val, (uint32_t)temp_uint);
+			else
+				return rx_init_uint64_value(val, temp_uint);
+		}
+		else if (parse_int64(data, &temp_int))
+		{
+			if (temp_int < INT_MAX && temp_int > INT_MIN)
+				return rx_init_int32_value(val, (int32_t)temp_int);
+			else
+				return rx_init_uint64_value(val, temp_int);
+		}
+		else if (parse_double(data, &temp_dbl))
+		{
+			return rx_init_double_value(val, temp_dbl);
+		}
+		else if (rx_string_to_uuid(data, &temp_uuid))
+		{
+			return rx_init_uuid_value(val, &temp_uuid);
+		}
+		else
+		{
+			return rx_init_string_value(val, data, -1);
+		}
+	}
+}
+
 

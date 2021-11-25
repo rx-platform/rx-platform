@@ -33,10 +33,10 @@
 
 
 
-// rx_def_blocks
-#include "system/meta/rx_def_blocks.h"
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
+// rx_def_blocks
+#include "system/meta/rx_def_blocks.h"
 
 
 
@@ -66,6 +66,8 @@ class variable_data_algorithm
 
       static rx_result construct_complex_attribute (const variable_data_type& whose, const names_cahce_type& names, construct_context& ctx);
 
+      static rx_result get_depends (const variable_data_type& whose, dependencies_context& ctx);
+
 
   protected:
 
@@ -93,6 +95,8 @@ class complex_data_algorithm
 
       static rx_result construct_complex_attribute (const complex_data_type& whose, construct_context& ctx);
 
+      static rx_result get_depends (const complex_data_type& whose, dependencies_context& ctx);
+
 
   protected:
 
@@ -119,6 +123,8 @@ class filtered_data_algorithm
 
       static rx_result construct_complex_attribute (const filtered_data_type& whose, const names_cahce_type& names, construct_context& ctx);
 
+      static rx_result get_depends (const filtered_data_type& whose, dependencies_context& ctx);
+
 
   protected:
 
@@ -144,6 +150,8 @@ class mapped_data_algorithm
       static bool check_complex_attribute (mapped_data_type& whose, type_check_context& ctx);
 
       static rx_result construct_complex_attribute (const mapped_data_type& whose, const names_cahce_type& names, construct_context& ctx);
+
+      static rx_result get_depends (const mapped_data_type& whose, dependencies_context& ctx);
 
 
   protected:

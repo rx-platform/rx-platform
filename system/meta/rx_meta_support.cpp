@@ -892,6 +892,9 @@ runtime::structure::block_data data_blocks_prototype::create_runtime ()
 }
 
 
+// Class rx_platform::meta::dependencies_context 
+
+
 } // namespace meta
 } // namespace rx_platform
 

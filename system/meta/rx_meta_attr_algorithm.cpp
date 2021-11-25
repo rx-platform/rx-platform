@@ -536,6 +536,21 @@ rx_result variable_data_algorithm::construct_complex_attribute (const variable_d
 	return true;
 }
 
+rx_result variable_data_algorithm::get_depends (const variable_data_type& whose, dependencies_context& ctx)
+{
+	for (const auto& one : whose.filters_)
+	{
+		auto ret = rx_internal::model::algorithms::resolve_reference(one.get_target(), ctx.directories);
+		if (!ret)
+		{
+			ret.register_error("Unable to resolve filter "s + one.get_target().to_string() + "!");
+			return ret.errors();
+		}
+		ctx.cache.emplace(ret.move_value());
+	}
+	return true;
+}
+
 
 // Class rx_platform::meta::meta_algorithm::complex_data_algorithm 
 
@@ -888,6 +903,52 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 	return true;
 }
 
+rx_result complex_data_algorithm::get_depends (const complex_data_type& whose, dependencies_context& ctx)
+{
+	for (const auto& one : whose.names_cache_)
+	{
+		switch (one.second & complex_data_type::type_mask)
+		{
+		case complex_data_type::structs_mask:
+			{
+				auto ret = rx_internal::model::algorithms::resolve_reference(whose.structs_[one.second & complex_data_type::index_mask].get_target(), ctx.directories);
+				if (!ret)
+				{
+					ret.register_error("Unable to resolve struct "s + whose.structs_[one.second & complex_data_type::index_mask].get_target().to_string() + "!");
+					return ret.errors();
+				}
+				ctx.cache.emplace(ret.move_value());
+				break;
+			}
+			// variables
+		case complex_data_type::variables_mask:
+			{
+				auto ret = rx_internal::model::algorithms::resolve_reference(whose.variables_[one.second & complex_data_type::index_mask].get_target(), ctx.directories);
+				if (!ret)
+				{
+					ret.register_error("Unable to resolve variable "s + whose.variables_[one.second & complex_data_type::index_mask].get_target().to_string() + "!");
+					return ret.errors();
+				}
+				ctx.cache.emplace(ret.move_value());
+				break;
+			}
+			// events
+		case complex_data_type::events_mask:
+			{
+				auto ret = rx_internal::model::algorithms::resolve_reference(whose.events_[one.second & complex_data_type::index_mask].get_target(), ctx.directories);
+				if (!ret)
+				{
+					ret.register_error("Unable to resolve event "s + whose.events_[one.second & complex_data_type::index_mask].get_target().to_string() + "!");
+					return ret.errors();
+				}
+				ctx.cache.emplace(ret.move_value());
+				break;
+			}
+		}
+	}
+	return true;
+}
+
 
 // Class rx_platform::meta::meta_algorithm::filtered_data_algorithm 
 
@@ -963,6 +1024,21 @@ rx_result filtered_data_algorithm::construct_complex_attribute (const filtered_d
 				break;
 			}
 		}
+	}
+	return true;
+}
+
+rx_result filtered_data_algorithm::get_depends (const filtered_data_type& whose, dependencies_context& ctx)
+{
+	for (const auto& one : whose.filters_)
+	{
+		auto ret = rx_internal::model::algorithms::resolve_reference(one.get_target(), ctx.directories);
+		if (!ret)
+		{
+			ret.register_error("Unable to resolve filter "s + one.get_target().to_string() + "!");
+			return ret.errors();
+		}
+		ctx.cache.emplace(ret.move_value());
 	}
 	return true;
 }
@@ -1088,6 +1164,31 @@ rx_result mapped_data_algorithm::construct_complex_attribute (const mapped_data_
 				break;
 			}
 		}
+	}
+	return true;
+}
+
+rx_result mapped_data_algorithm::get_depends (const mapped_data_type& whose, dependencies_context& ctx)
+{
+	for (const auto& one : whose.mappers_)
+	{
+		auto ret = rx_internal::model::algorithms::resolve_reference(one.get_target(), ctx.directories);
+		if (!ret)
+		{
+			ret.register_error("Unable to resolve mapper "s + one.get_target().to_string() + "!");
+			return ret.errors();
+		}
+		ctx.cache.emplace(ret.move_value());
+	}
+	for (const auto& one : whose.sources_)
+	{
+		auto ret = rx_internal::model::algorithms::resolve_reference(one.get_target(), ctx.directories);
+		if (!ret)
+		{
+			ret.register_error("Unable to resolve source "s + one.get_target().to_string() + "!");
+			return ret.errors();
+		}
+		ctx.cache.emplace(ret.move_value());
 	}
 	return true;
 }

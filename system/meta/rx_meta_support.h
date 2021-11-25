@@ -610,6 +610,28 @@ class data_blocks_prototype
 };
 
 
+
+
+
+
+class dependencies_context 
+{
+
+  public:
+
+      ns::rx_directory_resolver directories;
+
+      std::set<rx_node_id> cache;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace meta
 } // namespace rx_platform
 

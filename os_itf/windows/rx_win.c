@@ -1465,10 +1465,11 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
 			{
 				if (pOvl == &internal_data->m_read)
 				{// read operation
-					if (transfered != 0)
+					// READLOOP
+					//if (transfered != 0)
 						(data->read_callback)(data->data, 0, transfered);
-					else
-						(data->shutdown_callback)(data->data, 255);
+					/*else
+						(data->shutdown_callback)(data->data, 213);*/
 				}
 				else if (pOvl == &internal_data->m_write)
 				{
@@ -1887,10 +1888,20 @@ void fill_dbc(DCB* dcb, uint32_t baud_rate, int stop_bits, int parity, uint8_t d
 	if (!handshake)
 	{
 		dcb->fRtsControl = RTS_CONTROL_ENABLE;
-		dcb->fDtrControl = DTR_CONTROL_ENABLE;
+		dcb->fDtrControl = DTR_CONTROL_DISABLE;
+		dcb->fOutxCtsFlow = FALSE;
+		dcb->fOutxDsrFlow = FALSE;
+		dcb->fDsrSensitivity = FALSE;
 	}
-	dcb->fOutxCtsFlow = FALSE;//(m_rts==RTS_CONTROL_DISABLE ? FALSE : TRUE);
-	dcb->fOutxDsrFlow = FALSE;//(m_rts==RTS_CONTROL_DISABLE ? FALSE : TRUE);
+	else
+	{
+		dcb->fRtsControl = RTS_CONTROL_HANDSHAKE;
+		dcb->fDtrControl = DTR_CONTROL_HANDSHAKE;
+		dcb->fOutxCtsFlow = TRUE;
+		dcb->fOutxDsrFlow = TRUE;
+		dcb->fDsrSensitivity = TRUE;
+
+	}
 	dcb->fOutX = FALSE;
 	dcb->fInX = FALSE;
 	dcb->fDsrSensitivity = FALSE;
@@ -1913,6 +1924,17 @@ sys_handle_t rx_open_serial_port(const char* port, uint32_t baud_rate, int stop_
 			fill_dbc(&dcb, baud_rate, stop_bits, parity, data_bits, handshake);
 			dcb.fAbortOnError = 0;
 			success = SetCommState(ret, &dcb);
+			if (success)
+			{
+				COMMTIMEOUTS time;
+				time.ReadIntervalTimeout = 1;
+				time.ReadTotalTimeoutConstant = MAXDWORD;
+				time.ReadTotalTimeoutMultiplier = 0;
+				time.WriteTotalTimeoutConstant = 0;
+				time.WriteTotalTimeoutMultiplier = 0;
+
+				success = SetCommTimeouts(ret, &time);
+			}
 		}
 		if (!success)
 		{

@@ -65,6 +65,8 @@ namespace rx_platform {
 bool rx_is_runtime(rx_item_type type);
 
 
+
+
 struct rx_update_runtime_data
 {
     rx_uuid checkout;
@@ -188,7 +190,16 @@ class program_type;
 class display_type;
 }
 
+namespace runtime_data
+{
+class object_runtime_data;
+class domain_runtime_data;
+class port_runtime_data;
+class application_runtime_data;
 }
+
+}
+
 
 typedef pointers::reference<meta::object_types::object_type> rx_object_type_ptr;
 typedef pointers::reference<meta::object_types::domain_type> rx_domain_type_ptr;
@@ -278,6 +289,42 @@ class meta_data
 };
 
 meta_data create_meta_for_new(const meta_data& proto);
+
+
+
+
+
+class config_part_container 
+{
+  public:
+      typedef std::vector<std::unique_ptr<runtime_data::object_runtime_data> > objects_type;
+      typedef std::vector<std::unique_ptr<runtime_data::domain_runtime_data> > domains_type;
+      typedef std::vector<std::unique_ptr<runtime_data::port_runtime_data> > ports_type;
+      typedef std::vector<std::unique_ptr<runtime_data::application_runtime_data> > apps_type;
+
+  public:
+
+      rx_result serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (const string_type& name, base_meta_reader& stream, uint8_t type);
+
+
+      objects_type objects;
+
+      domains_type domains;
+
+      ports_type ports;
+
+      apps_type apps;
+
+
+  protected:
+
+  private:
+
+
+};
+
 
 } // namespace meta
 } // namespace rx_platform

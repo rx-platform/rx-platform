@@ -241,6 +241,39 @@ class port_stack_query : public rx_query
 };
 
 
+
+
+
+
+class dependents_query : public rx_query  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_query_type ();
+
+      rx_result do_query (api::query_result& result, rx_directory_ptr dir);
+
+
+      rx_item_reference item;
+
+      static string_type query_name;
+
+      string_type subfolder;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace queries
 } // namespace meta
 } // namespace rx_platform

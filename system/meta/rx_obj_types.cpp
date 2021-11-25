@@ -48,6 +48,8 @@ namespace object_types {
 
 rx_item_type application_type::type_id = rx_item_type::rx_application_type;
 
+rx_item_type application_type::runtime_type_id = rx_item_type::rx_application;
+
 
 platform_item_ptr application_type::get_item_ptr () const
 {
@@ -60,6 +62,8 @@ platform_item_ptr application_type::get_item_ptr () const
 
 rx_item_type domain_type::type_id = rx_item_type::rx_domain_type;
 
+rx_item_type domain_type::runtime_type_id = rx_item_type::rx_domain;
+
 
 platform_item_ptr domain_type::get_item_ptr () const
 {
@@ -71,6 +75,8 @@ platform_item_ptr domain_type::get_item_ptr () const
 // Class rx_platform::meta::object_types::object_type 
 
 rx_item_type object_type::type_id = rx_item_type::rx_object_type;
+
+rx_item_type object_type::runtime_type_id = rx_item_type::rx_object;
 
 
 void object_type::get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info)
@@ -152,6 +158,8 @@ rx_result object_data_type::register_display (const def_blocks::display_attribut
 // Class rx_platform::meta::object_types::port_type 
 
 const rx_item_type port_type::type_id = rx_item_type::rx_port_type;
+
+rx_item_type port_type::runtime_type_id = rx_item_type::rx_port;
 
 
 platform_item_ptr port_type::get_item_ptr () const

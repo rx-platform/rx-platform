@@ -127,6 +127,8 @@ class basic_types_algorithm
 
       static rx_result construct (const typeT& whose, construct_context& ctx, typename typeT::RDataType& prototype);
 
+      static rx_result get_depends (const typeT& whose, dependencies_context& ctx);
+
 
   protected:
 
@@ -153,6 +155,8 @@ class object_types_algorithm
       static bool check_type (typeT& whose, type_check_context& ctx);
 
       static rx_result construct_runtime (const typeT& whose, typename typeT::RTypePtr what, construct_context& ctx);
+
+      static rx_result get_depends (const typeT& whose, dependencies_context& ctx);
 
 
   protected:

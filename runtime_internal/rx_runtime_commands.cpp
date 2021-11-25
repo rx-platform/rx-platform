@@ -386,7 +386,7 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 	in >> full_path;
 	if (!in.eof())
 	{
-		in >> val_str;
+		std::getline(in, val_str, '\0');
 		to_write.parse(val_str);
 	}
 	if (full_path.empty())

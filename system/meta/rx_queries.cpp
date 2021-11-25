@@ -36,6 +36,7 @@
 
 #include "model/rx_meta_internals.h"
 #include "runtime_internal/rx_runtime_internal.h"
+#include "model/rx_model_algorithms.h"
 
 
 namespace rx_platform {
@@ -237,6 +238,7 @@ rx_result rx_query::init_query_types ()
 	registered_queries_.emplace(runtime_objects_query::query_name, [] { return std::make_shared<runtime_objects_query>(); });
 	registered_queries_.emplace(translate_query::query_name, [] { return std::make_shared<translate_query>(); });
 	registered_queries_.emplace(port_stack_query::query_name, [] { return std::make_shared<port_stack_query>(); });
+	registered_queries_.emplace(dependents_query::query_name, [] { return std::make_shared<dependents_query>(); });
 	return true;
 }
 
@@ -519,6 +521,55 @@ rx_result port_stack_query::do_query (api::query_result& result, rx_directory_pt
 		}
 	}
 	return true;
+}
+
+
+// Class rx_platform::meta::queries::dependents_query 
+
+string_type dependents_query::query_name = "dependents";
+
+
+rx_result dependents_query::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_item_reference("item", item))
+		return stream.get_error();
+	if (!stream.write_string("subfolder", subfolder.c_str()))
+		return stream.get_error();
+
+	return true;
+}
+
+rx_result dependents_query::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_item_reference("item", item))
+		return stream.get_error();
+	if (!stream.read_string("subfolder", subfolder))
+		return stream.get_error();
+
+	return true;
+}
+
+const string_type& dependents_query::get_query_type ()
+{
+  return query_name;
+
+}
+
+rx_result dependents_query::do_query (api::query_result& result, rx_directory_ptr dir)
+{
+	string_type path;
+	if (dir)
+		dir->fill_path(path);
+	auto depents = rx_internal::model::algorithms::transaction_algorithm::get_dependents(item, path);
+	if (depents)
+	{
+		result = depents.move_value();
+		return true;
+	}
+	else
+	{
+		return depents.errors();
+	}
 }
 
 

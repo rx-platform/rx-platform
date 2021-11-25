@@ -35,12 +35,12 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
-// rx_def_blocks
-#include "system/meta/rx_def_blocks.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// rx_def_blocks
+#include "system/meta/rx_def_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -243,6 +243,8 @@ public:
 
       static rx_item_type type_id;
 
+      static rx_item_type runtime_type_id;
+
 
   protected:
 
@@ -287,6 +289,8 @@ public:
 
 
       static rx_item_type type_id;
+
+      static rx_item_type runtime_type_id;
 
 
   protected:
@@ -335,6 +339,8 @@ public:
 
       static rx_item_type type_id;
 
+      static rx_item_type runtime_type_id;
+
 
   protected:
 
@@ -379,6 +385,8 @@ public:
 
 
       static const rx_item_type type_id;
+
+      static rx_item_type runtime_type_id;
 
 
   protected:

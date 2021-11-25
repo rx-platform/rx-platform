@@ -314,6 +314,38 @@ command for updating various objects and types in platform\r\n\
 };
 
 
+
+
+
+
+class query_command : public terminal::commands::server_command  
+{
+    DECLARE_REFERENCE_PTR(query_command);
+    DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for querying various runtime entities in platform\r\n\
+\
+");
+
+  public:
+      query_command();
+
+      ~query_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+  private:
+
+      bool do_depends_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+
+};
+
+
 } // namespace meta_commands
 } // namespace model
 } // namespace rx_internal

@@ -201,7 +201,8 @@ RX_COMMON_API int rx_uuid_to_string(const rx_uuid_t* u, char* str)
 RX_COMMON_API int rx_string_to_uuid(const char* str, rx_uuid_t* u)
 {
     uuid_t uuid;
-    uuid_parse(str, uuid);
+    if (uuid_parse(str, uuid) < 0)
+        return RX_ERROR;
     linux_uuid_to_uuid(&uuid, u);
     return RX_OK;
 }

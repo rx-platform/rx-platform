@@ -40,6 +40,8 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "api/rx_platform_api.h"
 #include "system/meta/rx_meta_algorithm.h"
+#include "api/rx_namespace_api.h"
+#include "model/rx_model_dependencies.h"
 
 #define RX_NEW_SYMBOL_LOG_PREFIX_STR "#"s
 
@@ -694,6 +696,20 @@ rx_result_with<rx_node_id> resolve_reference(const rx_item_reference& ref, const
 	meta_data temp;
 	return resolve_some_reference(ref, directories, temp, type);
 }
+meta_data resolve_reference(const rx_item_reference& ref, rx_item_type& type, const ns::rx_directory_resolver& directories)
+{
+	meta_data temp;
+	auto result = resolve_some_reference(ref, directories, temp, type);
+	if (result)
+	{
+		return temp;
+	}
+	else
+	{
+		type = rx_item_type::rx_invalid_type;
+		return meta_data();
+	}
+}
 
 
 template<typename typeT>
@@ -1144,7 +1160,7 @@ void runtime_model_algorithm<typeT>::create_prototype (instanceT&& instance_data
 template <class typeT>
 void runtime_model_algorithm<typeT>::update_runtime (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
 {
-	rx_post_function_to(RX_DOMAIN_META, callback.get_anchor(), &runtime_model_algorithm<typeT>::update_runtime_sync
+	rx_post_function_to(RX_DOMAIN_META, callback.get_anchor(), &runtime_model_algorithm<typeT>::update_runtime_with_depends_sync
 		, std::move(instance_data), std::move(update_data), std::move(callback), rx_thread_context());
 
 }
@@ -1408,6 +1424,43 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const rx_item_ref
 	return result;
 }
 
+template <class typeT>
+void runtime_model_algorithm<typeT>::update_runtime_with_depends_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target)
+{
+	auto result = transaction_algorithm::get_dependents(instance_data.meta_info.id, instance_data.meta_info.path);
+	if (result)
+	{
+		if (result.value().items.empty())
+		{
+			update_runtime_sync(std::move(instance_data), std::move(update_data), std::move(callback), result_target);
+		}
+		else
+		{
+			dependency::local_dependecy_builder::smart_ptr builder_ptr = rx_create_reference<dependency::local_dependecy_builder>();
+			api::query_result_detail temp(typeT::runtime_type_id, instance_data.meta_info);
+			builder_ptr->add(temp, true, true);
+			for (auto& one : result.value().items)
+			{
+				builder_ptr->add(one, true, true);
+			}
+			rx_reference_ptr anchor = callback.get_anchor();
+			rx_result_callback my_callback(anchor, [callback = std::move(callback)](rx_result&& res) mutable
+				{
+				if (!res)
+					callback(res.errors());
+				else
+					callback("Uradio nesto jbg!!!");
+				});
+			auto ret = builder_ptr->apply_items(std::move(my_callback));
+				
+		}
+	}
+	else
+	{
+		callback(result.errors());
+	}
+}
+
 
 // Class rx_internal::model::algorithms::relation_types_algorithm 
 
@@ -1629,6 +1682,47 @@ rx_result_with<check_type_result> data_types_model_algorithm::check_type_sync (c
 }
 
 
+// Class rx_internal::model::algorithms::transaction_algorithm 
+
+
+rx_result_with<api::query_result> transaction_algorithm::get_dependents (rx_item_reference item, string_view_type dir)
+{
+	std::vector<api::query_result_detail> ret;
+	ns::rx_directory_resolver dirs;
+	dirs.add_paths({ string_type(dir) });
+	rx_item_type type;
+	meta_data meta = api::ns::rx_resolve_reference(item, type, dirs);
+	if (type == rx_item_type::rx_invalid_type)
+		return RX_INVALID_PATH;
+
+	std::set<rx_node_id> ids;
+	rx_result repository_result = platform_types_manager::instance().get_dependecies_cache().fill_dependents(meta.id, ids);
+
+	if (!repository_result)
+		return repository_result.errors();
+
+
+	api::query_result result;
+	result.success = true;
+
+	for (auto& one : ids)
+	{
+		meta_data temp;
+		auto type = rx_internal::model::platform_types_manager::instance().get_types_resolver().get_item_data(one, temp);
+		if (type != rx_item_type::rx_invalid_type)
+		{
+			result.items.emplace_back(api::query_result_detail{ type, temp });
+		}
+	}
+
+	return result;
+}
+
+template<typename T>
+rx_result transaction_algorithm::fill_simple_type_dependents(const rx_node_id& id, std::set<rx_node_id>& results)
+{
+	return platform_types_manager::instance().get_dependecies_cache().fill_dependents(id, results);
+}
 } // namespace algorithms
 } // namespace model
 } // namespace rx_internal

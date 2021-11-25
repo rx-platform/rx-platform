@@ -572,6 +572,108 @@ meta_data create_meta_for_new(const meta_data& proto)
 
 	return ret_data;
 }
+// Class rx_platform::meta::config_part_container 
+
+
+rx_result config_part_container::serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const
+{
+	size_t count = objects.size() + domains.size() + ports.size() + apps.size();
+	if (!stream.start_array(name.c_str(), count))
+		return stream.get_error();
+
+	for (const auto& one : apps)
+	{
+		auto result = one->serialize(stream, type);
+		if (!result)
+			return result;
+	}
+	for (const auto& one : domains)
+	{
+		auto result = one->serialize(stream, type);
+		if (!result)
+			return result;
+	}
+	for (const auto& one : ports)
+	{
+		auto result = one->serialize(stream, type);
+		if (!result)
+			return result;
+	}
+	for (const auto& one : objects)
+	{
+		auto result = one->serialize(stream, type);
+		if (!result)
+			return result;
+	}
+
+	return true;
+}
+
+rx_result config_part_container::deserialize (const string_type& name, base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_array(name.c_str()))
+		return stream.get_error();
+
+	while (!stream.array_end())
+	{
+		meta::meta_data meta;
+		rx_item_type target_type;
+		auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
+		if (!result)
+		{
+			result.register_error("Error building "s + meta.get_full_path());
+			return result;
+		}
+		switch (target_type)
+		{
+		case rx_item_type::rx_object:
+			{
+				runtime_data::object_runtime_data data;
+				result = data.deserialize(stream, type);
+				if (!result)
+					return result;
+				data.meta_info = std::move(meta);
+				objects.emplace_back(std::make_unique<runtime_data::object_runtime_data>(data));
+			}
+			break;
+		case rx_item_type::rx_port:
+			{
+				runtime_data::port_runtime_data data;
+				result = data.deserialize(stream, type);
+				if (!result)
+					return result;
+				data.meta_info = std::move(meta);
+				ports.emplace_back(std::make_unique<runtime_data::port_runtime_data>(data));
+			}
+			break;
+		case rx_item_type::rx_domain:
+			{
+				runtime_data::domain_runtime_data data;
+				result = data.deserialize(stream, type);
+				if (!result)
+					return result;
+				data.meta_info = std::move(meta);
+				domains.emplace_back(std::make_unique<runtime_data::domain_runtime_data>(data));
+			}
+			break;
+		case rx_item_type::rx_application:
+			{
+				runtime_data::application_runtime_data data;
+				result = data.deserialize(stream, type);
+				if (!result)
+					return result;
+				data.meta_info = std::move(meta);
+				apps.emplace_back(std::make_unique<runtime_data::application_runtime_data>(data));
+			}
+			break;
+		default:
+			return RX_NOT_IMPLEMENTED;
+		}
+	}
+	return true;
+}
+
+
 } // namespace meta
 } // namespace rx_platform
 

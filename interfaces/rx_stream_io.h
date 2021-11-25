@@ -328,9 +328,15 @@ int full_duplex_comm<buffT>::internal_read_callback (size_t count, uint32_t stat
     if (!receiving)
         return 0;
 
-    if (status == 0 && count != 0)
+    if (status == 0)
     {
-        if (readed(dispatcher_data_.read_buffer, count, get_identity()))
+        if (count)
+        {
+            ret = readed(dispatcher_data_.read_buffer, count, get_identity());
+            if (!ret)
+                internal_shutdown_callback(0);
+        }
+        if (ret)
         {
             ret = read_loop();
             if (!ret)
@@ -338,8 +344,6 @@ int full_duplex_comm<buffT>::internal_read_callback (size_t count, uint32_t stat
                 internal_shutdown_callback(0);
             }
         }
-        else
-            internal_shutdown_callback(0);
     }
     return ret ? 1 : 0;
 }
