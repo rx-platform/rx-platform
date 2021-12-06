@@ -77,7 +77,7 @@ template rx_result register_host_simple_constructor<struct_type>(const rx_node_i
 
 
 template<typename typeT>
-rx_result register_host_type(rx_directory_ptr host_root, typename typeT::smart_ptr what)
+rx_result register_host_type(typename typeT::smart_ptr what)
 {
 	if (what->meta_info.created_time.is_null())
 		what->meta_info.created_time = rx_time::now();
@@ -91,13 +91,13 @@ rx_result register_host_type(rx_directory_ptr host_root, typename typeT::smart_p
 	else
 		return true;
 }
-template rx_result register_host_type<object_type>(rx_directory_ptr host_root, rx_object_type_ptr what);
-template rx_result register_host_type<domain_type>(rx_directory_ptr host_root, rx_domain_type_ptr what);
-template rx_result register_host_type<port_type>(rx_directory_ptr host_root, rx_port_type_ptr what);
-template rx_result register_host_type<application_type>(rx_directory_ptr host_root, rx_application_type_ptr what);
+template rx_result register_host_type<object_type>(rx_object_type_ptr what);
+template rx_result register_host_type<domain_type>(rx_domain_type_ptr what);
+template rx_result register_host_type<port_type>(rx_port_type_ptr what);
+template rx_result register_host_type<application_type>(rx_application_type_ptr what);
 
 template<typename typeT>
-rx_result register_host_simple_type(rx_directory_ptr host_root, typename typeT::smart_ptr what)
+rx_result register_host_simple_type(typename typeT::smart_ptr what)
 {
 	if (what->meta_info.created_time.is_null())
 		what->meta_info.created_time = rx_time::now();
@@ -111,15 +111,15 @@ rx_result register_host_simple_type(rx_directory_ptr host_root, typename typeT::
 	else
 		return true;
 }
-template rx_result register_host_simple_type<mapper_type>(rx_directory_ptr host_root, mapper_type::smart_ptr what);
-template rx_result register_host_simple_type<source_type>(rx_directory_ptr host_root, source_type::smart_ptr what);
-template rx_result register_host_simple_type<filter_type>(rx_directory_ptr host_root, filter_type::smart_ptr what);
-template rx_result register_host_simple_type<variable_type>(rx_directory_ptr host_root, variable_type::smart_ptr what);
-template rx_result register_host_simple_type<event_type>(rx_directory_ptr host_root, event_type::smart_ptr what);
-template rx_result register_host_simple_type<struct_type>(rx_directory_ptr host_root, struct_type::smart_ptr what);
+template rx_result register_host_simple_type<mapper_type>(mapper_type::smart_ptr what);
+template rx_result register_host_simple_type<source_type>(source_type::smart_ptr what);
+template rx_result register_host_simple_type<filter_type>(filter_type::smart_ptr what);
+template rx_result register_host_simple_type<variable_type>(variable_type::smart_ptr what);
+template rx_result register_host_simple_type<event_type>(event_type::smart_ptr what);
+template rx_result register_host_simple_type<struct_type>(struct_type::smart_ptr what);
 
 
-rx_result register_host_relation_type(rx_directory_ptr host_root, relation_type_ptr what)
+rx_result register_host_relation_type(relation_type_ptr what)
 {
 
 	if (what->meta_info.created_time.is_null())
@@ -134,7 +134,7 @@ rx_result register_host_relation_type(rx_directory_ptr host_root, relation_type_
 	else
 		return true;
 }
-rx_result register_host_data_type(rx_directory_ptr host_root, data_type_ptr what)
+rx_result register_host_data_type(data_type_ptr what)
 {
 
 	if (what->meta_info.created_time.is_null())
@@ -151,7 +151,7 @@ rx_result register_host_data_type(rx_directory_ptr host_root, data_type_ptr what
 }
 
 template<typename typeT>
-rx_result register_host_runtime(rx_directory_ptr host_root, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data)
+rx_result register_host_runtime(const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data)
 {
 	auto result = rx_internal::model::algorithms::runtime_model_algorithm<typeT>::create_runtime_sync(
 		typename typeT::instance_data_t(instance_data)
@@ -161,10 +161,10 @@ rx_result register_host_runtime(rx_directory_ptr host_root, const typename typeT
 	else
 		return true;
 }
-template rx_result register_host_runtime<object_type>(rx_directory_ptr host_root, const object_type::instance_data_t& instance_data, const data::runtime_values_data* data);
-template rx_result register_host_runtime<domain_type>(rx_directory_ptr host_root, const domain_type::instance_data_t& instance_data, const data::runtime_values_data* data);
-template rx_result register_host_runtime<port_type>(rx_directory_ptr host_root, const port_type::instance_data_t& instance_data, const data::runtime_values_data* data);
-template rx_result register_host_runtime<application_type>(rx_directory_ptr host_root, const application_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_host_runtime<object_type>(const object_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_host_runtime<domain_type>(const domain_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_host_runtime<port_type>(const port_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_host_runtime<application_type>(const application_type::instance_data_t& instance_data, const data::runtime_values_data* data);
 
 namespace hosting {
 namespace
@@ -350,7 +350,13 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 		if (config.storage.system_storage_reference.empty())
 			config.storage.system_storage_reference = host_directories_.system_storage;
 		if (config.storage.user_storage_reference.empty())
-			config.storage.user_storage_reference = host_directories_.user_storage;
+		{
+			string_type def = get_default_user_storage();
+			if(!def.empty())
+				config.storage.user_storage_reference = def;
+			else
+				config.storage.user_storage_reference = host_directories_.user_storage;
+		}
 		if (config.other.manuals_path.empty())
 			config.other.manuals_path = host_directories_.manuals;
 		if (config.other.http_path.empty())
@@ -493,6 +499,12 @@ std::vector<IP_interface> rx_platform_host::get_IP_interfaces (const string_type
 {
 	std::vector<IP_interface> ret;
 	return ret;
+}
+
+string_type rx_platform_host::get_default_user_storage () const
+{
+  return "";
+
 }
 
 rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data_t& config, const std::vector<library::rx_plugin_base*>& plugins)

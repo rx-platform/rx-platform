@@ -122,6 +122,10 @@ class port_reference_relation : public rx_platform::runtime::relations::relation
 
       rx_port_ptr to_;
 
+       meta::meta_data meta_from_;
+
+      rx_item_type from_type_;
+
 
 };
 

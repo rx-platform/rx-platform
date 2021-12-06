@@ -154,9 +154,6 @@ private:
   private:
 
 
-      rx_reference<rx_platform_directory> parent_;
-
-
       locks::lockable item_lock_;
 
 

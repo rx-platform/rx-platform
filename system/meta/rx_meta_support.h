@@ -45,6 +45,7 @@
 #include "system/runtime/rx_rt_struct.h"
 
 #include "system/server/rx_ns.h"
+#include "system/server/rx_ns_resolver.h"
 
 
 namespace rx_platform {

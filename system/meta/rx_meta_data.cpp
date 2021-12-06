@@ -416,13 +416,17 @@ bool meta_data::is_system () const
 
 rx_result_with<rx_storage_ptr> meta_data::resolve_storage () const
 {
-	auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(path);
+	auto dir = rx_gate::instance().get_directory(path);
 	if (dir)
 	{
-		return dir->resolve_storage();
+		auto storage = dir->get_storage();
+		if (!storage)
+			return "No storage defined for item";
+		else
+			return storage;
 	}
 	else
-		return "Unable to locate item's directory!";
+		return "Unable to locate item's storage!";
 }
 
 values::rx_value meta_data::get_value () const
@@ -479,73 +483,75 @@ rx_item_reference meta_data::create_item_reference ()
 
 rx_item_reference meta_data::create_weak_item_reference (const string_array& dirs)
 {
-	string_type my_path = get_full_path();
-	if (my_path.empty())
-		return rx_item_reference();
-	rx_directory_ptr my_directory = rx_gate::instance().get_root_directory()->get_sub_directory(path);
-	size_t best_idx = 0;
-	string_array best_splitted;
-	size_t current_idx;
-	string_type path;
-	string_array my_spplitted, splitted;
-	rx_split_string(path, my_spplitted, RX_DIR_DELIMETER);
-	for (const auto& one_path : dirs)
-	{
-		auto one_directory = my_directory->get_sub_directory(one_path);
-		if (one_directory)
-		{
-			path.clear();
-			one_directory->fill_path(path);
-			splitted.clear();
-			rx_split_string(path, splitted, RX_DIR_DELIMETER);
-			current_idx = 0;
-			auto my_it = my_spplitted.begin();
-			auto his_it = splitted.begin();
-			while (my_it != my_spplitted.end() && his_it != splitted.end())
-			{
-				if (*my_it != *his_it)
-					break;
-				current_idx++;
-				my_it++;
-				his_it++;
-			}
-			if (current_idx > best_idx)
-			{
-				best_idx = current_idx;
-				best_splitted = splitted;
-			}
-		}
-	}
-	if (best_idx > 0)
-	{
-		auto my_it = my_spplitted.begin();
-		auto his_it = best_splitted.begin();
-		// skip the common parts
-		while (my_it != my_spplitted.end() && his_it != best_splitted.end())
-		{
-			if (*my_it != *his_it)
-				break;
-			my_it++;
-			his_it++;
-		}
-		string_type relative_path(RX_DIR_DELIMETER_STR);
-		for (; his_it != best_splitted.end(); his_it++)
-		{
-			relative_path += ".." RX_DIR_DELIMETER_STR;
-		}
-		for (; my_it != my_spplitted.begin(); my_it++)
-		{
-			relative_path += *my_it;
-			relative_path += RX_DIR_DELIMETER;
-		}
-		relative_path += name;
+	RX_ASSERT(false);
+	return rx_item_reference();
+	//string_type my_path = get_full_path();
+	//if (my_path.empty())
+	//	return rx_item_reference();
+	//rx_directory_ptr my_directory = rx_gate::instance().get_directory(path);
+	//size_t best_idx = 0;
+	//string_array best_splitted;
+	//size_t current_idx;
+	//string_type path;
+	//string_array my_spplitted, splitted;
+	//rx_split_string(path, my_spplitted, RX_DIR_DELIMETER);
+	//for (const auto& one_path : dirs)
+	//{
+	//	auto one_directory = my_directory->get_sub_directory(one_path);
+	//	if (one_directory)
+	//	{
+	//		path.clear();
+	//		one_directory->fill_path(path);
+	//		splitted.clear();
+	//		rx_split_string(path, splitted, RX_DIR_DELIMETER);
+	//		current_idx = 0;
+	//		auto my_it = my_spplitted.begin();
+	//		auto his_it = splitted.begin();
+	//		while (my_it != my_spplitted.end() && his_it != splitted.end())
+	//		{
+	//			if (*my_it != *his_it)
+	//				break;
+	//			current_idx++;
+	//			my_it++;
+	//			his_it++;
+	//		}
+	//		if (current_idx > best_idx)
+	//		{
+	//			best_idx = current_idx;
+	//			best_splitted = splitted;
+	//		}
+	//	}
+	//}
+	//if (best_idx > 0)
+	//{
+	//	auto my_it = my_spplitted.begin();
+	//	auto his_it = best_splitted.begin();
+	//	// skip the common parts
+	//	while (my_it != my_spplitted.end() && his_it != best_splitted.end())
+	//	{
+	//		if (*my_it != *his_it)
+	//			break;
+	//		my_it++;
+	//		his_it++;
+	//	}
+	//	string_type relative_path(RX_DIR_DELIMETER_STR);
+	//	for (; his_it != best_splitted.end(); his_it++)
+	//	{
+	//		relative_path += ".." RX_DIR_DELIMETER_STR;
+	//	}
+	//	for (; my_it != my_spplitted.begin(); my_it++)
+	//	{
+	//		relative_path += *my_it;
+	//		relative_path += RX_DIR_DELIMETER;
+	//	}
+	//	relative_path += name;
 
-		return rx_item_reference(relative_path);
-	}
-	else
-	{
-		return rx_item_reference(my_path);
-	}
+	//	return rx_item_reference(relative_path);
+	//}
+	//else
+	//{
+	//	return rx_item_reference(my_path);
+	//}
 }
 
 void meta_data::increment_version (bool full_ver)

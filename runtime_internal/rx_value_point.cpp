@@ -882,7 +882,7 @@ bool value_point_impl::translate_path (const string_type& path, string_type& tra
 		}
 		else if (path.size() > 1 && path[0] != RX_DIR_DELIMETER)
 		{
-			context_->get_directory_resolver()->resolve_path(path);
+			translated = context_->get_directory_resolver()->resolve_item(path);
 		}
 	}
 	return false;

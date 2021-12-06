@@ -45,9 +45,9 @@ namespace rx_internal {
 
 namespace model {
 
-namespace dependency {
+namespace transactions {
 
-// Class rx_internal::model::dependency::dependency_cache 
+// Class rx_internal::model::transactions::dependency_cache 
 
 
 void dependency_cache::add_dependency (const rx_node_id& id, const rx_node_id& from)
@@ -130,10 +130,10 @@ void dependency_cache::add_single_dependency (const rx_node_id& id, const rx_nod
 }
 
 
-// Class rx_internal::model::dependency::local_dependecy_builder 
+// Class rx_internal::model::transactions::local_dependecy_builder 
 
 
-void local_dependecy_builder::add_runtime (const object_runtime_data& what, bool remove, bool create)
+void local_dependecy_builder::add_runtime (const object_runtime_data& what, bool remove, bool create, bool save)
 {
 	rx_node_id id = what.meta_info.id;
 	auto it = objects_.find(id);
@@ -143,17 +143,19 @@ void local_dependecy_builder::add_runtime (const object_runtime_data& what, bool
 		data.item = what;
 		data.create = create;
 		data.remove = remove;
+		data.save_result = save;
 		objects_.emplace(id, std::move(data));
 	}
 	else
 	{
 		it->second.create |= create;
 		it->second.remove |= remove;
+		it->second.save_result |= save;
 		it->second.item = what;
 	}
 }
 
-void local_dependecy_builder::add_runtime (const domain_runtime_data& what, bool remove, bool create)
+void local_dependecy_builder::add_runtime (const domain_runtime_data& what, bool remove, bool create, bool save)
 {
 	rx_node_id id = what.meta_info.id;
 	auto it = domains_.find(id);
@@ -163,17 +165,19 @@ void local_dependecy_builder::add_runtime (const domain_runtime_data& what, bool
 		data.item = what;
 		data.create = create;
 		data.remove = remove;
+		data.save_result = save;
 		domains_.emplace(id, std::move(data));
 	}
 	else
 	{
 		it->second.create |= create;
 		it->second.remove |= remove;
+		it->second.save_result |= save;
 		it->second.item = what;
 	}
 }
 
-void local_dependecy_builder::add_runtime (const port_runtime_data& what, bool remove, bool create)
+void local_dependecy_builder::add_runtime (const port_runtime_data& what, bool remove, bool create, bool save)
 {
 	rx_node_id id = what.meta_info.id;
 	auto it = ports_.find(id);
@@ -183,17 +187,19 @@ void local_dependecy_builder::add_runtime (const port_runtime_data& what, bool r
 		data.item = what;
 		data.create = create;
 		data.remove = remove;
+		data.save_result = save;
 		ports_.emplace(id, std::move(data));
 	}
 	else
 	{
 		it->second.create |= create;
 		it->second.remove |= remove;
+		it->second.save_result |= save;
 		it->second.item = what;
 	}
 }
 
-void local_dependecy_builder::add_runtime (const application_runtime_data& what, bool remove, bool create)
+void local_dependecy_builder::add_runtime (const application_runtime_data& what, bool remove, bool create, bool save)
 {
 	rx_node_id id = what.meta_info.id;
 	auto it = applications_.find(id);
@@ -203,17 +209,19 @@ void local_dependecy_builder::add_runtime (const application_runtime_data& what,
 		data.item = what;
 		data.create = create;
 		data.remove = remove;
+		data.save_result = save;
 		applications_.emplace(id, std::move(data));
 	}
 	else
 	{
 		it->second.create |= create;
 		it->second.remove |= remove;
+		it->second.save_result |= save;
 		it->second.item = what;
 	}
 }
 
-rx_result local_dependecy_builder::add (const api::query_result_detail& what, bool remove, bool create)
+rx_result local_dependecy_builder::add (const api::query_result_detail& what, bool remove, bool create, bool save)
 {
 	switch (what.type)
 	{
@@ -224,8 +232,11 @@ rx_result local_dependecy_builder::add (const api::query_result_detail& what, bo
 			{
 				item_creation_data<runtime_data::application_runtime_data> data;
 				data.item = result.value()->get_definition_data();
+				if(what.data.version> data.item.meta_info.version)
+					data.item.meta_info.version = what.data.version;
 				data.create = create;
 				data.remove = remove;
+				data.save_result = save;
 				applications_.emplace(what.data.id, data);
 				return true;
 			}
@@ -242,8 +253,11 @@ rx_result local_dependecy_builder::add (const api::query_result_detail& what, bo
 			{
 				item_creation_data<runtime_data::domain_runtime_data> data;
 				data.item = result.value()->get_definition_data();
+				if (what.data.version > data.item.meta_info.version)
+					data.item.meta_info.version = what.data.version;
 				data.create = create;
 				data.remove = remove;
+				data.save_result = save;
 				domains_.emplace(what.data.id, data);
 				return true;
 			}
@@ -260,8 +274,11 @@ rx_result local_dependecy_builder::add (const api::query_result_detail& what, bo
 			{
 				item_creation_data<runtime_data::port_runtime_data> data;
 				data.item = result.value()->get_definition_data();
+				if (what.data.version > data.item.meta_info.version)
+					data.item.meta_info.version = what.data.version;
 				data.create = create;
 				data.remove = remove;
+				data.save_result = save;
 				ports_.emplace(what.data.id, data);
 				return true;
 			}
@@ -278,8 +295,11 @@ rx_result local_dependecy_builder::add (const api::query_result_detail& what, bo
 			{
 				item_creation_data<runtime_data::object_runtime_data> data;
 				data.item = result.value()->get_definition_data();
+				if (what.data.version > data.item.meta_info.version)
+					data.item.meta_info.version = what.data.version;
 				data.create = create;
 				data.remove = remove;
+				data.save_result = save;
 				objects_.emplace(what.data.id, data);
 				return true;
 			}
@@ -427,6 +447,8 @@ rx_result local_dependecy_builder::build_runtimes ()
 				application_runtime_data(one.second.item), data::runtime_values_data());
 			if (!result)
 				return result.errors();
+			if (one.second.save_result)
+				built_apps_.emplace_back(result.move_value());
 		}
 	}
 	for (auto& one : ports_)
@@ -437,6 +459,8 @@ rx_result local_dependecy_builder::build_runtimes ()
 				port_runtime_data(one.second.item), data::runtime_values_data());
 			if (!result)
 				return result.errors();
+			if (one.second.save_result)
+				built_ports_.emplace_back(result.move_value());
 		}
 	}
 	for (auto& one : domains_)
@@ -447,6 +471,8 @@ rx_result local_dependecy_builder::build_runtimes ()
 				domain_runtime_data(one.second.item), data::runtime_values_data());
 			if (!result)
 				return result.errors();
+			if (one.second.save_result)
+				built_domains_.emplace_back(result.move_value());
 		}
 	}
 	for (auto& one : objects_)
@@ -457,6 +483,8 @@ rx_result local_dependecy_builder::build_runtimes ()
 				object_runtime_data(one.second.item), data::runtime_values_data());
 			if (!result)
 				return result.errors();
+			if (one.second.save_result)
+				built_objects_.emplace_back(result.move_value());
 		}
 	}
 	state_.phase = builder_phase::done;
@@ -494,14 +522,17 @@ void local_dependecy_builder::process (rx_result&& result)
 		res = delete_types();
 		if(!res)
 			break;
+		[[fallthrough]];
 	case builder_phase::bulding_types:
 		res = build_types();
 		if(!res)
 			break;
+		[[fallthrough]];
 	case builder_phase::building_runtimes:
 		res = build_runtimes();
 		if(!res)
 			break;
+		[[fallthrough]];
 	case builder_phase::done:
 		callback_(std::move(res));
 		break;
@@ -513,8 +544,39 @@ void local_dependecy_builder::process (rx_result&& result)
 	}
 }
 
-
-} // namespace dependency
+template<>
+rx_application_ptr local_dependecy_builder::extract_single_result<application_type>()
+{
+	if (built_apps_.empty())
+		return rx_application_ptr();
+	else
+		return built_apps_[0];
+}
+template<>
+rx_domain_ptr local_dependecy_builder::extract_single_result<domain_type>()
+{
+	if (built_domains_.empty())
+		return rx_domain_ptr();
+	else
+		return built_domains_[0];
+}
+template<>
+rx_port_ptr local_dependecy_builder::extract_single_result<port_type>()
+{
+	if (built_ports_.empty())
+		return rx_port_ptr();
+	else
+		return built_ports_[0];
+}
+template<>
+rx_object_ptr local_dependecy_builder::extract_single_result<object_type>()
+{
+	if (built_objects_.empty())
+		return rx_object_ptr();
+	else
+		return built_objects_[0];
+}
+} // namespace transactions
 } // namespace model
 } // namespace rx_internal
 

@@ -36,6 +36,7 @@
 
 #include "sys_internal/rx_internal_protocol.h"
 #include "sys_internal/rx_namespace_algorithms.h"
+#include "system/server/rx_directory_cache.h"
 
 
 namespace rx_internal {
@@ -69,7 +70,10 @@ rx_result rx_make_directory_request::deserialize (base_meta_reader& stream)
 
 message_ptr rx_make_directory_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
-	auto ret = internal_ns::namespace_algorithms::get_or_create_direcotry(ctx.safe_directory(), path);
+	ns::rx_directory_resolver dirs;
+	dirs.add_paths({ ctx.active_path });
+	auto dir = dirs.resolve_directory(path);
+	auto ret = internal_ns::namespace_algorithms::get_or_create_direcotry(dir, path);
 	if (!ret)
 	{
 		auto ret_value = std::make_unique<error_message>(ret, 17, request_id);
@@ -119,7 +123,12 @@ rx_result rx_remove_directory_request::deserialize (base_meta_reader& stream)
 
 message_ptr rx_remove_directory_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
-	auto ret = ctx.safe_directory()->delete_sub_directory(path);
+	string_type full_path;
+	auto ret = rx_internal::internal_ns::namespace_algorithms::translate_path(ctx.active_path, path, full_path);
+	if (ret)
+	{
+		ret = ns::rx_directory_cache::instance().remove_directory(full_path);
+	}
 	if (!ret)
 	{
 		auto ret_value = std::make_unique<error_message>(ret, 17, request_id);

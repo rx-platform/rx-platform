@@ -56,7 +56,7 @@ std::unique_ptr<platform_types_manager> g_platform_types_instance;
 
 platform_types_manager::platform_types_manager()
 {
-	dependecies_cache_ = std::make_unique<dependency::dependency_cache>();
+	dependecies_cache_ = std::make_unique<transactions::dependency_cache>();
 }
 
 
@@ -159,7 +159,7 @@ void platform_types_manager::stop ()
 {
 }
 
-dependency::dependency_cache& platform_types_manager::get_dependecies_cache ()
+transactions::dependency_cache& platform_types_manager::get_dependecies_cache ()
 {
 	return *dependecies_cache_;
 }

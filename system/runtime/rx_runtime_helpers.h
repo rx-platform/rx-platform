@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -33,6 +33,7 @@
 
 
 #include "lib/rx_values.h"
+#include "system/storage_base/rx_storage.h"
 using namespace rx::values;
 /////////////////////////////////////////////////////////////
 // logging macros for console library
@@ -51,22 +52,22 @@ class rx_directory_resolver;
 
 namespace runtime {
 namespace structure {
-class runtime_item;
 class source_data;
 class mapper_data;
 class variable_data;
+class runtime_item;
 } // namespace structure
 
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
 
-class relation_subscriber;
 class runtime_process_context;
 namespace relations {
 class relations_holder;
 } // namespace relations
 
+class relation_subscriber;
 namespace tag_blocks {
 class binded_tags;
 
@@ -294,7 +295,7 @@ struct write_tag_data
 
 
 
-class io_capabilities
+class io_capabilities 
 {
 
   public:
@@ -324,7 +325,7 @@ class io_capabilities
 
 
 
-class runtime_path_resolver
+class runtime_path_resolver 
 {
 
   public:
@@ -354,7 +355,7 @@ class runtime_path_resolver
 
 
 
-class runtime_structure_resolver
+class runtime_structure_resolver 
 {
 	typedef std::stack<std::reference_wrapper<structure::runtime_item>, std::vector<std::reference_wrapper<structure::runtime_item> > > runtime_items_type;
 
@@ -389,7 +390,7 @@ class runtime_structure_resolver
 
 
 
-class variables_stack
+class variables_stack 
 {
 	typedef std::stack<structure::variable_data*, std::vector<structure::variable_data*> > variables_type;
 
@@ -417,7 +418,7 @@ class variables_stack
 
 
 
-struct runtime_deinit_context
+struct runtime_deinit_context 
 {
 
 
@@ -438,7 +439,7 @@ struct runtime_deinit_context
 
 
 
-struct runtime_start_context
+struct runtime_start_context 
 {
 
       runtime_start_context (structure::runtime_item& root, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, relations::relations_holder* relations);
@@ -509,7 +510,7 @@ struct runtime_start_context
 
 
 
-struct runtime_stop_context
+struct runtime_stop_context 
 {
 
 
@@ -530,7 +531,7 @@ struct runtime_stop_context
 
 
 
-class mappers_stack
+class mappers_stack 
 {
     typedef std::map<rx_node_id, std::vector<structure::mapper_data*> > mappers_type;
 
@@ -559,7 +560,7 @@ class mappers_stack
 
 
 
-class sources_stack
+class sources_stack 
 {
     typedef std::map<rx_node_id, std::vector<structure::source_data*> > sources_type;
 
@@ -589,10 +590,10 @@ typedef std::map<string_type, runtime_handle_t> binded_tags_type;
 
 
 
-struct runtime_init_context
+struct runtime_init_context 
 {
 
-      runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories);
+      runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, rx_item_type type);
 
 
       runtime_handle_t get_new_handle ();
@@ -628,6 +629,8 @@ struct runtime_init_context
       rx_time now;
 
       rx_reference_ptr anchor;
+
+      rx_item_type item_type;
 
   public:
       template<typename T>

@@ -116,7 +116,7 @@ class test_program_context : public rx_internal::terminal::console::script::cons
 	typedef test_program_context* smart_ptr;
 
   public:
-      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor);
+      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor);
 
       ~test_program_context();
 

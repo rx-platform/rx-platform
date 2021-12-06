@@ -34,14 +34,12 @@
 
 #include "lib/rx_lock.h"
 
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_values
-#include "lib/rx_values.h"
 
 
 #include "system/runtime/rx_runtime_helpers.h"
@@ -91,14 +89,6 @@ typedef std::vector<rx_directory_ptr> platform_directories_type;
 
 namespace ns {
 
-
-struct namespace_data_t
-{
-	string_type system_storage_reference;
-	string_type user_storage_reference;
-	string_type test_storage_reference;
-};
-
 void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 
 
@@ -118,31 +108,17 @@ class rx_namespace_item
 
       operator bool () const;
 
-      string_type callculate_path (rx_directory_ptr dir) const;
-
       bool is_object () const;
 
       bool is_type () const;
 
-
-      const meta::meta_data& get_meta () const
-      {
-        return meta_;
-      }
+      rx_value get_value () const;
 
 
-      const rx::values::rx_value& get_value () const
-      {
-        return value_;
-      }
+      const meta::meta_data& get_meta () const;
 
 
-
-      rx_item_type get_type () const
-      {
-        return type_;
-      }
-
+      rx_item_type get_type () const;
 
 	  rx_namespace_item(const rx_namespace_item& right) = default;
 	  rx_namespace_item(rx_namespace_item&& right) = default;
@@ -155,10 +131,10 @@ class rx_namespace_item
 
       meta::meta_data meta_;
 
-      rx::values::rx_value value_;
-
 
       rx_item_type type_;
+
+      uint32_t version_;
 
 
 };
@@ -179,86 +155,41 @@ class rx_platform_directory : public rx::pointers::reference_object
     friend class rx_internal::builders::rx_platform_builder;
 
   public:
-      rx_platform_directory (const string_type& name, namespace_item_attributes attrs, rx_storage_ptr storage = rx_storage_ptr::null_ptr);
-
       ~rx_platform_directory();
 
-
-      virtual void get_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const;
-
-      rx_directory_ptr get_parent () const;
-
-      virtual rx_directory_ptr get_sub_directory (const string_type& path) const;
-
-      string_type get_name () const;
-
-      void fill_path (string_type& path) const;
-
-      namespace_item_attributes get_attributes () const;
 
       virtual void get_class_info (string_type& class_name, string_type& console, bool& has_own_code_info);
 
       virtual rx_item_type get_type_id () const;
 
-      virtual void get_value (rx_value& value);
-
       void fill_dir_code_info (std::ostream& info);
 
-      virtual void get_value (const string_type& name, rx_value& value);
+      virtual meta_data_t meta_info () const;
 
-      rx_result add_sub_directory (rx_directory_ptr who);
+      virtual void list_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const;
 
-      rx_result add_item (platform_item_ptr&& who);
-
-      rx_result delete_item (platform_item_ptr who);
-
-      virtual rx_result delete_item (const string_type& path);
-
-      rx_result_with<rx_directory_ptr> add_sub_directory (const string_type& path);
-
-      rx_result delete_sub_directory (const string_type& path);
-
-      bool empty () const;
+      rx_result add_item (rx_namespace_item item);
 
       rx_result reserve_name (const string_type& name);
 
       rx_result cancel_reserve (const string_type& name);
 
-      virtual meta_data_t meta_info () const;
+      rx_namespace_item get_item (const string_type& name) const;
 
-      rx_result_with<rx_storage_ptr> resolve_storage () const;
+      rx_result delete_item (const string_type& name);
 
-      rx_namespace_item get_sub_item (const string_type& path) const;
 
-      rx_result add_item (const rx_namespace_item& what);
+      rx_reference<storage_base::rx_platform_storage> get_storage ()
+      {
+        return storage_;
+      }
 
-      rx_result move_directory (const string_type& source, const string_type& dest);
 
-      rx_result copy_directory (const string_type& source, const string_type& dest);
 
-      virtual void register_suggestions (const string_type& line, suggestions_type& suggestions);
-
-	  template<class TImpl>
-	  rx_result add_item(TImpl who);
   protected:
 
   private:
 
-      void structure_lock ();
-
-      void structure_unlock ();
-
-      void set_parent (rx_directory_ptr parent);
-
-      void structure_lock () const;
-
-      void structure_unlock () const;
-
-
-
-      rx_reference<rx_platform_directory> parent_;
-
-      sub_directories_type sub_directories_;
 
       sub_items_type sub_items_;
 
@@ -267,93 +198,13 @@ class rx_platform_directory : public rx::pointers::reference_object
       rx_reference<storage_base::rx_platform_storage> storage_;
 
 
-      rx::locks::slim_lock structure_lock_;
-
       reserved_type reserved_;
 
+      locks::slim_lock lock_;
 
+
+    friend class rx_directory_cache;
     friend class rx_internal::internal_ns::namespace_algorithms;
-};
-
-
-
-
-
-
-
-class rx_names_cache 
-{
-	  typedef std::map<string_type, rx_namespace_item> name_items_hash_type;
-
-  public:
-      rx_names_cache();
-
-
-      rx_namespace_item get_cached_item (const string_type& name) const;
-
-      rx_result insert_cached_item (const string_type& name, const rx_namespace_item& item);
-
-      static bool should_cache (const platform_item_ptr& item);
-
-      static bool should_cache (const rx_namespace_item& item);
-
-      rx_result removed_cached_item (const string_type& name);
-
-      void clear ();
-
-
-  protected:
-
-  private:
-
-
-      name_items_hash_type name_items_hash_;
-
-
-};
-
-
-
-
-
-
-
-class rx_directory_resolver 
-{
-	struct resolver_data
-	{
-		string_type path;
-		rx_directory_ptr dir;
-		bool resolved;
-	};
-	typedef std::vector<resolver_data> directories_type;
-    rx_directory_resolver(const rx_directory_resolver&) = delete;
-    rx_directory_resolver(rx_directory_resolver&&) = delete;
-    rx_directory_resolver& operator=(const rx_directory_resolver&) = delete;
-    rx_directory_resolver& operator=(rx_directory_resolver&&) = delete;
-
-  public:
-      rx_directory_resolver();
-
-      rx_directory_resolver (rx_directory_resolver* parent);
-
-
-      rx_namespace_item resolve_path (const string_type& path) const;
-
-      void add_paths (std::initializer_list<string_type> paths);
-
-      ~rx_directory_resolver() = default;
-  protected:
-
-  private:
-
-
-      rx_directory_resolver *parent_;
-
-
-      directories_type directories_;
-
-
 };
 
 

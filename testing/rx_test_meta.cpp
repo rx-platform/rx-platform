@@ -42,6 +42,7 @@
 #include "system/runtime/rx_holder_algorithms.h"
 #include "api/rx_namespace_api.h"
 #include "system/server/rx_file_helpers.h"
+#include "system/server/rx_directory_cache.h"
 
 
 namespace testing {
@@ -158,7 +159,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 
  bool object_creation_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
  {
-	 auto one = rx_platform::rx_gate::instance().get_root_directory();
+	 auto one = rx_platform::rx_gate::instance().get_directory("/");
 	 rx_node_id object_type_id;
 
 	 out << ANSI_COLOR_YELLOW "Creating simple variable sub-types!\r\n" ANSI_COLOR_RESET;
@@ -197,7 +198,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 if (test_result)
 		 {
 			 rx_object_ptr test_object=test_result.value();
-			 ctx->get_current_directory()->add_item(test_object->get_item_ptr());
+			 ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory())->add_item(test_object->get_item_ptr());
 			 out << ANSI_COLOR_YELLOW "Test object created!!!\r\n" ANSI_COLOR_RESET;
 			 auto json_str = test_object->get_item_ptr()->get_definition_as_json();
 			 if (!json_str.empty())
@@ -250,7 +251,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 auto json_str = rx_type_item->get_definition_as_json();
-		 ctx->get_current_directory()->add_item(std::move(rx_type_item));
+		 ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory())->add_item(std::move(rx_type_item));
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -284,7 +285,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 	 {
 		 auto rx_type_item = test_type->get_item_ptr();
 		 auto json_str = rx_type_item->get_definition_as_json();
-		 ctx->get_current_directory()->add_item(std::move(rx_type_item));
+		 ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory())->add_item(std::move(rx_type_item));
 		 if (!json_str.empty())
 		 {
 			 out << json_str;
@@ -480,7 +481,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 
  bool inheritance_creation_test::run_test (std::istream& in, std::ostream& out, std::ostream& err, test_program_context::smart_ptr ctx)
  {
-	 auto one = rx_platform::rx_gate::instance().get_root_directory();
+	 auto one = rx_platform::rx_gate::instance().get_directory("/");
 	 rx_node_id object_type_id;
 	 
 	out << ANSI_COLOR_YELLOW "Creating simple sub-types!\r\n" ANSI_COLOR_RESET;
@@ -510,7 +511,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 		 {
 			 auto test_object = test_result.value()->get_item_ptr();
 			 auto json_str = test_object->get_definition_as_json();
-			 ctx->get_current_directory()->add_item(std::move(test_object));
+			 ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory())->add_item(std::move(test_object));
 			 out << ANSI_COLOR_YELLOW "Test object created!!!\r\n" ANSI_COLOR_RESET;
 			 if (!json_str.empty())
 			 {				

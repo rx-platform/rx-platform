@@ -47,11 +47,10 @@
 #include "rx_configuration.h"
 #include "system/libraries/rx_plugin.h"
 #include "lib/security/rx_security.h"
+#include "rx_ns.h"
 
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 
 namespace rx_platform {
 namespace prog {
@@ -120,11 +119,19 @@ struct meta_configuration_data_t
 };
 
 
+struct namespace_data_t
+{
+    string_type system_storage_reference;
+    string_type user_storage_reference;
+    string_type test_storage_reference;
+};
+
+
 struct configuration_data_t
 {
 	runtime_data_t processor;
 	management_data_t management;
-	ns::namespace_data_t storage;
+	namespace_data_t storage;
 	meta_configuration_data_t meta_configuration;
 	io_manager_data_t io;
 	general_data_t other;
@@ -161,7 +168,11 @@ class rx_gate
 
       rx_result stop ();
 
-      rx_directory_ptr get_root_directory ();
+      rx_directory_ptr get_directory (const string_type& path, ns::rx_directory_resolver* dirs = nullptr);
+
+      ns::rx_namespace_item get_namespace_item (const string_type& path, ns::rx_directory_resolver* dirs = nullptr);
+
+      rx_result_with<rx_directory_ptr> add_directory (const string_type& path);
 
       bool shutdown (const string_type& msg);
 
@@ -263,8 +274,6 @@ class rx_gate
 
       template <class typeT>
       rx_result register_constructor_internal(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
-
-      rx_directory_ptr root_;
 
       hosting::rx_platform_host *host_;
 

@@ -80,8 +80,7 @@ struct query_result
 
 struct rx_context
 {
-	rx_directory_ptr directory;
-	rx_directory_ptr safe_directory();
+	string_type active_path;
 	rx_reference<reference_object> object;
 };
 

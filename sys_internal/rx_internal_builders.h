@@ -70,11 +70,11 @@ class rx_platform_builder
       virtual ~rx_platform_builder();
 
 
-      static rx_result build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta_configuration_data_t& meta_data, rx_internal::internal_ns::platform_root::smart_ptr root);
+      static rx_result build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta_configuration_data_t& meta_data);
 
-      virtual rx_result do_build (rx_directory_ptr root) = 0;
+      virtual rx_result do_build () = 0;
 
-      static void deinitialize (rx_directory_ptr root);
+      static void deinitialize ();
 
 
   protected:
@@ -95,11 +95,11 @@ class rx_platform_builder
 
       static rx_result register_system_constructors ();
 
-      static rx_result buid_unassigned (platform_root::smart_ptr root, hosting::rx_platform_host* host, namespace_data_t& data);
+      static rx_result buid_unassigned (hosting::rx_platform_host* host, namespace_data_t& data);
 
       static std::vector<std::unique_ptr<rx_platform_builder> > get_plugin_builders (namespace_data_t& data, hosting::rx_platform_host* host);
 
-      static void recursive_destory_fs (rx_directory_ptr root);
+      static void recursive_destory_fs (rx_directory_ptr dir);
 
 
 
@@ -115,7 +115,7 @@ class root_folder_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:
@@ -135,7 +135,7 @@ class basic_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:
@@ -166,7 +166,7 @@ class system_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:
@@ -186,7 +186,7 @@ class port_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:
@@ -206,7 +206,7 @@ class system_objects_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:
@@ -226,7 +226,7 @@ class support_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:
@@ -246,7 +246,7 @@ class relation_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:
@@ -266,7 +266,7 @@ class simulation_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:
@@ -286,7 +286,7 @@ class system_ports_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:

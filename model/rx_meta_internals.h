@@ -38,10 +38,10 @@
 
 namespace rx_internal {
 namespace model {
-namespace dependency {
+namespace transactions {
 class dependency_cache;
 
-} // namespace dependency
+} // namespace transactions
 } // namespace model
 } // namespace rx_internal
 
@@ -870,7 +870,7 @@ class platform_types_manager
 
       void stop ();
 
-      dependency::dependency_cache& get_dependecies_cache ();
+      transactions::dependency_cache& get_dependecies_cache ();
 
 
       types_resolver& get_types_resolver ()
@@ -910,7 +910,7 @@ class platform_types_manager
 
       data_type_repository data_types_repository_;
 
-      std::unique_ptr<dependency::dependency_cache> dependecies_cache_;
+      std::unique_ptr<transactions::dependency_cache> dependecies_cache_;
 
 	  template <class typeT>
 	  friend class algorithms::types_model_algorithm;

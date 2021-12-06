@@ -247,7 +247,7 @@ class types_model_algorithm
 
       static void delete_type (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
+      static void check_type (const string_type& name, const string_type& dir, rx_result_with_callback<check_type_result>&& callback);
 
       static rx_result_with<typename typeT::smart_ptr> create_type_sync (typename typeT::smart_ptr prototype);
 
@@ -262,7 +262,7 @@ class types_model_algorithm
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<check_type_result> check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static rx_result_with<check_type_result> check_type_sync (const string_type& name, const string_type& dir);
 
 
 
@@ -287,7 +287,7 @@ class simple_types_model_algorithm
 
       static void delete_type (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
+      static void check_type (const string_type& name, const string_type& dir, rx_result_with_callback<check_type_result>&& callback);
 
       static rx_result_with<typename typeT::smart_ptr> create_type_sync (typename typeT::smart_ptr prototype);
 
@@ -302,7 +302,7 @@ class simple_types_model_algorithm
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<check_type_result> check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static rx_result_with<check_type_result> check_type_sync (const string_type& name, const string_type& dir);
 
 
 
@@ -372,7 +372,7 @@ class relation_types_algorithm
 
       static void delete_type (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
+      static void check_type (const string_type& name, const string_type& dir, rx_result_with_callback<check_type_result>&& callback);
 
       static rx_result_with<relation_type::smart_ptr> create_type_sync (relation_type::smart_ptr prototype);
 
@@ -387,7 +387,7 @@ class relation_types_algorithm
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<check_type_result> check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static rx_result_with<check_type_result> check_type_sync (const string_type& name, const string_type& dir);
 
 
 
@@ -411,7 +411,7 @@ class data_types_model_algorithm
 
       static void delete_type (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
-      static void check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback);
+      static void check_type (const string_type& name, const string_type& dir, rx_result_with_callback<check_type_result>&& callback);
 
       static rx_result_with<data_type::smart_ptr> create_type_sync (data_type::smart_ptr prototype);
 
@@ -426,7 +426,7 @@ class data_types_model_algorithm
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
-      static rx_result_with<check_type_result> check_type_sync (const string_type& name, rx_directory_ptr dir);
+      static rx_result_with<check_type_result> check_type_sync (const string_type& name, const string_type& dir);
 
 
 

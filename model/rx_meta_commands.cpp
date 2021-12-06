@@ -42,7 +42,7 @@
 #include "system/runtime/rx_runtime_holder.h"
 #include "api/rx_namespace_api.h"
 #include "terminal/rx_console.h"
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #include "system/runtime/rx_blocks.h"
 #include "system/server/rx_file_helpers.h"
 
@@ -308,8 +308,7 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("values", init_data))
 			{
-				string_type path;
-				ctx->get_current_directory()->fill_path(path);
+				string_type path = ctx->get_current_directory();
 				auto proto = create_runtime_prototype<T>(name, base_reference, path);
 				if (!proto.meta_info.parent.is_null())
 				{
@@ -362,8 +361,8 @@ bool create_command::create_object(typename T::instance_data_t instance_data, st
 	}
 	else if (as_command.empty())
 	{
-		string_type path;
-		ctx->get_current_directory()->fill_path(path);
+
+		string_type path = ctx->get_current_directory();
 		auto proto = create_runtime_prototype<T>(name, base_reference, path);
 		if (!proto.meta_info.parent.is_null())
 		{
@@ -450,8 +449,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("values", init_data))
 			{
-				string_type path;
-				ctx->get_current_directory()->fill_path(path);
+				string_type path = ctx->get_current_directory();
 				rx_result_with<typename T::smart_ptr> proto_result = create_prototype<T>(name, base_reference, path);
 				if (!proto_result)
 				{
@@ -504,8 +502,7 @@ bool create_command::create_type(std::istream& in, std::ostream& out, std::ostre
 	}
 	else if (as_command.empty())
 	{
-		string_type path;
-		ctx->get_current_directory()->fill_path(path);
+		string_type path = ctx->get_current_directory();
 		auto proto_result = create_prototype<T>(name, base_reference, path);
 		if (!proto_result)
 		{
@@ -594,8 +591,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("values", init_data))
 			{
-				string_type path;
-				ctx->get_current_directory()->fill_path(path);
+				string_type path = ctx->get_current_directory();
 				auto proto_result = create_simple_prototype<T>(name, base_reference, path);
 				if (!proto_result)
 				{
@@ -647,8 +643,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 	}
 	else if (as_command.empty())
 	{
-		string_type path;
-		ctx->get_current_directory()->fill_path(path);
+		string_type path = ctx->get_current_directory();
 		auto proto_result = create_simple_prototype<T>(name, base_reference, path);
 		if (!proto_result)
 		{
@@ -904,8 +899,7 @@ bool delete_command::delete_object(std::istream& in, std::ostream& out, std::ost
 
 	auto api_ctx = ctx->create_api_context();
 
-	string_type path;
-	ctx->get_current_directory()->fill_path(path);
+	string_type path = ctx->get_current_directory();
 	auto result = rx_platform::api::meta::rx_delete_runtime<T>(rx_item_reference(rx_combine_paths(path, name)),
 		rx_result_callback(api_ctx.object, [ctx, name, this](rx_result&& result)
 		{
@@ -954,8 +948,7 @@ bool delete_command::delete_type(std::istream& in, std::ostream& out, std::ostre
 	typename T::smart_ptr type_definition;
 	typename T::RTypePtr object_ptr;
 
-	string_type path;
-	ctx->get_current_directory()->fill_path(path);
+	string_type path = ctx->get_current_directory();
 
 	auto api_ctx = ctx->create_api_context();
 
@@ -999,8 +992,7 @@ bool delete_command::delete_simple_type(std::istream& in, std::ostream& out, std
 	typename T::RTypePtr object_ptr;
 
 	auto api_ctx = ctx->create_api_context();
-	string_type path;
-	ctx->get_current_directory()->fill_path(path);
+	string_type path = ctx->get_current_directory();
 	algorithms::simple_types_model_algorithm<T>::delete_type(rx_item_reference(rx_combine_paths(path, name)),
 		rx_result_callback(api_ctx.object, [ctx, name, this](rx_result result)
 		{
@@ -1344,8 +1336,7 @@ bool prototype_command::create_prototype(std::istream& in, std::ostream& out, st
 	{
 		if (def_command == "json")
 		{
-			string_type path;
-			ctx->get_current_directory()->fill_path(path);
+			string_type path = ctx->get_current_directory();
 			auto proto = create_runtime_prototype<T>(name, base_reference, path);
 			if (proto.meta_info.parent.is_null())
 			{
@@ -1628,8 +1619,7 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("values", init_data))
 			{
-				string_type path;
-				ctx->get_current_directory()->fill_path(path);
+				string_type path = ctx->get_current_directory();
 				auto proto = create_runtime_prototype<T>(name, base_reference, path);
 				proto.overrides = init_data;
 				ctx->set_waiting();
@@ -1677,8 +1667,7 @@ bool update_command::update_object(typename T::instance_data_t instance_data, st
 	}
 	else if (as_command.empty())
 	{
-		string_type path;
-		ctx->get_current_directory()->fill_path(path);
+		string_type path = ctx->get_current_directory();
 		auto proto = create_runtime_prototype<T>(name, base_reference, path);
 		ctx->set_waiting();
 		auto result = rx_platform::api::meta::rx_update_runtime<T>(std::move(proto), update_data,
@@ -1760,8 +1749,7 @@ bool update_command::update_type(std::istream& in, std::ostream& out, std::ostre
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("values", init_data))
 			{
-				string_type path;
-				ctx->get_current_directory()->fill_path(path);
+				string_type path = ctx->get_current_directory();
 				rx_result_with<typename T::smart_ptr> proto_result = create_prototype<T>(name, base_reference, path);
 				if (!proto_result)
 				{
@@ -1814,8 +1802,7 @@ bool update_command::update_type(std::istream& in, std::ostream& out, std::ostre
 	}
 	else if (as_command.empty())
 	{
-		string_type path;
-		ctx->get_current_directory()->fill_path(path);
+		string_type path = ctx->get_current_directory();
 		auto proto_result = create_prototype<T>(name, base_reference, path);
 		if (!proto_result)
 		{
@@ -1904,8 +1891,7 @@ bool update_command::update_simple_type(std::istream& in, std::ostream& out, std
 			data::runtime_values_data init_data;
 			if (reader.read_init_values("values", init_data))
 			{
-				string_type path;
-				ctx->get_current_directory()->fill_path(path);
+				string_type path = ctx->get_current_directory();
 				auto proto_result = create_simple_prototype<T>(name, base_reference, path);
 				if (!proto_result)
 				{
@@ -1957,8 +1943,7 @@ bool update_command::update_simple_type(std::istream& in, std::ostream& out, std
 	}
 	else if (as_command.empty())
 	{
-		string_type path;
-		ctx->get_current_directory()->fill_path(path);
+		string_type path = ctx->get_current_directory();
 		auto proto_result = create_simple_prototype<T>(name, base_reference, path);
 		if (!proto_result)
 		{

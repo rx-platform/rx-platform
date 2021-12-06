@@ -34,7 +34,7 @@
 // rx_platform_security
 #include "sys_internal/rx_security/rx_platform_security.h"
 
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 
 
 #define RX_DEFAULT_SECURITY_NAME RX_NONE_SECURITY_NAME

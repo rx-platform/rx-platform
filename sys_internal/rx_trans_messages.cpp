@@ -36,6 +36,7 @@
 
 #include "sys_internal/rx_internal_protocol.h"
 #include "model/rx_model_dependencies.h"
+#include "system/runtime/rx_runtime_holder.h"
 
 
 namespace rx_internal {
@@ -121,10 +122,10 @@ message_ptr rx_update_directory_request_message::do_job (api::rx_context ctx, rx
 		return std::make_unique<error_message>(brw_result.errors(), 13, request_id);
 	}
 
-	auto builder = rx_create_reference<rx_internal::model::dependency::local_dependecy_builder>();
+	auto builder = rx_create_reference<rx_internal::model::transactions::local_dependecy_builder>();
 	for (auto& one : brw_result.value().items)
 	{
-		builder->add(api::query_result_detail(one.get_type(), one.get_meta()), true, false);
+		builder->add(api::query_result_detail(one.get_type(), one.get_meta()), true, false, false);
 	}
 
 	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable

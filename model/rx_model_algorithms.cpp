@@ -42,6 +42,8 @@
 #include "system/meta/rx_meta_algorithm.h"
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_dependencies.h"
+#include "model/rx_model_transactions.h"
+#include "system/server/rx_directory_cache.h"
 
 #define RX_NEW_SYMBOL_LOG_PREFIX_STR "#"s
 
@@ -56,10 +58,6 @@ using namespace rx;
 
 namespace
 {
-rx_directory_ptr get_root_directory()
-{
-	return rx_gate::instance().get_root_directory();
-}
 }
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_node_id id)
 {
@@ -273,11 +271,10 @@ rx_result_with<rx_node_id> resolve_some_reference(const rx_item_reference& ref, 
 	}
 	else
 	{
-
-		auto item = rx_internal::internal_ns::platform_root::get_cached_item(ref.get_path());
+		auto item = ns::rx_directory_cache::instance().get_cached_item(ref.get_path());
 		if (!item)
 		{// found it in cache, return!
-			item = directories.resolve_path(ref.get_path());
+			item = directories.resolve_item(ref.get_path());
 			if (!item)
 			{
 				return ref.get_path() + " does not exists!";
@@ -310,22 +307,21 @@ rx_result delete_some_type(typeCache& cache, const rx_item_reference& rx_item_re
 	rx_node_id id;
 	string_type name;
 	rx_namespace_item item;
-	rx_directory_ptr dir = rx_gate::instance().get_root_directory();
+	rx_directory_ptr dir;
 	if (!rx_item_reference.is_node_id())
 	{
-		string_type path = rx_item_reference.get_path();
-		item = dir->get_sub_item(path);
+		item = rx_gate::instance().get_namespace_item(rx_item_reference.get_path());
 		if (!item)
 		{// error, item does not exists
-			return path + " does not exists";
+			return rx_item_reference.get_path() + " does not exists";
 		}
 		id = item.get_meta().id;
 		if (id.is_null())
 		{// error, item does not have id
-			return path + " does not have id";
+			return rx_item_reference.get_path() + " does not have id";
 		}
-		dir = dir->get_sub_directory(item.get_meta().path);
 		name = item.get_meta().name;
+		dir = rx_gate::instance().get_directory(item.get_meta().path);
 	}
 	else
 	{
@@ -341,7 +337,7 @@ rx_result delete_some_type(typeCache& cache, const rx_item_reference& rx_item_re
 			return id.to_string() + " does not exists";
 		}
 		name = item_meta.name;
-		dir = dir->get_sub_directory(item_meta.path);
+		dir = rx_gate::instance().get_directory(item_meta.path);
 	}
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
@@ -402,7 +398,7 @@ rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, 
 		prototype->meta_info.id = item_id;
 	}
 
-	auto dir = get_root_directory()->get_sub_directory(path);
+	auto dir = rx_gate::instance().get_directory(path);
 
 	if (!dir)
 		return path + " not found!";
@@ -467,7 +463,6 @@ rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_upd
 {
 	using algorithm_type = typename typeT::pointee_type::algorithm_type;
 
-	rx_directory_ptr dir = rx_gate::instance().get_root_directory();
 
 	prototype->meta_info.increment_version(update_data.increment_version);
 	type_check_context ctx;
@@ -518,22 +513,20 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_res
 	rx_node_id id;
 	string_type name;
 	rx_namespace_item item;
-	rx_directory_ptr dir = rx_gate::instance().get_root_directory();
-	if (!rx_item_reference.is_node_id())
+	rx_directory_ptr dir; if (!rx_item_reference.is_node_id())
 	{
-		string_type path = rx_item_reference.get_path();
-		item = dir->get_sub_item(path);
+		item = rx_gate::instance().get_namespace_item(rx_item_reference.get_path());
 		if (!item)
 		{// error, item does not exists
-			return path + " does not exists";
+			return rx_item_reference.get_path() + " does not exists";
 		}
 		id = item.get_meta().id;
 		if (id.is_null())
 		{// error, item does not have id
-			return path + " does not have id";
+			return rx_item_reference.get_path() + " does not have id";
 		}
-		dir = dir->get_sub_directory(item.get_meta().path);
 		name = item.get_meta().name;
+		dir = rx_gate::instance().get_directory(item.get_meta().path);
 	}
 	else
 	{
@@ -549,7 +542,7 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_res
 			return id.to_string() + " does not exists";
 		}
 		name = item_meta.name;
-		dir = dir->get_sub_directory(item_meta.path);
+		dir = rx_gate::instance().get_directory(item_meta.path);
 	}
 	auto obj_ptr = platform_types_manager::instance().get_type_repository<typeT>().mark_runtime_for_delete(id);
 	if (!obj_ptr)
@@ -631,7 +624,7 @@ rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_ru
 	string_type path = instance_data.meta_info.path;
 	string_type runtime_name = instance_data.meta_info.name;
 
-	rx_directory_ptr dir = rx_gate::instance().get_root_directory()->get_sub_directory(path);
+	rx_directory_ptr dir = rx_gate::instance().get_directory(path);
 
 	if (!dir)
 		return path + " not found!";
@@ -799,6 +792,9 @@ rx_result_with<rx_node_id> resolve_simple_type_reference(const rx_item_reference
 {
 	rx_item_type type;
 	meta_data info;
+	string_type ref_path;
+	if (!ref.is_node_id())
+		ref_path = ref.get_path();
 	auto result = resolve_some_reference(ref, directories, info, type);
 	if (!result)
 		return result;
@@ -922,11 +918,22 @@ void types_model_algorithm<typeT>::update_type (typename typeT::smart_ptr protot
 template <class typeT>
 void types_model_algorithm<typeT>::delete_type (const rx_item_reference& item_reference, rx_result_callback&& callback)
 {
-	rx_do_with_callback(RX_DOMAIN_META, types_model_algorithm<typeT>::delete_type_sync, std::move(callback), item_reference);
+	rx_reference_ptr anchor = callback.get_anchor();
+	rx_post_function_to(RX_DOMAIN_META, anchor, [](const rx_item_reference& item_reference, rx_result_callback&& callback)
+		{
+			ns::rx_directory_resolver dirs;
+			auto temp = resolve_type_reference<typeT>(item_reference, dirs, tl::type2type<typeT>());
+			if (!temp)
+				callback(temp.errors());
+			auto executer = rx_create_reference<transactions::model_transactions_executer>();
+			executer->add_transaction(std::make_unique<transactions::delete_type_transaction<typeT> >(temp.move_value(), callback.get_anchor()));
+			executer->execute(std::move(callback));
+		}, item_reference, std::move(callback));
+	//rx_do_with_callback(RX_DOMAIN_META, types_model_algorithm<typeT>::delete_type_sync, std::move(callback), item_reference);
 }
 
 template <class typeT>
-void types_model_algorithm<typeT>::check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback)
+void types_model_algorithm<typeT>::check_type (const string_type& name, const string_type& dir, rx_result_with_callback<check_type_result>&& callback)
 {
 	rx_do_with_callback(RX_DOMAIN_META, types_model_algorithm<typeT>::check_type_sync, std::move(callback), name, dir);
 }
@@ -941,7 +948,7 @@ rx_result_with<typename typeT::smart_ptr> types_model_algorithm<typeT>::get_type
 	}
 	else
 	{
-		auto item = get_root_directory()->get_sub_item(item_reference.get_path());
+		auto item = rx_gate::instance().get_namespace_item(item_reference.get_path());
 		if (item)
 		{
 			id = item.get_meta().id;
@@ -991,10 +998,12 @@ rx_result types_model_algorithm<typeT>::delete_type_sync (const rx_item_referenc
 }
 
 template <class typeT>
-rx_result_with<check_type_result> types_model_algorithm<typeT>::check_type_sync (const string_type& name, rx_directory_ptr dir)
+rx_result_with<check_type_result> types_model_algorithm<typeT>::check_type_sync (const string_type& name, const string_type& dir)
 {
 	rx_result_with<check_type_result> ret;
-	rx_namespace_item item = dir->get_sub_item(name);
+	ns::rx_directory_resolver dirs;
+	dirs.add_paths({ dir });
+	rx_namespace_item item = rx_gate::instance().get_namespace_item(name, &dirs);
 	if (!item)
 	{
 		ret.register_error(name + " does not exists!");
@@ -1044,7 +1053,7 @@ void simple_types_model_algorithm<typeT>::delete_type (const rx_item_reference& 
 }
 
 template <class typeT>
-void simple_types_model_algorithm<typeT>::check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback)
+void simple_types_model_algorithm<typeT>::check_type (const string_type& name, const string_type& dir, rx_result_with_callback<check_type_result>&& callback)
 {
 	rx_do_with_callback(RX_DOMAIN_META, simple_types_model_algorithm<typeT>::check_type_sync, std::move(callback), name, dir);
 }
@@ -1059,8 +1068,7 @@ rx_result_with<typename typeT::smart_ptr> simple_types_model_algorithm<typeT>::g
 	}
 	else
 	{
-		auto dir = get_root_directory();
-		auto item = dir->get_sub_item(item_reference.get_path());
+		auto item = rx_gate::instance().get_namespace_item(item_reference.get_path());
 		if (item)
 		{
 			id = item.get_meta().id;
@@ -1110,10 +1118,12 @@ rx_result simple_types_model_algorithm<typeT>::delete_type_sync (const rx_item_r
 }
 
 template <class typeT>
-rx_result_with<check_type_result> simple_types_model_algorithm<typeT>::check_type_sync (const string_type& name, rx_directory_ptr dir)
+rx_result_with<check_type_result> simple_types_model_algorithm<typeT>::check_type_sync (const string_type& name, const string_type& dir)
 {
 	rx_result_with<check_type_result> ret;
-	rx_namespace_item item = dir->get_sub_item(name);
+	ns::rx_directory_resolver dirs;
+	dirs.add_paths({ dir });
+	rx_namespace_item item = rx_gate::instance().get_namespace_item(name, &dirs);
 	if (!item)
 	{
 		ret.register_error(name + " does not exists!");
@@ -1199,7 +1209,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_run
 	}
 	else
 	{
-		auto item = get_root_directory()->get_sub_item(item_reference.get_path());
+		auto item = rx_gate::instance().get_namespace_item(item_reference.get_path());
 		if (item)
 		{
 			id = item.get_meta().id;
@@ -1308,7 +1318,7 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 	}
 	data::runtime_values_data runtime_data;
 	rx_storage_item_ptr runtime_storage;
-	auto dir = rx_gate::instance().get_root_directory()->get_sub_directory(old_meta.path);
+	auto dir = rx_gate::instance().get_directory(old_meta.path);
 	if (dir)
 		dir->delete_item(old_meta.name);
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
@@ -1436,20 +1446,21 @@ void runtime_model_algorithm<typeT>::update_runtime_with_depends_sync (instanceT
 		}
 		else
 		{
-			dependency::local_dependecy_builder::smart_ptr builder_ptr = rx_create_reference<dependency::local_dependecy_builder>();
+			transactions::local_dependecy_builder::smart_ptr builder_ptr = rx_create_reference<transactions::local_dependecy_builder>();
+			instance_data.meta_info.increment_version(update_data.increment_version);
 			api::query_result_detail temp(typeT::runtime_type_id, instance_data.meta_info);
-			builder_ptr->add(temp, true, true);
+			builder_ptr->add(temp, true, true, true);
 			for (auto& one : result.value().items)
 			{
-				builder_ptr->add(one, true, true);
+				builder_ptr->add(one, true, true, false);
 			}
 			rx_reference_ptr anchor = callback.get_anchor();
-			rx_result_callback my_callback(anchor, [callback = std::move(callback)](rx_result&& res) mutable
+			rx_result_callback my_callback(anchor, [builder_ptr, callback = std::move(callback)](rx_result&& res) mutable
 				{
 				if (!res)
 					callback(res.errors());
 				else
-					callback("Uradio nesto jbg!!!");
+					callback(builder_ptr->extract_single_result<typeT>());
 				});
 			auto ret = builder_ptr->apply_items(std::move(my_callback));
 				
@@ -1487,7 +1498,7 @@ void relation_types_algorithm::delete_type (const rx_item_reference& item_refere
 	rx_do_with_callback(RX_DOMAIN_META, delete_type_sync, std::move(callback), item_reference);
 }
 
-void relation_types_algorithm::check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback)
+void relation_types_algorithm::check_type (const string_type& name, const string_type& dir, rx_result_with_callback<check_type_result>&& callback)
 {
 	rx_do_with_callback(RX_DOMAIN_META, relation_types_algorithm::check_type_sync, std::move(callback), name, dir);
 }
@@ -1501,7 +1512,7 @@ rx_result_with<relation_type::smart_ptr> relation_types_algorithm::get_type_sync
 	}
 	else
 	{
-		auto item = rx_gate::instance().get_root_directory()->get_sub_item(item_reference.get_path());
+		auto item = rx_gate::instance().get_namespace_item(item_reference.get_path());
 		if (item)
 		{
 			id = item.get_meta().id;
@@ -1547,10 +1558,12 @@ rx_result relation_types_algorithm::delete_type_sync (const rx_item_reference& i
 	return result;
 }
 
-rx_result_with<check_type_result> relation_types_algorithm::check_type_sync (const string_type& name, rx_directory_ptr dir)
+rx_result_with<check_type_result> relation_types_algorithm::check_type_sync (const string_type& name, const string_type& dir)
 {
 	rx_result_with<check_type_result> ret;
-	rx_namespace_item item = dir->get_sub_item(name);
+	ns::rx_directory_resolver dirs;
+	dirs.add_paths({ dir });
+	rx_namespace_item item = rx_gate::instance().get_namespace_item(name, &dirs);
 	if (!item)
 	{
 		ret.register_error(name + " does not exists!");
@@ -1616,7 +1629,7 @@ void data_types_model_algorithm::delete_type (const rx_item_reference& item_refe
 	rx_do_with_callback(RX_DOMAIN_META, delete_type_sync, std::move(callback), item_reference);
 }
 
-void data_types_model_algorithm::check_type (const string_type& name, rx_directory_ptr dir, rx_result_with_callback<check_type_result>&& callback)
+void data_types_model_algorithm::check_type (const string_type& name, const string_type& dir, rx_result_with_callback<check_type_result>&& callback)
 {
 	rx_do_with_callback(RX_DOMAIN_META, data_types_model_algorithm::check_type_sync, std::move(callback), name, dir);
 }
@@ -1630,7 +1643,7 @@ rx_result_with<data_type::smart_ptr> data_types_model_algorithm::get_type_sync (
 	}
 	else
 	{
-		auto item = rx_gate::instance().get_root_directory()->get_sub_item(item_reference.get_path());
+		auto item = rx_gate::instance().get_namespace_item(item_reference.get_path());
 		if (item)
 		{
 			id = item.get_meta().id;
@@ -1676,7 +1689,7 @@ rx_result data_types_model_algorithm::delete_type_sync (const rx_item_reference&
 	return result;
 }
 
-rx_result_with<check_type_result> data_types_model_algorithm::check_type_sync (const string_type& name, rx_directory_ptr dir)
+rx_result_with<check_type_result> data_types_model_algorithm::check_type_sync (const string_type& name, const string_type& dir)
 {
 	return RX_NOT_IMPLEMENTED;
 }

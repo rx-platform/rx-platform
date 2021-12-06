@@ -40,10 +40,6 @@ namespace rx_platform
 {
 namespace api
 {
-	rx_directory_ptr rx_context::safe_directory()
-	{
-		return directory ? directory : rx_platform::rx_gate::instance().get_root_directory();
-	}
 
 } // api
 } // rx_platform

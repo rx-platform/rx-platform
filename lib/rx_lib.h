@@ -57,6 +57,7 @@ string_type _not_implemented_func(const char* fname);
 #define RX_NOT_CONNECTED "Not connected."
 #define RX_ALREADY_CONNECTED "Already connected."
 #define RX_INVALID_PATH "Invalid path."
+#define RX_INVALID_STATE "Invalid state."
 
 namespace rx
 {

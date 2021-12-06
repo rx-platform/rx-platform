@@ -589,7 +589,7 @@ test_program_context* testing_enviroment::create_test_context (rx_internal::term
 
 // Class testing::test_program_context 
 
-test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor)
+test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor)
       : status_(RX_TEST_STATUS_UNKNOWN),
         out_std_(out.unsafe_ptr()),
         err_std_(err.unsafe_ptr()),

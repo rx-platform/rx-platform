@@ -35,7 +35,7 @@
 // rx_test_basic
 #include "testing/rx_test_basic.h"
 
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
 

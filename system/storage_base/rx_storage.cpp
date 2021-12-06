@@ -37,7 +37,7 @@
 #include "system/storage_base/rx_storage.h"
 
 #include "system/server/rx_server.h"
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #define RX_CODE_STORAGE_NAME "<code>"
 
 

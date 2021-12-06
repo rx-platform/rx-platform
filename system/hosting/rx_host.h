@@ -85,15 +85,15 @@ template<typename typeT>
 rx_result register_host_simple_constructor(const rx_node_id& id, std::function<typename typeT::RTypePtr()> f);
 
 template<typename typeT>
-rx_result register_host_type(rx_directory_ptr host_root, typename typeT::smart_ptr what);
+rx_result register_host_type(typename typeT::smart_ptr what);
 template<typename typeT>
-rx_result register_host_simple_type(rx_directory_ptr host_root, typename typeT::smart_ptr what);
+rx_result register_host_simple_type(typename typeT::smart_ptr what);
 
-rx_result register_host_relation_type(rx_directory_ptr host_root, relation_type_ptr what);
-rx_result register_host_data_type(rx_directory_ptr host_root, data_type_ptr what);
+rx_result register_host_relation_type(relation_type_ptr what);
+rx_result register_host_data_type(data_type_ptr what);
 
 template<typename typeT>
-rx_result register_host_runtime(rx_directory_ptr host_root, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data);
+rx_result register_host_runtime(const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data);
 
 namespace hosting {
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -131,7 +131,7 @@ class host_platform_builder
 
   public:
 
-      rx_directory_ptr host_root;
+      string_type host_root;
 
 
   protected:
@@ -257,6 +257,8 @@ class rx_platform_host
       virtual std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
       virtual string_type get_default_name () const = 0;
+
+      virtual string_type get_default_user_storage () const;
 
       virtual bool is_canceling () const = 0;
 

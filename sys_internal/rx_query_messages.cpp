@@ -35,7 +35,7 @@
 #include "sys_internal/rx_query_messages.h"
 
 #include "sys_internal/rx_internal_protocol.h"
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #include "api/rx_namespace_api.h"
 #include "api/rx_meta_api.h"
 #include "system/server/rx_server.h"

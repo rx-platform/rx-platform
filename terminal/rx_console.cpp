@@ -60,9 +60,9 @@ console_runtime::console_runtime (rx_thread_handle_t executer, console_runtime_c
 {
 	CONSOLE_LOG_TRACE("console_runtime", 900, "Console endpoint created.");
 #ifdef _DEBUG
-	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");// "_sys");
+	current_directory_ = "/world";// "_sys";
 #else
-	current_directory_ = rx_platform::rx_gate::instance().get_root_directory()->get_sub_directory("world");
+	current_directory_ = "/world";
 #endif
 	// program executer
 	program_executer_ = std::make_unique<console_runtime_program_executer>(&program_holder_, smart_this()
@@ -153,7 +153,7 @@ bool console_runtime::cancel_command (security::security_context_ptr ctx)
 
 rx_result console_runtime::check_validity ()
 {
-	if (!current_directory_)
+	if (current_directory_.empty())
 		return "No valid directory for Terminal";
 	else
 		return true;
@@ -167,9 +167,7 @@ void console_runtime::reset ()
 void console_runtime::get_prompt (string_type& prompt)
 {
 	prompt += "\r\n";
-	string_type path;
-	current_directory_->fill_path(path);
-	prompt += path;
+	prompt += current_directory_;
 }
 
 void console_runtime::set_terminal_size (int width, int height)
@@ -234,7 +232,7 @@ void console_runtime_program_executer::do_scan ()
 
 // Class rx_internal::terminal::console::console_runtime_program_context 
 
-console_runtime_program_context::console_runtime_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_runtime> runtime)
+console_runtime_program_context::console_runtime_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_runtime> runtime)
 		: host_(runtime)
 		, out_(out)
 		, err_(err)
@@ -274,7 +272,7 @@ std::ostream& console_runtime_program_context::get_stderr ()
 api::rx_context console_runtime_program_context::create_api_context ()
 {
 	api::rx_context ret;
-	ret.directory = get_current_directory();
+	ret.active_path = get_current_directory();
 	ret.object = host_;
 	return ret;
 }

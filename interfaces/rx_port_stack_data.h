@@ -41,6 +41,7 @@ using namespace rx_platform::runtime;
 // rx_io_buffers
 #include "system/runtime/rx_io_buffers.h"
 
+#include "api/rx_platform_api.h"
 using rx_platform::runtime::io_types::rx_io_buffer;
 
 
@@ -209,6 +210,7 @@ class port_passive_map
 
 class port_stack_data 
 {
+    typedef std::map<rx_node_id, api::query_result_detail> connected_items_type;
 
   public:
       ~port_stack_data();
@@ -224,6 +226,9 @@ class port_stack_data
       port_build_map build_map;
 
       port_buffers buffers;
+
+
+      connected_items_type connected_items;
 
 
   protected:

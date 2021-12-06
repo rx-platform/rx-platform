@@ -38,7 +38,7 @@
 
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 
 
 namespace rx_internal {
@@ -56,7 +56,7 @@ rx_result http_rx_item_handler::handle_request (http_request& req, http_response
 	rx_directory_resolver directories;
 	directories.add_paths({ path , "/" });
 	api::rx_context context;
-	context.directory = rx_gate::instance().get_root_directory()->get_sub_directory("world");
+	context.active_path = "/world";
 	context.object = req.whose;
 	auto idx = req.path.rfind('.');
 	if (idx != string_type::npos)

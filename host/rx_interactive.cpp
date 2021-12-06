@@ -40,6 +40,7 @@
 #include "sys_internal/rx_security/rx_platform_security.h"
 #include "sys_internal/rx_plugin_manager.h"
 #include "interfaces/rx_io.h"
+#include "system/server/rx_directory_cache.h"
 
 // rx_interactive
 #include "host/rx_interactive.h"
@@ -405,7 +406,7 @@ string_type interactive_console_host::get_interactive_info ()
 rx_result interactive_console_host::build_host (hosting::host_platform_builder& builder)
 {
 #ifndef RX_MIN_MEMORY
-	auto dir_result = builder.host_root->add_sub_directory(rx_create_reference<ns::rx_platform_directory>("types", namespace_item_attributes::namespace_item_internal_access));
+	auto dir_result = rx_gate::instance().add_directory(builder.host_root + RX_DIR_DELIMETER_STR "types");
 	
 	auto detail_struct_type = rx_create_reference<meta::basic_types::struct_type>();
 	detail_struct_type->meta_info.name = RX_STD_IO_DETAILS_TYPE_NAME;
@@ -415,7 +416,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 	detail_struct_type->meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 
 	detail_struct_type->complex_data.register_const_value_static("supportsANSI", false);
-	auto result = register_host_simple_type<meta::basic_types::struct_type>(builder.host_root, detail_struct_type);
+	auto result = register_host_simple_type<meta::basic_types::struct_type>(detail_struct_type);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_STD_IO_DETAILS_TYPE_NAME " struct type.");
@@ -431,7 +432,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 
 	interactive_port_type->complex_data.register_struct("IODetails", rx_node_id(RX_STD_IO_DETAILS_TYPE_ID, 3));
 
-	result = register_host_type<meta::object_types::port_type>(builder.host_root, interactive_port_type);
+	result = register_host_type<meta::object_types::port_type>(interactive_port_type);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_STD_IO_TYPE_NAME " port type.");
@@ -448,7 +449,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 	app_inst_data.instance_data.priority = rx_domain_priority::normal;
 	app_inst_data.instance_data.processor = 0;
 
-	result = register_host_runtime<meta::object_types::application_type>(builder.host_root, app_inst_data, nullptr);
+	result = register_host_runtime<meta::object_types::application_type>(app_inst_data, nullptr);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_HOST_APP_NAME " application runtime.");
@@ -466,7 +467,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 	domain_inst_data.instance_data.priority = rx_domain_priority::normal;
 	domain_inst_data.instance_data.processor = -1;
 
-	result = register_host_runtime<meta::object_types::domain_type>(builder.host_root, domain_inst_data, nullptr);
+	result = register_host_runtime<meta::object_types::domain_type>(domain_inst_data, nullptr);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_HOST_DOMAIN_NAME " domain runtime.");
@@ -483,7 +484,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 
 	inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
 
-	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	result = register_host_runtime<meta::object_types::port_type>(inst_data, nullptr);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_STD_IO_NAME " port runtime.");
@@ -501,7 +502,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 
 	inst_data.overrides.add_value_static("StackTop", RX_STD_IO_NAME);
 
-	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	result = register_host_runtime<meta::object_types::port_type>(inst_data, nullptr);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_STD_VT100_NAME " port runtime.");
@@ -549,6 +550,12 @@ void interactive_console_host::console_run_result (rx_result result)
 void interactive_console_host::terminal_size_changed (int width, int height)
 {
 	interactive_port_->terminal_size_changed(width, height);
+}
+
+string_type interactive_console_host::get_default_user_storage () const
+{
+  return ".";
+
 }
 
 

@@ -34,7 +34,7 @@
 // rx_internal_ns
 #include "sys_internal/rx_internal_ns.h"
 
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #include "system/runtime/rx_blocks.h"
 #include "system/meta/rx_obj_types.h"
 #include "testing/rx_test.h"
@@ -47,99 +47,6 @@
 namespace rx_internal {
 
 namespace internal_ns {
-
-// Class rx_internal::internal_ns::platform_root 
-
-rx_platform::ns::rx_names_cache platform_root::cache_;
-
-platform_root::platform_root()
-	: rx_platform_directory("", namespace_item_internal_access)
-{
-}
-
-
-platform_root::~platform_root()
-{
-}
-
-
-
-rx_namespace_item platform_root::get_cached_item (const string_type& name)
-{
-	return cache_.get_cached_item(name);
-}
-
-rx_result platform_root::insert_cached_item (const string_type& name, const rx_namespace_item& item)
-{
-	return cache_.insert_cached_item(name, item);
-}
-
-rx_result platform_root::remove_cached_item (const string_type& name, const rx_namespace_item& item)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-void platform_root::clear_cached_items ()
-{
-	cache_.clear();
-}
-
-
-// Class rx_internal::internal_ns::user_directory 
-
-user_directory::user_directory (const string_type& name)
-	: rx_platform_directory(name, namespace_item_read_access | namespace_item_write_access | namespace_item_delete_access)
-{
-}
-
-
-user_directory::~user_directory()
-{
-}
-
-
-
-// Class rx_internal::internal_ns::unassigned_directory 
-
-unassigned_directory::unassigned_directory()
-	: rx_platform_directory(RX_NS_UNASSIGNED_NAME, namespace_item_internal_access, rx_create_reference<storage_base::rx_code_storage>())
-{
-    auto storage = resolve_storage();
-    if (storage)
-    {
-        string_type base(RX_DIR_DELIMETER_STR);
-        base += RX_NS_UNASSIGNED_NAME;
-        storage.value()->set_base_path(base);
-    }
-}
-
-
-unassigned_directory::~unassigned_directory()
-{
-}
-
-
-
-// Class rx_internal::internal_ns::world_directory 
-
-world_directory::world_directory()
-	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_user_storage().value())
-{
-	auto storage = resolve_storage();
-	if (storage)
-	{
-		string_type base(RX_DIR_DELIMETER_STR);
-		base += RX_NS_WORLD_NAME;
-		storage.value()->set_base_path(base);
-	}
-}
-
-
-world_directory::~world_directory()
-{
-}
-
-
 
 // Parameterized Class rx_internal::internal_ns::rx_item_implementation 
 
@@ -493,20 +400,6 @@ void rx_meta_item_implementation<TImpl>::write_struct (string_view_type path, wr
 }
 
 
-// Class rx_internal::internal_ns::internal_directory 
-
-internal_directory::internal_directory (const string_type& name)
-	: rx_platform_directory(name, namespace_item_internal_access)
-{
-}
-
-
-internal_directory::~internal_directory()
-{
-}
-
-
-
 // Parameterized Class rx_internal::internal_ns::rx_other_implementation 
 
 template <class TImpl>
@@ -674,77 +567,6 @@ void rx_other_implementation<TImpl>::write_struct (string_view_type path, write_
 }
 
 
-// Class rx_internal::internal_ns::system_directory 
-
-system_directory::system_directory()
-	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage("sys").value())
-{
-	auto storage = resolve_storage();
-	if (storage)
-	{
-		string_type base(RX_DIR_DELIMETER_STR);
-		base += RX_NS_SYS_NAME;
-		storage.value()->set_base_path(base);
-	}
-}
-
-
-system_directory::~system_directory()
-{
-}
-
-
-
-// Class rx_internal::internal_ns::host_directory 
-
-host_directory::host_directory()
-	: rx_platform_directory(RX_NS_HOST_NAME, namespace_item_internal_access
-		, rx_gate::instance().get_host()->get_system_storage(rx_gate::instance().get_host()->get_host_name()).value())
-{
-	auto storage = resolve_storage();
-	if (storage)
-	{
-		string_type base(RX_DIR_DELIMETER_STR);
-		base += RX_NS_SYS_NAME;
-		base += RX_DIR_DELIMETER_STR;
-		base += RX_NS_HOST_NAME;
-		storage.value()->set_base_path(base);
-	}
-}
-
-
-host_directory::~host_directory()
-{
-}
-
-
-
-// Class rx_internal::internal_ns::plugin_directory 
-
-plugin_directory::plugin_directory (rx_plugin_ptr plugin)
-	: rx_platform_directory(plugin->get_plugin_name(), namespace_item_internal_access
-		, rx_gate::instance().get_host()->get_system_storage(plugin->get_plugin_name()).value())
-{
-	auto storage = resolve_storage();
-	if (storage)
-	{
-		string_type base(RX_DIR_DELIMETER_STR);
-		base += RX_NS_SYS_NAME;
-		base += RX_DIR_DELIMETER_STR;
-		base += RX_NS_PLUGINS_NAME;
-		base += RX_DIR_DELIMETER_STR;
-		base += plugin->get_plugin_name();
-		storage.value()->set_base_path(base);
-	}
-}
-
-
-plugin_directory::~plugin_directory()
-{
-}
-
-
-
 } // namespace internal_ns
 } // namespace rx_internal
 
@@ -771,3 +593,81 @@ template class rx_internal::internal_ns::rx_meta_item_implementation<program_typ
 template class rx_internal::internal_ns::rx_meta_item_implementation<display_type_ptr>;
 
 template class rx_internal::internal_ns::rx_meta_item_implementation<data_type_ptr>;
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	: rx_platform_directory("", namespace_item_internal_access)
+
+	return cache_.get_cached_item(name);
+
+	return cache_.insert_cached_item(name, item);
+
+	return RX_NOT_IMPLEMENTED;
+
+	cache_.clear();
+
+	: rx_platform_directory(name, namespace_item_read_access | namespace_item_write_access | namespace_item_delete_access)
+
+	: rx_platform_directory(RX_NS_UNASSIGNED_NAME, namespace_item_internal_access, rx_create_reference<storage_base::rx_code_storage>())
+
+    auto storage = resolve_storage();
+    if (storage)
+    {
+        string_type base(RX_DIR_DELIMETER_STR);
+        base += RX_NS_UNASSIGNED_NAME;
+        storage.value()->set_base_path(base);
+    }
+
+	: rx_platform_directory(RX_NS_WORLD_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_user_storage().value())
+
+	auto storage = resolve_storage();
+	if (storage)
+	{
+		string_type base(RX_DIR_DELIMETER_STR);
+		base += RX_NS_WORLD_NAME;
+		storage.value()->set_base_path(base);
+	}
+
+	: rx_platform_directory(name, namespace_item_internal_access)
+
+	: rx_platform_directory(RX_NS_SYS_NAME, namespace_item_internal_access, rx_gate::instance().get_host()->get_system_storage("sys").value())
+
+	auto storage = resolve_storage();
+	if (storage)
+	{
+		string_type base(RX_DIR_DELIMETER_STR);
+		base += RX_NS_SYS_NAME;
+		storage.value()->set_base_path(base);
+	}
+
+	: rx_platform_directory(RX_NS_HOST_NAME, namespace_item_internal_access
+		, rx_gate::instance().get_host()->get_system_storage(rx_gate::instance().get_host()->get_host_name()).value())
+
+	auto storage = resolve_storage();
+	if (storage)
+	{
+		string_type base(RX_DIR_DELIMETER_STR);
+		base += RX_NS_SYS_NAME;
+		base += RX_DIR_DELIMETER_STR;
+		base += RX_NS_HOST_NAME;
+		storage.value()->set_base_path(base);
+	}
+
+	: rx_platform_directory(plugin->get_plugin_name(), namespace_item_internal_access
+		, rx_gate::instance().get_host()->get_system_storage(plugin->get_plugin_name()).value())
+
+	auto storage = resolve_storage();
+	if (storage)
+	{
+		string_type base(RX_DIR_DELIMETER_STR);
+		base += RX_NS_SYS_NAME;
+		base += RX_DIR_DELIMETER_STR;
+		base += RX_NS_PLUGINS_NAME;
+		base += RX_DIR_DELIMETER_STR;
+		base += plugin->get_plugin_name();
+		storage.value()->set_base_path(base);
+	}
+
+#endif

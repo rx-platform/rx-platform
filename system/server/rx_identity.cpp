@@ -34,7 +34,7 @@
 // rx_identity
 #include "system/server/rx_identity.h"
 
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
 
 /*

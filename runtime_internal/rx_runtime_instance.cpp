@@ -30,7 +30,7 @@
 
 #include "pch.h"
 
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 
 // rx_runtime_instance
 #include "runtime_internal/rx_runtime_instance.h"

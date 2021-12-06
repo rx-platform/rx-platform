@@ -101,14 +101,14 @@ class console_runtime : public rx::pointers::reference_object
       void set_terminal_size (int width, int height);
 
 
-      const rx_directory_ptr get_current_directory () const
+      const string_type get_current_directory () const
       {
         return current_directory_;
       }
 
 
 
-      rx_directory_ptr current_directory_;
+      string_type current_directory_;
 
 
   protected:
@@ -186,7 +186,7 @@ class console_runtime_program_context : public script::console_program_context
 {
 
   public:
-      console_runtime_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_runtime> runtime);
+      console_runtime_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_runtime> runtime);
 
       console_runtime_program_context (console_runtime_program_context&& right);
 

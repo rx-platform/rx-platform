@@ -34,7 +34,7 @@
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
 
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/runtime/rx_runtime_holder.h"
 

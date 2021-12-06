@@ -112,6 +112,8 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       void terminal_size_changed (int width, int height);
 
+      string_type get_default_user_storage () const;
+
 
   protected:
 

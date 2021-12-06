@@ -83,12 +83,13 @@ bool io_capabilities::get_output () const
 
 // Class rx_platform::runtime::runtime_init_context 
 
-runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories)
+runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, rx_item_type type)
       : context(context),
         next_handle_(0x80000000),
         meta(meta),
         directories(directories),
-        now(rx_time::now())
+        now(rx_time::now()),
+        item_type(type)
     , structure(root)
     , tags(binded)
 {

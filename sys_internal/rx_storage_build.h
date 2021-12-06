@@ -58,7 +58,7 @@ class configuration_storage_builder : public rx_platform_builder
       ~configuration_storage_builder();
 
 
-      rx_result do_build (rx_directory_ptr root);
+      rx_result do_build ();
 
 
   protected:

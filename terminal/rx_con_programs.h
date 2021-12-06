@@ -67,7 +67,7 @@ public:
     typedef int pending_jobs_type;
 
   public:
-      console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory);
+      console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory);
 
       ~console_program_context();
 
@@ -81,8 +81,8 @@ public:
       virtual api::rx_context create_api_context () = 0;
 
 
-      rx_directory_ptr get_current_directory ();
-      void set_current_directory (rx_directory_ptr value);
+      string_type get_current_directory ();
+      void set_current_directory (string_type value);
 
       const int get_terminal_width () const
       {
@@ -131,7 +131,7 @@ public:
   private:
 
 
-      rx_directory_ptr current_directory_;
+      string_type current_directory_;
 
       instructions_data_type instructions_data_;
 

@@ -170,6 +170,7 @@ void ramp_source::source_tick (rx_time now)
         current_value_ = 0.0;
     rx_value val;
     val.assign_static(current_value_, now);
+    val.set_good_locally();
     source_value_changed(std::move(val));
 }
 

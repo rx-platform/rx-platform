@@ -39,7 +39,7 @@
 #include "rx_write_transaction.h"
 #include "rx_process_context.h"
 #include "system/runtime/rx_blocks.h"
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 
 
 namespace rx_platform {
@@ -180,7 +180,7 @@ runtime_process_context runtime_holder_algorithms<typeT>::create_context (typena
 template <class typeT>
 runtime_init_context runtime_holder_algorithms<typeT>::create_init_context (typename typeT::RType& whose)
 {
-    return runtime::runtime_init_context(*whose.tags_.item_, whose.meta_info_, &whose.context_, &whose.tags_.binded_tags_, &whose.directories_);
+    return runtime::runtime_init_context(*whose.tags_.item_, whose.meta_info_, &whose.context_, &whose.tags_.binded_tags_, &whose.directories_, typeT::runtime_type_id);
 }
 
 template <class typeT>

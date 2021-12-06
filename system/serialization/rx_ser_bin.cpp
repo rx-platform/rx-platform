@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  sys_internal\rx_namespace_algorithms.h
+*  system\serialization\rx_ser_bin.cpp
 *
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,46 +28,11 @@
 ****************************************************************************/
 
 
-#ifndef rx_namespace_algorithms_h
-#define rx_namespace_algorithms_h 1
+#include "pch.h"
+
+
+// rx_ser_bin
+#include "system/serialization/rx_ser_bin.h"
 
 
 
-// rx_ns
-#include "system/server/rx_ns.h"
-
-
-
-namespace rx_internal {
-
-namespace internal_ns {
-
-
-
-
-
-
-class namespace_algorithms 
-{
-
-  public:
-
-      static rx_result_with<rx_directory_ptr> get_or_create_direcotry (rx_directory_ptr from, const string_type& path);
-
-      static rx_result translate_path (const string_type& ref_path, const string_type& rel_path, string_type& result);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace internal_ns
-} // namespace rx_internal
-
-
-
-#endif

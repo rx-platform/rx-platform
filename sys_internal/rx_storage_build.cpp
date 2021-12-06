@@ -38,6 +38,7 @@
 #include "model/rx_model_algorithms.h"
 #include "system/meta/rx_meta_algorithm.h"
 #include "sys_internal/rx_namespace_algorithms.h"
+#include "system/server/rx_directory_cache.h"
 
 
 namespace rx_internal {
@@ -60,9 +61,9 @@ configuration_storage_builder::~configuration_storage_builder()
 
 
 
-rx_result configuration_storage_builder::do_build (rx_directory_ptr root)
+rx_result configuration_storage_builder::do_build ()
 {
-	auto result = build_from_storage(root, *storage_);
+	auto result = build_from_storage(ns::rx_directory_cache::instance().get_root(), *storage_);
 	if (!result)
 	{
 		for (auto& err : result.errors())
@@ -368,14 +369,14 @@ rx_result_with<rx_directory_ptr> configuration_storage_builder::storage_get_dire
 	while ((next = path.find(RX_DIR_DELIMETER, last)) != string_type::npos)
 	{
 		temp_path = path.substr(last, next - last);
-		temp_dir = current_dir->get_sub_directory(temp_path);
+		temp_dir = ns::rx_directory_cache::instance().get_sub_directory(current_dir, temp_path);
 		if (temp_dir)
 		{
 			current_dir = temp_dir;
 		}
 		else
 		{
-			result = current_dir->add_sub_directory(temp_path);
+			result = ns::rx_directory_cache::instance().add_directory(current_dir, temp_path);
 			if (!result)
 				return result;
 			current_dir = result.value();
@@ -384,14 +385,14 @@ rx_result_with<rx_directory_ptr> configuration_storage_builder::storage_get_dire
 		last = next + 1;
 	}
 	temp_path = path.substr(last);
-	temp_dir = current_dir->get_sub_directory(temp_path);
+	temp_dir = ns::rx_directory_cache::instance().get_sub_directory(current_dir, temp_path);
 	if (temp_dir)
 	{
 		current_dir = temp_dir;
 	}
 	else
 	{
-		result = current_dir->add_sub_directory(temp_path);
+		result = ns::rx_directory_cache::instance().add_directory(current_dir, temp_path);
 		if (!result)
 			return result;
 		current_dir = result.value();

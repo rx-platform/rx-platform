@@ -59,7 +59,7 @@ class ns_suggetions_query : public rx_query
 
       const string_type& get_query_type ();
 
-      rx_result do_query (api::query_result& result, rx_directory_ptr dir);
+      rx_result do_query (api::query_result& result, const string_type& dir);
 
 
       string_type type_name;

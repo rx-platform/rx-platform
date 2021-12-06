@@ -76,7 +76,7 @@ class rx_query
 
       static rx_result_with<query_ptr> create_query (base_meta_reader& stream);
 
-      virtual rx_result do_query (api::query_result& result, rx_directory_ptr dir) = 0;
+      virtual rx_result do_query (api::query_result& result, const string_type& dir) = 0;
 
 
   protected:
@@ -108,7 +108,7 @@ class derived_types_query : public rx_query
 
       const string_type& get_query_type ();
 
-      rx_result do_query (api::query_result& result, rx_directory_ptr dir);
+      rx_result do_query (api::query_result& result, const string_type& dir);
 
 
       string_type type_name;
@@ -126,11 +126,11 @@ class derived_types_query : public rx_query
 
   private:
 	  template<typename T>
-	  rx_result do_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>);
+	  rx_result do_query(api::query_result& result, const string_type& dir, tl::type2type<T>);
 	  template<typename T>
-	  rx_result do_simple_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>);
-	  rx_result do_relation_query(api::query_result& result, rx_directory_ptr dir);
-      rx_result do_data_query(api::query_result& result, rx_directory_ptr dir);
+	  rx_result do_simple_query(api::query_result& result, const string_type& dir, tl::type2type<T>);
+	  rx_result do_relation_query(api::query_result& result, const string_type& dir);
+      rx_result do_data_query(api::query_result& result, const string_type& dir);
 
 };
 
@@ -150,7 +150,7 @@ class runtime_objects_query : public rx_query
 
       const string_type& get_query_type ();
 
-      rx_result do_query (api::query_result& result, rx_directory_ptr dir);
+      rx_result do_query (api::query_result& result, const string_type& dir);
 
 
       string_type type_name;
@@ -188,7 +188,7 @@ class translate_query : public rx_query
 
       const string_type& get_query_type ();
 
-      rx_result do_query (api::query_result& result, rx_directory_ptr dir);
+      rx_result do_query (api::query_result& result, const string_type& dir);
 
 
       static string_type query_name;
@@ -219,7 +219,7 @@ class port_stack_query : public rx_query
 
       const string_type& get_query_type ();
 
-      rx_result do_query (api::query_result& result, rx_directory_ptr dir);
+      rx_result do_query (api::query_result& result, const string_type& dir);
 
 
       string_type instance_name;
@@ -256,7 +256,7 @@ class dependents_query : public rx_query
 
       const string_type& get_query_type ();
 
-      rx_result do_query (api::query_result& result, rx_directory_ptr dir);
+      rx_result do_query (api::query_result& result, const string_type& dir);
 
 
       rx_item_reference item;

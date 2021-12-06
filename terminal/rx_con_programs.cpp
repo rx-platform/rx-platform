@@ -118,7 +118,7 @@ void console_program::process_program (sl_runtime::program_context* context, con
 
 // Class rx_internal::terminal::console::script::console_program_context 
 
-console_program_context::console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, rx_directory_ptr current_directory)
+console_program_context::console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory)
       : current_directory_(current_directory),
         canceled_(false),
         terminal_width_(80),
@@ -150,12 +150,12 @@ void console_program_context::cancel_execution ()
 }
 
 
-rx_directory_ptr console_program_context::get_current_directory ()
+string_type console_program_context::get_current_directory ()
 {
   return current_directory_;
 }
 
-void console_program_context::set_current_directory (rx_directory_ptr value)
+void console_program_context::set_current_directory (string_type value)
 {
   current_directory_ = value;
 }

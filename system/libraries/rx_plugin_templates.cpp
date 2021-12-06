@@ -87,7 +87,7 @@ template rx_result register_plugin_simple_constructor<meta::basic_types::struct_
 
 
 template<typename typeT>
-rx_result register_plugin_type(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, typename typeT::smart_ptr what)
+rx_result register_plugin_type(library::rx_plugin_base* plugin, typename typeT::smart_ptr what)
 {
     if (what->meta_info.created_time.is_null())
         what->meta_info.created_time = rx_time::now();
@@ -101,13 +101,13 @@ rx_result register_plugin_type(library::rx_plugin_base* plugin, rx_directory_ptr
     else
         return true;
 }
-template rx_result register_plugin_type<object_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, rx_object_type_ptr what);
-template rx_result register_plugin_type<domain_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, rx_domain_type_ptr what);
-template rx_result register_plugin_type<port_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, rx_port_type_ptr what);
-template rx_result register_plugin_type<application_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, rx_application_type_ptr what);
+template rx_result register_plugin_type<object_type>(library::rx_plugin_base* plugin, rx_object_type_ptr what);
+template rx_result register_plugin_type<domain_type>(library::rx_plugin_base* plugin, rx_domain_type_ptr what);
+template rx_result register_plugin_type<port_type>(library::rx_plugin_base* plugin, rx_port_type_ptr what);
+template rx_result register_plugin_type<application_type>(library::rx_plugin_base* plugin, rx_application_type_ptr what);
 
 template<typename typeT>
-rx_result register_plugin_simple_type(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, typename typeT::smart_ptr what)
+rx_result register_plugin_simple_type(library::rx_plugin_base* plugin, typename typeT::smart_ptr what)
 {
     if (what->meta_info.created_time.is_null())
         what->meta_info.created_time = rx_time::now();
@@ -121,14 +121,14 @@ rx_result register_plugin_simple_type(library::rx_plugin_base* plugin, rx_direct
     else
         return true;
 }
-template rx_result register_plugin_simple_type<mapper_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, mapper_type::smart_ptr what);
-template rx_result register_plugin_simple_type<source_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, source_type::smart_ptr what);
-template rx_result register_plugin_simple_type<filter_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, filter_type::smart_ptr what);
-template rx_result register_plugin_simple_type<variable_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, variable_type::smart_ptr what);
-template rx_result register_plugin_simple_type<event_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, event_type::smart_ptr what);
-template rx_result register_plugin_simple_type<struct_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, struct_type::smart_ptr what);
+template rx_result register_plugin_simple_type<mapper_type>(library::rx_plugin_base* plugin, mapper_type::smart_ptr what);
+template rx_result register_plugin_simple_type<source_type>(library::rx_plugin_base* plugin, source_type::smart_ptr what);
+template rx_result register_plugin_simple_type<filter_type>(library::rx_plugin_base* plugin, filter_type::smart_ptr what);
+template rx_result register_plugin_simple_type<variable_type>(library::rx_plugin_base* plugin, variable_type::smart_ptr what);
+template rx_result register_plugin_simple_type<event_type>(library::rx_plugin_base* plugin, event_type::smart_ptr what);
+template rx_result register_plugin_simple_type<struct_type>(library::rx_plugin_base* plugin, struct_type::smart_ptr what);
 
-rx_result register_plugin_relation_type(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, relation_type_ptr what)
+rx_result register_plugin_relation_type(library::rx_plugin_base* plugin, relation_type_ptr what)
 {
     if (what->meta_info.created_time.is_null())
         what->meta_info.created_time = rx_time::now();
@@ -142,7 +142,7 @@ rx_result register_plugin_relation_type(library::rx_plugin_base* plugin, rx_dire
     else
         return true;
 }
-rx_result register_plugin_data_type(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, data_type_ptr what)
+rx_result register_plugin_data_type(library::rx_plugin_base* plugin, data_type_ptr what)
 {
     if (what->meta_info.created_time.is_null())
         what->meta_info.created_time = rx_time::now();
@@ -158,7 +158,7 @@ rx_result register_plugin_data_type(library::rx_plugin_base* plugin, rx_director
 }
 
 template<typename typeT>
-rx_result register_plugin_runtime(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data)
+rx_result register_plugin_runtime(library::rx_plugin_base* plugin, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data)
 {
     auto result = rx_internal::model::algorithms::runtime_model_algorithm<typeT>::create_runtime_sync(
         typename typeT::instance_data_t(instance_data)
@@ -168,10 +168,10 @@ rx_result register_plugin_runtime(library::rx_plugin_base* plugin, rx_directory_
     else
         return true;
 }
-template rx_result register_plugin_runtime<object_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, const object_type::instance_data_t& instance_data, const data::runtime_values_data* data);
-template rx_result register_plugin_runtime<domain_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, const domain_type::instance_data_t& instance_data, const data::runtime_values_data* data);
-template rx_result register_plugin_runtime<port_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, const port_type::instance_data_t& instance_data, const data::runtime_values_data* data);
-template rx_result register_plugin_runtime<application_type>(library::rx_plugin_base* plugin, rx_directory_ptr plugin_root, const application_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_plugin_runtime<object_type>(library::rx_plugin_base* plugin, const object_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_plugin_runtime<domain_type>(library::rx_plugin_base* plugin, const domain_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_plugin_runtime<port_type>(library::rx_plugin_base* plugin, const port_type::instance_data_t& instance_data, const data::runtime_values_data* data);
+template rx_result register_plugin_runtime<application_type>(library::rx_plugin_base* plugin, const application_type::instance_data_t& instance_data, const data::runtime_values_data* data);
 
 
 

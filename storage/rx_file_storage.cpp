@@ -40,7 +40,7 @@
 
 #define RX_FILE_STORAGE_RUNTIME_DIR ".runtime"
 
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 
 // rx_file_internals
 #include "storage/rx_file_internals.h"

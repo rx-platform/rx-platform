@@ -40,7 +40,7 @@
 #include "rx_blocks.h"
 #include "rx_objbase.h"
 #include "rx_relations.h"
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #include "runtime_internal/rx_runtime_internal.h"
 
 namespace rx
@@ -1255,6 +1255,7 @@ rx_result variable_data::write_value (write_data&& data, write_task* task, runti
 
 rx_result variable_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+	
 	variable_ptr->container_ = this;
 	ctx.structure.push_item(*item);
 	ctx.variables.push_variable(this);

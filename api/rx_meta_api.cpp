@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2021 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -35,6 +35,7 @@
 // rx_meta_api
 #include "api/rx_meta_api.h"
 
+#include "system/server/rx_ns.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/meta/rx_meta_data.h"
 #include "model/rx_meta_internals.h"
@@ -282,7 +283,7 @@ rx_result recursive_save_directory(rx_directory_ptr dir)
 {
 	platform_directories_type dirs;
 	platform_items_type items;
-	dir->get_content(dirs, items, "");
+	dir->list_content(dirs, items, "");
 	for (auto& dir : dirs)
 	{
 		auto result = recursive_save_directory(dir);
@@ -304,14 +305,14 @@ rx_result recursive_save_directory(rx_directory_ptr dir)
 rx_result save_item_helper(string_type path)
 {
 	// check to see if we are to save whole directory?
-	auto dir_ptr = rx_gate::instance().get_root_directory()->get_sub_directory(path);
+	auto dir_ptr = rx_gate::instance().get_directory(path);
 	if (dir_ptr)
 	{// this is a directory do recursive save!!!
 		return recursive_save_directory(dir_ptr);
 	}
 	else
 	{// just plain item save
-		auto item = rx_gate::instance().get_root_directory()->get_sub_item(path);
+		auto item = rx_gate::instance().get_namespace_item(path);
 		if (!item)
 		{
 			return path + " does not exists!";
@@ -332,7 +333,7 @@ rx_result rx_save_item(const string_type& path
 			auto result = save_item_helper(path);
 			callback(std::move(result));
 		}
-		, std::move(path), std::move(callback));
+		, string_type(path), std::move(callback));
 
 	return true;
 }

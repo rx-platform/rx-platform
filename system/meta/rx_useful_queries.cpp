@@ -35,6 +35,8 @@
 #include "system/meta/rx_useful_queries.h"
 
 #include "model/rx_meta_internals.h"
+#include "system/server/rx_directory_cache.h"
+#include "sys_internal/rx_namespace_algorithms.h"
 
 
 namespace rx_platform {
@@ -82,7 +84,7 @@ const string_type& ns_suggetions_query::get_query_type ()
 
 }
 
-rx_result ns_suggetions_query::do_query (api::query_result& result, rx_directory_ptr dir)
+rx_result ns_suggetions_query::do_query (api::query_result& result, const string_type& dir)
 {
 	auto type = rx_parse_type_name(type_name);
 	rx_directory_ptr target_dir;
@@ -91,12 +93,16 @@ rx_result ns_suggetions_query::do_query (api::query_result& result, rx_directory
 
 	if (idx == string_type::npos)
 	{
-		target_dir = dir;
+		target_dir = rx_platform::ns::rx_directory_cache::instance().get_directory(dir);
 		local_stuff = suggested_path;
 	}
 	else
 	{
-		target_dir = dir->get_sub_directory(suggested_path.substr(0, idx));
+		string_type res_path;
+		auto trans_result = rx_internal::internal_ns::namespace_algorithms::translate_path(dir, suggested_path.substr(0, idx), res_path);
+		if (!trans_result)
+			return trans_result;
+		target_dir = rx_platform::ns::rx_directory_cache::instance().get_directory(res_path);
 		if (!target_dir)
 		{
 			return suggested_path + " not found!";
@@ -109,7 +115,7 @@ rx_result ns_suggetions_query::do_query (api::query_result& result, rx_directory
 	{
 		platform_directories_type sub_dirs;
 		platform_items_type items;
-		target_dir->get_content(sub_dirs, items, local_stuff + "*");
+		target_dir->list_content(sub_dirs, items, local_stuff + "*");
 		for (auto& one : sub_dirs)
 		{
 			result.items.emplace_back(api::query_result_detail{ rx_directory, one->meta_info() });

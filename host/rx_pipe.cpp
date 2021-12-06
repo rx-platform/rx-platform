@@ -45,6 +45,7 @@
 #include "terminal/rx_terminal_style.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
 #include "interfaces/rx_io.h"
+#include "system/server/rx_directory_cache.h"
 
 
 namespace host {
@@ -406,7 +407,8 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 {
 #ifndef RX_MIN_MEMORY
-	auto dir_result = builder.host_root->add_sub_directory(rx_create_reference<ns::rx_platform_directory>("types", namespace_item_attributes::namespace_item_internal_access));
+
+	auto dir_result = rx_gate::instance().add_directory(builder.host_root + RX_DIR_DELIMETER_STR "types");
 
 	auto detail_struct_type = rx_create_reference<meta::basic_types::struct_type>();
 	detail_struct_type->meta_info.name = RX_LOCAL_PIPE_DETAILS_TYPE_NAME;
@@ -418,7 +420,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 	detail_struct_type->complex_data.register_const_value_static<int64_t>("InPipe", -1);
 	detail_struct_type->complex_data.register_const_value_static<int64_t>("OutPipe", -1);
 
-	auto result = register_host_simple_type<meta::basic_types::struct_type>(builder.host_root, detail_struct_type);
+	auto result = register_host_simple_type<meta::basic_types::struct_type>(detail_struct_type);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_LOCAL_PIPE_DETAILS_TYPE_NAME " struct type.");
@@ -434,7 +436,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 
 	interactive_port_type->complex_data.register_struct("Pipe", rx_node_id(RX_LOCAL_PIPE_DETAILS_TYPE_ID, 2));
 
-	result = register_host_type<meta::object_types::port_type>(builder.host_root, interactive_port_type);
+	result = register_host_type<meta::object_types::port_type>(interactive_port_type);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_LOCAL_PIPE_TYPE_NAME " port type.");
@@ -451,7 +453,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 	app_inst_data.instance_data.priority = rx_domain_priority::normal;
 	app_inst_data.instance_data.processor = 0;
 
-	result = register_host_runtime<meta::object_types::application_type>(builder.host_root, app_inst_data, nullptr);
+	result = register_host_runtime<meta::object_types::application_type>(app_inst_data, nullptr);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_HOST_APP_NAME " application runtime.");
@@ -469,7 +471,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 	domain_inst_data.instance_data.priority = rx_domain_priority::normal;
 	domain_inst_data.instance_data.processor = -1;
 
-	result = register_host_runtime<meta::object_types::domain_type>(builder.host_root, domain_inst_data, nullptr);
+	result = register_host_runtime<meta::object_types::domain_type>(domain_inst_data, nullptr);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_HOST_DOMAIN_NAME " domain runtime.");
@@ -486,7 +488,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 
 	inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
 
-	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	result = register_host_runtime<meta::object_types::port_type>(inst_data, nullptr);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_LOCAL_PIPE_NAME " port runtime.");
@@ -504,7 +506,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 
 	inst_data.overrides.add_value_static("StackTop", RX_LOCAL_PIPE_NAME);
 
-	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	result = register_host_runtime<meta::object_types::port_type>(inst_data, nullptr);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_LOCAL_PIPE_TRANSPORT_NAME " port runtime.");
@@ -522,7 +524,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 
 	inst_data.overrides.add_value_static("StackTop", RX_LOCAL_PIPE_TRANSPORT_NAME);
 
-	result = register_host_runtime<meta::object_types::port_type>(builder.host_root, inst_data, nullptr);
+	result = register_host_runtime<meta::object_types::port_type>(inst_data, nullptr);
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_LOCAL_PIPE_PROTOCOL_NAME " port runtime.");

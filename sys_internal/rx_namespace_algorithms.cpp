@@ -36,6 +36,7 @@
 
 #include "rx_configuration.h"
 #include "system/server/rx_server.h"
+#include "system/server/rx_directory_cache.h"
 
 
 namespace rx_internal {
@@ -58,19 +59,19 @@ rx_result_with<rx_directory_ptr> namespace_algorithms::get_or_create_direcotry (
 	if (path[0] == RX_DIR_DELIMETER)// checked at begin for empty
 	{
 		// root folder path
-		current_dir = rx_platform::rx_gate::instance().get_root_directory();
+		current_dir = rx_platform::rx_gate::instance().get_directory("/");
 	}
 	while ((next = path.find(RX_DIR_DELIMETER, last)) != string_type::npos)
 	{
 		temp_path = path.substr(last, next - last);
-		temp_dir = current_dir->get_sub_directory(temp_path);
+		temp_dir = ns::rx_directory_cache::instance().get_sub_directory(current_dir, temp_path);
 		if (temp_dir)
 		{
 			current_dir = temp_dir;
 		}
 		else
 		{
-			result = current_dir->add_sub_directory(temp_path);
+			result = ns::rx_directory_cache::instance().add_directory(current_dir, temp_path);
 			if (!result)
 				return result;
 			current_dir = result.value();
@@ -79,19 +80,94 @@ rx_result_with<rx_directory_ptr> namespace_algorithms::get_or_create_direcotry (
 		last = next + 1;
 	}
 	temp_path = path.substr(last);
-	temp_dir = current_dir->get_sub_directory(temp_path);
+	temp_dir = ns::rx_directory_cache::instance().get_sub_directory(current_dir, temp_path);
 	if (temp_dir)
 	{
 		current_dir = temp_dir;
 	}
 	else
 	{
-		result = current_dir->add_sub_directory(temp_path);
+		result = ns::rx_directory_cache::instance().add_directory(current_dir, temp_path);
 		if (!result)
 			return result;
 		current_dir = result.value();
 	}
 	return current_dir;
+}
+
+rx_result namespace_algorithms::translate_path (const string_type& ref_path, const string_type& rel_path, string_type& result)
+{
+	if (rel_path.empty())
+	{
+		result = ref_path;
+		return true;
+	}
+	if (rel_path[0] == RX_DIR_DELIMETER)
+	{//  this is full path
+		result = rel_path;
+		return true;
+	}
+	if (ref_path.empty())
+		return RX_INVALID_PATH;
+	size_t ref_idx = ref_path.size() - 1;
+	size_t rel_idx = 0;
+	size_t rel_size = rel_path.size();
+	int state = 0;
+	while (rel_idx < rel_size)
+	{
+		char ch = rel_path[rel_idx];
+		if (ch == RX_DIR_DELIMETER)
+		{
+			rel_idx++;
+		}
+		else if (ch == '.')
+		{
+			rel_idx++;
+			if (rel_idx < rel_size)
+			{
+				switch (rel_path[rel_idx])
+				{
+				case RX_DIR_DELIMETER:
+					rel_idx++;
+					break;
+				case '.':
+					{
+						if (ref_idx == 0)
+							return RX_INVALID_PATH;
+						size_t help_idx = ref_path.rfind(RX_DIR_DELIMETER, ref_idx);
+						if (help_idx == string_type::npos)
+							return RX_INVALID_PATH;
+						ref_idx = help_idx;
+						if (ref_idx > 0)
+							ref_idx--;
+						rel_idx++;
+					}
+					break;
+				default:
+					return RX_INVALID_PATH;
+				}
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+	if (rel_idx < rel_size)
+	{
+		if (ref_path[ref_idx] != RX_DIR_DELIMETER)
+			result = ref_path.substr(0, ref_idx + 1) + RX_DIR_DELIMETER + rel_path.substr(rel_idx);
+		else
+			result = ref_path.substr(0, ref_idx + 1) + rel_path.substr(rel_idx);
+	}
+	else
+	{
+		if (ref_path[ref_idx] == RX_DIR_DELIMETER && ref_idx > 0)
+			result = ref_path.substr(0, ref_idx);
+		else
+			result = ref_path.substr(0, ref_idx + 1);
+	}
+	return true;
 }
 
 

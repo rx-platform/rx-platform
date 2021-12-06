@@ -33,14 +33,8 @@
 
 
 
-// rx_internal_objects
-#include "system/runtime/rx_internal_objects.h"
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_platform_item
 #include "system/server/rx_platform_item.h"
-// rx_ns
-#include "system/server/rx_ns.h"
 
 #include "terminal/rx_terminal_style.h"
 #include "api/rx_platform_api.h"
@@ -84,124 +78,6 @@ rx_result rx_save_platform_item(itemT& item)
         return result;
     }
 }
-
-
-
-
-
-
-
-class platform_root : public rx_platform::ns::rx_platform_directory  
-{
-	DECLARE_REFERENCE_PTR(platform_root);
-
-	DECLARE_CODE_INFO("rx", 0,6,0, "\
-root server directory:\r\n\
-contains root server folders\
-");
-
-  public:
-      platform_root();
-
-      ~platform_root();
-
-
-      static rx_namespace_item get_cached_item (const string_type& name);
-
-      static rx_result insert_cached_item (const string_type& name, const rx_namespace_item& item);
-
-      static rx_result remove_cached_item (const string_type& name, const rx_namespace_item& item);
-
-      static void clear_cached_items ();
-
-
-  protected:
-
-  private:
-
-
-      static rx_platform::ns::rx_names_cache cache_;
-
-
-};
-
-
-
-
-
-
-class user_directory : public rx_platform::ns::rx_platform_directory  
-{
-	DECLARE_REFERENCE_PTR(user_directory);
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-server directory:\r\n\
-used to create user defined folders...\
-");
-
-  public:
-      user_directory (const string_type& name);
-
-      ~user_directory();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class unassigned_directory : public rx_platform::ns::rx_platform_directory  
-{
-	DECLARE_REFERENCE_PTR(unassigned_directory);
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-storing unassigned domains and applications\r\n\
-All objects here are with unassigned state and hawing a bad quality\
-");
-
-  public:
-      unassigned_directory();
-
-      ~unassigned_directory();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class world_directory : public rx_platform::ns::rx_platform_directory  
-{
-	DECLARE_REFERENCE_PTR(world_directory);
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-user directory:\r\n\
-used to create user defined folders...\
-");
-
-  public:
-      world_directory();
-
-      ~world_directory();
-
-
-  protected:
-
-  private:
-
-
-};
 
 
 
@@ -360,32 +236,6 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
 
 
-class internal_directory : public rx_platform::ns::rx_platform_directory  
-{
-	DECLARE_REFERENCE_PTR(internal_directory);
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-server directory:\r\n\
-used to create system defined folders...\
-");
-
-  public:
-      internal_directory (const string_type& name);
-
-      ~internal_directory();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 template <class TImpl>
 class rx_other_implementation : public rx_platform::ns::rx_platform_item  
 {
@@ -458,87 +308,64 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 };
 
 
+} // namespace internal_ns
+} // namespace rx_internal
 
 
 
+#endif
 
-class system_directory : public rx_platform::ns::rx_platform_directory  
-{
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	DECLARE_REFERENCE_PTR(platform_root);
+
+	DECLARE_CODE_INFO("rx", 0,6,0, "\
+root server directory:\r\n\
+contains root server folders\
+");
+
+	DECLARE_REFERENCE_PTR(user_directory);
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
+server directory:\r\n\
+used to create user defined folders...\
+");
+
+	DECLARE_REFERENCE_PTR(unassigned_directory);
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
+storing unassigned domains and applications\r\n\
+All objects here are with unassigned state and hawing a bad quality\
+");
+
+	DECLARE_REFERENCE_PTR(world_directory);
+	DECLARE_CODE_INFO("rx", 0,5,0, "\
+user directory:\r\n\
+used to create user defined folders...\
+");
+
+	DECLARE_REFERENCE_PTR(internal_directory);
+	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+server directory:\r\n\
+used to create system defined folders...\
+");
+
 	DECLARE_REFERENCE_PTR(system_directory);
 	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
 system directory:\r\n\
 used to hold system folders...\
 ");
 
-  public:
-      system_directory();
-
-      ~system_directory();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class host_directory : public rx_platform::ns::rx_platform_directory  
-{
 	DECLARE_REFERENCE_PTR(host_directory);
 	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
 host directory:\r\n\
 used to hold host folders...\
 ");
 
-  public:
-      host_directory();
-
-      ~host_directory();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class plugin_directory : public rx_platform::ns::rx_platform_directory  
-{
 	DECLARE_REFERENCE_PTR(plugin_directory);
 	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
 plugin directory:\r\n\
 used to hold specific plugin folders...\
 ");
-
-  public:
-      plugin_directory (rx_plugin_ptr plugin);
-
-      ~plugin_directory();
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-} // namespace internal_ns
-} // namespace rx_internal
-
-
 
 #endif

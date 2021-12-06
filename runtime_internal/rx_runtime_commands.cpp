@@ -37,7 +37,7 @@
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
 #include "terminal/rx_console.h"
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #include "terminal/rx_term_table.h"
 
 
@@ -194,7 +194,9 @@ bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, s
 		err << "Empty path!";
 		return false;
 	}
-	auto item = ctx->get_current_directory()->get_sub_item(object_path);
+	ns::rx_directory_resolver dirs;
+	dirs.add_paths({ ctx->get_current_directory() });
+	auto item = rx_gate::instance().get_namespace_item(object_path, &dirs);
 	if (!item)
 	{
 		err << object_path << " not found!";
@@ -236,7 +238,9 @@ bool turn_off_command::do_console_command (std::istream& in, std::ostream& out, 
 		err << "Empty path!";
 		return false;
 	}
-	auto item = ctx->get_current_directory()->get_sub_item(object_path);
+	ns::rx_directory_resolver dirs;
+	dirs.add_paths({ ctx->get_current_directory() });
+	auto item = rx_gate::instance().get_namespace_item(object_path, &dirs);
 	if (!item)
 	{
 		err << object_path << " not found!";
@@ -357,12 +361,12 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 					idx++;
 				}
 				rx_dump_table(table, out, true, false);
-				ctx->continue_scan();
 			}
 			else
 			{
 				ctx->raise_error(result);
 			}
+			ctx->continue_scan();
 		}, executer));
 
 	return false;
@@ -399,12 +403,10 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 	rx_split_item_path(full_path, whose, item_path);
 	if (!whose.empty())
 	{
-		string_type path;
-		ctx->get_current_directory()->fill_path(path);
 		rx_directory_resolver directories;
-		directories.add_paths({ path });
+		directories.add_paths({ ctx->get_current_directory() });
 		api::rx_context context;
-		context.directory = ctx->get_current_directory();
+		context.active_path = ctx->get_current_directory();
 		context.object = smart_this();
 
 		auto resolve_result = api::ns::rx_resolve_reference(whose, directories);

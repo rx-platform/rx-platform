@@ -40,6 +40,7 @@
 #include "system/server/rx_ns.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_async_functions.h"
+#include "system/server/rx_directory_cache.h"
 
 namespace rx_platform
 {
@@ -141,11 +142,12 @@ rx_result_with<directory_browse_result> rx_list_directory(const string_type& nam
 {
 
 	directory_browse_result ret_val;
-	rx_directory_ptr from = ctx.directory ? ctx.directory : rx_gate::instance().get_root_directory();
-	rx_directory_ptr who = from->get_sub_directory(name);
+	rx_platform::ns::rx_directory_resolver dirs;
+	dirs.add_paths({ ctx.active_path });
+	rx_directory_ptr who = rx_gate::instance().get_directory(name, &dirs);
 	if (who)
 	{
-		who->get_content(ret_val.directories, ret_val.items, pattern);
+		who->list_content(ret_val.directories, ret_val.items, pattern);
 		ret_val.success = true;
 		return ret_val;
 	}
@@ -158,7 +160,7 @@ rx_result_with<directory_browse_result> rx_list_directory(const string_type& nam
 void do_recursive_list(rx_directory_ptr who, std::vector<rx_namespace_item>& items, const string_type& pattern)
 {
 	directory_browse_result ret_val;
-	who->get_content(ret_val.directories, ret_val.items, pattern);
+	who->list_content(ret_val.directories, ret_val.items, pattern);
 	for (const auto& one : ret_val.items)
 		items.emplace_back(one);
 	for (auto sub : ret_val.directories)
@@ -170,8 +172,9 @@ rx_result_with<directory_browse_result> rx_recursive_list_items(const string_typ
 	, rx_context ctx)
 {
 	directory_browse_result ret_val;
-	rx_directory_ptr from = ctx.directory ? ctx.directory : rx_gate::instance().get_root_directory();
-	rx_directory_ptr who = from->get_sub_directory(name);
+	rx_platform::ns::rx_directory_resolver dirs;
+	dirs.add_paths({ ctx.active_path });
+	rx_directory_ptr who = rx_gate::instance().get_directory(name, &dirs);
 	if (who)
 	{
 		do_recursive_list(who, ret_val.items, pattern);
@@ -239,11 +242,11 @@ rx_result rx_query_model(std::vector<meta::query_ptr> queries
 	, rx_result_with_callback<query_result>&& callback
 	, rx_context ctx)
 {
-	rx_post_function_to(RX_DOMAIN_META, ctx.object, [] (rx_result_with_callback<query_result>&& callback, std::vector<rx_platform::meta::query_ptr> queries, rx_directory_ptr dir)
+
+	rx_post_function_to(RX_DOMAIN_META, ctx.object, [] (rx_result_with_callback<query_result>&& callback, std::vector<rx_platform::meta::query_ptr> queries, const string_type from)
 		{
 
 			query_result ret_val;
-			rx_directory_ptr from = dir ? dir : rx_gate::instance().get_root_directory();
 
 			size_t count = queries.size();
 			std::vector<std::vector<query_result_detail> > results(count, std::vector<query_result_detail>());
@@ -262,7 +265,7 @@ rx_result rx_query_model(std::vector<meta::query_ptr> queries
 			ret_val.success = true;
 			callback(std::move(ret_val));
 
-		}, std::move(callback), queries, ctx.directory);
+		}, std::move(callback), queries, ctx.active_path);
 
 	return true;
 }

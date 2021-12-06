@@ -50,6 +50,7 @@
 #include "runtime_internal/rx_runtime_internal.h"
 #include "sys_internal/rx_async_functions.h"
 #include "http_server/rx_http_server.h"
+#include "system/server/rx_directory_cache.h"
 
 
 namespace rx_platform {
@@ -109,7 +110,7 @@ rx_gate& rx_gate::instance ()
 
 void rx_gate::cleanup ()
 {
-	platform_root::clear_cached_items();
+	ns::rx_directory_cache::instance().clear_cache();
 	RX_ASSERT(g_instance);
 	delete g_instance;
 	g_instance = nullptr;
@@ -135,9 +136,7 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 			result = io_manager_->initialize(host, data.io);
 			if (result)
 			{
-				auto root = rx_create_reference<rx_internal::internal_ns::platform_root>();
-				root_ = root;
-				auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data.storage, data.meta_configuration, root);
+				auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data.storage, data.meta_configuration);
 
 				if (build_result)
 				{
@@ -205,7 +204,7 @@ rx_result rx_gate::deinitialize (security::security_context_ptr sec_ctx)
 
 	rx_internal::model::platform_types_manager::instance().deinitialize();
 
-	rx_internal::builders::rx_platform_builder::deinitialize(root_);
+	rx_internal::builders::rx_platform_builder::deinitialize();
 
 	io_manager_->deinitialize();
 	rx_internal::infrastructure::server_runtime::instance().deinitialize();
@@ -252,9 +251,34 @@ rx_result rx_gate::stop ()
 	return true;
 }
 
-rx_directory_ptr rx_gate::get_root_directory ()
+rx_directory_ptr rx_gate::get_directory (const string_type& path, ns::rx_directory_resolver* dirs)
 {
-	return root_;
+	if (dirs != nullptr)
+		return dirs->resolve_directory(path);
+	else
+		return ns::rx_directory_cache::instance().get_directory(path);
+}
+
+ns::rx_namespace_item rx_gate::get_namespace_item (const string_type& path, ns::rx_directory_resolver* dirs)
+{
+	if (dirs != nullptr)
+		return dirs->resolve_item(path);
+	else
+	{
+		string_type name;
+		string_type dir_path;
+		rx_split_path(path, dir_path, name);
+		auto dir = ns::rx_directory_cache::instance().get_directory(dir_path);
+		if (!dir)
+			return ns::rx_namespace_item();
+		else
+			return dir->get_item(name);
+	}
+}
+
+rx_result_with<rx_directory_ptr> rx_gate::add_directory (const string_type& path)
+{
+	return ns::rx_directory_cache::instance().add_directory(path);
 }
 
 bool rx_gate::shutdown (const string_type& msg)

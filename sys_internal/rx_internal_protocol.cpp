@@ -34,7 +34,7 @@
 // rx_internal_protocol
 #include "sys_internal/rx_internal_protocol.h"
 
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 #include "system/runtime/rx_blocks.h"
 #include "sys_internal/rx_async_functions.h"
 #include "system/runtime/rx_io_buffers.h"
@@ -422,7 +422,7 @@ void rx_server_connection::send_message (message_ptr msg)
 rx_protocol_connection::rx_protocol_connection()
       : current_directory_path_("/world")
 {
-	current_directory_ = rx_gate::instance().get_root_directory()->get_sub_directory("world");
+	current_directory_ = rx_gate::instance().get_directory("/world");
 }
 
 
@@ -443,7 +443,7 @@ void rx_protocol_connection::data_processed (message_ptr result)
 void rx_protocol_connection::request_received (request_message_ptr&& request)
 {
 	api::rx_context ctx;
-	ctx.directory = current_directory_;
+	ctx.active_path = current_directory_->meta_info().get_full_path();
 	ctx.object = smart_this();
 	message_ptr result_msg;
 	/*if (stream_version_ == 0 && request->get_type_id() != messages::rx_connection_context_request_id)
@@ -462,7 +462,7 @@ void rx_protocol_connection::request_received (request_message_ptr&& request)
 
 rx_result rx_protocol_connection::set_current_directory (const string_type& path)
 {
-	auto temp = rx_gate::instance().get_root_directory()->get_sub_directory(path);
+	auto temp = rx_gate::instance().get_directory(path);
 	if (!temp)
 	{
 		return "Directory " + path + " not exists!";

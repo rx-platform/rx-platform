@@ -46,7 +46,7 @@ namespace rx_internal {
 
 namespace model {
 
-namespace dependency {
+namespace transactions {
 
 
 
@@ -101,6 +101,7 @@ class local_dependecy_builder : public rx::pointers::reference_object
         T item;
         bool create;
         bool remove;
+        bool save_result;
     };
 
     typedef std::map<rx_node_id, item_creation_data<object_runtime_data> > objects_type;
@@ -137,21 +138,48 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
     typedef std::map<string_type, std::map<rx_node_id, item_data> > directories_chache_type;
 
+
   public:
 
-      void add_runtime (const object_runtime_data& what, bool remove, bool create);
+      void add_runtime (const object_runtime_data& what, bool remove, bool create, bool save);
 
-      void add_runtime (const domain_runtime_data& what, bool remove, bool create);
+      void add_runtime (const domain_runtime_data& what, bool remove, bool create, bool save);
 
-      void add_runtime (const port_runtime_data& what, bool remove, bool create);
+      void add_runtime (const port_runtime_data& what, bool remove, bool create, bool save);
 
-      void add_runtime (const application_runtime_data& what, bool remove, bool create);
+      void add_runtime (const application_runtime_data& what, bool remove, bool create, bool save);
 
-      rx_result add (const api::query_result_detail& what, bool remove, bool create);
+      rx_result add (const api::query_result_detail& what, bool remove, bool create, bool save);
 
       rx_result apply_items (rx_result_callback&& callback);
 
 
+      const std::vector<rx_object_ptr>& get_built_objects () const
+      {
+        return built_objects_;
+      }
+
+
+      const std::vector<rx_domain_ptr>& get_built_domains () const
+      {
+        return built_domains_;
+      }
+
+
+      const std::vector<rx_port_ptr>& get_built_ports () const
+      {
+        return built_ports_;
+      }
+
+
+      const std::vector<rx_application_ptr>& get_built_apps () const
+      {
+        return built_apps_;
+      }
+
+
+      template<typename typeT>
+      typename typeT::RTypePtr extract_single_result();
   protected:
 
   private:
@@ -188,11 +216,19 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
       rx_result_callback callback_;
 
+      std::vector<rx_object_ptr> built_objects_;
+
+      std::vector<rx_domain_ptr> built_domains_;
+
+      std::vector<rx_port_ptr> built_ports_;
+
+      std::vector<rx_application_ptr> built_apps_;
+
 
 };
 
 
-} // namespace dependency
+} // namespace transactions
 } // namespace model
 } // namespace rx_internal
 

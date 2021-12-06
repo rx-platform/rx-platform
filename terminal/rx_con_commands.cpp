@@ -46,6 +46,7 @@
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
 #include "terminal/rx_console.h"
+#include "sys_internal/rx_namespace_algorithms.h"
 
 
 namespace rx_internal {
@@ -128,14 +129,16 @@ bool info_command::do_console_command (std::istream& in, std::ostream& out, std:
 		in >> whose;
 	if (!whose.empty())
 	{
-		rx_directory_ptr dir = ctx->get_current_directory()->get_sub_directory(whose);
+		string_type full_path;
+		auto res = internal_ns::namespace_algorithms::translate_path(ctx->get_current_directory(), whose, full_path);
+		rx_directory_ptr dir = rx_gate::instance().get_directory(full_path);
 		if (dir)
 		{
 			dump_dir_info(out,dir);
 		}
 		else
 		{
-			auto item = ctx->get_current_directory()->get_sub_item(whose);
+			auto item = rx_gate::instance().get_namespace_item(full_path);
 			if (item)
 			{
 				dump_info(out, item);
@@ -149,7 +152,7 @@ bool info_command::do_console_command (std::istream& in, std::ostream& out, std:
 	}
 	else
 	{
-		dump_dir_info(out, ctx->get_current_directory());
+		dump_dir_info(out, rx_gate::instance().get_directory(ctx->get_current_directory()));
 	}
 	return true;
 }
@@ -158,10 +161,9 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 {
 	string_type quality_stirng;
 	values::rx_value val;
-	directory->get_value(val);
 	fill_quality_string(val, quality_stirng);
 	string_type attrs;
-	ns::fill_attributes_string(directory->get_attributes(), attrs);
+	ns::fill_attributes_string(directory->meta_info().attributes, attrs);
 	string_type cls_name;
 	bool has_code = false;
 	string_type console;
@@ -828,12 +830,11 @@ bool item_query_command::do_console_command (std::istream& in, std::ostream& out
 		in >> whose;
 	if (!whose.empty())
 	{
-		string_type path;
-		ctx->get_current_directory()->fill_path(path);
+		string_type path = ctx->get_current_directory();
 		rx_directory_resolver directories;
 		directories.add_paths({ path });
 		api::rx_context context;
-		context.directory = ctx->get_current_directory();
+		context.active_path = ctx->get_current_directory();
 		context.object = smart_this();
 
 		auto resolve_result = api::ns::rx_resolve_reference(whose, directories);

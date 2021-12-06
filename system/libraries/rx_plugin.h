@@ -61,7 +61,7 @@ class plugin_builder
 
   public:
 
-      rx_directory_ptr plugin_root;
+      string_type plugin_root;
 
 
   protected:

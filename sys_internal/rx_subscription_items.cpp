@@ -35,7 +35,7 @@
 #include "sys_internal/rx_subscription_items.h"
 
 #include "sys_internal/rx_internal_protocol.h"
-#include "system/serialization/rx_ser.h"
+#include "system/serialization/rx_ser_json.h"
 
 
 namespace rx_internal {

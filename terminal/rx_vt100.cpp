@@ -236,7 +236,7 @@ bool vt100_endpoint::char_received_normal (const char ch, bool eof, string_type&
 						auto query = std::make_shared<meta::queries::ns_suggetions_query>();
 						query->suggested_path = what;
 						api::rx_context ctx;
-						ctx.directory = console_program_->get_current_directory();
+						ctx.active_path = console_program_->get_current_directory();
 						ctx.object = smart_this();
 
 						rx_result_with_callback<api::query_result> callback(ctx.object,

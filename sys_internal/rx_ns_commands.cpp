@@ -37,6 +37,7 @@
 #include "terminal/rx_console.h"
 #include "sys_internal/rx_namespace_algorithms.h"
 #include "terminal/rx_term_table.h"
+#include "system/server/rx_directory_cache.h"
 
 
 namespace rx_internal {
@@ -117,13 +118,12 @@ bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& option
 	if (options.list_attributes)
 	{
 		string_type attrs;
-		ns::fill_attributes_string(one->get_attributes(), attrs);
+		ns::fill_attributes_string(one->meta_info().attributes, attrs);
 		row.emplace_back(attrs);
 	}
 	if (options.list_qualities || options.list_timestamps)
 	{
 		values::rx_value val;
-		one->get_value(val);
 
 		if (options.list_qualities)
 		{
@@ -169,20 +169,25 @@ bool cd_command::do_console_command (std::istream& in, std::ostream& out, std::o
 	string_type path;
 	in >> path;
 
-	rx_namespace_item item;
+	if (path.empty() || path == ".")
+		return true;
 
-	rx_directory_ptr where = ctx->get_current_directory()->get_sub_directory(path);
+	rx_namespace_item item;
+	string_type full_path;
+	auto res = internal_ns::namespace_algorithms::translate_path(ctx->get_current_directory(), path, full_path);
+	if (!res)
+	{
+		err << RX_INVALID_PATH ":";
+		err << res.errors_line();
+		return false;
+	}
+	rx_directory_ptr where = ns::rx_directory_cache::instance().get_directory(full_path);
 	if (!where)
 	{
-		where = ctx->get_current_directory();
-		item = where->get_sub_item(path);
-		if (!item)
-		{
-			err << "Item not found!\r\n";
-			return false;
-		}
+		err << RX_INVALID_PATH;
+		return false;
 	}
-	ctx->set_current_directory(where);
+	ctx->set_current_directory(full_path);
 	return true;
 }
 
@@ -224,11 +229,11 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 	if (in.eof())
 	{// dump here
 		string_type filter;
-		auto current_directory = ctx->get_current_directory();
+		auto current_directory = ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory());
 
 		platform_directories_type dirs;
 		platform_items_type items;
-		current_directory->get_content(dirs, items, filter);
+		current_directory->list_content(dirs, items, filter);
 
 		size_t count = dirs.size() + items.size();
 
@@ -237,7 +242,7 @@ bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::o
 
 		for (auto& one : dirs)
 		{
-			row.emplace_back(one->get_name(), ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
+			row.emplace_back(one->meta_info().name, ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
 		}
 		for (auto& one : items)
 		{
@@ -296,7 +301,7 @@ bool list_command::list_directory (std::ostream& out, std::ostream& err, const s
 {
 	platform_directories_type dirs;
 	platform_items_type items;
-	directory->get_content(dirs, items, filter);
+	directory->list_content(dirs, items, filter);
 
 	size_t count = dirs.size() + items.size();
 
@@ -320,7 +325,7 @@ bool list_command::list_directory (std::ostream& out, std::ostream& err, const s
 	size_t idx = 1;
 	for (auto& one : dirs)
 	{
-		dump_dirs_on_console(table[idx], options, one, one->get_name());
+		dump_dirs_on_console(table[idx], options, one, one->meta_info().name);
 		idx++;
 	}
 	for (auto& one : items)
@@ -366,7 +371,12 @@ bool list_command::do_console_command (std::istream& in, std::ostream& out, std:
 		}
 	}
 
-	rx_directory_ptr dir = ctx->get_current_directory();
+	rx_directory_ptr dir = ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory());
+	if (!dir)
+	{
+		err << RX_INVALID_PATH;
+		return false;
+	}
 	return list_directory(out, err, filter, options, dir);
 }
 
@@ -390,7 +400,14 @@ bool mkdir_command::do_console_command (std::istream& in, std::ostream& out, std
 	string_type path;
 	in >> path;
 
-	auto ret = internal_ns::namespace_algorithms::get_or_create_direcotry(ctx->get_current_directory(), path);
+	auto dir = ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory());
+	if (!dir)
+	{
+		err << RX_INVALID_PATH;
+		return false;
+	}
+
+	auto ret = internal_ns::namespace_algorithms::get_or_create_direcotry(dir, path);
 	if (!ret)
 	{
 		err << "Error adding directory!\r\n";
@@ -423,7 +440,14 @@ bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std
 	string_type path;
 	in >> path;
 
-	auto ret = ctx->get_current_directory()->delete_sub_directory(path);
+	string_type full_path;
+	auto ret = internal_ns::namespace_algorithms::translate_path(ctx->get_current_directory(), path, full_path);
+	if (!ret)
+	{
+		err << RX_INVALID_PATH "!\r\n";
+		rx_dump_error_result(err, std::move(ret));
+	}
+	ret = ns::rx_directory_cache::instance().remove_directory(full_path);
 	if (!ret)
 	{
 		err << "Error deleting directory!\r\n";
@@ -472,7 +496,10 @@ move_command::~move_command()
 
 bool move_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
-	string_type old_path;
+	err << RX_NOT_IMPLEMENTED;
+	return false;
+
+	/*string_type old_path;
 	string_type new_path;
 	in >> old_path;
 	in >> new_path;
@@ -485,6 +512,7 @@ bool move_command::do_console_command (std::istream& in, std::ostream& out, std:
 		return false;
 	}
 	return true;
+	*/
 }
 
 
@@ -504,7 +532,10 @@ clone_command::~clone_command()
 
 bool clone_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
-	string_type old_path;
+	err << RX_NOT_IMPLEMENTED;
+	return false;
+
+	/*string_type old_path;
 	string_type new_path;
 	in >> old_path;
 	in >> new_path;
@@ -517,6 +548,7 @@ bool clone_command::do_console_command (std::istream& in, std::ostream& out, std
 		return false;
 	}
 	return true;
+	*/
 }
 
 

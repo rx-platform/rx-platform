@@ -84,7 +84,7 @@ const string_type& derived_types_query::get_query_type ()
 
 }
 
-rx_result derived_types_query::do_query (api::query_result& result, rx_directory_ptr dir)
+rx_result derived_types_query::do_query (api::query_result& result, const string_type& dir)
 {
 	if (type_name == "object")
 	{
@@ -154,12 +154,14 @@ rx_result derived_types_query::do_query (api::query_result& result, rx_directory
 }
 
 template<typename T>
-rx_result derived_types_query::do_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>)
+rx_result derived_types_query::do_query(api::query_result& result, const string_type& dir, tl::type2type<T>)
 {
 	rx_node_id id = rx_node_id::null_id;
 	if (!base_type.empty())
 	{
-		auto item = dir->get_sub_item(base_type);
+		ns::rx_directory_resolver dirs;
+		dirs.add_paths({ dir });
+		auto item = rx_gate::instance().get_namespace_item(base_type, &dirs);
 		if (!item)
 			return base_type + " not found!";
 		id = item.get_meta().id;
@@ -169,12 +171,14 @@ rx_result derived_types_query::do_query(api::query_result& result, rx_directory_
 	return result.success;
 }
 template<typename T>
-rx_result derived_types_query::do_simple_query(api::query_result& result, rx_directory_ptr dir, tl::type2type<T>)
+rx_result derived_types_query::do_simple_query(api::query_result& result, const string_type& dir, tl::type2type<T>)
 {
 	rx_node_id id = rx_node_id::null_id;
 	if (!base_type.empty())
 	{
-		auto item = dir->get_sub_item(base_type);
+		ns::rx_directory_resolver dirs;
+		dirs.add_paths({ dir });
+		auto item = rx_gate::instance().get_namespace_item(base_type, &dirs);
 		if (!item)
 			return base_type + " not found!";
 		id = item.get_meta().id;
@@ -183,13 +187,15 @@ rx_result derived_types_query::do_simple_query(api::query_result& result, rx_dir
 
 	return result.success;
 }
-rx_result derived_types_query::do_relation_query(api::query_result& result, rx_directory_ptr dir)
+rx_result derived_types_query::do_relation_query(api::query_result& result, const string_type& dir)
 {
 
 	rx_node_id id = rx_node_id::null_id;
 	if (!base_type.empty())
 	{
-		auto item = dir->get_sub_item(base_type);
+		ns::rx_directory_resolver dirs;
+		dirs.add_paths({ dir });
+		auto item = rx_gate::instance().get_namespace_item(base_type, &dirs);
 		if (!item)
 			return base_type + " not found!";
 		id = item.get_meta().id;
@@ -198,13 +204,15 @@ rx_result derived_types_query::do_relation_query(api::query_result& result, rx_d
 
 	return result.success;
 }
-rx_result derived_types_query::do_data_query(api::query_result& result, rx_directory_ptr dir)
+rx_result derived_types_query::do_data_query(api::query_result& result, const string_type& dir)
 {
 
 	rx_node_id id = rx_node_id::null_id;
 	if (!base_type.empty())
 	{
-		auto item = dir->get_sub_item(base_type);
+		ns::rx_directory_resolver dirs;
+		dirs.add_paths({ dir });
+		auto item = rx_gate::instance().get_namespace_item(base_type, &dirs);
 		if (!item)
 			return base_type + " not found!";
 		id = item.get_meta().id;
@@ -309,7 +317,7 @@ const string_type& runtime_objects_query::get_query_type ()
 
 }
 
-rx_result runtime_objects_query::do_query (api::query_result& result, rx_directory_ptr dir)
+rx_result runtime_objects_query::do_query (api::query_result& result, const string_type& dir)
 {
 	auto type = rx_parse_type_name(type_name);
 	switch (type)
@@ -326,7 +334,9 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				rx_node_id id = instance;
 				if (id.is_null())
 				{
-					auto item = dir->get_sub_item(instance_name);
+					ns::rx_directory_resolver dirs;
+					dirs.add_paths({ dir });
+					auto item = rx_gate::instance().get_namespace_item(instance_name, &dirs);
 					if (!item)
 						return type_name + " not found!";
 					id = item.get_meta().id;
@@ -346,7 +356,9 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				rx_node_id id = instance;
 				if (id.is_null())
 				{
-					auto item = dir->get_sub_item(instance_name);
+					ns::rx_directory_resolver dirs;
+					dirs.add_paths({ dir });
+					auto item = rx_gate::instance().get_namespace_item(instance_name, &dirs);
 					if (!item)
 						return type_name + " not found!";
 					id = item.get_meta().id;
@@ -366,7 +378,9 @@ rx_result runtime_objects_query::do_query (api::query_result& result, rx_directo
 				rx_node_id id = instance;
 				if (id.is_null())
 				{
-					auto item = dir->get_sub_item(instance_name);
+					ns::rx_directory_resolver dirs;
+					dirs.add_paths({ dir });
+					auto item = rx_gate::instance().get_namespace_item(instance_name, &dirs);
 					if (!item)
 						return type_name + " not found!";
 					id = item.get_meta().id;
@@ -427,7 +441,7 @@ const string_type& translate_query::get_query_type ()
 
 }
 
-rx_result translate_query::do_query (api::query_result& result, rx_directory_ptr dir)
+rx_result translate_query::do_query (api::query_result& result, const string_type& dir)
 {
 	for (const auto& one : items)
 	{
@@ -442,7 +456,9 @@ rx_result translate_query::do_query (api::query_result& result, rx_directory_ptr
 		}
 		else
 		{
-			auto item = dir->get_sub_item(one.get_path());
+			ns::rx_directory_resolver dirs;
+			dirs.add_paths({ dir });
+			auto item = rx_gate::instance().get_namespace_item(one.get_path(), &dirs);
 			if (item)
 			{
 				result.items.emplace_back(api::query_result_detail{ item.get_type(), item.get_meta() });
@@ -493,14 +509,16 @@ const string_type& port_stack_query::get_query_type ()
 
 }
 
-rx_result port_stack_query::do_query (api::query_result& result, rx_directory_ptr dir)
+rx_result port_stack_query::do_query (api::query_result& result, const string_type& dir)
 {
 	if (!instance_name.empty() || !instance.is_null())
 	{
 		rx_node_id id = instance;
 		if (id.is_null())
 		{
-			auto item = dir->get_sub_item(instance_name);
+			ns::rx_directory_resolver dirs;
+			dirs.add_paths({ dir });
+			auto item = rx_gate::instance().get_namespace_item(instance_name, &dirs);
 			if (!item)
 				return type_name + " not found!";
 			id = item.get_meta().id;
@@ -508,13 +526,17 @@ rx_result port_stack_query::do_query (api::query_result& result, rx_directory_pt
 		auto port_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(id);
 		if (port_ptr)
 		{
-			;
 			rx_port_ptr stack_top = port_ptr.value()->get_instance_data().stack_data.build_map.stack_top;
 			std::vector<rx_port_ptr> up_ports = port_ptr.value()->get_instance_data().stack_data.build_map.get_registered();
-			result.items.reserve(stack_top ? up_ports.size() + 1 : up_ports.size());
+			result.items.reserve(stack_top ? up_ports.size() + 1 : up_ports.size() 
+				+ port_ptr.value()->get_instance_data().stack_data.connected_items.size());
 			for (const auto& one : up_ports)
 			{
 				result.items.emplace_back(api::query_result_detail{ rx_port, one->meta_info() });
+			}
+			for (const auto& one : port_ptr.value()->get_instance_data().stack_data.connected_items)
+			{
+				result.items.emplace_back(one.second);
 			}
 			//if(stack_top)
 				//result.items.emplace_back(api::query_result_detail{ rx_port, stack_top->meta_info() });
@@ -555,12 +577,9 @@ const string_type& dependents_query::get_query_type ()
 
 }
 
-rx_result dependents_query::do_query (api::query_result& result, rx_directory_ptr dir)
+rx_result dependents_query::do_query (api::query_result& result, const string_type& dir)
 {
-	string_type path;
-	if (dir)
-		dir->fill_path(path);
-	auto depents = rx_internal::model::algorithms::transaction_algorithm::get_dependents(item, path);
+	auto depents = rx_internal::model::algorithms::transaction_algorithm::get_dependents(item, dir);
 	if (depents)
 	{
 		result = depents.move_value();
