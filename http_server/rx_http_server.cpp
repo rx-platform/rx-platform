@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_server.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -92,14 +92,14 @@ rx_result http_server::handle_request (http_request req)
 		req.whose->send_response(std::move(response));
 		return true;// done with the cache
 	}
-	
+
 	for (auto& one : filters_)
 	{
 		one->handle_request_before(req, response);
 	}
 	auto handler = handlers_.get_handler(req.extension);
 	if (handler)
-	{		
+	{
 		auto result = handler->handle_request(req, response);
 		if (!result)
 		{

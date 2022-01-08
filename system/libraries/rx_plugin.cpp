@@ -4,7 +4,7 @@
 *
 *  system\libraries\rx_plugin.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -59,5 +59,4 @@ rx_plugin_base::~rx_plugin_base()
 
 } // namespace library
 } // namespace rx_platform
-
 

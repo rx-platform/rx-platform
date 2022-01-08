@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_serial.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,18 +33,18 @@
 
 
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_serial_io
 #include "interfaces/rx_serial_io.h"
 
 namespace rx_internal {
 namespace interfaces {
 namespace serial {
-class serial_port;
 class serial_endpoint;
+class serial_port;
 
 } // namespace serial
 } // namespace interfaces
@@ -159,7 +159,7 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::serial::serial_endpoint  > serial_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< serial_endpoint  > serial_port_base;
 
 
 

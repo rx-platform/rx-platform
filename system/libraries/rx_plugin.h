@@ -4,7 +4,7 @@
 *
 *  system\libraries\rx_plugin.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -72,6 +72,13 @@ class plugin_builder
 };
 
 
+struct rx_plugin_info
+{
+    string_value_struct_t plugin_version;
+    string_value_struct_t comp_version;
+    string_value_struct_t lib_version;
+    string_value_struct_t platform_version;
+};
 
 
 
@@ -86,7 +93,7 @@ class rx_plugin_base
       virtual ~rx_plugin_base();
 
 
-      virtual string_type get_plugin_info () = 0;
+      virtual rx_plugin_info get_plugin_info () = 0;
 
       virtual rx_result init_plugin () = 0;
 

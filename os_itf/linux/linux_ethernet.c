@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  protocols\ansi_c\common_c\rx_protocol_base.c
+*  os_itf\linux\linux_ethernet.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -28,11 +28,31 @@
 ****************************************************************************/
 
 
-#include "pch.h"
 
 
-// rx_protocol_handlers
-#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
+#include "rx_linux.h"
 
+#include "os_itf/rx_ositf.h"
+
+
+// ethernet stuff
+int rx_list_eth_cards(struct ETH_interface** interfaces, size_t* count)
+{
+	return RX_ERROR;
+}
+///////////////////////////////////////////////////////////////////////////////////////////}
+// IP 4 addresses
+int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx)
+{
+	return RX_ERROR;
+}
+int rx_remove_ip_address(ip_addr_ctx_t ctx)
+{
+	return RX_ERROR;
+}
+int rx_is_valid_ip_address(uint32_t addr, uint32_t mask)
+{
+	return RX_ERROR;
+}
 
 

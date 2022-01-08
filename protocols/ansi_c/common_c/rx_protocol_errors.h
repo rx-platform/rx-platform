@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_protocol_errors.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,6 +33,14 @@
 
 
 
+// Hide ugly details about RX_COMMON_API
+#ifdef _MSC_VER // MSVC compiler
+#include "common/win32/win32_common.h"
+#endif
+#ifdef __GNUC__ // GCC compiler
+#include "common/gnu/gnu_common.h"
+#endif
+
 #define RX_PROTOCOL_OK 0
 #define RX_PROTOCOL_EMPTY 1
 #define RX_PROTOCOL_WRONG_STATE 2
@@ -56,7 +64,7 @@ extern "C" {
 
 
 typedef uint_fast8_t rx_protocol_result_t;
-const char* rx_protocol_error_message(rx_protocol_result_t code);
+RX_COMMON_API const char* rx_protocol_error_message(rx_protocol_result_t code);
 
 
 

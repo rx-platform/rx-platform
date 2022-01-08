@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\opcua_c\rx_opcua_transport.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,6 +35,7 @@
 #define RX_OPCUA_MAX_VERSION 0
 #define RX_OPCUA_MIN_BUFFER 8192
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
+#include "protocols/ansi_c/common_c/rx_packet_decoder.h"
 
 
 #ifdef __cplusplus
@@ -127,6 +128,8 @@ enum opcua_transport_state
 	opcua_transport_closing = 4,
 
 };
+
+
 // definition of transport struct
 typedef struct opcua_transport_protocol_def
 {
@@ -144,6 +147,10 @@ typedef struct opcua_transport_protocol_def
 	uint32_t current_sequence_id;
 	// receive collector
 	rx_packet_buffer receive_buffer;
+
+	struct packed_decoder_type packet_decoder;
+	uint8_t header_buffer[sizeof(opcua_transport_header)];
+	rx_packet_buffer transport_receive_buffer;
 
 } opcua_transport_protocol_type;
 // initialize and deinitialize of transport

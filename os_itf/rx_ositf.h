@@ -4,7 +4,7 @@
 *
 *  os_itf\rx_ositf.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -81,6 +81,39 @@ extern "C" {
 	int rx_write_pipe_client(struct pipe_client_t* pipes, const void* data, size_t size);
 	int rx_read_pipe_server(struct pipe_server_t* pipes, void* data, size_t* size);
 	int rx_read_pipe_client(struct pipe_client_t* pipes, void* data, size_t* size);
+
+	///////////////////////////////////////////////////////////////
+	// PHYSICAL INTERFACES
+	///////////////////////////////////////////////////////////////
+	enum interface_status_type
+	{
+		interface_status_disconnected = 0,
+		interface_status_active
+	};
+#define MAC_ADDR_SIZE 6
+#define ETH_CARD_NAME_SIZE 0x100
+	struct ETH_interface
+	{
+		uint8_t mac_address[MAC_ADDR_SIZE];
+		char name[ETH_CARD_NAME_SIZE];
+		char description[ETH_CARD_NAME_SIZE];
+		size_t index;
+		enum interface_status_type status;
+	};
+
+
+
+	struct IP_interface
+	{
+		char ip_address[0x10];
+		char name[ETH_CARD_NAME_SIZE];
+		size_t index;
+		enum interface_status_type status;
+	};
+
+	//////////////////////////////////////////////////////////////////////////////////////////////
+	// list ethernet cards
+	int rx_list_eth_cards(struct ETH_interface** interfaces, size_t* count);
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	// IP addresses
 	int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx);
@@ -237,11 +270,11 @@ extern "C" {
 	uint32_t rx_socket_read_from(struct rx_io_register_data_t* what, size_t* readed, struct sockaddr_storage* addr);
 	uint32_t rx_socket_write_to(struct rx_io_register_data_t* what, const void* data, size_t count, const struct sockaddr* addr, size_t addrsize);
 
-	uint32_t rx_socket_accept(struct rx_io_register_data_t* what);
+	uint32_t rx_socket_accept(struct rx_io_register_data_t* what, uint32_t keep_alive);
 	uint32_t rx_socket_connect(struct rx_io_register_data_t* what, const struct sockaddr* addr, size_t addrsize);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// socket abstractions
-	sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr);
+	sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr, uint32_t keep_alive);
 	sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr);
 	uint32_t rx_socket_listen(sys_handle_t handle);
 	void rx_close_socket(sys_handle_t handle);

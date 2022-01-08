@@ -4,7 +4,7 @@
 *
 *  os_itf\windows\rx_win.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -692,74 +692,22 @@ int rx_read_pipe_client(struct pipe_client_t* pipes, uint8_t* data, size_t* size
 	*size = read;
 	return RX_OK;
 }
-///////////////////////////////////////////////////////////////////////////////////////////}
-// IP 4 addresses
-int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx)
-{
-	ULONG NTEContext = 0;
-	ULONG NTEInstance = 0;
-
-	if (NO_ERROR == AddIPAddress(addr, mask, itf, &NTEContext, &NTEInstance))
-	{
-		*ctx = NTEContext;
-		return 1;
-	}
-	return 0;
-}
-int rx_remove_ip_address(ip_addr_ctx_t ctx)
-{
-	if (ctx)
-	{
-		if (DeleteIPAddress(ctx) == NO_ERROR)
-		{
-			return 1;
-		}
-	}
-	return 0;
-}
-int rx_is_valid_ip_address(uint32_t addr, uint32_t mask)
-{
-	BYTE tablebuff[4096];
-
-	int ret = RX_ERROR;
-
-	MIB_IPADDRTABLE* data = (MIB_IPADDRTABLE*)tablebuff;
-	ULONG size = sizeof(tablebuff);
-
-	uint32_t err = GetIpAddrTable(data, &size, FALSE);
-
-	if (SUCCEEDED(err))
-	{
-		for (uint32_t i = 0; i<data->dwNumEntries; i++)
-		{
-			if (addr == data->table[i].dwAddr &&
-				mask == data->table[i].dwMask &&
-				(data->table[i].wType&(MIB_IPADDR_DISCONNECTED | MIB_IPADDR_DELETED)) == 0)
-			{
-				ret = RX_OK;
-				break;
-			}
-		}
-	}
-
-	return ret;
-}
-
 //////////////////////////////////////////////////////////////////////////////
 // system info
 
 // RTL_OSVERSIONINFOEXW is defined in winnt.h
 BOOL GetOsVersion(RTL_OSVERSIONINFOEXW* pk_OsVer)
 {
+	
 	typedef LONG(WINAPI* tRtlGetVersion)(RTL_OSVERSIONINFOEXW*);
 
 	memset(pk_OsVer, 0, sizeof(RTL_OSVERSIONINFOEXW));
 	pk_OsVer->dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
 	tRtlGetVersion f_RtlGetVersion = NULL;
-	HMODULE h_NtDll = GetModuleHandleW(L"ntdll.dl");
-	if (h_NtDll)
+	HMODULE hLib = LoadLibraryEx(L"ntdll.dll", NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	if (hLib)
 	{
-		tRtlGetVersion f_RtlGetVersion = (tRtlGetVersion)GetProcAddress(h_NtDll, "RtlGetVersion");
+		f_RtlGetVersion = (tRtlGetVersion)GetProcAddress(hLib, "RtlGetVersion");
 	}
 
 	if (!f_RtlGetVersion)
@@ -777,7 +725,13 @@ BOOL GetOsVersionFromSystemFile(RTL_OSVERSIONINFOEXW* os)
 
 	ZeroMemory(os, sizeof(RTL_OSVERSIONINFOEXW));
 
-	os->wProductType = IsWindowsServer() ? VER_NT_SERVER : VER_NT_WORKSTATION;
+
+	BOOL ret = GetOsVersion(os);
+	if (ret)
+	{
+		os->wProductType = IsWindowsServer() ? VER_NT_SERVER : VER_NT_WORKSTATION;
+	}
+	return ret;
 
 	DWORD len;
 	DWORD dwDummyHandle; // will always be set to zero
@@ -1669,7 +1623,7 @@ uint32_t rx_socket_write_to(struct rx_io_register_data_t* what, const void* data
 }
 
 
-uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
+uint32_t rx_socket_accept(struct rx_io_register_data_t* what, uint32_t keep_alive)
 {
 
 	int buff = 1024 * 1024;
@@ -1695,7 +1649,7 @@ uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
 		}
 	}
 
-	internal_data->helper_socket = (SOCKET)rx_create_and_bind_ip4_tcp_socket(NULL);
+	internal_data->helper_socket = (SOCKET)rx_create_and_bind_ip4_tcp_socket(NULL, keep_alive);
 	if (internal_data->helper_socket == 0)
 	{
 		error = WSAGetLastError();
@@ -1745,6 +1699,7 @@ uint32_t rx_socket_connect(struct rx_io_register_data_t* what, const struct sock
 
 	//Initialize Overlapped
 	ZeroMemory(povl, sizeof(OVERLAPPED));
+	struct sockaddr_in* in_addr = (struct sockaddr_in*)addr;
 
 	BOOL ret = (internal_data->m_connectex)((SOCKET)what->handle, addr, (int)addrsize,NULL, 0, NULL, (LPOVERLAPPED)povl);
 	if (!ret)
@@ -1757,7 +1712,7 @@ uint32_t rx_socket_connect(struct rx_io_register_data_t* what, const struct sock
 	return ret != FALSE ? RX_ASYNC : RX_ERROR;
 }
 
-sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr)
+sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr, uint32_t keep_alive)
 {
 	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock == INVALID_SOCKET)
@@ -1778,14 +1733,17 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr)
 
 	//////////////////////////////////////////////////////////////
 	// keep alive settings
-	struct tcp_keepalive kalive;
-	kalive.onoff = 1;
-	kalive.keepalivetime = 5000;
-	kalive.keepaliveinterval = 50;
+	if (keep_alive > 0)
+	{
+		struct tcp_keepalive kalive;
+		kalive.onoff = 1;
+		kalive.keepalivetime = keep_alive;
+		kalive.keepaliveinterval = 50;
 
-	DWORD returned = 0;
+		DWORD returned = 0;
 
-	DWORD bread = WSAIoctl(sock, SIO_KEEPALIVE_VALS, &kalive, sizeof(kalive), NULL, 0, &returned, NULL, NULL);
+		DWORD bread = WSAIoctl(sock, SIO_KEEPALIVE_VALS, &kalive, sizeof(kalive), NULL, 0, &returned, NULL, NULL);
+	}
 
 	
 	if (addr)
@@ -1829,6 +1787,20 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr)
 	if (addr)
 	{
 		if (addr->sin_family != AF_INET || bind(sock, (PSOCKADDR)addr, sizeof(struct sockaddr_in)) == SOCKET_ERROR)
+		{
+			int err = WSAGetLastError();
+			closesocket(sock);
+			SetLastError(err);
+			return NULL;
+		}
+	}
+	else
+	{
+		struct sockaddr_in any;
+		any.sin_family = AF_INET;
+		any.sin_port = 0;
+		any.sin_addr.S_un.S_addr = INADDR_ANY;
+		if (bind(sock, (PSOCKADDR)&any, sizeof(struct sockaddr_in)) == SOCKET_ERROR)
 		{
 			int err = WSAGetLastError();
 			closesocket(sock);

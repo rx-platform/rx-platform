@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_internal_objects.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -49,6 +49,7 @@ unassigned_application::smart_ptr g_unassigned_application_inst;
 system_domain::smart_ptr g_system_domain_inst;
 unassigned_domain::smart_ptr g_unassigned_domain_inst;
 system_object::smart_ptr g_system_object_inst;
+host_object::smart_ptr g_host_object_inst;
 }
 
 // Class rx_platform::sys_objects::system_application 
@@ -223,10 +224,6 @@ rx_result system_object::initialize_runtime (runtime::runtime_init_context& ctx)
 
     ctx.set_item_static("Info.PlatformVer", rx_gate::instance().get_rx_version().c_str());
     ctx.set_item_static("Info.LibraryVer", rx_gate::instance().get_lib_version().c_str());
-    hosting::hosts_type hosts;
-    rx_gate::instance().get_host()->get_host_info(hosts);
-    if (hosts.size() > 0)
-        ctx.set_item_static("Info.HostVer", hosts[0].c_str());
     ctx.set_item_static("Info.TerminalVer", rx_internal::terminal::term_ports::vt100_endpoint::get_terminal_info().c_str());
     ctx.set_item_static("Info.HttpVer", rx_internal::rx_http_server::http_server::get_server_info().c_str());
     ctx.set_item_static("Info.CompilerVer", rx_gate::instance().get_comp_version().c_str());
@@ -251,6 +248,96 @@ void system_object::deinitialize ()
     timer_ = rx_timer_ptr::null_ptr;
     if (g_system_object_inst)
         g_system_object_inst = smart_ptr::null_ptr;
+}
+
+
+// Class rx_platform::sys_objects::host_object 
+
+host_object::host_object()
+      : free_memory_(0)
+{
+}
+
+
+host_object::~host_object()
+{
+}
+
+
+
+namespace_item_attributes host_object::get_attributes () const
+{
+    return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+}
+
+host_object::smart_ptr host_object::instance ()
+{
+    if (!g_host_object_inst)
+        g_host_object_inst = smart_ptr::create_from_pointer_without_bind(new host_object());
+    return g_host_object_inst;
+}
+
+rx_result host_object::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+    hosting::hosts_type hosts;
+    rx_gate::instance().get_host()->get_host_info(hosts);
+    if (hosts.size() > 0)
+        ctx.set_item_static("Info.OSHostVer", hosts[0].c_str());
+    if(hosts.size()>1)
+        ctx.set_item_static("Info.HostVer", hosts[hosts.size() - 1].c_str());
+
+    ctx.set_item_static("Info.FirmwareVer", rx_gate::instance().get_hal_version().c_str());
+    ctx.set_item_static("Info.OSVer", rx_gate::instance().get_os_info().c_str());
+    char buff[0x100];
+    size_t cpu_count = 1;
+    rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]), &cpu_count);
+    ctx.set_item_static("Info.CPU", buff);
+    ctx.set_item_static("Info.CPUCores", (uint32_t)cpu_count);
+    ctx.set_item_static("Info.LittleEndian", rx_big_endian == 0);
+    ctx.set_item_static("Info.FirmwareVer", rx_gate::instance().get_hal_version().c_str());
+
+    size_t total = 0;
+    size_t free = 0;
+    size_t process = 0;
+    rx_collect_memory_info(&total, &free, &process);
+
+    ctx.set_item_static("Info.MemoryTotal", (uint64_t)total);
+    ctx.set_item_static("Info.MemoryFree", (uint64_t)free);
+    ctx.set_item_static("Info.PageSize", (uint32_t)rx_os_page_size());
+
+    auto result = free_memory_.bind("Info.MemoryFree", ctx);
+    if (result)
+    {
+        timer_ = create_timer_function([this]()
+            {
+                size_t total = 0;
+                size_t free = 0;
+                size_t process = 0;
+                rx_collect_memory_info(&total, &free, &process);
+                free_memory_ = (uint64_t)free;
+            });
+    }
+
+
+    return true;
+}
+
+rx_result host_object::start_runtime (runtime::runtime_start_context& ctx)
+{
+    if (timer_)
+    {
+        timer_->start(5000, true);
+    }
+    return true;
+}
+
+void host_object::deinitialize ()
+{
+    if (timer_)
+        timer_->cancel();
+    timer_ = rx_timer_ptr::null_ptr;
+    if (g_host_object_inst)
+        g_host_object_inst = smart_ptr::null_ptr;
 }
 
 

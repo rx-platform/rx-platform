@@ -4,7 +4,7 @@
 *
 *  system\serialization\rx_ser_json.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -1519,12 +1519,12 @@ string_type json_writer_type<writerT>::get_error () const
 	return ss.str();
 }
 
-template class json_writer_type<json_writer_data>;
-template class json_writer_type<json_pretty_writer_data>;
-
-template class binary_reader<memory::std_vector_allocator, false>;
-template class binary_writer<memory::std_vector_allocator, false>;
-
 } // namespace serialization
 } // namespace rx_platform
 
+namespace rx_platform {
+namespace serialization {
+template class json_writer_type<json_writer_data>;
+template class json_writer_type<json_pretty_writer_data>;
+} // serialization
+} // rx_platform

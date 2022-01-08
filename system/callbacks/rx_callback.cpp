@@ -4,7 +4,7 @@
 *
 *  system\callbacks\rx_callback.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -90,11 +90,3 @@ void tesing()
 	(*p1)(6, "zika");
 
 }
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	target_ = target;
-
-#endif

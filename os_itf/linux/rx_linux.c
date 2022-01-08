@@ -4,7 +4,7 @@
 *
 *  os_itf\linux\rx_linux.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *
@@ -316,22 +316,6 @@ int rx_read_pipe_client(struct pipe_client_t* pipes, void* data, size_t* size)
         return RX_OK;
     }
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
-// IP addresses
-int rx_add_ip_address(uint32_t addr, uint32_t mask, int itf, ip_addr_ctx_t* ctx)
-{
-    return RX_ERROR;
-}
-int rx_remove_ip_address(ip_addr_ctx_t ctx)
-{
-    return RX_ERROR;
-}
-
-int rx_is_valid_ip_address(uint32_t addr, uint32_t mask)
-{
-    return 0;
-}
-
 
 
 uint8_t pipe_dummy_buffer[0x100];
@@ -1338,7 +1322,7 @@ uint32_t rx_socket_write_to(struct rx_io_register_data_t* what, const void* data
 	return RX_OK;
 }
 
-uint32_t rx_socket_accept(struct rx_io_register_data_t* what)
+uint32_t rx_socket_accept(struct rx_io_register_data_t* what, uint32_t keep_alive)
 {
     struct sockaddr* addr=(struct sockaddr*)what->read_buffer;
     socklen_t addrsize=sizeof(struct sockaddr_in);
@@ -1796,7 +1780,7 @@ uint32_t rx_dispatch_function(rx_kernel_dispather_t disp, rx_callback f, void* a
         return RX_ERROR;
 }
 
-sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr)
+sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr, uint32_t keep_alive)
 {
     sys_handle_t ret=socket(AF_INET,SOCK_STREAM|SOCK_NONBLOCK,0);
     if(ret)

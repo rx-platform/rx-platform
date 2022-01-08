@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_namespace_algorithms.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -168,6 +168,11 @@ rx_result namespace_algorithms::translate_path (const string_type& ref_path, con
 			result = ref_path.substr(0, ref_idx + 1);
 	}
 	return true;
+}
+
+rx_result namespace_algorithms::recursive_remove_directories (rx_directory_ptr from, const string_type& path)
+{
+	return RX_NOT_IMPLEMENTED;
 }
 
 

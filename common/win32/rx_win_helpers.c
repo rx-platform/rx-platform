@@ -4,7 +4,7 @@
 *
 *  common\win32\rx_win_helpers.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -31,6 +31,7 @@
 #include "pch.h"
 
 #include "../rx_common.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
 
 
@@ -67,6 +68,10 @@ uint64_t g_start;
 
 int g_init_count = 0;
 
+
+rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory);
+rx_protocol_result_t rx_deinit_protocols();
+
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 {
 	if (g_init_count == 0)
@@ -81,6 +86,8 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 		g_res_u = ((1ULL << 32) * 1'000'000ULL) / res.QuadPart;
 		g_start = start.QuadPart;
 
+		rx_init_protocols(NULL);
+
 		g_init_count = 1;
 
 		return RX_OK;
@@ -92,7 +99,7 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 }
 RX_COMMON_API void rx_deinit_common_library()
 {
-
+	rx_deinit_protocols();
 }
 RX_COMMON_API rx_timer_ticks_t rx_get_tick_count()
 {

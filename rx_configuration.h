@@ -84,6 +84,10 @@
 #define RX_NS_OBJECT_DATA_ID 0x0000000d
 
 
+#define RX_HOST_OBJ_ID 0xc00006f
+#define RX_HOST_APP_ID 0xc000070
+#define RX_HOST_DOMAIN_ID 0xc000071
+
 #define RX_HOST_APP_NAME "HostApp"
 #define RX_HOST_DOMAIN_NAME "HostDomain"
 #define RX_HOST_OBJECT_NAME "Host"
@@ -385,7 +389,7 @@
 #define RX_TCP_RX_PORT_TYPE_NAME "SystemRxPort"
 
 
-// last is 0xc00006e!!!! 
+// last is 0xc000071!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

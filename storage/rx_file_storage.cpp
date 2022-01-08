@@ -4,7 +4,7 @@
 *
 *  storage\rx_file_storage.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -41,6 +41,7 @@
 #define RX_FILE_STORAGE_RUNTIME_DIR ".runtime"
 
 #include "system/serialization/rx_ser_json.h"
+#include "system/serialization/rx_ser_bin.h"
 
 // rx_file_internals
 #include "storage/rx_file_internals.h"

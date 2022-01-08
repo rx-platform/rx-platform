@@ -4,7 +4,7 @@
 *
 *  testing\rx_test_basic.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,6 +36,7 @@
 #include "testing/rx_test_basic.h"
 
 #include "system/serialization/rx_ser_json.h"
+#include "system/serialization/rx_ser_bin.h"
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
 

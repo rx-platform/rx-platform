@@ -4,7 +4,7 @@
 *
 *  protocols\http\rx_http_mapping.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -159,13 +159,83 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 	}
 	string_type str_path;
 	str_path.reserve(path_len);
-	for (size_t i = 0; i < path_len; i++)
+	size_t idx = 0;
+	for (; idx < path_len; idx++)
 	{
-		if (path[i] == '?')
+		if (path[idx] == '?')
 			break;
-		str_path += path[i];
+		str_path += path[idx];
 	}
 	request.path = str_path;
+	idx++;
+	if (idx < path_len)
+	{
+		size_t idx_start = idx;
+		string_type param_name;
+		for (; idx < path_len; idx++)
+		{
+			if (param_name.empty())
+			{
+				if (path[idx] == '=')
+				{
+					if (idx_start == idx)
+						break;
+				
+					param_name.assign(&path[idx_start], idx - idx_start);
+					idx++;
+					idx_start = idx;
+				}
+				else if (path[idx] == '&')
+				{
+					if (idx_start == idx)
+						break;
+
+					request.params[string_type(&path[idx_start], idx - idx_start)] = "";
+					param_name.clear();
+					idx++;
+					idx_start = idx;
+				}
+			}
+			else
+			{
+				if (path[idx] == '&')
+				{
+					if (idx_start == idx)
+						request.params[param_name] = "";
+					else
+						request.params[param_name] = string_type(&path[idx_start], idx - idx_start);
+					idx++;
+					idx_start = idx;
+					param_name.clear();
+				}
+			}
+		}
+		if (param_name.empty())
+		{
+			if (idx_start < idx)
+			{
+				request.params[string_type(&path[idx_start], idx - idx_start)] = "";
+			}
+		}
+		else
+		{
+			if (idx_start == idx)
+				request.params[param_name] = "";
+			else
+				request.params[param_name] = string_type(&path[idx_start], idx - idx_start);
+		}
+	}
+	for (size_t i = 0; i < num_headers; i++)
+	{
+		string_type name;
+		string_type val;
+		if (headers[i].name_len > 0)
+			name.assign(headers[i].name, headers[i].name_len);
+		if (headers[i].value_len > 0)
+			name.assign(headers[i].value, headers[i].value_len);
+		request.headers[name] = val;
+	}
+
 	request.whose = smart_this();
 	port_->send_function([](http_request&& request)
 		{

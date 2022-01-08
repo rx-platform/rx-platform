@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_inverter_ports.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -41,8 +41,8 @@
 namespace rx_internal {
 namespace interfaces {
 namespace ports_lib {
-class initiator_to_listener_port;
 class i2l_listener_endpoint;
+class initiator_to_listener_port;
 
 } // namespace ports_lib
 } // namespace interfaces

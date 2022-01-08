@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_ns.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -312,60 +312,5 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 } // namespace rx_internal
 
 
-
-#endif
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	DECLARE_REFERENCE_PTR(platform_root);
-
-	DECLARE_CODE_INFO("rx", 0,6,0, "\
-root server directory:\r\n\
-contains root server folders\
-");
-
-	DECLARE_REFERENCE_PTR(user_directory);
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-server directory:\r\n\
-used to create user defined folders...\
-");
-
-	DECLARE_REFERENCE_PTR(unassigned_directory);
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-storing unassigned domains and applications\r\n\
-All objects here are with unassigned state and hawing a bad quality\
-");
-
-	DECLARE_REFERENCE_PTR(world_directory);
-	DECLARE_CODE_INFO("rx", 0,5,0, "\
-user directory:\r\n\
-used to create user defined folders...\
-");
-
-	DECLARE_REFERENCE_PTR(internal_directory);
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-server directory:\r\n\
-used to create system defined folders...\
-");
-
-	DECLARE_REFERENCE_PTR(system_directory);
-	DECLARE_CODE_INFO("rx", 0, 5, 0, "\
-system directory:\r\n\
-used to hold system folders...\
-");
-
-	DECLARE_REFERENCE_PTR(host_directory);
-	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-host directory:\r\n\
-used to hold host folders...\
-");
-
-	DECLARE_REFERENCE_PTR(plugin_directory);
-	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-plugin directory:\r\n\
-used to hold specific plugin folders...\
-");
 
 #endif

@@ -4,7 +4,7 @@
 *
 *  system\server\rx_directory_cache.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -62,6 +62,8 @@ rx_directory_cache::rx_directory_cache()
 
 rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (const string_type& dir_path, rx_storage_ptr storage)
 {
+	if (dir_path.size() > 2 && dir_path.substr(0, 2) == "//")
+		RX_ASSERT(false);
 	if (dir_path.empty())
 		return RX_INVALID_PATH ", empty path is invalid";
 	size_t idx = dir_path.rfind(RX_DIR_DELIMETER);
@@ -87,7 +89,7 @@ rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (const string
 	if (it != cache_.end())
 	{
 		if(it->second->sub_items_.find(name)!= it->second->sub_items_.end())
-			return RX_INVALID_PATH ", name is already exists";
+			return RX_INVALID_PATH ", name already exists";
 
 		rx_directory_ptr dir = rx_create_reference<rx_platform_directory>();
 		auto result = cache_.emplace(dir_path, dir);
@@ -122,7 +124,10 @@ rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (const string
 rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (rx_directory_ptr parent, const string_type& dir_name, rx_storage_ptr storage)
 {
 	string_type full_path = parent->meta_info().get_full_path();
-	full_path += (RX_DIR_DELIMETER + dir_name);
+	if(!full_path.empty() && *full_path.rbegin()==RX_DIR_DELIMETER)
+		full_path += dir_name;
+	else
+		full_path += (RX_DIR_DELIMETER + dir_name);
 	return add_directory(full_path, storage);
 }
 
@@ -148,36 +153,58 @@ rx_result rx_directory_cache::remove_directory (const string_type& dir_path)
 	if (name.empty())
 		return RX_INVALID_PATH ", empty name is invalid";
 
-	locks::const_auto_lock_t _(&cache_lock_);
-	auto it = cache_.find(dir_path);
-	if (it != cache_.end())
+	rx_result result;
+	rx_directory_ptr parent_dir;
 	{
-		if (!it->second->sub_items_.empty() || !sub_items_cache_[it->second].empty())
-			return "Directory not empty";
+		locks::const_auto_lock_t _(&cache_lock_);
+		auto it = cache_.find(dir_path);
+		if (it != cache_.end())
+		{
+			if (!it->second->sub_items_.empty() || !sub_items_cache_[it->second].empty())
+				return "Directory not empty";
 
-		auto it_parent= cache_.find(path);
-		RX_ASSERT(it_parent != cache_.end());
-		if (it_parent == cache_.end())
-			return "Sorry, but something critical happened, please restart platform!!!";
+			auto it_parent = cache_.find(path);
+			RX_ASSERT(it_parent != cache_.end());
+			if (it_parent == cache_.end())
+				return "Sorry, but something critical happened, please restart platform!!!";
 
-		auto it_parent_items = sub_items_cache_.find(it_parent->second);
-		RX_ASSERT(it_parent_items != sub_items_cache_.end());
-		if (it_parent_items == sub_items_cache_.end())
-			return "Sorry, but something critical happened, please restart platform!!!";
+			auto it_parent_items = sub_items_cache_.find(it_parent->second);
+			RX_ASSERT(it_parent_items != sub_items_cache_.end());
+			if (it_parent_items == sub_items_cache_.end())
+				return "Sorry, but something critical happened, please restart platform!!!";
 
-		it_parent_items->second.erase(it->second);
-		sub_items_cache_.erase(it->second);
-		cache_.erase(it);
+			it_parent_items->second.erase(it->second);
+			sub_items_cache_.erase(it->second);
+			cache_.erase(it);
+			parent_dir = it_parent->second;
 
-		locks::auto_lock_t _(&it_parent->second->lock_);
-		it_parent->second->meta_.modified_time = rx_time::now();
 
-		return true;
+			result = true;
+		}
+		else
+		{
+			result = RX_INVALID_PATH;
+		}
 	}
-	else
+	if (result)
 	{
-		return RX_INVALID_PATH;
+		
+		locks::auto_lock_t _(&parent_dir->lock_);
+		parent_dir->meta_.modified_time = rx_time::now();
 	}
+	return result;
+}
+
+rx_result_with<rx_directory_ptr> rx_directory_cache::get_or_create_directory (const string_type& path)
+{
+	
+	{
+		locks::const_auto_lock_t _(&cache_lock_);
+		auto it = cache_.find(path);
+		if (it != cache_.end())
+			return it->second;
+	}
+	return add_directory(path, rx_storage_ptr::null_ptr);
 }
 
 rx_directory_ptr rx_directory_cache::get_directory (const string_type& path) const
@@ -193,8 +220,13 @@ rx_directory_ptr rx_directory_cache::get_directory (const string_type& path) con
 rx_directory_ptr rx_directory_cache::get_sub_directory (rx_directory_ptr whose, const string_type& name) const
 {
 	string_type full_path = whose->meta_info().get_full_path();
-	if(!name.empty())
-		full_path += (RX_DIR_DELIMETER + name);
+	if (!name.empty())
+	{
+		if(!full_path.empty() && *full_path.rbegin() == RX_DIR_DELIMETER)
+			full_path += name;
+		else
+			full_path += (RX_DIR_DELIMETER + name);
+	}
 	return get_directory(full_path);
 }
 

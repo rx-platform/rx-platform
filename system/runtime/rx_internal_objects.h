@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_internal_objects.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -177,7 +177,7 @@ this domain is for unassigned objects.it always has bad quality");
 
 class system_object : public runtime::items::object_runtime  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 System object implementation");
     DECLARE_REFERENCE_PTR(system_object);
 
@@ -206,6 +206,46 @@ System object implementation");
       runtime::owned_value<rx_time> current_time_;
 
       rx_timer_ptr timer_;
+
+
+};
+
+
+
+
+
+
+class host_object : public runtime::items::object_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Host object implementation");
+    DECLARE_REFERENCE_PTR(host_object);
+
+  public:
+      host_object();
+
+      ~host_object();
+
+
+      namespace_item_attributes get_attributes () const;
+
+      static host_object::smart_ptr instance ();
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      void deinitialize ();
+
+
+  protected:
+
+  private:
+
+
+      rx_timer_ptr timer_;
+
+      runtime::owned_value<uint64_t> free_memory_;
 
 
 };

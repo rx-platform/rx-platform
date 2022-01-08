@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_plugin_manager.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_plugin
-#include "system/libraries/rx_plugin.h"
 // rx_commands
 #include "terminal/rx_commands.h"
+// rx_plugin
+#include "system/libraries/rx_plugin.h"
 
 using rx_internal::terminal::console_context_ptr;
 

@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_trans_messages.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -80,6 +80,9 @@ class rx_update_directory_request_message : public rx_request_message
   protected:
 
   private:
+
+      rx_result handle_path_id_stuff (const ns::platform_items_type& items);
+
 
 
 };

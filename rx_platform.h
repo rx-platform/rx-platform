@@ -4,7 +4,7 @@
 *
 *  rx_platform.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -50,7 +50,7 @@
 
 #define RX_LICENSE_MESSAGE "\
 \r\n\
-Copyright (c) 2021 ENSACO Solutions doo\r\n\r\n\
+Copyright (c) 2022 ENSACO Solutions doo\r\n\r\n\
 This program comes with ABSOLUTELY NO WARRANTY.\r\n\
 This is free software, and you are welcome to redistribute it\r\n\
 under certain conditions; type `license' for details.\r\n\

@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_holder.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -212,6 +212,7 @@ rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
             }
         }
     }
+    context_.runtime_stopped();
     return result;
 }
 

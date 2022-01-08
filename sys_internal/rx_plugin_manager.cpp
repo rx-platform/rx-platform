@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_plugin_manager.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -83,19 +83,24 @@ bool plugins_manager::check_class (rx::pointers::code_behind_definition_t* cd)
 
 rx_result plugins_manager::register_plugin (rx_platform::library::rx_plugin_base* what)
 {
-	PLUGIN_LOG_INFO("plugins_manager", 900, "Registering plugin "s + what->get_plugin_name());
+	auto info = what->get_plugin_info();
+
+	PLUGIN_LOG_INFO("plugins_manager", 900, "Registering plugin "s + rx_c_str(&info.plugin_version));
 	auto result = what->init_plugin();
 	if (result)
 	{
 		plugins_.emplace_back(what);
-		PLUGIN_LOG_INFO("plugins_manager", 900, "Registered plugin "s + what->get_plugin_info());
+		PLUGIN_LOG_INFO("plugins_manager", 900, "Registered plugin "s + rx_c_str(&info.plugin_version));
 	}
 	else
 	{
 		for(const auto& one : result.errors())
 			PLUGIN_LOG_ERROR("plugins_manager", 900, one);
-		PLUGIN_LOG_ERROR("plugins_manager", 900, "Error registering plugin "s + what->get_plugin_name());
+		PLUGIN_LOG_ERROR("plugins_manager", 900, "Error registering plugin "s + rx_c_str(&info.plugin_version));
 	}
+	rx_destory_string_value_struct(&info.plugin_version);
+	rx_destory_string_value_struct(&info.lib_version);
+	rx_destory_string_value_struct(&info.platform_version);
 	return result;
 }
 
@@ -128,8 +133,12 @@ bool plugin_command::do_console_command (std::istream& in, std::ostream& out, st
 		const auto& plugins = plugins_manager::instance().get_plugins();
 		for (const auto& one : plugins)
 		{
+			auto info = one->get_plugin_info();
 			out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
-			out << one->get_plugin_info() << "\r\n";
+			out << rx_c_str(&info.plugin_version) << "\r\n";
+			rx_destory_string_value_struct(&info.plugin_version);
+			rx_destory_string_value_struct(&info.lib_version);
+			rx_destory_string_value_struct(&info.platform_version);
 		}
 	}
 	else

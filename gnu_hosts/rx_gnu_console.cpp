@@ -4,7 +4,7 @@
 *
 *  gnu_hosts\rx_gnu_console.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -134,18 +134,6 @@ bool gnu_console_host::write_stdout (const void* data, size_t size)
 {
   uint32_t written=0;
   bool ret = RX_OK == rx_file_write(STDOUT_FILENO,data,size,&written);
-  return ret;
-}
-
-std::vector<ETH_interface> gnu_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-{
-  std::vector<ETH_interface> ret;
-  return ret;
-}
-
-std::vector<IP_interface> gnu_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-{
-  std::vector<IP_interface> ret;
   return ret;
 }
 

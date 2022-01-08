@@ -4,7 +4,7 @@
 *
 *  system\server\rx_directory_cache.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -61,6 +61,8 @@ class rx_directory_cache
       rx_result_with<rx_directory_ptr> add_directory (rx_directory_ptr parent, const string_type& dir_name, rx_storage_ptr storage = rx_storage_ptr::null_ptr);
 
       rx_result remove_directory (const string_type& dir_path);
+
+      rx_result_with<rx_directory_ptr> get_or_create_directory (const string_type& path);
 
       rx_directory_ptr get_directory (const string_type& path) const;
 

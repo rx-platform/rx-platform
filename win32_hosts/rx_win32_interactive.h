@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_interactive.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -66,10 +66,6 @@ class win32_console_host : public host::interactive::interactive_console_host
       bool read_stdin (std::array<char,0x100>& chars, size_t& count);
 
       bool write_stdout (const void* data, size_t size);
-
-      std::vector<ETH_interface> get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
-
-      std::vector<IP_interface> get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx);
 
       rx_result setup_console (int argc, char* argv[]);
 

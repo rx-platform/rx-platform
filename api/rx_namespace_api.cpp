@@ -4,7 +4,7 @@
 *
 *  api\rx_namespace_api.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -157,14 +157,17 @@ rx_result_with<directory_browse_result> rx_list_directory(const string_type& nam
 	}
 }
 
-void do_recursive_list(rx_directory_ptr who, std::vector<rx_namespace_item>& items, const string_type& pattern)
+void do_recursive_list(rx_directory_ptr who, std::vector<rx_namespace_item>& items, platform_directories_type& dirs, const string_type& pattern)
 {
 	directory_browse_result ret_val;
 	who->list_content(ret_val.directories, ret_val.items, pattern);
 	for (const auto& one : ret_val.items)
 		items.emplace_back(one);
 	for (auto sub : ret_val.directories)
-		do_recursive_list(sub, items, pattern);
+	{
+		dirs.emplace_back(sub);
+		do_recursive_list(sub, items, dirs, pattern);
+	}
 }
 
 rx_result_with<directory_browse_result> rx_recursive_list_items(const string_type& name // directory's path
@@ -177,7 +180,7 @@ rx_result_with<directory_browse_result> rx_recursive_list_items(const string_typ
 	rx_directory_ptr who = rx_gate::instance().get_directory(name, &dirs);
 	if (who)
 	{
-		do_recursive_list(who, ret_val.items, pattern);
+		do_recursive_list(who, ret_val.items, ret_val.directories, pattern);
 		ret_val.success = true;
 		return ret_val;
 	}

@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_interactive.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -258,10 +258,10 @@ size_t list_ip_adapters(IP_interface** interfaces)
 			padapters = (IP_interface*)malloc(sizeof(IP_interface)*count);
 			for (i = 0; i <count; i++)
 			{
-				padapters[i].name = names[i];
-				padapters[i].ip_address = addresses[i];
+				strcpy(padapters[i].name, names[i]);
+				strcpy(padapters[i].ip_address, addresses[i]);
 				padapters[i].index = ctxs[i];
-				padapters[i].status = interface_status_type::status_disconnected;
+				padapters[i].status = interface_status_disconnected;
 				ret_count++;
 			}
 			free(names);
@@ -508,26 +508,6 @@ bool win32_console_host::write_stdout (const void* data, size_t size)
 	{
 		return FALSE != WriteFile(out_handle_, data, (DWORD)size, &written, NULL);
 	}
-}
-
-std::vector<ETH_interface> win32_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-{
-	std::vector<ETH_interface> ret;
-	return ret;
-}
-
-std::vector<IP_interface> win32_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-{
-	std::vector<IP_interface> ret;
-	IP_interface* itfs;
-
-	size_t count = list_ip_adapters(&itfs);
-	for (size_t i = 0; i < count; i++)
-	{
-
-	}
-
-	return ret;
 }
 
 rx_result win32_console_host::setup_console (int argc, char* argv[])

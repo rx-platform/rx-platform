@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_packet_decoder.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -57,9 +57,9 @@ typedef struct packed_decoder_type
 
 } packed_decoder;
 
-rx_protocol_result_t rx_init_packet_decoder(struct packed_decoder_type* decoder, struct rx_packet_buffer_type* recv_buffer, check_header_function_type chk_function, size_t hdr_size, void* hdr_buffer);
+RX_COMMON_API rx_protocol_result_t rx_init_packet_decoder(struct packed_decoder_type* decoder, struct rx_packet_buffer_type* recv_buffer, check_header_function_type chk_function, size_t hdr_size, void* hdr_buffer);
 
-rx_protocol_result_t rx_decode_arrived(struct packed_decoder_type* decoder, struct rx_const_packet_buffer_type* data, struct rx_const_packet_buffer_type* recv_buffer);
+RX_COMMON_API rx_protocol_result_t rx_decode_arrived(struct packed_decoder_type* decoder, struct rx_const_packet_buffer_type* data, struct rx_const_packet_buffer_type* recv_buffer);
 
 
 

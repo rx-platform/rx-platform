@@ -4,7 +4,7 @@
 *
 *  terminal\rx_commands.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -51,6 +51,7 @@
 #include "terminal/rx_telnet.h"
 #include "protocols/opcua/rx_opcua_mapping.h"
 #include "protocols/http/rx_http_mapping.h"
+#include "interfaces/rx_io.h"
 
 
 namespace rx_internal {
@@ -176,6 +177,8 @@ void server_command_manager::register_internal_commands ()
 	register_command(rx_create_reference<sys_runtime::runtime_commands::browse_command>());
 	// plug-ins commands
 	register_command(rx_create_reference<rx_internal::plugins::plugin_command>());
+	// interfaces commands
+	register_command(rx_create_reference<rx_internal::interfaces::io_endpoints::net_command>());
 
 	// register constructors
 	auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(

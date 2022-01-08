@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_data.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -42,6 +42,7 @@
 #include "system/server/rx_server.h"
 #include "api/rx_platform_api.h"
 #include "sys_internal/rx_internal_ns.h"
+#include "rx_meta_algorithm.h"
 
 
 namespace rx_platform {
@@ -438,7 +439,11 @@ values::rx_value meta_data::get_value () const
 
 string_type meta_data::get_full_path () const
 {
-	if (!path.empty() && *path.rbegin() == RX_DIR_DELIMETER)
+	if (path.empty())
+	{
+		return RX_DIR_DELIMETER_STR + name;
+	}
+	else if (*path.rbegin() == RX_DIR_DELIMETER)
 	{
 		string_type ret(path);
 		ret += name;
@@ -457,7 +462,11 @@ string_type meta_data::get_full_path () const
 
 void meta_data::get_full_path_with_buffer (string_type& buffer) const
 {
-	if (!path.empty() && *path.rbegin() == RX_DIR_DELIMETER)
+	if (path.empty())
+	{
+		buffer = RX_DIR_DELIMETER_STR + name;
+	}
+	else if (*path.rbegin() == RX_DIR_DELIMETER)
 	{
 		buffer = path;
 		buffer += name;
@@ -622,6 +631,8 @@ rx_result config_part_container::deserialize (const string_type& name, base_meta
 
 	while (!stream.array_end())
 	{
+		if(!stream.start_object("item"))
+			return stream.get_error();
 		meta::meta_data meta;
 		rx_item_type target_type;
 		auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
@@ -672,9 +683,83 @@ rx_result config_part_container::deserialize (const string_type& name, base_meta
 				apps.emplace_back(std::make_unique<runtime_data::application_runtime_data>(data));
 			}
 			break;
+		case rx_item_type::rx_object_type:
+			{
+				using algorithm_type = typename object_types::object_type::algorithm_type;
+
+				auto item = rx_create_reference<object_types::object_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				object_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_port_type:
+			{
+				using algorithm_type = typename object_types::port_type::algorithm_type;
+
+				auto item = rx_create_reference<object_types::port_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				port_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_domain_type:
+			{
+				using algorithm_type = typename object_types::domain_type::algorithm_type;
+
+				auto item = rx_create_reference<object_types::domain_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				domain_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_application_type:
+			{
+				using algorithm_type = typename object_types::application_type::algorithm_type;
+
+				auto item = rx_create_reference<object_types::application_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				app_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_struct_type:
+			{
+				using algorithm_type = typename basic_types::struct_type::algorithm_type;
+
+				auto item = rx_create_reference<basic_types::struct_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				struct_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_variable_type:
+			{
+				using algorithm_type = typename basic_types::variable_type::algorithm_type;
+
+				auto item = rx_create_reference<basic_types::variable_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				variable_types.emplace_back(item);
+			}
+			break;
 		default:
 			return RX_NOT_IMPLEMENTED;
 		}
+		if (!stream.end_object())
+			return stream.get_error();
 	}
 	return true;
 }

@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_io.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,6 +34,8 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
+// rx_commands
+#include "terminal/rx_commands.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_thread
@@ -52,6 +54,9 @@ class dispatcher_subscriber;
 #include "lib/rx_io_addr.h"
 
 
+using rx_internal::terminal::console_context_ptr;
+
+
 namespace rx_internal {
 
 namespace interfaces {
@@ -59,46 +64,6 @@ namespace interfaces {
 namespace io_endpoints {
 typedef std::set<dispatcher_subscriber> dispatcher_subscriber_ptr;
 typedef std::set<rx::pointers::reference<dispatcher_subscriber> > time_aware_subscribers_type;
-
-
-
-
-
-template <class headerT, class bufferT>
-class stream_chuks_decoder 
-{
-
-  public:
-      stream_chuks_decoder (std::function<bool(const bufferT&)> callback);
-
-
-      bool push_bytes (const void* data, size_t count);
-
-
-  protected:
-
-  private:
-
-
-      std::function<bool(const bufferT&)> chunk_callback_;
-
-      bufferT receive_buffer_;
-
-      headerT* header_;
-
-      uint8_t* temp_byte_header_;
-
-      int collected_header_;
-
-      uint32_t collected_;
-
-      uint32_t expected_;
-
-      headerT temp_header_;
-
-
-};
-
 
 
 
@@ -188,6 +153,76 @@ class dispatcher_subscriber : public rx::pointers::reference_object
 	  friend int dispatcher_connect_callback(void* data, uint32_t status, struct sockaddr* addr, struct sockaddr* local_addr);
 	  friend int dispatcher_shutdown_callback(void* data, uint32_t status);
 	  friend int dispatcher_accept_callback(void* data, uint32_t status, sys_handle_t handle, struct sockaddr* addr, struct sockaddr* local_addr);
+};
+
+
+
+
+
+
+template <class headerT, class bufferT>
+class stream_chuks_decoder 
+{
+
+  public:
+      stream_chuks_decoder (std::function<bool(const bufferT&)> callback);
+
+
+      bool push_bytes (const void* data, size_t count);
+
+
+  protected:
+
+  private:
+
+
+      std::function<bool(const bufferT&)> chunk_callback_;
+
+      bufferT receive_buffer_;
+
+      headerT* header_;
+
+      uint8_t* temp_byte_header_;
+
+      int collected_header_;
+
+      uint32_t collected_;
+
+      uint32_t expected_;
+
+      headerT temp_header_;
+
+
+};
+
+
+
+
+
+
+class net_command : public terminal::commands::server_command  
+{
+    DECLARE_REFERENCE_PTR(net_command);
+    DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for querying status of network interfaces");
+
+  public:
+      net_command();
+
+      ~net_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+  private:
+
+      bool do_eth_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+
 };
 
 

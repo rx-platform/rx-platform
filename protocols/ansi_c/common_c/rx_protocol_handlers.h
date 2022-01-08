@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_protocol_handlers.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -90,9 +90,9 @@ typedef struct rx_session_def
 
 #define UINT8_ADDR_SIZE sizeof(struct protocol_address_def)
 #define UINT8_ADDRS_SIZE (2*UINT8_ADDR_SIZE)
-recv_protocol_packet rx_create_recv_packet(rx_packet_id_type id, rx_const_packet_buffer* buffer, rx_address_reference_type from, rx_address_reference_type to);
-send_protocol_packet rx_create_send_packet(rx_packet_id_type id, rx_packet_buffer* buffer, rx_address_reference_type from, rx_address_reference_type to);
-rx_session rx_create_session(const protocol_address* local, const protocol_address* remote, rx_address_reference_type local_ref, rx_address_reference_type remote_ref, const struct rx_session_def* next);
+RX_COMMON_API recv_protocol_packet rx_create_recv_packet(rx_packet_id_type id, rx_const_packet_buffer* buffer, rx_address_reference_type from, rx_address_reference_type to);
+RX_COMMON_API send_protocol_packet rx_create_send_packet(rx_packet_id_type id, rx_packet_buffer* buffer, rx_address_reference_type from, rx_address_reference_type to);
+RX_COMMON_API rx_session rx_create_session(const protocol_address* local, const protocol_address* remote, rx_address_reference_type local_ref, rx_address_reference_type remote_ref, const struct rx_session_def* next);
 
 typedef void(*rx_stack_changed_function_type)(
 	struct rx_protocol_stack_endpoint* reference);
@@ -174,20 +174,20 @@ struct rx_protocol_stack_endpoint
 
 };
 
-void rx_init_stack_entry(struct rx_protocol_stack_endpoint* stack, void* user_data);
+RX_COMMON_API void rx_init_stack_entry(struct rx_protocol_stack_endpoint* stack, void* user_data);
 
 
-rx_protocol_result_t rx_connect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session);
-rx_protocol_result_t rx_disconnect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session, rx_protocol_result_t reason);
-rx_protocol_result_t rx_close(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason);
+RX_COMMON_API rx_protocol_result_t rx_connect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session);
+RX_COMMON_API rx_protocol_result_t rx_disconnect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session, rx_protocol_result_t reason);
+RX_COMMON_API rx_protocol_result_t rx_close(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason);
 
-rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_endpoint* stack, recv_protocol_packet packet);
-rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_endpoint* stack, send_protocol_packet packet);
-rx_protocol_result_t rx_notify_ack(struct rx_protocol_stack_endpoint* stack, rx_packet_id_type id, rx_protocol_result_t result);
+RX_COMMON_API rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_endpoint* stack, recv_protocol_packet packet);
+RX_COMMON_API rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_endpoint* stack, send_protocol_packet packet);
+RX_COMMON_API rx_protocol_result_t rx_notify_ack(struct rx_protocol_stack_endpoint* stack, rx_packet_id_type id, rx_protocol_result_t result);
 
-rx_protocol_result_t rx_notify_connected(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session);
-rx_protocol_result_t rx_notify_disconnected(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session, rx_protocol_result_t reason);
-void rx_notify_closed(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason);
+RX_COMMON_API rx_protocol_result_t rx_notify_connected(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session);
+RX_COMMON_API rx_protocol_result_t rx_notify_disconnected(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session, rx_protocol_result_t reason);
+RX_COMMON_API void rx_notify_closed(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason);
 
 typedef rx_protocol_result_t(*rx_alloc_buffer_type)(void** buffer, size_t buffer_size);
 typedef rx_protocol_result_t(*rx_free_buffer_type)(void* buffer, size_t buffer_size);
@@ -210,12 +210,10 @@ struct rx_hosting_functions
 
 };
 
-rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory);
-rx_protocol_result_t rx_deinit_protocols();
 
 
-rx_protocol_result_t rx_push_stack(struct rx_protocol_stack_endpoint* where_to, struct rx_protocol_stack_endpoint* what);
-rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_endpoint* what);
+RX_COMMON_API rx_protocol_result_t rx_push_stack(struct rx_protocol_stack_endpoint* where_to, struct rx_protocol_stack_endpoint* what);
+RX_COMMON_API rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_endpoint* what);
 
 
 

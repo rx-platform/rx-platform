@@ -4,27 +4,27 @@
 *
 *  model\rx_model_transactions.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -45,7 +45,7 @@ namespace model {
 
 namespace transactions {
 
-// Class rx_internal::model::transactions::model_transaction_base
+// Class rx_internal::model::transactions::model_transaction_base 
 
 model_transaction_base::model_transaction_base (rx_reference_ptr anchor, rx_thread_handle_t target)
       : anchor_(anchor),
@@ -66,7 +66,7 @@ const rx_thread_handle_t model_transaction_base::get_target () const
 }
 
 
-// Parameterized Class rx_internal::model::transactions::delete_type_transaction
+// Parameterized Class rx_internal::model::transactions::delete_type_transaction 
 
 template <class typeT>
 delete_type_transaction<typeT>::delete_type_transaction (const rx_node_id& id, rx_reference_ptr anchor)
@@ -108,7 +108,7 @@ template class delete_type_transaction<object_type>;
 template class delete_type_transaction<port_type>;
 template class delete_type_transaction<domain_type>;
 template class delete_type_transaction<application_type>;
-// Class rx_internal::model::transactions::model_transactions_executer
+// Class rx_internal::model::transactions::model_transactions_executer 
 
 
 void model_transactions_executer::add_transaction (model_transaction_ptr_t what)

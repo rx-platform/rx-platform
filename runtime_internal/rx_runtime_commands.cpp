@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_commands.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -61,7 +61,7 @@ read_command::~read_command()
 
 
 
-bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
+bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in)
 {
 	string_type full_path = rt_item->meta_info().get_full_path();
 	if (!sub_item.empty())
@@ -132,7 +132,7 @@ write_command::~write_command()
 
 
 
-bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
+bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in)
 {
 	rx_simple_value my_copy;
 	auto now = rx_time::now();
@@ -273,7 +273,7 @@ browse_command::~browse_command()
 
 
 
-bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
+bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in)
 {
 
 	auto rctx = ctx->create_api_context();
@@ -386,12 +386,22 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 {
 	string_type full_path;
 	string_type val_str;
+	string_type line;
 	rx_simple_value to_write;
+
 	in >> full_path;
 	if (!in.eof())
 	{
-		std::getline(in, val_str, '\0');
-		to_write.parse(val_str);
+		in >> line;
+		if (!line.empty() && line[0] != '-')
+		{
+			val_str = line;
+			line.clear();
+		}
+		std::istreambuf_iterator<char> eos;
+		line += string_type(std::istreambuf_iterator<char>(in), eos);
+		if(!val_str.empty())
+			to_write.parse(val_str);
 	}
 	if (full_path.empty())
 	{
@@ -416,16 +426,18 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 			return resolve_result;
 
 		}
+
 		rx_thread_handle_t executer = rx_thread_context();
 		ctx->set_waiting();
 		rx_result result = model::algorithms::do_with_runtime_item(resolve_result.value()
-			, [ctx, item_path, to_write, this, executer](rx_result_with<platform_item_ptr>&& data) mutable -> bool
+			, [ctx, item_path, to_write, this, executer, line = std::move(line)](rx_result_with<platform_item_ptr>&& data) mutable -> bool
 			{
 				auto& out = ctx->get_stdout();
 				auto& err = ctx->get_stderr();
 				if (data)
 				{
-					return this->do_with_item(data.move_value(), item_path, std::move(to_write), ctx, out, err, executer);
+					std::istringstream in(line);
+					return this->do_with_item(data.move_value(), item_path, std::move(to_write), ctx, out, err, executer,in);
 				}
 				else
 				{
@@ -468,8 +480,47 @@ struct_command::~struct_command()
 
 
 
-bool struct_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
+bool struct_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in)
 {
+	using parser_t = urke::parser::parser3000;
+	bool pretty = false;
+	bool help = false;
+	bool version = false;
+
+	if (!in.eof())
+	{
+		parser_t parser;
+		parser.add_bit_option('h', "pretty", &pretty, "\"Pretty\" - human readable form of output. The <h> switch is obvious.");
+
+		auto ret = parser.parse(in, err);
+		if (ret)
+		{
+			if (help)
+			{
+				parser.print_help("struct json [PATH] [VALUE] [OPTIONS]", out);
+				return true;
+			}
+			else if (version)
+			{
+				auto version = code_version();
+				out << "Version "
+					<< version[0] << ". "
+					<< version[1] << ". "
+					<< version[2] << ".";
+				return true;
+			}
+			else
+			{
+				// do the rest, foll through
+			}
+		}
+		else
+		{
+			return false;
+		}
+		
+	}
+
 	string_type full_path = rt_item->meta_info().get_full_path();
 	if (!sub_item.empty())
 	{
@@ -479,22 +530,39 @@ bool struct_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 	auto rctx = ctx->create_api_context();
 	read_struct_data data;
 	data.type = runtime_value_type::simple_runtime_value;
-	data.callback = read_struct_callback_t(rctx.object, [ctx, full_path = std::move(full_path)](rx_result&& result, data::runtime_values_data&& data)
+	data.callback = read_struct_callback_t(rctx.object, [pretty, ctx, full_path = std::move(full_path)](rx_result&& result, data::runtime_values_data&& data)
 	{
 		auto& out = ctx->get_stdout();
 		if (result)
 		{
-			serialization::json_writer writer;
-			writer.write_header(STREAMING_TYPE_MESSAGE, 0);
-			if (writer.write_init_values(nullptr, data))
+			if (pretty)
 			{
-				result = writer.write_footer();
+				serialization::pretty_json_writer writer;
+				writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+				if (writer.write_init_values(nullptr, data))
+				{
+					result = writer.write_footer();
+				}
+				else
+				{
+					result = writer.get_error();
+				}
+				out << writer.get_string();
 			}
 			else
 			{
-				result = writer.get_error();
+				serialization::json_writer writer;
+				writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+				if (writer.write_init_values(nullptr, data))
+				{
+					result = writer.write_footer();
+				}
+				else
+				{
+					result = writer.get_error();
+				}
+				out << writer.get_string();
 			}
-			out << writer.get_string();
 			out << "\r\n";
 		}
 		if(!result)

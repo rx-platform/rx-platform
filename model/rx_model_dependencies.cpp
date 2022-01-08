@@ -4,7 +4,7 @@
 *
 *  model\rx_model_dependencies.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,6 +35,7 @@
 #include "system/runtime/rx_objbase.h"
 #include "system/runtime/rx_runtime_holder.h"
 #include "rx_model_algorithms.h"
+#include "system/server/rx_directory_cache.h"
 
 // rx_model_dependencies
 #include "model/rx_model_dependencies.h"
@@ -135,186 +136,157 @@ void dependency_cache::add_single_dependency (const rx_node_id& id, const rx_nod
 
 void local_dependecy_builder::add_runtime (const object_runtime_data& what, bool remove, bool create, bool save)
 {
-	rx_node_id id = what.meta_info.id;
-	auto it = objects_.find(id);
-	if(it==objects_.end())
-	{
-		item_creation_data<object_runtime_data> data;
-		data.item = what;
-		data.create = create;
-		data.remove = remove;
-		data.save_result = save;
-		objects_.emplace(id, std::move(data));
-	}
-	else
-	{
-		it->second.create |= create;
-		it->second.remove |= remove;
-		it->second.save_result |= save;
-		it->second.item = what;
-	}
+	add_runtime_concrete(objects_, what, remove, create, save);
 }
 
 void local_dependecy_builder::add_runtime (const domain_runtime_data& what, bool remove, bool create, bool save)
 {
-	rx_node_id id = what.meta_info.id;
-	auto it = domains_.find(id);
-	if (it == domains_.end())
-	{
-		item_creation_data<domain_runtime_data> data;
-		data.item = what;
-		data.create = create;
-		data.remove = remove;
-		data.save_result = save;
-		domains_.emplace(id, std::move(data));
-	}
-	else
-	{
-		it->second.create |= create;
-		it->second.remove |= remove;
-		it->second.save_result |= save;
-		it->second.item = what;
-	}
+	add_runtime_concrete(domains_, what, remove, create, save);
 }
 
 void local_dependecy_builder::add_runtime (const port_runtime_data& what, bool remove, bool create, bool save)
 {
-	rx_node_id id = what.meta_info.id;
-	auto it = ports_.find(id);
-	if (it == ports_.end())
-	{
-		item_creation_data<port_runtime_data> data;
-		data.item = what;
-		data.create = create;
-		data.remove = remove;
-		data.save_result = save;
-		ports_.emplace(id, std::move(data));
-	}
-	else
-	{
-		it->second.create |= create;
-		it->second.remove |= remove;
-		it->second.save_result |= save;
-		it->second.item = what;
-	}
+	add_runtime_concrete(ports_, what, remove, create, save);
 }
 
 void local_dependecy_builder::add_runtime (const application_runtime_data& what, bool remove, bool create, bool save)
 {
-	rx_node_id id = what.meta_info.id;
-	auto it = applications_.find(id);
-	if (it == applications_.end())
-	{
-		item_creation_data<application_runtime_data> data;
-		data.item = what;
-		data.create = create;
-		data.remove = remove;
-		data.save_result = save;
-		applications_.emplace(id, std::move(data));
-	}
-	else
-	{
-		it->second.create |= create;
-		it->second.remove |= remove;
-		it->second.save_result |= save;
-		it->second.item = what;
-	}
+	add_runtime_concrete(applications_, what, remove, create, save);
 }
 
-rx_result local_dependecy_builder::add (const api::query_result_detail& what, bool remove, bool create, bool save)
+void local_dependecy_builder::add_type (rx_application_type_ptr what, bool remove, bool create, bool save)
 {
+	add_type_concrete(application_types_, what, remove, create, save);
+}
+
+void local_dependecy_builder::add_type (rx_domain_type_ptr what, bool remove, bool create, bool save)
+{
+	add_type_concrete(domain_types_, what, remove, create, save);
+}
+
+void local_dependecy_builder::add_type (rx_port_type_ptr what, bool remove, bool create, bool save)
+{
+	add_type_concrete(port_types_, what, remove, create, save);
+}
+
+void local_dependecy_builder::add_type (rx_object_type_ptr what, bool remove, bool create, bool save)
+{
+	add_type_concrete(object_types_, what, remove, create, save);
+}
+
+void local_dependecy_builder::add_sub_type (struct_type_ptr what, bool remove, bool create, bool save)
+{
+	add_type_concrete(struct_types_, what, remove, create, save);
+}
+
+void local_dependecy_builder::add_sub_type (variable_type_ptr what, bool remove, bool create, bool save)
+{
+	add_type_concrete(variable_types_, what, remove, create, save);
+}
+
+rx_result local_dependecy_builder::add_query_result (const api::query_result_detail& what, bool remove, bool create, bool save)
+{
+	rx_result res;
 	switch (what.type)
 	{
 	case rx_application:
-		{
-			auto result = platform_types_manager::instance().get_type_repository<application_type>().get_runtime(what.data.id, false);
-			if (result)
-			{
-				item_creation_data<runtime_data::application_runtime_data> data;
-				data.item = result.value()->get_definition_data();
-				if(what.data.version> data.item.meta_info.version)
-					data.item.meta_info.version = what.data.version;
-				data.create = create;
-				data.remove = remove;
-				data.save_result = save;
-				applications_.emplace(what.data.id, data);
-				return true;
-			}
-			else
-			{
-				return result.errors();
-			}
-		}
+		res = add_query_runtime_concrete<application_type>(applications_, what, remove, create, save);
 		break;
 	case rx_domain:
-		{
-			auto result = platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(what.data.id, false);
-			if (result)
-			{
-				item_creation_data<runtime_data::domain_runtime_data> data;
-				data.item = result.value()->get_definition_data();
-				if (what.data.version > data.item.meta_info.version)
-					data.item.meta_info.version = what.data.version;
-				data.create = create;
-				data.remove = remove;
-				data.save_result = save;
-				domains_.emplace(what.data.id, data);
-				return true;
-			}
-			else
-			{
-				return result.errors();
-			}
-		}
+		res = add_query_runtime_concrete<domain_type>(domains_, what, remove, create, save);
 		break;
 	case rx_port:
-		{
-			auto result = platform_types_manager::instance().get_type_repository<port_type>().get_runtime(what.data.id, false);
-			if (result)
-			{
-				item_creation_data<runtime_data::port_runtime_data> data;
-				data.item = result.value()->get_definition_data();
-				if (what.data.version > data.item.meta_info.version)
-					data.item.meta_info.version = what.data.version;
-				data.create = create;
-				data.remove = remove;
-				data.save_result = save;
-				ports_.emplace(what.data.id, data);
-				return true;
-			}
-			else
-			{
-				return result.errors();
-			}
-		}
+		res = add_query_runtime_concrete<port_type>(ports_, what, remove, create, save);
 		break;
 	case rx_object:
-		{
-			auto result = platform_types_manager::instance().get_type_repository<object_type>().get_runtime(what.data.id, false);
-			if (result)
-			{
-				item_creation_data<runtime_data::object_runtime_data> data;
-				data.item = result.value()->get_definition_data();
-				if (what.data.version > data.item.meta_info.version)
-					data.item.meta_info.version = what.data.version;
-				data.create = create;
-				data.remove = remove;
-				data.save_result = save;
-				objects_.emplace(what.data.id, data);
-				return true;
-			}
-			else
-			{
-				return result.errors();
-			}
-		}
+		res = add_query_runtime_concrete<object_type>(objects_, what, remove, create, save);
+		break;
+
+	case rx_application_type:
+		res = add_query_type_concrete<application_type>(application_types_, what, remove, create, save);
+		break;
+	case rx_domain_type:
+		res = add_query_type_concrete<domain_type>(domain_types_, what, remove, create, save);
+		break;
+	case rx_port_type:
+		res = add_query_type_concrete<port_type>(port_types_, what, remove, create, save);
+		break;
+	case rx_object_type:
+		res = add_query_type_concrete<object_type>(object_types_, what, remove, create, save);
+		break;
+
+	case rx_struct_type:
+		res = add_query_simple_type_concrete<struct_type>(struct_types_, what, remove, create, save);
+		break;
+	case rx_variable_type:
+		res = add_query_simple_type_concrete<variable_type>(variable_types_, what, remove, create, save);
+		break;
 	default:
 		return RX_NOT_IMPLEMENTED;
+	}
+	return res;
+}
+
+void local_dependecy_builder::add_config_part (const meta::config_part_container& part)
+{
+	for (const auto& one : part.apps)
+	{
+		add_runtime(*one, false, true, true);
+	}
+	for (const auto& one : part.domains)
+	{
+		add_runtime(*one, false, true, true);
+	}
+	for (const auto& one : part.ports)
+	{
+		add_runtime(*one, false, true, true);
+	}
+	for (const auto& one : part.objects)
+	{
+		add_runtime(*one, false, true, true);
+	}
+	for (const auto& one : part.app_types)
+	{
+		add_type(one, false, true, true);
+	}
+	for (const auto& one : part.domain_types)
+	{
+		add_type(one, false, true, true);
+	}
+	for (const auto& one : part.port_types)
+	{
+		add_type(one, false, true, true);
+	}
+	for (const auto& one : part.object_types)
+	{
+		add_type(one, false, true, true);
+	}
+	for (const auto& one : part.struct_types)
+	{
+		add_sub_type(one, false, true, true);
+	}
+	for (const auto& one : part.variable_types)
+	{
+		add_sub_type(one, false, true, true);
 	}
 }
 
 rx_result local_dependecy_builder::apply_items (rx_result_callback&& callback)
 {
+	// consolidate meta data for all items if needed
+	do_consolidate_for_item(applications_);
+	do_consolidate_for_item(domains_);
+	do_consolidate_for_item(ports_);
+	do_consolidate_for_item(objects_);
+
+	do_consolidate_for_types(application_types_);
+	do_consolidate_for_types(domain_types_);
+	do_consolidate_for_types(port_types_);
+	do_consolidate_for_types(object_types_);
+
+	do_consolidate_for_types(struct_types_);
+	do_consolidate_for_types(variable_types_);
+
 	callback_ = std::move(callback);
 	state_.phase = builder_phase::idle;
 	state_.objects_it = objects_.begin();
@@ -328,51 +300,105 @@ rx_result local_dependecy_builder::apply_items (rx_result_callback&& callback)
 rx_result local_dependecy_builder::delete_types ()
 {
 	RX_ASSERT(state_.phase == builder_phase::deleting_types);
-	state_.phase = builder_phase::bulding_types;
+
+	rx_result ret = delete_types<application_type>(application_types_);
+	if (!ret)
+		return ret;
+	ret = delete_types<domain_type>(domain_types_);
+	if (!ret)
+		return ret;
+	ret = delete_types<port_type>(port_types_);
+	if (!ret)
+		return ret;
+	ret = delete_types<object_type>(object_types_);
+	if (!ret)
+		return ret;
+	ret = delete_simple_types<struct_type>(struct_types_);
+	if (!ret)
+		return ret;
+	ret = delete_simple_types<variable_type>(variable_types_);
+	if (!ret)
+		return ret;
+
+	state_.phase = builder_phase::deleting_directories;
+
 	return true;
 }
 
 rx_result local_dependecy_builder::delete_objects ()
 {
 	RX_ASSERT(state_.phase == builder_phase::deleting_objects);
-	if (state_.objects_it != objects_.end())
+	bool waiting = false;
+	while (state_.objects_it != objects_.end())
 	{
-		rx_node_id id = state_.objects_it->second.item.meta_info.id;
-		state_.objects_it++;
-		rx_result_callback callback(smart_this(), [this](rx_result&& res)
+		if (state_.objects_it->second.remove)
+		{
+			rx_node_id id = state_.objects_it->second.item.meta_info.id;
+			state_.objects_it++;
+
+			rx_result_callback callback(smart_this(), [this](rx_result&& res)
+				{
+					process(std::move(res));
+				});
+			auto result = algorithms::runtime_model_algorithm<object_types::object_type>::delete_runtime_sync(
+				id, RX_DOMAIN_META, std::move(callback));
+			if (!result)
 			{
-				process(std::move(res));
-			});
-		auto result = algorithms::runtime_model_algorithm<object_types::object_type>::delete_runtime_sync(
-			id, RX_DOMAIN_META, std::move(callback));
-		if (!result)
-			return result.errors();
+				return result.errors();
+			}
+			else
+			{
+				waiting = true;
+				break;
+			}
+		}
+		else
+		{
+			state_.objects_it++;
+		}
 	}
-	else
+	if (!waiting)
 	{
 		state_.phase = builder_phase::deleting_ports;
 		process(true);
 	}
+
 	return true;
 }
 
 rx_result local_dependecy_builder::delete_ports ()
 {
 	RX_ASSERT(state_.phase == builder_phase::deleting_ports);
-	if (state_.ports_it != ports_.end())
+	bool waiting = false;
+	while (state_.ports_it != ports_.end())
 	{
-		rx_node_id id = state_.ports_it->second.item.meta_info.id;
-		state_.ports_it++;
-		rx_result_callback callback(smart_this(), [this](rx_result&& res)
+		if (state_.ports_it->second.remove)
+		{
+			rx_node_id id = state_.ports_it->second.item.meta_info.id;
+			state_.ports_it++;
+
+			rx_result_callback callback(smart_this(), [this](rx_result&& res)
+				{
+					process(std::move(res));
+				});
+			auto result = algorithms::runtime_model_algorithm<object_types::port_type>::delete_runtime_sync(
+				id, RX_DOMAIN_META, std::move(callback));
+			if (!result)
 			{
-				process(std::move(res));
-			});
-		auto result = algorithms::runtime_model_algorithm<object_types::port_type>::delete_runtime_sync(
-			id, RX_DOMAIN_META, std::move(callback));
-		if (!result)
-			return result.errors();
+				return result.errors();
+			}
+			else
+			{
+				waiting = true;
+				break;
+			}
+		}
+		else
+		{
+			state_.ports_it++;
+		}
 	}
-	else
+	if (!waiting)
 	{
 		state_.phase = builder_phase::deleting_domains;
 		process(true);
@@ -383,20 +409,36 @@ rx_result local_dependecy_builder::delete_ports ()
 rx_result local_dependecy_builder::delete_domains ()
 {
 	RX_ASSERT(state_.phase == builder_phase::deleting_domains);
-	if (state_.domains_it != domains_.end())
+	bool waiting = false;
+	while (state_.domains_it != domains_.end())
 	{
-		rx_node_id id = state_.domains_it->second.item.meta_info.id;
-		state_.domains_it++;
-		rx_result_callback callback(smart_this(), [this](rx_result&& res)
+		if (state_.domains_it->second.remove)
+		{
+			rx_node_id id = state_.domains_it->second.item.meta_info.id;
+			state_.domains_it++;
+
+			rx_result_callback callback(smart_this(), [this](rx_result&& res)
+				{
+					process(std::move(res));
+				});
+			auto result = algorithms::runtime_model_algorithm<object_types::domain_type>::delete_runtime_sync(
+				id, RX_DOMAIN_META, std::move(callback));
+			if (!result)
 			{
-				process(std::move(res));
-			});
-		auto result = algorithms::runtime_model_algorithm<object_types::domain_type>::delete_runtime_sync(
-			id, RX_DOMAIN_META, std::move(callback));
-		if (!result)
-			return result.errors();
+				return result.errors();
+			}
+			else
+			{
+				waiting = true;
+				break;
+			}
+		}
+		else
+		{
+			state_.domains_it++;
+		}
 	}
-	else
+	if (!waiting)
 	{
 		state_.phase = builder_phase::deleting_apps;
 		process(true);
@@ -407,20 +449,36 @@ rx_result local_dependecy_builder::delete_domains ()
 rx_result local_dependecy_builder::delete_apps ()
 {
 	RX_ASSERT(state_.phase == builder_phase::deleting_apps);
-	if (state_.applications_it != applications_.end())
+	bool waiting = false;
+	while (state_.applications_it != applications_.end())
 	{
-		rx_node_id id = state_.applications_it->second.item.meta_info.id;
-		state_.applications_it++;
-		rx_result_callback callback(smart_this(), [this](rx_result&& res)
+		if (state_.applications_it->second.remove)
+		{
+			rx_node_id id = state_.applications_it->second.item.meta_info.id;
+			state_.applications_it++;
+
+			rx_result_callback callback(smart_this(), [this](rx_result&& res)
+				{
+					process(std::move(res));
+				});
+			auto result = algorithms::runtime_model_algorithm<object_types::application_type>::delete_runtime_sync(
+				id, RX_DOMAIN_META, std::move(callback));
+			if (!result)
 			{
-				process(std::move(res));
-			});
-		auto result = algorithms::runtime_model_algorithm<object_types::application_type>::delete_runtime_sync(
-			id, RX_DOMAIN_META, std::move(callback));
-		if (!result)
-			return result.errors();
+				return result.errors();
+			}
+			else
+			{
+				waiting = true;
+				break;
+			}
+		}
+		else
+		{
+			state_.applications_it++;
+		}
 	}
-	else
+	if (!waiting)
 	{
 		state_.phase = builder_phase::deleting_types;
 		process(true);
@@ -428,10 +486,57 @@ rx_result local_dependecy_builder::delete_apps ()
 	return true;
 }
 
+rx_result local_dependecy_builder::delete_directories ()
+{
+	RX_ASSERT(state_.phase == builder_phase::deleting_directories);
+	for (auto it = dirs_to_delete_.rbegin(); it!=dirs_to_delete_.rend(); it++)
+	{
+		auto ret = ns::rx_directory_cache::instance().remove_directory(*it);
+		if (!ret)
+			return ret;
+	}
+	state_.phase = builder_phase::building_directories;
+	return true;
+}
+
+rx_result local_dependecy_builder::build_directories ()
+{
+	RX_ASSERT(state_.phase == builder_phase::building_directories);
+	for (auto it = dirs_to_create_.begin(); it != dirs_to_create_.end(); it++)
+	{
+		auto ret = ns::rx_directory_cache::instance().get_or_create_directory(*it);
+		if (!ret)
+			return ret.errors();
+	}
+	state_.phase = builder_phase::building_types;
+	return true;
+}
+
 rx_result local_dependecy_builder::build_types ()
 {
-	RX_ASSERT(state_.phase == builder_phase::bulding_types);
+	RX_ASSERT(state_.phase == builder_phase::building_types);
+
+	rx_result ret = create_simple_types<variable_type>(variable_types_, built_variable_types_);
+	if (!ret)
+		return ret; 
+	ret = create_simple_types<struct_type>(struct_types_, built_struct_types_);
+	if (!ret)
+		return ret;
+
+	ret = create_types<application_type>(application_types_, built_app_types_);
+	if (!ret)
+		return ret;
+	ret = create_types<domain_type>(domain_types_, built_domain_types_);
+	if (!ret)
+		return ret;
+	ret = create_types<port_type>(port_types_, built_port_types_);
+	if (!ret)
+		return ret;
+	ret = create_types<object_type>(object_types_, built_object_types_);
+	if (!ret)
+		return ret;
 	state_.phase = builder_phase::building_runtimes;
+
 	return true;
 }
 
@@ -523,7 +628,17 @@ void local_dependecy_builder::process (rx_result&& result)
 		if(!res)
 			break;
 		[[fallthrough]];
-	case builder_phase::bulding_types:
+	case builder_phase::deleting_directories:
+		res = delete_directories();
+		if (!res)
+			break;
+		[[fallthrough]];
+	case builder_phase::building_directories:
+		res = build_directories();
+		if (!res)
+			break;
+		[[fallthrough]];
+	case builder_phase::building_types:
 		res = build_types();
 		if(!res)
 			break;
@@ -541,6 +656,438 @@ void local_dependecy_builder::process (rx_result&& result)
 	{
 		state_.phase = builder_phase::done;
 		callback_(std::move(res));
+	}
+}
+
+rx_result local_dependecy_builder::consolidate_meta_data (meta::meta_data& new_data, const meta::meta_data& old_data)
+{
+	new_data.id = old_data.id;
+	if (old_data.created_time.is_valid_time())
+		new_data.created_time = old_data.created_time;
+	if (new_data.version < old_data.version)
+	{
+		new_data.version = old_data.version;
+		new_data.increment_version(false);
+	}
+	new_data.attributes = new_data.attributes | old_data.attributes;
+	return true;
+}
+
+rx_result local_dependecy_builder::consolidate_meta_data (meta::meta_data& data)
+{
+	if (data.id.is_null())
+		data.id = rx_node_id::generate_new();
+	if (data.attributes == 0)
+		data.attributes = namespace_item_full_access;
+	if(!data.modified_time.is_valid_time())
+		data.modified_time = rx_time::now();
+	if (data.version == 0)
+		data.version = RX_INITIAL_ITEM_VERSION;
+	return true;
+}
+
+
+template<typename T>
+void local_dependecy_builder::do_consolidate_for_item(T& container)
+{
+	for (auto& one : container)
+	{
+		if (one.second.remove)
+			dirs_to_delete_.emplace(one.second.item.meta_info.path);
+		if (one.second.create)
+		{
+			dirs_to_create_.emplace(one.second.item.meta_info.path);
+			consolidate_meta_data(one.second.item.meta_info);
+		}
+	}
+}
+template<typename T, typename dataT>
+void local_dependecy_builder::add_runtime_concrete(T& container, const dataT& what, bool remove, bool create, bool save)
+{
+	string_type path = what.meta_info.get_full_path();
+	auto it = container.find(path);
+	if (it == container.end())
+	{
+		item_creation_data<dataT> data;
+		data.item = what;
+		data.create = create;
+		data.remove = remove;
+		data.save_result = save;
+		container.insert_or_assign(path, std::move(data));
+	}
+	else
+	{
+		it->second.create |= create;
+		it->second.remove |= remove;
+		it->second.save_result |= save;
+		it->second.item = what;
+	}
+}
+
+template<typename T, typename dataT>
+void local_dependecy_builder::add_type_concrete(T& container, const dataT& what, bool remove, bool create, bool save)
+{
+	string_type path = what->meta_info.get_full_path();
+	auto it = container.find(path);
+	if (it == container.end())
+	{
+		item_creation_data<dataT> data;
+		data.item = what;
+		data.create = create;
+		data.remove = remove;
+		data.save_result = save;
+		container.insert_or_assign(path, std::move(data));
+	}
+	else
+	{
+		it->second.create |= create;
+		it->second.remove |= remove;
+		it->second.save_result |= save;
+		it->second.item = what;
+	}
+}
+
+
+template<typename typeT>
+rx_result local_dependecy_builder::add_query_runtime_concrete(local_dependecy_builder::rt_container_t<typeT>& container, const api::query_result_detail& what, bool remove, bool create, bool save)
+{
+
+	using instance_type_t = typename typeT::instance_data_t;
+	auto result = platform_types_manager::instance().get_type_repository<typeT>().get_runtime(what.data.id, false);
+	if (result)
+	{
+		auto it = container.find(what.data.get_full_path());
+		if (it == container.end())
+		{
+			item_creation_data<instance_type_t> data;
+			data.item = result.value()->get_definition_data();
+			if (what.data.version > data.item.meta_info.version)
+				data.item.meta_info.version = what.data.version;
+			data.create = create;
+			data.remove = remove;
+			data.save_result = save;
+			container.emplace(what.data.get_full_path(), data);
+			return true;
+		}
+		else if (remove)
+		{
+			auto res = consolidate_meta_data(it->second.item.meta_info, what.data);
+			if (!res)
+				return res;
+			it->second.remove = true;
+			return true;
+		}
+		else
+		{
+			RX_ASSERT(false);
+			return "Internal error!!!";
+		}
+	}
+	else
+	{
+		return result.errors();
+	}
+}
+
+template<typename typeT>
+rx_result local_dependecy_builder::add_query_type_concrete(local_dependecy_builder::container_t<typeT>& container, const api::query_result_detail& what, bool remove, bool create, bool save)
+{
+	using type_ptr_t = typename typeT::smart_ptr;
+	auto result = platform_types_manager::instance().get_type_repository<typeT>().get_type_definition(what.data.id);
+	if (result)
+	{
+		auto it = container.find(what.data.get_full_path());
+		if (it == container.end())
+		{
+			item_creation_data<type_ptr_t> data;
+			data.item = result.value();
+			if (what.data.version > data.item->meta_info.version)
+				data.item->meta_info.version = what.data.version;
+			data.create = create;
+			data.remove = remove;
+			data.save_result = save;
+			container.emplace(what.data.get_full_path(), data);
+			return true;
+		}
+		else if (remove)
+		{
+			auto res = consolidate_meta_data(it->second.item->meta_info, what.data);
+			if (!res)
+				return res;
+			it->second.remove = true;
+			return true;
+		}
+		else
+		{
+			RX_ASSERT(false);
+			return "Internal error!!!";
+		}
+	}
+	else
+	{
+		return result.errors();
+	}
+}
+
+template<typename typeT>
+rx_result local_dependecy_builder::add_query_simple_type_concrete(local_dependecy_builder::container_t<typeT>& container, const api::query_result_detail& what, bool remove, bool create, bool save)
+{
+	using type_ptr_t = typename typeT::smart_ptr;
+	auto result = platform_types_manager::instance().get_simple_type_repository<typeT>().get_type_definition(what.data.id);
+	if (result)
+	{
+		auto it = container.find(what.data.get_full_path());
+		if (it == container.end())
+		{
+			item_creation_data<type_ptr_t> data;
+			data.item = result.value();
+			if (what.data.version > data.item->meta_info.version)
+				data.item->meta_info.version = what.data.version;
+			data.create = create;
+			data.remove = remove;
+			data.save_result = save;
+			container.emplace(what.data.get_full_path(), data);
+			return true;
+		}
+		else if (remove)
+		{
+			auto res = consolidate_meta_data(it->second.item->meta_info, what.data);
+			if (!res)
+				return res;
+			it->second.remove = true;
+			return true;
+		}
+		else
+		{
+			RX_ASSERT(false);
+			return "Internal error!!!";
+		}
+	}
+	else
+	{
+		return result.errors();
+	}
+}
+template<typename typeT>
+rx_result local_dependecy_builder::create_types(local_dependecy_builder::container_t<typeT>& data, std::vector<typename typeT::smart_ptr>& built)
+{
+	using algorithm_t = typename typeT::algorithm_type;
+	using type_ptr = typename typeT::smart_ptr;
+	rx_result ret = true;
+	std::vector<std::pair<string_type, string_type> > to_add;
+	to_add.reserve(data.size());
+	for (const auto& one : data)
+	{
+		if (one.second.create)
+		{
+			ns::rx_directory_resolver dirs;
+			dirs.add_paths({ one.second.item->meta_info.path });
+			auto parent_id = algorithms::resolve_reference(one.second.item->meta_info.parent, dirs);
+			if (parent_id)
+			{
+				to_add.emplace_back(one.second.item->meta_info.get_full_path(), string_type());
+			}
+			else
+			{
+				auto it_local = data.find(one.second.item->meta_info.parent.to_string());
+				if (it_local != data.end())
+				{
+					to_add.emplace_back(one.second.item->meta_info.get_full_path(), one.second.item->meta_info.parent.to_string());
+				}
+				else
+				{//!!!
+					to_add.emplace_back(one.second.item->meta_info.get_full_path(), string_type());
+				}
+			}
+		}
+	}
+	for (auto& one : data)
+	{
+		if (one.second.create)
+		{
+
+			auto result = algorithms::types_model_algorithm<typeT>::create_type_sync(
+				one.second.item);
+			if (!result)
+				return result.errors();
+			if (one.second.save_result)
+				built.emplace_back(result.move_value());
+		}
+	}
+	return ret;
+}
+
+template<typename typeT>
+rx_result local_dependecy_builder::delete_types(container_t<typeT>& data)
+{
+	using type_ptr = typename typeT::smart_ptr;
+	rx_result ret = true;
+	for (auto it = data.rbegin(); it!=data.rend(); it++)
+	{
+		if (it->second.remove)
+		{
+			auto result = algorithms::types_model_algorithm<typeT>::delete_type_sync(
+				it->second.item->meta_info.id);
+			if (!result)
+				return result.errors();
+		}
+	}
+	return ret;
+}
+
+
+template<typename typeT>
+rx_result local_dependecy_builder::create_simple_types(local_dependecy_builder::container_t<typeT>& data, std::vector<typename typeT::smart_ptr>& built)
+{
+	using type_ptr = typename typeT::smart_ptr;
+	rx_result ret = true;
+	std::vector<string_type> add_order;
+	std::vector<std::pair<string_type, string_type> > local_to_add;
+	local_to_add.reserve(data.size());
+	add_order.reserve(data.size());
+	for (const auto& one : data)
+	{
+		if (one.second.create)
+		{
+			ns::rx_directory_resolver dirs;
+			dirs.add_paths({ one.second.item->meta_info.path });
+			auto parent_id = algorithms::resolve_reference(one.second.item->meta_info.parent, dirs);
+			if (parent_id)
+			{
+				local_to_add.emplace_back(one.second.item->meta_info.get_full_path(), string_type());
+			}
+			else
+			{
+				auto it_local = data.find(one.second.item->meta_info.parent.to_string());
+				if (it_local != data.end())
+				{
+					local_to_add.emplace_back(one.second.item->meta_info.get_full_path(), one.second.item->meta_info.parent.to_string());
+				}
+				else
+				{//!!!
+					local_to_add.emplace_back(one.second.item->meta_info.get_full_path(), string_type());
+				}
+			}
+		}
+	}
+	std::set<string_type> to_add;
+	// first add all items to set for faster search
+	for (const auto& one : local_to_add)
+		to_add.insert(one.first);
+
+	while (!to_add.empty())
+	{
+		// check for items not dependent on any items and add them next
+		for (auto& one : local_to_add)
+		{
+			if (!one.first.empty())
+			{
+				auto it_help = to_add.find(one.second);
+				if (it_help == to_add.end())
+				{
+					add_order.push_back(one.first);
+					to_add.erase(one.first);
+					one.first.clear();
+				}
+			}
+		}
+	}
+	for (auto& one : add_order)
+	{
+		auto it = data.find(one);
+		RX_ASSERT(it != data.end());
+		if (it != data.end())
+		{
+			if (it->second.create)
+			{
+				auto result = algorithms::simple_types_model_algorithm<typeT>::create_type_sync(
+					it->second.item);
+				if (!result)
+					return result.errors();
+				if (it->second.save_result)
+					built.emplace_back(result.move_value());
+			}
+		}
+	}
+	return ret;
+}
+
+template<typename typeT>
+rx_result local_dependecy_builder::delete_simple_types(container_t<typeT>& data)
+{
+	using type_ptr = typename typeT::smart_ptr;
+	rx_result ret = true; std::vector<string_type> add_order;
+	std::vector<std::pair<string_type, string_type> > local_to_add;
+	local_to_add.reserve(data.size());
+	add_order.reserve(data.size());
+	for (const auto& one : data)
+	{
+		if (one.second.create)
+		{			
+			auto it_local = data.find(one.second.item->meta_info.parent.to_string());
+			if (it_local != data.end())
+			{
+				local_to_add.emplace_back(one.second.item->meta_info.get_full_path(), one.second.item->meta_info.parent.to_string());
+			}
+			else
+			{//!!!
+				local_to_add.emplace_back(one.second.item->meta_info.get_full_path(), string_type());
+			}
+		}
+	}
+	std::set<string_type> to_add;
+	// first add all items to set for faster search
+	for (const auto& one : local_to_add)
+		to_add.insert(one.first);
+
+	while (!to_add.empty())
+	{
+		// check for items not dependent on any items and add them next
+		for (auto& one : local_to_add)
+		{
+			if (!one.first.empty())
+			{
+				auto it_help = to_add.find(one.second);
+				if (it_help == to_add.end())
+				{
+					add_order.push_back(one.first);
+					to_add.erase(one.first);
+					one.first.clear();
+				}
+			}
+		}
+	}
+	// just reverse the order
+	for (auto it_str = add_order.rbegin(); it_str != add_order.rend(); it_str++)
+	{
+		auto it = data.find(*it_str);
+		RX_ASSERT(it != data.end());
+		if (it != data.end())
+		{
+			if (it->second.remove)
+			{
+				auto result = algorithms::simple_types_model_algorithm<typeT>::delete_type_sync(
+					it->second.item->meta_info.id);
+				if (!result)
+					return result.errors();
+			}
+		}
+	}
+	return ret;
+}
+
+template<typename T>
+void local_dependecy_builder::do_consolidate_for_types(T& container)
+{
+	for (auto& one : container)
+	{
+		if (one.second.remove)
+			dirs_to_delete_.emplace(one.second.item->meta_info.path);
+		if (one.second.create)
+		{
+			dirs_to_create_.emplace(one.second.item->meta_info.path);
+			consolidate_meta_data(one.second.item->meta_info);
+		}
 	}
 }
 

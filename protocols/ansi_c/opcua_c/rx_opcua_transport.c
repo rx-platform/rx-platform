@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\opcua_c\rx_opcua_transport.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -40,7 +40,7 @@
 const uint32_t invalid_sequence_id = (uint32_t)(-1);
 
 
-
+const size_t opcua_regular_headers_size = sizeof(opcua_transport_header) + sizeof(opcua_security_simetric_header) + sizeof(opcua_sequence_header);
 
 rx_protocol_result_t opcua_init_transport_state(opcua_transport_protocol_type* transport)
 {
@@ -55,13 +55,7 @@ rx_protocol_result_t opcua_init_transport_state(opcua_transport_protocol_type* t
 	return RX_PROTOCOL_OK;
 }
 
-rx_protocol_result_t opcua_check_header(opcua_transport_protocol_type* transport, const opcua_transport_header* header)
-{
-	return RX_PROTOCOL_OK;
-}
 
-
-const size_t opcua_regular_headers_size = sizeof(opcua_transport_header) + sizeof(opcua_security_simetric_header) + sizeof(opcua_sequence_header);
 
 rx_protocol_result_t opcua_parse_regular_message(struct rx_protocol_stack_endpoint* stack, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
 {
@@ -102,6 +96,8 @@ rx_protocol_result_t opcua_parse_regular_message(struct rx_protocol_stack_endpoi
 			result = rx_reinit_packet_buffer(&transport->receive_buffer);
 			if (result != RX_PROTOCOL_OK)
 				return result;
+			transport->received_sequence_id = sequence_header->sequence_number;
+			transport->received_request_id = sequence_header->request_id;
 		}
 	}
 	else
@@ -175,88 +171,104 @@ rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_endpoint*
 	uint32_t message_type;
 	opcua_transport_protocol_type* transport = (opcua_transport_protocol_type*)reference->user_data;
 
-	while (1)
+	result = RX_PROTOCOL_OK;
+	rx_const_packet_buffer received_buffer;
+	rx_init_const_packet_buffer(&received_buffer, NULL, 0);
+	while (!rx_buffer_eof(packet.buffer))
 	{
-
-		available_data = rx_get_packet_available_data(packet.buffer);
-		// check message sizes
-		if (available_data <= sizeof(opcua_transport_header))
-		{
-			result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
-			break;
-		}
-
-		// check message type
-		header = (opcua_transport_header*)rx_get_from_packet(packet.buffer, sizeof(opcua_transport_header), &result);
+		result = rx_decode_arrived(&transport->packet_decoder, packet.buffer, &received_buffer);
 		if (result != RX_PROTOCOL_OK)
-			return result;
-
-		message_type = (header->message_type[0] << 16) | (header->message_type[1] << 8) | (header->message_type[2]);
-
-		// check correct message size in header
-		if (header->message_size > available_data)
-		{
-			result = RX_PROTOCOL_PARSING_ERROR;
 			break;
-		}
+		if (!rx_buffer_eof(&received_buffer))
+		{// we received something
 
-		if (transport->server_side)
-		{
-			switch (message_type)
+
+			available_data = rx_get_packet_available_data(&received_buffer);
+			// check message sizes
+			if (available_data <= sizeof(opcua_transport_header))
 			{
-			case opcua_regular_msg_type:
-				result = opcua_parse_regular_message(reference, transport, header, packet.buffer, packet.id);
+				result = RX_PROTOCOL_BUFFER_SIZE_ERROR;
 				break;
-			case opcua_error_msg_type:
-				result = opcua_parse_error_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			case opcua_hello_msg_type:
-				result = opcua_parse_hello_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			case opcua_reverse_hello_msg_type:
-				result = opcua_parse_reverse_hello_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			case opcua_open_msg_type:
-				result = opcua_parse_open_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			case opcua_close_msg_type:
-				result = opcua_parse_close_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			default:
-				result = RX_PROTOCOL_PARSING_ERROR;
 			}
-		}
-		else
-		{
-			switch (message_type)
+
+			// check message type
+			header = (opcua_transport_header*)rx_get_from_packet(&received_buffer, sizeof(opcua_transport_header), &result);
+			if (result != RX_PROTOCOL_OK)
+				return result;
+
+			message_type = (header->message_type[0] << 16) | (header->message_type[1] << 8) | (header->message_type[2]);
+
+			// check correct message size in header
+			if (header->message_size > available_data)
 			{
-			case opcua_regular_msg_type:
-				result = opcua_parse_regular_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			case opcua_ack_msg_type:
-				result = opcua_parse_ack_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			case opcua_error_msg_type:
-				result = opcua_parse_error_message(reference, transport, header, packet.buffer, packet.id);
-				break;
-			default:
 				result = RX_PROTOCOL_PARSING_ERROR;
+				break;
 			}
-		}
-		// check correct message size in header
-		if (header->message_size == available_data)
-		{
-			break;
+
+			if (transport->server_side)
+			{
+				switch (message_type)
+				{
+				case opcua_regular_msg_type:
+					result = opcua_parse_regular_message(reference, transport, header, &received_buffer, packet.id);
+					break;
+				case opcua_error_msg_type:
+					result = opcua_parse_error_message(reference, transport, header, &received_buffer, packet.id);
+					break;
+				case opcua_hello_msg_type:
+					result = opcua_parse_hello_message(reference, transport, header, &received_buffer, packet.id);
+					break;
+				case opcua_reverse_hello_msg_type:
+					result = opcua_parse_reverse_hello_message(reference, transport, header, &received_buffer, packet.id);
+					break;
+				case opcua_open_msg_type:
+					result = opcua_parse_open_message(reference, transport, header, &received_buffer, packet.id);
+					break;
+				case opcua_close_msg_type:
+					result = opcua_parse_close_message(reference, transport, header, &received_buffer, packet.id);
+					break;
+				default:
+					result = RX_PROTOCOL_PARSING_ERROR;
+				}
+			}
+			else
+			{
+				switch (message_type)
+				{
+				case opcua_regular_msg_type:
+					result = opcua_parse_regular_message(reference, transport, header, &received_buffer, packet.id);
+					break;
+				case opcua_ack_msg_type:
+					result = opcua_parse_ack_message(reference, transport, header, &received_buffer, packet.id);
+					break;
+				case opcua_error_msg_type:
+					result = opcua_parse_error_message(reference, transport, header, &received_buffer, packet.id);
+					break;
+				default:
+					result = RX_PROTOCOL_PARSING_ERROR;
+				}
+			}
+
+			if (result != RX_PROTOCOL_OK)
+			{
+				opcua_init_transport_state(transport);
+			}
+			rx_init_const_packet_buffer(&received_buffer, NULL, 0);
+			if (result != RX_PROTOCOL_OK)
+				break;
+
 		}
 	}
-	if (result != RX_PROTOCOL_OK)
-	{
-		opcua_init_transport_state(transport);
-	}
+
 	return result;
 }
 
-
+rx_protocol_result_t opcua_check_header(uint8_t* header, size_t* size)
+{
+	uint32_t len = (*((uint32_t*)&header[4]));
+	*size = len;
+	return RX_PROTOCOL_OK;
+}
 
 rx_protocol_result_t opcua_bin_init_transport(opcua_transport_protocol_type* transport
 	, rx_packet_buffer receive_buffer
@@ -275,6 +287,14 @@ rx_protocol_result_t opcua_bin_init_transport(opcua_transport_protocol_type* tra
 	// fill options
 	transport->supports_pipe = supports_pipe;
 	transport->server_side = server_side;
+	// decoder
+	result = rx_init_packet_decoder(&transport->packet_decoder, &transport->transport_receive_buffer
+		, opcua_check_header, sizeof(opcua_transport_header), transport->header_buffer);
+	if (result != RX_PROTOCOL_OK)
+	{
+		return result;
+	}
+
 	// fill state
 	result = opcua_init_transport_state(transport);
 	if (result != RX_PROTOCOL_OK)

@@ -4,7 +4,7 @@
 *
 *  lib\rx_io_addr.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -197,7 +197,7 @@ bool ip4_address::operator==(const ip4_address &right) const
             RX_ASSERT(false);
             return false;
         }
-        return me->sin_port == other->sin_port && GET_IP4_ADDR(me) == GET_IP4_ADDR(other);
+        return me->sin_port == other->sin_port && GET_IP4_ADDR(*me) == GET_IP4_ADDR(*other);
     }
     else
     {
@@ -235,7 +235,7 @@ bool ip4_address::operator<(const ip4_address &right) const
             return false;
         }
         return me->sin_port < other->sin_port
-            || (me->sin_port == other->sin_port && GET_IP4_ADDR(me) < GET_IP4_ADDR(other));
+            || (me->sin_port == other->sin_port && GET_IP4_ADDR(*me) < GET_IP4_ADDR(*other));
     }
     else
     {
@@ -267,7 +267,7 @@ bool ip4_address::operator>(const ip4_address &right) const
             return false;
         }
         return me->sin_port > other->sin_port
-            || (me->sin_port == other->sin_port && GET_IP4_ADDR(me) > GET_IP4_ADDR(other));
+            || (me->sin_port == other->sin_port && GET_IP4_ADDR(*me) > GET_IP4_ADDR(*other));
     }
     else
     {
@@ -315,6 +315,12 @@ const sockaddr_in* ip4_address::get_ip4_address () const
 bool ip4_address::is_null () const
 {
     return rx_is_null_address(this) != 0 ? true : false;
+}
+
+bool ip4_address::is_empty_ip4 () const
+{
+    const sockaddr_in* addr = &this->value.ip4_address;
+    return is_null() || (this->value.ip4_address.sin_family == AF_INET && GET_IP4_ADDR(*addr) == 0);
 }
 
 bool ip4_address::is_valid () const
@@ -796,8 +802,8 @@ bool any_address::operator<(const any_address& right) const
         case protocol_address_ip4:
             if (value.ip4_address.sin_port == right.value.ip4_address.sin_port)
             {
-                auto ip1= GET_IP4_ADDR((&value.ip4_address));
-                auto ip2 = GET_IP4_ADDR((&right.value.ip4_address));
+                auto ip1= GET_IP4_ADDR(value.ip4_address);
+                auto ip2 = GET_IP4_ADDR(right.value.ip4_address);
                 return ip1 < ip2;
             }
             else

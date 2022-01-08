@@ -4,7 +4,7 @@
 *
 *  system\server\rx_server.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -51,6 +51,7 @@
 #include "sys_internal/rx_async_functions.h"
 #include "http_server/rx_http_server.h"
 #include "system/server/rx_directory_cache.h"
+#include "http_server/rx_http_server.h"
 
 
 namespace rx_platform {
@@ -81,7 +82,7 @@ rx_gate::rx_gate()
 		rx_name_ = sname;
 	lib_version_ = g_lib_version;
 	rx_init_hal_version();
-	hal_version_ = g_ositf_version;	
+	hal_version_ = g_ositf_version;
 
 	sprintf(buff, "%s %d.%d.%d",
 		RX_COMPILER_NAME,
@@ -122,7 +123,7 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 #ifdef PYTHON_SUPPORT
 	python::py_script* python = &python::py_script::instance();
 	scripts_.emplace(python->get_definition().name, python);
-#endif	
+#endif
 	host_ = host;
 	rx_name_ = data.meta_configuration.instance_name.empty() ? host_->get_default_name() : data.meta_configuration.instance_name;
 
@@ -196,7 +197,7 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 
 rx_result rx_gate::deinitialize (security::security_context_ptr sec_ctx)
 {
-	
+
 	for (auto one : scripts_)
 		one.second->deinitialize();
 

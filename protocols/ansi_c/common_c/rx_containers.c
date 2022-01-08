@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_containers.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,7 +36,7 @@
 
 #include "protocols/ansi_c/internal_c/rx_internal_impl.h"
 
-rx_protocol_result_t rx_init_queue(rx_packet_queue* queue, size_t initial_capacity)
+RX_COMMON_API rx_protocol_result_t rx_init_queue(rx_packet_queue* queue, size_t initial_capacity)
 {
 	rx_protocol_result_t result;
 
@@ -48,7 +48,7 @@ rx_protocol_result_t rx_init_queue(rx_packet_queue* queue, size_t initial_capaci
 
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_deinit_queue(rx_packet_queue* queue)
+RX_COMMON_API rx_protocol_result_t rx_deinit_queue(rx_packet_queue* queue)
 {
 	rx_protocol_result_t result;
 	size_t i;
@@ -62,7 +62,7 @@ rx_protocol_result_t rx_deinit_queue(rx_packet_queue* queue)
 	return g_memory.free_function(queue->buffers, queue->capacity * sizeof(rx_packet_buffer));
 }
 
-int rx_queue_empty(const rx_packet_queue* queue)
+RX_COMMON_API int rx_queue_empty(const rx_packet_queue* queue)
 {
 	return queue->size == 0 ? 1 : 0;
 }
@@ -90,7 +90,7 @@ rx_protocol_result_t rx_handle_queue_resize(rx_packet_queue* queue, size_t to_ad
 
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_enqueue(rx_packet_queue* queue, const rx_packet_buffer* buffer)
+RX_COMMON_API rx_protocol_result_t rx_enqueue(rx_packet_queue* queue, const rx_packet_buffer* buffer)
 {
 	rx_protocol_result_t result;
 
@@ -102,7 +102,7 @@ rx_protocol_result_t rx_enqueue(rx_packet_queue* queue, const rx_packet_buffer* 
 
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_dequeue(rx_packet_queue* queue, rx_packet_buffer* buffer)
+RX_COMMON_API rx_protocol_result_t rx_dequeue(rx_packet_queue* queue, rx_packet_buffer* buffer)
 {
 	size_t to_move;
 
@@ -121,7 +121,7 @@ rx_protocol_result_t rx_dequeue(rx_packet_queue* queue, rx_packet_buffer* buffer
 
 
 
-rx_protocol_result_t rx_init_stack(rx_packet_stack* stack, size_t initial_capacity)
+RX_COMMON_API rx_protocol_result_t rx_init_stack(rx_packet_stack* stack, size_t initial_capacity)
 {
 	rx_protocol_result_t result;
 
@@ -133,7 +133,7 @@ rx_protocol_result_t rx_init_stack(rx_packet_stack* stack, size_t initial_capaci
 
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_deinit_stack(rx_packet_stack* stack)
+RX_COMMON_API rx_protocol_result_t rx_deinit_stack(rx_packet_stack* stack)
 {
 	rx_protocol_result_t result;
 	size_t i;
@@ -147,7 +147,7 @@ rx_protocol_result_t rx_deinit_stack(rx_packet_stack* stack)
 	return g_memory.free_function(stack->buffers, stack->capacity * sizeof(rx_packet_buffer));
 }
 
-int rx_stack_empty(const rx_packet_stack* stack)
+RX_COMMON_API int rx_stack_empty(const rx_packet_stack* stack)
 {
 	return stack->size == 0 ? 1 : 0;
 }
@@ -175,7 +175,7 @@ rx_protocol_result_t rx_handle_stack_resize(rx_packet_stack* stack, size_t to_ad
 
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_push(rx_packet_stack* stack, const rx_packet_buffer* buffer)
+RX_COMMON_API rx_protocol_result_t rx_push(rx_packet_stack* stack, const rx_packet_buffer* buffer)
 {
 	rx_protocol_result_t result;
 
@@ -187,7 +187,7 @@ rx_protocol_result_t rx_push(rx_packet_stack* stack, const rx_packet_buffer* buf
 
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_pop(rx_packet_stack* stack, rx_packet_buffer* buffer)
+RX_COMMON_API rx_protocol_result_t rx_pop(rx_packet_stack* stack, rx_packet_buffer* buffer)
 {
 	if (stack->size == 0)
 		return RX_PROTOCOL_EMPTY;

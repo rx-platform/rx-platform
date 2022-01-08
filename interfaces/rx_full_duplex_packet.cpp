@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_full_duplex_packet.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -350,6 +350,11 @@ rx_result_with<port_connect_result> full_duplex_addr_packet_port<addrT>::start_c
 				ret = me->my_port->remove_initiator(key);
 			}
 			return ret;
+		};
+	stack_ep->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
+		{
+			initiator_data_t* whose = reinterpret_cast<initiator_data_t*>(entry->user_data);
+			whose->my_port->unbind_stack_endpoint(entry);
 		};
 	stack_ep->allocate_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
 		{
@@ -734,7 +739,6 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 		new_listener->my_instance = this;
 		new_listener->local_addr.parse(local_address);
 		new_listener->remote_addr.parse(remote_address);
-		listeners_.emplace(key, new_listener.get());
 
 		rx_protocol_stack_endpoint* new_endpoint = &new_listener->stack_endpoint;
 		rx_init_stack_entry(new_endpoint, new_listener.get());
@@ -783,6 +787,7 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 			whose->my_port->unbind_stack_endpoint(entry);
 		};
 		locks::auto_lock_t _(&routing_lock_);
+		listeners_.emplace(key, new_listener.get());
 		auto emplace_result = my_port->listening_.emplace(new_endpoint, std::move(new_listener));
 		if (!emplace_result.second)
 		{
@@ -793,6 +798,7 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 			auto result = my_port->add_stack_endpoint(new_endpoint, local_address, remote_address);
 			if (!result)
 			{
+				listeners_.erase(key);
 				my_port->listening_.erase(new_endpoint);
 				new_endpoint = nullptr;
 			}
@@ -807,6 +813,7 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 template <typename addrT>
 rx_protocol_result_t listener_instance<addrT>::remove_listener (const listener_key_type& key)
 {
+	locks::auto_lock_t _(&routing_lock_);
 	auto it_cli = listeners_.find(key);
 	if (it_cli != listeners_.end())
 	{

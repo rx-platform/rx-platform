@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_relations.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -43,23 +43,20 @@
 #include "system/runtime/rx_resolvers.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
-namespace relations {
-class relation_connector;
-} // namespace relations
-
 namespace algorithms {
 template <class typeT> class runtime_holder_algorithms;
 } // namespace algorithms
 
 namespace relations {
 class relation_connections;
+class relation_connector;
 
 } // namespace relations
 } // namespace runtime

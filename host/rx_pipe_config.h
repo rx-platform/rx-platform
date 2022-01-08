@@ -4,7 +4,7 @@
 *
 *  host\rx_pipe_config.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -50,9 +50,6 @@
 
 #define RX_LOCAL_PIPE_PROTOCOL_NAME "hostProtocol"
 #define RX_LOCAL_PIPE_PROTOCOL_ID 0x00005
-
-#define RX_LOCAL_PIPE_APP_ID 0x00006
-#define RX_LOCAL_PIPE_DOMAIN_ID 0x00007
 
 
 

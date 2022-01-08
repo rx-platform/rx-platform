@@ -4,7 +4,7 @@
 *
 *  host\rx_pipe.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -443,9 +443,10 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 		return result;
 	}
 
+
 	meta::runtime_data::application_runtime_data app_inst_data;
 	app_inst_data.meta_info.name = RX_HOST_APP_NAME;
-	app_inst_data.meta_info.id = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+	app_inst_data.meta_info.id = rx_node_id(RX_HOST_APP_ID);
 	app_inst_data.meta_info.parent = rx_node_id(RX_HOST_APP_TYPE_ID);
 	app_inst_data.meta_info.path = "/sys/host";
 	app_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
@@ -460,14 +461,15 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 		return result;
 	}
 
+
 	meta::runtime_data::domain_runtime_data domain_inst_data;
 	domain_inst_data.meta_info.name = RX_HOST_DOMAIN_NAME;
-	domain_inst_data.meta_info.id = rx_node_id(RX_LOCAL_PIPE_DOMAIN_ID, 2);
+	domain_inst_data.meta_info.id = rx_node_id(RX_HOST_DOMAIN_ID);
 	domain_inst_data.meta_info.parent = rx_node_id(RX_HOST_DOMAIN_TYPE_ID);
 	domain_inst_data.meta_info.path = "/sys/host";
 	domain_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 
-	domain_inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+	domain_inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
 	domain_inst_data.instance_data.priority = rx_domain_priority::normal;
 	domain_inst_data.instance_data.processor = -1;
 
@@ -475,6 +477,21 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_HOST_DOMAIN_NAME " domain runtime.");
+		return result;
+	}
+
+	runtime_data::object_runtime_data instance_data;
+	instance_data = runtime_data::object_runtime_data();
+	instance_data.meta_info.name = RX_HOST_OBJECT_NAME;
+	instance_data.meta_info.id = RX_HOST_OBJ_ID;
+	instance_data.meta_info.parent = RX_NS_HOST_TYPE_ID;
+	instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+	instance_data.meta_info.path = "/sys/host";
+	instance_data.instance_data.domain_ref = rx_node_id(RX_HOST_DOMAIN_ID);
+	result = register_host_runtime<meta::object_types::object_type>(instance_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_HOST_OBJECT_NAME " application runtime.");
 		return result;
 	}
 
@@ -486,7 +503,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 	inst_data.meta_info.path = "/sys/host";
 	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 
-	inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+	inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
 
 	result = register_host_runtime<meta::object_types::port_type>(inst_data, nullptr);
 	if (!result)
@@ -502,7 +519,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 	inst_data.meta_info.path = "/sys/host";
 	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 
-	inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+	inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
 
 	inst_data.overrides.add_value_static("StackTop", RX_LOCAL_PIPE_NAME);
 
@@ -520,7 +537,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 	inst_data.meta_info.path = "/sys/host";
 	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 
-	inst_data.instance_data.app_ref = rx_node_id(RX_LOCAL_PIPE_APP_ID, 2);
+	inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
 
 	inst_data.overrides.add_value_static("StackTop", RX_LOCAL_PIPE_TRANSPORT_NAME);
 
@@ -711,5 +728,4 @@ string_type rx_pipe_stdout_log_subscriber::get_name () const
 
 } // namespace pipe
 } // namespace host
-
 

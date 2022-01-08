@@ -4,7 +4,7 @@
 *
 *  system\server\rx_ns_resolver.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -47,51 +47,6 @@ namespace ns {
 
 
 
-class rx_directory_resolver 
-{
-    struct resolver_data
-    {
-        string_type path;
-    };
-    typedef std::vector<resolver_data> directories_type;
-    rx_directory_resolver(const rx_directory_resolver&) = delete;
-    rx_directory_resolver(rx_directory_resolver&&) = delete;
-    rx_directory_resolver& operator=(const rx_directory_resolver&) = delete;
-    rx_directory_resolver& operator=(rx_directory_resolver&&) = delete;
-
-  public:
-      rx_directory_resolver();
-
-      rx_directory_resolver (rx_directory_resolver* parent);
-
-
-      rx_namespace_item resolve_item (const string_type& path) const;
-
-      rx_directory_ptr resolve_directory (const string_type& path) const;
-
-      void add_paths (std::initializer_list<string_type> paths);
-
-      ~rx_directory_resolver() = default;
-
-  protected:
-
-  private:
-
-
-      rx_directory_resolver *parent_;
-
-
-      directories_type directories_;
-
-
-};
-
-
-
-
-
-
-
 class rx_names_cache 
 {
     typedef std::map<string_type, rx_namespace_item> name_items_hash_type;
@@ -119,6 +74,50 @@ class rx_names_cache
 
 
       name_items_hash_type name_items_hash_;
+
+
+};
+
+
+
+
+
+
+
+class rx_directory_resolver 
+{
+    struct resolver_data
+    {
+        string_type path;
+    };
+    typedef std::vector<resolver_data> directories_type;
+    rx_directory_resolver(const rx_directory_resolver&) = delete;
+    rx_directory_resolver(rx_directory_resolver&&) = delete;
+    rx_directory_resolver& operator=(const rx_directory_resolver&) = delete;
+    rx_directory_resolver& operator=(rx_directory_resolver&&) = delete;
+
+  public:
+      rx_directory_resolver();
+
+      rx_directory_resolver (rx_directory_resolver* parent);
+
+
+      rx_namespace_item resolve_item (const string_type& path) const;
+
+      rx_directory_ptr resolve_directory (const string_type& path) const;
+
+      void add_paths (std::initializer_list<string_type> paths);
+
+      ~rx_directory_resolver() = default;
+  protected:
+
+  private:
+
+
+      rx_directory_resolver *parent_;
+
+
+      directories_type directories_;
 
 
 };

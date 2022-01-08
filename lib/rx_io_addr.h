@@ -4,7 +4,7 @@
 *
 *  lib\rx_io_addr.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -83,6 +83,8 @@ class ip4_address : public protocol_address
       const sockaddr_in* get_ip4_address () const;
 
       bool is_null () const;
+
+      bool is_empty_ip4 () const;
 
       bool is_valid () const;
 

@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -52,10 +52,10 @@ class rx_directory_resolver;
 
 namespace runtime {
 namespace structure {
+class runtime_item;
 class source_data;
 class mapper_data;
 class variable_data;
-class runtime_item;
 } // namespace structure
 
 namespace algorithms {

@@ -4,7 +4,7 @@
 *
 *  system\server\rx_identity.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,8 +34,10 @@
 // rx_identity
 #include "system/server/rx_identity.h"
 
-#include "system/serialization/rx_ser_json.h"
+
+#include "system/serialization/rx_ser_bin.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
+
 
 /*
 security account type:

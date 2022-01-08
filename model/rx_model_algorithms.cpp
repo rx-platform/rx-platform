@@ -4,7 +4,7 @@
 *
 *  model\rx_model_algorithms.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -1449,10 +1449,10 @@ void runtime_model_algorithm<typeT>::update_runtime_with_depends_sync (instanceT
 			transactions::local_dependecy_builder::smart_ptr builder_ptr = rx_create_reference<transactions::local_dependecy_builder>();
 			instance_data.meta_info.increment_version(update_data.increment_version);
 			api::query_result_detail temp(typeT::runtime_type_id, instance_data.meta_info);
-			builder_ptr->add(temp, true, true, true);
+			builder_ptr->add_query_result(temp, true, true, true);
 			for (auto& one : result.value().items)
 			{
-				builder_ptr->add(one, true, true, false);
+				builder_ptr->add_query_result(one, true, true, false);
 			}
 			rx_reference_ptr anchor = callback.get_anchor();
 			rx_result_callback my_callback(anchor, [builder_ptr, callback = std::move(callback)](rx_result&& res) mutable

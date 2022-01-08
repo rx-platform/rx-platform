@@ -4,7 +4,7 @@
 *
 *  os_itf\windows\rx_win.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -182,7 +182,8 @@ typedef ULONG ip_addr_ctx_t;
 
 
 
-#define GET_IP4_ADDR(a) (a->sin_addr.S_un.S_addr)
+#define GET_IP4_ADDR(a) ((a).sin_addr.S_un.S_addr)
+#define SET_IP4_ADDR(a, d) ((a).sin_addr.S_un.S_addr = (d))
 
 
 typedef int socklen_t;

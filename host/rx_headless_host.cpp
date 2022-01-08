@@ -4,7 +4,7 @@
 *
 *  host\rx_headless_host.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -344,7 +344,63 @@ string_type headless_platform_host::just_parse_command_line (int argc, char* arg
 
 rx_result headless_platform_host::build_host (hosting::host_platform_builder& builder)
 {
+#ifndef RX_MIN_MEMORY
+
+	meta::runtime_data::application_runtime_data app_inst_data;
+	app_inst_data.meta_info.name = RX_HOST_APP_NAME;
+	app_inst_data.meta_info.id = rx_node_id(RX_HOST_APP_ID, 3);
+	app_inst_data.meta_info.parent = rx_node_id(RX_HOST_APP_TYPE_ID);
+	app_inst_data.meta_info.path = "/sys/host";
+	app_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	app_inst_data.instance_data.priority = rx_domain_priority::normal;
+	app_inst_data.instance_data.processor = 0;
+
+	auto result = register_host_runtime<meta::object_types::application_type>(app_inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_HOST_APP_NAME " application runtime.");
+		return result;
+	}
+
+
+	meta::runtime_data::domain_runtime_data domain_inst_data;
+	domain_inst_data.meta_info.name = RX_HOST_DOMAIN_NAME;
+	domain_inst_data.meta_info.id = rx_node_id(RX_HOST_DOMAIN_ID);
+	domain_inst_data.meta_info.parent = rx_node_id(RX_HOST_DOMAIN_TYPE_ID);
+	domain_inst_data.meta_info.path = "/sys/host";
+	domain_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+
+	domain_inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
+	domain_inst_data.instance_data.priority = rx_domain_priority::normal;
+	domain_inst_data.instance_data.processor = -1;
+
+	result = register_host_runtime<meta::object_types::domain_type>(domain_inst_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_HOST_DOMAIN_NAME " domain runtime.");
+		return result;
+	}
+
+	meta::runtime_data::object_runtime_data instance_data;
+	instance_data = meta::runtime_data::object_runtime_data();
+	instance_data.meta_info.name = RX_HOST_OBJECT_NAME;
+	instance_data.meta_info.id = RX_HOST_OBJ_ID;
+	instance_data.meta_info.parent = RX_NS_HOST_TYPE_ID;
+	instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+	instance_data.meta_info.path = "/sys/host";
+	instance_data.instance_data.domain_ref = rx_node_id(RX_HOST_DOMAIN_ID);
+	result = register_host_runtime<meta::object_types::object_type>(instance_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_HOST_OBJECT_NAME " application runtime.");
+		return result;
+	}
+
 	return true;
+#else
+	return "Not implemented for small memory footprint";
+#endif
 }
 
 string_type headless_platform_host::get_host_manual () const
@@ -441,11 +497,3 @@ void rx_thread_synchronizer::deinit_callback ()
 } // namespace headless
 } // namespace host
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return RX_SIMPLE_HOST;
-
-#endif

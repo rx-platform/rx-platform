@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_namespace_algorithms.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -55,6 +55,8 @@ class namespace_algorithms
       static rx_result_with<rx_directory_ptr> get_or_create_direcotry (rx_directory_ptr from, const string_type& path);
 
       static rx_result translate_path (const string_type& ref_path, const string_type& rel_path, string_type& result);
+
+      static rx_result recursive_remove_directories (rx_directory_ptr from, const string_type& path);
 
 
   protected:

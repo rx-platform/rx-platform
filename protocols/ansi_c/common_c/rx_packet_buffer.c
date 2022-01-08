@@ -4,27 +4,27 @@
 *
 *  protocols\ansi_c\common_c\rx_packet_buffer.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -46,7 +46,7 @@
 #endif
 
 
-rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, size_t initial_front_capacity)
+RX_COMMON_API rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, size_t initial_front_capacity)
 {
 	rx_protocol_result_t result;
 
@@ -63,13 +63,13 @@ rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t init
 
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_deinit_packet_buffer(rx_packet_buffer* buffer)
+RX_COMMON_API rx_protocol_result_t rx_deinit_packet_buffer(rx_packet_buffer* buffer)
 {
 	HANDLE_PACKET_BUFFER_SANITY_CHECK(buffer);
 	return g_memory.free_function(buffer->mem_ptr, buffer->capacity + buffer->front_capacity);
 }
 
-rx_protocol_result_t rx_reinit_packet_buffer(rx_packet_buffer* buffer)
+RX_COMMON_API rx_protocol_result_t rx_reinit_packet_buffer(rx_packet_buffer* buffer)
 {
 	buffer->size = 0;
 	buffer->buffer_ptr = buffer->mem_ptr + buffer->front_capacity;
@@ -78,7 +78,7 @@ rx_protocol_result_t rx_reinit_packet_buffer(rx_packet_buffer* buffer)
 
 	return RX_PROTOCOL_OK;
 }
-size_t rx_get_packet_usable_data(const rx_packet_buffer* buffer)
+RX_COMMON_API size_t rx_get_packet_usable_data(const rx_packet_buffer* buffer)
 {
 	HANDLE_PACKET_BUFFER_SANITY_CHECK(buffer);
 
@@ -181,7 +181,7 @@ rx_protocol_result_t rx_handle_buffer_front_resize(rx_packet_buffer* buffer, siz
 
 	return RX_PROTOCOL_OK;
 }
-void* rx_alloc_from_packet(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result)
+RX_COMMON_API void* rx_alloc_from_packet(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result)
 {
 	void* ret = NULL;
 
@@ -198,7 +198,7 @@ void* rx_alloc_from_packet(rx_packet_buffer* buffer, size_t size, rx_protocol_re
 
 	return ret;
 }
-rx_protocol_result_t rx_push_to_packet(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size)
+RX_COMMON_API rx_protocol_result_t rx_push_to_packet(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size)
 {
 	void* temp;
 	rx_protocol_result_t result;
@@ -217,7 +217,7 @@ rx_protocol_result_t rx_push_to_packet(rx_packet_buffer* buffer, const void* buf
 }
 
 
-void* rx_alloc_from_packet_front(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result)
+RX_COMMON_API void* rx_alloc_from_packet_front(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result)
 {
 	void* ret = NULL;
 
@@ -233,7 +233,7 @@ void* rx_alloc_from_packet_front(rx_packet_buffer* buffer, size_t size, rx_proto
 
 	return ret;
 }
-rx_protocol_result_t rx_push_to_packet_front(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size)
+RX_COMMON_API rx_protocol_result_t rx_push_to_packet_front(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size)
 {
 	void* temp;
 	rx_protocol_result_t result;
@@ -250,13 +250,13 @@ rx_protocol_result_t rx_push_to_packet_front(rx_packet_buffer* buffer, const voi
 }
 
 
-rx_protocol_result_t rx_reinit_const_packet_buffer(rx_const_packet_buffer* buffer)
+RX_COMMON_API rx_protocol_result_t rx_reinit_const_packet_buffer(rx_const_packet_buffer* buffer)
 {
 	buffer->next_read = 0;
 	return RX_PROTOCOL_OK;
 }
 
-rx_protocol_result_t rx_init_const_packet_buffer(rx_const_packet_buffer* buffer, const void* data, size_t size)
+RX_COMMON_API rx_protocol_result_t rx_init_const_packet_buffer(rx_const_packet_buffer* buffer, const void* data, size_t size)
 {
 	// force it through!!!
 	buffer->buffer_ptr = data;
@@ -265,7 +265,7 @@ rx_protocol_result_t rx_init_const_packet_buffer(rx_const_packet_buffer* buffer,
 
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_init_const_from_packet_buffer(rx_const_packet_buffer* buffer, const rx_packet_buffer* from)
+RX_COMMON_API rx_protocol_result_t rx_init_const_from_packet_buffer(rx_const_packet_buffer* buffer, const rx_packet_buffer* from)
 {
 	// force it through!!!
 	buffer->buffer_ptr = from->buffer_ptr;
@@ -275,17 +275,17 @@ rx_protocol_result_t rx_init_const_from_packet_buffer(rx_const_packet_buffer* bu
 	return RX_PROTOCOL_OK;
 }
 
-size_t rx_get_packet_available_data(const rx_const_packet_buffer* buffer)
+RX_COMMON_API size_t rx_get_packet_available_data(const rx_const_packet_buffer* buffer)
 {
 	return buffer->size - buffer->next_read;
 }
-int rx_buffer_eof(const rx_const_packet_buffer* buffer)
+RX_COMMON_API int rx_buffer_eof(const rx_const_packet_buffer* buffer)
 {
 	assert(buffer->next_read <= buffer->size);
 	return buffer->next_read == buffer->size;
 }
 
-const void* rx_get_from_packet(rx_const_packet_buffer* buffer, size_t size, rx_protocol_result_t* result)
+RX_COMMON_API const void* rx_get_from_packet(rx_const_packet_buffer* buffer, size_t size, rx_protocol_result_t* result)
 {
 	const void* ret = NULL;
 
@@ -300,7 +300,7 @@ const void* rx_get_from_packet(rx_const_packet_buffer* buffer, size_t size, rx_p
 	return ret;
 
 }
-rx_protocol_result_t rx_pop_from_packet(rx_const_packet_buffer* buffer, void* buffer_ptr, size_t size)
+RX_COMMON_API rx_protocol_result_t rx_pop_from_packet(rx_const_packet_buffer* buffer, void* buffer_ptr, size_t size)
 {
 	const void* temp;
 	rx_protocol_result_t result;

@@ -2,27 +2,27 @@
 
 /****************************************************************************
 *
-*  protocols\ansi_c\common_c\rx_protocol_base.c
+*  protocols\ansi_c\common_c\rx_protocol_handlers.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of rx-platform
+*  This file is part of {rx-platform}
 *
 *  
-*  rx-platform is free software: you can redistribute it and/or modify
+*  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
 *  
-*  rx-platform is distributed in the hope that it will be useful,
+*  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
 *  
 *  You should have received a copy of the GNU General Public License  
-*  along with rx-platform. It is also available in any rx-platform console
+*  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
 *  
 ****************************************************************************/
@@ -31,7 +31,7 @@
 #include "pch.h"
 
 
-// rx_protocol_base
+// rx_protocol_handlers
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
 #include "protocols/ansi_c/internal_c/rx_internal_impl.h"
@@ -68,13 +68,13 @@ rx_protocol_result_t rx_deinit_protocols()
 }
 
 
-void rx_init_stack_entry(struct rx_protocol_stack_endpoint* stack, void* user_data)
+RX_COMMON_API void rx_init_stack_entry(struct rx_protocol_stack_endpoint* stack, void* user_data)
 {
 	memset(stack, 0, sizeof(struct rx_protocol_stack_endpoint));
 	stack->user_data = user_data;
 }
 
-rx_protocol_result_t rx_push_stack(struct rx_protocol_stack_endpoint* where_to, struct rx_protocol_stack_endpoint* what)
+RX_COMMON_API rx_protocol_result_t rx_push_stack(struct rx_protocol_stack_endpoint* where_to, struct rx_protocol_stack_endpoint* what)
 {
 	struct rx_protocol_stack_endpoint* bottom = NULL;
 	if (where_to->upward || what->downward)
@@ -98,7 +98,7 @@ rx_protocol_result_t rx_push_stack(struct rx_protocol_stack_endpoint* where_to, 
 		return RX_PROTOCOL_OK;
 	}
 }
-rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_endpoint* what)
+RX_COMMON_API rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_endpoint* what)
 {
 	if (what->downward)
 	{
@@ -112,7 +112,7 @@ rx_protocol_result_t rx_pop_stack(struct rx_protocol_stack_endpoint* what)
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
 
-recv_protocol_packet rx_create_recv_packet(rx_packet_id_type id, rx_const_packet_buffer* buffer, rx_address_reference_type from, rx_address_reference_type to)
+RX_COMMON_API recv_protocol_packet rx_create_recv_packet(rx_packet_id_type id, rx_const_packet_buffer* buffer, rx_address_reference_type from, rx_address_reference_type to)
 {
 	recv_protocol_packet ret;
 
@@ -126,7 +126,7 @@ recv_protocol_packet rx_create_recv_packet(rx_packet_id_type id, rx_const_packet
 	return ret;
 }
 
-send_protocol_packet rx_create_send_packet(rx_packet_id_type id, rx_packet_buffer* buffer, rx_address_reference_type from, rx_address_reference_type to)
+RX_COMMON_API send_protocol_packet rx_create_send_packet(rx_packet_id_type id, rx_packet_buffer* buffer, rx_address_reference_type from, rx_address_reference_type to)
 {
 	send_protocol_packet ret;
 	ret.id = id;
@@ -139,7 +139,7 @@ send_protocol_packet rx_create_send_packet(rx_packet_id_type id, rx_packet_buffe
 	return ret;
 }
 
-rx_session rx_create_session(const protocol_address* local, const protocol_address* remote, rx_address_reference_type local_ref, rx_address_reference_type remote_ref, const struct rx_session_def* next)
+RX_COMMON_API rx_session rx_create_session(const protocol_address* local, const protocol_address* remote, rx_address_reference_type local_ref, rx_address_reference_type remote_ref, const struct rx_session_def* next)
 {
 	rx_session ret;
 	ret.local_addr = local;
@@ -150,7 +150,7 @@ rx_session rx_create_session(const protocol_address* local, const protocol_addre
 
 	return ret;
 }
-rx_protocol_result_t rx_connect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session)
+RX_COMMON_API rx_protocol_result_t rx_connect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session)
 {
 	while (stack)
 	{
@@ -163,7 +163,7 @@ rx_protocol_result_t rx_connect(struct rx_protocol_stack_endpoint* stack, struct
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
 
-rx_protocol_result_t rx_disconnect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session, rx_protocol_result_t reason)
+RX_COMMON_API rx_protocol_result_t rx_disconnect(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session, rx_protocol_result_t reason)
 {
 	while (stack != NULL)
 	{
@@ -187,7 +187,7 @@ rx_protocol_result_t rx_disconnect(struct rx_protocol_stack_endpoint* stack, str
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
 
-rx_protocol_result_t rx_close(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason)
+RX_COMMON_API rx_protocol_result_t rx_close(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason)
 {
 	while (stack != NULL)
 	{
@@ -208,7 +208,7 @@ rx_protocol_result_t rx_close(struct rx_protocol_stack_endpoint* stack, rx_proto
 }
 
 
-rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_endpoint* stack, send_protocol_packet packet)
+RX_COMMON_API rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_endpoint* stack, send_protocol_packet packet)
 {
 	while (stack->downward != NULL)
 	{
@@ -220,7 +220,7 @@ rx_protocol_result_t rx_move_packet_down(struct rx_protocol_stack_endpoint* stac
 	}
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
-rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_endpoint* stack, recv_protocol_packet packet)
+RX_COMMON_API rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_endpoint* stack, recv_protocol_packet packet)
 {
 	while (stack->upward != NULL)
 	{
@@ -232,7 +232,7 @@ rx_protocol_result_t rx_move_packet_up(struct rx_protocol_stack_endpoint* stack,
 	}
 	return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 }
-rx_protocol_result_t rx_notify_ack(struct rx_protocol_stack_endpoint* stack, rx_packet_id_type id, rx_protocol_result_t result)
+RX_COMMON_API rx_protocol_result_t rx_notify_ack(struct rx_protocol_stack_endpoint* stack, rx_packet_id_type id, rx_protocol_result_t result)
 {
 	while (stack->upward != NULL)
 	{
@@ -244,7 +244,7 @@ rx_protocol_result_t rx_notify_ack(struct rx_protocol_stack_endpoint* stack, rx_
 	}
 	return RX_PROTOCOL_OK;// o.k. to ignore the result
 }
-rx_protocol_result_t rx_notify_connected(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session)
+RX_COMMON_API rx_protocol_result_t rx_notify_connected(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session)
 {
 	while (stack->upward != NULL)
 	{
@@ -256,7 +256,7 @@ rx_protocol_result_t rx_notify_connected(struct rx_protocol_stack_endpoint* stac
 	}
 	return RX_PROTOCOL_OK;
 }
-rx_protocol_result_t rx_notify_disconnected(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session, rx_protocol_result_t reason)
+RX_COMMON_API rx_protocol_result_t rx_notify_disconnected(struct rx_protocol_stack_endpoint* stack, struct rx_session_def* session, rx_protocol_result_t reason)
 {
 	while (stack->upward != NULL)
 	{
@@ -268,7 +268,7 @@ rx_protocol_result_t rx_notify_disconnected(struct rx_protocol_stack_endpoint* s
 	}
 	return RX_PROTOCOL_OK;
 }
-void rx_notify_closed(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason)
+RX_COMMON_API void rx_notify_closed(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason)
 {
 	struct rx_protocol_stack_endpoint* temp_stack;
 	while (stack != NULL)

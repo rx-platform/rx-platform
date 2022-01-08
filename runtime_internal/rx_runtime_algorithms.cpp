@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_algorithms.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -264,11 +264,7 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 		if (domain_id)
 		{
 			auto domain_ptr = model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(domain_id.value());
-			if (!domain_ptr)
-			{
-				RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is invalid, connecting object "s
-					+ what->meta_info().get_full_path() + " to unassigned domain.");
-			}
+					
 			if (domain_ptr)
 			{
 				auto temp_ptr = domain_ptr.value();
@@ -277,20 +273,25 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 					RUNTIME_LOG_INFO("object_algorithms", 100, what->meta_info().get_full_path()
 						+ " connected to domain " + domain_ptr.value()->meta_info().get_full_path());
 					connect_unassigned = false;
+
+					model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
+						what->meta_info().id, domain_ptr.value()->meta_info().id);
+				}
+				else
+				{
+					std::ostringstream message;
+					message << "Unable to connect to domain "
+						<< !what->get_instance_data().get_data().domain_ref.is_null() ? what->get_instance_data().get_data().domain_ref.to_string() : RX_NULL_ITEM_NAME;
+					
+					RUNTIME_LOG_ERROR("object_algorithms", 900, message.str());
+					return rx_result(message.str());
 				}
 			}
 			else
 			{
-				std::ostringstream message;
-				message << "Unable to connect to domain "
-					<< !what->get_instance_data().get_data().domain_ref.is_null() ? what->get_instance_data().get_data().domain_ref.to_string() : RX_NULL_ITEM_NAME;
-				message << domain_ptr.errors_line();
-				RUNTIME_LOG_ERROR("object_algorithms", 900, message.str());
-				return rx_result(message.str());
-			}
-			if (domain_ptr && !connect_unassigned)
-				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
-					what->meta_info().id, domain_ptr.value()->meta_info().id);
+				RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is invalid, connecting object "s
+					+ what->meta_info().get_full_path() + " to unassigned domain.");
+			}				
 		}
 		else
 		{
@@ -451,40 +452,40 @@ rx_result domain_algorithms::connect_application (rx_domain_ptr what)
 		auto app_id = api::ns::rx_resolve_runtime_reference<application_type>(what->get_instance_data().get_data().app_ref, what->get_directories(), tl::type2type<application_type>());
 		if (app_id)
 		{
-			auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(app_id.value());
-			if (!application_ptr)
+			auto app_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(app_id.value());
+
+			if (app_ptr)
 			{
-				RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is invalid, connecting domain "s
-					+ what->meta_info().get_full_path() + " to unassigned application.");
-				application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_DOM_ID);
-			}
-			if (application_ptr)
-			{
-				auto temp_ptr = application_ptr.value();
+				auto temp_ptr = app_ptr.value();
 				if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				{
 					RUNTIME_LOG_INFO("domain_algorithms", 100, what->meta_info().get_full_path()
-						+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
+						+ " connected to application " + app_ptr.value()->meta_info().get_full_path());
 					connect_unassigned = false;
+
+					model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
+						what->meta_info().id, app_ptr.value()->meta_info().id);
+				}
+				else
+				{
+					std::ostringstream message;
+					message << "Unable to connect to application "
+						<< !what->get_instance_data().get_data().app_ref.is_null() ? what->get_instance_data().get_data().app_ref.to_string() : RX_NULL_ITEM_NAME;
+
+					RUNTIME_LOG_ERROR("domain_algorithms", 900, message.str());
+					return rx_result(message.str());
 				}
 			}
 			else
 			{
-				std::ostringstream message;
-				message << "Unable to connect to application "
-					<< !what->get_instance_data().get_data().app_ref.is_null() ? what->get_instance_data().get_data().app_ref.to_string() : RX_NULL_ITEM_NAME;
-				message << application_ptr.errors_line();
-				RUNTIME_LOG_ERROR("domain_algorithms", 900, message.str());
-				return rx_result(message.str());
+				RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is invalid, connecting domain "s
+					+ what->meta_info().get_full_path() + " to unassigned application.");
 			}
-			if(application_ptr && !connect_unassigned)
-				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
-					what->meta_info().id, application_ptr.value()->meta_info().id);
 		}
 		else
 		{
 			std::ostringstream ss;
-			ss << "App ref <"
+			ss << "Application ref <"
 				<< what->get_instance_data().get_data().app_ref.to_string()
 				<< "> is invalid, connecting domain"
 				<< what->meta_info().get_full_path()
@@ -494,28 +495,29 @@ rx_result domain_algorithms::connect_application (rx_domain_ptr what)
 	}
 	else
 	{
-		RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application Id is " RX_NULL_ITEM_NAME ", connecting object "s
+		RUNTIME_LOG_WARNING("domain_algorithms", 900, "Application reference is " RX_NULL_ITEM_NAME ", connecting domain "s
 			+ what->meta_info().get_full_path() + " to unassigned application.");
 	}
-	if(connect_unassigned)
+	if (connect_unassigned)
 	{
-		auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_APP_ID);
-		if (application_ptr)
+		auto app_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_UNASS_APP_ID);
+		if (app_ptr)
 		{
-			auto temp_ptr = application_ptr.value();
+			auto temp_ptr = app_ptr.value();
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_INFO("domain_algorithms", 100, what->meta_info().get_full_path()
-					+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
+					+ " connected to application " + app_ptr.value()->meta_info().get_full_path());
 
-			if (application_ptr)
+			if (app_ptr)
 				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
-					what->meta_info().id, application_ptr.value()->meta_info().id);
+					what->meta_info().id, app_ptr.value()->meta_info().id);
 		}
 		else
 		{
 			std::ostringstream message;
 			message << "Unable to connect to application "
 				<< !what->get_instance_data().get_data().app_ref.is_null() ? what->get_instance_data().get_data().app_ref.to_string() : RX_NULL_ITEM_NAME;
+			RUNTIME_LOG_ERROR("domain_algorithms", 900, message.str());
 			return rx_result(message.str());
 		}
 	}
@@ -637,70 +639,72 @@ rx_result port_algorithms::connect_application (rx_port_ptr what)
 		auto app_id = api::ns::rx_resolve_runtime_reference<application_type>(what->get_instance_data().get_data().app_ref, what->get_directories(), tl::type2type<application_type>());
 		if (app_id)
 		{
-			auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(app_id.value());
-			if (!application_ptr)
+			auto app_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(app_id.value());
+
+			if (app_ptr)
 			{
-				RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is invalid, connecting port "s
-					+ what->meta_info().get_full_path() + " to unassigned application.");
-				application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_APP_ID);
-			}
-			if (application_ptr)
-			{
-				auto temp_ptr = application_ptr.value();
+				auto temp_ptr = app_ptr.value();
 				if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				{
 					RUNTIME_LOG_INFO("port_algorithms", 100, what->meta_info().get_full_path()
-						+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
+						+ " connected to application " + app_ptr.value()->meta_info().get_full_path());
 					connect_unassigned = false;
+
+					model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
+						what->meta_info().id, app_ptr.value()->meta_info().id);
+				}
+				else
+				{
+					std::ostringstream message;
+					message << "Unable to connect to application "
+						<< !what->get_instance_data().get_data().app_ref.is_null() ? what->get_instance_data().get_data().app_ref.to_string() : RX_NULL_ITEM_NAME;
+
+					RUNTIME_LOG_ERROR("port_algorithms", 900, message.str());
+					return rx_result(message.str());
 				}
 			}
 			else
 			{
-				std::ostringstream message;
-				message << "Unable to connect to application "
-					<< !what->get_instance_data().get_data().app_ref.is_null() ? what->get_instance_data().get_data().app_ref.to_string() : RX_NULL_ITEM_NAME;
-				message << application_ptr.errors_line();
-				return rx_result(message.str());
+				RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is invalid, connecting port "s
+					+ what->meta_info().get_full_path() + " to unassigned application.");
 			}
-			if (application_ptr && !connect_unassigned)
-				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
-					what->meta_info().id, application_ptr.value()->meta_info().id);
 		}
 		else
 		{
 			std::ostringstream ss;
-			ss << "App ref <"
+			ss << "Application ref <"
 				<< what->get_instance_data().get_data().app_ref.to_string()
-				<< "> is invalid, connecting port <"
+				<< "> is invalid, connecting port"
 				<< what->meta_info().get_full_path()
-				<< "> to unassigned application.";
-			RUNTIME_LOG_WARNING("domain_algorithms", 900, ss.str());
+				<< " to unassigned application.";
+			RUNTIME_LOG_WARNING("port_algorithms", 900, ss.str());
 		}
 	}
 	else
 	{
-		RUNTIME_LOG_WARNING("port_algorithms", 900, "Application Id is " RX_NULL_ITEM_NAME ", connecting object "s
+		RUNTIME_LOG_WARNING("port_algorithms", 900, "Application reference is " RX_NULL_ITEM_NAME ", connecting port "s
 			+ what->meta_info().get_full_path() + " to unassigned application.");
 	}
-	if(connect_unassigned)
+	if (connect_unassigned)
 	{
-		auto application_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_APP_ID);
-		if (application_ptr)
+		auto app_ptr = model::platform_types_manager::instance().get_type_repository<application_type>().get_runtime(RX_NS_SYSTEM_UNASS_APP_ID);
+		if (app_ptr)
 		{
-			auto temp_ptr = application_ptr.value();
+			auto temp_ptr = app_ptr.value();
 			if (what->get_instance_data().connect_application(std::move(temp_ptr), what))
 				RUNTIME_LOG_INFO("port_algorithms", 100, what->meta_info().get_full_path()
-					+ " connected to application " + application_ptr.value()->meta_info().get_full_path());
+					+ " connected to application " + app_ptr.value()->meta_info().get_full_path());
 
-			if (application_ptr)
+			if (app_ptr)
 				model::platform_types_manager::instance().get_dependecies_cache().add_dependency(
-					what->meta_info().id, application_ptr.value()->meta_info().id);
+					what->meta_info().id, app_ptr.value()->meta_info().id);
 		}
 		else
 		{
 			std::ostringstream message;
 			message << "Unable to connect to application "
 				<< !what->get_instance_data().get_data().app_ref.is_null() ? what->get_instance_data().get_data().app_ref.to_string() : RX_NULL_ITEM_NAME;
+			RUNTIME_LOG_ERROR("port_algorithms", 900, message.str());
 			return rx_result(message.str());
 		}
 	}

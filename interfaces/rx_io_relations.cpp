@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_io_relations.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -187,8 +187,11 @@ void port_reference_relation::relation_connected ()
 
 void port_reference_relation::relation_disconnected ()
 {
-    to_->get_instance_data().stack_data.connected_items.erase(meta_from_.id);
-    to_ = rx_port_ptr::null_ptr;
+    if (to_)
+    {
+        to_->get_instance_data().stack_data.connected_items.erase(meta_from_.id);
+        to_ = rx_port_ptr::null_ptr;
+    }
 }
 
 

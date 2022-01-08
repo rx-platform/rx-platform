@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_subscription.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -814,11 +814,3 @@ std::vector<std::pair<runtime_handle_t, rx_result> > subscription_write_transact
 } // namespace sys_runtime
 } // namespace rx_internal
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return target_;
-
-#endif

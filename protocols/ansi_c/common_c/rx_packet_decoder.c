@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_packet_decoder.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,7 +34,7 @@
 // rx_packet_decoder
 #include "protocols/ansi_c/common_c/rx_packet_decoder.h"
 
-rx_protocol_result_t rx_init_packet_decoder(struct packed_decoder_type* decoder, struct rx_packet_buffer_type* recv_buffer, check_header_function_type chk_function, size_t hdr_size, void* hdr_buffer)
+RX_COMMON_API rx_protocol_result_t rx_init_packet_decoder(struct packed_decoder_type* decoder, struct rx_packet_buffer_type* recv_buffer, check_header_function_type chk_function, size_t hdr_size, void* hdr_buffer)
 {
 	memset(decoder, 0, sizeof(*decoder));
 	decoder->header_size = hdr_size;
@@ -44,7 +44,7 @@ rx_protocol_result_t rx_init_packet_decoder(struct packed_decoder_type* decoder,
 	return RX_PROTOCOL_OK;
 }
 
-rx_protocol_result_t rx_decode_arrived(struct packed_decoder_type* decoder, struct rx_const_packet_buffer_type* data, struct rx_const_packet_buffer_type* recv_buffer)
+RX_COMMON_API rx_protocol_result_t rx_decode_arrived(struct packed_decoder_type* decoder, struct rx_const_packet_buffer_type* data, struct rx_const_packet_buffer_type* recv_buffer)
 {
 	size_t temp_size;
 	rx_protocol_result_t result = RX_PROTOCOL_OK;
@@ -85,14 +85,12 @@ rx_protocol_result_t rx_decode_arrived(struct packed_decoder_type* decoder, stru
 			return result;
 		count = count - head_size;
 		decoder->collected_header = 0;
-		decoder->header = NULL;
 	}
-	decoder->collected += count;
 
-	if (decoder->collected >= decoder->expected)
+	if (count + decoder->collected >= decoder->expected)
 	{
 
-		size_t usefull = count - (decoder->collected - decoder->expected);
+		size_t usefull = decoder->expected - decoder->collected;
 		buffer = rx_get_from_packet(data, usefull, &result);
 		if (result != RX_PROTOCOL_OK)
 			return result;
@@ -106,16 +104,17 @@ rx_protocol_result_t rx_decode_arrived(struct packed_decoder_type* decoder, stru
 		decoder->expected = 0;
 		decoder->header = NULL;
 	}
-	else if(decoder->collected > 0)
+	else if(count > 0)
 	{
 		// just move from input buffer
-		size_t usefull = count - decoder->collected;
+		size_t usefull = count;
 		buffer = rx_get_from_packet(data, usefull, &result);
 		if (result != RX_PROTOCOL_OK)
 			return result;
 		result = rx_push_to_packet(decoder->receive_buffer, buffer, usefull);
 		if (result != RX_PROTOCOL_OK)
 			return result;
+		decoder->collected += count;
 	}
 	return RX_PROTOCOL_OK;
 }

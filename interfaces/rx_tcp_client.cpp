@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_tcp_client.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -188,7 +188,7 @@ bool tcp_client_endpoint::tick ()
             rx_result result;
             tcp_socket_ = rx_create_reference<socket_holder_t>(this);
             tcp_socket_->set_identity(stack_endpoint_.identity);
-            if(local_addr_.is_null())
+            if(local_addr_.is_empty_ip4())
                 result = tcp_socket_->bind_socket_tcpip_4(nullptr);
             else
                 result = tcp_socket_->bind_socket_tcpip_4(local_addr_.get_ip4_address());

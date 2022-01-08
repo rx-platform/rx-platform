@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 2
 #define RX_LIB_MINOR_VERSION 3
-#define RX_LIB_BUILD_NUMBER 0
+#define RX_LIB_BUILD_NUMBER 2
 
 
 // version 0.16.0 removed virtual references and added hashes to library

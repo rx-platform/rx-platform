@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_protocol_address.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -80,31 +80,31 @@ typedef struct protocol_address_def
 } protocol_address;
 
 
-void rx_create_null_address(struct protocol_address_def* def);
-void rx_create_uint8_address(struct protocol_address_def* def, uint8_t addr);
-void rx_create_uint16_address(struct protocol_address_def* def, uint16_t addr);
-void rx_create_uint32_address(struct protocol_address_def* def, uint32_t addr);
-void rx_create_uint64_address(struct protocol_address_def* def, uint64_t addr);
-void rx_create_mac_address(struct protocol_address_def* def, uint8_t* addr);
-void rx_create_ip4_address(struct protocol_address_def* def, const struct sockaddr_in* addr);
-void rx_create_ip6_address(struct protocol_address_def* def, const struct sockaddr_in6* addr);
-void rx_create_string_address(struct protocol_address_def* def, const char* addr);
-void rx_create_bytes_address(struct protocol_address_def* def, const uint8_t* addr, size_t size);
+RX_COMMON_API void rx_create_null_address(struct protocol_address_def* def);
+RX_COMMON_API void rx_create_uint8_address(struct protocol_address_def* def, uint8_t addr);
+RX_COMMON_API void rx_create_uint16_address(struct protocol_address_def* def, uint16_t addr);
+RX_COMMON_API void rx_create_uint32_address(struct protocol_address_def* def, uint32_t addr);
+RX_COMMON_API void rx_create_uint64_address(struct protocol_address_def* def, uint64_t addr);
+RX_COMMON_API void rx_create_mac_address(struct protocol_address_def* def, uint8_t* addr);
+RX_COMMON_API void rx_create_ip4_address(struct protocol_address_def* def, const struct sockaddr_in* addr);
+RX_COMMON_API void rx_create_ip6_address(struct protocol_address_def* def, const struct sockaddr_in6* addr);
+RX_COMMON_API void rx_create_string_address(struct protocol_address_def* def, const char* addr);
+RX_COMMON_API void rx_create_bytes_address(struct protocol_address_def* def, const uint8_t* addr, size_t size);
 
-int rx_is_null_address(const struct protocol_address_def* def);
-rx_protocol_result_t rx_extract_uint8_address(const struct protocol_address_def* def, uint8_t* addr);
-rx_protocol_result_t rx_extract_uint16_address(const struct protocol_address_def* def, uint16_t* addr);
-rx_protocol_result_t rx_extract_uint32_address(const struct protocol_address_def* def, uint32_t* addr);
-rx_protocol_result_t rx_extract_uint64_address(const struct protocol_address_def* def, uint64_t* addr);
-rx_protocol_result_t rx_extract_mac_address(const struct protocol_address_def* def, const uint8_t** addr);
-rx_protocol_result_t rx_extract_ip4_address(const struct protocol_address_def* def, const struct sockaddr_in** addr);
-rx_protocol_result_t rx_extract_ip6_address(const struct protocol_address_def* def, const struct sockaddr_in6** addr);
-rx_protocol_result_t rx_extract_string_address(const struct protocol_address_def* def, const char** addr);
-rx_protocol_result_t rx_extract_bytes_address(const struct protocol_address_def* def, const uint8_t** addr, size_t* size);
+RX_COMMON_API int rx_is_null_address(const struct protocol_address_def* def);
+RX_COMMON_API rx_protocol_result_t rx_extract_uint8_address(const struct protocol_address_def* def, uint8_t* addr);
+RX_COMMON_API rx_protocol_result_t rx_extract_uint16_address(const struct protocol_address_def* def, uint16_t* addr);
+RX_COMMON_API rx_protocol_result_t rx_extract_uint32_address(const struct protocol_address_def* def, uint32_t* addr);
+RX_COMMON_API rx_protocol_result_t rx_extract_uint64_address(const struct protocol_address_def* def, uint64_t* addr);
+RX_COMMON_API rx_protocol_result_t rx_extract_mac_address(const struct protocol_address_def* def, const uint8_t** addr);
+RX_COMMON_API rx_protocol_result_t rx_extract_ip4_address(const struct protocol_address_def* def, const struct sockaddr_in** addr);
+RX_COMMON_API rx_protocol_result_t rx_extract_ip6_address(const struct protocol_address_def* def, const struct sockaddr_in6** addr);
+RX_COMMON_API rx_protocol_result_t rx_extract_string_address(const struct protocol_address_def* def, const char** addr);
+RX_COMMON_API rx_protocol_result_t rx_extract_bytes_address(const struct protocol_address_def* def, const uint8_t** addr, size_t* size);
 
-void rx_free_address(struct protocol_address_def* def);
-void rx_copy_address(struct protocol_address_def* dest, const struct protocol_address_def* src);
-void rx_move_address(struct protocol_address_def* dest, struct protocol_address_def* src);
+RX_COMMON_API void rx_free_address(struct protocol_address_def* def);
+RX_COMMON_API void rx_copy_address(struct protocol_address_def* dest, const struct protocol_address_def* src);
+RX_COMMON_API void rx_move_address(struct protocol_address_def* dest, struct protocol_address_def* src);
 
 
 

@@ -4,7 +4,7 @@
 *
 *  lib\rx_lib.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -316,44 +316,6 @@ string_type& to_upper(string_type& str);
 
 string_type get_code_module(const string_type& full);
 
-///////////////////////////////////////////////////////////////
-// PHYSICAL INTERFACES
-///////////////////////////////////////////////////////////////
-enum class interface_status_type
-{
-	status_disconnected = 0,
-	status_active
-};
-#define MAC_ADDR_SIZE 6
-struct ETH_interface
-{
-	uint8_t mac_address[MAC_ADDR_SIZE];
-	string_type name;
-	size_t index;
-	interface_status_type status;
-	void init()
-	{
-		index = 0;
-		status = interface_status_type::status_disconnected;
-		name = "<unnanmed>";
-	}
-};
-
-
-
-struct IP_interface
-{
-	string_type ip_address;
-	string_type name;
-	size_t index;
-	interface_status_type status;
-	void init()
-	{
-		index = 0;
-		status = interface_status_type::status_disconnected;
-		name = "<unnanmed>";
-	}
-};
 
 
 

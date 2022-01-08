@@ -4,7 +4,7 @@
 *
 *  model\rx_model_dependencies.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -104,10 +104,18 @@ class local_dependecy_builder : public rx::pointers::reference_object
         bool save_result;
     };
 
-    typedef std::map<rx_node_id, item_creation_data<object_runtime_data> > objects_type;
-    typedef std::map<rx_node_id, item_creation_data<domain_runtime_data> > domains_type;
-    typedef std::map<rx_node_id, item_creation_data<port_runtime_data> > ports_type;
-    typedef std::map<rx_node_id, item_creation_data<application_runtime_data> > applications_type;
+    typedef std::map<string_type, item_creation_data<object_runtime_data> > objects_type;
+    typedef std::map<string_type, item_creation_data<domain_runtime_data> > domains_type;
+    typedef std::map<string_type, item_creation_data<port_runtime_data> > ports_type;
+    typedef std::map<string_type, item_creation_data<application_runtime_data> > applications_type;
+
+    typedef std::map<string_type, item_creation_data<rx_object_type_ptr> > object_types_type;
+    typedef std::map<string_type, item_creation_data<rx_port_type_ptr> > port_types_type;
+    typedef std::map<string_type, item_creation_data<rx_domain_type_ptr> > domain_types_type;
+    typedef std::map<string_type, item_creation_data<rx_application_type_ptr> > application_types_type;
+    ;
+    typedef std::map<string_type, item_creation_data<struct_type_ptr> > struct_types_type;
+    typedef std::map<string_type, item_creation_data<variable_type_ptr> > variable_types_type;
 
     enum class builder_phase
     {
@@ -117,9 +125,11 @@ class local_dependecy_builder : public rx::pointers::reference_object
         deleting_domains    = 3,
         deleting_apps       = 4,
         deleting_types      = 5,
-        bulding_types       = 6,
-        building_runtimes   = 7,
-        done                = 8
+        deleting_directories = 6,
+        building_directories = 7,
+        building_types       = 8,
+        building_runtimes   = 9,
+        done                = 10
     };
 
     struct builder_state
@@ -130,6 +140,8 @@ class local_dependecy_builder : public rx::pointers::reference_object
         domains_type::iterator domains_it;
         applications_type::iterator applications_it;
     };
+
+    typedef std::set<string_type> directory_list_type;
 
     struct item_data
     {
@@ -149,7 +161,21 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
       void add_runtime (const application_runtime_data& what, bool remove, bool create, bool save);
 
-      rx_result add (const api::query_result_detail& what, bool remove, bool create, bool save);
+      void add_type (rx_application_type_ptr what, bool remove, bool create, bool save);
+
+      void add_type (rx_domain_type_ptr what, bool remove, bool create, bool save);
+
+      void add_type (rx_port_type_ptr what, bool remove, bool create, bool save);
+
+      void add_type (rx_object_type_ptr what, bool remove, bool create, bool save);
+
+      void add_sub_type (struct_type_ptr what, bool remove, bool create, bool save);
+
+      void add_sub_type (variable_type_ptr what, bool remove, bool create, bool save);
+
+      rx_result add_query_result (const api::query_result_detail& what, bool remove, bool create, bool save);
+
+      void add_config_part (const meta::config_part_container& part);
 
       rx_result apply_items (rx_result_callback&& callback);
 
@@ -178,6 +204,42 @@ class local_dependecy_builder : public rx::pointers::reference_object
       }
 
 
+      const std::vector<rx_object_type_ptr>& get_built_object_types () const
+      {
+        return built_object_types_;
+      }
+
+
+      const std::vector<rx_domain_type_ptr>& get_built_domain_types () const
+      {
+        return built_domain_types_;
+      }
+
+
+      const std::vector<rx_port_type_ptr>& get_built_port_types () const
+      {
+        return built_port_types_;
+      }
+
+
+      const std::vector<rx_application_type_ptr>& get_built_app_types () const
+      {
+        return built_app_types_;
+      }
+
+
+      const std::vector<struct_type_ptr>& get_built_struct_types () const
+      {
+        return built_struct_types_;
+      }
+
+
+      const std::vector<variable_type_ptr>& get_built_variable_types () const
+      {
+        return built_variable_types_;
+      }
+
+
       template<typename typeT>
       typename typeT::RTypePtr extract_single_result();
   protected:
@@ -194,11 +256,19 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
       rx_result delete_apps ();
 
+      rx_result delete_directories ();
+
+      rx_result build_directories ();
+
       rx_result build_types ();
 
       rx_result build_runtimes ();
 
       void process (rx_result&& result);
+
+      rx_result consolidate_meta_data (meta::meta_data& new_data, const meta::meta_data& old_data);
+
+      rx_result consolidate_meta_data (meta::meta_data& data);
 
 
 
@@ -210,7 +280,9 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
       applications_type applications_;
 
-      directories_chache_type directories_;
+      directory_list_type dirs_to_delete_;
+
+      directory_list_type dirs_to_create_;
 
       builder_state state_;
 
@@ -224,7 +296,67 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
       std::vector<rx_application_ptr> built_apps_;
 
+      object_types_type object_types_;
 
+      domain_types_type domain_types_;
+
+      port_types_type port_types_;
+
+      application_types_type application_types_;
+
+      std::vector<rx_object_type_ptr> built_object_types_;
+
+      std::vector<rx_domain_type_ptr> built_domain_types_;
+
+      std::vector<rx_port_type_ptr> built_port_types_;
+
+      std::vector<rx_application_type_ptr> built_app_types_;
+
+      struct_types_type struct_types_;
+
+      variable_types_type variable_types_;
+
+      std::vector<struct_type_ptr> built_struct_types_;
+
+      std::vector<variable_type_ptr> built_variable_types_;
+
+
+      template<typename typeT>
+      using container_t = std::map<string_type, item_creation_data<typename typeT::smart_ptr> >;
+
+      template<typename typeT>
+      using rt_container_t = std::map<string_type, item_creation_data<typename typeT::instance_data_t> >;
+
+      template<typename T>
+      void do_consolidate_for_item(T& container);
+
+      template<typename T, typename dataT>
+      void add_runtime_concrete(T& container, const dataT& what, bool remove, bool create, bool save);
+
+      template<typename T, typename dataT>
+      void add_type_concrete(T& container, const dataT& what, bool remove, bool create, bool save);
+
+      template<typename typeT>
+      rx_result add_query_runtime_concrete(rt_container_t<typeT>& container, const api::query_result_detail& what, bool remove, bool create, bool save);
+
+      template<typename typeT>
+      rx_result add_query_type_concrete(container_t<typeT>&, const api::query_result_detail& what, bool remove, bool create, bool save);
+
+      template<typename typeT>
+      rx_result add_query_simple_type_concrete(container_t<typeT>&, const api::query_result_detail& what, bool remove, bool create, bool save);
+
+      template<typename typeT>
+      rx_result create_types(container_t<typeT>& data, std::vector<typename typeT::smart_ptr>& built);
+      template<typename typeT>
+      rx_result delete_types(container_t<typeT>& data);
+
+      template<typename typeT>
+      rx_result create_simple_types(container_t<typeT>& data, std::vector<typename typeT::smart_ptr>& built);
+      template<typename typeT>
+      rx_result delete_simple_types(container_t<typeT>& data);
+
+      template<typename T>
+      void do_consolidate_for_types(T& container);
 };
 
 

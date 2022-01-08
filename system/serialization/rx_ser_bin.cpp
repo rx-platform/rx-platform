@@ -4,7 +4,7 @@
 *
 *  system\serialization\rx_ser_bin.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,3 +36,9 @@
 
 
 
+namespace rx_platform {
+namespace serialization {
+template class binary_reader<memory::std_vector_allocator, false>;
+template class binary_writer<memory::std_vector_allocator, false>;
+} // serialization
+} // rx_platform

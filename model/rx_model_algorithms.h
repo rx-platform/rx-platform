@@ -4,7 +4,7 @@
 *
 *  model\rx_model_algorithms.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -251,6 +251,8 @@ class types_model_algorithm
 
       static rx_result_with<typename typeT::smart_ptr> create_type_sync (typename typeT::smart_ptr prototype);
 
+      static rx_result delete_type_sync (const rx_item_reference& item_reference);
+
 
   protected:
 
@@ -259,8 +261,6 @@ class types_model_algorithm
       static rx_result_with<typename typeT::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
       static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, rx_update_type_data update_data);
-
-      static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
       static rx_result_with<check_type_result> check_type_sync (const string_type& name, const string_type& dir);
 
@@ -291,6 +291,8 @@ class simple_types_model_algorithm
 
       static rx_result_with<typename typeT::smart_ptr> create_type_sync (typename typeT::smart_ptr prototype);
 
+      static rx_result delete_type_sync (const rx_item_reference& item_reference);
+
 
   protected:
 
@@ -299,8 +301,6 @@ class simple_types_model_algorithm
       static rx_result_with<typename typeT::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
       static rx_result_with<typename typeT::smart_ptr> update_type_sync (typename typeT::smart_ptr prototype, rx_update_type_data update_data);
-
-      static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
       static rx_result_with<check_type_result> check_type_sync (const string_type& name, const string_type& dir);
 

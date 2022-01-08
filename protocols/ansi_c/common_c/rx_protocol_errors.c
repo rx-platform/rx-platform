@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_protocol_errors.c
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -55,7 +55,7 @@ const char* error_messages[] =
 };
 
 
-const char* rx_protocol_error_message(rx_protocol_result_t code)
+RX_COMMON_API const char* rx_protocol_error_message(rx_protocol_result_t code)
 {
 	if (code < sizeof(error_messages) / sizeof(error_messages[0]))
 		return error_messages[code];

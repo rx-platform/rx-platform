@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_obj_types.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,12 +35,12 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 

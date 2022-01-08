@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_packet_buffer.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -55,17 +55,17 @@ typedef struct rx_packet_buffer_type
 
 
 // initialization
-rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, size_t initial_front_capacity);
-rx_protocol_result_t rx_deinit_packet_buffer(rx_packet_buffer* buffer);
-rx_protocol_result_t rx_reinit_packet_buffer(rx_packet_buffer* buffer);
+RX_COMMON_API rx_protocol_result_t rx_init_packet_buffer(rx_packet_buffer* buffer, size_t initial_capacity, size_t initial_front_capacity);
+RX_COMMON_API rx_protocol_result_t rx_deinit_packet_buffer(rx_packet_buffer* buffer);
+RX_COMMON_API rx_protocol_result_t rx_reinit_packet_buffer(rx_packet_buffer* buffer);
 // writing to buffer
-void* rx_alloc_from_packet(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
-rx_protocol_result_t rx_push_to_packet(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size);
+RX_COMMON_API void* rx_alloc_from_packet(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
+RX_COMMON_API rx_protocol_result_t rx_push_to_packet(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size);
 // writing to buffer front
-void* rx_alloc_from_packet_front(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
-rx_protocol_result_t rx_push_to_packet_front(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size);
+RX_COMMON_API void* rx_alloc_from_packet_front(rx_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
+RX_COMMON_API rx_protocol_result_t rx_push_to_packet_front(rx_packet_buffer* buffer, const void* buffer_ptr, size_t size);
 // data for "write-to"
-size_t rx_get_packet_usable_data(const rx_packet_buffer* buffer);
+RX_COMMON_API size_t rx_get_packet_usable_data(const rx_packet_buffer* buffer);
 
 
 typedef struct rx_const_packet_buffer_type
@@ -76,15 +76,15 @@ typedef struct rx_const_packet_buffer_type
 
 } rx_const_packet_buffer;
 
-rx_protocol_result_t rx_reinit_const_packet_buffer(rx_const_packet_buffer* buffer);
-rx_protocol_result_t rx_init_const_packet_buffer(rx_const_packet_buffer* buffer, const void* data, size_t size);
-rx_protocol_result_t rx_init_const_from_packet_buffer(rx_const_packet_buffer* buffer, const rx_packet_buffer* from);
+RX_COMMON_API rx_protocol_result_t rx_reinit_const_packet_buffer(rx_const_packet_buffer* buffer);
+RX_COMMON_API rx_protocol_result_t rx_init_const_packet_buffer(rx_const_packet_buffer* buffer, const void* data, size_t size);
+RX_COMMON_API rx_protocol_result_t rx_init_const_from_packet_buffer(rx_const_packet_buffer* buffer, const rx_packet_buffer* from);
 // reading from const buffer
-const void* rx_get_from_packet(rx_const_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
-rx_protocol_result_t rx_pop_from_packet(rx_const_packet_buffer* buffer, void* buffer_ptr, size_t size);
+RX_COMMON_API const void* rx_get_from_packet(rx_const_packet_buffer* buffer, size_t size, rx_protocol_result_t* result);
+RX_COMMON_API rx_protocol_result_t rx_pop_from_packet(rx_const_packet_buffer* buffer, void* buffer_ptr, size_t size);
 // reading statuses
-size_t rx_get_packet_available_data(const rx_const_packet_buffer* buffer);
-int rx_buffer_eof(const rx_const_packet_buffer* buffer);
+RX_COMMON_API size_t rx_get_packet_available_data(const rx_const_packet_buffer* buffer);
+RX_COMMON_API int rx_buffer_eof(const rx_const_packet_buffer* buffer);
 
 
 

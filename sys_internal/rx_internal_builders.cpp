@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_builders.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -218,12 +218,6 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	}
 	BUILD_LOG_INFO("rx_platform_builder", 900, "System built.");
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building unassigned system...");
-	auto dir_result = ns::rx_directory_cache::instance().add_directory(RX_DIR_DELIMETER_STR RX_NS_UNASSIGNED_NAME);
-	if (!dir_result)
-	{
-		dir_result.register_error("Unable to add directory " RX_NS_UNASSIGNED_NAME ".");
-		return dir_result.errors();
-	}
 	errors = buid_unassigned(host, data);
 	if (errors)
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Unassigned system built.");
@@ -257,9 +251,13 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
 		for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
 		{
-			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + one->get_plugin_info() + "]..."s));
+			auto info = one->get_plugin_info();
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + rx_c_str(&info.plugin_version) + "]..."s));
 			string_type root_path(RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_PLUGINS_NAME RX_DIR_DELIMETER_STR);
 			root_path += one->get_plugin_name();
+			rx_destory_string_value_struct(&info.plugin_version);
+			rx_destory_string_value_struct(&info.lib_version);
+			rx_destory_string_value_struct(&info.platform_version);
 			auto dir_ptr = ns::rx_directory_cache::instance().get_directory(root_path);
 			if (dir_ptr)
 			{
@@ -301,8 +299,12 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
 		for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
 		{
-			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + one->get_plugin_info() + "]..."s));
+			auto info = one->get_plugin_info();
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + rx_c_str(&info.plugin_version) + "]..."s));
 			auto storage_ptr = host->get_system_storage(one->get_plugin_name());
+			rx_destory_string_value_struct(&info.plugin_version);
+			rx_destory_string_value_struct(&info.lib_version);
+			rx_destory_string_value_struct(&info.platform_version);
 			if (storage_ptr)
 			{
 				storage::configuration_storage_builder builder(storage_ptr.value());
@@ -436,6 +438,14 @@ rx_result rx_platform_builder::register_system_constructors ()
 		result.register_error("Error registering constructor for system object!");
 		return result;
 	}
+	// host object
+	result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+		RX_NS_HOST_TYPE_ID, [] { return rx_platform::sys_objects::host_object::instance(); });
+	if (!result)
+	{
+		result.register_error("Error registering constructor for system object!");
+		return result;
+	}
 	// unassigned app
 	result = model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
 		RX_NS_SYSTEM_UNASS_APP_TYPE_ID, [] { return rx_platform::sys_objects::unassigned_application::instance(); });
@@ -459,7 +469,7 @@ rx_result rx_platform_builder::buid_unassigned (hosting::rx_platform_host* host,
 {
 	string_type path(RX_NS_UNASSIGNED_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
-	auto dir = ns::rx_directory_cache::instance().get_directory(path);
+	auto dir = ns::rx_directory_cache::instance().get_directory(full_path);
 	if (dir)
 	{
 		runtime_data::application_runtime_data app_instance_data;
@@ -483,7 +493,7 @@ rx_result rx_platform_builder::buid_unassigned (hosting::rx_platform_host* host,
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.processor = 1;
-		instance_data.instance_data.app_ref = rx_item_reference(RX_NS_SYSTEM_UNASS_APP_PATH);
+		instance_data.instance_data.app_ref = rx_item_reference(RX_NS_SYSTEM_UNASS_APP_NAME);
 		instance_data.instance_data.priority = rx_domain_priority::low;
 		auto result2 = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<domain_type>());
 		if (!result2)
@@ -506,10 +516,11 @@ void rx_platform_builder::deinitialize ()
 	rx_platform::sys_objects::system_application::instance()->deinitialize();
 	rx_platform::sys_objects::system_domain::instance()->deinitialize();
 	rx_platform::sys_objects::system_object::instance()->deinitialize();
+	rx_platform::sys_objects::host_object::instance()->deinitialize();
 	rx_platform::sys_objects::unassigned_application::instance()->deinitialize();
 	rx_platform::sys_objects::unassigned_domain::instance()->deinitialize();
 	// now delete directories recursive
-	
+
 	recursive_destory_fs(ns::rx_directory_cache::instance().get_root());
 }
 
@@ -562,7 +573,9 @@ rx_result root_folder_builder::do_build ()
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_SIMULATION_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_RELATIONS_NAME
-			, rx_storage_ptr::null_ptr }
+			, rx_storage_ptr::null_ptr },
+		{ RX_DIR_DELIMETER_STR RX_NS_UNASSIGNED_NAME
+			, rx_storage_ptr::null_ptr }, // /unassigned
 	};
 
 	for (const auto& one : dirs)
@@ -693,7 +706,7 @@ rx_result basic_types_builder::do_build ()
 			, rx_node_id::null_id
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			}); 
+			});
 		build_basic_type<basic_types::display_type>(dir, disp);
 
 		//build general data for runtime objects
@@ -909,6 +922,15 @@ rx_result system_types_builder::do_build ()
 			});
 		obj->complex_data.register_struct("Info", RX_NS_SYSTEM_INFO_TYPE_ID);
 		add_type_to_configuration(dir, obj, false);
+		obj = create_type<object_type>(meta::object_type_creation_data{
+			RX_NS_HOST_TYPE_NAME
+			, RX_NS_HOST_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		obj->complex_data.register_struct("Info", RX_NS_HOST_INFO_ID);
+		add_type_to_configuration(dir, obj, false);
 		auto str = create_type<basic_types::struct_type>(meta::type_creation_data{
 			RX_NS_SYSTEM_INFO_TYPE_NAME
 			, RX_NS_SYSTEM_INFO_TYPE_ID
@@ -917,6 +939,15 @@ rx_result system_types_builder::do_build ()
 			, full_path
 			});
 		build_instance_info_struct_type(dir, str);
+		add_simple_type_to_configuration(dir, str, false);
+		str = create_type<basic_types::struct_type>(meta::type_creation_data{
+			RX_NS_HOST_INFO_NAME
+			, RX_NS_HOST_INFO_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_host_info_struct_type(dir, str);
 		add_simple_type_to_configuration(dir, str, false);
 		// system subtypes
 		auto ev = create_type<event_type>(meta::object_type_creation_data{
@@ -937,7 +968,7 @@ rx_result system_types_builder::do_build ()
 			, full_path
 			});
 		app->complex_data.register_event(event_attribute("ItemChanged", RX_NS_CHANGED_DATA_EVENT_ID));
-		add_type_to_configuration(dir, app, false);		
+		add_type_to_configuration(dir, app, false);
 		auto dom = create_type<domain_type>(meta::object_type_creation_data{
 			RX_NS_SYSTEM_DOM_TYPE_NAME
 			, RX_NS_SYSTEM_DOM_TYPE_ID
@@ -945,7 +976,7 @@ rx_result system_types_builder::do_build ()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		add_type_to_configuration(dir, dom, false);		
+		add_type_to_configuration(dir, dom, false);
 		dom = create_type<domain_type>(meta::object_type_creation_data{
 			RX_HOST_DOMAIN_TYPE_NAME
 			, RX_HOST_DOMAIN_TYPE_ID
@@ -1121,6 +1152,20 @@ void system_types_builder::build_instance_info_struct_type(rx_directory_ptr dir,
 	what->complex_data.register_const_value_static("TerminalVer", "");
 	what->complex_data.register_const_value_static("HttpVer", "");
 	what->complex_data.register_const_value_static("CompilerVer", "");
+}
+void system_types_builder::build_host_info_struct_type(rx_directory_ptr dir, struct_type_ptr what)
+{
+	what->complex_data.register_const_value_static("HostVer", "");
+	what->complex_data.register_const_value_static("OSHostVer", "");
+	what->complex_data.register_const_value_static("FirmwareVer", "");
+
+	what->complex_data.register_const_value_static("OSVer", "");
+	what->complex_data.register_const_value_static("CPU", "");
+	what->complex_data.register_const_value_static("CPUCores", 0u);
+	what->complex_data.register_const_value_static("LittleEndian", false);
+	what->complex_data.register_const_value_static<uint64_t>("MemoryTotal", 0ull);
+	what->complex_data.register_simple_value_static<uint64_t>("MemoryFree", 0ull, true, false);
+	what->complex_data.register_const_value_static<uint32_t>("PageSize", 0u);
 }
 // Class rx_internal::builders::port_types_builder 
 
@@ -1703,8 +1748,8 @@ rx_result support_types_builder::do_build ()
 		what->complex_data.register_simple_value_static<uint32_t>("ReadTimeout", 200, false, true);
 		what->complex_data.register_simple_value_static<uint32_t>("WriteTimeout", 500, false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
-		
-		
+
+
 		what = create_type<struct_type>(meta::type_creation_data{
 			RX_ROUTER_PORT_OPTIONS_TYPE_NAME
 			, RX_ROUTER_PORT_OPTIONS_TYPE_ID
@@ -1739,7 +1784,7 @@ rx_result support_types_builder::do_build ()
 			});
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
-		
+
 		what = create_type<struct_type>(meta::type_creation_data{
 			RX_STXETX_PORT_OPTIONS_TYPE_NAME
 			, RX_STXETX_PORT_OPTIONS_TYPE_ID
@@ -1947,7 +1992,7 @@ rx_result system_ports_builder::do_build ()
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_TCP_NAME);
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
-		
+
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXJSON_NAME;
 		port_instance_data.meta_info.id = RX_NS_SYSTEM_RXJSON_ID;
 		port_instance_data.meta_info.parent = RX_RX_JSON_TYPE_ID;

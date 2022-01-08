@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\opcua_c\rx_opcua_binary_sec.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  

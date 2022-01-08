@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_full_duplex_packet.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -326,6 +326,10 @@ typedef full_duplex_addr_packet_port< io::numeric_address<uint8_t>  > byte_routi
 
 class byte_routing_port : public byte_routing_port_base  
 {
+    DECLARE_CODE_INFO("rx", 0, 1, 1, "\
+Byte address routing port implementation, for both initiators and listeners");
+
+    DECLARE_REFERENCE_PTR(byte_routing_port);
 
   public:
 

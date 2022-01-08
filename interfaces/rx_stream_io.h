@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_stream_io.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -169,6 +169,67 @@ class tcp_socket : public full_duplex_comm<buffT>
 
 
 
+typedef tcp_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_socket_std_buffer;
+
+
+
+
+
+
+
+template <class buffT>
+class tcp_listen_socket : public io_endpoints::dispatcher_subscriber  
+{
+    DECLARE_REFERENCE_PTR(tcp_listen_socket<buffT>);
+protected:
+    typedef typename tcp_socket<buffT>::smart_ptr result_ptr;
+public:
+    typedef std::function<result_ptr(sys_handle_t, sockaddr_in*, sockaddr_in*, rx_security_handle_t)> make_function_t;
+
+  public:
+      tcp_listen_socket (make_function_t make_function);
+
+      ~tcp_listen_socket();
+
+
+      rx_result start_tcpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
+
+      void stop ();
+
+
+  protected:
+
+  private:
+
+      int internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status);
+
+      bool accept_new ();
+
+      int internal_shutdown_callback (uint32_t status);
+
+
+
+      uint8_t buffer_[ACCEPT_BUFFER_SIZE];
+
+      bool connected_;
+
+      make_function_t make_function_;
+
+
+};
+
+
+
+
+
+
+typedef tcp_listen_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_listent_std_buffer;
+
+
+
+
+
+
 template <class buffT>
 class tcp_client_socket : public tcp_socket<buffT>  
 {
@@ -231,67 +292,6 @@ class tcp_client_socket : public tcp_socket<buffT>
 
 
 typedef tcp_client_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_client_socket_std_buffer;
-
-
-
-
-
-
-
-template <class buffT>
-class tcp_listen_socket : public io_endpoints::dispatcher_subscriber  
-{
-    DECLARE_REFERENCE_PTR(tcp_listen_socket<buffT>);
-protected:
-    typedef typename tcp_socket<buffT>::smart_ptr result_ptr;
-public:
-    typedef std::function<result_ptr(sys_handle_t, sockaddr_in*, sockaddr_in*, rx_security_handle_t)> make_function_t;
-
-  public:
-      tcp_listen_socket (make_function_t make_function);
-
-      ~tcp_listen_socket();
-
-
-      rx_result start_tcpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
-
-      void stop ();
-
-
-  protected:
-
-  private:
-
-      int internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status);
-
-      bool accept_new ();
-
-      int internal_shutdown_callback (uint32_t status);
-
-
-
-      uint8_t buffer_[ACCEPT_BUFFER_SIZE];
-
-      bool connected_;
-
-      make_function_t make_function_;
-
-
-};
-
-
-
-
-
-
-typedef tcp_listen_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_listent_std_buffer;
-
-
-
-
-
-
-typedef tcp_socket< memory::std_strbuff<memory::std_vector_allocator>  > tcp_socket_std_buffer;
 
 
 // Parameterized Class rx_internal::interfaces::ip_endpoints::full_duplex_comm 
@@ -648,6 +648,123 @@ tcp_socket<buffT>::~tcp_socket()
 
 
 
+// Parameterized Class rx_internal::interfaces::ip_endpoints::tcp_listen_socket 
+
+template <class buffT>
+tcp_listen_socket<buffT>::tcp_listen_socket (make_function_t make_function)
+      : connected_(false),
+        make_function_(make_function)
+{
+    dispatcher_data_.read_buffer = buffer_;
+    dispatcher_data_.read_buffer_size = ACCEPT_BUFFER_SIZE;
+    dispatcher_data_.data = this;
+}
+
+
+template <class buffT>
+tcp_listen_socket<buffT>::~tcp_listen_socket()
+{
+}
+
+
+
+template <class buffT>
+int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status)
+{
+    if (!connected_)
+        return 0;
+    typedef typename tcp_socket<buffT>::smart_ptr target_ptr;
+    target_ptr created = make_function_(handle, addr, local_addr, get_identity());
+    if (created)
+    {
+        if (created->start_loops())
+        {
+            created->on_startup(get_identity());
+        }
+    }
+    else
+    {
+        rx_close_socket(handle);
+    }
+    bool ret = accept_new();
+    return ret ? 1 : 0;
+}
+
+template <class buffT>
+rx_result tcp_listen_socket<buffT>::start_tcpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
+{
+    rx_transaction_type trans;
+    this->dispatcher_data_.handle = ::rx_create_and_bind_ip4_tcp_socket(addr, 10000);
+    if (this->dispatcher_data_.handle)
+    {
+        trans.push([this]() {
+                rx_close_socket(this->dispatcher_data_.handle);
+                this->dispatcher_data_.handle = 0;
+            });
+        if (rx_socket_listen(this->dispatcher_data_.handle))
+        {
+            connected_ = true;
+            if (this->connect_dispatcher(dispatcher))
+            {
+                trans.push([this]() {
+                        this->disconnect_dispatcher();
+                    });
+                if (accept_new())
+                {
+                    trans.commit();
+                    return true;
+                }
+                else
+                {
+                    return "**********NEEEE jbg";
+                }
+            }
+            else
+            {
+                return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
+            }
+        }
+        else
+        {
+            return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
+        }
+    }
+    else
+    {
+        return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
+    }
+}
+
+template <class buffT>
+void tcp_listen_socket<buffT>::stop ()
+{
+    connected_ = false;
+    disconnect_dispatcher();
+    rx_close_socket(dispatcher_data_.handle);
+    dispatcher_data_.handle = 0;
+}
+
+template <class buffT>
+bool tcp_listen_socket<buffT>::accept_new ()
+{
+    bind();
+    uint32_t ret = rx_socket_accept(&dispatcher_data_, 5000);
+    if (ret == RX_ERROR)
+    {
+        release();
+        return false;
+    }
+    else
+        return true;
+}
+
+template <class buffT>
+int tcp_listen_socket<buffT>::internal_shutdown_callback (uint32_t status)
+{
+    return 1;
+}
+
+
 // Parameterized Class rx_internal::interfaces::ip_endpoints::tcp_client_socket 
 
 template <class buffT>
@@ -670,7 +787,16 @@ tcp_client_socket<buffT>::~tcp_client_socket()
 template <class buffT>
 rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (const sockaddr_in* addr)
 {
-    this->dispatcher_data_.handle = rx_create_and_bind_ip4_tcp_socket(addr);
+
+    struct sockaddr_in any;
+    any.sin_family = AF_INET;
+    any.sin_port = 0;
+    SET_IP4_ADDR(any, INADDR_ANY);
+
+    if (!addr)
+        addr = &any;
+
+    this->dispatcher_data_.handle = rx_create_and_bind_ip4_tcp_socket(addr, 7000);
     if (this->dispatcher_data_.handle)
     {
         return true;
@@ -820,123 +946,6 @@ rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (const string_type& addr
         temp_addr.sin_addr.s_addr = INADDR_ANY;
     }
     return bind_socket_tcpip_4(&temp_addr);
-}
-
-
-// Parameterized Class rx_internal::interfaces::ip_endpoints::tcp_listen_socket 
-
-template <class buffT>
-tcp_listen_socket<buffT>::tcp_listen_socket (make_function_t make_function)
-      : connected_(false),
-        make_function_(make_function)
-{
-    dispatcher_data_.read_buffer = buffer_;
-    dispatcher_data_.read_buffer_size = ACCEPT_BUFFER_SIZE;
-    dispatcher_data_.data = this;
-}
-
-
-template <class buffT>
-tcp_listen_socket<buffT>::~tcp_listen_socket()
-{
-}
-
-
-
-template <class buffT>
-int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, uint32_t status)
-{
-    if (!connected_)
-        return 0;
-    typedef typename tcp_socket<buffT>::smart_ptr target_ptr;
-    target_ptr created = make_function_(handle, addr, local_addr, get_identity());
-    if (created)
-    {
-        if (created->start_loops())
-        {
-            created->on_startup(get_identity());
-        }
-    }
-    else
-    {
-        rx_close_socket(handle);
-    }
-    bool ret = accept_new();
-    return ret ? 1 : 0;
-}
-
-template <class buffT>
-rx_result tcp_listen_socket<buffT>::start_tcpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
-{
-    rx_transaction_type trans;
-    this->dispatcher_data_.handle = ::rx_create_and_bind_ip4_tcp_socket(addr);
-    if (this->dispatcher_data_.handle)
-    {
-        trans.push([this]() {
-                rx_close_socket(this->dispatcher_data_.handle);
-                this->dispatcher_data_.handle = 0;
-            });
-        if (rx_socket_listen(this->dispatcher_data_.handle))
-        {
-            connected_ = true;
-            if (this->connect_dispatcher(dispatcher))
-            {
-                trans.push([this]() {
-                        this->disconnect_dispatcher();
-                    });
-                if (accept_new())
-                {
-                    trans.commit();
-                    return true;
-                }
-                else
-                {
-                    return "**********NEEEE jbg";
-                }
-            }
-            else
-            {
-                return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
-            }
-        }
-        else
-        {
-            return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
-        }
-    }
-    else
-    {
-        return rx_result::create_from_last_os_error("Unable to bind to endpoint.");
-    }
-}
-
-template <class buffT>
-void tcp_listen_socket<buffT>::stop ()
-{
-    connected_ = false;
-    disconnect_dispatcher();
-    rx_close_socket(dispatcher_data_.handle);
-    dispatcher_data_.handle = 0;
-}
-
-template <class buffT>
-bool tcp_listen_socket<buffT>::accept_new ()
-{
-    bind();
-    uint32_t ret = rx_socket_accept(&dispatcher_data_);
-    if (ret == RX_ERROR)
-    {
-        release();
-        return false;
-    }
-    else
-        return true;
-}
-
-template <class buffT>
-int tcp_listen_socket<buffT>::internal_shutdown_callback (uint32_t status)
-{
-    return 1;
 }
 
 

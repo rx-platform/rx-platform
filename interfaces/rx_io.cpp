@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_io.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -240,8 +240,77 @@ void dispatcher_subscriber::deinitialize ()
 }
 
 
+// Class rx_internal::interfaces::io_endpoints::net_command 
+
+net_command::net_command()
+	: terminal::commands::server_command("net")
+{
+}
+
+
+net_command::~net_command()
+{
+}
+
+
+
+bool net_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	string_type sub_command;
+	in >> sub_command;
+	if (sub_command.empty())
+	{
+		err << "No sub command specified!";
+		return false;
+	}
+	if (sub_command == "eth")
+	{
+		return do_eth_command(in, out, err, ctx);
+	}
+	else
+	{
+
+		err << sub_command 
+			<< "is unknown sub command!";
+		return false;
+	}
+}
+
+bool net_command::do_eth_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	ETH_interface* interfaces = nullptr;
+	size_t count = 0;
+	auto res = rx_list_eth_cards(&interfaces, &count);
+	if (res == RX_OK)
+	{
+		out << "total " << count << "\r\n";
+		for (size_t i = 0; i < count; i++)
+		{
+			out
+				<< interfaces[i].index << "  "
+				<< interfaces[i].name << "  "
+				<< interfaces[i].description << " ";
+			bool first = true;
+			char buff[0x18];
+			sprintf(buff, "%02x-%02x-%02x-%02x-%02x-%02x",
+				(int)interfaces[i].mac_address[0],
+				(int)interfaces[i].mac_address[1],
+				(int)interfaces[i].mac_address[2],
+				(int)interfaces[i].mac_address[3],
+				(int)interfaces[i].mac_address[4],
+				(int)interfaces[i].mac_address[5]);
+
+			out << buff << "\r\n";
+			
+		}
+		free(interfaces);
+	}
+	out << "Hello from listing an ethernet interfaces!\r\n";
+	return true;
+}
+
+
 } // namespace io_endpoints
 } // namespace interfaces
 } // namespace rx_internal
-
 

@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_endpoints.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -89,8 +89,7 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 		for (const auto& alias : one)
 			serial_aliases_[alias.first] = alias.second;
 
-	auto result_c = rx_init_protocols(nullptr);
-	rx_result result = result_c == RX_PROTOCOL_OK ? rx_result(true) : rx_result(rx_get_error_text(result_c));
+	rx_result result = true;
 	if (result)
 	{
         // register port stack relation
@@ -197,7 +196,6 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 void rx_io_manager::deinitialize ()
 {
 	rx_internal::terminal::commands::server_command_manager::instance()->clear();
-	rx_deinit_protocols();
 }
 
 rx_result rx_io_manager::start (hosting::rx_platform_host* host, const io_manager_data_t& data)

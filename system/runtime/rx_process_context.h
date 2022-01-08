@@ -4,27 +4,27 @@
 *
 *  system\runtime\rx_process_context.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*
+*  
 *  This file is part of {rx-platform}
 *
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -57,7 +57,7 @@ namespace runtime {
 
 
 
-class context_job
+class context_job 
 {
 
   public:
@@ -112,7 +112,7 @@ class process_context_job : public context_job
 
 
 
-struct write_data
+struct write_data 
 {
 
 
@@ -168,7 +168,7 @@ struct write_result_struct
 
 
 
-class relation_subscriber
+class relation_subscriber 
 {
 
   public:
@@ -275,7 +275,7 @@ typedef std::vector<method_runtime_ptr> methods_type;
 
 
 
-class runtime_process_context
+class runtime_process_context 
 {
     template<typename typeT>
     friend class algorithms::runtime_holder_algorithms;
@@ -379,6 +379,8 @@ class runtime_process_context
       void from_remote_pending (remotes_data data);
 
       remotes_data_type& get_from_remote ();
+
+      void runtime_stopped ();
 
 
       const rx_mode_type get_mode () const
@@ -496,6 +498,8 @@ class runtime_process_context
       std::atomic<bool> serialize_value_;
 
       double_collection<remotes_data_type> from_remote_;
+
+      bool stopping_;
 
       template<runtime_process_step step>
       void turn_on_pending();

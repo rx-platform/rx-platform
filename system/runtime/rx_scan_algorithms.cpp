@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_scan_algorithms.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -463,6 +463,4 @@ template class runtime_scan_algorithms<meta::object_types::domain_type>;
 } // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
-
-
 

@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -31,8 +31,8 @@
 #include "pch.h"
 
 
-// rx_ns
-#include "system/server/rx_ns.h"
+// rx_ns_resolver
+#include "system/server/rx_ns_resolver.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_operational

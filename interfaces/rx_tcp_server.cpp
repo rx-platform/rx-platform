@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_tcp_server.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -148,6 +148,7 @@ void tcp_server_endpoint::disconnected (rx_security_handle_t identity)
 bool tcp_server_endpoint::readed (const void* data, size_t count, rx_security_handle_t identity)
 {
     rx_const_packet_buffer buffer{ (const uint8_t*)data, count, 0 };
+
     recv_protocol_packet up = rx_create_recv_packet(0, &buffer, 0, 0);
     {
         up.from_addr = &remote_address_;

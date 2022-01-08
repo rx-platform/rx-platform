@@ -4,7 +4,7 @@
 *
 *  host\rx_interactive.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -234,18 +234,6 @@ bool interactive_console_host::do_host_command (const string_type& line, memory:
 	return ret;
 }
 
-std::vector<ETH_interface> interactive_console_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-{
-	std::vector<ETH_interface> ret;
-	return ret;
-}
-
-std::vector<IP_interface> interactive_console_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-{
-			std::vector<IP_interface> ret;
-			return ret;
-}
-
 int interactive_console_host::console_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_thread_data_t tls = rx_alloc_thread_data();
@@ -441,7 +429,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 
 	meta::runtime_data::application_runtime_data app_inst_data;
 	app_inst_data.meta_info.name = RX_HOST_APP_NAME;
-	app_inst_data.meta_info.id = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
+	app_inst_data.meta_info.id = RX_HOST_APP_ID;
 	app_inst_data.meta_info.parent = rx_node_id(RX_HOST_APP_TYPE_ID);
 	app_inst_data.meta_info.path = "/sys/host";
 	app_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
@@ -456,14 +444,15 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 		return result;
 	}
 
+
 	meta::runtime_data::domain_runtime_data domain_inst_data;
 	domain_inst_data.meta_info.name = RX_HOST_DOMAIN_NAME;
-	domain_inst_data.meta_info.id = rx_node_id(RX_INTERACTIVE_DOMAIN_ID, 3);
+	domain_inst_data.meta_info.id = RX_HOST_DOMAIN_ID;
 	domain_inst_data.meta_info.parent = rx_node_id(RX_HOST_DOMAIN_TYPE_ID);
 	domain_inst_data.meta_info.path = "/sys/host";
 	domain_inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 
-	domain_inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
+	domain_inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
 	domain_inst_data.instance_data.priority = rx_domain_priority::normal;
 	domain_inst_data.instance_data.processor = -1;
 
@@ -471,6 +460,21 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 	if (!result)
 	{
 		result.register_error("Unable to register " RX_HOST_DOMAIN_NAME " domain runtime.");
+		return result;
+	}
+
+	runtime_data::object_runtime_data instance_data;
+	instance_data = runtime_data::object_runtime_data();
+	instance_data.meta_info.name = RX_HOST_OBJECT_NAME;
+	instance_data.meta_info.id = RX_HOST_OBJ_ID;
+	instance_data.meta_info.parent = RX_NS_HOST_TYPE_ID;
+	instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+	instance_data.meta_info.path = "/sys/host";
+	instance_data.instance_data.domain_ref = rx_node_id(RX_HOST_DOMAIN_ID);
+	result = register_host_runtime<meta::object_types::object_type>(instance_data, nullptr);
+	if (!result)
+	{
+		result.register_error("Unable to register " RX_HOST_OBJECT_NAME " application runtime.");
 		return result;
 	}
 
@@ -482,7 +486,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 	inst_data.meta_info.path = "/sys/host";
 	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 
-	inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
+	inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
 
 	result = register_host_runtime<meta::object_types::port_type>(inst_data, nullptr);
 	if (!result)
@@ -498,7 +502,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 	inst_data.meta_info.path = "/sys/host";
 	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 
-	inst_data.instance_data.app_ref = rx_node_id(RX_INTERACTIVE_APP_ID, 3);
+	inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
 
 	inst_data.overrides.add_value_static("StackTop", RX_STD_IO_NAME);
 

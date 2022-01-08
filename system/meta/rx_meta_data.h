@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_data.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -302,6 +302,15 @@ class config_part_container
       typedef std::vector<std::unique_ptr<runtime_data::port_runtime_data> > ports_type;
       typedef std::vector<std::unique_ptr<runtime_data::application_runtime_data> > apps_type;
 
+
+      typedef std::vector<rx_object_type_ptr> object_types_type;
+      typedef std::vector<rx_port_type_ptr> port_types_type;
+      typedef std::vector<rx_domain_type_ptr> domain_types_type;
+      typedef std::vector<rx_application_type_ptr> app_types_type;
+
+      typedef std::vector<struct_type_ptr> struct_types_type;
+      typedef std::vector<variable_type_ptr> variable_types_type;
+
   public:
 
       rx_result serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const;
@@ -316,6 +325,18 @@ class config_part_container
       ports_type ports;
 
       apps_type apps;
+
+      object_types_type object_types;
+
+      port_types_type port_types;
+
+      domain_types_type domain_types;
+
+      app_types_type app_types;
+
+      struct_types_type struct_types;
+
+      variable_types_type variable_types;
 
 
   protected:

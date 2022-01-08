@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_trans_messages.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -37,6 +37,8 @@
 #include "sys_internal/rx_internal_protocol.h"
 #include "model/rx_model_dependencies.h"
 #include "system/runtime/rx_runtime_holder.h"
+#include "sys_internal/rx_namespace_algorithms.h"
+#include "system/server/rx_directory_cache.h"
 
 
 namespace rx_internal {
@@ -46,6 +48,32 @@ namespace rx_protocol {
 namespace messages {
 
 namespace set_messages {
+
+template<typename T>
+rx_result handle_path_id_stuff_templ(T& container, const std::map<string_type
+	, std::pair<rx_node_id, rx_item_type> >& temp_map
+	, const string_type path, size_t path_size, rx_item_type type)
+{
+	for (auto& one : container)
+	{
+		if (one->meta_info.path.empty())
+		{
+			one->meta_info.path = path;
+		}
+		else if (one->meta_info.path.size() < path_size || memcmp(path.c_str(), one->meta_info.path.c_str(), path_size) != 0)
+		{
+			return one->meta_info.get_full_path() + " is not located in folder " + path + ".";
+		}
+
+		if (one->meta_info.id.is_null())
+		{
+			auto it = temp_map.find(one->meta_info.get_full_path());
+			if (it != temp_map.end() && it->second.second == type)
+				one->meta_info.id = it->second.first;
+		}
+	}
+	return true;
+}
 
 // Class rx_internal::rx_protocol::messages::set_messages::rx_update_directory_request_message 
 
@@ -116,16 +144,31 @@ message_ptr rx_update_directory_request_message::do_job (api::rx_context ctx, rx
 {
 	auto request_id = this->request_id;
 
+	auto my_dir = ns::rx_directory_cache::instance().get_directory(ctx.active_path);
+	if(!my_dir)
+		return std::make_unique<error_message>("Invalid Path in context, something is really wrong here!!!"s, 99, request_id);
+
+	auto dir = internal_ns::namespace_algorithms::get_or_create_direcotry(my_dir, path);
+
 	auto brw_result = api::ns::rx_recursive_list_items(path, "", ctx);
 	if (!brw_result)
 	{
 		return std::make_unique<error_message>(brw_result.errors(), 13, request_id);
 	}
+	
+	auto result = handle_path_id_stuff(brw_result.value().items);
+	if (!result)
+	{
+		return std::make_unique<error_message>(result.errors(), 14, request_id);
+	}
 
 	auto builder = rx_create_reference<rx_internal::model::transactions::local_dependecy_builder>();
+
+	builder->add_config_part(content);
+
 	for (auto& one : brw_result.value().items)
 	{
-		builder->add(api::query_result_detail(one.get_type(), one.get_meta()), true, false, false);
+		builder->add_query_result(api::query_result_detail(one.get_type(), one.get_meta()), true, false, false);
 	}
 
 	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
@@ -160,6 +203,31 @@ rx_message_type_t rx_update_directory_request_message::get_type_id ()
 {
   return type_id;
 
+}
+
+rx_result rx_update_directory_request_message::handle_path_id_stuff (const ns::platform_items_type& items)
+{
+	// check for duplicates based on path!!!
+	std::map<string_type, std::pair<rx_node_id, rx_item_type> > temp_map;
+	for (auto& one : items)
+		temp_map[one.get_meta().get_full_path()] = { one.get_meta().id, one.get_type() };
+
+	size_t path_size = path.size();
+
+	auto result = handle_path_id_stuff_templ(content.objects, temp_map, path, path_size, rx_object);
+	if (!result)
+		return result;
+	result = handle_path_id_stuff_templ(content.domains, temp_map, path, path_size, rx_domain);
+	if (!result)
+		return result;
+	result = handle_path_id_stuff_templ(content.ports, temp_map, path, path_size, rx_port);
+	if (!result)
+		return result;
+	result = handle_path_id_stuff_templ(content.apps, temp_map, path, path_size, rx_application);
+	if (!result)
+		return result;
+
+	return true;
 }
 
 

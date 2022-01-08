@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_builders.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -173,6 +173,7 @@ class system_types_builder : public rx_platform_builder
 
   private:
       void build_instance_info_struct_type(rx_directory_ptr dir, struct_type_ptr what);
+      void build_host_info_struct_type(rx_directory_ptr dir, struct_type_ptr what);
 
 };
 

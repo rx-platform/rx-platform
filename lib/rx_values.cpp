@@ -4,7 +4,7 @@
 *
 *  lib\rx_values.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -985,7 +985,7 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	}
 }
 
-rx::values::rx_simple_value rx_value::to_simple () const
+rx_simple_value rx_value::to_simple () const
 {
     return rx_simple_value(value);
 }
@@ -1680,7 +1680,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx::values::rx_simple_value rx_timed_value::to_simple () const
+rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(value);
 }

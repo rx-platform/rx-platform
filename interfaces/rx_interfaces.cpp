@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_interfaces.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,8 +33,6 @@
 
 // rx_interfaces
 #include "interfaces/rx_interfaces.h"
-
-
 
 
 

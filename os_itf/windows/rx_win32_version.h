@@ -3,7 +3,7 @@
 
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 1
-#define RX_HAL_MINOR_VERSION 1
+#define RX_HAL_MINOR_VERSION 2
 #define RX_HAL_BUILD_NUMBER 0
 
 /*********************************************************************************
@@ -39,5 +39,7 @@
 1.0.4 wait for single object is calculated as (t-50)/1000 + 1
 1.0.5 support for rx-common shared library
 1.1.0 added COM port support
+1.1.1 added RtlGetVersion call
+1.2.0 added Ethernet support
 
 *********************************************************************************/

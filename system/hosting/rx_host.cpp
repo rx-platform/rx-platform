@@ -4,7 +4,7 @@
 *
 *  system\hosting\rx_host.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -487,18 +487,6 @@ bool rx_platform_host::do_host_command (const string_type& line, memory::buffer_
 	out << "dummy implementation by base interface class\r\n";
 
 	return true;
-}
-
-std::vector<ETH_interface> rx_platform_host::get_ETH_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-{
-	std::vector<ETH_interface> ret;
-	return ret;
-}
-
-std::vector<IP_interface> rx_platform_host::get_IP_interfaces (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
-{
-	std::vector<IP_interface> ret;
-	return ret;
 }
 
 string_type rx_platform_host::get_default_user_storage () const

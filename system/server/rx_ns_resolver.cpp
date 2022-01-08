@@ -4,7 +4,7 @@
 *
 *  system\server\rx_ns_resolver.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -43,6 +43,77 @@
 namespace rx_platform {
 
 namespace ns {
+
+// Class rx_platform::ns::rx_names_cache 
+
+rx_names_cache::rx_names_cache()
+{
+}
+
+
+
+rx_namespace_item rx_names_cache::get_cached_item (const string_type& name) const
+{
+	const auto it = name_items_hash_.find(name);
+	if (it != name_items_hash_.end())
+	{
+		return it->second;
+	}
+	else
+	{
+		return std::move(rx_namespace_item());
+	}
+}
+
+rx_result rx_names_cache::insert_cached_item (const string_type& name, const rx_namespace_item& item)
+{
+	auto it = name_items_hash_.find(name);
+	if (it != name_items_hash_.end())
+	{
+		return name + "is already registered name.";
+	}
+	else
+	{
+		auto result = name_items_hash_.emplace(name, item);
+		return true;
+	}
+}
+
+bool rx_names_cache::should_cache (const platform_item_ptr& item)
+{
+	// stupid algorithm here, should be checked!!!
+	if (item->meta_info().attributes & namespace_item_system_mask)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool rx_names_cache::should_cache (const rx_namespace_item& item)
+{
+	if (item.get_meta().attributes & namespace_item_system_mask)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+rx_result rx_names_cache::removed_cached_item (const string_type& name)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+void rx_names_cache::clear ()
+{
+	name_items_hash_.clear();
+}
+
 
 // Class rx_platform::ns::rx_directory_resolver 
 
@@ -127,77 +198,6 @@ void rx_directory_resolver::add_paths (std::initializer_list<string_type> paths)
 {
 	for (auto&& one : paths)
 		directories_.emplace_back(resolver_data{ std::forward<decltype(one)>(one) });
-}
-
-
-// Class rx_platform::ns::rx_names_cache 
-
-rx_names_cache::rx_names_cache()
-{
-}
-
-
-
-rx_namespace_item rx_names_cache::get_cached_item (const string_type& name) const
-{
-	const auto it = name_items_hash_.find(name);
-	if (it != name_items_hash_.end())
-	{
-		return it->second;
-	}
-	else
-	{
-		return std::move(rx_namespace_item());
-	}
-}
-
-rx_result rx_names_cache::insert_cached_item (const string_type& name, const rx_namespace_item& item)
-{
-	auto it = name_items_hash_.find(name);
-	if (it != name_items_hash_.end())
-	{
-		return name + "is already registered name.";
-	}
-	else
-	{
-		auto result = name_items_hash_.emplace(name, item);
-		return true;
-	}
-}
-
-bool rx_names_cache::should_cache (const platform_item_ptr& item)
-{
-	// stupid algorithm here, should be checked!!!
-	if (item->meta_info().attributes & namespace_item_system_mask)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool rx_names_cache::should_cache (const rx_namespace_item& item)
-{
-	if (item.get_meta().attributes & namespace_item_system_mask)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-rx_result rx_names_cache::removed_cached_item (const string_type& name)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-void rx_names_cache::clear ()
-{
-	name_items_hash_.clear();
 }
 
 

@@ -4,7 +4,7 @@
 *
 *  system\storage_base\rx_storage.cpp
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -38,6 +38,7 @@
 
 #include "system/server/rx_server.h"
 #include "system/serialization/rx_ser_json.h"
+#include "system/serialization/rx_ser_bin.h"
 #define RX_CODE_STORAGE_NAME "<code>"
 
 

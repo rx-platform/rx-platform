@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_containers.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -47,11 +47,11 @@ typedef struct rx_packet_queue_type
 
 } rx_packet_queue;
 
-rx_protocol_result_t rx_init_queue(rx_packet_queue* queue, size_t initial_capacity);
-rx_protocol_result_t rx_deinit_queue(rx_packet_queue* queue);
-int rx_queue_empty(const rx_packet_queue* queue);
-rx_protocol_result_t rx_enqueue(rx_packet_queue* queue, const rx_packet_buffer* buffer);
-rx_protocol_result_t rx_dequeue(rx_packet_queue* queue, rx_packet_buffer* buffer);
+RX_COMMON_API rx_protocol_result_t rx_init_queue(rx_packet_queue* queue, size_t initial_capacity);
+RX_COMMON_API rx_protocol_result_t rx_deinit_queue(rx_packet_queue* queue);
+RX_COMMON_API int rx_queue_empty(const rx_packet_queue* queue);
+RX_COMMON_API rx_protocol_result_t rx_enqueue(rx_packet_queue* queue, const rx_packet_buffer* buffer);
+RX_COMMON_API rx_protocol_result_t rx_dequeue(rx_packet_queue* queue, rx_packet_buffer* buffer);
 
 
 typedef struct rx_packet_stack_type
@@ -62,11 +62,11 @@ typedef struct rx_packet_stack_type
 
 } rx_packet_stack;
 
-rx_protocol_result_t rx_init_stack(rx_packet_stack* stack, size_t initial_capacity);
-rx_protocol_result_t rx_deinit_stack(rx_packet_stack* stack);
-int rx_stack_empty(const rx_packet_stack* stack);
-rx_protocol_result_t rx_push(rx_packet_stack* stack, const rx_packet_buffer* buffer);
-rx_protocol_result_t rx_pop(rx_packet_stack* stack, rx_packet_buffer* buffer);
+RX_COMMON_API rx_protocol_result_t rx_init_stack(rx_packet_stack* stack, size_t initial_capacity);
+RX_COMMON_API rx_protocol_result_t rx_deinit_stack(rx_packet_stack* stack);
+RX_COMMON_API int rx_stack_empty(const rx_packet_stack* stack);
+RX_COMMON_API rx_protocol_result_t rx_push(rx_packet_stack* stack, const rx_packet_buffer* buffer);
+RX_COMMON_API rx_protocol_result_t rx_pop(rx_packet_stack* stack, rx_packet_buffer* buffer);
 
 
 

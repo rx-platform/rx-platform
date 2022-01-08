@@ -4,7 +4,7 @@
 *
 *  host\rx_interactive_config.h
 *
-*  Copyright (c) 2020-2021 ENSACO Solutions doo
+*  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -50,8 +50,6 @@
 #define RX_STD_CONSOLE_NAME "interactiveConsole"
 #define RX_STD_CONSOLE_ID 0x00005
 
-#define RX_INTERACTIVE_APP_ID 0x00006
-#define RX_INTERACTIVE_DOMAIN_ID 0x00007
 
 
 
