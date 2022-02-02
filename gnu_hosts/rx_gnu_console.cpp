@@ -199,13 +199,6 @@ void gnu_console_host::restore_console ()
 
 }
 
-string_type gnu_console_host::get_default_name () const
-{
-	string_type ret;
-	get_gnu_host_name(ret);
-	return ret;
-}
-
 string_type gnu_console_host::get_gnu_interactive_info ()
 {
 	static char ret[0x100] = { 0 };
@@ -248,3 +241,13 @@ void gnu_console_host::adjust_terminal_size ()
 
 } // namespace gnu
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	string_type ret;
+	get_gnu_host_name(ret);
+	return ret;
+
+#endif

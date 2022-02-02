@@ -174,7 +174,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
 template <class typeT>
 runtime_process_context runtime_holder_algorithms<typeT>::create_context (typename typeT::RType& whose)
 {
-    return runtime_process_context(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_);
+    return runtime_process_context(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.smart_this());
 }
 
 template <class typeT>
@@ -186,6 +186,7 @@ runtime_init_context runtime_holder_algorithms<typeT>::create_init_context (type
 template <class typeT>
 runtime_start_context runtime_holder_algorithms<typeT>::create_start_context (typename typeT::RType& whose)
 {
+    whose.context_.job_queue_ = rx_internal::infrastructure::server_runtime::instance().get_executer(whose.instance_data_.get_executer());
     return runtime_start_context(*whose.tags_.item_, &whose.context_, &whose.tags_.binded_tags_, &whose.directories_, &whose.relations_);
 }
 
@@ -271,9 +272,12 @@ template <class typeT>
 void runtime_holder_algorithms<typeT>::collect_data (data::runtime_values_data& data, runtime_value_type type, const typename typeT::RType& whose)
 {
     whose.tags_.collect_data(data, type);
-    whose.relations_.collect_data(data, type);
-    whose.logic_.collect_data(data, type);
-    whose.displays_.collect_data(data, type);
+    if (type != runtime_value_type::simple_runtime_value)
+    {
+        whose.relations_.collect_data(data, type);
+        whose.logic_.collect_data(data, type);
+        whose.displays_.collect_data(data, type);
+    }
 }
 
 template <class typeT>
@@ -368,7 +372,7 @@ void runtime_holder_algorithms<typeT>::read_value (const string_type& path, read
 }
 
 template <class typeT>
-void runtime_holder_algorithms<typeT>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx, typename typeT::RType& whose)
+void runtime_holder_algorithms<typeT>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, typename typeT::RType& whose)
 {
     auto connect_result = whose.tags_.connected_tags_.connect_tag(path, *whose.tags_.item_);
     if (!connect_result)
@@ -395,9 +399,12 @@ void runtime_holder_algorithms<typeT>::read_struct (string_view_type path, read_
     if (path.empty())
     {// our value
         whose.tags_.collect_data(collected_data, data.type);
-        whose.relations_.collect_data(collected_data, data.type);
-        whose.logic_.collect_data(collected_data, data.type);
-        whose.displays_.collect_data(collected_data, data.type);
+        if (data.type != runtime_value_type::simple_runtime_value)
+        {
+            whose.relations_.collect_data(collected_data, data.type);
+            whose.logic_.collect_data(collected_data, data.type);
+            whose.displays_.collect_data(collected_data, data.type);
+        }
         result = true;
     }
     else
@@ -449,6 +456,33 @@ rx_result runtime_holder_algorithms<typeT>::serialize_runtime_value (base_meta_w
         return true;
 }
 
+template <class typeT>
+void runtime_holder_algorithms<typeT>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback, typename typeT::RType& whose)
+{
+    auto connect_result = whose.tags_.connected_tags_.connect_tag(path, *whose.tags_.item_);
+    if (!connect_result)
+    {
+        connect_result.register_error("Error executing method "s + path);
+        callback(connect_result.errors(), data::runtime_values_data());
+        return;
+    }
+    auto transaction_ptr = rx_create_reference<execute_method_transaction>(std::move(callback));
+    auto result = whose.tags_.connected_tags_.execute_tag(1, connect_result.value(), std::move(data), transaction_ptr);
+    if (!result)
+    {
+        whose.tags_.connected_tags_.disconnect_tag(connect_result.value());
+        (*transaction_ptr)(std::move(result), data::runtime_values_data());
+        return;
+    }
+}
+
+template <class typeT>
+rx_result runtime_holder_algorithms<typeT>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
+{
+    auto result = whose.tags_.connected_tags_.execute_tag(transaction_id, handle, data, monitor);
+    return result;
+}
+
 template <>
 std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<meta::object_types::relation_type>::connect_items(const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor, meta::object_types::relation_type::RType& whose)
 {
@@ -462,37 +496,7 @@ std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<meta::o
         result.emplace_back(RX_NOT_IMPLEMENTED);
     }
 
-    return result;
-
-    // OutputDebugStringA("****************Something to connect object runtime\r\n");
-
-    /*std::function<connect_result_t(string_array, operational::tags_callback_ptr, smart_ptr)> func = [](string_array paths, operational::tags_callback_ptr monitor, smart_ptr whose)
-    {
-
-        // OutputDebugStringA("****************Something to connect object runtime\r\n");
-        connect_result_t results;
-        bool has_errors = false;
-        auto ret = whose->runtime_.connect_items(paths, monitor, results, has_errors);
-        if (ret)
-        {
-            whose->runtime_context_.process_tag_connections = true;
-        }
-        else
-        {
-            auto size = paths.size();
-            results.reserve(size);
-            for (size_t i = 0; i < size; i++)
-                results.emplace_back(ret.errors());
-        }
-        if (whose->runtime_context_.process_tag_connections)
-        {
-            whose->fire_job();
-        }
-        return results;
-    };
-    auto ret_thread = whose->get_executer();
-    rx_do_with_callback<connect_result_t, decltype(ctx.object), string_array, operational::tags_callback_ptr, smart_ptr>(func, ret_thread, callback, ctx.object, paths, monitor, whose->smart_this());
-    return true;*/
+    return result;    
 }
 
 template class runtime_holder_algorithms<meta::object_types::port_type>;

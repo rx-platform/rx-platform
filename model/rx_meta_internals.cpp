@@ -522,7 +522,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 			}
 			ctx.pop_overrides();
 			//overrides.push_back(*ctx.get_overrides());
-			overrides.push_back(my_class.value()->complex_data.get_overrides());
+			overrides.push_back(my_class.value()->complex_data.overrides);
 		}
 		else
 		{
@@ -538,6 +538,36 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	auto rt_data = ctx.pop_rt_name();
 	rt_data.add_const_value("Name", name_value);
 	ret.ptr->tags_.set_runtime_data(create_runtime_data(rt_data));
+	// now handle methods, programs and rest of the stuff
+
+	auto& obj_data = ctx.object_data();
+	if (!obj_data.methods.empty())
+	{
+		std::vector<runtime::logic_blocks::method_data> methods;
+		for (auto& one : obj_data.methods)
+		{
+			methods.emplace_back(std::move(one.method));
+		}
+		ret.ptr->logic_.set_methods(std::move(methods));
+	}
+	if (!obj_data.programs.empty())
+	{
+		std::vector<runtime::logic_blocks::program_data> programs;
+		for (auto& one : obj_data.programs)
+		{
+			programs.emplace_back(std::move(one.program));
+		}
+		ret.ptr->logic_.set_programs(std::move(programs));
+	}
+	if (!obj_data.displays.empty())
+	{
+		std::vector<runtime::display_blocks::display_data> displays;
+		for (auto& one : obj_data.displays)
+		{
+			displays.emplace_back(std::move(one.display));
+		}
+		ret.ptr->displays_.set_displays(std::move(displays));
+	}
 	// go reverse with overrides
 	for (auto it = overrides.rbegin(); it!= overrides.rend(); it++)
 	{
@@ -1335,7 +1365,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 				return result.errors();
 			}
 			
-			overrides.push_back(my_class.value()->complex_data.get_overrides());
+			overrides.push_back(my_class.value()->complex_data.overrides);
 		}
 		else
 			return my_class.errors();

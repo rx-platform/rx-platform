@@ -213,6 +213,8 @@ class object_data_algorithm
 
       static rx_result construct_object_data (const object_types::object_data_type& whose, typename typeT::RTypePtr what, const names_cahce_type& names, construct_context& ctx);
 
+      static rx_result get_depends (const object_types::object_data_type& whose, dependencies_context& ctx);
+
 
   protected:
 

@@ -82,6 +82,15 @@ void internal_data_source::write_item (const value_handle_extended& handle, rx_s
 	}
 }
 
+void internal_data_source::execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id)
+{
+	auto it = subscriptions_.find(handle.subscription);
+	if (it != subscriptions_.end())
+	{
+		it->second.subscription->execute_item(handle, std::move(data), id);
+	}
+}
+
 void internal_data_source::remove_item (const value_handle_extended& handle)
 {
 	auto it = subscriptions_.find(handle.subscription);
@@ -132,8 +141,11 @@ void internal_data_subscription::write_completed (runtime_transaction_id_t trans
 	}
 }
 
-void internal_data_subscription::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
+void internal_data_subscription::execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
 {
+	// we can reuse this one in a loop because we are changing only item handle value and reusing rest
+	handles_.item = item;
+	controler_->execute_result_received(handles_.make_handle(), std::move(result), std::move(data), transaction_id);
 }
 
 void internal_data_subscription::add_item (const string_type& path, value_handle_extended& handle)
@@ -163,6 +175,19 @@ void internal_data_subscription::write_item (const value_handle_extended& handle
 				controler_->result_received(handle.make_handle(), std::move(results[0]), id);
 			else
 				controler_->result_received(handle.make_handle(), "Unexpected error", id);
+		}
+	}
+}
+
+void internal_data_subscription::execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id)
+{
+	
+	auto result = my_subscription_->execute_item(id, handle.item, std::move(data));
+	if (id != 0)
+	{
+		if (!result)
+		{
+			controler_->execute_result_received(handle.make_handle(), std::move(result), data::runtime_values_data(), id);
 		}
 	}
 }

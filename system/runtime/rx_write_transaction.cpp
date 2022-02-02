@@ -55,13 +55,36 @@ void write_item_transaction::items_changed (const std::vector<update_item>& item
 {
 }
 
-void write_item_transaction::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
+void write_item_transaction::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
 {
 }
 
 void write_item_transaction::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result)
 {
     callback_(std::move(result));
+}
+
+
+// Class rx_platform::runtime::algorithms::execute_method_transaction 
+
+execute_method_transaction::execute_method_transaction (execute_method_callback_t&& callback)
+      : callback_(std::move(callback))
+{
+}
+
+
+
+void execute_method_transaction::items_changed (const std::vector<update_item>& items)
+{
+}
+
+void execute_method_transaction::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
+{
+    callback_(std::move(result), std::move(data));
+}
+
+void execute_method_transaction::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result)
+{
 }
 
 

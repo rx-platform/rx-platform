@@ -229,8 +229,8 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 {
 	out << "System Information\r\n";
 	out << RX_CONSOLE_HEADER_LINE "\r\n";
-	out << "Instance Name: " << rx_gate::instance().get_rx_name() << "\r\n";
-	out << "Node Name: " << rx_get_server_name() << "\r\n";
+	out << "Instance Name: " << rx_gate::instance().get_instance_name() << "\r\n";
+	out << "Node Name: " << rx_get_node_name() << "\r\n";
 	out << "Engine Version: " << rx_gate::instance().get_rx_version() << "\r\n";
 	out << "Library Version: " << rx_gate::instance().get_lib_version() << "\r\n";
 	out << "Firmware: " << rx_gate::instance().get_hal_version() << "\r\n";
@@ -1017,8 +1017,11 @@ string_type help_command::get_help () const
 				<< " is free software: you can redistribute it and/or \r\n"
 				<< "modify it under the terms of the GNU General Public License\r\n"
 				<< "as published by the Free Software Foundation, either \r\n"
-				<< "version 3 of the License, or (at your option) any later version.\r\n"
-				<< "Commercial support is available at "
+				<< "version 3 of the License, or (at your option) any later version.\r\n" 
+				<< "See more at "
+				<< ANSI_COLOR_YELLOW ANSI_COLOR_BOLD "<http://www.rx-platform.org/>" ANSI_COLOR_RESET ".\r\n\r\n"
+				<< "For commercial support more information\r\n"
+				<< "can be found at "
 				<< ANSI_COLOR_YELLOW ANSI_COLOR_BOLD "<https://ensaco.rs>" ANSI_COLOR_RESET ".\r\n"
 				<< "\r\nThis is a list of commands:\r\n\r\n";
 

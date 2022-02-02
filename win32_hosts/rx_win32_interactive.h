@@ -69,8 +69,6 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       rx_result setup_console (int argc, char* argv[]);
 
-      string_type get_default_name () const;
-
       static string_type get_win32_interactive_info ();
 
       bool supports_ansi () const;

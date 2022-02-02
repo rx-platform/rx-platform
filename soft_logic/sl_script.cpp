@@ -180,24 +180,49 @@ void sl_script_program::deinitialize (sl_program_holder* holder, deinitialize_co
 void sl_script_program::load (const string_type& lines)
 {
 	size_t count = lines.size();
-	size_t idx1 = 0;
-	size_t idx2 = 0;
-	while (idx2<count && idx2 != string_type::npos)
+	size_t idx = 0;
+	int blocks_count = 0;
+	string_type current_line;
+	while (idx < count)
 	{
-		idx1 = idx2;
-		idx2 = lines.find_first_of("\r\n", idx1);
-		if (idx2 != string_type::npos)
-		{			
-			if(idx2>idx1+1)
-				lines_.emplace_back(lines.substr(idx1, (idx2 - idx1)));
-			idx2++;
+		if (blocks_count == 0)
+		{// regular line
+			switch (lines[idx])
+			{
+			case '\r':
+			case '\n':
+				if (!current_line.empty())
+				{
+					lines_.push_back(current_line);
+					current_line.clear();
+				}
+				break;
+			case '{':
+				blocks_count++;
+			default:
+				current_line += lines[idx];
+			}
+			idx++;
 		}
-		
+		else
+		{
+			switch (lines[idx])
+			{
+			case '}':
+				blocks_count--;
+				current_line += lines[idx];
+				break;
+			case '{':
+				blocks_count++;
+			default:
+				current_line += lines[idx];
+			}
+			idx++;
+		}
 	}
-	if (idx1 == 0 && idx2 == string_type::npos)
-		lines_.emplace_back(lines);
-	else if (idx2 != string_type::npos && idx2 + 1 < count)
-		lines_.emplace_back(lines.substr(idx2 + 1));
+	if(!current_line.empty())
+		lines_.push_back(current_line);
+	
 }
 
 void sl_script_program::clear ()

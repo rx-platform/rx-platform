@@ -70,6 +70,19 @@ public:
       program_data (structure::runtime_item::smart_ptr&& rt, program_runtime_ptr&& var, const program_data& prototype);
 
 
+      void fill_data (const data::runtime_values_data& data);
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+
       program_runtime_ptr program_ptr;
 
 
@@ -92,6 +105,8 @@ public:
 
 class method_data 
 {
+
+    typedef std::unique_ptr<std::map<runtime_transaction_id_t, structure::execute_task*> > pending_tasks_type;
 public:
     method_data() = default;
     ~method_data() = default;
@@ -108,11 +123,32 @@ public:
       method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var, const method_data& prototype);
 
 
+      void fill_data (const data::runtime_values_data& data);
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      rx_value get_value (runtime_process_context* ctx) const;
+
+      rx_result execute (execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+
+      void process_execute_result (runtime_transaction_id_t id, rx_result&& result, data::runtime_values_data data);
+
+
       method_runtime_ptr method_ptr;
 
       structure::block_data inputs;
 
       structure::block_data outputs;
+
+      structure::value_data value;
 
 
       structure::runtime_item::smart_ptr item;
@@ -123,6 +159,9 @@ public:
   protected:
 
   private:
+
+
+      pending_tasks_type pending_tasks_;
 
 
 };
@@ -136,6 +175,11 @@ class logic_holder
 {
     typedef const_size_vector<program_data> runtime_programs_type;
     typedef const_size_vector<method_data> runtime_methods_type;
+
+    template<class typeT>
+    friend class meta::meta_algorithm::object_types_algorithm;
+    template<class typeT>
+    friend class meta::meta_algorithm::object_data_algorithm;
 
   public:
 
@@ -166,6 +210,10 @@ class logic_holder
       rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result get_struct_value (string_view_type item, string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const;
+
+      void set_methods (std::vector<method_data> data);
+
+      void set_programs (std::vector<program_data> data);
 
 
   protected:

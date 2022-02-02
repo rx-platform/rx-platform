@@ -72,8 +72,6 @@ class gnu_console_host : public host::interactive::interactive_console_host
 
       void restore_console ();
 
-      string_type get_default_name () const;
-
       static string_type get_gnu_interactive_info ();
 
       bool supports_ansi () const;

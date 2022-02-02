@@ -252,8 +252,6 @@ class rx_platform_host
 
       virtual bool break_host (const string_type& msg) = 0;
 
-      virtual string_type get_default_name () const = 0;
-
       virtual string_type get_default_user_storage () const;
 
       virtual bool is_canceling () const = 0;

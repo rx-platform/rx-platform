@@ -122,9 +122,9 @@ void rx_item_implementation<TImpl>::read_value (const string_type& path, read_re
 }
 
 template <class TImpl>
-void rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx)
+void rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
 {
-	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, std::move(val), std::move(callback), ctx, *impl_);
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, std::move(val), std::move(callback), *impl_);
 }
 
 template <class TImpl>
@@ -219,6 +219,18 @@ void rx_item_implementation<TImpl>::write_struct (string_view_type path, write_s
 	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_struct(path, std::move(data), *impl_);
 }
 
+template <class TImpl>
+void rx_item_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
+{
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_method(path, std::move(data), std::move(callback), *impl_);
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_item(transaction_id, handle, data, monitor, *impl_);
+}
+
 
 // Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
 
@@ -289,7 +301,7 @@ void rx_meta_item_implementation<TImpl>::read_value (const string_type& path, re
 }
 
 template <class TImpl>
-void rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx)
+void rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
 {
 	callback(RX_NOT_IMPLEMENTED);
 }
@@ -303,7 +315,7 @@ rx_result rx_meta_item_implementation<TImpl>::do_command (rx_object_command_t co
 template <class TImpl>
 void rx_meta_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback)
 {
-	callback("Not valid for this type!", std::vector<runtime_item_attribute>());
+	callback(RX_NOT_VALID_TYPE, std::vector<runtime_item_attribute>());
 }
 
 template <class TImpl>
@@ -313,7 +325,7 @@ std::vector<rx_result_with<runtime_handle_t> > rx_meta_item_implementation<TImpl
     result.reserve(paths.size());
     for (size_t idx = 0; idx < paths.size(); idx++)
     {
-        result.emplace_back("Not valid for this type!");
+        result.emplace_back(RX_NOT_VALID_TYPE);
     }
     return result;
 }
@@ -325,7 +337,7 @@ std::vector<rx_result> rx_meta_item_implementation<TImpl>::disconnect_items (con
 	result.reserve(items.size());
 	for (size_t idx = 0; idx < items.size(); idx++)
 	{
-		result.emplace_back("Not valid for this type!");
+		result.emplace_back(RX_NOT_VALID_TYPE);
 	}
 	return result;
 }
@@ -333,7 +345,7 @@ std::vector<rx_result> rx_meta_item_implementation<TImpl>::disconnect_items (con
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
 {
-	return "Not valid for this type!";
+	return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
@@ -372,13 +384,13 @@ rx_thread_handle_t rx_meta_item_implementation<TImpl>::get_executer () const
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
 {
-    return "Not valid for this type!";
+    return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::deserialize_value (base_meta_reader& stream, runtime_value_type type)
 {
-    return "Not valid for this type!";
+    return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
@@ -390,13 +402,25 @@ rx_result rx_meta_item_implementation<TImpl>::save () const
 template <class TImpl>
 void rx_meta_item_implementation<TImpl>::read_struct (string_view_type path, read_struct_data data) const
 {
-	data.callback(RX_NOT_IMPLEMENTED, data::runtime_values_data());
+	data.callback(RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
 void rx_meta_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
 {
-	data.callback(RX_NOT_IMPLEMENTED, std::vector<rx_result>());
+	data.callback(RX_NOT_VALID_TYPE, std::vector<rx_result>());
+}
+
+template <class TImpl>
+void rx_meta_item_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
+{
+	callback(RX_NOT_VALID_TYPE, data::runtime_values_data());
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
 }
 
 
@@ -465,7 +489,7 @@ void rx_other_implementation<TImpl>::read_value (const string_type& path, read_r
 }
 
 template <class TImpl>
-void rx_other_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, api::rx_context ctx)
+void rx_other_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
 {
 	callback(RX_NOT_IMPLEMENTED);
 }
@@ -479,7 +503,7 @@ rx_result rx_other_implementation<TImpl>::do_command (rx_object_command_t comman
 template <class TImpl>
 void rx_other_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback)
 {
-	callback("Not valid for this type!", std::vector<runtime_item_attribute>());
+	callback(RX_NOT_VALID_TYPE, std::vector<runtime_item_attribute>());
 }
 
 template <class TImpl>
@@ -489,7 +513,7 @@ std::vector<rx_result_with<runtime_handle_t> > rx_other_implementation<TImpl>::c
     result.reserve(paths.size());
     for (size_t idx = 0; idx < paths.size(); idx++)
     {
-        result.emplace_back("Not valid for this type!");
+        result.emplace_back(RX_NOT_VALID_TYPE);
     }
     return result;
 }
@@ -501,7 +525,7 @@ std::vector<rx_result> rx_other_implementation<TImpl>::disconnect_items (const s
 	result.reserve(items.size());
 	for (size_t idx = 0; idx < items.size(); idx++)
 	{
-		result.emplace_back("Not valid for this type!");
+		result.emplace_back(RX_NOT_VALID_TYPE);
 	}
 	return result;
 }
@@ -509,7 +533,7 @@ std::vector<rx_result> rx_other_implementation<TImpl>::disconnect_items (const s
 template <class TImpl>
 rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
 {
-	return "Not valid for this type!";
+	return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
@@ -539,13 +563,13 @@ rx_thread_handle_t rx_other_implementation<TImpl>::get_executer () const
 template <class TImpl>
 rx_result rx_other_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
 {
-    return "Not valid for this type!";
+    return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
 rx_result rx_other_implementation<TImpl>::deserialize_value (base_meta_reader& stream, runtime_value_type type)
 {
-    return "Not valid for this type!";
+    return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
@@ -557,13 +581,25 @@ rx_result rx_other_implementation<TImpl>::save () const
 template <class TImpl>
 void rx_other_implementation<TImpl>::read_struct (string_view_type path, read_struct_data data) const
 {
-	data.callback(RX_NOT_IMPLEMENTED, data::runtime_values_data());
+	data.callback(RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
 void rx_other_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
 {
-	data.callback(RX_NOT_IMPLEMENTED, std::vector<rx_result>());
+	data.callback(RX_NOT_VALID_TYPE, std::vector<rx_result>());
+}
+
+template <class TImpl>
+void rx_other_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
+{
+	callback(RX_NOT_VALID_TYPE, data::runtime_values_data());
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
 }
 
 

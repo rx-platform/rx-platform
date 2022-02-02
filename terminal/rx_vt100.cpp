@@ -725,8 +725,8 @@ void vt100_endpoint::synchronized_do_command (const string_type& in_line, securi
 
 		out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET "Terminal Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 		out << "Version: " << get_terminal_info() << "\r\n";
-		out << "Instance Name: " << rx_gate::instance().get_rx_name() << "\r\n";
-		out << "Node Name: " << rx_get_server_name() << "\r\n";
+		out << "Instance Name: " << rx_gate::instance().get_instance_name() << "\r\n";
+		out << "Node Name: " << rx_get_node_name() << "\r\n";
 		port_->fill_code_info(out, "vt100_endpoint");
 		out << "\r\n";
 		process_result(true, out_buffer, memory::buffer_ptr::null_ptr, true);
@@ -779,7 +779,7 @@ void vt100_endpoint::synchronized_do_command (const string_type& in_line, securi
 	{
 		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
 		auto err_buffer = rx_create_reference< memory::std_buffer_type>();
-		std::ostream out(err_buffer.unsafe_ptr());
+		std::ostream out(out_buffer.unsafe_ptr());
 		std::ostream err(err_buffer.unsafe_ptr());
 		err << "Error while parsing the line:"
 			<< line;

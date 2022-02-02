@@ -54,13 +54,6 @@ gnu_pipe_host::~gnu_pipe_host()
 
 
 
-string_type gnu_pipe_host::get_default_name () const
-{
-	string_type ret;
-	get_gnu_host_name(ret);
-	return ret;
-}
-
 void gnu_pipe_host::get_host_info (string_array& hosts)
 {
 	hosts.emplace_back(get_gnu_pipe_info());
@@ -103,3 +96,13 @@ bool gnu_pipe_host::supports_ansi () const
 
 } // namespace gnu
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	string_type ret;
+	get_gnu_host_name(ret);
+	return ret;
+
+#endif

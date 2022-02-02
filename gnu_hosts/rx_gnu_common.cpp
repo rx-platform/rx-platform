@@ -73,12 +73,7 @@ std::string get_full_path(const std::string& base)
 	}
 	return "";
 }
-void get_gnu_host_name(std::string& name)
-{
-	char buff[0x100];
-	gethostname(buff, sizeof(buff));
-	name = buff;
-}
+
 std::string get_full_path_from_relative(const std::string& path)
 {
 	char resolved_path[PATH_MAX];

@@ -18,6 +18,7 @@ public:
 
 	bool do_console_command(std::istream& in, std::ostream& out, std::ostream& err, rx_internal::terminal::console_context_ptr ctx)
 	{
+
 		out << "\r\n"
 			" " ANSI_COLOR_BOLD ANSI_COLOR_RED "H" ANSI_COLOR_RESET "alt and " ANSI_COLOR_BOLD ANSI_COLOR_RED "C" ANSI_COLOR_RESET "atch " ANSI_COLOR_BOLD ANSI_COLOR_RED "F" ANSI_COLOR_RESET "ire\r\n"
 			" ===================\r\n";

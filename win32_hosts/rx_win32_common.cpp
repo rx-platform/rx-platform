@@ -156,13 +156,6 @@ string_type get_full_path(const string_type& base)
 	}
 	return "";
 }
-void get_win_host_name(string_type& name)
-{
-	char buff[0x100];
-	DWORD szname = sizeof(buff);
-	GetComputerNameA(buff, &szname);
-	name = buff;
-}
 }
 
 

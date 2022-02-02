@@ -572,12 +572,58 @@ void value_point_impl::write (rx_simple_value val, runtime_transaction_id_t id, 
 				runtime_transaction_id_t new_id = id ? platform_runtime_manager::get_new_transaction_id() : 0u;
 				if (id)
 				{
-					auto res = pending_writes_.emplace(new_id, id);
+					auto res = pending_transactions_.emplace(new_id, id);
 					RX_ASSERT(res.second);
 				}
 				if (!controler)
 					controler = data_controler::get_controler();
 				controler->write_item(tag_handles_.begin()->first, std::move(val), new_id);
+			}
+		}
+		break;
+	default:
+		RX_ASSERT(false);
+	}
+}
+
+void value_point_impl::execute (data::runtime_values_data data, runtime_transaction_id_t id, data_controler* controler)
+{
+	switch (state_)
+	{
+	case value_point_not_connected:
+		{
+			if (id)
+			{// we should callback the negative result
+				execute_result_received(RX_NOT_CONNECTED, data::runtime_values_data(), id);
+			}
+		}
+		break;
+	case value_point_connected:
+		{
+			if (id)
+			{// we should callback the negative result
+				execute_result_received(RX_NOT_SUPPORTED, data::runtime_values_data(), id);
+			}
+		}
+		break;
+	case value_point_connected_simple:
+		{
+			RX_ASSERT(tag_handles_.size() == 1);
+			if (tag_handles_.empty() && id)
+			{
+				execute_result_received(RX_NOT_SUPPORTED, data::runtime_values_data(), id);
+			}
+			else
+			{
+				runtime_transaction_id_t new_id = id ? platform_runtime_manager::get_new_transaction_id() : 0u;
+				if (id)
+				{
+					auto res = pending_transactions_.emplace(new_id, id);
+					RX_ASSERT(res.second);
+				}
+				if (!controler)
+					controler = data_controler::get_controler();
+				controler->execute_item(tag_handles_.begin()->first, std::move(data), new_id);
 			}
 		}
 		break;
@@ -842,14 +888,14 @@ void value_point_impl::value_changed (value_handle_type handle, const rx_value& 
 
 bool value_point_impl::shared_result_received (const rx_result& result, runtime_transaction_id_t id)
 {
-	auto it = pending_writes_.find(id);
-	if (it != pending_writes_.end())
+	auto it = pending_transactions_.find(id);
+	if (it != pending_transactions_.end())
 	{
 		if (result)
 			result_received(true, it->second);
 		else
 			result_received(result.errors(), it->second);
-		pending_writes_.erase(it);
+		pending_transactions_.erase(it);
 		return true;
 	}
 	return false;
@@ -857,17 +903,48 @@ bool value_point_impl::shared_result_received (const rx_result& result, runtime_
 
 bool value_point_impl::single_result_received (rx_result result, runtime_transaction_id_t id)
 {
-	auto it = pending_writes_.find(id);
-	if (it != pending_writes_.end())
+	auto it = pending_transactions_.find(id);
+	if (it != pending_transactions_.end())
 	{
 		result_received(std::move(result), it->second);
-		pending_writes_.erase(it);
+		pending_transactions_.erase(it);
+		return true;
+	}
+	return false;
+}
+
+bool value_point_impl::shared_execute_result_received (const rx_result& result, const data::runtime_values_data& data, runtime_transaction_id_t id)
+{
+	auto it = pending_transactions_.find(id);
+	if (it != pending_transactions_.end())
+	{
+		if (result)
+			execute_result_received(true, data, it->second);
+		else
+			execute_result_received(result.errors(), data, it->second);
+		pending_transactions_.erase(it);
+		return true;
+	}
+	return false;
+}
+
+bool value_point_impl::single_execute_result_received (rx_result result, const data::runtime_values_data& data, runtime_transaction_id_t id)
+{
+	auto it = pending_transactions_.find(id);
+	if (it != pending_transactions_.end())
+	{
+		execute_result_received(std::move(result), data, it->second);
+		pending_transactions_.erase(it);
 		return true;
 	}
 	return false;
 }
 
 void value_point_impl::result_received (rx_result&& result, runtime_transaction_id_t id)
+{
+}
+
+void value_point_impl::execute_result_received (rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id)
 {
 }
 

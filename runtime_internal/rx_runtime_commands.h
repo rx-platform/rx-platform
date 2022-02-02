@@ -143,7 +143,7 @@ class runtime_command_base : public terminal::commands::server_command
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
-      virtual bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in) = 0;
+      virtual bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer) = 0;
 
 
   private:
@@ -170,7 +170,7 @@ command for reading values from various items");
 
   protected:
 
-      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in);
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer);
 
 
   private:
@@ -198,7 +198,7 @@ command for writing values to various items");
 
   protected:
 
-      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in);
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer);
 
 
   private:
@@ -225,7 +225,7 @@ command for browsing inside of object, domain, port or application");
 
   protected:
 
-      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in);
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer);
 
 
   private:
@@ -254,7 +254,31 @@ useful, different formats!");
 
   protected:
 
-      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in);
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class execute_command : public runtime_command_base  
+{
+
+  public:
+      execute_command();
+
+      ~execute_command();
+
+
+  protected:
+
+      bool do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer);
 
 
   private:

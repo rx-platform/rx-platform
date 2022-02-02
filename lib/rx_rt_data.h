@@ -99,6 +99,12 @@ class runtime_values_data
 		  temp.assign_static(std::forward<T>(value));
 		  add_value(name, temp);
 	  }
+      template<typename T>
+      T get_value_static(const string_type& name, const T& def)
+      {
+          rx_simple_value temp = get_value(name);
+          return temp.extract_static<T>(def);
+      }
   protected:
 
   private:

@@ -102,7 +102,7 @@ using rx_platform::ns::suggestions_type;
 
 
 
-class server_command : public rx_platform::logic::program_runtime  
+class server_command : public rx_platform::logic::method_runtime  
 {
 	DECLARE_REFERENCE_PTR(server_command);
 
@@ -133,6 +133,8 @@ class server_command : public rx_platform::logic::program_runtime
       virtual string_type get_help () const;
 
       virtual void register_suggestions (const string_type& line, suggestions_type& suggestions);
+
+      rx_result execute (data::runtime_values_data args, logic::method_execution_context* context);
 
 
       const string_type& get_console_name () const
@@ -207,6 +209,8 @@ bin folder in file hierarcyh\
       void register_suggestions (const string_type& line, suggestions_type& suggestions);
 
       void clear ();
+
+      std::vector<server_command_base_ptr> get_internal_commands ();
 
 
   protected:

@@ -118,6 +118,30 @@ void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what
 	}
 }
 
+
+void add_data_type_to_configuration(rx_directory_ptr dir, data_type_ptr what)
+{
+	what->meta_info = create_meta_for_new(what->meta_info);
+	auto result = model::platform_types_manager::instance().get_data_types_repository().register_type(what);
+	if (!result)
+	{
+		for (const auto& one : result.errors())
+		{
+			BUILD_LOG_ERROR("builders", 500, one);
+		}
+		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(basic_types::data_type::type_id) + " "s + what->meta_info.get_full_path());
+	}
+	result = dir->add_item(what->get_item_ptr());
+	if (!result)
+	{
+		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(basic_types::data_type::type_id) + " "s + what->meta_info.get_full_path() + " to directory.");
+		for (const auto& one : result.errors())
+		{
+			BUILD_LOG_ERROR("builders", 500, one);
+		}
+	}
+}
+
 void add_relation_type_to_configuration(rx_directory_ptr dir, relation_type::smart_ptr what)
 {
 	what->meta_info = create_meta_for_new(what->meta_info);
@@ -368,6 +392,7 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 		// types builders
 		builders.emplace_back(std::make_unique<basic_types_builder>());
 		builders.emplace_back(std::make_unique<support_types_builder>());
+		builders.emplace_back(std::make_unique<terminal_commands_builder>());
 		builders.emplace_back(std::make_unique<system_types_builder>());
 		builders.emplace_back(std::make_unique<port_types_builder>());
 		builders.emplace_back(std::make_unique<relation_types_builder>());
@@ -573,6 +598,8 @@ rx_result root_folder_builder::do_build ()
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_SIMULATION_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_RELATIONS_NAME
+			, rx_storage_ptr::null_ptr },
+		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_TERMINAL_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_UNASSIGNED_NAME
 			, rx_storage_ptr::null_ptr }, // /unassigned
@@ -1024,14 +1051,7 @@ rx_result system_types_builder::do_build ()
 		model::platform_types_manager::instance().get_data_types_repository().register_type(dtype);
 		dir->add_item(dtype->get_item_ptr());
 		// other system object types
-		obj = create_type<object_type>(meta::object_type_creation_data{
-			RX_COMMANDS_MANAGER_TYPE_NAME
-			, RX_COMMANDS_MANAGER_TYPE_ID
-			, RX_INTERNAL_OBJECT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		add_type_to_configuration(dir, obj, false);
+		
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_NS_SERVER_RT_TYPE_NAME
 			, RX_NS_SERVER_RT_TYPE_ID
@@ -1363,23 +1383,6 @@ rx_result port_types_builder::do_build ()
 		port->object_data.register_relation(rel_attr, port->complex_data);
 		add_type_to_configuration(dir, port, true);
 
-		/*port = create_type<port_type>(meta::object_type_creation_data{
-			RX_CONSOLE_TYPE_NAME
-			, RX_CONSOLE_TYPE_ID
-			, RX_APPLICATION_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		add_type_to_configuration(dir, port, false);*/
-
-		port = create_type<port_type>(meta::object_type_creation_data{
-			RX_VT00_TYPE_NAME
-			, RX_VT00_TYPE_ID
-			, RX_APPLICATION_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		add_type_to_configuration(dir, port, false);
 
 	}
 	BUILD_LOG_INFO("port_classes_builder", 900, "Port types built.");
@@ -2024,6 +2027,93 @@ rx_result system_ports_builder::do_build ()
 
 	}
 	BUILD_LOG_INFO("system_ports_builder", 900, "System ports built.");
+	return true;
+}
+
+
+// Class rx_internal::builders::terminal_commands_builder 
+
+
+rx_result terminal_commands_builder::do_build ()
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_TERMINAL_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir_result = ns::rx_directory_cache::instance().get_directory(full_path);
+	if (dir_result)
+	{
+		auto dir = dir_result;
+
+		auto dtype = create_type<basic_types::data_type>(meta::type_creation_data{
+			RX_CLASS_CONSOLE_IN_NAME
+			, RX_CLASS_CONSOLE_IN_ID
+			, RX_CLASS_DATA_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		dtype->complex_data.register_value_static("In", "");
+		add_data_type_to_configuration(dir, dtype);
+
+		dtype = create_type<basic_types::data_type>(meta::type_creation_data{
+			RX_CLASS_CONSOLE_OUT_NAME
+			, RX_CLASS_CONSOLE_OUT_ID
+			, RX_CLASS_DATA_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		dtype->complex_data.register_value_static("Out", "");
+		dtype->complex_data.register_value_static("Err", "");
+		dtype->complex_data.register_value_static("Result", false);
+		add_data_type_to_configuration(dir, dtype);
+
+		auto met = create_type<basic_types::method_type>(meta::type_creation_data{
+				RX_CLASS_CONSOLE_COMMAND_BASE_NAME
+				, RX_CLASS_CONSOLE_COMMAND_BASE_ID
+				, RX_CLASS_METHOD_BASE_ID
+				, namespace_item_attributes::namespace_item_internal_access
+				, full_path
+			});
+		met->complex_data.register_const_value_static("TermName", ""s);
+		met->inputs = rx_item_reference(RX_CLASS_CONSOLE_IN_NAME);
+		met->outputs = rx_item_reference(RX_CLASS_CONSOLE_OUT_NAME);
+		add_simple_type_to_configuration<basic_types::method_type>(dir, met, true);
+
+
+		auto obj = create_type<object_type>(meta::object_type_creation_data{
+			RX_COMMANDS_MANAGER_TYPE_NAME
+			, RX_COMMANDS_MANAGER_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+
+		auto internal_commands = terminal::commands::server_command_manager::instance()->get_internal_commands();
+		for (auto& one : internal_commands)
+		{
+			met = create_type<basic_types::method_type>(meta::type_creation_data{
+				one->get_console_name() + "Cmd"
+				, one->get_console_name().c_str()
+				, RX_CLASS_CONSOLE_COMMAND_BASE_ID
+				, namespace_item_attributes::namespace_item_internal_access
+				, full_path
+				});
+			obj->complex_data.overrides.add_value_static("TermName", one->get_console_name());
+			obj->object_data.register_method(def_blocks::method_attribute(one->get_console_name(), met->meta_info.name), obj->complex_data);
+			add_simple_type_to_configuration<basic_types::method_type>(dir, met, false);
+		}
+
+		add_type_to_configuration(dir, obj, false);
+
+		auto port = create_type<port_type>(meta::object_type_creation_data{
+			RX_VT00_TYPE_NAME
+			, RX_VT00_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+	}
+	BUILD_LOG_INFO("terminal_commands_builder", 900, "Terminal commands built.");
 	return true;
 }
 

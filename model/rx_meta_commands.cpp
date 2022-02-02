@@ -690,7 +690,7 @@ bool create_command::create_simple_type(std::istream& in, std::ostream& out, std
 // Class rx_internal::model::meta_commands::dump_types_command 
 
 dump_types_command::dump_types_command()
-	: server_command("dump-types")
+	: server_command("dmptypes")
 {
 }
 
@@ -1990,7 +1990,7 @@ bool update_command::update_simple_type(std::istream& in, std::ostream& out, std
 // Class rx_internal::model::meta_commands::query_command 
 
 query_command::query_command()
-	: server_command("update")
+	: server_command("depends")
 {
 }
 

@@ -53,8 +53,6 @@ class win32_pipe_host : public host::pipe::rx_pipe_host
       ~win32_pipe_host();
 
 
-      string_type get_default_name () const;
-
       void get_host_info (string_array& hosts);
 
       static string_type get_win32_pipe_info ();

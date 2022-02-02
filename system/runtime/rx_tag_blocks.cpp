@@ -80,13 +80,13 @@ rx_result tags_holder::browse (const string_type& prefix, const string_type& pat
 	return item_->browse_items(prefix, path, filter, items, ctx);
 }
 
-rx_result tags_holder::initialize_runtime (runtime_init_context& ctx, relations::relations_holder* relations)
+rx_result tags_holder::initialize_runtime (runtime_init_context& ctx, relations::relations_holder* relations, logic_blocks::logic_holder* logic, display_blocks::displays_holder* displays)
 {
 	ctx.structure.push_item(*item_);
 	auto result = item_->initialize_runtime(ctx);
 	if (result)
 	{
-		connected_tags_.init_tags(ctx.context, relations, &binded_tags_);
+		connected_tags_.init_tags(ctx.context, relations, logic, displays, &binded_tags_);
 
 		result = common_tags_.initialize_runtime(ctx);
 	}
@@ -142,7 +142,7 @@ void tags_holder::target_relation_removed (relations::relation_data::smart_ptr w
 
 rx_result tags_holder::get_value_ref (string_view_type path, rt_value_ref& ref)
 {
-	return item_->get_value_ref(path, ref);
+	return item_->get_value_ref(path, ref, false);
 }
 
 

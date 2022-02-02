@@ -332,7 +332,7 @@ unathorized_security_context::unathorized_security_context()
 {
 	user_name_ = "unauthorized";
 	full_name_ = user_name_ + "@";
-	location_ = rx_get_server_name();
+	location_ = rx_get_node_name();
 	full_name_ += location_;
 }
 

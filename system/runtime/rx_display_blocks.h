@@ -67,6 +67,19 @@ public:
       display_data (structure::runtime_item::smart_ptr&& rt, display_runtime_ptr&& var, const display_data& prototype);
 
 
+      void fill_data (const data::runtime_values_data& data);
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+
       display_runtime_ptr display_ptr;
 
 
@@ -118,6 +131,8 @@ class displays_holder
       rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
       rx_result get_struct_value (string_view_type item, string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const;
+
+      void set_displays (std::vector<display_data> data);
 
 
   protected:

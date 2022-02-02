@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Molecule" 
 #define RX_SERVER_MAJOR_VERSION 1
 #define RX_SERVER_MINOR_VERSION 6
-#define RX_SERVER_BUILD_NUMBER 4
+#define RX_SERVER_BUILD_NUMBER 5
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -37,4 +37,5 @@
 // version 1.4.0 moved a lot of runtime to internal files
 // version 1.4.1 support for rx-common shared library
 // version 1.5.0 added callback support rx_any_callback<> and rx_remote_function<>
+// version 1.7.0 source input and mapper mapped value as tag
 

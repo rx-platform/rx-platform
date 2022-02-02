@@ -40,7 +40,6 @@ using rx_platform::hosting::rx_host_directories;
 
 namespace win32
 {
-void get_win_host_name(string_type& name);
 rx_result build_directories(rx_host_directories& data);
 string_type get_full_path_from_relative(const string_type& path);
 string_type get_full_path(const string_type& base);

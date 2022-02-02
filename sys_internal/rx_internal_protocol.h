@@ -143,7 +143,7 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
       void items_changed (const std::vector<update_item>& items);
 
-      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+      void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
       void write_completed (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results);
 

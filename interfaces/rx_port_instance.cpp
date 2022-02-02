@@ -168,7 +168,7 @@ rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::run
 
 security::security_context_ptr port_instance_data::create_security_context (const meta::meta_data& meta)
 {
-    auto sec_result = identity_.create_context(meta.get_full_path(), rx_gate::instance().get_rx_name(), data_.identity);
+    auto sec_result = identity_.create_context(meta.get_full_path(), rx_gate::instance().get_instance_name(), data_.identity);
     if (sec_result)
         return sec_result.value();
     else

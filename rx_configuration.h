@@ -36,6 +36,7 @@
 #define RX_NS_PORT_CLASSES_NAME "ports"
 #define RX_NS_SUPPORT_CLASSES_NAME "support"
 #define RX_NS_SIMULATION_CLASSES_NAME "simulation"
+#define RX_NS_TERMINAL_NAME "term"
 #define RX_NS_PLUGINS_NAME "plugins"
 #define RX_NS_HOST_NAME "host"
 
@@ -73,6 +74,14 @@
 #define RX_CLASS_DATA_BASE_ID 0x00000015
 #define RX_CLASS_DISPLAY_BASE_NAME "DisplayBase"
 #define RX_CLASS_DISPLAY_BASE_ID 0x00000016
+
+// console stuff
+#define RX_CLASS_CONSOLE_IN_NAME "ConsoleInData"
+#define RX_CLASS_CONSOLE_IN_ID 0x00000019
+#define RX_CLASS_CONSOLE_OUT_NAME "ConsoleOUTData"
+#define RX_CLASS_CONSOLE_OUT_ID 0x0000001a
+#define RX_CLASS_CONSOLE_COMMAND_BASE_NAME "ConsoleCommandBase"
+#define RX_CLASS_CONSOLE_COMMAND_BASE_ID 0x0000001b
 
 
 // objects stuff

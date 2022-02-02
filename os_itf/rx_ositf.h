@@ -123,9 +123,9 @@ extern "C" {
 	extern int rx_big_endian;
 	extern rx_thread_data_t rx_tls;
 	extern rx_pid_t rx_pid;
-	const char* rx_get_server_name();
+	const char* rx_get_node_name();
 	void rx_init_hal_version();
-	void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, const char* server_name);
+	void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls);
 	void rx_deinitialize_os();
 	uint32_t rx_border_rand(uint32_t min, uint32_t max);
 

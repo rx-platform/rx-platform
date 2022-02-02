@@ -61,7 +61,7 @@ read_command::~read_command()
 
 
 
-bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in)
+bool read_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
 	string_type full_path = rt_item->meta_info().get_full_path();
 	if (!sub_item.empty())
@@ -132,9 +132,17 @@ write_command::~write_command()
 
 
 
-bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in)
+bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
-	rx_simple_value my_copy;
+	rx_simple_value value;
+	string_type val_str;
+	in >> val_str;
+	if (val_str.empty())
+	{
+		ctx->raise_error(rx_result("No value specified!"));
+		return true;
+	}
+	value.parse(val_str);
 	auto now = rx_time::now();
 	out << "Write prepared. \r\n";
 	out << sub_item << " <= "
@@ -147,7 +155,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 	ctx->set_waiting();
 
 	rt_item->write_value(sub_item, std::move(value),
-		write_result_callback_t(rctx.object, [ctx, this, sub_item, value, my_copy, us1](rx_result&& result)
+		write_result_callback_t(rctx.object, [ctx, this, sub_item, value, us1](rx_result&& result)
 		{
 			uint64_t us2 = rx_get_us_ticks() - us1;
 			auto& out = ctx->get_stdout();
@@ -165,7 +173,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 			}
 			ctx->continue_scan();
 
-		}, executer), ctx->create_api_context());
+		}, executer));
 
 	return false;	
 }
@@ -174,7 +182,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 // Class rx_internal::sys_runtime::runtime_commands::turn_on_command 
 
 turn_on_command::turn_on_command()
-	: terminal::commands::server_command("turn-on")
+	: terminal::commands::server_command("turnon")
 {
 }
 
@@ -218,7 +226,7 @@ bool turn_on_command::do_console_command (std::istream& in, std::ostream& out, s
 // Class rx_internal::sys_runtime::runtime_commands::turn_off_command 
 
 turn_off_command::turn_off_command()
-	: terminal::commands::server_command("turn-off")
+	: terminal::commands::server_command("turnoff")
 {
 }
 
@@ -273,7 +281,7 @@ browse_command::~browse_command()
 
 
 
-bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in)
+bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
 
 	auto rctx = ctx->create_api_context();
@@ -322,9 +330,11 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 						table[idx].emplace_back(one.name, ANSI_RX_EVENT_COLOR, ANSI_COLOR_RESET);
 						break;
 					case rx_attribute_type::source_attribute_type:
+						is_value = true;
 						table[idx].emplace_back(one.name, ANSI_RX_SOURCE_COLOR, ANSI_COLOR_RESET);
 						break;
 					case rx_attribute_type::mapper_attribute_type:
+						is_value = true;
 						table[idx].emplace_back(one.name, ANSI_RX_MAPPER_COLOR, ANSI_COLOR_RESET);
 						break;
 					case rx_attribute_type::relation_attribute_type:
@@ -385,23 +395,13 @@ runtime_command_base::runtime_command_base (const string_type& name)
 bool runtime_command_base::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
 	string_type full_path;
-	string_type val_str;
 	string_type line;
-	rx_simple_value to_write;
 
 	in >> full_path;
 	if (!in.eof())
 	{
-		in >> line;
-		if (!line.empty() && line[0] != '-')
-		{
-			val_str = line;
-			line.clear();
-		}
 		std::istreambuf_iterator<char> eos;
-		line += string_type(std::istreambuf_iterator<char>(in), eos);
-		if(!val_str.empty())
-			to_write.parse(val_str);
+		line = string_type(std::istreambuf_iterator<char>(in), eos);
 	}
 	if (full_path.empty())
 	{
@@ -410,7 +410,8 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 	}
 	string_type whose;
 	string_type item_path;
-	rx_split_item_path(full_path, whose, item_path);
+	if(full_path[0]!=-'-')
+		rx_split_item_path(full_path, whose, item_path);
 	if (!whose.empty())
 	{
 		rx_directory_resolver directories;
@@ -430,14 +431,14 @@ bool runtime_command_base::do_console_command (std::istream& in, std::ostream& o
 		rx_thread_handle_t executer = rx_thread_context();
 		ctx->set_waiting();
 		rx_result result = model::algorithms::do_with_runtime_item(resolve_result.value()
-			, [ctx, item_path, to_write, this, executer, line = std::move(line)](rx_result_with<platform_item_ptr>&& data) mutable -> bool
+			, [ctx, item_path, this, executer, line = std::move(line)](rx_result_with<platform_item_ptr>&& data) mutable -> bool
 			{
 				auto& out = ctx->get_stdout();
 				auto& err = ctx->get_stderr();
 				if (data)
 				{
 					std::istringstream in(line);
-					return this->do_with_item(data.move_value(), item_path, std::move(to_write), ctx, out, err, executer,in);
+					return this->do_with_item(data.move_value(), item_path, ctx, in, out, err, executer);
 				}
 				else
 				{
@@ -480,7 +481,7 @@ struct_command::~struct_command()
 
 
 
-bool struct_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, rx_simple_value&& value, console_context_ptr ctx, std::ostream& out, std::ostream& err, rx_thread_handle_t executer, std::istream& in)
+bool struct_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
 	using parser_t = urke::parser::parser3000;
 	bool pretty = false;
@@ -511,7 +512,7 @@ bool struct_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 			}
 			else
 			{
-				// do the rest, foll through
+				// do the rest, fall through
 			}
 		}
 		else
@@ -577,6 +578,64 @@ bool struct_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 	}, executer);
 	rt_item->read_struct(sub_item, std::move(data));
 
+	return false;
+}
+
+
+// Class rx_internal::sys_runtime::runtime_commands::execute_command 
+
+execute_command::execute_command()
+	: runtime_command_base("exec")
+{
+}
+
+
+execute_command::~execute_command()
+{
+}
+
+
+
+bool execute_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
+{
+
+	std::istreambuf_iterator<char> eos;
+	string_type data = string_type(std::istreambuf_iterator<char>(in), eos);
+	data::runtime_values_data rt_data;
+	serialization::json_reader reader;
+	if(reader.parse_data(data))
+		reader.read_init_values(nullptr, rt_data);
+	auto now = rx_time::now();
+	out << "Execute prepared. \r\n";
+	out << "Start time: " << now.get_string() << "\r\n";
+	uint64_t us1 = rx_get_us_ticks();
+	auto rctx = ctx->create_api_context();
+	rt_item->execute_method(sub_item, std::move(rt_data), execute_method_callback_t(rctx.object, [us1, ctx, sub_item](rx_result result, data::runtime_values_data data)
+		{
+			uint64_t us2 = rx_get_us_ticks() - us1;
+			auto& out = ctx->get_stdout();
+			if (result)
+			{
+				out << "Execute "
+					<< sub_item
+					<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
+				out << "Result:";
+				serialization::pretty_json_writer writer;
+				writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+				writer.write_init_values(nullptr, data);
+				writer.write_footer();
+				out << writer.get_string();
+				out << "\r\n";
+					
+				out << "Time elapsed: " ANSI_RX_GOOD_COLOR << us2 << ANSI_COLOR_RESET " us\r\n";
+			}
+			else
+			{
+				out << "Execute " ANSI_COLOR_BOLD ANSI_COLOR_RED "failed" ANSI_COLOR_RESET ". \r\n";
+				ctx->raise_error(result);
+			}
+			ctx->continue_scan();
+		}, executer));
 	return false;
 }
 

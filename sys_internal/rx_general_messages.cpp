@@ -167,8 +167,8 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
 {
     auto response = std::make_unique<rx_system_info_response>();
     response->request_id = request_id;
-    response->instance = rx_gate::instance().get_rx_name();
-    response->node = rx_gate::instance().get_host()->get_default_name();
+    response->instance = rx_gate::instance().get_instance_name();
+    response->node = rx_gate::instance().get_node_name();
     response->platform = rx_gate::instance().get_rx_version();
     response->library = rx_gate::instance().get_lib_version();
     response->os_itf = rx_gate::instance().get_hal_version();

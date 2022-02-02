@@ -402,6 +402,30 @@ rx_result basic_types_algorithm<event_type>::serialize_type(const event_type& wh
 	return true;
 }
 
+
+
+template <>
+rx_result basic_types_algorithm<method_type>::serialize_type(const method_type& whose, base_meta_writer& stream, uint8_t type)
+{
+	if (!whose.meta_info.serialize_meta_data(stream, type, method_type::type_id))
+		return stream.get_error();
+	if (!stream.start_object("def"))
+		return stream.get_error();
+	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
+	if (!ret)
+		return ret;
+	if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
+	{
+		if (!stream.write_item_reference("in", whose.inputs))
+			return stream.get_error();
+		if (!stream.write_item_reference("out", whose.outputs))
+			return stream.get_error();
+	}
+	if (!stream.end_object())
+		return stream.get_error();
+	return true;
+}
+
 template <>
 rx_result basic_types_algorithm<variable_type>::deserialize_type(variable_type& whose, base_meta_reader& stream, uint8_t type)
 {
@@ -488,6 +512,28 @@ rx_result basic_types_algorithm<event_type>::deserialize_type(event_type& whose,
 	return true;
 }
 
+
+
+template <>
+rx_result basic_types_algorithm<method_type>::deserialize_type(method_type& whose, base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_object("def"))
+		return stream.get_error();
+	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
+	if (!ret)
+		return ret;
+	if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
+	{
+		if (!stream.read_item_reference("in", whose.inputs))
+			return stream.get_error();
+		if (!stream.read_item_reference("out", whose.outputs))
+			return stream.get_error();
+	}
+	if (!stream.end_object())
+		return stream.get_error();
+	return true;
+}
+
 template <>
 bool basic_types_algorithm<variable_type>::check_type(variable_type& whose, type_check_context& ctx)
 {
@@ -540,6 +586,31 @@ bool basic_types_algorithm<event_type>::check_type(event_type& whose, type_check
 	}
 	return ret;
 }
+
+
+template <>
+bool basic_types_algorithm<method_type>::check_type(method_type& whose, type_check_context& ctx)
+{
+	type_check_source _(whose.meta_info.get_full_path(), &ctx);
+	auto ret = complex_data_algorithm::check_complex_attribute(whose.complex_data, ctx);
+	if (!whose.inputs.is_null())
+	{
+		auto result = data_blocks_algorithm::check_data_reference(whose.inputs, ctx.get_directories());
+		if (!result)
+		{
+			ctx.add_error("Unable to resolve inputs data type.", RX_ITEM_NOT_FOUND, rx_medium_severity, result.errors());
+		}
+		ret = ret && result;
+		result = data_blocks_algorithm::check_data_reference(whose.outputs, ctx.get_directories());
+		if (!result)
+		{
+			ctx.add_error("Unable to resolve outputs data type.", RX_ITEM_NOT_FOUND, rx_medium_severity, result.errors());
+		}
+		ret = ret && result;
+	}
+	return ret;
+}
+
 
 
 template <>
@@ -612,6 +683,43 @@ rx_result basic_types_algorithm<event_type>::construct(const event_type& whose, 
 
 
 template <>
+rx_result basic_types_algorithm<method_type>::construct(const method_type& whose, construct_context& ctx, method_type::RDataType& prototype)
+{
+	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
+	if (ret)
+	{
+		if (prototype.inputs.values.empty() && prototype.inputs.children.empty() && !whose.inputs.is_null())
+		{
+			data_blocks_prototype data_proto;
+			data_attribute attr;
+			if (whose.inputs.is_node_id())
+				attr = std::move(data_attribute("In", whose.inputs.get_node_id()));
+			else
+				attr = std::move(data_attribute("In", whose.inputs.get_path()));
+
+			ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
+			if (ret)
+				prototype.inputs = data_proto.create_runtime();
+		}
+		if (prototype.outputs.values.empty() && prototype.outputs.children.empty() && !whose.outputs.is_null())
+		{
+			data_blocks_prototype data_proto;
+			data_attribute attr;
+			if (whose.outputs.is_node_id())
+				attr = std::move(data_attribute("Out", whose.outputs.get_node_id()));
+			else
+				attr = std::move(data_attribute("Out", whose.outputs.get_path()));
+
+			ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
+			if (ret)
+				prototype.outputs = data_proto.create_runtime();
+		}
+	}
+	return ret;
+}
+
+
+template <>
 rx_result basic_types_algorithm<variable_type>::get_depends(const variable_type& whose, dependencies_context& ctx)
 {
 	ctx.directories.add_paths({ whose.meta_info.path });
@@ -665,6 +773,31 @@ rx_result basic_types_algorithm<event_type>::get_depends(const event_type& whose
 		if(res)
 			ctx.cache.emplace(res.move_value());
 
+	}
+	return ret;
+}
+
+
+
+template <>
+rx_result basic_types_algorithm<method_type>::get_depends(const method_type& whose, dependencies_context& ctx)
+{
+	ctx.directories.add_paths({ whose.meta_info.path });
+	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
+	if (ret)
+	{
+		if (!whose.inputs.is_null())
+		{
+			auto res = rx_internal::model::algorithms::resolve_reference(whose.inputs, ctx.directories);
+			if (res)
+				ctx.cache.emplace(res.move_value());
+		}
+		if (!whose.outputs.is_null())
+		{
+			auto res = rx_internal::model::algorithms::resolve_reference(whose.outputs, ctx.directories);
+			if (res)
+				ctx.cache.emplace(res.move_value());
+		}
 	}
 	return ret;
 }
@@ -756,6 +889,10 @@ rx_result object_types_algorithm<typeT>::get_depends (const typeT& whose, depend
 {
 	ctx.directories.add_paths({ whose.meta_info.path });
 	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
+	if (ret)
+	{
+		ret = object_data_algorithm<typeT>::get_depends(whose.object_data, ctx);
+	}
 	return ret;
 }
 
@@ -884,9 +1021,15 @@ rx_result object_data_algorithm<typeT>::serialize_object_data (const object_type
 		return stream.get_error();
 	for (const auto& one : whose.programs_)
 	{
+		if (!stream.start_object("item"))
+			return stream.get_error();
+
 		auto one_result = program_attribute::AlgorithmType::serialize_complex_attribute(one, stream);
 		if(!one_result)
 			return one_result;
+
+		if (!stream.end_object())
+			return stream.get_error();
 	}
 	if (!stream.end_array())
 		return stream.get_error();
@@ -897,9 +1040,15 @@ rx_result object_data_algorithm<typeT>::serialize_object_data (const object_type
 			return stream.get_error();
 		for (const auto& one : whose.methods_)
 		{
+			if (!stream.start_object("item"))
+				return stream.get_error();
+
 			auto one_result = method_attribute::AlgorithmType::serialize_complex_attribute(one, stream);
 			if (!one_result)
 				return one_result;
+
+			if (!stream.end_object())
+				return stream.get_error();
 		}
 		if (!stream.end_array())
 			return stream.get_error();
@@ -908,9 +1057,15 @@ rx_result object_data_algorithm<typeT>::serialize_object_data (const object_type
 			return stream.get_error();
 		for (const auto& one : whose.displays_)
 		{
+			if (!stream.start_object("item"))
+				return stream.get_error();
+
 			auto one_result = display_attribute::AlgorithmType::serialize_complex_attribute(one, stream);
 			if (!one_result)
 				return one_result;
+
+			if (!stream.end_object())
+				return stream.get_error();
 		}
 		if (!stream.end_array())
 			return stream.get_error();
@@ -1048,7 +1203,8 @@ rx_result object_data_algorithm<typeT>::construct_object_data (const object_type
 		case complex_data_type::relations_mask:
 			{
 				auto data = rx_create_reference<runtime::relations::relation_data>();
-				rx_result ret = relation_attribute::AlgorithmType::construct_relation_attribute(whose.relations_[one.second & complex_data_type::index_mask], *data, ctx);
+				rx_result ret = relation_attribute::AlgorithmType::construct_relation_attribute(
+					whose.relations_[one.second & complex_data_type::index_mask], *data, ctx);
 				if (!ret)
 				{
 					ret.register_error("Unable to create relation "s + one.first + "!");
@@ -1059,17 +1215,20 @@ rx_result object_data_algorithm<typeT>::construct_object_data (const object_type
 			}
 		case complex_data_type::methods_mask:
 			{
-				rx_result ret = method_attribute::AlgorithmType::construct_complex_attribute(whose.methods_[one.second & complex_data_type::index_mask], ctx);
+				rx_result ret = method_attribute::AlgorithmType::construct_complex_attribute(
+					whose.methods_[one.second & complex_data_type::index_mask], ctx);
 				if (!ret)
 				{
 					ret.register_error("Unable to create method "s + one.first + "!");
 					return ret;
 				}
+				//what->logic_.runtime_methods_.emplcae_back(std::move(data))
 				break;
 			}
 		case complex_data_type::programs_mask:
 			{
-				rx_result ret = program_attribute::AlgorithmType::construct_complex_attribute(whose.programs_[one.second & complex_data_type::index_mask], ctx);
+				rx_result ret = program_attribute::AlgorithmType::construct_complex_attribute(
+					whose.programs_[one.second & complex_data_type::index_mask], ctx);
 				if (!ret)
 				{
 					ret.register_error("Unable to create program "s + one.first + "!");
@@ -1079,7 +1238,8 @@ rx_result object_data_algorithm<typeT>::construct_object_data (const object_type
 			}
 		case complex_data_type::displays_mask:
 			{
-				rx_result ret = display_attribute::AlgorithmType::construct_complex_attribute(whose.displays_[one.second & complex_data_type::index_mask], ctx);
+				rx_result ret = display_attribute::AlgorithmType::construct_complex_attribute(
+					whose.displays_[one.second & complex_data_type::index_mask], ctx);
 				if (!ret)
 				{
 					ret.register_error("Unable to create display "s + one.first + "!");
@@ -1088,6 +1248,42 @@ rx_result object_data_algorithm<typeT>::construct_object_data (const object_type
 				break;
 			}
 		}
+	}
+	return true;
+}
+
+template <class typeT>
+rx_result object_data_algorithm<typeT>::get_depends (const object_types::object_data_type& whose, dependencies_context& ctx)
+{
+	for (const auto& one : whose.methods_)
+	{
+		auto ret = rx_internal::model::algorithms::resolve_reference(one.get_target(), ctx.directories);
+		if (!ret)
+		{
+			ret.register_error("Unable to resolve method "s + one.get_target().to_string() + "!");
+			return ret.errors();
+		}
+		ctx.cache.emplace(ret.move_value());
+	}
+	for (const auto& one : whose.displays_)
+	{
+		auto ret = rx_internal::model::algorithms::resolve_reference(one.get_target(), ctx.directories);
+		if (!ret)
+		{
+			ret.register_error("Unable to resolve display "s + one.get_target().to_string() + "!");
+			return ret.errors();
+		}
+		ctx.cache.emplace(ret.move_value());
+	}
+	for (const auto& one : whose.programs_)
+	{
+		auto ret = rx_internal::model::algorithms::resolve_reference(one.get_target(), ctx.directories);
+		if (!ret)
+		{
+			ret.register_error("Unable to resolve program "s + one.get_target().to_string() + "!");
+			return ret.errors();
+		}
+		ctx.cache.emplace(ret.move_value());
 	}
 	return true;
 }

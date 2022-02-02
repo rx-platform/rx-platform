@@ -85,7 +85,7 @@ class value_point_impl
 {
     typedef std::vector<rx_value> tag_variables_type;
     typedef std::map<value_handle_type, int> tag_handles_type;
-    typedef std::map<runtime_transaction_id_t, runtime_transaction_id_t> pending_writes_type;
+    typedef std::map<runtime_transaction_id_t, runtime_transaction_id_t> pending_transactions_type;
 
   public:
       value_point_impl();
@@ -99,6 +99,8 @@ class value_point_impl
 
       void write (rx_simple_value val, runtime_transaction_id_t id, data_controler* controler = nullptr);
 
+      void execute (data::runtime_values_data data, runtime_transaction_id_t id, data_controler* controler = nullptr);
+
       void calculate (char* token_buff);
 
       void value_changed (value_handle_type handle, const rx_value& val);
@@ -106,6 +108,10 @@ class value_point_impl
       bool shared_result_received (const rx_result& result, runtime_transaction_id_t id);
 
       bool single_result_received (rx_result result, runtime_transaction_id_t id);
+
+      bool shared_execute_result_received (const rx_result& result, const data::runtime_values_data& data, runtime_transaction_id_t id);
+
+      bool single_execute_result_received (rx_result result, const data::runtime_values_data& data, runtime_transaction_id_t id);
 
 
       void set_context (rx_platform::runtime::runtime_process_context * value);
@@ -118,6 +124,8 @@ class value_point_impl
       virtual void value_changed (const rx_value& val) = 0;
 
       virtual void result_received (rx_result&& result, runtime_transaction_id_t id);
+
+      virtual void execute_result_received (rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id);
 
       bool translate_path (const string_type& path, string_type& translated);
 
@@ -169,7 +177,7 @@ class value_point_impl
 
       string_type expression_;
 
-      pending_writes_type pending_writes_;
+      pending_transactions_type pending_transactions_;
 
 
 };

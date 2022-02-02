@@ -77,9 +77,8 @@ rx_gate::rx_gate()
 		ASSIGN_MODULE_VERSION(buff, RX_SERVER_NAME, RX_SERVER_MAJOR_VERSION, RX_SERVER_MINOR_VERSION, RX_SERVER_BUILD_NUMBER);
 		rx_version_ = buff;
 	}
-	auto sname = rx_get_server_name();
-	if(sname)
-		rx_name_ = sname;
+	node_name_ = rx_get_node_name();
+	
 	lib_version_ = g_lib_version;
 	rx_init_hal_version();
 	hal_version_ = g_ositf_version;
@@ -125,7 +124,7 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 	scripts_.emplace(python->get_definition().name, python);
 #endif
 	host_ = host;
-	rx_name_ = data.meta_configuration.instance_name.empty() ? host_->get_default_name() : data.meta_configuration.instance_name;
+	rx_name_ = data.meta_configuration.instance_name.empty() ? node_name_ : data.meta_configuration.instance_name;
 
 	security::security_context_ptr host_ctx = rx_create_reference<rx_internal::rx_security::host_security_context>(host_->get_host_name(), rx_name_);
 	auto result = host_ctx->login();

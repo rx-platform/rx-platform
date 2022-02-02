@@ -225,7 +225,7 @@ std::vector<std::unique_ptr<platform_security_provider> > platform_security::col
 
 built_in_security_context::built_in_security_context()
 {
-    location_ = rx_get_server_name();
+    location_ = rx_get_node_name();
 }
 
 

@@ -551,13 +551,6 @@ rx_result win32_console_host::setup_console (int argc, char* argv[])
 	return true;
 }
 
-string_type win32_console_host::get_default_name () const
-{
-	string_type ret;
-	get_win_host_name(ret);
-	return ret;
-}
-
 string_type win32_console_host::get_win32_interactive_info ()
 {
 	static char ret[0x60] = { 0 };
@@ -599,3 +592,13 @@ void win32_console_host::add_command_line_options (hosting::command_line_options
 
 } // namespace win32
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	string_type ret;
+	get_win_host_name(ret);
+	return ret;
+
+#endif

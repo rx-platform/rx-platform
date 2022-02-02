@@ -43,6 +43,10 @@
 namespace rx_platform {
 namespace runtime {
 class runtime_process_context;
+namespace logic_blocks {
+class method_data;
+} // namespace logic_blocks
+
 namespace tag_blocks {
 class binded_tags;
 
@@ -71,7 +75,7 @@ class rx_tags_callback : public rx::pointers::reference_object
 
       virtual void items_changed (const std::vector<update_item>& items) = 0;
 
-      virtual void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items) = 0;
+      virtual void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data) = 0;
 
       virtual void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result) = 0;
 
@@ -94,6 +98,8 @@ class connected_tags
     using relation_ptr = rx_reference<relations::relation_data>;
 	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
 	typedef std::map<structure::value_data*, runtime_handle_t> values_type;
+    typedef std::map<structure::full_value_data*, runtime_handle_t> full_values_type;
+    typedef std::map<logic_blocks::method_data*, runtime_handle_t> methods_type;
     typedef std::map<structure::indirect_value_data*, runtime_handle_t> indirect_values_type;
 	typedef std::map<structure::variable_data*, runtime_handle_t> variables_type;
     typedef std::map<relation_ptr, runtime_handle_t> relations_type;
@@ -109,9 +115,13 @@ class connected_tags
 	typedef std::map<runtime_handle_t, one_tag_data> handles_map_type;	
 	typedef std::map<string_type, runtime_handle_t> referenced_tags_type;
 
-	typedef std::map<tags_callback_ptr, std::map<runtime_handle_t, rx_value> > next_send_type;    
+	typedef std::map<tags_callback_ptr, std::map<runtime_handle_t, rx_value> > next_send_type;   
+ 
     typedef std::map<tags_callback_ptr, std::vector<write_result_data> > write_results_type;
     typedef std::vector<write_tag_data> write_requests_type;
+
+    typedef std::map<tags_callback_ptr, std::vector<execute_result_data> > execute_results_type;
+    typedef std::vector<execute_tag_data> execute_requests_type;
 
     typedef std::map<string_type, relation_ptr> mapped_relations_type;
 
@@ -123,7 +133,7 @@ class connected_tags
       ~connected_tags();
 
 
-      void init_tags (runtime_process_context* ctx, relations::relations_holder* relations, binded_tags* binded);
+      void init_tags (runtime_process_context* ctx, relations::relations_holder* relations, logic_blocks::logic_holder* logic, display_blocks::displays_holder* displays, binded_tags* binded);
 
       void runtime_stopped (const rx_time& now);
 
@@ -132,6 +142,8 @@ class connected_tags
       rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor);
 
       rx_result write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor);
+
+      rx_result execute_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, data::runtime_values_data data, tags_callback_ptr monitor);
 
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor = tags_callback_ptr::null_ptr);
 
@@ -147,7 +159,11 @@ class connected_tags
 
       void write_result_arrived (tags_callback_ptr whose, write_result_data&& data);
 
+      void execute_result_arrived (tags_callback_ptr whose, execute_result_data&& data);
+
       void target_relation_removed (relation_ptr&& whose);
+
+      void full_value_changed (structure::full_value_data* whose, const rx_value& val);
 
 
   protected:
@@ -158,7 +174,11 @@ class connected_tags
 
       rx_result internal_write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor);
 
+      rx_result internal_execute_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, data::runtime_values_data args, tags_callback_ptr monitor, rx_security_handle_t identity);
+
       connected_tags::relation_ptr get_parent_relation (const string_type& name);
+
+      rx_result_with<runtime_handle_t> register_new_tag_ref (const string_type& path, rt_value_ref ref, tags_callback_ptr monitor);
 
 
 
@@ -173,6 +193,12 @@ class connected_tags
       relation_values_type relation_values_;
 
       binded_tags *binded_;
+
+      structure::const_value_data const_values_;
+
+      full_values_type full_values_;
+
+      methods_type methods_;
 
 
       handles_map_type handles_map_;
@@ -189,6 +215,14 @@ class connected_tags
 
       write_requests_type write_requests_;
 
+      execute_results_type execute_results_;
+
+      execute_requests_type execute_requests_;
+
+      logic_blocks::logic_holder* parent_logic_;
+
+      display_blocks::displays_holder* parent_displays_;
+
 
 };
 
@@ -202,6 +236,8 @@ class binded_tags
 {
 	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
 	typedef std::map<structure::value_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > values_type;
+    typedef std::map<structure::full_value_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > full_values_type;
+    typedef std::map<logic_blocks::method_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > methods_type;
 	typedef std::map<runtime_handle_t, rt_value_ref> handles_map_type;
 
   public:
@@ -221,6 +257,8 @@ class binded_tags
       rx_result pool_value (runtime_handle_t handle, std::function<void(const rx_value&)> callback) const;
 
       void value_change (structure::value_data* whose, const rx_value& val);
+
+      void full_value_changed (structure::full_value_data* whose, const rx_value& val, connected_tags& tags);
 
       rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_start_context& ctx);
 
@@ -258,6 +296,12 @@ class binded_tags
 
       values_type values_;
 
+      structure::const_value_data *const_values_;
+
+      full_values_type full_values_;
+
+      methods_type methods_;
+
 
       handles_map_type handles_map_;
 
@@ -277,6 +321,38 @@ class connected_write_task : public structure::write_task
 
 
       void process_result (rx_result&& result);
+
+
+  protected:
+
+  private:
+
+
+      connected_tags *parent_;
+
+
+      runtime_transaction_id_t id_;
+
+      tags_callback_ptr callback_;
+
+      runtime_handle_t item_;
+
+
+};
+
+
+
+
+
+
+class connected_execute_task : public structure::execute_task  
+{
+
+  public:
+      connected_execute_task (connected_tags* parent, tags_callback_ptr callback, runtime_transaction_id_t id, runtime_handle_t item);
+
+
+      void process_result (rx_result&& result, data::runtime_values_data&& data);
 
 
   protected:

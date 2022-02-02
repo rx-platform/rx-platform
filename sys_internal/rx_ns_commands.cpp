@@ -461,7 +461,7 @@ bool rmdir_command::do_console_command (std::istream& in, std::ostream& out, std
 // Class rx_internal::internal_ns::namespace_commands::clone_system_command 
 
 clone_system_command::clone_system_command()
-	: server_command("clone-system")
+	: server_command("clonesys")
 {
 }
 

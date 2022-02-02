@@ -116,12 +116,9 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 		if (ret)
 		{
 			std::cout << "OK\r\n";
-			string_type server_name = get_default_name();
-
-
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config_.processor.real_time, !config_.processor.no_hd_timer, tls, server_name.c_str());
+			rx_initialize_os(config_.processor.real_time, !config_.processor.no_hd_timer, tls);
 			std::cout << "OK\r\n";
 			std::cout << "\r\n"
 				<< "{rx-platform} "
@@ -336,7 +333,6 @@ string_type headless_platform_host::just_parse_command_line (int argc, char* arg
 		if (ret)
 		{
 			std::cout << "OK\r\n";
-			server_name = get_default_name();
 		}
 	}
 	return server_name;

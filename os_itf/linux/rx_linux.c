@@ -73,7 +73,21 @@ int g_priority_add=0;
 
 int rx_big_endian = 0;
 rx_thread_data_t rx_tls = 0;
-const char* rx_server_name=NULL;
+
+
+const char* rx_server_name = NULL;
+char node_name_buff[0x100];
+void collect_computer_name()
+{
+    gethostname(node_name_buff, sizeof(node_name_buff));
+    rx_server_name = node_name_buff;
+}
+const char* rx_get_node_name()
+{
+    if(rx_server_name==NULL)
+        collect_computer_name();
+    return rx_server_name;
+}
 
 int add_pending_op(linux_epoll_subscriber* internal)
 {
@@ -84,11 +98,6 @@ int remove_pending_op(linux_epoll_subscriber* internal)
     return __atomic_sub_fetch(&internal->pending_operations, 1, __ATOMIC_SEQ_CST);
 }
 
-
-const char* rx_get_server_name()
-{
-    return rx_server_name;
-}
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
@@ -105,7 +114,7 @@ void rx_init_hal_version()
 
 int init_common_result = RX_ERROR;
 
-void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls,const char* server_name)
+void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls)
 {
     rx_platform_init_data common_data;
     common_data.rx_hd_timer = hdt;
@@ -115,8 +124,8 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls,const char* server_n
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
 
+	collect_computer_name();
 
-    rx_server_name=server_name;
 	rx_tls = tls;
 	rx_hd_timer = hdt;
 	rx_pid= getpid();

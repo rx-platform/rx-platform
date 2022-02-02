@@ -53,8 +53,6 @@ class win32_headless_host : public host::headless::headless_platform_host
       ~win32_headless_host();
 
 
-      string_type get_default_name () const;
-
       void get_host_info (string_array& hosts);
 
       string_type get_full_path (const string_type& path);

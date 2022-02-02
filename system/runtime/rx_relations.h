@@ -103,6 +103,8 @@ class relation_connector
 
       virtual rx_result write_tag (runtime_transaction_id_t trans, runtime_handle_t item, rx_simple_value&& value) = 0;
 
+      virtual rx_result execute_tag (runtime_transaction_id_t trans, runtime_handle_t item, data::runtime_values_data&& value) = 0;
+
       virtual void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback) = 0;
 
       virtual void read_value (const string_type& path, read_result_callback_t callback) const = 0;
@@ -131,6 +133,8 @@ class relation_value_data
 
       rx_result write_value (write_data&& data, structure::write_task* task, runtime_process_context* ctx);
 
+      rx_result execute (execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+
 
       rx::values::rx_value value;
 
@@ -155,6 +159,7 @@ class relation_value_data
 class relation_connections 
 {
     typedef std::map<runtime_transaction_id_t, structure::write_task*> pending_tasks_type;
+    typedef std::map<runtime_transaction_id_t, structure::execute_task*> pending_execute_tasks_type;
     // connection handles types
     typedef std::vector<std::unique_ptr<relation_value_data> > values_cache_type;
     typedef std::map<runtime_handle_t, relation_value_data*> handles_type;// target_handle -> value index
@@ -167,11 +172,9 @@ class relation_connections
 
       rx_result write_tag (runtime_handle_t item, write_data&& data, structure::write_task* task, runtime_process_context* ctx);
 
+      rx_result execute_tag (runtime_handle_t item, execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+
       void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
-
-      void write_value (const string_type& path, write_data&& data, structure::write_task* task, runtime_process_context* ctx);
-
-      void write_struct (string_view_type path, write_struct_data data);
 
       void read_value (const string_type& path, read_result_callback_t callback, runtime_process_context* ctx) const;
 
@@ -185,7 +188,7 @@ class relation_connections
 
       void items_changed (const std::vector<update_item>& items);
 
-      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
       void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
 
@@ -203,6 +206,8 @@ class relation_connections
       values_cache_type values_cache_;
 
       pending_tasks_type pending_tasks_;
+
+      pending_execute_tasks_type pending_execute_tasks_;
 
 
       tags_type tag_paths_;

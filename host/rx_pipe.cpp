@@ -183,14 +183,13 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 		if (ret)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-			string_type server_name = get_default_name();
 			if (config.meta_configuration.instance_name.empty())
 				config.meta_configuration.instance_name = "develop";
 
 			//config.namespace_data.build_system_from_code = true;
 			
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls, server_name.c_str());
+			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls);
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			
@@ -212,7 +211,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			std::cout << "Node Name:";
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
-			std::cout << server_name << "\r\n\r\n";
+			std::cout << rx_get_node_name() << "\r\n\r\n";
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_RESET;
 

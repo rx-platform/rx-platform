@@ -147,7 +147,7 @@ construct_context::construct_context (const string_type& name)
         state_(active_state_t::regular)
 {
 	rt_names_.push_back(name);
-	runtime_data_.push_back(object_data_prototype());
+	runtime_data_.runtime_data.push_back(runtime_data_prototype());
 }
 
 
@@ -196,30 +196,35 @@ const string_type& construct_context::rt_name () const
 void construct_context::push_rt_name (const string_type& name)
 {
 	rt_names_.push_back(name);
-	runtime_data_.push_back(object_data_prototype());
+	runtime_stack().push_back(runtime_data_prototype());
 }
 
 runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
-	runtime_data_prototype ret = std::move(runtime_data_.rbegin()->runtime_data);
-	runtime_data_.pop_back();
+	runtime_data_prototype ret = std::move(*runtime_stack().rbegin());
+	runtime_stack().pop_back();
 	return ret;
 }
 
 runtime_data_prototype& construct_context::runtime_data ()
 {
+	return *runtime_stack().rbegin();
+}
+
+runtime_data_type& construct_context::runtime_stack ()
+{
 	switch (state_)
 	{
 	case active_state_t::regular:
-		return runtime_data_.rbegin()->runtime_data;
+		return runtime_data_.runtime_data;
 	case active_state_t::in_method:
-		return runtime_data_.rbegin()->methods.rbegin()->runtime_data;
+		return runtime_data_.methods.rbegin()->runtime_data;
 	case active_state_t::in_program:
-		return runtime_data_.rbegin()->programs.rbegin()->runtime_data;
+		return runtime_data_.programs.rbegin()->runtime_data;
 	default:
 		RX_ASSERT(false);
-		return runtime_data_.rbegin()->runtime_data;
+		return runtime_data_.runtime_data;
 	}
 }
 
@@ -228,7 +233,7 @@ void construct_context::start_program (const string_type& name)
 	RX_ASSERT(state_ == active_state_t::regular);
 	program_data_prototype temp;
 	temp.name = name;
-	runtime_data_.rbegin()->programs.emplace_back(std::move(temp));
+	runtime_data_.programs.emplace_back(std::move(temp));
 	state_ = active_state_t::in_program;
 }
 
@@ -237,32 +242,34 @@ void construct_context::start_method (const string_type& name)
 	RX_ASSERT(state_ == active_state_t::regular);
 	method_data_prototype temp;
 	temp.name = name;
-	runtime_data_.rbegin()->methods.emplace_back(std::move(temp));
+	runtime_data_.methods.emplace_back(std::move(temp));
 	state_ = active_state_t::in_method;
 }
 
-void construct_context::end_program ()
+void construct_context::end_program (runtime::logic_blocks::program_data data)
 {
 	RX_ASSERT(state_ == active_state_t::in_program);
 	state_ = active_state_t::regular;
 }
 
-void construct_context::end_method ()
+void construct_context::end_method (runtime::logic_blocks::method_data data)
 {
 	RX_ASSERT(state_ == active_state_t::in_method);
+	data.name = runtime_data_.methods.rbegin()->name;
+	runtime_data_.methods.rbegin()->method = std::move(data);
 	state_ = active_state_t::regular;
 }
 
 runtime::logic_blocks::method_data& construct_context::method_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_method);
-	return runtime_data_.rbegin()->methods.rbegin()->method;
+	return runtime_data_.methods.rbegin()->method;
 }
 
 runtime::logic_blocks::program_data& construct_context::program_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_program);
-	return runtime_data_.rbegin()->programs.rbegin()->program;
+	return runtime_data_.programs.rbegin()->program;
 }
 
 void construct_context::start_display (const string_type& name)
@@ -270,11 +277,11 @@ void construct_context::start_display (const string_type& name)
 	RX_ASSERT(state_ == active_state_t::regular);
 	display_data_prototype temp;
 	temp.name = name;
-	runtime_data_.rbegin()->displays.emplace_back(std::move(temp));
+	runtime_data_.displays.emplace_back(std::move(temp));
 	state_ = active_state_t::in_display;
 }
 
-void construct_context::end_display ()
+void construct_context::end_display (runtime::display_blocks::display_data data)
 {
 	RX_ASSERT(state_ == active_state_t::in_display);
 	state_ = active_state_t::regular;
@@ -283,7 +290,7 @@ void construct_context::end_display ()
 runtime::display_blocks::display_data& construct_context::display_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_display);
-	return runtime_data_.rbegin()->displays.rbegin()->display;
+	return runtime_data_.displays.rbegin()->display;
 }
 
 void construct_context::register_warining (runtime_status_record data)
@@ -294,6 +301,11 @@ void construct_context::register_warining (runtime_status_record data)
 	for (auto& one : rt_names_)
 		warning.path += one;
 	warnings_.emplace_back(std::move(warning));
+}
+
+object_data_prototype& construct_context::object_data ()
+{
+	return runtime_data_;
 }
 
 

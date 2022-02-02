@@ -124,7 +124,7 @@ class tags_holder
 
       rx_result browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx);
 
-      rx_result initialize_runtime (runtime_init_context& ctx, relations::relations_holder* relations);
+      rx_result initialize_runtime (runtime_init_context& ctx, relations::relations_holder* relations, logic_blocks::logic_holder* logic, display_blocks::displays_holder* displays);
 
       rx_result deinitialize_runtime (runtime_deinit_context& ctx);
 

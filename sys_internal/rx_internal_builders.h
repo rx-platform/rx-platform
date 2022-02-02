@@ -298,6 +298,26 @@ class system_ports_builder : public rx_platform_builder
 };
 
 
+
+
+
+
+class terminal_commands_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace builders
 } // namespace rx_internal
 

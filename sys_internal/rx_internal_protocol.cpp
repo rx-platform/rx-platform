@@ -111,12 +111,22 @@ rx_protocol_subscription::rx_protocol_subscription (subscription_data& data, rx_
 	my_subscription_ = rx_create_reference<sys_runtime::subscriptions::rx_subscription>(this);
 	if (data.active)
 		my_subscription_->activate();
+	std::ostringstream ss;
+	ss << "Protocol subscription "
+		<< data_.subscription_id.to_string()
+		<< " created.";
+	RUNTIME_LOG_TRACE("", 100, ss.str());
 }
 
 
 rx_protocol_subscription::~rx_protocol_subscription()
 {
 	destroy();
+	std::ostringstream ss;
+	ss << "Protocol subscription "
+		<< data_.subscription_id.to_string()
+		<< " destroyed.";
+	RUNTIME_LOG_TRACE("", 100, ss.str());
 }
 
 
@@ -152,7 +162,7 @@ void rx_protocol_subscription::items_changed (const std::vector<update_item>& it
 	}
 }
 
-void rx_protocol_subscription::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
+void rx_protocol_subscription::execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
 {
 }
 

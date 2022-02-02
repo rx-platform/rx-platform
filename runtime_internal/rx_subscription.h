@@ -99,9 +99,9 @@ class rx_subscription_callback
 
       virtual void items_changed (const std::vector<update_item>& items) = 0;
 
-      virtual void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items) = 0;
-
       virtual void write_completed (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results) = 0;
+
+      virtual void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data) = 0;
 
 
   protected:
@@ -140,8 +140,6 @@ class runtime_connection_data
       platform_item_ptr item;
 
       bool connecting;
-
-      bool connected;
 
 
   protected:
@@ -230,8 +228,28 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
         rx_simple_value value;
     };
     typedef std::map<rx_thread_handle_t, std::vector<pending_write_data> > pending_writes_type;
+
+
+    struct pending_execute_data
+    {
+        runtime_transaction_id_t trans_id;
+        runtime_handle_t handle;
+        data::runtime_values_data data;
+        rx_security_handle_t identity;
+    };
+    typedef std::map<rx_thread_handle_t, std::vector<pending_execute_data> > pending_executions_type;
+
     typedef std::vector<update_item> pending_updates_type;
     typedef std::vector<std::pair<runtime_transaction_id_t, std::vector<std::pair<runtime_handle_t, rx_result> > > > pending_write_results_type;
+
+    struct pending_execute_result
+    {
+        runtime_transaction_id_t trans_id;
+        runtime_handle_t handle;
+        rx_result result;
+        data::runtime_values_data data;
+    };
+    typedef std::vector<pending_execute_result> pending_execute_results_type;
 
     typedef std::map<runtime_transaction_id_t, subscription_write_transaction> write_transactions_type;
 
@@ -253,9 +271,11 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
       void items_changed (const std::vector<update_item>& items);
 
-      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& result);
+
+      rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data);
 
       void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
 
@@ -263,6 +283,8 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
   protected:
 
   private:
+
+      void connection_error (runtime_handle_t handle);
 
       void process_subscription (bool posted = false);
 
@@ -303,6 +325,8 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
       pending_writes_type pending_writes_;
 
+      pending_executions_type pending_executions_;
+
       pending_updates_type pending_updates_;
 
       std::unordered_set<size_t> to_retrieve_;
@@ -312,6 +336,8 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
       subscription_write_transaction::transactions_map_type transactions_map_;
 
       pending_write_results_type pending_write_results_;
+
+      pending_execute_results_type pending_execute_results_;
 
       values_cache_type values_cache_;
 

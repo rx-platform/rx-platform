@@ -48,8 +48,9 @@
 ********************************************************************/
 
 
-string_type _not_implemented_func(const char* fname);
-#define RX_NOT_IMPLEMENTED _not_implemented_func(_rx_func_)
+string_type _implemented_func(const char* fname);
+#define RX_NOT_IMPLEMENTED (_implemented_func(_rx_func_) + " not implemented")
+#define RX_INTERNAL_ERROR ("Internal error, something wen really wrong at "s + _implemented_func(_rx_func_))
 #define RX_INVALID_ARGUMENT "Invalid argument."
 #define RX_INVALID_CONVERSION "Invalid conversion."
 #define RX_ERROR_STOPPED "Item is not running."
@@ -58,6 +59,7 @@ string_type _not_implemented_func(const char* fname);
 #define RX_ALREADY_CONNECTED "Already connected."
 #define RX_INVALID_PATH "Invalid path."
 #define RX_INVALID_STATE "Invalid state."
+#define RX_NOT_VALID_TYPE "Not valid for this type!"
 
 namespace rx
 {
@@ -288,9 +290,12 @@ public:
 		else if (!errors_ || errors_->empty())
 			return "No specific errors, it's just empty.!";
 		std::ostringstream ss;
+		bool first = true;
 		for (const auto& one : *errors_)
 		{
-			if (!ss.eof())// using this as a bool!
+			if (first)// using this as a bool!
+				first = false;
+			else
 				ss << delim;
 			ss << one;
 		}

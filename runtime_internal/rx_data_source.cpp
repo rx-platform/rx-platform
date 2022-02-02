@@ -161,6 +161,20 @@ void data_controler::write_item (value_handle_type handle, rx_simple_value val, 
 	}
 }
 
+void data_controler::execute_item (value_handle_type handle, data::runtime_values_data data, runtime_transaction_id_t id)
+{
+	auto ex_handle = value_handle_extended::fill_from_handle(handle);
+	auto it = sources_.find(ex_handle.source);
+	if (it != sources_.end())
+	{
+		it->second.source->execute_item(ex_handle, std::move(data), id);
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
+}
+
 void data_controler::remove_item (value_handle_type handle)
 {
 	auto ex_handle = value_handle_extended::fill_from_handle(handle);
@@ -225,6 +239,34 @@ void data_controler::result_received (value_handle_type handle, rx_result&& resu
 					done = (*itv)->single_result_received(std::move(result), id);
 				else
 					done = (*itv)->shared_result_received(result, id);
+			}
+		}
+	}
+}
+
+void data_controler::execute_result_received (value_handle_type handle, rx_result&& result, data::runtime_values_data data, runtime_transaction_id_t id)
+{
+	if (id == 0)
+		return;// nothing to do
+	auto it = registered_values_.find(handle);
+	if (it != registered_values_.end())
+	{
+		size_t count = it->second.size();
+		if (count == 1)
+		{// just move the result
+			(*it->second.begin())->single_execute_result_received(std::move(result), data, id);
+		}
+		else if (count > 0)
+		{
+			size_t last = count - 1;// it is more readable this way
+			size_t counter = 0;
+			bool done = false;
+			for (auto itv = it->second.begin(); itv != it->second.end() && !done; itv++, counter++)
+			{
+				if (counter == last)
+					done = (*itv)->single_execute_result_received(std::move(result), data, id);
+				else
+					done = (*itv)->shared_execute_result_received(result, data, id);
 			}
 		}
 	}

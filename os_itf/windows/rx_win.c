@@ -217,10 +217,22 @@ void init_fixed_drives();
 
 int rx_big_endian = 0;
 rx_thread_data_t rx_tls = 0;
-const char* rx_server_name = NULL;
 int rx_hd_timer = 1;
-const char* rx_get_server_name()
+
+
+const char* rx_server_name = NULL;
+char node_name_buff[0x100];
+void collect_computer_name()
 {
+	DWORD szname = sizeof(node_name_buff);
+	GetComputerNameA(node_name_buff, &szname);
+	rx_server_name = node_name_buff;
+}
+const char* rx_get_node_name()
+{
+	if(rx_server_name==NULL)
+		collect_computer_name();
+
 	return rx_server_name;
 }
 
@@ -414,17 +426,19 @@ void rx_init_hal_version()
 struct WSAData wsaData;
 int init_common_result = RX_ERROR;
 
-void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, const char* server_name)
+
+void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls)
 {
 	rx_platform_init_data common_data;
 	common_data.rx_hd_timer = hdt;
 
 	init_common_result = rx_init_common_library(&common_data);
+	
+	collect_computer_name();
 
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
 
-	rx_server_name = server_name;
 	rx_tls = tls;
 	rx_hd_timer = hdt;
 	rx_pid = GetCurrentProcessId();

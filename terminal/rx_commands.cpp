@@ -130,56 +130,7 @@ void server_command_manager::register_command (server_command_base_ptr cmd)
 
 void server_command_manager::register_internal_commands ()
 {
-	// console commands
-	register_command(rx_create_reference<echo_server_command>());
-	register_command(rx_create_reference<console::console_commands::info_command>());
-	register_command(rx_create_reference<console::console_commands::code_command>());
-	register_command(rx_create_reference<console::console_commands::rx_name_command>());
-	register_command(rx_create_reference<console::console_commands::cls_command>());
-	register_command(rx_create_reference<console::console_commands::shutdown_command>());
-	register_command(rx_create_reference<console::console_commands::log_command>());
-	register_command(rx_create_reference<console::console_commands::sec_command>());
-	register_command(rx_create_reference<console::console_commands::time_command>());
-	register_command(rx_create_reference<console::console_commands::sleep_command>());
-	register_command(rx_create_reference<console::console_commands::def_command>());
-	register_command(rx_create_reference<console::console_commands::phyton_command>());
-	register_command(rx_create_reference<console::console_commands::license_command>());
-	register_command(rx_create_reference<console::console_commands::copyright_command>());
-	register_command(rx_create_reference<console::console_commands::help_command>());
-	// namespace commands
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::dir_command>());
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::ls_command>());
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::cd_command>());
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::mkdir_command>());
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::rmdir_command>());
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::move_command>());
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_command>());
-	register_command(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_system_command>());
-	// test command
-	register_command(rx_create_reference<testing::test_command>());
-	// meta commands
-	register_command(rx_create_reference<model::meta_commands::del_command>());
-	register_command(rx_create_reference<model::meta_commands::rm_command>());
-	register_command(rx_create_reference<model::meta_commands::create_command>());
-	register_command(rx_create_reference<model::meta_commands::update_command>());
-	register_command(rx_create_reference<model::meta_commands::prototype_command>());
-	register_command(rx_create_reference<model::meta_commands::dump_types_command>());
-	register_command(rx_create_reference<model::meta_commands::check_command>());
-	register_command(rx_create_reference<model::meta_commands::save_command>());
-	register_command(rx_create_reference<model::meta_commands::query_command>());
-	// runtime commands
-	register_command(rx_create_reference<sys_runtime::runtime_commands::read_command>());
-	register_command(rx_create_reference<sys_runtime::runtime_commands::struct_command>());
-	register_command(rx_create_reference<sys_runtime::runtime_commands::write_command>());
-	register_command(rx_create_reference<sys_runtime::runtime_commands::pull_command>());
-	register_command(rx_create_reference<sys_runtime::runtime_commands::turn_on_command>());
-	register_command(rx_create_reference<sys_runtime::runtime_commands::turn_off_command>());
-	register_command(rx_create_reference<sys_runtime::runtime_commands::browse_command>());
-	// plug-ins commands
-	register_command(rx_create_reference<rx_internal::plugins::plugin_command>());
-	// interfaces commands
-	register_command(rx_create_reference<rx_internal::interfaces::io_endpoints::net_command>());
-
+	
 	// register constructors
 	auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
 		RX_COMMANDS_MANAGER_TYPE_ID, [] {
@@ -204,14 +155,27 @@ void server_command_manager::register_internal_commands ()
 		RX_TELNET_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::terminal::term_ports::telnet_transport_port>();
 		});
-	/*result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
-		RX_CONSOLE_TYPE_ID, [] {
-			return rx_create_reference<rx_internal::terminal::console::console_port>();
-		});*/
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_NS_HTTP_TYPE_ID, [] {
 			return rx_create_reference<protocols::rx_http::rx_http_port>();
 		});
+	
+	auto commands = get_internal_commands();
+	for (auto& one : commands)
+	{
+		register_command(one);
+	}
+
+	for (auto& one : registered_commands_)
+	{
+		command_ptr temp = one.second;
+		result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<method_type>().register_constructor(
+			one.first.c_str(), [temp] {
+				return temp;
+			});
+	}
+
+	
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)
@@ -268,6 +232,64 @@ void server_command_manager::clear ()
 	g_inst = smart_ptr::null_ptr;
 }
 
+std::vector<server_command_base_ptr> server_command_manager::get_internal_commands ()
+{
+	std::vector<server_command_base_ptr> ret_commands;
+	
+	// general commands
+	ret_commands.push_back(rx_create_reference<echo_server_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::info_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::code_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::rx_name_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::cls_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::shutdown_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::log_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::sec_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::time_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::sleep_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::def_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::phyton_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::license_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::copyright_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::help_command>());
+	// namespace commands
+	ret_commands.push_back(rx_create_reference<rx_internal::internal_ns::namespace_commands::dir_command>());
+	ret_commands.push_back(rx_create_reference<rx_internal::internal_ns::namespace_commands::ls_command>());
+	ret_commands.push_back(rx_create_reference<rx_internal::internal_ns::namespace_commands::cd_command>());
+	ret_commands.push_back(rx_create_reference<rx_internal::internal_ns::namespace_commands::mkdir_command>());
+	ret_commands.push_back(rx_create_reference<rx_internal::internal_ns::namespace_commands::rmdir_command>());
+	ret_commands.push_back(rx_create_reference<rx_internal::internal_ns::namespace_commands::move_command>());
+	ret_commands.push_back(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_command>());
+	ret_commands.push_back(rx_create_reference<rx_internal::internal_ns::namespace_commands::clone_system_command>());
+	// test command
+	ret_commands.push_back(rx_create_reference<testing::test_command>());
+	// meta commands
+	ret_commands.push_back(rx_create_reference<model::meta_commands::del_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::rm_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::create_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::update_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::prototype_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::dump_types_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::check_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::save_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::query_command>());
+	// runtime commands
+	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::read_command>());
+	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::struct_command>());
+	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::write_command>());
+	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::pull_command>());
+	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::turn_on_command>());
+	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::turn_off_command>());
+	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::browse_command>());
+	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::execute_command>());
+	// plug-ins commands
+	ret_commands.push_back(rx_create_reference<rx_internal::plugins::plugin_command>());
+	// interfaces commands
+	ret_commands.push_back(rx_create_reference<rx_internal::interfaces::io_endpoints::net_command>());
+
+	return ret_commands;
+}
+
 
 // Class rx_internal::terminal::commands::echo_server_command 
 
@@ -305,7 +327,7 @@ server_command::server_command (const string_type& name)
         console_name_(name),
         security_guard_(std::make_unique<security::security_guard>()),
         modified_time_(rx_time::now())
-	, program_runtime(name, name.c_str())
+	, method_runtime(name, name.c_str())
 {
 }
 
@@ -395,6 +417,32 @@ string_type server_command::get_help () const
 
 void server_command::register_suggestions (const string_type& line, suggestions_type& suggestions)
 {
+}
+
+rx_result server_command::execute (data::runtime_values_data args, logic::method_execution_context* context)
+{
+	string_type line = this->get_console_name() + " " +  args.get_value_static("In", ""s);
+	
+	rx_reference<console::console_runtime> console_program = rx_create_reference<console::console_runtime>(rx_thread_context(),
+		[context](bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
+		{
+			if (done)
+			{
+				string_type out_str;
+				string_type err_str;
+				if (!out_buffer->empty())
+					out_str.assign(out_buffer->pbase(), out_buffer->get_size());
+				if (!err_buffer->empty())
+					err_str.assign(err_buffer->pbase(), err_buffer->get_size());
+				data::runtime_values_data out_result;
+				out_result.add_value_static("Out", out_str);
+				out_result.add_value_static("Err", err_str);
+				out_result.add_value_static("Result", result);
+				context->execution_complete(std::move(out_result));
+			}
+		});
+	console_program->do_command(line, security::active_security());
+	return true;
 }
 
 

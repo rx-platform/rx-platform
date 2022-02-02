@@ -167,22 +167,64 @@ method_runtime::~method_runtime()
 
 rx_result method_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
 }
 
 rx_result method_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
 }
 
 rx_result method_runtime::start_runtime (runtime::runtime_start_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
 }
 
 rx_result method_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	return true;
+}
+
+method_execution_context* method_runtime::create_execution_context (execute_data data)
+{
+	return new method_execution_context(data);
+}
+
+rx_result method_runtime::execute (data::runtime_values_data args, method_execution_context* context)
+{
+	return "Undefined method type execution!";
+}
+
+
+// Class rx_platform::logic::method_execution_context 
+
+method_execution_context::method_execution_context (execute_data data)
+      : data_(data),
+        context_(nullptr),
+        method_data_(nullptr)
+{
+}
+
+
+
+void method_execution_context::execution_complete (rx_result result, data::runtime_values_data data)
+{
+	method_execute_result_data result_data;
+	result_data.result = std::move(result);
+	result_data.transaction_id = data_.transaction_id;
+	result_data.data = std::move(data);
+	result_data.whose = method_data_;
+	context_->method_result_pending(std::move(result_data));
+}
+
+void method_execution_context::execution_complete (rx_result result)
+{
+	execution_complete(std::move(result), data::runtime_values_data());
+}
+
+void method_execution_context::execution_complete (data::runtime_values_data data)
+{
+	execution_complete(true, std::move(data));
 }
 
 

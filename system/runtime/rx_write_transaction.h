@@ -58,7 +58,7 @@ class write_item_transaction : public tag_blocks::rx_tags_callback
 
       void items_changed (const std::vector<update_item>& items);
 
-      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
       void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
 
@@ -73,6 +73,39 @@ class write_item_transaction : public tag_blocks::rx_tags_callback
 
 
       write_result_callback_t callback_;
+
+
+};
+
+
+
+
+
+
+class execute_method_transaction : public tag_blocks::rx_tags_callback  
+{
+
+  public:
+      execute_method_transaction (execute_method_callback_t&& callback);
+
+
+      void items_changed (const std::vector<update_item>& items);
+
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
+
+      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
+
+      template<typename... FwdArgs>
+      void operator () (FwdArgs&&... args)
+      {
+          this->callback_(std::forward<FwdArgs>(args)...);
+      }
+  protected:
+
+  private:
+
+
+      execute_method_callback_t callback_;
 
 
 };

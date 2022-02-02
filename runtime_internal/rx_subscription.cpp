@@ -104,7 +104,6 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 
 				runtime_connection_data temp;
 				temp.path = object_path;
-				temp.connected = false;
 				temp.connecting = false;
 
 				rx_subscription_tag tag;
@@ -169,6 +168,18 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 	return true;
 }
 
+void rx_subscription::connection_error (runtime_handle_t handle)
+{
+	locks::auto_lock_t<decltype(items_lock_)> _(&items_lock_);
+	if (active_)
+	{
+		rx_value temp;
+		temp.set_quality(RX_BAD_QUALITY_CONFIG_ERROR);
+		temp.set_time(rx_time::now());
+		pending_updates_.emplace_back(update_item{ handle, std::move(temp) });
+	}
+}
+
 rx_result rx_subscription::disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results)
 {
 	for (auto one : items)
@@ -218,7 +229,7 @@ void rx_subscription::process_subscription (bool posted)
 		for (auto idx : to_retrieve_)
 		{
 			auto& one = connections_[idx];
-			if (!one.connected && !one.item && one.last_checked + 1000 < now)
+			if (!one.item && one.last_checked + 1000 < now)
 			{
 				one.last_checked = now;
 				to_query.emplace_back(one.path);
@@ -372,7 +383,7 @@ void rx_subscription::items_changed (const std::vector<update_item>& items)
 	}
 }
 
-void rx_subscription::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
+void rx_subscription::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
 {
 }
 
@@ -469,6 +480,11 @@ rx_result rx_subscription::write_items (runtime_transaction_id_t transaction_id,
 	items_lock_.unlock();
 
 	return total_result;
+}
+
+rx_result rx_subscription::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data)
+{
+	return RX_NOT_IMPLEMENTED;
 }
 
 void rx_subscription::process_writes ()
@@ -662,7 +678,7 @@ runtime_handle_t runtime_connection_data::add_tag (rx_subscription_tag&& tag, ru
 
 bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscription_ptr whose)
 {
-	if (!connecting && !connected && item)
+	if (!connecting && item)
 	{
 		connect_indexes.clear();
 		to_connect.clear();
@@ -721,17 +737,14 @@ bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscrip
 						<< path
 						<< RX_DIR_OBJECT_DELIMETER
 						<< tags_[connect_indexes[idx]].path
-						<< " :";
-					for (const auto& one : result[idx].errors())
-					{
-						ss << one
-							<< ", ";
-					}
+						<< " :" << result[idx].errors_line();
 					RUNTIME_LOG_TRACE("runtime_connection_data", 10, ss.str());
+
+					whose->connection_error(tags_[connect_indexes[idx]].mine_handle);
 				}
 			}
-			if (!had_good)
-				connection_dead();
+			//if (!had_good)
+			//	connection_dead();
 
 			return all_good;
 		}
@@ -743,7 +756,6 @@ bool runtime_connection_data::connection_dead ()
 {
 	if (!item)
 		return false;// probably already done!!!
-	connected = false;
 	connecting = false;
 	item.reset();
 	for (auto& one : tags_)

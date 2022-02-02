@@ -55,13 +55,6 @@ win32_pipe_host::~win32_pipe_host()
 
 
 
-string_type win32_pipe_host::get_default_name () const
-{
-	string_type ret;
-	get_win_host_name(ret);
-	return ret;
-}
-
 void win32_pipe_host::get_host_info (string_array& hosts)
 {
 	hosts.emplace_back(get_win32_pipe_info());
@@ -125,3 +118,13 @@ rx_result win32_pipe_host::setup_console (int argc, char* argv[])
 
 } // namespace win32
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	string_type ret;
+	get_win_host_name(ret);
+	return ret;
+
+#endif

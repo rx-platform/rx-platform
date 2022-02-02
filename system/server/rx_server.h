@@ -220,9 +220,15 @@ class rx_gate
       }
 
 
-      const string_type& get_rx_name () const
+      const string_type& get_instance_name () const
       {
         return rx_name_;
+      }
+
+
+      const string_type& get_node_name () const
+      {
+        return node_name_;
       }
 
 
@@ -293,6 +299,8 @@ class rx_gate
       string_type lib_version_;
 
       string_type rx_name_;
+
+      string_type node_name_;
 
       string_type comp_version_;
 

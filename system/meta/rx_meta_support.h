@@ -118,6 +118,7 @@ class runtime_data_prototype
 
 };
 
+typedef std::vector<runtime_data_prototype> runtime_data_type;
 
 
 
@@ -374,7 +375,7 @@ class method_data_prototype
 
       runtime::logic_blocks::method_data method;
 
-      runtime_data_prototype runtime_data;
+      runtime_data_type runtime_data;
 
 
       string_type name;
@@ -399,7 +400,7 @@ class program_data_prototype
 
       runtime::logic_blocks::program_data program;
 
-      runtime_data_prototype runtime_data;
+      runtime_data_type runtime_data;
 
 
       string_type name;
@@ -424,7 +425,7 @@ class display_data_prototype
 
       runtime::display_blocks::display_data display;
 
-      runtime_data_prototype runtime_data;
+      runtime_data_type runtime_data;
 
 
       string_type name;
@@ -452,7 +453,7 @@ class object_data_prototype
 
   public:
 
-      runtime_data_prototype runtime_data;
+      runtime_data_type runtime_data;
 
       methods_type methods;
 
@@ -484,7 +485,6 @@ class construct_context
         in_display = 3
     };
     typedef std::stack<data::runtime_values_data*, std::vector<data::runtime_values_data*> > override_stack_type;
-    typedef std::vector<object_data_prototype> runtime_data_type;
     typedef std::vector<runtime_status_data> warnings_type;
  public:
     ~construct_context() = default;
@@ -513,13 +513,15 @@ class construct_context
 
       runtime_data_prototype& runtime_data ();
 
+      runtime_data_type& runtime_stack ();
+
       void start_program (const string_type& name);
 
       void start_method (const string_type& name);
 
-      void end_program ();
+      void end_program (runtime::logic_blocks::program_data data);
 
-      void end_method ();
+      void end_method (runtime::logic_blocks::method_data data);
 
       runtime::logic_blocks::method_data& method_data ();
 
@@ -527,11 +529,13 @@ class construct_context
 
       void start_display (const string_type& name);
 
-      void end_display ();
+      void end_display (runtime::display_blocks::display_data data);
 
       runtime::display_blocks::display_data& display_data ();
 
       void register_warining (runtime_status_record data);
+
+      object_data_prototype& object_data ();
 
 
       ns::rx_directory_resolver& get_directories ()
@@ -549,7 +553,7 @@ class construct_context
   private:
 
 
-      runtime_data_type runtime_data_;
+      object_data_prototype runtime_data_;
 
 
       ns::rx_directory_resolver directories_;

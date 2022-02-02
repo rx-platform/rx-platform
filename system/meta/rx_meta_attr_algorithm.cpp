@@ -181,6 +181,11 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::serialize_complex
 		if (!stream.write_bool("proc", whose.io_.process))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SRC_MAP_TYPE_VERSION)
+	{
+		if(!stream.write_value_type("type", whose.value_type_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -210,6 +215,15 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::deserialize_compl
 	{
 		whose.io_.simulation = true;
 		whose.io_.process = true;
+	}
+	if (stream.get_version() >= RX_SRC_MAP_TYPE_VERSION)
+	{
+		if (!stream.read_value_type("type", whose.value_type_))
+			return stream.get_error();
+	}
+	else
+	{
+		whose.value_type_ = RX_NULL_TYPE;
 	}
 	return true;
 }
@@ -263,6 +277,11 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::serialize_complex
 		if (!stream.write_bool("proc", whose.io_.process))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SRC_MAP_TYPE_VERSION)
+	{
+		if (!stream.write_value_type("type", whose.value_type_))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -293,13 +312,23 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::deserialize_compl
 		whose.io_.simulation = true;
 		whose.io_.process = true;
 	}
+	if (stream.get_version() >= RX_SRC_MAP_TYPE_VERSION)
+	{
+		if (!stream.read_value_type("type", whose.value_type_))
+			return stream.get_error();
+	}
+	else
+	{
+		whose.value_type_ = RX_NULL_TYPE;
+	}
 	return true;
 }
 template<>
 rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex_attribute(const def_blocks::mapper_attribute& whose, construct_context& ctx)
 {
 	rx_node_id target;
-	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::mapper_attribute::TargetType>());
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(
+		whose.target_, ctx.get_directories(), tl::type2type<def_blocks::mapper_attribute::TargetType>());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -420,9 +449,9 @@ rx_result meta_blocks_algorithm<def_blocks::program_attribute>::construct_comple
 	target = resolve_result.value();
 	ctx.start_program(whose.get_name());
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::program_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
-	ctx.end_program();
 	if (temp)
 	{
+		ctx.end_program(temp.move_value());
 		return true;
 	}
 	else
@@ -444,11 +473,11 @@ rx_result meta_blocks_algorithm<def_blocks::display_attribute>::construct_comple
 		return ret;
 	}
 	target = resolve_result.value();
-	ctx.start_program(whose.get_name());
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::program_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
-	ctx.end_program();
+	ctx.start_display(whose.get_name());
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::display_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
+		ctx.end_display(temp.move_value());
 		return true;
 	}
 	else
@@ -679,12 +708,12 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 	if (!stream.end_array())
 		return stream.get_error();
 
-	if (!stream.write_init_values("overrides", whose.overrides_))
+	if (!stream.write_init_values("overrides", whose.overrides))
 		return stream.get_error();
 
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.write_string("description", whose.description_.c_str()))
+		if (!stream.write_string("description", whose.description.c_str()))
 			return stream.get_error();
 	}
 
@@ -807,12 +836,12 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 			return stream.get_error();
 	}
 
-	if (!stream.read_init_values("overrides", whose.overrides_))
+	if (!stream.read_init_values("overrides", whose.overrides))
 		return stream.get_error();
 
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
-		if (!stream.read_string("description", whose.description_))
+		if (!stream.read_string("description", whose.description))
 			return stream.get_error();
 	}
 
@@ -935,10 +964,18 @@ rx_result complex_data_algorithm::get_depends (const complex_data_type& whose, d
 			// events
 		case complex_data_type::events_mask:
 			{
-				auto ret = rx_internal::model::algorithms::resolve_reference(whose.events_[one.second & complex_data_type::index_mask].get_target(), ctx.directories);
+				auto& one_event = whose.events_[one.second & complex_data_type::index_mask];
+				auto ret = rx_internal::model::algorithms::resolve_reference(one_event.get_target(), ctx.directories);
 				if (!ret)
 				{
-					ret.register_error("Unable to resolve event "s + whose.events_[one.second & complex_data_type::index_mask].get_target().to_string() + "!");
+					ret.register_error("Unable to resolve event "s + one_event.get_target().to_string() + "!");
+					return ret.errors();
+				}
+				ctx.cache.emplace(ret.move_value());
+				ret = rx_internal::model::algorithms::resolve_reference(one_event.get_arguments(), ctx.directories);
+				if (!ret)
+				{
+					ret.register_error("Unable to resolve event's arguments "s + one_event.get_target().to_string() + "!");
 					return ret.errors();
 				}
 				ctx.cache.emplace(ret.move_value());
@@ -1434,9 +1471,9 @@ rx_result method_blocks_algorithm::serialize_complex_attribute (const def_blocks
 	{
 		if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 		{
-			if (!stream.write_item_reference("inputs", whose.inputs_))
+			if (!stream.write_item_reference("in", whose.inputs_))
 				return stream.get_error();
-			if (!stream.write_item_reference("outputs", whose.outputs_))
+			if (!stream.write_item_reference("out", whose.outputs_))
 				return stream.get_error();
 		}
 	}
@@ -1450,9 +1487,9 @@ rx_result method_blocks_algorithm::deserialize_complex_attribute (def_blocks::me
 	{
 		if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 		{
-			if (!stream.read_item_reference("inputs", whose.inputs_))
+			if (!stream.read_item_reference("in", whose.inputs_))
 				return stream.get_error();
-			if (!stream.read_item_reference("outputs", whose.outputs_))
+			if (!stream.read_item_reference("out", whose.outputs_))
 				return stream.get_error();
 		}
 	}
@@ -1492,7 +1529,7 @@ bool method_blocks_algorithm::check_complex_attribute (def_blocks::method_attrib
 rx_result method_blocks_algorithm::construct_complex_attribute (const def_blocks::method_attribute& whose, construct_context& ctx)
 {
 	rx_node_id target;
-	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::filter_attribute::TargetType>());
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::method_attribute::TargetType>());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());
@@ -1502,9 +1539,9 @@ rx_result method_blocks_algorithm::construct_complex_attribute (const def_blocks
 	target = resolve_result.value();
 	ctx.start_method(whose.get_name());
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::method_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
-	ctx.end_method();
 	if (temp)
 	{
+		ctx.end_method(temp.move_value());
 		return true;
 	}
 	else

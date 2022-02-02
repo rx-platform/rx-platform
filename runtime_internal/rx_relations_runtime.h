@@ -80,10 +80,10 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
             if (parent_)
                 parent_->items_changed(items);
         }
-        void transaction_complete(runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
+        void execute_complete(runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
         {
             if (parent_)
-                parent_->transaction_complete(transaction_id, std::move(result), std::move(items));
+                parent_->execute_complete(transaction_id, item, std::move(result), std::move(data));
         }
         void write_complete(runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result)
         {
@@ -113,6 +113,8 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
 
       rx_result write_tag (runtime_transaction_id_t trans, runtime_handle_t item, rx_simple_value&& value);
 
+      rx_result execute_tag (runtime_transaction_id_t trans, runtime_handle_t item, data::runtime_values_data&& value);
+
       void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
@@ -121,7 +123,7 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
 
       void items_changed (const std::vector<update_item>& items);
 
-      void transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items);
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
       void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
 
@@ -166,6 +168,8 @@ class relation_value_point : public data_source::value_point_impl
 
       void result_received (rx_result&& result, runtime_transaction_id_t id);
 
+      void execute_result_received (rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id);
+
 
 
       remote_relation_connector *connector_;
@@ -197,6 +201,8 @@ class remote_relation_connector : public rx_platform::runtime::relations::relati
 
       rx_result write_tag (runtime_transaction_id_t trans, runtime_handle_t item, rx_simple_value&& value);
 
+      rx_result execute_tag (runtime_transaction_id_t trans, runtime_handle_t item, data::runtime_values_data&& value);
+
       void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
@@ -206,6 +212,8 @@ class remote_relation_connector : public rx_platform::runtime::relations::relati
       void value_changed (runtime_handle_t handle, const rx_value& val);
 
       void result_received (runtime_handle_t handle, rx_result&& result, runtime_transaction_id_t id);
+
+      void execute_result_received (runtime_handle_t handle, rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id);
 
 
   protected:

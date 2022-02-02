@@ -208,10 +208,9 @@ system_object::smart_ptr system_object::instance ()
 
 rx_result system_object::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    ctx.set_item_static("Info.Instance", rx_gate::instance().get_rx_name().c_str());
-    ctx.set_item_static("Info.Node", rx_gate::instance().get_host()->get_default_name().c_str());
+    ctx.set_item_static("Info.Instance", rx_gate::instance().get_instance_name().c_str());
+    ctx.set_item_static("Info.Node", rx_gate::instance().get_node_name().c_str());
     ctx.set_item_static("Info.StartTime", rx_gate::instance().get_started());
-    ctx.set_item_static("Info.Instance", rx_gate::instance().get_rx_name().c_str());
 
     auto result = current_time_.bind("Info.Time", ctx);
     if (result)

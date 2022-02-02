@@ -125,7 +125,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
             runtime_holder_algorithms<typeT>::fire_job(*this);
         });
     ctx.context = &context_;
-    auto result = tags_.initialize_runtime(ctx, &relations_);
+    auto result = tags_.initialize_runtime(ctx, &relations_, &logic_, &displays_);
     if (result)
     {
         result = relations_.initialize_relations(ctx);

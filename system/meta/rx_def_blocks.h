@@ -410,12 +410,6 @@ class complex_data_type
       }
 
 
-      const rx::data::runtime_values_data& get_overrides () const
-      {
-        return overrides_;
-      }
-
-
       const events_type& events () const
       {
         return events_;
@@ -429,16 +423,15 @@ class complex_data_type
       }
 
 
-      const string_type& get_description () const
-      {
-        return description_;
-      }
 
+      rx::data::runtime_values_data overrides;
 
 
       bool is_sealed;
 
       bool is_abstract;
+
+      string_type description;
 
 	  template <typename constT>
 	  bool register_const_value_static(const string_type& name, constT&& value, bool config_only = false);
@@ -481,14 +474,10 @@ class complex_data_type
 
       variables_type variables_;
 
-      rx::data::runtime_values_data overrides_;
-
       events_type events_;
 
 
       names_cahce_type names_cache_;
-
-      string_type description_;
 
 
 };
@@ -764,6 +753,12 @@ class mapper_attribute
       }
 
 
+      const rx_value_t get_value_type () const
+      {
+        return value_type_;
+      }
+
+
       const string_type& get_description () const
       {
         return description_;
@@ -782,6 +777,8 @@ class mapper_attribute
       string_type name_;
 
       rx_item_reference target_;
+
+      rx_value_t value_type_;
 
       string_type description_;
 
@@ -831,6 +828,12 @@ class source_attribute
       }
 
 
+      const rx_value_t get_value_type () const
+      {
+        return value_type_;
+      }
+
+
       const string_type& get_description () const
       {
         return description_;
@@ -849,6 +852,8 @@ class source_attribute
       string_type name_;
 
       rx_item_reference target_;
+
+      rx_value_t value_type_;
 
       string_type description_;
 

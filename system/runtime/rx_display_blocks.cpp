@@ -47,7 +47,19 @@ namespace display_blocks {
 
 rx_result displays_holder::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
 {
-	return RX_NOT_IMPLEMENTED;
+    size_t idx = path.find(RX_OBJECT_DELIMETER);
+    string_view_type name = path.substr(0, idx);
+    if (idx != string_type::npos)
+    {
+        for (auto& one : displays_)
+        {
+            if (one.name == name)
+            {
+                return one.get_value(path.substr(idx + 1), val, ctx);
+            }
+        }
+    }
+    return RX_INVALID_PATH;
 }
 
 rx_result displays_holder::initialize_displays (runtime::runtime_init_context& ctx)
@@ -110,7 +122,12 @@ void displays_holder::fill_data (const data::runtime_values_data& data, runtime_
 {
     for (auto& one : displays_)
     {
-        one.item->fill_data(data);
+        auto it = data.children.find(one.name);
+        if (it != data.children.end())
+        {
+            one.fill_data(it->second);
+            break;
+        }
     }
 }
 
@@ -119,7 +136,7 @@ void displays_holder::collect_data (data::runtime_values_data& data, runtime_val
     for (const auto& one : displays_)
     {
         data::runtime_values_data one_data;
-        one.item->collect_data(one_data, type);
+        one.collect_data(one_data, type);
         data.add_child(one.name, std::move(one_data));
 
     }
@@ -207,11 +224,11 @@ rx_result displays_holder::get_value_ref (string_view_type path, rt_value_ref& r
     if (idx != string_type::npos)
     {
         size_t len = idx;
-        for (const auto& one : displays_)
+        for (auto& one : displays_)
         {
             if (one.name == name)
             {
-                return one.item->get_value_ref(path.substr(idx+1), ref);
+                return one.get_value_ref(path.substr(idx+1), ref);
             }
         }
     }
@@ -240,6 +257,11 @@ rx_result displays_holder::get_struct_value (string_view_type item, string_view_
     }
 }
 
+void displays_holder::set_displays (std::vector<display_data> data)
+{
+    displays_ = const_size_vector<display_data>(std::move(data));
+}
+
 
 // Class rx_platform::runtime::display_blocks::display_data 
 
@@ -247,6 +269,37 @@ display_data::display_data (structure::runtime_item::smart_ptr&& rt, display_run
 {
 }
 
+
+
+void display_data::fill_data (const data::runtime_values_data& data)
+{
+    item->fill_data(data);
+}
+
+void display_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+{
+    item->collect_data(data, type);
+}
+
+rx_result display_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx)
+{
+    return item->browse_items(prefix, path, filter, items, ctx);
+}
+
+rx_result display_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+    return item->get_value(path, val, ctx);
+}
+
+rx_result display_data::get_value_ref (string_view_type path, rt_value_ref& ref)
+{
+    return item->get_value_ref(path, ref, false);
+}
+
+rx_result display_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+    return item->get_local_value(path, val);
+}
 
 
 } // namespace display_blocks

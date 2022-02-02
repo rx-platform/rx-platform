@@ -71,6 +71,8 @@ class data_source
 
       virtual void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id) = 0;
 
+      virtual void execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id) = 0;
+
       virtual void remove_item (const value_handle_extended& handle) = 0;
 
       virtual bool is_empty () const = 0;
@@ -161,6 +163,8 @@ class data_controler
 
       void write_item (value_handle_type handle, rx_simple_value val, runtime_transaction_id_t id);
 
+      void execute_item (value_handle_type handle, data::runtime_values_data data, runtime_transaction_id_t id);
+
       void remove_item (value_handle_type handle);
 
       static data_controler* get_controler ();
@@ -168,6 +172,8 @@ class data_controler
       void items_changed (const std::vector<std::pair<value_handle_type, rx_value> >& values);
 
       void result_received (value_handle_type handle, rx_result&& result, runtime_transaction_id_t id);
+
+      void execute_result_received (value_handle_type handle, rx_result&& result, data::runtime_values_data data, runtime_transaction_id_t id);
 
 
   protected:

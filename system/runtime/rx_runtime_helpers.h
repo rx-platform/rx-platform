@@ -114,6 +114,8 @@ namespace meta_algorithm
 template <class typeT>
 class object_types_algorithm;
 template <class typeT>
+class object_data_algorithm;
+template <class typeT>
 class meta_blocks_algorithm;
 class relation_blocks_algorithm;
 class complex_data_algorithm;
@@ -220,6 +222,7 @@ using tag_blocks::tags_callback_ptr;
 namespace structure {
 class const_value_data;
 class value_data;
+class full_value_data;
 class struct_data;
 class variable_data;
 class event_data;
@@ -228,6 +231,11 @@ class source_data;
 class mapper_data;
 class write_context;
 } // namespace structure
+
+namespace logic_blocks
+{
+class method_data;
+}
 
 
 typedef rx::const_size_vector<structure::variable_data> runtime_variables_type;
@@ -241,7 +249,9 @@ union rt_value_ref_union
 {
 	structure::const_value_data* const_value;
 	structure::value_data* value;
+    structure::full_value_data* full_value;
 	structure::variable_data* variable;
+    logic_blocks::method_data* method;
     relations::relation_data* relation;
     relations::relation_value_data* relation_value;
 };
@@ -250,9 +260,11 @@ enum class rt_value_ref_type
 	rt_null = 0,
 	rt_const_value = 1,
 	rt_value = 2,
-	rt_variable = 3,
-    rt_relation = 4,
-    rt_relation_value = 5
+    rt_full_value = 3,
+	rt_variable = 4,
+    rt_method = 5,
+    rt_relation = 6,
+    rt_relation_value = 7
 };
 struct rt_value_ref
 {
@@ -288,6 +300,23 @@ struct write_tag_data
     runtime_handle_t item;
     rx_simple_value value;
     tags_callback_ptr callback;
+};
+
+struct execute_result_data
+{
+    runtime_transaction_id_t transaction_id;
+    runtime_handle_t item;
+    rx_result result;
+    data::runtime_values_data data;
+};
+
+struct execute_tag_data
+{
+    runtime_transaction_id_t transaction_id;
+    runtime_handle_t item;
+    data::runtime_values_data data;
+    tags_callback_ptr callback;
+    rx_security_handle_t identity;
 };
 
 

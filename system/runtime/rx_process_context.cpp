@@ -59,6 +59,7 @@ mapper_writes_type g_empty_mapper_writes;
 mapper_updates_type g_empty_mapper_updates;
 filters_type g_empty_filters;
 events_type g_empty_events;
+method_results_type g_empty_method_results;
 }
 
 
@@ -90,14 +91,16 @@ bool runtime_process_context::should_do_step()
 
 // Class rx_platform::runtime::runtime_process_context 
 
-runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs)
+runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor)
       : tags_(tags),
         binded_(binded),
         current_step_(runtime_process_step::idle),
         meta_info(info),
         directory_resolver_(dirs),
         serialize_value_(false),
-        stopping_(false)
+        stopping_(false),
+        job_queue_(nullptr),
+        anchor_(anchor)
 {
     mode_.turn_off();
     now = rx_time::now();
@@ -531,6 +534,30 @@ void runtime_process_context::runtime_stopped ()
     stopping_ = true;
 }
 
+void runtime_process_context::full_value_changed (structure::full_value_data* whose)
+{
+    binded_.full_value_changed(whose, whose->get_value(this), tags_);
+}
+
+void runtime_process_context::method_result_pending (method_execute_result_data data)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::programs>();
+    method_results_.emplace_back(std::move(data));
+}
+
+method_results_type& runtime_process_context::get_method_results ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    RX_ASSERT(current_step_ == runtime_process_step::programs);
+    if (current_step_ == runtime_process_step::programs)
+        return method_results_.get_and_swap();
+    else
+        return g_empty_method_results;
+}
+
 rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)
 {
     return ctx->set_value(handle, std::move(val));
@@ -545,6 +572,9 @@ rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t
 
 
 // Class rx_platform::runtime::relation_subscriber 
+
+
+// Class rx_platform::runtime::execute_data 
 
 
 } // namespace runtime

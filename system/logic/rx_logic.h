@@ -34,6 +34,8 @@
 
 #include "system/meta/rx_meta_data.h"
 
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 // rx_ptr
@@ -41,6 +43,7 @@
 // soft_plc
 #include "soft_logic/soft_plc.h"
 
+using rx_platform::runtime::execute_data;
 
 
 namespace rx_platform {
@@ -146,6 +149,42 @@ ladder program class.");
 
 
 
+class method_execution_context 
+{
+    friend class runtime::logic_blocks::method_data;
+
+  public:
+      method_execution_context (execute_data data);
+
+
+      void execution_complete (rx_result result, data::runtime_values_data data);
+
+      void execution_complete (rx_result result);
+
+      void execution_complete (data::runtime_values_data data);
+
+
+  protected:
+
+  private:
+
+
+      runtime::execute_data data_;
+
+
+      runtime::runtime_process_context* context_;
+
+      runtime::logic_blocks::method_data* method_data_;
+
+
+};
+
+
+
+
+
+
+
 class method_runtime : public rx::pointers::reference_object  
 {
 
@@ -164,6 +203,10 @@ class method_runtime : public rx::pointers::reference_object
       virtual rx_result start_runtime (runtime::runtime_start_context& ctx);
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      virtual method_execution_context* create_execution_context (execute_data data);
+
+      virtual rx_result execute (data::runtime_values_data args, method_execution_context* context);
 
 
       string_type get_name () const

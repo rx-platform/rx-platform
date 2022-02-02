@@ -873,7 +873,14 @@ rx_value relation_value_data::get_value (runtime_process_context* ctx) const
 
 rx_result relation_value_data::write_value (write_data&& data, structure::write_task* task, runtime_process_context* ctx)
 {
+	security::secured_scope _(data.identity);
 	return parent->write_tag(handle, std::move(data), task, ctx);
+}
+
+rx_result relation_value_data::execute (execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
+{
+	security::secured_scope _(data.identity);
+	return parent->execute_tag(handle, std::move(data), task, ctx);
 }
 
 
@@ -930,6 +937,25 @@ rx_result relation_connections::write_tag (runtime_handle_t item, write_data&& d
 	}
 }
 
+rx_result relation_connections::execute_tag (runtime_handle_t item, execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
+{
+	if (connector_)
+	{
+		auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
+		pending_execute_tasks_.emplace(new_trans, task);
+		data.transaction_id = new_trans;
+		auto result = connector_->execute_tag(new_trans, item, std::move(data.data));
+		if (!result)
+			pending_execute_tasks_.erase(new_trans);
+
+		return result;
+	}
+	else
+	{
+		return RX_NOT_CONNECTED;
+	}
+}
+
 void relation_connections::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback)
 {
 	if (connector_)
@@ -940,14 +966,6 @@ void relation_connections::browse (const string_type& prefix, const string_type&
 	{
 		callback("Wrong object state!", std::vector<runtime_item_attribute>());
 	}
-}
-
-void relation_connections::write_value (const string_type& path, write_data&& data, structure::write_task* task, runtime_process_context* ctx)
-{
-}
-
-void relation_connections::write_struct (string_view_type path, write_struct_data data)
-{
 }
 
 void relation_connections::read_value (const string_type& path, read_result_callback_t callback, runtime_process_context* ctx) const
@@ -1103,12 +1121,17 @@ void relation_connections::items_changed (const std::vector<update_item>& items)
 			it->second->value = one.value;
 			algorithms::runtime_relation_algorithms::relation_value_change(it->second,one.value, context);
 		}
-
 	}
 }
 
-void relation_connections::transaction_complete (runtime_transaction_id_t transaction_id, rx_result result, std::vector<update_item>&& items)
+void relation_connections::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
 {
+	auto it = pending_execute_tasks_.find(transaction_id);
+	if (it != pending_execute_tasks_.end())
+	{
+		it->second->process_result(std::move(result), std::move(data));
+		pending_execute_tasks_.erase(it);
+	}
 }
 
 void relation_connections::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result)

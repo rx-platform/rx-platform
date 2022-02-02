@@ -186,6 +186,57 @@ class relation_subscriber
 };
 
 
+
+
+
+
+struct execute_data 
+{
+
+
+      bool internal;
+
+      runtime_transaction_id_t transaction_id;
+
+      data::runtime_values_data data;
+
+      bool test;
+
+      rx_security_handle_t identity;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+struct method_execute_result_data
+{
+    logic_blocks::method_data* whose;
+    rx_result result;
+    data::runtime_values_data data;
+    runtime_transaction_id_t transaction_id;
+    method_execute_result_data() = default;
+    method_execute_result_data(method_execute_result_data&& right) noexcept
+    {
+        whose = right.whose;
+        result = std::move(right.result);
+        data = std::move(right.data);
+        transaction_id = right.transaction_id;
+    }
+    method_execute_result_data& operator=(method_execute_result_data&& right) noexcept
+    {
+        whose = right.whose;
+        result = std::move(right.result);
+        data = std::move(right.data);
+        transaction_id = right.transaction_id;
+        return *this;
+    }
+};
+
 enum class runtime_process_step : uint_fast8_t
 {
     idle = 0,
@@ -262,6 +313,9 @@ typedef std::vector<write_data_struct<structure::mapper_data> > mapper_writes_ty
 typedef std::vector<write_data_struct<structure::source_data> > source_writes_type;
 typedef std::vector<write_result_struct<structure::source_data> > source_results_type;
 typedef std::vector<write_result_struct<structure::variable_data> > variable_results_type;
+
+typedef std::vector<method_execute_result_data> method_results_type;
+
 typedef std::vector<remotes_data> remotes_data_type;
 
 typedef std::vector<structure::variable_data*> variables_type;
@@ -287,7 +341,7 @@ class runtime_process_context
     //typedef std::vector<context_value_point*> points_type;
 
   public:
-      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs);
+      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor);
 
 
       bool should_repeat ();
@@ -381,6 +435,12 @@ class runtime_process_context
       remotes_data_type& get_from_remote ();
 
       void runtime_stopped ();
+
+      void full_value_changed (structure::full_value_data* whose);
+
+      void method_result_pending (method_execute_result_data data);
+
+      method_results_type& get_method_results ();
 
 
       const rx_mode_type get_mode () const
@@ -500,6 +560,12 @@ class runtime_process_context
       double_collection<remotes_data_type> from_remote_;
 
       bool stopping_;
+
+      double_collection<method_results_type> method_results_;
+
+      threads::job_thread* job_queue_;
+
+      rx_reference_ptr anchor_;
 
       template<runtime_process_step step>
       void turn_on_pending();

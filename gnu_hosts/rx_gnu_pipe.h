@@ -56,8 +56,6 @@ class gnu_pipe_host : public host::pipe::rx_pipe_host
       ~gnu_pipe_host();
 
 
-      string_type get_default_name () const;
-
       void get_host_info (string_array& hosts);
 
       static string_type get_gnu_pipe_info ();

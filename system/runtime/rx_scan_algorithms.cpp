@@ -368,9 +368,15 @@ void runtime_scan_algorithms<typeT>::process_variables (typename typeT::RType& w
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_programs (typename typeT::RType& whose, runtime_process_context& ctx)
 {
+    // order here is very important 
+    auto method_results = &ctx.get_method_results();
     auto programs = &ctx.get_programs_for_process();
-    while (!programs->empty())
+    while (!programs->empty() || !method_results->empty())
     {
+        for (auto& one : *method_results)
+            one.whose->process_execute_result(one.transaction_id, std::move(one.result), std::move(one.data));
+        method_results = &ctx.get_method_results();
+
         for (auto& one : *programs)
             one->process_program(ctx);
         programs = &ctx.get_programs_for_process();

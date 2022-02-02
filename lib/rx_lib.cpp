@@ -41,9 +41,9 @@
 
 using namespace rx::values;
 
-string_type _not_implemented_func(const char* fname)
+string_type _implemented_func(const char* fname)
 {
-    return string_type(fname) + " not implemented";
+    return string_type(fname);
 }
 
 namespace rx
