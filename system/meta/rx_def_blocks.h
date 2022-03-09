@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -41,9 +41,9 @@
 namespace rx_platform {
 namespace meta {
 namespace def_blocks {
+class mapper_attribute;
 class variable_attribute;
 class struct_attribute;
-class mapper_attribute;
 
 } // namespace def_blocks
 } // namespace meta

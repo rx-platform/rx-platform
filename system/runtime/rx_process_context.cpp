@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -447,7 +447,7 @@ rx_result runtime_process_context::do_command (rx_object_command_t command_type)
     return "Error executing command!";
 }
 
-void runtime_process_context::own_pending (jobs::job_ptr what)
+void runtime_process_context::own_pending (job_ptr what)
 {
     locks::auto_lock_t _(&context_lock_);
     if (stopping_)

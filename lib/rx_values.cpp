@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -162,7 +162,7 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 				rx_node_id temp;
 				if (!reader.read_id(name, temp))
 					return false;
-				return rx_init_node_id_value(&val, &temp) == RX_OK;
+				return rx_init_node_id_value(&val, temp.c_ptr()) == RX_OK;
 			}
 		case RX_STRING_TYPE:
 			{
@@ -688,54 +688,56 @@ bool set_float_to_value(typed_value_type& to, double val, rx_value_t type)
 
 // Class rx::values::rx_value 
 
-rx_value::rx_value (const full_value_type& storage)
+rx_value::rx_value (const full_value_type* storage)
 {
-	rx_copy_value(&value, &storage.value);
-	quality = storage.quality;
-	origin = storage.origin;
+	rx_copy_value(&data_.value, &storage->value);
+	data_.time = storage->time;
+	data_.quality = storage->quality;
+	data_.origin = storage->origin;
 }
 
-rx_value::rx_value (const typed_value_type& storage, rx_time ts, const rx_mode_type& mode)
+rx_value::rx_value (const typed_value_type* storage, rx_time ts, const rx_mode_type& mode)
 {
-	rx_copy_value(&value, &storage);
-	quality = mode.is_off() ? RX_BAD_QUALITY_OFFLINE : RX_GOOD_QUALITY;
-	origin = RX_DEFAULT_ORIGIN;
+	rx_copy_value(&data_.value, storage);
+	data_.quality = mode.is_off() ? RX_BAD_QUALITY_OFFLINE : RX_GOOD_QUALITY;
+	data_.origin = RX_DEFAULT_ORIGIN;
 	if (mode.is_test())
 		set_test();
-	time = ts;
+	data_.time = ts;
 }
 
 
 rx_value::~rx_value()
 {
-	rx_destroy_value(&value);
+	rx_destroy_value(&data_.value);
+	static_assert(sizeof(rx_value) == sizeof(full_value_type), "Memory size has to be the same, no virtual functions or members");
 }
 
 
 
 bool rx_value::is_bad () const
 {
-	return ((quality & RX_QUALITY_MASK) == RX_BAD_QUALITY);
+	return ((data_.quality & RX_QUALITY_MASK) == RX_BAD_QUALITY);
 }
 
 bool rx_value::is_uncertain () const
 {
-	return ((quality & RX_QUALITY_MASK) == RX_UNCERTAIN_QUALITY);
+	return ((data_.quality & RX_QUALITY_MASK) == RX_UNCERTAIN_QUALITY);
 }
 
 bool rx_value::is_test () const
 {
-	return ((origin & RX_TEST_ORIGIN) == RX_TEST_ORIGIN);
+	return ((data_.origin & RX_TEST_ORIGIN) == RX_TEST_ORIGIN);
 }
 
 bool rx_value::is_substituted () const
 {
-	return ((origin & RX_FORCED_ORIGIN) == RX_FORCED_ORIGIN);
+	return ((data_.origin & RX_FORCED_ORIGIN) == RX_FORCED_ORIGIN);
 }
 
 bool rx_value::is_good () const
 {
-	return ((quality & RX_QUALITY_MASK) == RX_GOOD_QUALITY);
+	return ((data_.quality & RX_QUALITY_MASK) == RX_GOOD_QUALITY);
 }
 
 bool rx_value::can_operate (bool test_mode) const
@@ -749,15 +751,15 @@ bool rx_value::serialize (const string_type& name, base_meta_writer& stream) con
 {
 	if (!stream.start_object(name.c_str()))
 		return false;
-	if (!stream.write_value_type("type", value.value_type))
+	if (!stream.write_value_type("type", data_.value.value_type))
 		return false;
-	if (!serialize_value(stream, value.value, value.value_type, "val"))
+	if (!serialize_value(stream, data_.value.value, data_.value.value_type, "val"))
 		return false;
-	if (!stream.write_time("ts", time))
+	if (!stream.write_time("ts", data_.time))
 		return false;
-	if (!stream.write_uint("quality", quality))
+	if (!stream.write_uint("quality", data_.quality))
 		return false;
-	if (!stream.write_uint("origin", origin))
+	if (!stream.write_uint("origin", data_.origin))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -769,15 +771,15 @@ bool rx_value::deserialize (const string_type& name, base_meta_reader& stream)
 	if (!stream.start_object(name.c_str()))
 		return false;
 	// first destroy eventual values already inside
-	rx_destroy_value(&value);
+	rx_destroy_value(&data_.value);
 	
-	if (!deserialize_value(stream, value, "val"))
+	if (!deserialize_value(stream, data_.value, "val"))
 		return false;
-	if (!stream.read_time("ts", time))
+	if (!stream.read_time("ts", data_.time))
 		return false;
-	if (!stream.read_uint("quality", quality))
+	if (!stream.read_uint("quality", data_.quality))
 		return false;
-	if (!stream.read_uint("origin", origin))
+	if (!stream.read_uint("origin", data_.origin))
 		return false;
 	if (!stream.end_object())
 		return false;
@@ -787,9 +789,9 @@ bool rx_value::deserialize (const string_type& name, base_meta_reader& stream)
 void rx_value::dump_to_stream (std::ostream& out) const
 {
 	rx_string_wrapper str;
-	rx_get_string_value(&value, -1, &str);
+	rx_get_string_value(&data_.value, -1, &str);
 	out << str.to_string_view();
-	rx_time temp(time);
+	rx_time temp(data_.time);
 	out << " [" << temp.get_string() << "] ";
 	string_type q;
 	fill_quality_string(*this, q);
@@ -800,42 +802,42 @@ void rx_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type&
 {
 	val = *this;
 	if (mode.is_off())
-		val.quality = RX_BAD_QUALITY_OFFLINE;
+		val.data_.quality = RX_BAD_QUALITY_OFFLINE;
 	if (mode.is_test())
 		val.set_test();
 }
 
 rx_value_t rx_value::get_type () const
 {
-	return value.value_type;
+	return data_.value.value_type;
 }
 
 bool rx_value::convert_to (rx_value_t type)
 {
-	int ret_val = rx_convert_value(&value, type);
+	int ret_val = rx_convert_value(&data_.value, type);
 	if (!ret_val)
 	{
-		quality = RX_BAD_QUALITY_TYPE_MISMATCH;
+		data_.quality = RX_BAD_QUALITY_TYPE_MISMATCH;
 	}
 	return ret_val == RX_OK;
 }
 
 void rx_value::parse (const string_type& str)
 {
-	rx_destroy_value(&value);
-	if (!rx_parse_string(&value, str.c_str()))
-		rx_init_null_value(&value);
+	rx_destroy_value(&data_.value);
+	if (!rx_parse_string(&data_.value, str.c_str()))
+		rx_init_null_value(&data_.value);
 }
 
 bool rx_value::is_array () const
 {
-	return rx_is_array_value(&value);
+	return rx_is_array_value(&data_.value);
 }
 
 size_t rx_value::array_size () const
 {
 	size_t ret = 0;
-	int ret_val = rx_get_array_size(&value, &ret);
+	int ret_val = rx_get_array_size(&data_.value, &ret);
 	if (ret_val)
 		return ret;
 	else
@@ -844,50 +846,50 @@ size_t rx_value::array_size () const
 
 bool rx_value::is_null () const
 {
-	return rx_is_null_value(&value);
+	return rx_is_null_value(&data_.value);
 }
 
 bool rx_value::is_complex () const
 {
-	return rx_is_complex_value(&value);
+	return rx_is_complex_value(&data_.value);
 }
 
 bool rx_value::is_numeric () const
 {
-	return rx_is_numeric_value(&value);
+	return rx_is_numeric_value(&data_.value);
 }
 
 bool rx_value::is_integer () const
 {
-	return rx_is_integer_value(&value);
+	return rx_is_integer_value(&data_.value);
 }
 
 bool rx_value::is_unassigned () const
 {
-	return rx_is_unassigned_value(&value);
+	return rx_is_unassigned_value(&data_.value);
 }
 
 bool rx_value::is_float () const
 {
-	return rx_is_float_value(&value);
+	return rx_is_float_value(&data_.value);
 }
 
 bool rx_value::is_string () const
 {
-	return rx_is_string_value(&value);
+	return rx_is_string_value(&data_.value);
 }
 
 string_type rx_value::get_string (size_t idx) const
 {
 	rx_string_wrapper str;
-	rx_get_string_value(&value, idx, &str);
+	rx_get_string_value(&data_.value, idx, &str);
 	return str.to_string();
 }
 
 bool rx_value::get_bool (size_t idx) const
 {
 	int ret = 0;
-	if (rx_get_bool_value(&value, idx, &ret))
+	if (rx_get_bool_value(&data_.value, idx, &ret))
 		return ret != 0;
 	else
 		return false;
@@ -896,7 +898,7 @@ bool rx_value::get_bool (size_t idx) const
 int64_t rx_value::get_integer (rx_value_t* type, size_t idx) const
 {
 	int64_t ret = 0;
-	if (rx_get_integer_value(&value, idx, &ret, type))
+	if (rx_get_integer_value(&data_.value, idx, &ret, type))
 		return ret;
 	else
 		return 0;
@@ -905,7 +907,7 @@ int64_t rx_value::get_integer (rx_value_t* type, size_t idx) const
 uint64_t rx_value::get_unassigned (rx_value_t* type, size_t idx) const
 {
 	uint64_t ret = 0;
-	if (rx_get_unassigned_value(&value, idx, &ret, type))
+	if (rx_get_unassigned_value(&data_.value, idx, &ret, type))
 		return ret;
 	else
 		return 0;
@@ -914,7 +916,7 @@ uint64_t rx_value::get_unassigned (rx_value_t* type, size_t idx) const
 double rx_value::get_float (rx_value_t* type, size_t idx) const
 {
 	double ret = 0;
-	if (rx_get_float_value(&value, idx, &ret, type))
+	if (rx_get_float_value(&data_.value, idx, &ret, type))
 		return ret;
 	else
 		return 0;
@@ -923,7 +925,7 @@ double rx_value::get_float (rx_value_t* type, size_t idx) const
 complex_value rx_value::get_complex (size_t idx) const
 {
 	complex_value ret{ 0,0 };
-	if (rx_get_complex_value(&value, idx, &ret))
+	if (rx_get_complex_value(&data_.value, idx, &ret))
 		return ret;
 	else
 		return complex_value{ 0,0 };
@@ -932,40 +934,40 @@ complex_value rx_value::get_complex (size_t idx) const
 string_type rx_value::to_string () const
 {
 	rx_string_wrapper str;
-	rx_get_string_value(&value, RX_INVALID_INDEX_VALUE, &str);
+	rx_get_string_value(&data_.value, RX_INVALID_INDEX_VALUE, &str);
 	return str.to_string();
 }
 
 void rx_value::set_integer (int64_t val, rx_value_t type, size_t idx)
 {
-	rx_destroy_value(&value);
-	if (!set_integer_to_value(value, val, type))
-		quality = RX_BAD_QUALITY_TYPE_MISMATCH;
+	rx_destroy_value(&data_.value);
+	if (!set_integer_to_value(data_.value, val, type))
+		data_.quality = RX_BAD_QUALITY_TYPE_MISMATCH;
 }
 
 void rx_value::set_unassigned (int64_t val, rx_value_t type, size_t idx)
 {
-	rx_destroy_value(&value);
-	if (!set_unassigned_to_value(value, val, type))
-		quality = RX_BAD_QUALITY_TYPE_MISMATCH;
+	rx_destroy_value(&data_.value);
+	if (!set_unassigned_to_value(data_.value, val, type))
+		data_.quality = RX_BAD_QUALITY_TYPE_MISMATCH;
 }
 
 void rx_value::set_float (double val, rx_value_t type, size_t idx)
 {
-	rx_destroy_value(&value);
-	if (!set_float_to_value(value, val, type))
-		quality = RX_BAD_QUALITY_TYPE_MISMATCH;
+	rx_destroy_value(&data_.value);
+	if (!set_float_to_value(data_.value, val, type))
+		data_.quality = RX_BAD_QUALITY_TYPE_MISMATCH;
 }
 
 rx_time rx_value::set_time (rx_time time)
 {
-	this->time = time;
+	data_.time = time;
 	return time;
 }
 
 rx_time rx_value::get_time () const
 {
-	return time;
+	return data_.time;
 }
 
 bool rx_value::compare (const rx_value& right, time_compare_type time_compare) const
@@ -973,13 +975,13 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	switch (time_compare)
 	{
 	case time_compare_type::skip:
-		return quality == right.quality && rx_compare_values(&value, &right.value) == 0;
+		return data_.quality == right.data_.quality && rx_compare_values(&data_.value, &right.data_.value) == 0;
 	case time_compare_type::ms_accurate:
-		return quality == right.quality && rx_compare_values(&value, &right.value) == 0
-			&& (rx_time(time).get_longlong_miliseconds() == rx_time(right.time).get_longlong_miliseconds());
+		return data_.quality == right.data_.quality && rx_compare_values(&data_.value, &right.data_.value) == 0
+			&& (rx_time(data_.time).get_longlong_miliseconds() == rx_time(right.data_.time).get_longlong_miliseconds());
 	case time_compare_type::exact:
-		return quality == right.quality && rx_compare_values(&value, &right.value) == 0
-			&& time.t_value == right.time.t_value;
+		return data_.quality == right.data_.quality && rx_compare_values(&data_.value, &right.data_.value) == 0
+			&& data_.time.t_value == right.data_.time.t_value;
 	default:
 		return false;
 	}
@@ -987,30 +989,30 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 
 rx_simple_value rx_value::to_simple () const
 {
-    return rx_simple_value(value);
+    return rx_simple_value(&data_.value);
 }
 
 void rx_value::set_substituted ()
 {
-	uint32_t dummy =origin&RX_ORIGIN_MASK & RX_FORCED_ORIGIN;
-	origin = dummy | (origin^RX_ORIGIN_MASK);
+	uint32_t dummy = data_.origin&RX_ORIGIN_MASK & RX_FORCED_ORIGIN;
+	data_.origin = dummy | (data_.origin^RX_ORIGIN_MASK);
 }
 
 void rx_value::set_test ()
 {
-	uint32_t dummy = origin&RX_ORIGIN_MASK & RX_FORCED_ORIGIN;
-	origin = dummy | (origin^ RX_TEST_ORIGIN);
+	uint32_t dummy = data_.origin&RX_ORIGIN_MASK & RX_FORCED_ORIGIN;
+	data_.origin = dummy | (data_.origin^ RX_TEST_ORIGIN);
 }
 
 bool rx_value::is_dead () const
 {
-	return ((quality & RX_QUALITY_MASK) == RX_DEAD_QUALITY);
+	return ((data_.quality & RX_QUALITY_MASK) == RX_DEAD_QUALITY);
 }
 
 bool rx_value::adapt_quality_to_mode (const rx_mode_type& mode)
 {
 	bool ret = false;
-	if (((origin&RX_TEST_ORIGIN)!=0) ^ ((mode.raw_format&RX_MODE_MASK_TEST)==0))
+	if (((data_.origin&RX_TEST_ORIGIN)!=0) ^ ((mode.raw_format&RX_MODE_MASK_TEST)==0))
 	{
 		ret = true;
 		if (is_test())
@@ -1025,126 +1027,149 @@ bool rx_value::adapt_quality_to_mode (const rx_mode_type& mode)
 
 void rx_value::set_offline ()
 {
-	quality = RX_BAD_QUALITY_OFFLINE;
-	origin |= RX_TEST_ORIGIN;
+	data_.quality = RX_BAD_QUALITY_OFFLINE;
+	data_.origin |= RX_TEST_ORIGIN;
 }
 
 void rx_value::set_good_locally ()
 {
-	quality = RX_GOOD_QUALITY;
-	origin = RX_LOCAL_ORIGIN;
+	data_.quality = RX_GOOD_QUALITY;
+	data_.origin = RX_LOCAL_ORIGIN;
 }
 
 uint32_t rx_value::get_quality () const
 {
-  return quality;
+  return data_.quality;
 
 }
 
 void rx_value::set_quality (uint32_t val)
 {
-  quality = val;
+  data_.quality = val;
 
 }
 
 
 rx_value::rx_value()
 {
-	rx_init_null_value(&value);
-	origin = RX_DEFAULT_ORIGIN;
-	quality = RX_DEFAULT_VALUE_QUALITY;
+	rx_init_null_value(&data_.value);
+	data_.origin = RX_DEFAULT_ORIGIN;
+	data_.quality = RX_DEFAULT_VALUE_QUALITY;
+}
+rx_value::rx_value(full_value_type right) noexcept
+{
+	rx_move_value(&data_.value, &right.value);
+	data_.origin = right.origin;
+	data_.quality = right.quality;
+	data_.time = right.time;
 }
 rx_value::rx_value(rx_value&& right) noexcept
 {
-	rx_move_value(&value, &right.value);
-	origin = right.origin;
-	quality = right.quality;
-	time = right.time;
+	rx_move_value(&data_.value, &right.data_.value);
+	data_.origin = right.data_.origin;
+	data_.quality = right.data_.quality;
+	data_.time = right.data_.time;
 }
 
 rx_value& rx_value::operator=(rx_value&& right) noexcept
 {
-	rx_destroy_value(&value);
-	rx_move_value(&value, &right.value);
-	origin = right.origin;
-	quality = right.quality;
-	time = right.time;
+	rx_destroy_value(&data_.value);
+	rx_move_value(&data_.value, &right.data_.value);
+	data_.origin = right.data_.origin;
+	data_.quality = right.data_.quality;
+	data_.time = right.data_.time;
 	return *this;
 }
 rx_value::rx_value(const rx_value &right)
 {
-	rx_copy_value(&value, &right.value);
-	origin = right.origin;
-	quality = right.quality;
-	time = right.time;
+	rx_copy_value(&data_.value, &right.data_.value);
+	data_.origin = right.data_.origin;
+	data_.quality = right.data_.quality;
+	data_.time = right.data_.time;
 }
 rx_value& rx_value::operator=(const rx_value& right)
 {
-	rx_destroy_value(&value);
-	rx_copy_value(&value, &right.value);
-	origin = right.origin;
-	quality = right.quality;
-	time = right.time;
+	rx_destroy_value(&data_.value);
+	rx_copy_value(&data_.value, &right.data_.value);
+	data_.origin = right.data_.origin;
+	data_.quality = right.data_.quality;
+	data_.time = right.data_.time;
 	return *this;
 }
 
 
 rx_value::rx_value(rx_simple_value&& right, rx_time ts, uint32_t quality) noexcept
 {
-	rx_move_value(&value, &right);
-	time = ts;
-	this->quality = quality;
-	origin = RX_DEFAULT_ORIGIN;
+	typed_value_type temp = right.move();
+	rx_move_value(&data_.value, &temp);
+	data_.time = ts;
+	data_.quality = quality;
+	data_.origin = RX_DEFAULT_ORIGIN;
 }
 rx_value::rx_value(const rx_simple_value& right, rx_time ts, uint32_t quality)
 {
-	rx_copy_value(&value, &right);
-	time = ts;
-	this->quality = quality;
-	origin = RX_DEFAULT_ORIGIN;
+	rx_copy_value(&data_.value, right.c_ptr());
+	data_.time = ts;
+	data_.quality = quality;
+	data_.origin = RX_DEFAULT_ORIGIN;
 }
 
 rx_value::rx_value(rx_timed_value&& right, uint32_t quality) noexcept
 {
-	rx_move_value(&value, &right.value);
-	time = right.time;
-	this->quality = quality;
-	origin = RX_DEFAULT_ORIGIN;
+	timed_value_type temp = right.move();
+	rx_move_value(&data_.value, &temp.value);
+	data_.time = temp.time;
+	data_.quality = quality;
+	data_.origin = RX_DEFAULT_ORIGIN;
 }
 rx_value::rx_value(const rx_timed_value& right, uint32_t quality)
 {
-	rx_copy_value(&value, &right.value);
-	time = right.time;
-	this->quality = quality;
-	origin = RX_DEFAULT_ORIGIN;
+	rx_copy_value(&data_.value, &right.c_ptr()->value);
+	data_.time = right.get_time();
+	data_.quality = quality;
+	data_.origin = RX_DEFAULT_ORIGIN;
 }
 
 bool rx_value::operator==(const rx_value& right) const
 {
-	return quality == right.quality && rx_compare_values(&value, &right.value) == 0;
+	return data_.quality == right.data_.quality && rx_compare_values(&data_.value, &right.data_.value) == 0;
 }
 bool rx_value::operator!=(const rx_value& right) const
 {
 	return !operator==(right);
 }
 
+full_value_type rx_value::move() noexcept 
+{
+	full_value_type ret;
+	rx_move_value(&ret.value, &data_.value);
+	ret.time = data_.time;
+	ret.origin = data_.origin;
+	ret.quality = data_.quality;
+	return ret;
+}
+const full_value_type* rx_value::c_ptr() const noexcept
+{
+	return &data_;
+}
 // Class rx::values::rx_simple_value 
 
-rx_simple_value::rx_simple_value (const typed_value_type& storage)
+rx_simple_value::rx_simple_value (const typed_value_type* storage)
 {
-	rx_copy_value(this, &storage);
+	rx_copy_value(&data_, storage);
 }
 
 
 rx_simple_value::~rx_simple_value()
 {
-	rx_destroy_value(this);
+	rx_destroy_value(&data_);
+	static_assert(sizeof(rx_simple_value) == sizeof(typed_value_type), "Memory size has to be the same, no virtual functions or members");
 }
 
 
 bool rx_simple_value::operator==(const rx_simple_value &right) const
 {
-	return rx_compare_values(this, &right) == 0;
+	return rx_compare_values(&data_, &right.data_) == 0;
 }
 
 bool rx_simple_value::operator!=(const rx_simple_value &right) const
@@ -1188,9 +1213,9 @@ bool rx_simple_value::serialize (const string_type& name, base_meta_writer& writ
 {
 	if (!writter.start_object(name.c_str()))
 		return false;
-	if (!writter.write_value_type("type", value_type))
+	if (!writter.write_value_type("type", data_.value_type))
 		return false;
-	if (!serialize_value(writter, value, value_type, "val"))
+	if (!serialize_value(writter, data_.value, data_.value_type, "val"))
 		return false;
 	if (!writter.end_object())
 		return false;
@@ -1202,8 +1227,8 @@ bool rx_simple_value::deserialize (const string_type& name, base_meta_reader& re
 	if (!reader.start_object(name.c_str()))
 		return false;
 	// first destroy eventual values already inside
-	rx_destroy_value(this);
-	if (!deserialize_value(reader, *this, "val"))
+	rx_destroy_value(&data_);
+	if (!deserialize_value(reader, data_, "val"))
 		return false;
 	if (!reader.end_object())
 		return false;
@@ -1213,42 +1238,42 @@ bool rx_simple_value::deserialize (const string_type& name, base_meta_reader& re
 void rx_simple_value::dump_to_stream (std::ostream& out) const
 {
 	rx_string_wrapper str;
-	rx_get_string_value(this, -1, &str);
+	rx_get_string_value(&data_, -1, &str);
 	out << str.to_string_view();
 }
 
 void rx_simple_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
 {
-	val = rx_value(*this, ts, mode);
+	val = rx_value(&data_, ts, mode);
 }
 
 rx_value_t rx_simple_value::get_type () const
 {
-	return value_type;
+	return data_.value_type;
 }
 
 bool rx_simple_value::convert_to (rx_value_t type)
 {
-	int ret_val = rx_convert_value(this, type);
+	int ret_val = rx_convert_value(&data_, type);
 	return ret_val == RX_OK;
 }
 
 void rx_simple_value::parse (const string_type& str)
 {
-	rx_destroy_value(this);
-	if (!rx_parse_string(this, str.c_str()))
-		rx_init_null_value(this);
+	rx_destroy_value(&data_);
+	if (!rx_parse_string(&data_, str.c_str()))
+		rx_init_null_value(&data_);
 }
 
 bool rx_simple_value::is_array () const
 {
-	return rx_is_array_value(this);
+	return rx_is_array_value(&data_);
 }
 
 size_t rx_simple_value::array_size () const
 {
 	size_t ret = 0;
-	int ret_val = rx_get_array_size(this, &ret);
+	int ret_val = rx_get_array_size(&data_, &ret);
 	if (ret_val)
 		return ret;
 	else
@@ -1257,50 +1282,50 @@ size_t rx_simple_value::array_size () const
 
 bool rx_simple_value::is_null () const
 {
-	return rx_is_null_value(this);
+	return rx_is_null_value(&data_);
 }
 
 bool rx_simple_value::is_complex () const
 {
-	return rx_is_complex_value(this);
+	return rx_is_complex_value(&data_);
 }
 
 bool rx_simple_value::is_numeric () const
 {
-	return rx_is_numeric_value(this);
+	return rx_is_numeric_value(&data_);
 }
 
 bool rx_simple_value::is_integer () const
 {
-	return rx_is_integer_value(this);
+	return rx_is_integer_value(&data_);
 }
 
 bool rx_simple_value::is_unassigned () const
 {
-	return rx_is_unassigned_value(this);
+	return rx_is_unassigned_value(&data_);
 }
 
 bool rx_simple_value::is_float () const
 {
-	return rx_is_float_value(this);
+	return rx_is_float_value(&data_);
 }
 
 bool rx_simple_value::is_string () const
 {
-	return rx_is_string_value(this);
+	return rx_is_string_value(&data_);
 }
 
 string_type rx_simple_value::get_string (size_t idx) const
 {
 	rx_string_wrapper str;
-	rx_get_string_value(this, idx, &str);
+	rx_get_string_value(&data_, idx, &str);
 	return str.to_string();
 }
 
 bool rx_simple_value::get_bool (size_t idx) const
 {
 	int ret = 0;
-	if (rx_get_bool_value(this, idx, &ret))
+	if (rx_get_bool_value(&data_, idx, &ret))
 		return ret != 0;
 	else
 		return false;
@@ -1309,7 +1334,7 @@ bool rx_simple_value::get_bool (size_t idx) const
 int64_t rx_simple_value::get_integer (rx_value_t* type, size_t idx) const
 {
 	int64_t ret = 0;
-	if (rx_get_integer_value(this, idx, &ret, type))
+	if (rx_get_integer_value(&data_, idx, &ret, type))
 		return ret;
 	else
 		return 0;
@@ -1318,7 +1343,7 @@ int64_t rx_simple_value::get_integer (rx_value_t* type, size_t idx) const
 uint64_t rx_simple_value::get_unassigned (rx_value_t* type, size_t idx) const
 {
 	uint64_t ret = 0;
-	if (rx_get_unassigned_value(this, idx, &ret, type))
+	if (rx_get_unassigned_value(&data_, idx, &ret, type))
 		return ret;
 	else
 		return 0;
@@ -1327,7 +1352,7 @@ uint64_t rx_simple_value::get_unassigned (rx_value_t* type, size_t idx) const
 double rx_simple_value::get_float (rx_value_t* type, size_t idx) const
 {
 	double ret = 0;
-	if (rx_get_float_value(this, idx, &ret, type))
+	if (rx_get_float_value(&data_, idx, &ret, type))
 		return ret;
 	else
 		return 0;
@@ -1336,7 +1361,7 @@ double rx_simple_value::get_float (rx_value_t* type, size_t idx) const
 complex_value rx_simple_value::get_complex (size_t idx) const
 {
 	complex_value ret{ 0,0 };
-	if (rx_get_complex_value(this, idx, &ret))
+	if (rx_get_complex_value(&data_, idx, &ret))
 		return ret;
 	else
 		return complex_value{ 0,0 };
@@ -1345,85 +1370,107 @@ complex_value rx_simple_value::get_complex (size_t idx) const
 string_type rx_simple_value::to_string () const
 {
 	rx_string_wrapper str;
-	rx_get_string_value(this, RX_INVALID_INDEX_VALUE, &str);
+	rx_get_string_value(&data_, RX_INVALID_INDEX_VALUE, &str);
 	return str.to_string();
 }
 
 void rx_simple_value::set_integer (int64_t val, rx_value_t type, size_t idx)
 {
-	rx_destroy_value(this);
-	set_integer_to_value(*this, val, type);
+	rx_destroy_value(&data_);
+	set_integer_to_value(data_, val, type);
 }
 
 void rx_simple_value::set_unassigned (int64_t val, rx_value_t type, size_t idx)
 {
-	rx_destroy_value(this);
-	set_unassigned_to_value(*this, val, type);
+	rx_destroy_value(&data_);
+	set_unassigned_to_value(data_, val, type);
 }
 
 void rx_simple_value::set_float (double val, rx_value_t type, size_t idx)
 {
-	rx_destroy_value(this);
-	set_float_to_value(*this, val, type);
+	rx_destroy_value(&data_);
+	set_float_to_value(data_, val, type);
 }
 
 bool rx_simple_value::weak_serialize (const char* name, base_meta_writer& writter) const
 {
-	if (!serialize_value(writter, value, value_type, name))
+	if (!serialize_value(writter, data_.value, data_.value_type, name))
 		return false;
 	return true;
 }
 
 bool rx_simple_value::weak_deserialize (const char* name, base_meta_reader& reader)
 {
-	return false;
+	if (!deserialize_value(reader, data_, name))
+		return false;
+	return true;
 }
 
 rx_simple_value::rx_simple_value()
 {
-	rx_init_null_value(this);
+	rx_init_null_value(&data_);
+}
+rx_simple_value::rx_simple_value(typed_value_type val) noexcept
+{
+	rx_move_value(&data_, &val);
 }
 rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
 {
-	rx_move_value(this, &right);
+	rx_move_value(&data_, &right.data_);
 }
 
 rx_simple_value& rx_simple_value::operator=(rx_simple_value&& right) noexcept
 {
-	rx_destroy_value(this);
-	rx_move_value(this, &right);
+	rx_destroy_value(&data_);
+	rx_move_value(&data_, &right.data_);
 	return *this;
 }
 rx_simple_value::rx_simple_value(const rx_simple_value &right)
 {
-	rx_copy_value(this, &right);
+	rx_copy_value(&data_, &right.data_);
 }
 rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 {
-	rx_destroy_value(this);
-	rx_copy_value(this, &right);
+	rx_destroy_value(&data_);
+	rx_copy_value(&data_, &right.data_);
 	return *this;
+}
+
+typed_value_type rx_simple_value::move() noexcept
+{
+	typed_value_type ret;
+	rx_move_value(&ret, &data_);
+	return ret;
+}
+const typed_value_type* rx_simple_value::c_ptr() const noexcept
+{
+	return &data_;
 }
 // Class rx::values::rx_timed_value 
 
-rx_timed_value::rx_timed_value (const timed_value_type& storage)
+rx_timed_value::rx_timed_value (const timed_value_type* storage)
 {
+	rx_copy_value(&data_.value, &storage->value);
+	data_.time = storage->time;
 }
 
-rx_timed_value::rx_timed_value (const typed_value_type& storage, rx_time ts)
+rx_timed_value::rx_timed_value (const typed_value_type* storage, rx_time ts)
 {
+	rx_copy_value(&data_.value, storage);
+	data_.time = ts;
 }
 
 
 rx_timed_value::~rx_timed_value()
 {
-	rx_destroy_value(&value);
+	rx_destroy_value(&data_.value);
+	static_assert(sizeof(rx_timed_value) == sizeof(timed_value_type), "Memory size has to be the same, no virtual functions or members");
 }
 
 
 bool rx_timed_value::operator==(const rx_timed_value &right) const
 {
-	return rx_compare_values(&value, &right.value) == 0;
+	return rx_compare_values(&data_.value, &right.data_.value) == 0;
 }
 
 bool rx_timed_value::operator!=(const rx_timed_value &right) const
@@ -1467,11 +1514,11 @@ bool rx_timed_value::serialize (const string_type& name, base_meta_writer& writt
 {
 	if (!writter.start_object(name.c_str()))
 		return false;
-	if (!writter.write_value_type("type", value.value_type))
+	if (!writter.write_value_type("type", data_.value.value_type))
 		return false;
-	if (!serialize_value(writter, value.value, value.value_type, "val"))
+	if (!serialize_value(writter, data_.value.value, data_.value.value_type, "val"))
 		return false;
-	if (!writter.write_time("ts", time))
+	if (!writter.write_time("ts", data_.time))
 		return false;
 	if (!writter.end_object())
 		return false;
@@ -1483,10 +1530,10 @@ bool rx_timed_value::deserialize (const string_type& name, base_meta_reader& rea
 	if (!reader.start_object(name.c_str()))
 		return false;
 	// first destroy eventual values already inside
-	rx_destroy_value(&value);
-	if (!deserialize_value(reader, value, "val"))
+	rx_destroy_value(&data_.value);
+	if (!deserialize_value(reader, data_.value, "val"))
 		return false;
-	if (!reader.read_time("ts", time))
+	if (!reader.read_time("ts", data_.time))
 		return false;
 	if (!reader.end_object())
 		return false;
@@ -1496,44 +1543,44 @@ bool rx_timed_value::deserialize (const string_type& name, base_meta_reader& rea
 void rx_timed_value::dump_to_stream (std::ostream& out) const
 {
 	rx_string_wrapper str;
-	rx_get_string_value(&value, -1, &str);
+	rx_get_string_value(&data_.value, -1, &str);
 	out << str.to_string_view();
-	out << " [" << rx_time(time).get_string() << "]";
+	out << " [" << rx_time(data_.time).get_string() << "]";
 }
 
 void rx_timed_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
 {
-	ts.t_value = std::max(ts.t_value, time.t_value);
-	val = rx_value(value, ts, mode);
+	ts.t_value = std::max(ts.t_value, data_.time.t_value);
+	val = rx_value(&data_.value, ts, mode);
 }
 
 rx_value_t rx_timed_value::get_type () const
 {
-	return value.value_type;
+	return data_.value.value_type;
 }
 
 bool rx_timed_value::convert_to (rx_value_t type)
 {
-	int ret_val = rx_convert_value(&value, type);
+	int ret_val = rx_convert_value(&data_.value, type);
 	return ret_val == RX_OK;
 }
 
 void rx_timed_value::parse (const string_type& str)
 {
-	rx_destroy_value(&value);
-	if (!rx_parse_string(&value, str.c_str()))
-		rx_init_null_value(&value);
+	rx_destroy_value(&data_.value);
+	if (!rx_parse_string(&data_.value, str.c_str()))
+		rx_init_null_value(&data_.value);
 }
 
 bool rx_timed_value::is_array () const
 {
-	return rx_is_array_value(&value);
+	return rx_is_array_value(&data_.value);
 }
 
 size_t rx_timed_value::array_size () const
 {
 	size_t ret = 0;
-	int ret_val = rx_get_array_size(&value, &ret);
+	int ret_val = rx_get_array_size(&data_.value, &ret);
 	if (ret_val)
 		return ret;
 	else
@@ -1542,50 +1589,50 @@ size_t rx_timed_value::array_size () const
 
 bool rx_timed_value::is_null () const
 {
-	return rx_is_null_value(&value);
+	return rx_is_null_value(&data_.value);
 }
 
 bool rx_timed_value::is_complex () const
 {
-	return rx_is_complex_value(&value);
+	return rx_is_complex_value(&data_.value);
 }
 
 bool rx_timed_value::is_numeric () const
 {
-	return rx_is_numeric_value(&value);
+	return rx_is_numeric_value(&data_.value);
 }
 
 bool rx_timed_value::is_integer () const
 {
-	return rx_is_integer_value(&value);
+	return rx_is_integer_value(&data_.value);
 }
 
 bool rx_timed_value::is_unassigned () const
 {
-	return rx_is_unassigned_value(&value);
+	return rx_is_unassigned_value(&data_.value);
 }
 
 bool rx_timed_value::is_float () const
 {
-	return rx_is_float_value(&value);
+	return rx_is_float_value(&data_.value);
 }
 
 bool rx_timed_value::is_string () const
 {
-	return rx_is_string_value(&value);
+	return rx_is_string_value(&data_.value);
 }
 
 string_type rx_timed_value::get_string (size_t idx) const
 {
 	rx_string_wrapper str;
-	rx_get_string_value(&value, idx, &str);
+	rx_get_string_value(&data_.value, idx, &str);
 	return str.to_string();
 }
 
 bool rx_timed_value::get_bool (size_t idx) const
 {
 	int ret = 0;
-	if (rx_get_bool_value(&value, idx, &ret))
+	if (rx_get_bool_value(&data_.value, idx, &ret))
 		return ret != 0;
 	else
 		return false;
@@ -1594,7 +1641,7 @@ bool rx_timed_value::get_bool (size_t idx) const
 int64_t rx_timed_value::get_integer (rx_value_t* type, size_t idx) const
 {
 	int64_t ret = 0;
-	if (rx_get_integer_value(&value, idx, &ret, type))
+	if (rx_get_integer_value(&data_.value, idx, &ret, type))
 		return ret;
 	else
 		return 0;
@@ -1603,7 +1650,7 @@ int64_t rx_timed_value::get_integer (rx_value_t* type, size_t idx) const
 uint64_t rx_timed_value::get_unassigned (rx_value_t* type, size_t idx) const
 {
 	uint64_t ret = 0;
-	if (rx_get_unassigned_value(&value, idx, &ret, type))
+	if (rx_get_unassigned_value(&data_.value, idx, &ret, type))
 		return ret;
 	else
 		return 0;
@@ -1612,7 +1659,7 @@ uint64_t rx_timed_value::get_unassigned (rx_value_t* type, size_t idx) const
 double rx_timed_value::get_float (rx_value_t* type, size_t idx) const
 {
 	double ret = 0;
-	if (rx_get_float_value(&value, idx, &ret, type))
+	if (rx_get_float_value(&data_.value, idx, &ret, type))
 		return ret;
 	else
 		return 0;
@@ -1621,7 +1668,7 @@ double rx_timed_value::get_float (rx_value_t* type, size_t idx) const
 complex_value rx_timed_value::get_complex (size_t idx) const
 {
 	complex_value ret{ 0,0 };
-	if (rx_get_complex_value(&value, idx, &ret))
+	if (rx_get_complex_value(&data_.value, idx, &ret))
 		return ret;
 	else
 		return complex_value{ 0,0 };
@@ -1630,37 +1677,37 @@ complex_value rx_timed_value::get_complex (size_t idx) const
 string_type rx_timed_value::to_string () const
 {
 	rx_string_wrapper str;
-	rx_get_string_value(&value, RX_INVALID_INDEX_VALUE, &str);
+	rx_get_string_value(&data_.value, RX_INVALID_INDEX_VALUE, &str);
 	return str.to_string();
 }
 
 void rx_timed_value::set_integer (int64_t val, rx_value_t type, size_t idx)
 {
-	rx_destroy_value(&value);
-	set_integer_to_value(value, val, type);
+	rx_destroy_value(&data_.value);
+	set_integer_to_value(data_.value, val, type);
 }
 
 void rx_timed_value::set_unassigned (int64_t val, rx_value_t type, size_t idx)
 {
-	rx_destroy_value(&value);
-	set_unassigned_to_value(value, val, type);
+	rx_destroy_value(&data_.value);
+	set_unassigned_to_value(data_.value, val, type);
 }
 
 void rx_timed_value::set_float (double val, rx_value_t type, size_t idx)
 {
-	rx_destroy_value(&value);
-	set_float_to_value(value, val, type);
+	rx_destroy_value(&data_.value);
+	set_float_to_value(data_.value, val, type);
 }
 
 rx_time rx_timed_value::set_time (rx_time time)
 {
-	this->time = time;
+	data_.time = time;
 	return time;
 }
 
 rx_time rx_timed_value::get_time () const
 {
-	return time;
+	return data_.time;
 }
 
 bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type time_compare) const
@@ -1668,13 +1715,13 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	switch (time_compare)
 	{
 	case time_compare_type::skip:
-		return rx_compare_values(&value, &right.value) == 0;
+		return rx_compare_values(&data_.value, &right.data_.value) == 0;
 	case time_compare_type::ms_accurate:
-		return rx_compare_values(&value, &right.value) == 0
-				&& (rx_time(time).get_longlong_miliseconds() == rx_time(right.time).get_longlong_miliseconds());
+		return rx_compare_values(&data_.value, &right.data_.value) == 0
+				&& (rx_time(data_.time).get_longlong_miliseconds() == rx_time(right.data_.time).get_longlong_miliseconds());
 	case time_compare_type::exact:
-		return rx_compare_values(&value, &right.value) == 0
-				&& time.t_value == right.time.t_value;
+		return rx_compare_values(&data_.value, &right.data_.value) == 0
+				&& data_.time.t_value == right.data_.time.t_value;
 	default:
 		return false;
 	}
@@ -1682,52 +1729,73 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 
 rx_simple_value rx_timed_value::to_simple () const
 {
-	return rx_simple_value(value);
+	return rx_simple_value(&data_.value);
 }
 
 
 rx_timed_value::rx_timed_value()
 {
-	rx_init_null_value(&value);
-	time = rx_time::null_time();
+	rx_init_null_value(&data_.value);
+	data_.time = rx_time::null_time();
 }
+
+rx_timed_value::rx_timed_value(timed_value_type right) noexcept
+{
+	rx_move_value(&data_.value, &right.value);
+	data_.time = right.time;
+}
+
 rx_timed_value::rx_timed_value(rx_timed_value&& right) noexcept
 {
-	rx_move_value(&value, &right.value);
-	time = right.time;
+	rx_move_value(&data_.value, &right.data_.value);
+	data_.time = right.data_.time;
 }
 
 rx_timed_value& rx_timed_value::operator=(rx_timed_value&& right) noexcept
 {
-	rx_destroy_value(&value);
-	rx_move_value(&value, &right.value);
-	time = right.time;
+	rx_destroy_value(&data_.value);
+	rx_move_value(&data_.value, &right.data_.value);
+	data_.time = right.data_.time;
 	return *this;
 }
 
 rx_timed_value::rx_timed_value(const rx_timed_value &right)
 {
-	rx_copy_value(&value, &right.value);
-	time = right.time;
+	rx_copy_value(&data_.value, &right.data_.value);
+	data_.time = right.data_.time;
 }
 rx_timed_value & rx_timed_value::operator=(const rx_timed_value &right)
 {
-	rx_destroy_value(&value);
-	rx_copy_value(&value, &right.value);
-	time = right.time;
+	rx_destroy_value(&data_.value);
+	rx_copy_value(&data_.value, &right.data_.value);
+	data_.time = right.data_.time;
 	return *this;
 }
 
 
 rx_timed_value::rx_timed_value(rx_simple_value&& right, rx_time ts) noexcept
 {
-	rx_move_value(&value, &right);
-	time = ts;
+	typed_value_type temp = right.move();
+	rx_move_value(&data_.value, &temp);
+	data_.time = ts;
 }
 rx_timed_value::rx_timed_value(const rx_simple_value& right, rx_time ts)
 {
-	rx_copy_value(&value, &right);
-	time = ts;
+	rx_copy_value(&data_.value, right.c_ptr());
+	data_.time = ts;
+}
+
+
+timed_value_type rx_timed_value::move() noexcept
+{
+	timed_value_type ret;
+	rx_move_value(&ret.value, &data_.value);
+	ret.time = data_.time;
+	return ret;
+}
+const timed_value_type* rx_timed_value::c_ptr() const noexcept
+{
+	return &data_;
 }
 
 // Parameterized Class rx::values::rx_value_holder 

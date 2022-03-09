@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -71,9 +71,9 @@ public:
   private:
 
 
-      std::unique_ptr<rx_platform::serialization::json_reader> reader_;
+      std::unique_ptr<serialization::json_reader> reader_;
 
-      std::unique_ptr<rx_platform::serialization::pretty_json_writer> writer_;
+      std::unique_ptr<serialization::pretty_json_writer> writer_;
 
 
 };
@@ -94,7 +94,7 @@ public:
 
       base_meta_writer& write_stream ();
 
-      rx_result open_for_read (const string_type& file_path);
+      rx_result open_for_read (const byte_string& data, const string_type& file_path);
 
       rx_result open_for_write (const string_type& file_path);
 
@@ -102,7 +102,7 @@ public:
 
       rx_result close_write (const string_type& file_path);
 
-      rx_result get_data (string_type& data);
+      rx_result get_data (byte_string& data);
 
 
   protected:
@@ -110,9 +110,11 @@ public:
   private:
 
 
-      std::unique_ptr<rx_platform::serialization::std_buffer_reader> reader_;
+      std::unique_ptr<serialization::std_buffer_reader> reader_;
 
-      std::unique_ptr<rx_platform::serialization::std_buffer_writer> writer_;
+      std::unique_ptr<serialization::std_buffer_writer> writer_;
+
+      memory::std_buffer buffer_;
 
 
 };

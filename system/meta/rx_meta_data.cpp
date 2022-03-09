@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -381,9 +381,9 @@ rx_result meta_data::deserialize_meta_data (base_meta_reader& stream, uint8_t ty
 		return stream.get_error();
 	if (!stream.read_time("modified", modified_time))
 		return stream.get_error();
-	if (!stream.read_string("path", path))
-		return stream.get_error();
 	if (!stream.read_version("ver", version))
+		return stream.get_error();
+	if (!stream.read_string("path", path))
 		return stream.get_error();
 	if (!stream.end_object())
 		return stream.get_error();

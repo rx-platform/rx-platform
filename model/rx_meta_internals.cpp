@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -40,7 +40,7 @@
 #include "rx_model_algorithms.h"
 #include "system/runtime/rx_holder_algorithms.h"
 #include "system/meta/rx_meta_algorithm.h"
-#include "lib/security/rx_security.h"
+#include "security/rx_security.h"
 using namespace rx;
 
 
@@ -494,13 +494,9 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		{
 			implementation_ptr = default_constructor_();
 		}
-		else if(!prototype)
-		{
-			return "Unable to construct base runtime!";
-		}
 		else
 		{
-			implementation_ptr = default_constructor_();
+			return "Unable to construct base runtime!";
 		}
 	}
 

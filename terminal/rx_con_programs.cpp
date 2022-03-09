@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 
 // rx_con_programs
 #include "terminal/rx_con_programs.h"
@@ -82,7 +83,7 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 			server_command_base_ptr command = terminal::commands::server_command_manager::instance()->get_command_by_name(first);
 			if (command)
 			{
-				if (!command->console_execute(in, out, err, ctx) 
+				if (!command->console_execute(in, out, err, ctx)
 					&& ctx->get_result())// don raise another error, only if needed!!!
 					return false;
 			}
@@ -95,7 +96,7 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 		}
 		else
 		{
-			commands::suggestions_type suggestions;
+			suggestions_type suggestions;
 			terminal::commands::server_command_manager::instance()->register_suggestions("", suggestions);
 		}
 

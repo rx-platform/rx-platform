@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 // rx_internal_ns
 #include "sys_internal/rx_internal_ns.h"
 
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 #include "system/runtime/rx_blocks.h"
 #include "system/meta/rx_obj_types.h"
 #include "testing/rx_test.h"
@@ -42,6 +42,7 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "system/meta/rx_meta_algorithm.h"
 #include "system/runtime/rx_holder_algorithms.h"
+#include "lib/rx_ser_bin.h"
 
 
 namespace rx_internal {
@@ -166,7 +167,7 @@ rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t t
 template <class TImpl>
 string_type rx_item_implementation<TImpl>::get_definition_as_json () const
 {
-	rx_platform::serialization::json_writer writer;
+	serialization::json_writer writer;
 
 	writer.write_header(STREAMING_TYPE_OBJECT, 0);
 
@@ -229,6 +230,21 @@ template <class TImpl>
 rx_result rx_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_item(transaction_id, handle, data, monitor, *impl_);
+}
+
+template <class TImpl>
+byte_string rx_item_implementation<TImpl>::get_definition_as_bytes () const
+{
+	memory::std_buffer buff;
+	serialization::std_buffer_writer writer(buff);
+
+	writer.write_header(STREAMING_TYPE_OBJECT, 0);
+
+	impl_->serialize(writer, STREAMING_TYPE_OBJECT);
+
+	writer.write_footer();
+
+	return writer.get_data();
 }
 
 
@@ -359,7 +375,7 @@ string_type rx_meta_item_implementation<TImpl>::get_definition_as_json () const
 {
 	using algorithm_type = typename TImpl::pointee_type::algorithm_type;
 
-	rx_platform::serialization::json_writer writer;
+	serialization::json_writer writer;
 	writer.write_header(STREAMING_TYPE_TYPE, 0);
 
 	algorithm_type::serialize_type(*impl_, writer, STREAMING_TYPE_TYPE);
@@ -421,6 +437,19 @@ template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+byte_string rx_meta_item_implementation<TImpl>::get_definition_as_bytes () const
+{
+
+	using algorithm_type = typename TImpl::pointee_type::algorithm_type;
+	
+	memory::std_buffer buff;
+	serialization::std_buffer_writer writer(buff);
+	algorithm_type::serialize_type(*impl_, writer, STREAMING_TYPE_MESSAGE);
+
+	return writer.get_data();
 }
 
 
@@ -600,6 +629,12 @@ template <class TImpl>
 rx_result rx_other_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+byte_string rx_other_implementation<TImpl>::get_definition_as_bytes () const
+{
+	return byte_string();
 }
 
 

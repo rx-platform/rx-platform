@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -245,6 +245,9 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
 		temp.value().source_id = target;
+		temp.value().input_value.value.convert_to(whose.get_value_type());
+		temp.value().input_value.value.set_time(ctx.now);
+		temp.value().input_value.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
 		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
 	}
 	else
@@ -344,6 +347,9 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
 		temp.value().mapper_id = target;
+		temp.value().mapped_value.value.convert_to(whose.get_value_type());
+		temp.value().mapped_value.value.set_time(ctx.now);
+		temp.value().mapped_value.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
 		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
 	}
 	else
@@ -593,7 +599,9 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 	if (!stream.write_bool("abstract", whose.is_abstract))
 		return stream.get_error();
 
-	if (!stream.start_array("items", whose.names_cache_.size()))
+	if (!stream.start_array("items"
+		, whose.const_values_.size() + whose.simple_values_.size() + whose.variables_.size() 
+		+ whose.structs_.size() + whose.events_.size()))
 		return stream.get_error();
 	for (const auto& one : whose.names_cache_)
 	{
@@ -750,9 +758,9 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 			uint8_t temp;
 			if (!stream.read_byte("type", temp))
 				return stream.get_error();
+			item_type = (rx_subitem_type)temp;
 			if (item_type >= rx_subitem_type::rx_first_invalid_subitem)
 				return "Invalid item type";
-			item_type = (rx_subitem_type)temp;
 		}
 		switch (item_type)
 		{
@@ -845,7 +853,7 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 			return stream.get_error();
 	}
 
-	return true;//!!!! NOT DONE
+	return true;
 }
 
 bool complex_data_algorithm::check_complex_attribute (complex_data_type& whose, type_check_context& ctx)
@@ -1318,13 +1326,15 @@ rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& 
 
 rx_result event_blocks_algorithm::serialize_complex_attribute (const def_blocks::event_attribute& whose, base_meta_writer& stream)
 {
-
-	if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
-	{
-		if (!stream.write_item_reference("args", whose.arguments_))
-			return stream.get_error();
-	}
 	auto ret = meta_blocks_algorithm<event_attribute>::serialize_complex_attribute(whose, stream);
+	if (ret)
+	{
+		if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
+		{
+			if (!stream.write_item_reference("args", whose.arguments_))
+				return stream.get_error();
+		}
+	}
 	return ret;
 }
 

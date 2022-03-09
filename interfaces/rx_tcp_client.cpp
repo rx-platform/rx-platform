@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -35,7 +35,7 @@
 #include "interfaces/rx_tcp_client.h"
 
 #include "rx_endpoints.h"
-#include "lib/security/rx_security.h"
+#include "security/rx_security.h"
 
 
 namespace rx_internal {
@@ -414,7 +414,7 @@ rx_result_with<port_connect_result> tcp_client_port::start_connect (const protoc
     endpoint_->get_stack_endpoint()->release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
     {
         tcp_client_endpoint* whose = reinterpret_cast<tcp_client_endpoint*>(entry->user_data);
-        runtime::io_types::rx_io_buffer temp;
+        io::rx_io_buffer temp;
         temp.attach(buffer);
         whose->get_port()->release_io_buffer(std::move(temp));
 

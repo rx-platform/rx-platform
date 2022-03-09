@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 
 
 // rx_security
-#include "lib/security/rx_security.h"
+#include "security/rx_security.h"
 
 
 

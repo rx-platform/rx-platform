@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -273,6 +273,7 @@ std::vector<server_command_base_ptr> server_command_manager::get_internal_comman
 	ret_commands.push_back(rx_create_reference<model::meta_commands::check_command>());
 	ret_commands.push_back(rx_create_reference<model::meta_commands::save_command>());
 	ret_commands.push_back(rx_create_reference<model::meta_commands::query_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::carray_command>());
 	// runtime commands
 	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::read_command>());
 	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::struct_command>());

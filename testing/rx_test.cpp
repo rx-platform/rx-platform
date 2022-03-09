@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,12 +30,13 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 #define ANSI_RX_TEST_NAME ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
 
 // rx_test
 #include "testing/rx_test.h"
 
-#include "lib/security/rx_security.h"
+#include "security/rx_security.h"
 #include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "terminal/rx_term_table.h"

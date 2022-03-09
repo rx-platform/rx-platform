@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -115,16 +115,11 @@ rx_result win32_pipe_host::setup_console (int argc, char* argv[])
 	return true;
 }
 
+void win32_pipe_host::fill_plugin_libs (string_array& paths)
+{
+	fill_plugin_paths(paths);
+}
+
 
 } // namespace win32
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	string_type ret;
-	get_win_host_name(ret);
-	return ret;
-
-#endif

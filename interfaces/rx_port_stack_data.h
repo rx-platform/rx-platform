@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -39,10 +39,10 @@ using namespace rx_platform;
 using namespace rx_platform::runtime;
 
 // rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
+#include "lib/rx_io_buffers.h"
 
 #include "api/rx_platform_api.h"
-using rx_platform::runtime::io_types::rx_io_buffer;
+using io::rx_io_buffer;
 
 
 namespace rx_internal {
@@ -93,10 +93,12 @@ class port_buffers
     typedef std::vector<rx_io_buffer> free_buffers_type;
 
   public:
+      port_buffers();
 
-      static rx_result_with<io_types::rx_io_buffer> alloc_io_buffer (rx_port_ptr& whose);
 
-      static void release_io_buffer (rx_port_ptr& whose, io_types::rx_io_buffer buff);
+      static rx_result_with<io::rx_io_buffer> alloc_io_buffer (rx_port_ptr& whose);
+
+      static void release_io_buffer (rx_port_ptr& whose, io::rx_io_buffer buff);
 
 
       free_buffers_type free_buffers;

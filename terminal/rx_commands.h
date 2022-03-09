@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #define rx_commands_h 1
 
 
+#include "security/rx_security.h"
 
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
@@ -57,6 +58,8 @@ class console_program_context;
 using namespace rx_platform; 
 using namespace rx_platform::ns;
 using namespace rx;
+
+using suggestions_type = std::set<string_type>;
 
 
 namespace rx_internal {
@@ -96,7 +99,6 @@ typedef rx::pointers::reference<commands::server_command> server_command_ptr;
 namespace commands {
 typedef pointers::reference<server_command> command_ptr;
 
-using rx_platform::ns::suggestions_type;
 
 
 

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -51,7 +51,36 @@ string_type get_full_path_from_relative(const string_type& path)
 		return path;
 	}
 }
-
+void fill_plugin_paths(string_array& paths)
+{
+#ifdef _DEBUG
+	paths.emplace_back("D:\\RX\\Native\\VS\\RxMainSolution\\x64\\Debug\\rx-first-plugin.dll");
+	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Modbus\\x64\\Debug\\rx-modbus.dll");
+	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\InfoControl\\x64\\Debug\\rx-ics.dll");
+	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Beka\\x64\\Debug\\rx-mesrnp.dll");
+	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\SAMTMS\\x64\\Debug\\rx-samcomm.dll");
+#else
+	char buff[MAX_PATH];
+	DWORD size = sizeof(buff);
+	string_type search_dir;
+	if (GetEnvironmentVariableA("rx-path", buff, size))
+	{
+		if (buff[0] == '"')
+		{
+			search_dir = rx::rx_combine_paths(&buff[1], "bin/plugins");
+		}
+		else
+		{
+			search_dir = rx::rx_combine_paths(buff, "bin/plugins");
+		}
+	}
+	if (!search_dir.empty())
+	{
+		string_array dirs;
+		rx_list_files(search_dir, "*.dll", paths, dirs);
+	}
+#endif
+}
 rx_result build_directories(rx_host_directories& data)
 {
 	char buff[MAX_PATH];

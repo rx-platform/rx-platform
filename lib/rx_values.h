@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -118,28 +118,32 @@ bool assign_value(typed_value_type& from, const byte_string& value);
 
 
 
-class rx_simple_value : public typed_value_type  
+class rx_simple_value 
 {
   public:
       template<typename typeT>
 	  void assign_static(typeT&& val, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY)
 	  {
-          rx_destroy_value(this);
-		  assign_value(*this, std::forward<typeT>(val));
+          rx_destroy_value(&data_);
+		  assign_value(data_, std::forward<typeT>(val));
 	  }
       template<typename typeT>
       typeT extract_static(const typeT& def) const
       {
-          return extract_value(*this, def);
+          return extract_value(data_, def);
       }
       rx_simple_value();
+      rx_simple_value(typed_value_type val) noexcept;
 	  rx_simple_value(const rx_simple_value &right);
 	  rx_simple_value(rx_simple_value&& right) noexcept;
 	  rx_simple_value& operator=(rx_simple_value&& right) noexcept;
 	  rx_simple_value & operator=(const rx_simple_value &right);
 
+      typed_value_type move() noexcept;
+      const typed_value_type* c_ptr() const noexcept;
+
   public:
-      rx_simple_value (const typed_value_type& storage);
+      rx_simple_value (const typed_value_type* storage);
 
       ~rx_simple_value();
 
@@ -222,6 +226,9 @@ class rx_simple_value : public typed_value_type
   private:
 
 
+      typed_value_type data_;
+
+
 };
 
 
@@ -230,22 +237,23 @@ class rx_simple_value : public typed_value_type
 
 
 
-class rx_value : public full_value_type  
+class rx_value 
 {
 public:
     template<typename typeT>
-    void assign_static(typeT&& val, rx_time ts = rx_time::null_time())
+    void assign_static(typeT val, rx_time ts = rx_time::null_time())
     {
-        rx_destroy_value(&value);
-        assign_value(value, std::forward<typeT>(val));
-        time = ts;
+        rx_destroy_value(&data_.value);
+        assign_value(data_.value, std::forward<typeT>(val));
+        data_.time = ts;
     }
     template<typename typeT>
     typeT extract_static(const typeT& def) const
     {
-        return extract_value(value, def);
+        return extract_value(data_.value, def);
     }
 	rx_value();
+    rx_value(full_value_type right) noexcept;
 	rx_value(const rx_value &right);
 	rx_value(rx_value&& right) noexcept;
 	rx_value& operator=(rx_value&& right) noexcept;
@@ -260,10 +268,13 @@ public:
     bool operator==(const rx_value& right) const;
     bool operator!=(const rx_value& right) const;
 
-  public:
-      rx_value (const full_value_type& storage);
+    full_value_type move() noexcept;
+    const full_value_type* c_ptr() const noexcept;
 
-      rx_value (const typed_value_type& storage, rx_time ts, const rx_mode_type& mode);
+  public:
+      rx_value (const full_value_type* storage);
+
+      rx_value (const typed_value_type* storage, rx_time ts, const rx_mode_type& mode);
 
       ~rx_value();
 
@@ -362,6 +373,9 @@ public:
   private:
 
 
+      full_value_type data_;
+
+
 };
 
 
@@ -370,23 +384,24 @@ public:
 
 
 
-class rx_timed_value : public timed_value_type  
+class rx_timed_value 
 {
 public:
 
     template<typename typeT>
-    void assign_static(typeT&& val, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY)
+    void assign_static(typeT val, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY)
     {
-        rx_destroy_value(&value);
-        assign_value(value, std::forward<typeT>(val));
-        time = ts;
+        rx_destroy_value(&data_.value);
+        assign_value(data_.value, std::forward<typeT>(val));
+        data_.time = ts;
     }
     template<typename typeT>
     typeT extract_static(const typeT& def) const
     {
-        return extract_value(&value, def);
+        return extract_value(&data_.value, def);
     }
 	rx_timed_value();
+    rx_timed_value(timed_value_type right) noexcept;
 	rx_timed_value(const rx_timed_value &right);
 	rx_timed_value(rx_timed_value&& right) noexcept;
 	rx_timed_value& operator=(rx_timed_value&& right) noexcept;
@@ -395,10 +410,13 @@ public:
     rx_timed_value(rx_simple_value&& right, rx_time ts = rx_time::null_time()) noexcept;
     rx_timed_value(const rx_simple_value& right, rx_time ts = rx_time::null_time());
 
-  public:
-      rx_timed_value (const timed_value_type& storage);
+    timed_value_type move() noexcept;
+    const timed_value_type* c_ptr() const noexcept;
 
-      rx_timed_value (const typed_value_type& storage, rx_time ts);
+  public:
+      rx_timed_value (const timed_value_type* storage);
+
+      rx_timed_value (const typed_value_type* storage, rx_time ts);
 
       ~rx_timed_value();
 
@@ -483,6 +501,9 @@ public:
   protected:
 
   private:
+
+
+      timed_value_type data_;
 
 
 };

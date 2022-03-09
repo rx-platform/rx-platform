@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -36,16 +36,16 @@
 
 // dummy
 #include "dummy.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_thread
-#include "lib/rx_thread.h"
 
 namespace host {
 namespace pipe {
+class rx_pipe_host;
 class anonymus_pipe_client;
 class local_pipe_port;
-class rx_pipe_host;
 
 } // namespace pipe
 } // namespace host
@@ -128,7 +128,7 @@ class anonymus_pipe_endpoint
 
       std::unique_ptr<anonymus_pipe_client> pipes_;
 
-      rx::threads::physical_job_thread pipe_sender_;
+      rx_platform::threads::physical_job_thread pipe_sender_;
 
       rx_protocol_stack_endpoint stack_entry_;
 

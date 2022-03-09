@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -506,7 +506,7 @@ void runtime_cache::register_subscriber (const rx_item_reference& ref, runtime::
 					id_subscribers_.emplace(id, std::move(subs));
 				}
 				auto it = id_cache_.find(id);
-				if (it != id_cache_.end())
+				if (it != id_cache_.end() && it->second.item)
 					item = it->second.item->clone();
 			}
 		}

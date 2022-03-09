@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 
 // rx_resolvers
 #include "system/runtime/rx_resolvers.h"
@@ -146,7 +147,7 @@ void runtime_resolver<typeT>::runtime_appeared (platform_item_ptr&& item)
                 }
             });
         rmt(runtime_reference_);
-               
+
     }
 }
 
@@ -278,7 +279,7 @@ void runtime_item_resolver::runtime_appeared (platform_item_ptr&& item)
                 }
             });
         rmt(runtime_reference_);
-    }    
+    }
 }
 
 void runtime_item_resolver::runtime_destroyed (const rx_node_id& id)

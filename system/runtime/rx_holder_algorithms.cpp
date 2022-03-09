@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -39,7 +39,7 @@
 #include "rx_write_transaction.h"
 #include "rx_process_context.h"
 #include "system/runtime/rx_blocks.h"
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 
 
 namespace rx_platform {
@@ -187,7 +187,8 @@ template <class typeT>
 runtime_start_context runtime_holder_algorithms<typeT>::create_start_context (typename typeT::RType& whose)
 {
     whose.context_.job_queue_ = rx_internal::infrastructure::server_runtime::instance().get_executer(whose.instance_data_.get_executer());
-    return runtime_start_context(*whose.tags_.item_, &whose.context_, &whose.tags_.binded_tags_, &whose.directories_, &whose.relations_);
+    return runtime_start_context(*whose.tags_.item_, &whose.context_, &whose.tags_.binded_tags_
+        , &whose.directories_, &whose.relations_, whose.context_.job_queue_);
 }
 
 template <class typeT>

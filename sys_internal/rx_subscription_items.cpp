@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -35,7 +35,7 @@
 #include "sys_internal/rx_subscription_items.h"
 
 #include "sys_internal/rx_internal_protocol.h"
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 
 
 namespace rx_internal {
@@ -223,6 +223,12 @@ rx_result execute_item_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
+	if (!stream.write_uint("transId", transaction_id))
+		return stream.get_error();
+	if (!stream.write_uint("item", item))
+		return stream.get_error();
+	if (!stream.write_init_values("data", data))
+		return stream.get_error();
 	return true;
 }
 
@@ -232,11 +238,30 @@ rx_result execute_item_request::deserialize (base_meta_reader& stream)
 	if (!stream.read_uuid("id", temp))
 		return stream.get_error();
 	subscription_id = temp;
+	if (!stream.read_uint("transId", transaction_id))
+		return stream.get_error();
+	if (!stream.read_uint("item", item))
+		return stream.get_error();
+	if (!stream.read_init_values("data", data))
+		return stream.get_error();
 	return true;
 }
 
 message_ptr execute_item_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
+	auto result = conn->execute_item(subscription_id, transaction_id, item, std::move(data));
+	if (result)
+	{
+		auto response = std::make_unique<execute_item_response>();
+		response->request_id = request_id;
+		response->subscription_id = subscription_id;
+		return response;
+	}
+	else
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
 	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
 }
 
@@ -354,7 +379,7 @@ rx_result write_items_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
-	if (!stream.write_uint("trans_id", transaction_id))
+	if (!stream.write_uint("transId", transaction_id))
 		return stream.get_error();
 	if (!stream.start_array("values", values.size()))
 		return stream.get_error();
@@ -380,7 +405,7 @@ rx_result write_items_request::deserialize (base_meta_reader& stream)
 	if (!stream.read_uuid("id", temp))
 		return stream.get_error();
 	subscription_id = temp;
-	if (!stream.read_uint("trans_id", transaction_id))
+	if (!stream.read_uint("transId", transaction_id))
 		return stream.get_error();
 	if (!stream.start_array("values"))
 		return stream.get_error();

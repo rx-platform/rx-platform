@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #define rx_lib_h 1
 
 
+#include "lib/rx_intrinsic.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -72,6 +73,30 @@ class rx_simple_value;
 class rx_timed_value;
 class rx_value;
 }
+
+
+// helper method to avoid problem with strict-aliasing
+template<typename T, typename F>
+struct alias_cast_t
+{
+	union
+	{
+		F raw;
+		T data;
+	};
+};
+
+template<typename T, typename F>
+T alias_cast(F raw_data)
+{
+	// just in any case
+	static_assert(sizeof(T) == sizeof(F), "Cannot cast types of different sizes");
+
+	alias_cast_t<T, F> ac;
+	ac.raw = raw_data;
+	return ac.data;
+}
+
 
 // string and byte array helpers
 class rx_string_wrapper : public string_value_struct
@@ -162,33 +187,44 @@ typedef std::vector<string_type> rx_result_erros_t;
 
 class rx_result
 {
-	std::unique_ptr<rx_result_erros_t> result_value_;
+	rx_result_struct data_;
 public:
-	rx_result(bool value);
-	rx_result(const string_vector& errors);
-	rx_result(string_vector&& errors);
-	rx_result(const char* error);
-	rx_result(const string_type& error);
-	rx_result(string_type&& error);
-	void register_error(string_type&& error);
-	void register_errors(rx_result_erros_t&& errors);
-	void register_errors(const rx_result_erros_t& errors);
-	operator bool() const;
-	const rx_result_erros_t& errors()const;
-	string_type errors_line(char delim = ',') const;
-	rx_result(const rx_result& right) = delete;// because of the unique_ptr!
+	rx_result();
 
-	rx_result() = default;
-	~rx_result() = default;
-	rx_result(rx_result&&) noexcept = default;
+	rx_result(const rx_result& right) = delete;// it's faster and has to be
 	rx_result& operator=(const rx_result&) = delete;
-	rx_result& operator=(rx_result&&) noexcept = default;
 
-	static rx_result create_from_last_os_error(const string_type& text);
-	static rx_result create_from_c_error(const string_type& text);
+	rx_result(rx_result&&) noexcept;
+	rx_result& operator=(rx_result&&) noexcept;
+
+	~rx_result();
+
+	rx_result(bool value);
+	rx_result(rx_result_struct errors) noexcept;
+	rx_result(const rx_result_struct* errors);
+	rx_result(string_view_type error);
+	rx_result(const string_type& error);
+	rx_result(const char* error);// has to have it because of bool conversion
+	rx_result(const rx_result_erros_t& errors);
+
+	operator bool() const;
+
+	rx_result_struct move();
+	const rx_result_struct* c_ptr() const;
+
+	rx_result_erros_t errors()const;
+	string_type errors_line(char delim = ',') const;
+
+
+	void register_error(string_view_type error, uint32_t code = 1);
+	void register_errors(const rx_result_erros_t& errors);
+
+	static rx_result create_from_last_os_error(string_view_type text);
+	static rx_result create_from_c_error(string_view_type text);
 };
 
 typedef std::vector<rx_result> results_array;
+
 
 template<class T>
 void rx_dump_error_result(std::ostream& err, const T& result)
@@ -327,6 +363,7 @@ string_type get_code_module(const string_type& full);
 class rx_uuid : public rx_uuid_t
 {
 public:
+	~rx_uuid();
 	rx_uuid();
 	rx_uuid(const rx_uuid& rigth);
 	rx_uuid(const rx_uuid_t& right);
@@ -359,12 +396,14 @@ typedef std::complex<double> complex_type;
 
 
 
-class rx_node_id : public rx_node_id_struct
+class rx_node_id
 {
+	rx_node_id_struct data_;
 	friend struct std::hash<rx::rx_node_id>;
 public:
 	rx_node_id() noexcept;
 	rx_node_id(const rx_node_id_struct* right);
+	rx_node_id(rx_node_id_struct right) noexcept;
 	rx_node_id(const rx_node_id &right);
 	rx_node_id(uint32_t id, uint16_t namesp = DEFAULT_NAMESPACE);
 	rx_node_id(const char* id, uint16_t namesp = DEFAULT_NAMESPACE);
@@ -375,6 +414,9 @@ public:
 
 	rx_node_id & operator=(const rx_node_id &right);
 	rx_node_id & operator=(rx_node_id &&right) noexcept;
+
+	const rx_node_id_struct* c_ptr() const;
+	rx_node_id_struct move() noexcept;
 
 	bool operator==(const rx_node_id &right) const;
 	bool operator!=(const rx_node_id &right) const;
@@ -416,13 +458,14 @@ typedef std::vector<rx_node_id> rx_node_ids;
 
 
 
-class rx_item_reference : public rx_reference_struct
+class rx_item_reference 
 {
-
+	rx_reference_struct data_;
 public:
 
 	rx_item_reference();
 	rx_item_reference(const rx_reference_struct* data);
+	rx_item_reference(rx_reference_struct data) noexcept;
 
 	rx_item_reference(const rx_item_reference& right);
 	rx_item_reference(const rx_node_id& right);
@@ -434,6 +477,9 @@ public:
 	~rx_item_reference();
 
 	bool is_null() const;
+
+	const rx_reference_struct* c_ptr() const;
+	rx_reference_struct move() noexcept;
 
 	rx_item_reference& operator=(const rx_item_reference& right);
 	rx_item_reference& operator=(rx_item_reference&& right) noexcept;
@@ -495,6 +541,7 @@ struct rx_mode_type
 class rx_time : public rx_time_struct
 {
 public:
+	~rx_time();
 	rx_time() noexcept;
 	rx_time(rx_time_struct tm) noexcept;
 	rx_time(const rx_time&) = default;
@@ -539,8 +586,6 @@ public:
 	bool operator<(const rx_time_struct& right) const;
 	bool operator<=(const rx_time_struct& right) const;
 
-	void swap_bytes() const;
-
 	void set_as_span(uint32_t days);
 	uint32_t get_as_span() const;
 
@@ -570,9 +615,9 @@ struct time_stamp
 void rx_dump_ticks_to_stream(std::ostream& out, rx_timer_ticks_t ticks);
 
 
-// security related basics for stuff
-typedef intptr_t rx_security_handle_t;
 typedef intptr_t rx_thread_handle_t;
+
+
 enum class rx_criticalness
 {
 	soft,
@@ -590,10 +635,6 @@ enum class  rx_access
 };
 
 
-rx_thread_handle_t rx_thread_context();
-bool rx_push_thread_context(rx_thread_handle_t obj);
-
-#define RX_THREAD_NULL 0ull
 
 void rx_split_string(const string_type& what, string_vector& result, char delimeter);
 void extract_next(const string_type& path, string_type& name, string_type& rest, char delimeter);

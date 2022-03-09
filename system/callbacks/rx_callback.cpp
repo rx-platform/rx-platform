@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -43,7 +43,7 @@ namespace callback {
 
 // Parameterized Class rx_platform::callback::rx_any_callback 
 
-void send_callback_back(rx_thread_handle_t target, jobs::job_ptr job)
+void send_callback_back(rx_thread_handle_t target, job_ptr job)
 {
 	rx_internal::infrastructure::server_runtime::instance().get_executer(target)->append(job);
 }

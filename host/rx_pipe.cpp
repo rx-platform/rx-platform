@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -235,8 +235,8 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			}
 			std::cout << "========================================================\r\n\r\n";
 			std::cout << "Starting log...";
-			rx::log::log_object::instance().register_subscriber(stdout_log_);
-			ret = rx::log::log_object::instance().start(config.management.test_log);
+			rx_platform::log::log_object::instance().register_subscriber(stdout_log_);
+			ret = rx_platform::log::log_object::instance().start(config.management.test_log);
 			if (ret)
 			{
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
@@ -286,10 +286,10 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing security:\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
-				rx::log::log_object::instance().deinitialize();
+				rx_platform::log::log_object::instance().deinitialize();
 			}
 
-			rx::log::log_object::instance().unregister_subscriber(stdout_log_);
+			rx_platform::log::log_object::instance().unregister_subscriber(stdout_log_);
 
 			rx_deinitialize_os();
 		}
@@ -301,7 +301,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 	}
 	std::cout << "\r\n";
 	rx_internal::interfaces::io_endpoints::dispatcher_subscriber::deinitialize();
-	rx::threads::thread::deinitialize();
+	rx_platform::threads::thread::deinitialize();
 	restore_console();
 
 	if (debug_stop_)

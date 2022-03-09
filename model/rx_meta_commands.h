@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -341,6 +341,35 @@ command for querying various runtime entities in platform\r\n\
 
       bool do_depends_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
+
+
+};
+
+
+
+
+
+
+class carray_command : public terminal::commands::server_command  
+{
+    DECLARE_REFERENCE_PTR(carray_command);
+    DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for exporting item to C array def\r\n\
+\
+");
+
+  public:
+      carray_command();
+
+      ~carray_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+  private:
 
 
 };

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -41,6 +41,7 @@ namespace gnu
 void get_full_path(const std::string& base, std::string& path);
 std::string get_full_path_from_relative(const std::string& path);
 rx_result build_directories(hosting::rx_host_directories& data);
+void fill_plugin_paths(string_array& paths);
 }
 
 

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 
 
 // rx_job
-#include "lib/rx_job.h"
+#include "system/threads/rx_job.h"
 
 #include "system/callbacks/rx_callback.h"
 
@@ -118,7 +118,7 @@ public:
 
 
 
-class model_transactions_executer : public rx::jobs::job  
+class model_transactions_executer : public rx_platform::jobs::job  
 {
     DECLARE_REFERENCE_PTR(model_transactions_executer);
 

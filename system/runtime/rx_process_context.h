@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #define rx_process_context_h 1
 
 
+#include "system/threads/rx_job.h"
 #include "rx_runtime_helpers.h"
 #include "system/meta/rx_meta_data.h"
 
@@ -305,7 +306,7 @@ public:
     }
 };
 
-typedef std::vector<jobs::job_ptr> owner_jobs_type;
+typedef std::vector<job_ptr> owner_jobs_type;
 
 typedef std::vector<update_data_struct<structure::mapper_data> > mapper_updates_type;
 typedef std::vector<update_data_struct<structure::source_data> > source_updates_type;
@@ -416,7 +417,7 @@ class runtime_process_context
 
       rx_result do_command (rx_object_command_t command_type);
 
-      void own_pending (jobs::job_ptr what);
+      void own_pending (job_ptr what);
 
       owner_jobs_type& get_for_own_process ();
 

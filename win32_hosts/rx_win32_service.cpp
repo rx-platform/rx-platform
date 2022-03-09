@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -178,7 +178,7 @@ rx_result win32_service_host::install_service ()
 			full_path += "\"";
 			SC_HANDLE svc = CreateServiceA(scm
 				, RX_WIN32_SERVICE_HOST
-				, ("rx-platform "s + get_win32_service_info()).c_str()
+				, RX_WIN32_SERVICE_NAME
 				, SC_MANAGER_ALL_ACCESS
 				, SERVICE_WIN32_OWN_PROCESS
 				, SERVICE_AUTO_START

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -42,11 +42,9 @@
 #include "version/rx_version.h"
 
 #include "os_itf/rx_ositf.h"
-#include "system/rx_platform_version.h"
 #include "lib/rx_lib.h"
 #include "rx_configuration.h"
-#include "system/libraries/rx_plugin.h"
-#include "lib/security/rx_security.h"
+#include "security/rx_security.h"
 #include "rx_ns.h"
 
 // rx_host
@@ -69,7 +67,7 @@ class rx_io_manager;
 
 
 
-#include "lib/rx_log.h"
+#include "system/server/rx_log.h"
 using namespace rx;
 
 

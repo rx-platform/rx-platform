@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -171,6 +171,12 @@ ip4_address::ip4_address (const string_type& addr, uint16_t port)
     storage.sin_port = htons(port);
     storage.sin_addr.s_addr = num_addr;
     rx_create_ip4_address(this, &storage);
+}
+
+
+ip4_address::~ip4_address()
+{
+    static_assert(sizeof(ip4_address) == sizeof(protocol_address), "Memory size has to be the same, no virtual functions or members");
 }
 
 
@@ -443,6 +449,13 @@ numeric_address<defT>::numeric_address (defT val)
 
 
 template <typename defT>
+numeric_address<defT>::~numeric_address()
+{
+    static_assert(sizeof(numeric_address) == sizeof(protocol_address), "Memory size has to be the same, no virtual functions or members");
+}
+
+
+template <typename defT>
 bool numeric_address<defT>::operator==(const numeric_address<defT> &right) const
 {
     if (is_null() && right.is_null())
@@ -698,6 +711,7 @@ any_address::any_address (const protocol_address* ep)
 any_address::~any_address()
 {
     rx_free_address(this);
+    static_assert(sizeof(any_address) == sizeof(protocol_address), "Memory size has to be the same, no virtual functions or members");
 }
 
 

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,9 +34,12 @@
 
 
 // rx_job
-#include "lib/rx_job.h"
+#include "system/threads/rx_job.h"
 
+//#include "system/threads/rx_thread.h"
 using namespace std::placeholders;
+
+rx_thread_handle_t rx_thread_context();
 
 
 namespace rx_platform {
@@ -45,7 +48,7 @@ namespace callback {
 typedef uint32_t callback_handle_t;
 typedef uint32_t callback_state_t;
 
-void send_callback_back(rx_thread_handle_t target, jobs::job_ptr job);
+void send_callback_back(rx_thread_handle_t target, job_ptr job);
 
 
 
@@ -53,7 +56,7 @@ void send_callback_back(rx_thread_handle_t target, jobs::job_ptr job);
 template <typename... Args>
 class rx_any_callback 
 {
-    using base_job_ptr_t = rx_reference<rx::jobs::args_job<Args...> >;
+    using base_job_ptr_t = rx_reference<jobs::args_job<Args...> >;
 
   public:
 
@@ -101,7 +104,7 @@ class rx_any_callback
 template <typename resultT, typename... Args>
 class rx_remote_function 
 {
-    using base_job_ptr_t = rx_reference<rx::jobs::remote_args_job<resultT, Args...> >;
+    using base_job_ptr_t = rx_reference<jobs::remote_args_job<resultT, Args...> >;
 
   public:
 

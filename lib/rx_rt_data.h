@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -76,6 +76,8 @@ class runtime_values_data
   public:
 
       void add_value (const string_type& name, const rx_simple_value& value);
+
+      void add_value (const string_type& name, rx_simple_value&& value);
 
       runtime_values_data& add_child (const string_type& name);
 

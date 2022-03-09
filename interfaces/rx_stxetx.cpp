@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -104,7 +104,7 @@ rx_protocol_result_t stxetx_endpoint::send_packet (send_protocol_packet packet)
         else
         {
             return RX_PROTOCOL_NOT_IMPLEMENTED;
-            runtime::io_types::rx_io_buffer temp_buffer;
+            io::rx_io_buffer temp_buffer;
             size_t used = 0;
             while (used < send_size)
             {

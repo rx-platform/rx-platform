@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -37,10 +37,10 @@
 #include "system/server/rx_server.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
 #include "system/runtime/rx_operational.h"
-#include "lib/security/rx_security.h"
+#include "security/rx_security.h"
 #include "rx_endpoints.h"
 
-namespace rx
+namespace rx_platform
 {
 rx_security_handle_t rx_security_context();
 bool rx_push_security_context(rx_security_handle_t obj);

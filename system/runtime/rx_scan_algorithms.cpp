@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 
 // rx_scan_algorithms
 #include "system/runtime/rx_scan_algorithms.h"
@@ -308,7 +309,7 @@ void runtime_scan_algorithms<typeT>::process_status_change (typename typeT::RTyp
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_source_inputs (typename typeT::RType& whose, runtime_process_context& ctx)
 {
-    // order here is very important 
+    // order here is very important
     source_results_type* source_results = &ctx.get_source_results();
     source_updates_type* source_updates = &ctx.get_source_updates();
     while (!source_updates->empty() || !source_results->empty())
@@ -352,7 +353,7 @@ void runtime_scan_algorithms<typeT>::process_subscription_inputs (typename typeT
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_variables (typename typeT::RType& whose, runtime_process_context& ctx)
 {
-    // order here is very important 
+    // order here is very important
     auto to_process = ctx.get_variables_for_process();
     while (!to_process.first->empty() || !to_process.second->empty())
     {
@@ -368,7 +369,7 @@ void runtime_scan_algorithms<typeT>::process_variables (typename typeT::RType& w
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_programs (typename typeT::RType& whose, runtime_process_context& ctx)
 {
-    // order here is very important 
+    // order here is very important
     auto method_results = &ctx.get_method_results();
     auto programs = &ctx.get_programs_for_process();
     while (!programs->empty() || !method_results->empty())

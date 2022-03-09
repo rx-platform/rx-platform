@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,10 +34,10 @@
 // rx_internal_protocol
 #include "sys_internal/rx_internal_protocol.h"
 
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 #include "system/runtime/rx_blocks.h"
 #include "sys_internal/rx_async_functions.h"
-#include "system/runtime/rx_io_buffers.h"
+#include "lib/rx_io_buffers.h"
 #include "rx_internal_subscription.h"
 #include "rx_subscription_items.h"
 #include "model/rx_meta_internals.h"
@@ -164,6 +164,26 @@ void rx_protocol_subscription::items_changed (const std::vector<update_item>& it
 
 void rx_protocol_subscription::execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
 {
+	if (connection_)
+	{
+		auto notify_msg = std::make_unique<messages::subscription_messages::subscription_execute_done>();
+		notify_msg->request_id = 0;
+		notify_msg->subscription_id = data_.subscription_id;
+		notify_msg->transaction_id = transaction_id;
+		if (result)
+		{
+			notify_msg->result.first = 0;
+			notify_msg->result.second = "";
+		}
+		else
+		{
+			notify_msg->result.first = 119;
+			notify_msg->result.second = result.errors_line();
+		}
+
+		notify_msg->data = std::move(data);
+		connection_->data_processed(std::move(notify_msg));
+	}
 }
 
 void rx_protocol_subscription::write_completed (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results)
@@ -231,6 +251,12 @@ rx_result rx_protocol_subscription::write_items (runtime_transaction_id_t transa
 	return result;
 }
 
+rx_result rx_protocol_subscription::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data)
+{
+	auto result = my_subscription_->execute_item(transaction_id, handle, std::move(data));
+	return result;
+}
+
 rx_result rx_protocol_subscription::remove_items (std::vector<runtime_handle_t >&& items, std::vector<rx_result>& results)
 {
 	auto result = my_subscription_->disconnect_items(items, results);
@@ -268,7 +294,7 @@ rx_server_connection::rx_server_connection (runtime::items::port_runtime* port)
 	RXCOMM_LOG_DEBUG("rx_server_connection", 200, "{rx-platform} communication server endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.received_function = &rx_server_connection::received_function;
-
+	
 	executer_ = port->get_executer();
 }
 
@@ -301,7 +327,7 @@ rx_protocol_result_t rx_server_connection::received_function (rx_protocol_stack_
 
 rx_protocol_result_t rx_server_connection::received (recv_protocol_packet packet)
 {
-	runtime::io_types::rx_const_io_buffer received(packet.buffer);
+	io::rx_const_io_buffer received(packet.buffer);
 	uint8_t type;
 	uint8_t namespace_id;
 	uint16_t num_id;
@@ -546,6 +572,19 @@ rx_result rx_protocol_connection::write_items (const rx_uuid& id, runtime_transa
 	if (it != subscriptions_.end())
 	{
 		return it->second->write_items(transaction_id, std::move(values), results);
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
+rx_result rx_protocol_connection::execute_item (const rx_uuid& id, runtime_transaction_id_t transaction_id, runtime_handle_t item, data::runtime_values_data data)
+{
+	auto it = subscriptions_.find(id);
+	if (it != subscriptions_.end())
+	{
+		return it->second->execute_item(transaction_id, item, std::move(data));
 	}
 	else
 	{

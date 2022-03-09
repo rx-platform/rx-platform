@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -76,59 +76,17 @@ struct code_behind_definition_t
 
 
 template <class ptrT>
-class basic_smart_ptr 
+class reference 
 {
+	
 	static code_behind_definition_t* rx_code_behind;
 	// friend declaration here
 	template<class otherT>
 	friend class reference;
-public:
 
+public:
 	typedef ptrT* pointer_type;
 	typedef ptrT pointee_type;
-
-  public:
-
-      const ptrT* operator -> () const
-      {
-		  return ptr_;
-      }
-
-      ptrT* operator -> ()
-      {
-		  return ptr_;
-      }
-
-      ptrT& operator * ()
-      {
-		  return *ptr_;
-      }
-
-      const ptrT& operator * () const
-      {
-		  return *ptr_;
-      }
-
-
-  protected:
-
-  private:
-
-
-      pointer_type ptr_;
-
-
-};
-
-
-
-
-
-
-template <class ptrT>
-class reference : public basic_smart_ptr<ptrT>  
-{
-public:
 	static reference<ptrT> null_ptr;
 	static reference create_from_pointer(ptrT* ptr)
 	{
@@ -175,7 +133,7 @@ public:
 			this->ptr_->bind();
 	}
 	template<class derT>
-	reference(const basic_smart_ptr<derT>& right)
+	reference(const reference<derT>& right)
 	{
 		this->ptr_ = right.ptr_;
 		if (this->ptr_)
@@ -188,7 +146,7 @@ public:
 		right.ptr_ = nullptr;
 	}
 	template<class derT>
-	reference(basic_smart_ptr<derT>&& right) noexcept
+	reference(reference<derT>&& right) noexcept
 	{
 		this->ptr_ = right.ptr_;
 		right.ptr_ = nullptr;
@@ -212,7 +170,7 @@ public:
 		return *this;
 	}
 	template<class derT>
-	reference<ptrT>& operator=(const basic_smart_ptr<derT>& right)
+	reference<ptrT>& operator=(const reference<derT>& right)
 	{
 		if (this->ptr_)
 			this->ptr_->release();
@@ -235,7 +193,7 @@ public:
 		return *this;
 	}
 	template<class derT>
-	reference<ptrT>& operator=(basic_smart_ptr<derT>&& right) noexcept
+	reference<ptrT>& operator=(reference<derT>&& right) noexcept
 	{
 		if (this->ptr_)
 			this->ptr_->release();
@@ -272,6 +230,27 @@ public:
 	}
 
   public:
+
+      const ptrT* operator -> () const
+      {
+		  return ptr_;
+      }
+
+      ptrT* operator -> ()
+      {
+		  return ptr_;
+      }
+
+      ptrT& operator * ()
+      {
+		  return *ptr_;
+      }
+
+      const ptrT& operator * () const
+      {
+		  return *ptr_;
+      }
+
 
 
 	  static const char* get_pointee_class_name()
@@ -345,6 +324,9 @@ public:
   private:
 
 
+      ptrT* ptr_;
+
+
 };
 
 
@@ -389,7 +371,7 @@ class reference_object
 	/*
 	where to put this code from macros?!?
 	public:
-	typedef basic_smart_ptr<ptrT> smart_ptr;
+	typedef reference<ptrT> smart_ptr;
 	template<class Tother>
 	friend class rx::pointers::reference;
 	private:
@@ -398,6 +380,8 @@ class reference_object
 
   public:
       reference_object();
+
+      reference_object (lock_reference_struct* extern_data);
 
       virtual ~reference_object();
 
@@ -412,12 +396,16 @@ class reference_object
 
       virtual void fill_code_info (std::ostream& info, const string_type& name);
 
+      lock_reference_struct* get_extern_ref ();
+
 	  reference_object(const reference_object&) = delete;
 	  reference_object(reference_object&&) = delete;
 	  reference_object& operator=(const reference_object&) = delete;
 	  reference_object& operator=(reference_object&&) = delete;
   protected:
 
+      void bind_as_shared (lock_reference_struct* extern_data);
+
       void bind ();
 
       void release ();
@@ -427,50 +415,12 @@ class reference_object
 
 
       std::atomic<ref_counting_type> ref_count_;
+
+      lock_reference_struct* extern_data_;
 
       static std::atomic<ref_counting_type> g_objects_count;
 
-
-};
-
-
-
-
-
-
-
-struct struct_reference 
-{
-	DECLARE_REFERENCE_PTR(struct_reference);
-
-public:
-	// nothing special here
-	struct_reference()
-		: ref_count_(1)
-	{
-	}
-	// it's not virtual!!!
-	~struct_reference() = default;
-	// reference based object no copying
-	struct_reference(const struct_reference &right) = delete;
-	struct_reference & operator=(const struct_reference &right) = delete;
-	// don't use '&&' to move object around
-	struct_reference(struct_reference &&right) = delete;
-	struct_reference & operator=(struct_reference &&right) = delete;
-
-  public:
-
-  protected:
-
-      void bind ();
-
-      void release ();
-
-
-  private:
-
-
-      std::atomic<ref_counting_type> ref_count_;
+      bool own_ref_;
 
 
 };
@@ -486,10 +436,8 @@ namespace rx
 template<class Tptr>
 using rx_reference = pointers::reference<Tptr>;
 
-//convenient alias
-typedef pointers::struct_reference::smart_ptr rx_struct_ptr;
-
 typedef pointers::reference_object::smart_ptr rx_reference_ptr;
+typedef pointers::reference_object::smart_ptr rx_struct_ptr;
 
 
 // this strange looking stuff is placed in order to catch dangling pointers with

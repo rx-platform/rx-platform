@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -57,9 +57,15 @@ enum byte_order_type
 
 byte_order_type get_platform_byte_order();
 
+
 template<typename T>
 T rx_byte_swap(T val);
 
+
+template<>
+int8_t rx_byte_swap(int8_t val);
+template<>
+uint8_t rx_byte_swap(uint8_t val);
 template<>
 int16_t rx_byte_swap(int16_t val);
 template<>
@@ -76,28 +82,6 @@ template<>
 float rx_byte_swap(float val);
 template<>
 double rx_byte_swap(double val);
-
-// helper method to avoid problem with strict-aliasing
-template<typename T, typename F>
-struct alias_cast_t
-{
-    union
-    {
-        F raw;
-        T data;
-    };
-};
-
-template<typename T, typename F>
-T alias_cast(F raw_data)
-{
-    // just in any case
-    static_assert(sizeof(T) == sizeof(F), "Cannot cast types of different sizes");
-
-    alias_cast_t<T, F> ac;
-    ac.raw = raw_data;
-    return ac.data;
-}
 
 
 
@@ -119,17 +103,17 @@ class memory_buffer_base : public pointers::reference_object
       ~memory_buffer_base();
 
 
-      void push_data (const void* ptr, size_t size);
+      bool push_data (const void* ptr, size_t size);
 
-      void read_data (void* ptr, size_t size);
+      bool read_data (void* ptr, size_t size);
 
       bool eof () const;
 
-      void push_string (const string_type& str);
+      bool push_string (const string_type& str);
 
-      void push_line (const string_type& str);
+      bool push_line (const string_type& str);
 
-      void read_line (string_type& line);
+      bool read_line (string_type& line);
 
       void reinit (bool clear_memory = false);
 
@@ -139,78 +123,111 @@ class memory_buffer_base : public pointers::reference_object
 
       void* get_data () const;
 
-      bool fill_with_file_content (sys_handle_t file);
-
       void dump_to_stream (std::ostream& out);
 
 	  template<typename T>
-	  void read_data(T& val)
+	  bool read_data(T& val)
 	  {
-		  from_buffer(val, std::is_fundamental<T>(), std::is_trivially_copyable<T>());
+		  return from_buffer(val, std::is_fundamental<T>(), std::is_trivially_copyable<T>());
 	  }
-	  void read_data(bool& val)
+      bool read_data(bool& val)
 	  {
 		  uint8_t temp;
-		  read_data(temp);
+          if (!read_data(temp))
+              return false;
 		  val = temp != 0;
+          return true;
 	  }
-	  void read_data(string_type& val)
+      bool read_data(string_type& val)
 	  {
           int size;
-          read_data(size);
+          if (!read_data(size))
+              return false;
           if (size > 0)
           {
               val.assign(size, '\0');
-              read_data(&val[0], size);
+              if (!read_data(&val[0], size))
+                  return false;
           }
           else
           {
               val.clear();
           }
+          return true;
 	  }
-	  void read_data(byte_string& val)
+	  bool read_data(byte_string& val)
 	  {
           int size;
-          read_data(size);
+          if (!read_data(size))
+              return false;
           if (size > 0)
           {
               val.assign(size, '\0');
-              read_data(&val[0], size);
+              if (!read_data(&val[0], size))
+                  return false;
           }
           else
           {
               val.clear();
           }
+          return true;
 	  }
-	  void read_data(rx_uuid_t& val)
+	  bool read_data(rx_uuid_t& val)
 	  {
-		  read_data(&val, sizeof(rx_uuid_t));
+		  return read_data(&val, sizeof(rx_uuid_t));
 	  }
-      void read_data(rx_uuid& val)
-      {
-          rx_uuid_t temp;
-          read_data(&temp, sizeof(rx_uuid_t));
-          val = temp;
-      }
 	  template<typename T>
-	  void push_data(const T& val)
+      bool push_data(const T& val)
 	  {
-		  to_buffer(val, std::is_fundamental<T>(),  std::is_trivially_copyable<T>());
+		  return to_buffer(val, std::is_fundamental<T>(),  std::is_trivially_copyable<T>());
 	  }
-	  void push_data(const bool& val)
+      bool push_data(const bool& val)
 	  {
 		  uint8_t temp = val ? 0xff : 0x00;
-		  push_data(temp);
+		  return push_data(temp);
 	  }
-	  void push_data(const string_type& val)
+      bool push_data(const string_type& val)
 	  {
-		  push_data((uint32_t)val.size());
+          if (!push_data((uint32_t)val.size()))
+              return false;
           if (!val.empty())
-		    push_data(val.c_str(), val.size());
+              return push_data(val.c_str(), val.size());
+          else
+              return true;
 	  }
-      void push_data(const rx_uuid_t& val)
+      bool push_data(const string_view_type val)
       {
-          push_data(&val, sizeof(rx_uuid_t));
+          if (!push_data((uint32_t)val.size()))
+              return false;
+          if (!val.empty())
+              return push_data(&val[0], val.size());
+          else
+              return true;
+      }
+      bool push_data(const char* val)
+      {
+          uint32_t len = 0;
+          if (val)
+              len = (uint32_t)strlen(val);
+          if (!push_data(len))
+              return false;
+          if (len)
+              return push_data(val, len);
+          else
+              return true;
+      }
+      bool push_data(const byte_string& val)
+      {
+          if (!push_data((uint32_t)val.size()))
+              return false;
+          if (!val.empty())
+              return push_data(&val[0], val.size());
+          else
+              return true;
+      }
+      bool push_data(const rx_uuid_t& val)
+      {
+          return push_data(&val, sizeof(rx_uuid_t));
       }
 	  template<typename T>
 	  T* get_buffer()
@@ -234,45 +251,49 @@ class memory_buffer_base : public pointers::reference_object
 		  return ret;
 	  }
 	  template<typename T>
-	  void to_buffer(const T& val, std::true_type, std::true_type)
+      bool to_buffer(const T& val, std::true_type, std::true_type)
 	  {
 		  if constexpr (swap_bytes)
 		  {
 			  T temp = rx_byte_swap<T>(val);
-			  push_data(&temp, sizeof(T));
+			  return push_data(&temp, sizeof(T));
 		  }
 		  else
-			  push_data(&val, sizeof(T));
+			  return push_data(&val, sizeof(T));
 	  }
 	  template<typename T>
-	  void to_buffer(const T& val, std::false_type, std::true_type)
+	  bool to_buffer(const T& val, std::false_type, std::true_type)
 	  {
 		  if constexpr (swap_bytes)
 		  {
 			  T temp = val;
 			  temp.swap_bytes();
-			  push_data(&temp, sizeof(T));
+			  return push_data(&temp, sizeof(T));
 		  }
 		  else
-			  push_data(&val, sizeof(T));
+			  return push_data(&val, sizeof(T));
 	  }
 	  template<typename T>
-	  void from_buffer(T& val, std::true_type, std::true_type)
+	  bool from_buffer(T& val, std::true_type, std::true_type)
 	  {
-		  read_data(&val, sizeof(T));
+          if (!read_data(&val, sizeof(T)))
+              return false;
 		  if constexpr (swap_bytes)
 		  {
 			  val = rx_byte_swap<T>(val);
 		  }
+          return true;
 	  }
 	  template<typename T>
-	  void constexpr from_buffer(T& val, std::false_type, std::true_type)
+	  bool constexpr from_buffer(T& val, std::false_type, std::true_type)
 	  {
-		  read_data(&val, sizeof(T));
+          if (!read_data(&val, sizeof(T)))
+              return false;
 		  if constexpr (swap_bytes)
 		  {
 			  val.swap_bytes();
 		  }
+          return true;
 	  }
 
 };
@@ -291,11 +312,11 @@ class std_vector_allocator
       ~std_vector_allocator();
 
 
-      void allocate (size_t size);
+      bool allocate (size_t size);
 
       void deallocate ();
 
-      void reallocate (size_t new_size);
+      bool reallocate (size_t new_size);
 
       size_t get_buffer_size () const;
 
@@ -403,11 +424,11 @@ class backward_memory_buffer_base : public pointers::reference_object
       ~backward_memory_buffer_base();
 
 
-      void push_data (const void* ptr, size_t size);
+      bool push_data (const void* ptr, size_t size);
 
-      void push_string (const string_type& str);
+      bool push_string (const string_type& str);
 
-      void push_line (const string_type& str);
+      bool push_line (const string_type& str);
 
       void reinit (bool clear_memory = false);
 
@@ -469,11 +490,11 @@ class backward_simple_allocator
       ~backward_simple_allocator();
 
 
-      void allocate (size_t size);
+      bool allocate (size_t size);
 
       void deallocate ();
 
-      void reallocate (size_t new_size);
+      bool reallocate (size_t new_size);
 
       size_t get_buffer_size () const;
 
@@ -518,7 +539,7 @@ class page_aligned_buffer
       ~page_aligned_buffer();
 
 
-      void alloc_buffer (size_t size);
+      bool alloc_buffer (size_t size);
 
       void free_buffer ();
 
@@ -673,21 +694,28 @@ memory_buffer_base<allocT,swap_bytes>::~memory_buffer_base()
 
 
 template <class allocT, bool swap_bytes>
-void memory_buffer_base<allocT,swap_bytes>::push_data (const void* ptr, size_t size)
+bool memory_buffer_base<allocT,swap_bytes>::push_data (const void* ptr, size_t size)
 {
-	while (next_push_ + size>allocator_.get_buffer_size())
-		allocator_.reallocate(next_push_ + size);
+    while (next_push_ + size > allocator_.get_buffer_size())
+    {
+        if (!allocator_.reallocate(next_push_ + size))
+            return false;
+    }
 	memcpy(&allocator_.get_char_buffer()[next_push_], ptr, size);
 	next_push_ += size;
+    return true;
 }
 
 template <class allocT, bool swap_bytes>
-void memory_buffer_base<allocT,swap_bytes>::read_data (void* ptr, size_t size)
+bool memory_buffer_base<allocT,swap_bytes>::read_data (void* ptr, size_t size)
 {
-	if (current_read_ + size>next_push_)
-		throw std::overflow_error("buffer end of file!");
+    if (current_read_ + size > next_push_)
+    {
+        return false;
+    }
 	memcpy(ptr, &allocator_.get_char_buffer()[current_read_], size);
 	current_read_ += size;
+    return true;
 }
 
 template <class allocT, bool swap_bytes>
@@ -698,24 +726,33 @@ bool memory_buffer_base<allocT,swap_bytes>::eof () const
 }
 
 template <class allocT, bool swap_bytes>
-void memory_buffer_base<allocT,swap_bytes>::push_string (const string_type& str)
+bool memory_buffer_base<allocT,swap_bytes>::push_string (const string_type& str)
 {
-	push_data(str.c_str(), str.size());
+	return push_data(str.c_str(), str.size());
 }
 
 template <class allocT, bool swap_bytes>
-void memory_buffer_base<allocT,swap_bytes>::push_line (const string_type& str)
+bool memory_buffer_base<allocT,swap_bytes>::push_line (const string_type& str)
 {
-	push_data(str.c_str(), str.size());
-	push_data("\r\n", 2);
+    if (!push_data(str.c_str(), str.size()))
+        return false;
+    if (!push_data("\r\n", 2))
+        return false;
+    return true;
 }
 
 template <class allocT, bool swap_bytes>
-void memory_buffer_base<allocT,swap_bytes>::read_line (string_type& line)
+bool memory_buffer_base<allocT,swap_bytes>::read_line (string_type& line)
 {
 	if (eof())
-		return;
+	{
+		return true;// empty line!?!
+    }
 	char* buff = &allocator_.get_char_buffer()[current_read_];
+    if (!buff)
+    {
+        return false;
+    }
 	char* start = buff;
 	while (*buff!='\r' && *buff!='\n' && !eof())
 		buff++;
@@ -730,6 +767,7 @@ void memory_buffer_base<allocT,swap_bytes>::read_line (string_type& line)
 		}
 		line.assign(start, len);
 	}
+    return true;
 }
 
 template <class allocT, bool swap_bytes>
@@ -757,27 +795,6 @@ template <class allocT, bool swap_bytes>
 void* memory_buffer_base<allocT,swap_bytes>::get_data () const
 {
   return allocator_.get_char_buffer();
-}
-
-template <class allocT, bool swap_bytes>
-bool memory_buffer_base<allocT,swap_bytes>::fill_with_file_content (sys_handle_t file)
-{
-	uint64_t sz = 0;
-	if (rx_file_get_size(file, &sz))
-	{
-		if (sz == 0)
-			return true;
-		// init buffer
-		current_read_ = 0;
-		next_push_ = (int)sz;
-		allocator_.reallocate((size_t)sz);
-		uint32_t readed = 0;
-		if (rx_file_read(file, allocator_.get_char_buffer(), (uint32_t)sz, &readed) && readed == sz)
-		{
-			return true;
-		}
-	}
-	return false;
 }
 
 template <class allocT, bool swap_bytes>
@@ -843,7 +860,7 @@ char* std_strbuff<allocT,swap_bytes>::pptr () const
 template <class allocT, bool swap_bytes>
 char* std_strbuff<allocT,swap_bytes>::epptr () const
 {
-	return &this->allocator_.get_char_buffer()[this->allocator_.get_size()];
+	return &this->allocator_.get_char_buffer()[this->allocator_.get_buffer_size()];
 }
 
 template <class allocT, bool swap_bytes>
@@ -887,25 +904,32 @@ backward_memory_buffer_base<allocT>::~backward_memory_buffer_base()
 
 
 template <class allocT>
-void backward_memory_buffer_base<allocT>::push_data (const void* ptr, size_t size)
+bool backward_memory_buffer_base<allocT>::push_data (const void* ptr, size_t size)
 {
-	while (next_push_ + size>allocator_.get_buffer_size())
-		allocator_.reallocate(next_push_+size);
+    while (next_push_ + size > allocator_.get_buffer_size())
+    {
+        if (!allocator_.reallocate(next_push_ + size))
+            return false;
+    }
 	memcpy(&allocator_.get_char_buffer()[allocator_.get_buffer_size() - next_push_ - size], ptr, size);
 	next_push_ += ((int)size);
+    return true;
 }
 
 template <class allocT>
-void backward_memory_buffer_base<allocT>::push_string (const string_type& str)
+bool backward_memory_buffer_base<allocT>::push_string (const string_type& str)
 {
-	push_data(str.c_str(), str.size());
+	return push_data(str.c_str(), str.size());
 }
 
 template <class allocT>
-void backward_memory_buffer_base<allocT>::push_line (const string_type& str)
+bool backward_memory_buffer_base<allocT>::push_line (const string_type& str)
 {
-	push_data(str.c_str(), str.size());
-	push_data("\r\n", 2);
+    if (!push_data(str.c_str(), str.size()))
+    {
+        return false;
+    }
+	return push_data("\r\n", 2);
 }
 
 template <class allocT>
@@ -932,7 +956,7 @@ bool backward_memory_buffer_base<allocT>::empty () const
 template <class allocT>
 void* backward_memory_buffer_base<allocT>::get_data () const
 {
-	return &allocator_.get_char_buffer[allocator_.size() - next_push_];
+	return &allocator_.get_char_buffer()[allocator_.get_buffer_size() - next_push_];
 }
 
 

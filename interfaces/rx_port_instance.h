@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -33,10 +33,10 @@
 
 
 
-// rx_runtime_data
-#include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
+// rx_runtime_data
+#include "system/meta/rx_runtime_data.h"
 // rx_port_stack_data
 #include "interfaces/rx_port_stack_data.h"
 

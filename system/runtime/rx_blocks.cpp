@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -53,6 +53,12 @@ string_type filter_runtime::type_name = RX_CPP_FILTER_TYPE_NAME;
 
 filter_runtime::filter_runtime()
       : container_(nullptr)
+{
+}
+
+filter_runtime::filter_runtime (lock_reference_struct* extern_data)
+      : container_(nullptr)
+    , reference_object(extern_data)
 {
 }
 
@@ -137,6 +143,19 @@ rx_result filter_runtime::set_value (runtime_handle_t handle, values::rx_simple_
     }
 }
 
+rx_result filter_runtime::filter_changed ()
+{
+    if (container_)
+    {
+        return container_->filter_changed();
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return "Context not binded!";
+    }
+}
+
 
 // Class rx_platform::runtime::blocks::mapper_runtime 
 
@@ -145,6 +164,13 @@ string_type mapper_runtime::type_name = RX_CPP_MAPPER_TYPE_NAME;
 mapper_runtime::mapper_runtime()
       : container_(nullptr),
         value_type_(RX_NULL_TYPE)
+{
+}
+
+mapper_runtime::mapper_runtime (lock_reference_struct* extern_data)
+      : container_(nullptr),
+        value_type_(RX_NULL_TYPE)
+    , reference_object(extern_data)
 {
 }
 
@@ -217,26 +243,17 @@ void mapper_runtime::map_current_value () const
     }
 }
 
-void mapper_runtime::mapped_value_changed (rx_value&& val)
+void mapper_runtime::mapped_value_changed (rx_value&& val, runtime_process_context* ctx)
 {
 }
 
-void mapper_runtime::mapper_result_received (rx_result&& result, runtime_transaction_id_t id)
+void mapper_runtime::mapper_result_received (rx_result&& result, runtime_transaction_id_t id, runtime_process_context* ctx)
 {
 }
 
-threads::job_thread* mapper_runtime::get_jobs_queue ()
+std::vector<rx_simple_value> mapper_runtime::get_mapping_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const
 {
-    return nullptr;
-    /*if (container_)
-    {
-        return rx_internal::infrastructure::server_runtime::instance().get_executer(container_->);
-    }*/
-}
-
-std::vector<rx_value> mapper_runtime::get_mapped_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const
-{
-    return ctx.mappers.get_mapped_values(id, path);
+    return ctx.mappers.get_mapping_values(id, path);
 }
 
 
@@ -253,6 +270,13 @@ string_type source_runtime::type_name = RX_CPP_SOURCE_TYPE_NAME;
 source_runtime::source_runtime()
       : container_(nullptr),
         value_type_(RX_NULL_TYPE)
+{
+}
+
+source_runtime::source_runtime (lock_reference_struct* extern_data)
+      : container_(nullptr),
+        value_type_(RX_NULL_TYPE)
+    , reference_object(extern_data)
 {
 }
 
@@ -329,23 +353,9 @@ rx_result source_runtime::source_write (write_data&& data, runtime_process_conte
     return RX_NOT_IMPLEMENTED;
 }
 
-threads::job_thread* source_runtime::get_jobs_queue ()
+std::vector<rx_simple_value> source_runtime::get_source_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const
 {
-    if (container_)
-        return container_->get_jobs_queue();
-    else
-        return nullptr;
-}
-
-void source_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
-{
-    if (container_)
-        container_->add_periodic_job(job);
-}
-
-std::vector<rx_value> source_runtime::get_sourced_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const
-{
-    return ctx.sources.get_sourced_values(id, path);
+    return ctx.sources.get_source_values(id, path);
 }
 
 
@@ -528,18 +538,6 @@ rx_result event_runtime::deinitialize_event (runtime::runtime_deinit_context& ct
 {
 	return true;
 }
-
-
-// Class rx_platform::runtime::blocks::mapper_start_context 
-
-
-rx_value& mapper_start_context::init_value ()
-{
-    return *initial_value_;
-}
-
-
-// Class rx_platform::runtime::blocks::mapper_stop_context 
 
 
 } // namespace blocks

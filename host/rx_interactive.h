@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -37,12 +37,12 @@
 
 // dummy
 #include "dummy.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_thread
-#include "lib/rx_thread.h"
 
 namespace host {
 namespace interactive {
@@ -158,7 +158,7 @@ class interactive_console_endpoint
 
       interactive_console_host *host_;
 
-      rx::threads::physical_job_thread std_out_sender_;
+      rx_platform::threads::physical_job_thread std_out_sender_;
 
       rx_protocol_stack_endpoint stack_entry_;
 

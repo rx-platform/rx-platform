@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -109,6 +109,12 @@ class execute_item_request : public rx_request_message
 
       rx_uuid subscription_id;
 
+      runtime_transaction_id_t transaction_id;
+
+      runtime_handle_t item;
+
+      data::runtime_values_data data;
+
 
   protected:
 
@@ -180,8 +186,6 @@ class execute_item_response : public rx_message_base
       static rx_message_type_t type_id;
 
       rx_uuid subscription_id;
-
-      rx_result result;
 
 
   protected:

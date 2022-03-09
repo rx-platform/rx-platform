@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -589,16 +589,11 @@ void win32_console_host::add_command_line_options (hosting::command_line_options
 		("no-ansi", "Force not to use the ANSI escape sequences even when these are supported.", cxxopts::value<bool>(no_ansi_));
 }
 
+void win32_console_host::fill_plugin_libs (string_array& paths)
+{
+	fill_plugin_paths(paths);
+}
+
 
 } // namespace win32
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	string_type ret;
-	get_win_host_name(ret);
-	return ret;
-
-#endif

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -185,6 +185,52 @@ rx_result rx_source_file::write_string(const std::string& buff)
 	uint32_t size = (uint32_t)buff.size();
 	uint32_t written = 0;
 	if (rx_file_write(m_handle, buff.c_str(), size, &written) == RX_OK)
+	{
+		return true;
+	}
+	else
+	{
+		return rx_result::create_from_last_os_error("Error writing to file!");
+	}
+}
+rx_result rx_source_file::read_data(byte_string& buff)
+{
+	if (m_handle == 0)
+	{
+		RX_ASSERT(false);
+		return "File not opened!";
+	}
+	uint64_t size64;
+	if (rx_file_get_size(m_handle, &size64) != RX_OK)
+		return rx_result::create_from_last_os_error("Unable to get file size!");
+
+	size_t size = (size_t)size64;
+	uint8_t* temp = new uint8_t[size];
+
+	uint32_t readed = 0;
+	if (rx_file_read(m_handle, temp, (uint32_t)size, &readed) == RX_OK)
+	{
+		buff.assign(temp, temp + size);
+		delete[] temp;
+		return true;
+	}
+	else
+	{
+		delete[] temp;
+		return rx_result::create_from_last_os_error("Error reading file!");
+	}
+}
+rx_result rx_source_file::write_data(const byte_string& buff)
+{
+	if (m_handle == 0)
+	{
+		RX_ASSERT(false);
+		return "File not opened!";
+	}
+
+	uint32_t size = (uint32_t)buff.size();
+	uint32_t written = 0;
+	if (rx_file_write(m_handle, &buff[0], size, &written) == RX_OK)
 	{
 		return true;
 	}

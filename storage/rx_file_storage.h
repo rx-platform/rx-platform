@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -38,10 +38,10 @@
 
 namespace storage {
 namespace files {
+class rx_json_file;
 class rx_simple_file;
 class rx_runtime_file;
 class rx_binary_file;
-class rx_json_file;
 
 } // namespace files
 } // namespace storage

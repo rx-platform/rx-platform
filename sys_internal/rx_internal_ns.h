@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -39,7 +39,7 @@
 #include "terminal/rx_terminal_style.h"
 #include "api/rx_platform_api.h"
 #include "system/server/rx_server.h"
-#include "system/serialization/rx_serialization_defs.h"
+#include "lib/rx_serialization_defs.h"
 #include "system/meta/rx_types.h"
 #include "system/storage_base/rx_storage.h"
 #include "system/runtime/rx_runtime_holder.h"
@@ -148,6 +148,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
+      byte_string get_definition_as_bytes () const;
+
 
   protected:
 
@@ -228,6 +230,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
+      byte_string get_definition_as_bytes () const;
+
 
   protected:
 
@@ -307,6 +311,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       void execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      byte_string get_definition_as_bytes () const;
 
 
   protected:

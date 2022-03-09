@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
+#include "lib/rx_io_buffers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_http_server
@@ -109,7 +109,7 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
       rx_protocol_stack_endpoint stack_entry_;
 
-      rx_platform::runtime::io_types::rx_io_buffer receive_buffer_;
+      rx::io::rx_io_buffer receive_buffer_;
 
 
       rx_thread_handle_t executer_;

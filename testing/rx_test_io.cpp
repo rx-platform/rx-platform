@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 #ifndef EXCLUDE_TEST_CODE
 
 // rx_test_io

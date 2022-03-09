@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 
 
 // rx_thread
-#include "lib/rx_thread.h"
+#include "system/threads/rx_thread.h"
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
 
@@ -150,7 +150,7 @@ class data_controler
 	typedef std::unordered_map<string_type, named_source_data> named_sources_type;
 
   public:
-      data_controler (rx::threads::physical_job_thread* worker);
+      data_controler (threads::physical_job_thread* worker);
 
       ~data_controler();
 
@@ -181,7 +181,7 @@ class data_controler
   private:
 
 
-      rx::threads::physical_job_thread *my_worker_;
+      rx_platform::threads::physical_job_thread *my_worker_;
 
       sources_type sources_;
 

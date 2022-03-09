@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 
 // rx_telnet
 #include "terminal/rx_telnet.h"
@@ -422,7 +423,7 @@ rx_protocol_result_t telnet_transport_endpoint::connected_function (rx_protocol_
 	}
 	else
 	{
-		
+
 		send_buffer.value().write(g_server_telnet_idetification, TELENET_IDENTIFICATION_SIZE);
 		rx_protocol_result_t result = rx_move_packet_down(reference, rx_create_send_packet(0, &send_buffer.value(), 0, 0));
 		if (result == RX_PROTOCOL_OK)

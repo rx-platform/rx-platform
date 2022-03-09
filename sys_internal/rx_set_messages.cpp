@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,10 +34,10 @@
 // rx_set_messages
 #include "sys_internal/rx_set_messages.h"
 
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 #include "system/runtime/rx_blocks.h"
 #include "sys_internal/rx_internal_protocol.h"
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 #include "api/rx_namespace_api.h"
 #include "api/rx_meta_api.h"
 #include "system/server/rx_server.h"

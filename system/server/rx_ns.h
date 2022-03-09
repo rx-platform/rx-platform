@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -141,7 +141,6 @@ class rx_namespace_item
 
 typedef std::vector<rx_namespace_item> platform_items_type;
 
-using suggestions_type = std::set<string_type>;
 
 
 

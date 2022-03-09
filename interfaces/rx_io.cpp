@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -126,15 +126,19 @@ bool dispatcher_subscriber::connect_dispatcher (threads::dispatcher_pool& dispat
 
 bool dispatcher_subscriber::disconnect_dispatcher ()
 {
-	int ret = rx_dispatcher_unregister(dispatcher_handle_, &dispatcher_data_);
-	if(ret>0)
+    if(dispatcher_handle_)
 	{
-        for(int i=0; i<ret; i++)
+        int ret = rx_dispatcher_unregister(dispatcher_handle_, &dispatcher_data_);
+        if(ret>0)
         {
-            release();
+            for(int i=0; i<ret; i++)
+            {
+                release();
+            }
         }
+        return ret >= 0;
 	}
-	return ret >= 0;
+	return true;
 }
 
 void dispatcher_subscriber::register_timed ()
@@ -270,7 +274,7 @@ bool net_command::do_console_command (std::istream& in, std::ostream& out, std::
 	else
 	{
 
-		err << sub_command 
+		err << sub_command
 			<< "is unknown sub command!";
 		return false;
 	}
@@ -301,7 +305,7 @@ bool net_command::do_eth_command (std::istream& in, std::ostream& out, std::ostr
 				(int)interfaces[i].mac_address[5]);
 
 			out << buff << "\r\n";
-			
+
 		}
 		free(interfaces);
 	}

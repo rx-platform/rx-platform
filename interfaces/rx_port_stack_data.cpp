@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -129,8 +129,18 @@ void port_active_map::close_all_endpoints ()
 
 // Class rx_internal::interfaces::port_stack::port_buffers 
 
+port_buffers::port_buffers()
+      : buffer_back_capacity(0x100),
+        buffer_front_capacity(0x10),
+        buffer_discard_size(0x200),
+        buffer_count(0),
+        discard_buffer_count(0)
+{
+}
 
-rx_result_with<io_types::rx_io_buffer> port_buffers::alloc_io_buffer (rx_port_ptr& whose)
+
+
+rx_result_with<io::rx_io_buffer> port_buffers::alloc_io_buffer (rx_port_ptr& whose)
 {
     rx_io_buffer ret;
     port_buffers& buffers = whose->get_instance_data().stack_data.buffers;
@@ -155,7 +165,7 @@ rx_result_with<io_types::rx_io_buffer> port_buffers::alloc_io_buffer (rx_port_pt
     return ret;
 }
 
-void port_buffers::release_io_buffer (rx_port_ptr& whose, io_types::rx_io_buffer buff)
+void port_buffers::release_io_buffer (rx_port_ptr& whose, io::rx_io_buffer buff)
 {
     port_buffers& buffers = whose->get_instance_data().stack_data.buffers;
     if (buff.size > buffers.buffer_discard_size)
@@ -403,7 +413,6 @@ rx_result port_stack_data::init_runtime_data (runtime::runtime_init_context& ctx
     buffers.buffer_discard_size = ctx.get_item_static<size_t>("Options.BuffDiscardSize", 0x1000);
     buffers.buffer_count.bind("Status.Buffers", ctx);
     buffers.discard_buffer_count.bind("Status.DropedBuffers", ctx);
-    buffers.buffer_count.bind("Status.", ctx);
     passive_map.stack_binded.bind("Status.Binded", ctx);
     build_map.stack_ready.bind("Status.Assembled", ctx);
     active_map.active_endpoints.bind("Status.Endpoints", ctx);

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -422,6 +422,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->bool_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				return RX_OK;
 			case RX_INT8_TYPE:
@@ -515,6 +518,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->int8_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->int8_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -581,7 +587,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->int8_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -594,6 +600,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->int16_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->int16_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -660,7 +669,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->int16_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -673,6 +682,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->int32_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->int32_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -739,7 +751,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->int32_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -752,6 +764,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->int64_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->int64_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -818,7 +833,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->int64_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -831,6 +846,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->uint8_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->uint8_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -897,7 +915,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->uint8_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -910,6 +928,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->uint16_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->uint16_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -976,7 +997,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->uint16_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -989,6 +1010,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->uint32_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->uint32_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -1055,7 +1079,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->uint32_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -1068,6 +1092,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->uint64_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->uint64_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -1134,7 +1161,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->uint64_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -1147,6 +1174,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->float_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->float_value = what->bool_value ? (float)1 : (float)0;
 				return RX_OK;
@@ -1213,7 +1243,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->float_value = (float)temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -1226,6 +1256,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->double_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->double_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -1292,7 +1325,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->double_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -1306,6 +1339,11 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value->imag = 0;
+				what->complex_value->real = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->complex_value = malloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
@@ -1382,7 +1420,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						what->complex_value = malloc(sizeof(complex_value_struct));
 						*what->complex_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -1396,6 +1434,10 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->complex_value.imag = 0;
+				what->complex_value.real = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->complex_value.imag = 0;
 				what->complex_value.real = what->bool_value ? 1.0 : 0.0;
@@ -1459,7 +1501,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						rx_destory_string_value_struct(&what->string_value);
 						what->complex_value = temp;
 					}
-					return RX_OK;
+					return ret;
 				}
 			case RX_BYTES_TYPE:
 				return RX_ERROR;
@@ -1474,6 +1516,10 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->uuid_value = malloc(sizeof(rx_uuid_t));
+				memzero(what->uuid_value, sizeof(rx_uuid_t));
+				return RX_OK;
 			case RX_BOOL_TYPE:
 			case RX_INT8_TYPE:
 			case RX_INT16_TYPE:
@@ -1515,6 +1561,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				memzero(&what->uuid_value, sizeof(rx_uuid_t));
+				return RX_OK;
 			case RX_BOOL_TYPE:
 			case RX_INT8_TYPE:
 			case RX_INT16_TYPE:
@@ -1555,6 +1604,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->time_value.t_value = 0;
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				what->time_value.t_value = what->bool_value ? 1 : 0;
 				return RX_OK;
@@ -1634,6 +1686,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				rx_init_string_value_struct(&what->string_value, NULL, 0);
+				return RX_OK;
 			case RX_BOOL_TYPE:
 				return bool_to_str(what->bool_value, &what->string_value);
 			case RX_INT8_TYPE:
@@ -1716,6 +1771,10 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				what->node_id_value = malloc(sizeof(rx_node_id_struct));
+				rx_init_null_node_id(what->node_id_value);
+				return RX_OK;
 			case RX_BOOL_TYPE:
 			case RX_INT8_TYPE:
 			case RX_INT16_TYPE:
@@ -1747,6 +1806,9 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		{
 			switch (source)
 			{
+			case RX_NULL_TYPE:
+				rx_init_bytes_value_struct(&what->bytes_value, NULL, 0);
+				return RX_OK;
 			case RX_BOOL_TYPE:
 			case RX_INT16_TYPE:
 			case RX_INT32_TYPE:

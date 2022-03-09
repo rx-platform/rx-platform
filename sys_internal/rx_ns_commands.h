@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -222,10 +222,6 @@ removes directory from namespace");
 class clone_system_command : public terminal::commands::server_command  
 {
 	DECLARE_REFERENCE_PTR(clone_system_command);
-	struct clone_data_t : public pointers::struct_reference
-	{
-		uint64_t started;
-	};
 	DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
 command for cloning system types and objects of this rx-platform instance\r\n\
 \
@@ -255,10 +251,6 @@ command for cloning system types and objects of this rx-platform instance\r\n\
 class move_command : public terminal::commands::server_command  
 {
     DECLARE_REFERENCE_PTR(move_command);
-    struct clone_data_t : public pointers::struct_reference
-    {
-        uint64_t started;
-    };
     DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
 command for moving (or renaming if you like?) a directories of this rx-platform instance\r\n\
 \
@@ -288,10 +280,6 @@ command for moving (or renaming if you like?) a directories of this rx-platform 
 class clone_command : public terminal::commands::server_command  
 {
     DECLARE_REFERENCE_PTR(clone_command);
-    struct clone_data_t : public pointers::struct_reference
-    {
-        uint64_t started;
-    };
     DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
     command for making copies of directories of this rx-platform instance\r\n\
 \

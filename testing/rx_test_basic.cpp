@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -35,8 +35,8 @@
 // rx_test_basic
 #include "testing/rx_test_basic.h"
 
-#include "system/serialization/rx_ser_json.h"
-#include "system/serialization/rx_ser_bin.h"
+#include "lib/rx_ser_json.h"
+#include "lib/rx_ser_bin.h"
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
 

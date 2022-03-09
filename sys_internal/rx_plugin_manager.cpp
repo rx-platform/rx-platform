@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -83,24 +83,31 @@ bool plugins_manager::check_class (rx::pointers::code_behind_definition_t* cd)
 
 rx_result plugins_manager::register_plugin (rx_platform::library::rx_plugin_base* what)
 {
-	auto info = what->get_plugin_info();
-
-	PLUGIN_LOG_INFO("plugins_manager", 900, "Registering plugin "s + rx_c_str(&info.plugin_version));
-	auto result = what->init_plugin();
+	auto result = what->bind_plugin();
 	if (result)
 	{
-		plugins_.emplace_back(what);
-		PLUGIN_LOG_INFO("plugins_manager", 900, "Registered plugin "s + rx_c_str(&info.plugin_version));
+		auto info = what->get_plugin_info();
+
+		PLUGIN_LOG_INFO("plugins_manager", 900, "Registering plugin "s + info.plugin_version);
+		result = what->init_plugin();
+		if (result)
+		{
+			plugins_.emplace_back(what);
+			PLUGIN_LOG_INFO("plugins_manager", 900, "Registered plugin "s + info.plugin_version);
+		}
+		else
+		{
+			for (const auto& one : result.errors())
+				PLUGIN_LOG_ERROR("plugins_manager", 900, one);
+			PLUGIN_LOG_ERROR("plugins_manager", 900, "Error registering plugin "s + info.plugin_version);
+		}
 	}
 	else
 	{
-		for(const auto& one : result.errors())
+		for (const auto& one : result.errors())
 			PLUGIN_LOG_ERROR("plugins_manager", 900, one);
-		PLUGIN_LOG_ERROR("plugins_manager", 900, "Error registering plugin "s + rx_c_str(&info.plugin_version));
+		PLUGIN_LOG_ERROR("plugins_manager", 900, "Error registering plugin");
 	}
-	rx_destory_string_value_struct(&info.plugin_version);
-	rx_destory_string_value_struct(&info.lib_version);
-	rx_destory_string_value_struct(&info.platform_version);
 	return result;
 }
 
@@ -134,20 +141,48 @@ bool plugin_command::do_console_command (std::istream& in, std::ostream& out, st
 		for (const auto& one : plugins)
 		{
 			auto info = one->get_plugin_info();
-			out << ANSI_COLOR_GREEN "$>" ANSI_COLOR_RESET;
-			out << rx_c_str(&info.plugin_version) << "\r\n";
-			rx_destory_string_value_struct(&info.plugin_version);
-			rx_destory_string_value_struct(&info.lib_version);
-			rx_destory_string_value_struct(&info.platform_version);
+			out << ANSI_COLOR_GREEN ANSI_COLOR_BOLD "$>" ;
+			out << one->get_plugin_name() 
+				<< ANSI_COLOR_RESET " [" << info.plugin_version << "]\r\n";
 		}
 	}
 	else
 	{
 		if (sub_command.empty())
+		{
 			err << "Specify a sub-command.";
+		}
 		else
-			err << sub_command << " is unknown sub-command!";
-		return false;
+		{
+			const rx_platform::library::rx_plugin_base* plugin = nullptr;
+			const auto& plugins = plugins_manager::instance().get_plugins();
+			for (const auto& one : plugins)
+			{
+				if (sub_command == one->get_plugin_name())
+				{
+					plugin = one;
+					break;
+				}
+			}
+			if (plugin)
+			{
+				auto info = plugin->get_plugin_info();
+
+				out << ANSI_COLOR_GREEN ANSI_COLOR_BOLD "$>";
+				out << plugin->get_plugin_name()
+					<< ANSI_COLOR_RESET "\r\n";
+				out << info.plugin_version << "\r\n";
+				out << "Platform: " << info.platform_version << "\r\n";
+				out << "Library: " << info.lib_version << "\r\n";
+				out << "Compiler: " << info.comp_version << "\r\n";
+
+			}
+			else
+			{
+				err << sub_command << " is unknown sub-command!";
+				return false;
+			}
+		}
 	}
 	return true;
 }

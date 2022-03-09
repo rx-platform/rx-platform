@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -344,7 +344,7 @@ bool vt100_endpoint::char_received_normal (const char ch, bool eof, string_type&
 											{
 												if(!had_options)
 													current_line_ += suggested;
-												io_types::rx_io_buffer sbuffer = sbuff_res.move_value();
+												io::rx_io_buffer sbuffer = sbuff_res.move_value();
 												sbuffer.write_chars(suggested);
 												rx_move_packet_down(&stack_entry, rx_create_send_packet(0, &sbuffer, 0, 0));
 											}

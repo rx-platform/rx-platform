@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -37,6 +37,7 @@
 
 #include "terminal/rx_terminal_style.h"
 #include "system/server/rx_server.h"
+#include "system/server/rx_file_helpers.h"
 
 
 namespace testing {
@@ -150,8 +151,9 @@ bool read_and_run_file::run_test (std::istream& in, std::ostream& out, std::ostr
 			sys_handle_t file = 0;// storage->get_host_test_file(file_name);
 			if (file)
 			{
+
 				memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
-				if (buffer->fill_with_file_content(file))
+				//if (buffer->fill_with_file_content(file))
 				{
 					out << "file loaded in memory...\r\n";
 					out << "Running file script:" << file_name;
@@ -185,7 +187,7 @@ bool read_and_run_file::run_test (std::istream& in, std::ostream& out, std::ostr
 
 					out << RX_CONSOLE_HEADER_LINE "\r\nScript done.\r\n";
 				}
-				else
+				//else
 				{
 					err << "error reading file content\r\n";
 				}

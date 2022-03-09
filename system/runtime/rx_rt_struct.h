@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -460,6 +460,8 @@ public:
 
       rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
 
+      rx_result filter_changed ();
+
 
       runtime_item::smart_ptr item;
 
@@ -710,12 +712,12 @@ class full_value_data
       rx_simple_value simple_get_value () const;
 
 
+      rx::values::rx_value value;
+
+
   protected:
 
   private:
-
-
-      rx::values::rx_value value_;
 
 
 };
@@ -986,10 +988,6 @@ class source_data
       void source_result_pending (rx_result&& result, runtime_transaction_id_t id);
 
       void process_result (runtime_transaction_id_t id, rx_result&& result);
-
-      threads::job_thread* get_jobs_queue ();
-
-      void add_periodic_job (jobs::periodic_job::smart_ptr job);
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 

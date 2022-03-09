@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,11 +34,68 @@
 
 
 
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#include <stdint.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <time.h>
+#include <errno.h>
+#include <arpa/inet.h>
+#include <uuid/uuid.h>
+#include <stdio.h>
+#include <limits.h>
+#include <netinet/in.h>
+#include <dlfcn.h>
+#include <poll.h>
+#include <sys/eventfd.h>
+#include <signal.h>
+#include <sys/mman.h>
+
+#define RX_COMPILER_NAME "GCC"
+#define RX_COMPILER_VERSION (__GNUC__)
+#define RX_COMPILER_MINOR (__GNUC_MINOR__)
+#define RX_COMPILER_BUILD (__GNUC_PATCHLEVEL__)
+
+#define _rx_func_ __PRETTY_FUNCTION__
+
+typedef int rx_os_error_t;
+typedef int sys_handle_t;
+
+#define _snprintf_s(a,b,c,...) snprintf(a,c,__VA_ARGS__)
+
+#define GET_IP4_ADDR(a) ((a).sin_addr.s_addr)
+#define SET_IP4_ADDR(a, d) ((a).sin_addr.s_addr = (d))
+
+
+
 #ifdef RXCOMMON_EXPORTS
 #define RX_COMMON_API __attribute__((visibility("default")))
 #else
 #define RX_COMMON_API
 #endif
+
+
+
+#ifdef RXPLUGIN_EXPORTS
+#define RX_PLUGIN_API __attribute__((visibility("default")))
+#else
+#define RX_PLUGIN_API
+#endif
+
+
+
+#ifdef RXPLATFORM_EXPORTS
+#define RX_PLATFORM_API __attribute__((visibility("default")))
+#else
+#define RX_PLATFORM_API
+#endif
+
 
 #ifdef _DEBUG
 #define RX_ASSERT(v) assert(v)
@@ -68,6 +125,28 @@ typedef struct _GUID {
 
 typedef GUID rx_uuid_;
 typedef GUID rx_uuid_t;
+
+
+#define SLIM_LOCK_SIZE sizeof(pthread_mutex_t)
+#define RW_SLIM_LOCK_SIZE sizeof(pthread_mutex_t)
+
+
+
+typedef void* rx_module_handle_t;
+typedef void* rx_func_addr_t;
+
+
+#include <openssl/hmac.h>
+
+typedef struct _crypt_key_t
+{
+	uint8_t* data;
+	uint32_t size;
+} *crypt_key_t;
+
+typedef HMAC_CTX* crypt_hash_t;
+
+
 
 
 

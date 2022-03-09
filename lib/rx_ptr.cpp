@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -35,6 +35,19 @@
 #include "lib/rx_ptr.h"
 
 
+extern "C"
+{
+	void c_destroy_reference(rx::pointers::reference_object* self)
+	{
+		delete self;
+	}
+
+	lock_reference_def_struct _g_ref_def_struct
+	{
+		(reference_destroy_func_t)c_destroy_reference
+	};
+}
+
 
 namespace rx {
 
@@ -49,28 +62,64 @@ _create_new_type _create_new;
 std::atomic<ref_counting_type> reference_object::g_objects_count;
 
 reference_object::reference_object()
-      : ref_count_(1)
+      : ref_count_(1),
+        own_ref_(false)
+	, extern_data_(nullptr)
 {
 	g_objects_count++;
+}
+
+reference_object::reference_object (lock_reference_struct* extern_data)
+      : ref_count_(1),
+        own_ref_(false)
+	, extern_data_(extern_data)
+{
+	if (extern_data_)
+	{
+		rx_aquire_lock_reference(extern_data_);
+	}
 }
 
 
 reference_object::~reference_object()
 {
+	if (extern_data_ && !own_ref_)
+		rx_release_lock_reference(extern_data_);
 	g_objects_count--;
 }
 
 
 
+void reference_object::bind_as_shared (lock_reference_struct* extern_data)
+{
+	extern_data_ = extern_data;
+	RX_ASSERT(extern_data);
+	if (extern_data_)
+	{
+		own_ref_ = true;
+		rx_init_lock_reference(extern_data_, this, &_g_ref_def_struct);
+	}
+}
+
 void reference_object::bind ()
 {
-	ref_count_.fetch_add(1);
+	if (own_ref_)
+		rx_aquire_lock_reference(extern_data_);
+	else
+		ref_count_.fetch_add(1);
 }
 
 void reference_object::release ()
 {
-	if (1 == ref_count_.fetch_sub(1))
-		delete this;
+	if (own_ref_)
+	{
+		rx_release_lock_reference(extern_data_);
+	}
+	else
+	{
+		if (1 == ref_count_.fetch_sub(1))
+			delete this;
+	}
 }
 
 size_t reference_object::get_objects_count ()
@@ -82,23 +131,10 @@ void reference_object::fill_code_info (std::ostream& info, const string_type& na
 {
 }
 
-
-// Class rx::pointers::struct_reference 
-
-
-void struct_reference::bind ()
+lock_reference_struct* reference_object::get_extern_ref ()
 {
-	ref_count_++;
+	return extern_data_;
 }
-
-void struct_reference::release ()
-{
-	if (0 == --ref_count_)
-		delete this;
-}
-
-
-// Parameterized Class rx::pointers::basic_smart_ptr 
 
 
 } // namespace pointers

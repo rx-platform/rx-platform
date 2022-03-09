@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -111,7 +111,7 @@ initiator_to_listener_port::initiator_to_listener_port()
 	initiator_endpoint_.release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
 	{
 		initiator_to_listener_port* whose = (initiator_to_listener_port*)entry->user_data;
-		runtime::io_types::rx_io_buffer temp;
+		io::rx_io_buffer temp;
 		temp.attach(buffer);
 		whose->release_io_buffer(std::move(temp));
 

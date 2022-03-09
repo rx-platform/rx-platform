@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -44,8 +44,8 @@
 namespace rx_internal {
 namespace interfaces {
 namespace ip_endpoints {
-class tcp_client_port;
 class tcp_client_endpoint;
+class tcp_client_port;
 
 } // namespace ip_endpoints
 } // namespace interfaces

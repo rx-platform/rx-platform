@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -198,7 +198,7 @@ bool interactive_console_host::do_host_command (const string_type& line, memory:
 			if (file)
 			{
 				memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer(pointers::_create_new);
-				if (buffer->fill_with_file_content(file))
+				//if (buffer->fill_with_file_content(file))
 				{
 					out << "file loaded in memory...\r\n";
 					out << "Running file script:" << file_name;
@@ -214,7 +214,7 @@ bool interactive_console_host::do_host_command (const string_type& line, memory:
 					out << "=====================================\r\nScript done.\r\n";
 					ret = true;
 				}
-				else
+				//else
 				{
 					err << "error reading file content\r\n";
 				}
@@ -300,7 +300,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			}
 			std::cout << "========================================================\r\n\r\n";
 			std::cout << "Starting log...";
-			ret = rx::log::log_object::instance().start(config.management.test_log);
+			ret =rx_platform::log::log_object::instance().start(config.management.test_log);
 			if (ret)
 			{
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
@@ -348,7 +348,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing security:\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
-				rx::log::log_object::instance().deinitialize();
+				rx_platform::log::log_object::instance().deinitialize();
 			}
 
 			if (!ret)
@@ -365,7 +365,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 		}
 	}
 	rx_internal::interfaces::io_endpoints::dispatcher_subscriber::deinitialize();
-	rx::threads::thread::deinitialize();
+	rx_platform::threads::thread::deinitialize();
 	restore_console();
 	std::cout << "\r\n";
 	return ret ? 0 : -1;
@@ -716,7 +716,7 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
 	interactive_console_endpoint* self = reinterpret_cast<interactive_console_endpoint*>(reference->user_data);
-	using job_type = rx::jobs::function_job<rx_reference_ptr, std::vector<uint8_t>&&>;
+	using job_type = rx_platform::jobs::function_job<rx_reference_ptr, std::vector<uint8_t>&&>;
 	std::vector<uint8_t> captured(packet.buffer->buffer_ptr, packet.buffer->buffer_ptr + packet.buffer->size);
 	auto packet_id = packet.id;
 

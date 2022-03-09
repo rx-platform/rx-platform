@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -35,14 +35,14 @@
 #include "system/runtime/rx_runtime_helpers.h"
 #include "lib/rx_io_addr.h"
 
-// rx_runtime_data
-#include "system/meta/rx_runtime_data.h"
 // rx_identity
 #include "system/server/rx_identity.h"
-// rx_security
-#include "lib/security/rx_security.h"
+// rx_runtime_data
+#include "system/meta/rx_runtime_data.h"
 // rx_port_instance
 #include "interfaces/rx_port_instance.h"
+// rx_security
+#include "security/rx_security.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -265,7 +265,7 @@ class application_instance_data
 
       rx_platform::meta::runtime_data::application_data data_;
 
-      rx_reference<rx::security::security_context> security_ctx_;
+      rx_reference<rx_platform::security::security_context> security_ctx_;
 
 
       rx_thread_handle_t executer_;

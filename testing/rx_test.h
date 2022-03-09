@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -35,12 +35,12 @@
 
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_con_programs
 #include "terminal/rx_con_programs.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 namespace testing {
 class test_case;

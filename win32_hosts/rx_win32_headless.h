@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -61,6 +61,8 @@ class win32_headless_host : public host::headless::headless_platform_host
 
       rx_result setup_console (int argc, char* argv[]);
 
+      void fill_plugin_libs (string_array& paths);
+
 
   protected:
 
@@ -73,6 +75,36 @@ class win32_headless_host : public host::headless::headless_platform_host
 
 
       bool supports_ansi_;
+
+
+};
+
+
+
+
+
+
+class win32_dll_host : public win32_headless_host  
+{
+
+  public:
+      win32_dll_host (const std::vector<storage_base::rx_platform_storage_type*>& storages, const string_type& host_name, const string_type& local_dir);
+
+
+      string_type get_host_name ();
+
+
+  protected:
+
+      rx_result fill_host_directories (hosting::rx_host_directories& data);
+
+
+  private:
+
+
+      string_type local_dir_override_;
+
+      string_type host_name_;
 
 
 };

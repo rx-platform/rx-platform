@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -148,7 +148,7 @@ rx_protocol_stack_endpoint* transport_port_impl<endpointT>::construct_endpoint (
         endpoint_data.first->release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
         {
             endpointT* whose = reinterpret_cast<endpointT*>(entry->user_data);
-            rx_io_buffer temp;
+            io::rx_io_buffer temp;
             temp.attach(buffer);
             whose->get_port()->release_io_buffer(std::move(temp));
 

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -93,7 +93,7 @@ public:
       virtual ~base_meta_writer();
 
 
-      virtual bool write_id (const char* name, const rx_node_id_struct& id) = 0;
+      virtual bool write_id (const char* name, const rx_node_id& id) = 0;
 
       virtual bool write_string (const char* name, const char* str) = 0;
 

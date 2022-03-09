@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 
 // rx_holder_algorithms
 #include "system/runtime/rx_holder_algorithms.h"
@@ -83,7 +84,7 @@ rx_result relation_data::initialize_relation (runtime::runtime_init_context& ctx
 	if (result)
 	{
 		rx_item_reference ref = implementation_->get_implicit_reference(ctx.meta);
-		
+
 		if (!ref.is_null())
 		{
 			meta_data target_meta;
@@ -203,7 +204,7 @@ void relation_data::try_resolve ()
 		}
 		target_id = resolve_result.move_value();
 	}
-	
+
 	if (target_id.is_null())
 		return;
 
@@ -334,7 +335,7 @@ rx_result relation_data::resolve_inverse_name ()
 	{
 		string_type inverse_name;
 		auto idx_obj = target_path.rfind('.');
-		if (idx_obj != string_type::npos && idx_obj > 1)// safely 1 
+		if (idx_obj != string_type::npos && idx_obj > 1)// safely 1
 		{
 			auto idx_path = target_path.rfind(RX_DIR_DELIMETER);
 			if (idx_path != string_type::npos && idx_path>idx_obj)
@@ -357,7 +358,7 @@ rx_result relation_data::resolve_inverse_name ()
 		else
 		{
 			parent_path = target_path;
-		}		
+		}
 	}
 	return true;
 }
@@ -756,6 +757,15 @@ rx_result relations_holder::register_relation_subscriber (const string_type& nam
 	return "Invalid relation name!";
 }
 
+rx_result relations_holder::register_extern_relation_subscriber (const string_type& name, relation_subscriber_data* who)
+{
+	auto ptr = std::make_unique<extern_relation_subscriber>(who);
+	auto result = register_relation_subscriber(name, ptr.get());
+	if(result)
+		extern_subscribers_.emplace_back(std::move(ptr));
+	return result;
+}
+
 void relations_holder::read_value (const string_type& path, read_result_callback_t callback, runtime_process_context* ctx) const
 {
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
@@ -993,7 +1003,7 @@ void relation_connections::read_struct (string_view_type path, read_struct_data 
 {
 	if (connector_)
 	{
-		
+
 		connector_->read_struct(path, std::move(data));
 	}
 	else

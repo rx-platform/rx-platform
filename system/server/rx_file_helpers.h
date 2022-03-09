@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #define rx_file_helpers_h 1
 
 
+#include "lib/rx_mem.h"
 
 
 namespace rx
@@ -54,9 +55,34 @@ public:
 	rx_result open_write(const char* file_name);
 	rx_result read_string(std::string& buff);
 	rx_result write_string(const std::string& buff);
+	rx_result read_data(byte_string& buff);
+	rx_result write_data(const byte_string& buff);
 	~rx_source_file();
 
 };
+
+
+template <class allocT, bool swap_bytes>
+bool fill_buffer_with_file_content(sys_handle_t file, rx::memory::memory_buffer_base<allocT, swap_bytes>& buff)
+{
+	uint64_t sz = 0;
+	if (rx_file_get_size(file, &sz))
+	{
+		if (sz == 0)
+			return true;
+		// init buffer
+		
+		buff.current_read_ = 0;
+		buff.next_push_ = (int)sz;
+		buff.allocator_.reallocate((size_t)sz);
+		uint32_t readed = 0;
+		if (rx_file_read(file, buff.allocator_.get_char_buffer(), (uint32_t)sz, &readed) && readed == sz)
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
 
 } // namespace rx

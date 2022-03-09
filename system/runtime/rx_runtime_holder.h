@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -38,6 +38,8 @@
 
 // rx_ns_resolver
 #include "system/server/rx_ns_resolver.h"
+// rx_job
+#include "system/threads/rx_job.h"
 // rx_tag_blocks
 #include "system/runtime/rx_tag_blocks.h"
 // rx_display_blocks
@@ -56,8 +58,6 @@
 #include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_job
-#include "lib/rx_job.h"
 
 #include "system/meta/rx_obj_types.h"
 #include "runtime_internal/rx_runtime_instance.h"
@@ -87,7 +87,7 @@ namespace algorithms {
 
 
 template <class typeT>
-class process_runtime_job : public rx::jobs::job  
+class process_runtime_job : public jobs::job  
 {
     DECLARE_REFERENCE_PTR(process_runtime_job);
 

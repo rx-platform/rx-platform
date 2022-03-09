@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -42,8 +42,8 @@ namespace rx_internal {
 namespace rx_protocol {
 namespace messages {
 namespace set_messages {
-class protocol_type_creator_base;
 class protocol_runtime_creator_base;
+class protocol_type_creator_base;
 
 } // namespace set_messages
 } // namespace messages

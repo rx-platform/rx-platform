@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,8 +34,8 @@
 // rx_platform_security
 #include "sys_internal/rx_security/rx_platform_security.h"
 
-#include "system/serialization/rx_ser_json.h"
-
+#include "lib/rx_ser_json.h"
+#include "system/server/rx_server.h"
 
 #define RX_DEFAULT_SECURITY_NAME RX_NONE_SECURITY_NAME
 

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -64,7 +64,6 @@ extern "C" {
 #endif
 
 
-size_t g_page_size=0;
 
 int g_base_rt_priority=0;
 int g_idle_priority=0;
@@ -139,8 +138,6 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls)
     int ret;
     struct sched_param sp;
     struct rlimit rl;
-    // query page size for optimization purpose
-    g_page_size = sysconf(_SC_PAGESIZE);
 
     if(rt)
     {
@@ -180,21 +177,7 @@ void rx_deinitialize_os()
     if (init_common_result)
         rx_deinit_common_library();
 }
-///////////////////////////////////////////////////////////////////
-// errors support pipes
 
-rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size)
-{
-	char buff[0x100];
-	char* msg;
-	int err = errno;
-	msg = strerror_r(err, buff, sizeof(buff));
-	if (text)
-		snprintf(buffer, buffer_size, "%s. %s (%d)", text, msg, err);
-	else
-		snprintf(buffer, buffer_size, "%s (%d)", msg, err);
-	return err;
-}
 ///////////////////////////////////////////////////////////////////
 // anynoimus pipes
 void rx_initialize_server_side_pipe(struct pipe_server_t* pipes)
@@ -330,50 +313,6 @@ int rx_read_pipe_client(struct pipe_client_t* pipes, void* data, size_t* size)
 uint8_t pipe_dummy_buffer[0x100];
 
 
-uint32_t rx_border_rand(uint32_t min, uint32_t max)
-{
-    if (max > min)
-    {
-        uint32_t diff = (max - min);
-        if (diff > RAND_MAX)
-        {
-            int shifts = 0;
-            while (diff > RAND_MAX)
-            {
-                shifts++;
-                diff >>= 1;
-            }
-            uint32_t gen = rand() << shifts;
-            gen = gen % (max - min) + min;
-            return gen;
-        }
-        else
-        {
-            uint32_t gen = rand();
-            gen = gen % (max - min) + min;
-            return gen;
-        }
-    }
-    else
-        return min;
-}
-
-void* rx_allocate_os_memory(size_t size)
-{
-    return mmap(NULL,size,PROT_READ|PROT_WRITE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
-}
-void rx_deallocate_os_memory(void* p,size_t size)
-{
-    int ret=munmap(p,size);
-    if(ret==-1)
-        perror("Unmap");
-}
-
-size_t rx_os_page_size()
-{
-    RX_ASSERT(g_page_size);
-    return g_page_size;
-}
 ////////////////////////////////////////////////////////////
 // system info classes
 
@@ -481,178 +420,6 @@ void rx_collect_memory_info(size_t* total, size_t* free, size_t* process)
 
 	read_off_memory_status(process);
 }
-/////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
-{
-    struct pollfd pfds;
-    int ret;
-	eventfd_t buff = 0;
-
-	pfds.fd=what;
-	pfds.events=POLLIN;
-	pfds.revents=0;
-	ret = poll(&pfds,1,(int)timeout);
-	if(ret==0)
-        return RX_WAIT_TIMEOUT;
-	else if(ret==1)
-	{
-        //do the read to release it
-        ret = read(what, &buff, sizeof(buff));
-        if(ret>0)
-            return RX_WAIT_0;
-    }
-    return RX_WAIT_ERROR;
-
-}
-uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout)
-{
-    struct pollfd pfds;
-    int ret;
-	eventfd_t buff = 0;
-
-    struct timespec ts;
-    ts.tv_sec = timeout / 1000000ul;
-    ts.tv_nsec = timeout % 1000000ul * 1000;
-
-	pfds.fd=what;
-	pfds.events=POLLIN;
-	pfds.revents=0;
-	sigset_t sigset;
-	ret = ppoll(&pfds,1,&ts,&sigset);
-	if(ret==0)
-        return RX_WAIT_TIMEOUT;
-	else if(ret==1)
-	{
-        //do the read to release it
-        ret = read(what, &buff, sizeof(buff));
-        if(ret>0)
-            return RX_WAIT_0;
-    }
-    return RX_WAIT_ERROR;
-
-}
-uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count,uint32_t timeout)
-{
-	struct pollfd pfds[0x10];
-	int ret;
-	size_t i;
-	eventfd_t buff = 0;
-
-	if (count>0x10)
-		return RX_WAIT_ERROR;//to large for this function
-
-	for (i = 0; i<count; i++)
-	{
-		pfds[i].fd = what[i];
-		pfds[i].events = POLLIN;
-		pfds[i].revents = 0;
-	}
-	ret = poll(pfds, (int)count, (int)timeout);
-	if (ret == 0)
-		return RX_WAIT_TIMEOUT;
-	else if (ret>0)
-	{
-		int first = -1;
-		//do the read to release it
-		for (i = 0; i<count; i++)
-		{
-			if (pfds[i].revents != 0)
-			{
-				if (first<0)
-					first = (int)i;
-				ret = read(pfds[i].fd, &buff, sizeof(buff));
-				if(ret<=0)
-                    break;
-			}
-		}
-		if(ret>0)
-            return RX_WAIT_0 + first;
-	}
-	return RX_WAIT_ERROR;
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define MANUAL_EVENT
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// event apstractions ( wait and the rest of the stuff
-sys_handle_t rx_event_create(int initialy_set)
-{
-	int fd = 0;
-	fd = eventfd(initialy_set ? 1 : 0, EFD_NONBLOCK);
-
-	return fd;
-}
-int rx_event_destroy(sys_handle_t hndl)
-{
-	close(hndl);
-	return RX_ERROR;
-}
-int rx_event_set(sys_handle_t hndl)
-{
-	eventfd_t val = 0xfffffffe;
-	int fd = (int)hndl;
-	int ret = write(fd, &val, sizeof(val));
-	if(ret<0)
-        return RX_ERROR;
-    else
-        return RX_OK;
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-void rx_slim_lock_create(pslim_lock_t plock)
-{
-	pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
-	pthread_mutex_init(mtx, &attr);
-}
-void rx_slim_lock_destroy(pslim_lock_t plock)
-{
-	pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
-	pthread_mutex_destroy(mtx);
-}
-void rx_slim_lock_aquire(pslim_lock_t plock)
-{
-	pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
-	pthread_mutex_lock(mtx);
-}
-void rx_slim_lock_release(pslim_lock_t plock)
-{
-	pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
-	pthread_mutex_unlock(mtx);
-}
-
-void rx_rw_slim_lock_create(prw_slim_lock_t plock)
-{
-	rx_slim_lock_create((pslim_lock_t)plock);
-}
-void rx_rw_slim_lock_destroy(prw_slim_lock_t plock)
-{
-	rx_slim_lock_destroy((pslim_lock_t)plock);
-}
-void rx_rw_slim_lock_aquire_reader(prw_slim_lock_t plock)
-{
-	rx_slim_lock_aquire((pslim_lock_t)plock);
-}
-void rx_rw_slim_lock_release_reader(prw_slim_lock_t plock)
-{
-	rx_slim_lock_release((pslim_lock_t)plock);
-}
-void rx_rw_slim_lock_aquire_writter(prw_slim_lock_t plock)
-{
-	rx_slim_lock_aquire((pslim_lock_t)plock);
-}
-void rx_rw_slim_lock_release_writter(prw_slim_lock_t plock)
-{
-	rx_slim_lock_release((pslim_lock_t)plock);
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // thread apstractions
@@ -1865,49 +1632,6 @@ void rx_close_serial_port(sys_handle_t handle)
 {
 }
 
-
-uint16_t rx_swap_2bytes(uint16_t val)
-{
-	return bswap_16(val);
-}
-uint32_t rx_swap_4bytes(uint32_t val)
-{
-	return bswap_32(val);
-}
-uint64_t rx_swap_8bytes(uint64_t val)
-{
-	return bswap_64(val);
-}
-
-uint32_t rx_atomic_add_fetch_32(volatile uint32_t* val, int add)
-{
-	return (uint32_t)__atomic_add_fetch((volatile int*)val, add, __ATOMIC_SEQ_CST);
-}
-uint32_t rx_atomic_inc_fetch_32(volatile uint32_t* val)
-{
-	return (uint32_t)__atomic_add_fetch((volatile int*)val, 1, __ATOMIC_SEQ_CST);
-}
-uint32_t rx_atomic_dec_fetch_32(volatile uint32_t* val)
-{
-	return (uint32_t)__atomic_add_fetch((volatile int*)val, -1, __ATOMIC_SEQ_CST);
-}
-uint32_t rx_atomic_fetch_32(volatile uint32_t* val)
-{
-	return (uint32_t)__atomic_add_fetch((volatile int*)val, 0, __ATOMIC_SEQ_CST);
-}
-
-uint64_t rx_atomic_inc_fetch_64(volatile uint64_t* val)
-{
-	return (uint64_t)__atomic_add_fetch((volatile int64_t*)val, 1ll, __ATOMIC_SEQ_CST);
-}
-uint64_t rx_atomic_dec_fetch_64(volatile uint64_t* val)
-{
-	return (uint64_t)__atomic_add_fetch((volatile int64_t*)val, -1ll, __ATOMIC_SEQ_CST);
-}
-uint64_t rx_atomic_fetch_64(volatile uint64_t* val)
-{
-	return (uint64_t)__atomic_add_fetch((volatile int64_t*)val, 0ll, __ATOMIC_SEQ_CST);
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

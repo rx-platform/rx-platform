@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -142,6 +142,8 @@ private:
       rx_result delete_item () const;
 
       virtual string_type get_definition_as_json () const = 0;
+
+      virtual byte_string get_definition_as_bytes () const = 0;
 
       virtual rx_thread_handle_t get_executer () const = 0;
 

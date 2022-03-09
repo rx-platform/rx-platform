@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -40,8 +40,8 @@
 
 #define RX_FILE_STORAGE_RUNTIME_DIR ".runtime"
 
-#include "system/serialization/rx_ser_json.h"
-#include "system/serialization/rx_ser_bin.h"
+#include "lib/rx_ser_json.h"
+#include "lib/rx_ser_bin.h"
 
 // rx_file_internals
 #include "storage/rx_file_internals.h"
@@ -304,9 +304,20 @@ string_type file_system_storage::get_file_path (const meta::meta_data& data, con
 			file_path = rx_combine_paths(root, data.path.substr(idx + 1));
 		else
 			file_path = root;
-		string_type ext = rx_is_runtime(type) ?
-			"." RX_INSTANCE_JSON_FILE_EXTENSION
-			: "." RX_TYPE_JSON_FILE_EXTENSION;
+		string_type ext;
+		if (data.attributes & namespace_item_attributes::namespace_item_system)
+		{
+			ext = rx_is_runtime(type) ?
+				"." RX_INSTANCE_JSON_FILE_EXTENSION
+				: "." RX_TYPE_JSON_FILE_EXTENSION;
+		}
+		else
+		{
+
+			ext = rx_is_runtime(type) ?
+				"." RX_INSTANCE_JSON_FILE_EXTENSION
+				: "." RX_TYPE_JSON_FILE_EXTENSION;
+		}
 		file_path = rx_combine_paths(file_path, data.name + ext);
 		items_cache_.emplace(data.get_full_path(), file_path);
 		return file_path;
@@ -494,7 +505,16 @@ rx_result rx_file_item<fileT,streamT>::open_for_read ()
 		}
 		else
 		{
-			result = RX_NOT_IMPLEMENTED;
+			byte_string data;
+			result = file.read_data(data);
+			if (result)
+			{
+				result = item_data_.open_for_read(data, file_path_);
+			}
+			else
+			{
+				result.register_error("Error reading file "s + file_path_ + "!");
+			}
 		}
 	}
 	else
@@ -538,7 +558,15 @@ rx_result rx_file_item<fileT,streamT>::commit_write ()
 		}
 		else
 		{
-			result = RX_NOT_IMPLEMENTED;
+			byte_string data;
+			result = item_data_.get_data(data);
+			if (result)
+			{
+				if (!file.write_data(data))
+				{
+					result = "Error writing file "s + file_path_ + "!";
+				}
+			}
 		}
 	}
 	else

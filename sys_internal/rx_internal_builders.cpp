@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -276,12 +276,9 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
 		{
 			auto info = one->get_plugin_info();
-			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + rx_c_str(&info.plugin_version) + "]..."s));
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + info.plugin_version + "]..."s));
 			string_type root_path(RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_PLUGINS_NAME RX_DIR_DELIMETER_STR);
 			root_path += one->get_plugin_name();
-			rx_destory_string_value_struct(&info.plugin_version);
-			rx_destory_string_value_struct(&info.lib_version);
-			rx_destory_string_value_struct(&info.platform_version);
 			auto dir_ptr = ns::rx_directory_cache::instance().get_directory(root_path);
 			if (dir_ptr)
 			{
@@ -324,11 +321,8 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
 		{
 			auto info = one->get_plugin_info();
-			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + rx_c_str(&info.plugin_version) + "]..."s));
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + info.plugin_version + "]..."s));
 			auto storage_ptr = host->get_system_storage(one->get_plugin_name());
-			rx_destory_string_value_struct(&info.plugin_version);
-			rx_destory_string_value_struct(&info.lib_version);
-			rx_destory_string_value_struct(&info.platform_version);
 			if (storage_ptr)
 			{
 				storage::configuration_storage_builder builder(storage_ptr.value());
@@ -681,7 +675,6 @@ rx_result basic_types_builder::do_build ()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		map->complex_data.register_const_value_static("ValueType", (uint8_t)0);
 		build_basic_type<basic_types::mapper_type>(dir, map);
 		auto evnt = create_type<basic_types::event_type>(meta::type_creation_data{
 			RX_CLASS_EVENT_BASE_NAME
@@ -706,7 +699,6 @@ rx_result basic_types_builder::do_build ()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_const_value_static("ValueType", (uint8_t)0);
 		build_basic_type<basic_types::source_type>(dir, src);
 
 		auto met = create_type<basic_types::method_type>(meta::type_creation_data{

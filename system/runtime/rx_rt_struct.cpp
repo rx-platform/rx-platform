@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,20 +30,23 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 
+#include "system/runtime/rx_display_blocks.h"
+#include "system/runtime/rx_runtime_logic.h"
 #include "rx_library.h"
 #include "rx_blocks.h"
 #include "rx_objbase.h"
 #include "rx_relations.h"
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 #include "runtime_internal/rx_runtime_internal.h"
 
-namespace rx
+namespace rx_platform
 {
 rx_security_handle_t rx_security_context();
 }
@@ -1242,7 +1245,7 @@ void variable_data::set_value (rx_simple_value&& val)
 rx_result variable_data::write_value (write_data&& data, write_task* task, runtime_process_context* ctx)
 {
 	if (!data.value.convert_to(value.get_type()))
-		return "Invalid conversion";
+		return RX_INVALID_CONVERSION;
 	auto& filters = item->get_filters();
 	rx_result result;
 	if (!filters.empty())
@@ -1277,7 +1280,7 @@ rx_result variable_data::execute (execute_data&& data, execute_task* task, runti
 
 rx_result variable_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	
+
 	variable_ptr->container_ = this;
 	ctx.structure.push_item(*item);
 	ctx.variables.push_variable(this);
@@ -1335,7 +1338,7 @@ rx_result variable_data::stop_runtime (runtime::runtime_stop_context& ctx)
 void variable_data::process_runtime (runtime_process_context* ctx)
 {
 	auto& sources = item->get_sources();
-	
+
 	auto prepared_value = variable_ptr->get_variable_input(ctx, sources);
 	if (prepared_value.get_time().is_null())
 		return;
@@ -1592,6 +1595,9 @@ void mapper_data::fill_data (const data::runtime_values_data& data)
 rx_result mapper_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	my_variable_ = ctx.variables.get_current_variable();
+	if (mapped_value.value.get_type() == RX_NULL_TYPE && my_variable_)
+		mapped_value.value.convert_to(my_variable_->value.get_type());
+	mapper_ptr->value_type_ = mapped_value.value.get_type();
 	mapper_ptr->container_ = this;
 	ctx.mappers.push_mapper(mapper_id, this);
 	ctx.structure.push_item(*item);
@@ -1620,9 +1626,7 @@ rx_result mapper_data::start_runtime (runtime::runtime_start_context& ctx)
 	auto result = item->start_runtime(ctx);
 	if (result)
 	{
-		auto value_type = ctx.structure.get_current_item().get_local_as<rx_value_t>("ValueType", RX_NULL_TYPE);
-		if (value_type == RX_NULL_TYPE && my_variable_)
-			value_type = my_variable_->value.get_type();
+		auto value_type = mapped_value.value.get_type();
 		mapper_ptr->value_type_ = value_type;
 		result = mapper_ptr->start_mapper(ctx);
 	}
@@ -1670,14 +1674,14 @@ void mapper_data::process_update (values::rx_value&& value)
 			rx_value filtered_value = rx_value(std::move(prepared_value), value.get_time());
 			filtered_value.set_quality(quality);
 			mapped_value.set_value(filtered_value, context_);
-			mapper_ptr->mapped_value_changed(std::move(filtered_value));
+			mapper_ptr->mapped_value_changed(std::move(filtered_value), context_);
 		}
 		else
 		{
 			if (!value.convert_to(mapper_ptr->value_type_))
 				value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
 			mapped_value.set_value(value, context_);
-			mapper_ptr->mapped_value_changed(std::move(value));
+			mapper_ptr->mapped_value_changed(std::move(value), context_);
 		}
 	}
 }
@@ -1690,7 +1694,7 @@ void mapper_data::process_write (write_data&& data)
 		rx_value prepared_value = rx_value(std::move(data.value), rx_time());
 		if (!prepared_value.convert_to(my_variable_->value.get_type()))
 		{
-			mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, trans_id);
+			mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, trans_id, context_);
 		}
 		else
 		{
@@ -1714,7 +1718,7 @@ void mapper_data::process_write (write_data&& data)
 			}
 			if (!result)
 			{
-				mapper_ptr->mapper_result_received(std::move(result), trans_id);
+				mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
 			}
 			else
 			{
@@ -1723,7 +1727,7 @@ void mapper_data::process_write (write_data&& data)
 				result = my_variable_->write_value(std::move(data), task, context_);
 				if (!result)
 				{
-					mapper_ptr->mapper_result_received(std::move(result), trans_id);
+					mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
 				}
 			}
 		}
@@ -1780,7 +1784,7 @@ void mapper_data::process_write_result (rx_result&& result, runtime_transaction_
 {
 	if (mapper_ptr)
 	{
-		mapper_ptr->mapper_result_received(std::move(result), id);
+		mapper_ptr->mapper_result_received(std::move(result), id, context_);
 	}
 }
 
@@ -1865,6 +1869,9 @@ void source_data::fill_data (const data::runtime_values_data& data)
 rx_result source_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	my_variable_ = ctx.variables.get_current_variable();
+	if (input_value.value.get_type() == RX_NULL_TYPE && my_variable_)
+		input_value.value.convert_to(my_variable_->value.get_type());
+	source_ptr->value_type_ = input_value.value.get_type();
 	source_ptr->container_ = this;
 	ctx.structure.push_item(*item);
 	auto result = item->initialize_runtime(ctx);
@@ -1891,9 +1898,7 @@ rx_result source_data::start_runtime (runtime::runtime_start_context& ctx)
 	auto result = item->start_runtime(ctx);
 	if (result)
 	{
-		auto value_type = ctx.structure.get_current_item().get_local_as<rx_value_t>("ValueType", RX_NULL_TYPE);
-		if (value_type == RX_NULL_TYPE && my_variable_)
-			value_type = my_variable_->value.get_type();
+		auto value_type = input_value.value.get_type();
 		source_ptr->value_type_ = value_type;
 		result = source_ptr->start_source(ctx);
 	}
@@ -2025,16 +2030,6 @@ void source_data::source_result_pending (rx_result&& result, runtime_transaction
 void source_data::process_result (runtime_transaction_id_t id, rx_result&& result)
 {
 	my_variable_->process_result(id, std::move(result));
-}
-
-threads::job_thread* source_data::get_jobs_queue ()
-{
-	return nullptr;
-}
-
-void source_data::add_periodic_job (jobs::periodic_job::smart_ptr job)
-{
-	rx_internal::infrastructure::server_runtime::instance().append_calculation_job(job);
 }
 
 rx_result source_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
@@ -2409,6 +2404,11 @@ rx_result filter_data::get_local_value (const string_type& path, rx_simple_value
 	return item->get_local_value(path, val);
 }
 
+rx_result filter_data::filter_changed ()
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
 
 // Class rx_platform::runtime::structure::const_value_data 
 
@@ -2442,7 +2442,7 @@ rx_result const_value_data::set_value (rx_simple_value&& val)
 		}
 		else
 		{
-			return "Invalid conversion";
+			return RX_INVALID_CONVERSION;
 		}
 	}
 }
@@ -2552,7 +2552,7 @@ void indirect_value_data::object_state_changed (runtime_process_context* ctx)
 rx_result indirect_value_data::write_value (write_data&& data, runtime_process_context* ctx)
 {
 	if (!data.value.convert_to(value.get_type()))
-		return "Invalid conversion";
+		return RX_INVALID_CONVERSION;
 	return true;
 }
 
@@ -2816,7 +2816,7 @@ const runtime_item* block_data::get_child_item (string_view_type path) const
 {
 	if (path.empty())
 		return this;
-	
+
 	const runtime_item* ret = nullptr;
 	string_view_type mine;
 	string_view_type rest;
@@ -3008,7 +3008,7 @@ rx_result block_data::create_safe_runtime_data (const data::runtime_values_data&
 				auto val_type = values[(one.index >> rt_type_shift)].value.get_type();
 				if (!temp_val.value.convert_to(val_type))
 				{
-					return "Invalid conversion for "s + one.name;
+					return RX_INVALID_CONVERSION " for "s + one.name;
 				}
 				out.values.emplace(one.name, std::move(temp_val));
 			}
@@ -3030,24 +3030,24 @@ rx_result block_data::create_safe_runtime_data (const data::runtime_values_data&
 rx_value full_value_data::get_value (runtime_process_context* ctx) const
 {
 	if (ctx)
-		return ctx->adapt_value(value_);
+		return ctx->adapt_value(value);
 	else
-		return value_;
+		return value;
 }
 
 void full_value_data::set_value (const rx_value& val, runtime_process_context* ctx)
 {
 	rx_value temp(val);
-	if (temp.convert_to(value_.get_type()))
+	if (temp.convert_to(value.get_type()))
 	{
-		value_ = std::move(temp);
+		value = std::move(temp);
 		ctx->full_value_changed(this);
 	}
 }
 
 rx_simple_value full_value_data::simple_get_value () const
 {
-	return value_.to_simple();
+	return value.to_simple();
 }
 
 

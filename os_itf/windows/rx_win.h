@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -69,18 +69,6 @@
 #define _CRT_NON_CONFORMING__snprintfS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 
-#define RX_COMPILER_NAME "MSVC"
-#define RX_COMPILER_VERSION (_MSC_VER/100-5)
-#define RX_COMPILER_MINOR (_MSC_VER%100)
-#define RX_COMPILER_BUILD (_MSC_FULL_VER%100000)
-
-#define _CRT_RAND_S
-
-
-#ifndef _rx_func_
-#define _rx_func_ __FUNCTION__
-#endif
-
 
 
 #include <winsock2.h>
@@ -93,24 +81,6 @@
 
 
 
-typedef HCRYPTKEY crypt_key_t;
-typedef HCRYPTHASH  crypt_hash_t;
-
-#ifndef __cplusplus
-#ifndef max
-#define max(a,b) (((a) > (b)) ? (a) : (b))
-#define min(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-#endif
-
-#define MAX max
-
-#ifdef _DEBUG
-#define RX_ASSERT(v) _ASSERT(v)
-#else
-#define RX_ASSERT(v) ((void)0)
-#endif
-
 //#define snprintf _snprintf
 #define scprintf _scprintf
 
@@ -119,16 +89,9 @@ typedef SOCKET gs_socket_t;
 
 
 
-#define SECURITY_WIN32
-
-#include <Security.h>
-
-typedef uuid_t rx_uuid_t;
 typedef ULONG ip_addr_ctx_t;
 
 typedef ULONG ip_addr_ctx_t;
-
-typedef HANDLE sys_handle_t;
 
 typedef HANDLE rx_kernel_dispather_t;
 
@@ -143,13 +106,9 @@ typedef struct find_file_struct_t* find_file_handle_t;
 
 
 typedef DWORD rx_pid_t;
-typedef DWORD rx_os_error_t;
 
 
 #ifdef _MSC_VER
-// windows slim lock size
-#define SLIM_LOCK_SIZE sizeof(CRITICAL_SECTION)
-#define RW_SLIM_LOCK_SIZE sizeof(SRWLOCK)
 
 
 #define SOCKET_ADDR_SIZE (sizeof (struct sockaddr_storage))
@@ -180,10 +139,6 @@ typedef struct windows_overlapped_t
 #include <IPHlpApi.h>
 typedef ULONG ip_addr_ctx_t;
 
-
-
-#define GET_IP4_ADDR(a) ((a).sin_addr.S_un.S_addr)
-#define SET_IP4_ADDR(a, d) ((a).sin_addr.S_un.S_addr = (d))
 
 
 typedef int socklen_t;

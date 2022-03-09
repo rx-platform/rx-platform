@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -41,7 +41,7 @@
 	assert(buffer->capacity + buffer->front_capacity >= buffer->size + (buffer->buffer_ptr - buffer->mem_ptr));\
 
 #else
-#define HANDLE_PACKET_BUFFER_SANITY_CHECK(buffer) 
+#define HANDLE_PACKET_BUFFER_SANITY_CHECK(buffer)
 
 #endif
 
@@ -108,11 +108,11 @@ rx_protocol_result_t rx_handle_buffer_back_resize(rx_packet_buffer* buffer, size
 		temp_ptr = buffer->mem_ptr;
 		if (temp_ptr == NULL)
 		{
-			result = g_memory.alloc_buffer_function(&temp_ptr, new_capacity + buffer->front_capacity);
+			result = g_memory.alloc_buffer_function((void**)&temp_ptr, new_capacity + buffer->front_capacity);
 		}
 		else
 		{
-			result = g_memory.realloc_buffer_function(&temp_ptr, buffer->capacity + new_capacity);
+			result = g_memory.realloc_buffer_function((void**)&temp_ptr, buffer->capacity + new_capacity);
 		}
 		if (result != RX_PROTOCOL_OK)
 			return result;
@@ -152,21 +152,21 @@ rx_protocol_result_t rx_handle_buffer_front_resize(rx_packet_buffer* buffer, siz
 		temp_ptr = buffer->mem_ptr;
 		if (temp_ptr == NULL)
 		{
-			result = g_memory.alloc_buffer_function(&temp_ptr, buffer->capacity + new_capacity);
+			result = g_memory.alloc_buffer_function((void**)&temp_ptr, buffer->capacity + new_capacity);
 			if (result != RX_PROTOCOL_OK)
 				return result;
 		}
 		else
 		{
 			// for backward we have to do the copy stuff
-			result = g_memory.alloc_buffer_function(&temp_ptr, buffer->capacity + new_capacity);
+			result = g_memory.alloc_buffer_function((void**)&temp_ptr, buffer->capacity + new_capacity);
 			if (result != RX_PROTOCOL_OK)
 				return result;
 			if (buffer->size)
 				memcpy(temp_ptr + front_reserve, buffer->buffer_ptr, buffer->size);
 			g_memory.free_buffer_function(buffer->mem_ptr, buffer->capacity + buffer->front_capacity);
 		}
-		
+
 		front_reserve -= to_add;
 		buffer->mem_ptr = temp_ptr;
 		buffer->buffer_ptr = buffer->mem_ptr + front_reserve;

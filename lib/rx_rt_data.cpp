@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -72,6 +72,31 @@ void runtime_values_data::add_value (const string_type& name, const rx_simple_va
 	}
 }
 
+void runtime_values_data::add_value (const string_type& name, rx_simple_value&& value)
+{
+	if (name.empty())
+		return;
+	auto idx = name.find(".");
+
+	if (idx == string_type::npos)
+	{// our value
+		values.insert(std::make_pair(name, runtime_value{ std::move(value) }));
+	}
+	else
+	{
+		auto child_it = children.find(name.substr(0, idx));
+		if (child_it != children.end())
+		{
+			child_it->second.add_value(name.substr(idx + 1), std::move(value));
+		}
+		else
+		{
+			auto& vals = add_child(name.substr(0, idx));
+			vals.add_value(name.substr(idx + 1), std::move(value));
+		}
+	}
+}
+
 runtime_values_data& runtime_values_data::add_child (const string_type& name)
 {
 	auto idx = name.find(".");
@@ -123,7 +148,7 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 	if (path.empty())
 		return rx_simple_value();
 	auto idx = path.find(".");
-	
+
 	if (idx == string_type::npos)
 	{// our value
 		auto val_it = values.find(path);

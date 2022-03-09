@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -43,11 +43,17 @@
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
+#include "lib/rx_io_buffers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
-#include "lib/security/rx_security.h"
+namespace rx_platform {
+namespace security {
+class security_context;
+typedef pointers::reference<security_context> security_context_ptr;
+}
+}
+
 #include "system/callbacks/rx_callback.h"
 #include "rx_process_context.h"
 using namespace rx;
@@ -151,6 +157,8 @@ object class. basic implementation of an object");
   public:
       object_runtime();
 
+      object_runtime (lock_reference_struct* extern_data);
+
       ~object_runtime();
 
 
@@ -249,6 +257,8 @@ system application class. basic implementation of a application");
   public:
       application_runtime();
 
+      application_runtime (lock_reference_struct* extern_data);
+
       ~application_runtime();
 
 
@@ -339,6 +349,8 @@ system domain class. basic implementation of a domain");
 
   public:
       domain_runtime();
+
+      domain_runtime (lock_reference_struct* extern_data);
 
       ~domain_runtime();
 
@@ -434,6 +446,8 @@ system port class. basic implementation of a port");
   public:
       port_runtime();
 
+      port_runtime (lock_reference_struct* extern_data);
+
       ~port_runtime();
 
 
@@ -477,9 +491,9 @@ system port class. basic implementation of a port");
 
       virtual rx_result_with<security::security_context_ptr> create_security_context ();
 
-      rx_result_with<io_types::rx_io_buffer> alloc_io_buffer ();
+      rx_result_with<io::rx_io_buffer> alloc_io_buffer ();
 
-      void release_io_buffer (io_types::rx_io_buffer buff);
+      void release_io_buffer (io::rx_io_buffer buff);
 
 
       static rx_item_type get_type_id ()
@@ -545,7 +559,7 @@ system port class. basic implementation of a port");
           add_periodic_job(job);
           return job;
       }
-      template<class refT, class funcT, class callbackT>
+      /*template<class refT, class funcT, class callbackT>
       void do_io_data_with_callback(funcT&& what, callbackT&& callback)
       {
           rx_thread_handle_t ctx = RX_DOMAIN_IO;
@@ -556,7 +570,7 @@ system port class. basic implementation of a port");
       {
           rx_thread_handle_t ctx = RX_DOMAIN_META;
           rx_do_with_callback(ctx, smart_this(), std::forward<funcT>(what), std::forward<callbackT>(callback));
-      }
+      }*/
   protected:
 
       rx_result listen (const protocol_address* local_address, const protocol_address* remote_address);

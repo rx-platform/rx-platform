@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,12 +34,12 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
-// rx_commands
-#include "terminal/rx_commands.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_thread
-#include "lib/rx_thread.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 namespace rx_internal {
 namespace interfaces {

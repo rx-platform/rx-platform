@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -36,6 +36,7 @@
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 
+using rx::io::rx_io_buffer;
 
 
 namespace rx_platform {

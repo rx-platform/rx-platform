@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -39,7 +39,7 @@
 #include "system/runtime/rx_operational.h"
 #include "system/server/rx_server.h"
 #include "lib/rx_func_to_go.h"
-#include "lib/rx_job.h"
+#include "system/threads/rx_job.h"
 
 
 namespace host {
@@ -254,7 +254,7 @@ rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_en
 	if (packet.buffer && packet.buffer->buffer_ptr && packet.buffer->size > 0)
 	{
 		anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference->user_data);
-		using job_type = rx::jobs::function_job<rx_packet_buffer>;
+		using job_type = rx_platform::jobs::function_job<rx_packet_buffer>;
 		auto packet_id = packet.id;
 
 		rx_packet_buffer copy_buff;

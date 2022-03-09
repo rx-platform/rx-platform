@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -60,19 +60,17 @@ struct configuration_data_t;
 
 
 // rx_log
-#include "lib/rx_log.h"
-
-namespace rx {
-namespace security {
-class security_context;
-} // namespace security
-} // namespace rx
+#include "system/server/rx_log.h"
 
 namespace rx_platform {
 namespace library {
 class rx_plugin_base;
-
 } // namespace library
+
+namespace security {
+class security_context;
+
+} // namespace security
 } // namespace rx_platform
 
 
@@ -146,7 +144,7 @@ class host_platform_builder
 
 
 
-class startup_log_subscriber : public rx::log::log_subscriber  
+class startup_log_subscriber : public log::log_subscriber  
 {
     typedef std::vector<log::log_event_data> pending_events_type;
 
@@ -289,6 +287,8 @@ class rx_platform_host
       void host_started ();
 
       std::vector<std::map<string_type, string_type> > read_config_files (const string_type& file_name);
+
+      virtual void fill_plugin_libs (string_array& paths);
 
 
       rx_platform_host * get_parent ()

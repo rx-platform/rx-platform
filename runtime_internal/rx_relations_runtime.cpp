@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
+*
 *  This file is part of {rx-platform}
 *
-*  
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -46,7 +46,7 @@ namespace sys_runtime {
 
 namespace relations_runtime {
 
-// Class rx_internal::sys_runtime::relations_runtime::local_relation_connector 
+// Class rx_internal::sys_runtime::relations_runtime::local_relation_connector
 
 local_relation_connector::local_relation_connector (platform_item_ptr&& item, relations::relation_connections* whose)
       : item_ptr_(std::move(item)),
@@ -118,7 +118,7 @@ void local_relation_connector::write_complete (runtime_transaction_id_t transact
 }
 
 
-// Class rx_internal::sys_runtime::relations_runtime::remote_relation_connector 
+// Class rx_internal::sys_runtime::relations_runtime::remote_relation_connector
 
 remote_relation_connector::remote_relation_connector (platform_item_ptr&& item, relations::relation_connections* whose)
       : item_ptr_(std::move(item)),
@@ -304,7 +304,7 @@ void remote_relation_connector::execute_result_received (runtime_handle_t handle
 }
 
 
-// Class rx_internal::sys_runtime::relations_runtime::relation_value_point 
+// Class rx_internal::sys_runtime::relations_runtime::relation_value_point
 
 relation_value_point::relation_value_point (remote_relation_connector* connector, runtime_handle_t handle)
       : connector_(connector),

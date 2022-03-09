@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -44,7 +44,7 @@ rx_result build_directories(rx_host_directories& data);
 string_type get_full_path_from_relative(const string_type& path);
 string_type get_full_path(const string_type& base);
 string_type get_storage_directory();
-
+void fill_plugin_paths(string_array& paths);
 
 }
 

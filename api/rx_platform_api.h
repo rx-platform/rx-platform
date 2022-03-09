@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -33,21 +33,39 @@
 
 
 
+// rx_job
+#include "system/threads/rx_job.h"
 
 #include "rx_library.h"
+#include "system/server/rx_log.h"
 #include "system/server/rx_ns.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/meta/rx_types.h"
+#include "platform_api/rx_abi.h"
 
 using rx_platform::meta::meta_data;
 using namespace rx_platform::meta;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+	struct platform_api_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 namespace rx_platform
 {
 namespace api
 {
 
+
+void bind_plugins_dynamic_api();
+const platform_api_t* get_plugins_dynamic_api();
 
 struct query_result_detail
 {
@@ -56,7 +74,7 @@ struct query_result_detail
 		this->type = type;
 		this->data = data;
 	}
-	query_result_detail(const rx_item_type type, meta_data&& data) noexcept 
+	query_result_detail(const rx_item_type type, meta_data&& data) noexcept
 	{
 		this->type = type;
 		this->data = std::move(data);
@@ -87,6 +105,76 @@ struct rx_context
 }
 }
 
+
+namespace rx_platform {
+
+
+
+
+
+class extern_timer_job : public jobs::periodic_job  
+{
+
+  public:
+      extern_timer_job (plugin_job_struct* extern_data);
+
+
+      void process ();
+
+
+  protected:
+
+  private:
+
+
+      rx_reference_ptr anchor_;
+
+      plugin_job_struct* extern_data_;
+
+
+};
+
+
+
+
+
+
+class extern_timers 
+{
+    typedef std::map<runtime_handle_t, jobs::periodic_job::smart_ptr> timers_type;
+
+  public:
+
+      static extern_timers& instance ();
+
+      runtime_handle_t create_timer (plugin_job_struct* job_impl, uint32_t period, threads::job_thread* pool);
+
+      runtime_handle_t create_calc_timer (plugin_job_struct* job_impl, uint32_t period, threads::job_thread* pool);
+
+      runtime_handle_t create_io_timer (plugin_job_struct* job_impl, uint32_t period);
+
+      void start_timer (runtime_handle_t handle, uint32_t period);
+
+      void suspend_timer (runtime_handle_t handle);
+
+      void destroy_timer (runtime_handle_t handle);
+
+
+  protected:
+
+  private:
+
+
+      timers_type timers_;
+
+
+      locks::slim_lock lock_;
+
+
+};
+
+
+} // namespace rx_platform
 
 
 

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -66,7 +66,7 @@ value_handle_extended value_handle_extended::fill_from_handle(value_handle_type 
 
 // Class rx_internal::sys_runtime::data_source::data_controler 
 
-data_controler::data_controler (rx::threads::physical_job_thread* worker)
+data_controler::data_controler (threads::physical_job_thread* worker)
       : my_worker_(worker),
         next_source_id_(0)
 {

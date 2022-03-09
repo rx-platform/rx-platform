@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -41,6 +41,8 @@
 #include "system/runtime/rx_relation_impl.h"
 // rx_resolvers
 #include "system/runtime/rx_resolvers.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_values
@@ -50,13 +52,16 @@
 
 namespace rx_platform {
 namespace runtime {
+namespace relations {
+class relation_connector;
+} // namespace relations
+
 namespace algorithms {
 template <class typeT> class runtime_holder_algorithms;
 } // namespace algorithms
 
 namespace relations {
 class relation_connections;
-class relation_connector;
 
 } // namespace relations
 } // namespace runtime
@@ -363,6 +368,30 @@ class relations_holder
     friend class meta::meta_algorithm::object_data_algorithm;
     friend class algorithms::runtime_relation_algorithms;
 
+    class extern_relation_subscriber : public runtime::relation_subscriber
+    {
+        relation_subscriber_data* data_;
+    public:
+        extern_relation_subscriber(relation_subscriber_data* data)
+            : data_(data)
+        {
+        }
+        extern_relation_subscriber(const extern_relation_subscriber&) = delete;
+        extern_relation_subscriber(extern_relation_subscriber&&) noexcept = delete;
+
+        void relation_connected(const string_type& name, const platform_item_ptr& item)
+        {
+            data_->connected_callback(data_->target, name.c_str(), item->meta_info().id.c_ptr());
+        }
+
+        virtual void relation_disconnected(const string_type& name)
+        {
+            data_->disconnected_callback(data_->target, name.c_str());
+        }
+    };
+
+    typedef std::vector<std::unique_ptr<extern_relation_subscriber> > extern_subscribers_type;
+
   public:
 
       virtual rx_result initialize_relations (runtime::runtime_init_context& ctx);
@@ -395,6 +424,8 @@ class relations_holder
 
       rx_result register_relation_subscriber (const string_type& name, relation_subscriber* who);
 
+      rx_result register_extern_relation_subscriber (const string_type& name, relation_subscriber_data* who);
+
       void read_value (const string_type& path, read_result_callback_t callback, runtime_process_context* ctx) const;
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
@@ -414,6 +445,8 @@ class relations_holder
       target_relations_type target_relations_;
 
       implicit_relations_type implicit_relations_;
+
+      extern_subscribers_type extern_subscribers_;
 
 
       relation_subscribers_type relation_subscribers_;

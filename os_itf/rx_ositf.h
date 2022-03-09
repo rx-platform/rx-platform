@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -49,10 +49,7 @@ extern "C" {
 
 
 	extern const char* g_ositf_version;
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// error handling here
-
-	rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size);
+	
 	///////////////////////////////////////////////////////////////////
 	// anonymous pipes
 
@@ -127,25 +124,6 @@ extern "C" {
 	void rx_init_hal_version();
 	void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls);
 	void rx_deinitialize_os();
-	uint32_t rx_border_rand(uint32_t min, uint32_t max);
-
-	size_t rx_os_page_size();
-	void* rx_allocate_os_memory(size_t size);
-	void rx_deallocate_os_memory(void* p, size_t size);
-
-	uint16_t rx_swap_2bytes(uint16_t val);
-	uint32_t rx_swap_4bytes(uint32_t val);
-	uint64_t rx_swap_8bytes(uint64_t val);
-
-	uint32_t rx_atomic_inc_fetch_32(volatile uint32_t* val);
-	uint32_t rx_atomic_dec_fetch_32(volatile uint32_t* val);
-	uint32_t rx_atomic_fetch_32(volatile uint32_t* val);
-
-	uint32_t rx_atomic_add_fetch_32(volatile uint32_t* val, int add);
-
-	uint64_t rx_atomic_inc_fetch_64(volatile uint64_t* val);
-	uint64_t rx_atomic_dec_fetch_64(volatile uint64_t* val);
-	uint64_t rx_atomic_fetch_64(volatile uint64_t* val);
 
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,25 +151,6 @@ extern "C" {
 	int rx_get_next_file(find_file_handle_t hndl, struct rx_file_directory_entry_t* entry);
 	void rx_find_file_close(find_file_handle_t hndl);
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// handles abstractions ( wait and the rest of the stuff
-#define RX_INFINITE 0xffffffff
-#define RX_WAIT_0 0
-#define RX_WAIT_TIMEOUT 0x102
-#define RX_WAIT_ERROR 0xffffffff
-
-	uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout);
-	uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout);
-	uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t timeout);
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// event abstractions ( wait and the rest of the stuff
-	sys_handle_t rx_event_create(int initialy_set);
-	int rx_event_destroy(sys_handle_t hndl);
-	int rx_event_set(sys_handle_t hndl);
-	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -293,36 +252,7 @@ extern "C" {
 
 	sys_handle_t rx_open_serial_port(const char* port, uint32_t baud_rate, int stop_bits, int parity, uint8_t data_bits, int handshake);
 	void rx_close_serial_port(sys_handle_t handle);
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	// slim lock abstraction
-	// 1. light weight
-	// 2. reentrant
-	// 3. small object so no malloc/free stuff ( header should define size of object )
-	typedef struct slim_lock_def
-	{
-		char data[SLIM_LOCK_SIZE];
-	} slim_lock_t, *pslim_lock_t;
-
-
-	typedef struct rw_slim_lock_def
-	{
-		char data[RW_SLIM_LOCK_SIZE];
-	} rw_slim_lock_t, *prw_slim_lock_t;
-
-
-	void rx_slim_lock_create(pslim_lock_t plock);
-	void rx_slim_lock_destroy(pslim_lock_t plock);
-	void rx_slim_lock_aquire(pslim_lock_t plock);
-	void rx_slim_lock_release(pslim_lock_t plock);
-
-	void rx_rw_slim_lock_create(prw_slim_lock_t plock);
-	void rx_rw_slim_lock_destroy(prw_slim_lock_t plock);
-	void rx_rw_slim_lock_aquire_reader(prw_slim_lock_t plock);
-	void rx_rw_slim_lock_release_reader(prw_slim_lock_t plock);
-	void rx_rw_slim_lock_aquire_writter(prw_slim_lock_t plock);
-	void rx_rw_slim_lock_release_writter(prw_slim_lock_t plock);
-	///////////////////////////////////////////////////////////////////////////////////////////////////
+	
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// thread abstractions
@@ -352,36 +282,6 @@ extern "C" {
 	void rx_free_thread_data(rx_thread_data_t key);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////
-	// cryptography
-
-
-	// KP_MODE
-#define RX_CRYPT_MODE_CBC          1       // Cipher block chaining
-#define RX_CRYPT_MODE_ECB          2       // Electronic code book
-#define RX_CRYPT_MODE_OFB          3       // Output feedback mode
-#define RX_CRYPT_MODE_CFB          4       // Cipher feedback mode
-#define RX_CRYPT_MODE_CTS          5       // Cipher-text stealing mode
-
-	// these are ones implement so far
-#define RX_SYMETRIC_AES128 1
-#define RX_SYMETRIC_AES192 2
-#define RX_SYMETRIC_AES256 3
-
-#define RX_HASH_SHA256 4
-#define RX_HASH_SHA1 5
-
-crypt_key_t rx_crypt_create_symetric_key(const void* data, size_t size, int alg, int mode);
-int rx_crypt_set_IV(crypt_key_t key, const void* data);
-void rx_crypt_destroy_key(crypt_key_t key);
-int rx_crypt_decrypt(crypt_key_t key, const void* chiper, void* plain, size_t* size);
-
-int rx_crypt_gen_random(void* buffer, size_t size);
-
-crypt_hash_t rx_crypt_create_hash(crypt_key_t key, int alg);
-void rx_crypt_destroy_hash(crypt_hash_t hash);
-int rx_crypt_hash_data(crypt_hash_t hhash, const void* buffer, size_t size);
-int rx_crypt_get_hash(crypt_hash_t hhash, void* buffer, size_t* size);
 
 #ifdef __cplusplus
 }

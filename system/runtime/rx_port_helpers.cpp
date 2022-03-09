@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
@@ -230,7 +231,7 @@ rx_result external_port_status::initialize (runtime_init_context& ctx)
         result.register_error("Error connecting Status.RxPackets:"s + one_result.errors_line());
     one_result = sent_.bind("Status.TxPackets", ctx);
     if (!one_result)
-        result.register_error("Error connecting Status.TxPackets:"s + one_result.errors_line()); 
+        result.register_error("Error connecting Status.TxPackets:"s + one_result.errors_line());
     one_result = received_bytes_.bind("Status.RxBytes", ctx);
     if (!one_result)
         result.register_error("Error connecting Status.RxBytes:"s + one_result.errors_line());

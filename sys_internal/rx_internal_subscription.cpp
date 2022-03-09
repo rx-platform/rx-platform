@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -368,7 +368,7 @@ rx_result subscription_items_change::serialize (base_meta_writer& stream) const
 		return stream.get_error();
 	if (!stream.start_array("items", items.size()))
 		return stream.get_error();
-	for (const auto one : items)
+	for (const auto& one : items)
 	{
 		if (!stream.start_object("item"))
 			return stream.get_error();
@@ -451,7 +451,7 @@ rx_result subscription_write_done::serialize (base_meta_writer& stream) const
 		if (!stream.write_uint("errCode", std::get<1>(one)))
 			return stream.get_error();
 
-		if (!stream.write_string("errMsg", std::move(std::get<2>(one)).c_str()))
+		if (!stream.write_string("errMsg", std::get<2>(one).c_str()))
 			return stream.get_error();
 
 		if (!stream.end_object())
@@ -528,6 +528,66 @@ void subscription_write_done::add_result (runtime_handle_t handle, rx_result&& r
 		}
 	}
 	results.emplace_back(result_type{ handle, error_code, error_text });
+}
+
+
+// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_execute_done 
+
+string_type subscription_execute_done::type_name = "subsExecDone";
+
+rx_message_type_t subscription_execute_done::type_id = rx_subscription_exec_done_id;
+
+
+rx_result subscription_execute_done::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.write_uint("transId", transaction_id))
+		return stream.get_error();
+	if (!stream.start_object("result"))
+		return stream.get_error();
+	if (!stream.write_uint("errCode", result.first))
+		return stream.get_error();
+	if (!stream.write_string("errMsg", result.second.c_str()))
+		return stream.get_error();
+	if (!stream.end_object())
+		return stream.get_error();
+	if (!stream.write_init_values("data", data))
+		return stream.get_error();
+	return true;
+}
+
+rx_result subscription_execute_done::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	if (!stream.read_uint("transId", transaction_id))
+		return stream.get_error();
+	if (!stream.start_object("result"))
+		return stream.get_error();
+	if (!stream.read_uint("errCode", result.first))
+		return stream.get_error();
+	if (!stream.read_string("errMsg", result.second))
+		return stream.get_error();
+	if (!stream.end_object())
+		return stream.get_error();
+	if (!stream.read_init_values("data", data))
+		return stream.get_error();
+	return true;
+}
+
+const string_type& subscription_execute_done::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t subscription_execute_done::get_type_id ()
+{
+  return type_id;
+
 }
 
 

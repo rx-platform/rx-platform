@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/server/rx_server.h"
 
 // rx_host
 #include "system/hosting/rx_host.h"
@@ -37,8 +38,8 @@
 #include "system/storage_base/rx_storage.h"
 
 #include "system/server/rx_server.h"
-#include "system/serialization/rx_ser_json.h"
-#include "system/serialization/rx_ser_bin.h"
+#include "lib/rx_ser_json.h"
+#include "lib/rx_ser_bin.h"
 #define RX_CODE_STORAGE_NAME "<code>"
 
 

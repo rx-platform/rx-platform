@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -162,6 +162,7 @@ const rx_message_type_t rx_execute_item_response_id = 0x8089;
 const rx_message_type_t rx_subscription_items_notification_id = 0x7001;
 const rx_message_type_t rx_subscription_write_done_id = 0x7002;
 const rx_message_type_t rx_connection_notify_id = 0x7003;
+const rx_message_type_t rx_subscription_exec_done_id = 0x7004;
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // keep alive message constant
 const rx_message_type_t rx_keep_alive_message_id = 0xfffe;

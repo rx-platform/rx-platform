@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -42,7 +42,7 @@
 #include "system/runtime/rx_runtime_holder.h"
 #include "api/rx_namespace_api.h"
 #include "terminal/rx_console.h"
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 #include "system/runtime/rx_blocks.h"
 #include "system/server/rx_file_helpers.h"
 
@@ -1421,7 +1421,7 @@ bool save_command::do_console_command (std::istream& in, std::ostream& out, std:
 					{
 						auto& err = ctx->get_stderr();
 						err << "Error saving item\r\n";
-						rx_dump_error_result(err, std::move(result));
+						ctx->raise_error(std::move(result));
 					}
 					else
 					{
@@ -2010,6 +2010,125 @@ bool query_command::do_depends_command (std::istream& in, std::ostream& out, std
 {
 	err << RX_NOT_IMPLEMENTED;
 	return false;
+}
+
+
+// Class rx_internal::model::meta_commands::carray_command 
+
+carray_command::carray_command()
+	: server_command("carray")
+{
+}
+
+
+carray_command::~carray_command()
+{
+}
+
+
+
+bool carray_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	string_type full_path;
+	string_type line;
+
+	in >> full_path;
+	if (!in.eof())
+	{
+		std::istreambuf_iterator<char> eos;
+		line = string_type(std::istreambuf_iterator<char>(in), eos);
+	}
+	if (full_path.empty())
+	{
+		err << "Empty path!";
+		return false;
+	}
+	string_type whose;
+	string_type item_path;
+	if (full_path[0] != -'-')
+		rx_split_item_path(full_path, whose, item_path);
+	if (!whose.empty())
+	{
+		rx_directory_resolver directories;
+		directories.add_paths({ ctx->get_current_directory() });
+		api::rx_context context;
+		context.active_path = ctx->get_current_directory();
+		context.object = smart_this();
+
+		auto resolve_result = api::ns::rx_resolve_reference(whose, directories);
+		if (!resolve_result)
+		{
+			ctx->raise_error(resolve_result);
+			return resolve_result;
+
+		}
+
+		rx_thread_handle_t executer = rx_thread_context();
+		ctx->set_waiting();
+		rx_result result = model::algorithms::do_with_item(resolve_result.value()
+			, [ctx, item_path, this, executer, line = std::move(line)](rx_result_with<platform_item_ptr>&& data) mutable -> rx_result
+			{
+				auto& out = ctx->get_stdout();
+				auto& err = ctx->get_stderr();
+				if (data)
+				{
+					std::istringstream in(line);
+					byte_string buff = data.value()->get_definition_as_bytes();
+					if (buff.size() < 2)
+					{
+						ctx->raise_error(rx_result("Error deserializing item"));
+					}
+					else
+					{
+						char hex_buff[0x8];
+						out << "\r\n"
+							<< "static const uint8_t c_def_" << data.value()->meta_info().name << "[] = {\r\n    ";
+						bool first = true;
+						for (int i = 0; i < buff.size(); i++)
+						{
+							if (first)
+							{
+								first = false;
+							}
+							else
+							{
+								out << ",";
+								if (i % 16 == 0)
+									out << "\r\n    ";
+								else
+									out << " ";
+							}
+							sprintf(hex_buff, "0x%02x", buff[i]);
+							out << hex_buff;
+						}
+						out << "\r\n};\r\n";
+					}
+					return true;
+				}
+				else
+				{
+					ctx->raise_error(data);
+					return true;
+				}
+			}
+			, rx_result_callback(context.object, [ctx](rx_result done) mutable
+				{
+					if (done)
+						ctx->continue_scan();
+				})
+				, context);
+
+		if (!result)
+		{
+			ctx->raise_error(result);
+		}
+		return result;
+	}
+	else
+	{
+		err << "Please, define item!";
+		return false;
+	}
 }
 
 

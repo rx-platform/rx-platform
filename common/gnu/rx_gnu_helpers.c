@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,12 +30,20 @@
 
 #include "pch.h"
 
+#include <pthread.h>
 #include "../rx_common.h"
+#include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
 
 
 int rx_hd_timer = 1;
 int g_init_count = 0;
+
+
+size_t g_page_size = 0;
+
+rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory);
+rx_protocol_result_t rx_deinit_protocols();
 
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
@@ -45,6 +53,9 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
         rx_hd_timer = init_data->rx_hd_timer;
 
         g_init_count = 1;
+
+        // query page size for optimization purpose
+        g_page_size = sysconf(_SC_PAGESIZE);
 
         rx_init_protocols(NULL);
 
@@ -57,6 +68,69 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 }
 RX_COMMON_API void rx_deinit_common_library()
 {
+}
+
+
+uint32_t rx_border_rand(uint32_t min, uint32_t max)
+{
+    if (max > min)
+    {
+        uint32_t diff = (max - min);
+        if (diff > RAND_MAX)
+        {
+            int shifts = 0;
+            while (diff > RAND_MAX)
+            {
+                shifts++;
+                diff >>= 1;
+            }
+            uint32_t gen = rand() << shifts;
+            gen = gen % (max - min) + min;
+            return gen;
+        }
+        else
+        {
+            uint32_t gen = rand();
+            gen = gen % (max - min) + min;
+            return gen;
+        }
+    }
+    else
+        return min;
+}
+
+void* rx_allocate_os_memory(size_t size)
+{
+    return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+}
+void rx_deallocate_os_memory(void* p, size_t size)
+{
+    int ret = munmap(p, size);
+    if (ret == -1)
+        perror("Unmap");
+}
+
+size_t rx_os_page_size()
+{
+    RX_ASSERT(g_page_size);
+    return g_page_size;
+}
+
+RX_COMMON_API rx_module_handle_t rx_load_library(const char* path)
+{
+    rx_module_handle_t ret = dlopen(path, RTLD_NOW);
+    if(ret==0)
+        printf("\r\n**********%s\r\n", dlerror());
+    return ret;
+}
+RX_COMMON_API rx_func_addr_t rx_get_func_address(rx_module_handle_t module_handle, const char* name)
+{
+    return dlsym(module_handle, name);
+}
+RX_COMMON_API void rx_unload_library(rx_module_handle_t module_handle)
+{
+    if (module_handle)
+        dlclose(module_handle);
 }
 
 RX_COMMON_API rx_timer_ticks_t rx_get_tick_count()
@@ -208,6 +282,193 @@ RX_COMMON_API int rx_string_to_uuid(const char* str, rx_uuid_t* u)
     linux_uuid_to_uuid(&uuid, u);
     return RX_OK;
 }
+
+
+
+RX_COMMON_API void rx_slim_lock_create(pslim_lock_t plock)
+{
+    pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
+    pthread_mutex_init(mtx, &attr);
+}
+RX_COMMON_API void rx_slim_lock_destroy(pslim_lock_t plock)
+{
+    pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
+    pthread_mutex_destroy(mtx);
+}
+RX_COMMON_API void rx_slim_lock_aquire(pslim_lock_t plock)
+{
+    pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
+    pthread_mutex_lock(mtx);
+}
+RX_COMMON_API void rx_slim_lock_release(pslim_lock_t plock)
+{
+    pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
+    pthread_mutex_unlock(mtx);
+}
+
+RX_COMMON_API void rx_rw_slim_lock_create(prw_slim_lock_t plock)
+{
+    rx_slim_lock_create((pslim_lock_t)plock);
+}
+RX_COMMON_API void rx_rw_slim_lock_destroy(prw_slim_lock_t plock)
+{
+    rx_slim_lock_destroy((pslim_lock_t)plock);
+}
+RX_COMMON_API void rx_rw_slim_lock_aquire_reader(prw_slim_lock_t plock)
+{
+    rx_slim_lock_aquire((pslim_lock_t)plock);
+}
+RX_COMMON_API void rx_rw_slim_lock_release_reader(prw_slim_lock_t plock)
+{
+    rx_slim_lock_release((pslim_lock_t)plock);
+}
+RX_COMMON_API void rx_rw_slim_lock_aquire_writter(prw_slim_lock_t plock)
+{
+    rx_slim_lock_aquire((pslim_lock_t)plock);
+}
+RX_COMMON_API void rx_rw_slim_lock_release_writter(prw_slim_lock_t plock)
+{
+    rx_slim_lock_release((pslim_lock_t)plock);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+RX_COMMON_API uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
+{
+    struct pollfd pfds;
+    int ret;
+    eventfd_t buff = 0;
+
+    pfds.fd = what;
+    pfds.events = POLLIN;
+    pfds.revents = 0;
+    ret = poll(&pfds, 1, (int)timeout);
+    if (ret == 0)
+        return RX_WAIT_TIMEOUT;
+    else if (ret == 1)
+    {
+        //do the read to release it
+        ret = read(what, &buff, sizeof(buff));
+        if (ret > 0)
+            return RX_WAIT_0;
+    }
+    return RX_WAIT_ERROR;
+
+}
+RX_COMMON_API uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout)
+{
+    struct pollfd pfds;
+    int ret;
+    eventfd_t buff = 0;
+
+    struct timespec ts;
+    ts.tv_sec = timeout / 1000000ul;
+    ts.tv_nsec = timeout % 1000000ul * 1000;
+
+    pfds.fd = what;
+    pfds.events = POLLIN;
+    pfds.revents = 0;
+    sigset_t sigset;
+    ret = ppoll(&pfds, 1, &ts, &sigset);
+    if (ret == 0)
+        return RX_WAIT_TIMEOUT;
+    else if (ret == 1)
+    {
+        //do the read to release it
+        ret = read(what, &buff, sizeof(buff));
+        if (ret > 0)
+            return RX_WAIT_0;
+    }
+    return RX_WAIT_ERROR;
+
+}
+RX_COMMON_API uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t timeout)
+{
+    struct pollfd pfds[0x10];
+    int ret;
+    size_t i;
+    eventfd_t buff = 0;
+
+    if (count > 0x10)
+        return RX_WAIT_ERROR;//to large for this function
+
+    for (i = 0; i < count; i++)
+    {
+        pfds[i].fd = what[i];
+        pfds[i].events = POLLIN;
+        pfds[i].revents = 0;
+    }
+    ret = poll(pfds, (int)count, (int)timeout);
+    if (ret == 0)
+        return RX_WAIT_TIMEOUT;
+    else if (ret > 0)
+    {
+        int first = -1;
+        //do the read to release it
+        for (i = 0; i < count; i++)
+        {
+            if (pfds[i].revents != 0)
+            {
+                if (first < 0)
+                    first = (int)i;
+                ret = read(pfds[i].fd, &buff, sizeof(buff));
+                if (ret <= 0)
+                    break;
+            }
+        }
+        if (ret > 0)
+            return RX_WAIT_0 + first;
+    }
+    return RX_WAIT_ERROR;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define MANUAL_EVENT
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// event apstractions ( wait and the rest of the stuff
+RX_COMMON_API sys_handle_t rx_event_create(int initialy_set)
+{
+    int fd = 0;
+    fd = eventfd(initialy_set ? 1 : 0, EFD_NONBLOCK);
+
+    return fd;
+}
+RX_COMMON_API int rx_event_destroy(sys_handle_t hndl)
+{
+    close(hndl);
+    return RX_ERROR;
+}
+RX_COMMON_API int rx_event_set(sys_handle_t hndl)
+{
+    eventfd_t val = 0xfffffffe;
+    int fd = (int)hndl;
+    int ret = write(fd, &val, sizeof(val));
+    if (ret < 0)
+        return RX_ERROR;
+    else
+        return RX_OK;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+// errors support
+
+RX_COMMON_API rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size)
+{
+    char buff[0x100];
+    char* msg;
+    int err = errno;
+    msg = strerror_r(err, buff, sizeof(buff));
+    if (text)
+        snprintf(buffer, buffer_size, "%s. %s (%d)", text, msg, err);
+    else
+        snprintf(buffer, buffer_size, "%s (%d)", msg, err);
+    return err;
+}
+
 
 
 

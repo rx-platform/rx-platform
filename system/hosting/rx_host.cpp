@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 
 
 // rx_security
-#include "lib/security/rx_security.h"
+#include "security/rx_security.h"
 // rx_plugin
 #include "system/libraries/rx_plugin.h"
 // rx_host
@@ -379,7 +379,7 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 {
 	config.other.http_port = 0;
 	config.other.rx_port = 0;
-	
+
 
 	cxxopts::Options options(help_name, "");
 
@@ -599,8 +599,28 @@ rx_result rx_platform_host::init_storage (const string_type& name, const string_
 
 rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_base*>& plugins)
 {
+	static std::vector<std::unique_ptr<library::rx_dynamic_plugin> > dynamic_plugins;
 	startup_log_ = rx_create_reference<startup_log_subscriber>();
-	rx::log::log_object::instance().register_subscriber(startup_log_);
+	rx_platform::log::log_object::instance().register_subscriber(startup_log_);
+
+	string_array libs;
+	fill_plugin_libs(libs);
+	for (auto& one : libs)
+	{
+		auto one_plugin = std::make_unique< library::rx_dynamic_plugin>(one);
+		auto result = one_plugin->bind_plugin();
+		if (result)
+		{
+			HOST_LOG_INFO("Base", 999, "Loaded library "s + one);
+			plugins.emplace_back(one_plugin.get());
+			dynamic_plugins.emplace_back(std::move(one_plugin));
+		}
+		else
+		{
+			HOST_LOG_ERROR("Base", 999, "Error loading library "s + one + ". " + result.errors_line());
+		}
+	}
+	rx_platform::api::bind_plugins_dynamic_api();
 	rx_result ret;
 	for (auto one : plugins)
 	{
@@ -818,6 +838,10 @@ std::vector<std::map<string_type, string_type> > rx_platform_host::read_config_f
 	return options;
 }
 
+void rx_platform_host::fill_plugin_libs (string_array& paths)
+{
+}
+
 
 // Class rx_platform::hosting::configuration_reader 
 
@@ -834,7 +858,7 @@ void startup_log_subscriber::log_event (log::log_event_type event_type, const st
 		return;
 
 	log::log_event_data one = { event_type,library,source,level,code,message,when };
-	
+
 	locks::auto_slim_lock _(&pending_lock_);
 	pending_events_.emplace_back(std::move(one));
 }

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -41,17 +41,6 @@
 #include "rx_gnu_version.h"
 
 
-#define RX_COMPILER_NAME "GCC"
-#define RX_COMPILER_VERSION (__GNUC__)
-#define RX_COMPILER_MINOR (__GNUC_MINOR__)
-#define RX_COMPILER_BUILD (__GNUC_PATCHLEVEL__)
-
-#define _rx_func_ __PRETTY_FUNCTION__
-
-#ifdef __cplusplus
-#include <string>
-typedef std::string string_type;
-#endif
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -77,9 +66,6 @@ typedef std::string string_type;
 
 
 typedef unsigned int ip_addr_ctx_t;
-
-#define SLIM_LOCK_SIZE sizeof(pthread_mutex_t)
-#define RW_SLIM_LOCK_SIZE sizeof(pthread_mutex_t)
 
 #define EPOLL_READ_TYPE 1
 #define EPOLL_WRITE_TYPE 2
@@ -120,7 +106,6 @@ typedef struct linux_epoll_subscriber_t
 
 #define closesocket(a) ::close(a)
 
-typedef int sys_handle_t;
 typedef struct linux_find_files_t
 {
 	DIR* pdir;
@@ -140,12 +125,7 @@ typedef struct linux_epoll_struct_t* rx_kernel_dispather_t;
 
 
 typedef pid_t rx_pid_t;
-typedef int rx_os_error_t;
 
-
-
-#define GET_IP4_ADDR(a) ((a).sin_addr.s_addr)
-#define SET_IP4_ADDR(a, d) ((a).sin_addr.s_addr = (d))
 
 
 typedef int rx_socket_t;
@@ -153,23 +133,11 @@ typedef void socket_data_t;
 #define GS_INVALID_SOCKET (-1)
 
 
-#define _snprintf_s(a,b,c,...) snprintf(a,c,__VA_ARGS__)
-
 #define ntohll be64toh
 
 #define htonll htobe64
 
 typedef pthread_key_t rx_thread_data_t;
-
-#include <openssl/hmac.h>
-
-typedef struct _crypt_key_t
-{
-    uint8_t* data;
-    uint32_t size;
-} *crypt_key_t;
-
-typedef HMAC_CTX* crypt_hash_t;
 
 #ifdef PYTHON_SUPPORT
 #include <python2.7/Python.h>

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,6 +34,9 @@
 
 #include "lib/rx_values.h"
 #include "system/storage_base/rx_storage.h"
+#include "system/server/rx_log_macros.h"
+#include "system/threads/rx_job.h"
+#include "platform_api/rx_abi.h"
 using namespace rx::values;
 /////////////////////////////////////////////////////////////
 // logging macros for console library
@@ -45,6 +48,7 @@ using namespace rx::values;
 #define RUNTIME_LOG_TRACE(src,lvl,msg) RX_TRACE("Run",src,lvl,(msg))
 
 
+
 namespace rx_platform {
 namespace ns {
 class rx_directory_resolver;
@@ -52,22 +56,22 @@ class rx_directory_resolver;
 
 namespace runtime {
 namespace structure {
+class variable_data;
 class runtime_item;
 class source_data;
 class mapper_data;
-class variable_data;
 } // namespace structure
+
+namespace relations {
+class relations_holder;
+} // namespace relations
 
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
 
-class runtime_process_context;
-namespace relations {
-class relations_holder;
-} // namespace relations
-
 class relation_subscriber;
+class runtime_process_context;
 namespace tag_blocks {
 class binded_tags;
 
@@ -80,7 +84,10 @@ class binded_tags;
 
 
 namespace rx_platform {
-
+namespace threads
+{
+class job_thread;
+}
 namespace logic
 {
 class program_runtime;
@@ -113,6 +120,8 @@ namespace meta_algorithm
 {
 template <class typeT>
 class object_types_algorithm;
+template <class typeT>
+class basic_types_algorithm;
 template <class typeT>
 class object_data_algorithm;
 template <class typeT>
@@ -158,9 +167,6 @@ typedef rx_reference<runtime::items::port_runtime> rx_port_impl_ptr;
 typedef rx_reference<runtime::items::application_runtime> rx_application_impl_ptr;
 typedef rx_reference<runtime::items::domain_runtime> rx_domain_impl_ptr;
 
-
-typedef uint32_t runtime_handle_t;
-typedef uint32_t runtime_transaction_id_t;
 
 enum subscription_trigger_type
 {
@@ -471,16 +477,24 @@ struct runtime_deinit_context
 struct runtime_start_context 
 {
 
-      runtime_start_context (structure::runtime_item& root, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, relations::relations_holder* relations);
+      runtime_start_context (structure::runtime_item& root, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, relations::relations_holder* relations, threads::job_thread* jobs_queue);
 
 
       runtime_handle_t connect (const string_type& path, uint32_t rate, std::function<void(const values::rx_value&)> callback);
 
       rx_result register_relation_subscriber (const string_type& name, relation_subscriber* who);
 
+      rx_result register_extern_relation_subscriber (const string_type& name, relation_subscriber_data* who);
+
       rx_result set_item (const string_type& path, rx_simple_value&& value);
 
       rx_result get_item (const string_type& path, rx_simple_value& val);
+
+      void add_periodic_job (jobs::periodic_job::smart_ptr job);
+
+      void add_calc_periodic_job (jobs::periodic_job::smart_ptr job);
+
+      void add_io_periodic_job (jobs::periodic_job::smart_ptr job);
 
 
       runtime_path_resolver path;
@@ -500,7 +514,30 @@ struct runtime_start_context
 
       bool simulation;
 
+      threads::job_thread* queue;
+
   public:
+      template<typename funcT, typename... Args>
+      rx_timer_ptr create_timer_function(rx_reference_ptr anchor, funcT&& func, Args&&... args)
+      {
+          auto job = rx_create_timer_job<funcT, Args...>()(anchor, std::forward<funcT>(func), std::forward<Args>(args)...);
+          add_periodic_job(job);
+          return job;
+      }
+      template<typename funcT, typename... Args>
+      rx_timer_ptr create_callculation_timer_function(rx_reference_ptr anchor, funcT&& func, Args&&... args)
+      {
+          auto job = rx_create_timer_job<funcT, Args...>()(anchor, std::forward<funcT>(func), std::forward<Args>(args)...);
+          add_calc_periodic_job(job);
+          return job;
+      }
+      template<typename funcT, typename... Args>
+      rx_timer_ptr create_io_timer_function(rx_reference_ptr anchor, funcT&& func, Args&&... args)
+      {
+          auto job = rx_create_timer_job<funcT, Args...>()(anchor, std::forward<funcT>(func), std::forward<Args>(args)...);
+          add_io_periodic_job(job);
+          return job;
+      }
       template<typename T>
       rx_result set_item_static(const string_type& path, T&& value)
       {
@@ -570,7 +607,7 @@ class mappers_stack
 
       void pop_mapper (const rx_node_id& id);
 
-      std::vector<rx_value> get_mapped_values (const rx_node_id& id, const string_type& path);
+      std::vector<rx_simple_value> get_mapping_values (const rx_node_id& id, const string_type& path);
 
 
   protected:
@@ -599,7 +636,7 @@ class sources_stack
 
       void pop_source (const rx_node_id& id);
 
-      std::vector<rx_value> get_sourced_values (const rx_node_id& id, const string_type& path);
+      std::vector<rx_simple_value> get_source_values (const rx_node_id& id, const string_type& path);
 
 
   protected:

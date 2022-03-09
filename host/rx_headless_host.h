@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -33,12 +33,12 @@
 
 
 
+// rx_thread
+#include "system/threads/rx_thread.h"
 // rx_host
 #include "system/hosting/rx_host.h"
 // rx_security
-#include "lib/security/rx_security.h"
-// rx_thread
-#include "lib/rx_thread.h"
+#include "security/rx_security.h"
 
 #include "system/server/rx_server.h"
 using rx_platform::hosting::hosts_type;
@@ -65,17 +65,17 @@ class headless_security
 };
 
 
-typedef std::function<void(jobs::job_ptr)> synchronize_callback_t;
+typedef std::function<void(job_ptr)> synchronize_callback_t;
 
 
 
 
-class rx_thread_synchronizer : public rx::threads::job_thread  
+class rx_thread_synchronizer : public rx_platform::threads::job_thread  
 {
 
   public:
 
-      void append (jobs::job_ptr pjob);
+      void append (job_ptr pjob);
 
       void init_callback (synchronize_callback_t callback);
 
@@ -153,7 +153,7 @@ class headless_platform_host : public rx_platform::hosting::rx_platform_host
 
 
 
-      rx_reference<rx::security::security_context> host_security_context_;
+      rx_reference<rx_platform::security::security_context> host_security_context_;
 
       rx_thread_synchronizer thread_synchronizer_;
 

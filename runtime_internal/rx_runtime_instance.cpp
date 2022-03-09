@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@
 
 #include "pch.h"
 
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 
 // rx_runtime_instance
 #include "runtime_internal/rx_runtime_instance.h"

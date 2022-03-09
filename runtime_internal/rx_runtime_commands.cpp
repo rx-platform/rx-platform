@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
 #include "terminal/rx_console.h"
-#include "system/serialization/rx_ser_json.h"
+#include "lib/rx_ser_json.h"
 #include "terminal/rx_term_table.h"
 
 

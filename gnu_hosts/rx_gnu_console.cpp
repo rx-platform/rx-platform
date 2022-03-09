@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -238,16 +238,11 @@ void gnu_console_host::adjust_terminal_size ()
     }
 }
 
+void gnu_console_host::fill_plugin_libs (string_array& paths)
+{
+	fill_plugin_paths(paths);
+}
+
 
 } // namespace gnu
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	string_type ret;
-	get_gnu_host_name(ret);
-	return ret;
-
-#endif

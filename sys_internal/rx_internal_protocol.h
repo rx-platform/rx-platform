@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -153,6 +153,8 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
       rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results);
 
+      rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data);
+
       rx_result remove_items (std::vector<runtime_handle_t >&& items, std::vector<rx_result>& results);
 
 
@@ -206,6 +208,8 @@ class rx_protocol_connection : public rx::pointers::reference_object
       rx_result add_items (const rx_uuid& id, const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results);
 
       rx_result write_items (const rx_uuid& id, runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results);
+
+      rx_result execute_item (const rx_uuid& id, runtime_transaction_id_t transaction_id, runtime_handle_t item, data::runtime_values_data data);
 
       rx_result remove_items (const rx_uuid& id, std::vector<runtime_handle_t>&& items, std::vector<rx_result>& results);
 

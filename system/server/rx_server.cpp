@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -39,6 +39,7 @@
 // rx_server
 #include "system/server/rx_server.h"
 
+#include "rx_platform_version.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "sys_internal/rx_internal_builders.h"
 #include "system/python/py_support.h"

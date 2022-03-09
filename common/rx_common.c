@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,6 +34,33 @@
 // rx_common
 #include "common/rx_common.h"
 
+#include "lib/rx_intrinsic.h"
+
+
+RX_COMMON_API void rx_init_lock_reference(lock_reference_struct* data, void* target, lock_reference_def_struct* def)
+{
+	data->target = target;
+	data->ref_count = 1;
+	data->def = def;
+}
+RX_COMMON_API void rx_aquire_lock_reference(lock_reference_struct* data)
+{
+	if(data->target)
+		rx_atomic_inc_fetch_32(&data->ref_count);
+}
+RX_COMMON_API void rx_release_lock_reference(lock_reference_struct* data)
+{
+	if (data->target && data->def)
+	{
+		rx_count_ref_t ret = rx_atomic_dec_fetch_32(&data->ref_count);
+		if (ret <= 0 && data->def->destroy_reference)
+		{
+			data->def->destroy_reference(data->target);
+			data->target = NULL;
+			data->def = NULL;
+		}
+	}
+}
 
 int parse_uint16(const char* str, uint16_t* val);
 int parse_uint32(const char* str, uint32_t* val);
@@ -205,6 +232,35 @@ RX_COMMON_API void rx_destory_bytes_value_struct(bytes_value_struct* data)
 		free(data->value);
 	memzero(data, sizeof(bytes_value_struct));
 }
+
+RX_COMMON_API int rx_init_values_array_struct(values_array_struct* data, const struct typed_value_type* values, size_t len)
+{
+	memzero(data, sizeof(values_array_struct));
+	if (len && values)
+	{
+		data->values = malloc(len * sizeof(struct typed_value_type));
+		if (data->values == NULL)
+			return RX_ERROR;
+		for (size_t i = 0; i < len; i++)
+		{
+			rx_copy_value(&data->values[i], &values[i]);
+		}
+		data->size = len;
+	}
+	return RX_OK;
+}
+RX_COMMON_API void rx_destory_values_array_struct(values_array_struct* data)
+{
+	if (data->size && data->values)
+	{
+		for (size_t i = 0; i < data->size; i++)
+		{
+			rx_destroy_value(&data->values[i]);
+		}
+		free(data->values);
+	}
+}
+
 
 
 RX_COMMON_API int rx_parse_value_type_name(const char* strtype, rx_value_t* type)

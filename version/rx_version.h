@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -48,6 +48,7 @@ extern "C" {
 
 // versions helper
 void create_module_compile_time_string(const char* date, const char* time, char* buffer);
+void create_module_compile_time(const char* date, const char* time, rx_time_struct* ret);
 void create_module_version_string(const char* prefix, int major, int minor, int build, const char* date, const char* time, char* buffer);
 
 

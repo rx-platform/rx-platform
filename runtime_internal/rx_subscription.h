@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -33,10 +33,20 @@
 
 
 
+// rx_job
+#include "system/threads/rx_job.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
-// rx_job
-#include "lib/rx_job.h"
+
+namespace rx_internal {
+namespace sys_runtime {
+namespace subscriptions {
+class rx_subscription;
+
+} // namespace subscriptions
+} // namespace sys_runtime
+} // namespace rx_internal
+
 
 #include "system/runtime/rx_runtime_helpers.h"
 #include "system/runtime/rx_operational.h"
@@ -188,7 +198,7 @@ class subscription_write_transaction
 
       std::vector<std::pair<runtime_handle_t, rx_result> > get_results ();
 
-      runtime_transaction_id_t client_handle;
+      runtime_transaction_id_t client_transaction_id;
   protected:
 
   private:
@@ -197,6 +207,113 @@ class subscription_write_transaction
       writes_type writes_;
 
       int pending_count_;
+
+
+};
+
+
+
+
+
+
+
+class subscription_execute_manager 
+{
+    struct pending_execute_data
+    {
+        runtime_transaction_id_t trans_id;
+        runtime_handle_t handle;
+        data::runtime_values_data data;
+        rx_security_handle_t identity;
+    };
+    typedef std::map<rx_thread_handle_t, std::vector<pending_execute_data> > pending_executions_type;
+
+    struct pending_execute_result
+    {
+        runtime_transaction_id_t trans_id;
+        runtime_handle_t handle;
+        rx_result result;
+        data::runtime_values_data data;
+    };
+    typedef std::vector<pending_execute_result> pending_execute_results_type;
+
+    struct execute_transaction_data
+    {
+        runtime_transaction_id_t client_transaction_id;
+        runtime_handle_t client_handle;
+    };
+    typedef std::map<runtime_transaction_id_t, execute_transaction_data> execute_transactions_type;
+
+
+  public:
+
+      rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data, rx_subscription& subs);
+
+      void process (rx_subscription& subs);
+
+      void process_results (rx_subscription& subs);
+
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data, rx_subscription& subs);
+
+
+  protected:
+
+  private:
+
+
+      pending_executions_type pending_executions_;
+
+      pending_execute_results_type pending_execute_results_;
+
+      execute_transactions_type execute_transactions_;
+
+
+};
+
+
+
+
+
+
+
+class subscription_write_manager 
+{
+    struct pending_write_data
+    {
+        runtime_transaction_id_t trans_id;
+        runtime_handle_t handle;
+        rx_simple_value value;
+    };
+    typedef std::map<rx_thread_handle_t, std::vector<pending_write_data> > pending_writes_type;
+    typedef std::vector<std::pair<runtime_transaction_id_t, std::vector<std::pair<runtime_handle_t, rx_result> > > > pending_write_results_type;
+
+
+    typedef std::map<runtime_transaction_id_t, subscription_write_transaction> write_transactions_type;
+
+  public:
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& result, rx_subscription& subs);
+
+      void process (rx_subscription& subs);
+
+      void process_results (rx_subscription& subs);
+
+      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result, rx_subscription& subs);
+
+
+  protected:
+
+  private:
+
+
+      write_transactions_type write_transactions_;
+
+
+      pending_writes_type pending_writes_;
+
+      pending_write_results_type pending_write_results_;
+
+      subscription_write_transaction::transactions_map_type transactions_map_;
 
 
 };
@@ -221,38 +338,8 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 	typedef std::map<rx_thread_handle_t, std::vector<size_t> > connection_attempts_type;
 	static constexpr uint32_t timer_period_ = 1000;
 
-    struct pending_write_data
-    {
-        runtime_transaction_id_t trans_id;
-        runtime_handle_t handle;
-        rx_simple_value value;
-    };
-    typedef std::map<rx_thread_handle_t, std::vector<pending_write_data> > pending_writes_type;
-
-
-    struct pending_execute_data
-    {
-        runtime_transaction_id_t trans_id;
-        runtime_handle_t handle;
-        data::runtime_values_data data;
-        rx_security_handle_t identity;
-    };
-    typedef std::map<rx_thread_handle_t, std::vector<pending_execute_data> > pending_executions_type;
-
     typedef std::vector<update_item> pending_updates_type;
-    typedef std::vector<std::pair<runtime_transaction_id_t, std::vector<std::pair<runtime_handle_t, rx_result> > > > pending_write_results_type;
-
-    struct pending_execute_result
-    {
-        runtime_transaction_id_t trans_id;
-        runtime_handle_t handle;
-        rx_result result;
-        data::runtime_values_data data;
-    };
-    typedef std::vector<pending_execute_result> pending_execute_results_type;
-
-    typedef std::map<runtime_transaction_id_t, subscription_write_transaction> write_transactions_type;
-
+  
     friend class runtime_connection_data;
 
   public:
@@ -273,11 +360,11 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
       void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
+      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
+
       rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& result);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data);
-
-      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
 
 
   protected:
@@ -292,19 +379,17 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
       rx_subscription_tag* get_tag (runtime_handle_t handle);
 
-      void process_writes ();
-
-      void process_results ();
-
 
 
       rx_subscription_callback *callback_;
 
       connections_type connections_;
 
-      rx_reference<rx::jobs::periodic_job> timer_;
+      rx_reference<rx_platform::jobs::periodic_job> timer_;
 
-      write_transactions_type write_transactions_;
+      subscription_execute_manager execute_manager_;
+
+      subscription_write_manager write_manager_;
 
 
       handles_type handles_;
@@ -323,25 +408,17 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
       connection_paths_type connection_paths_;
 
-      pending_writes_type pending_writes_;
-
-      pending_executions_type pending_executions_;
-
       pending_updates_type pending_updates_;
 
       std::unordered_set<size_t> to_retrieve_;
 
       std::unordered_set<size_t> to_process_;
 
-      subscription_write_transaction::transactions_map_type transactions_map_;
-
-      pending_write_results_type pending_write_results_;
-
-      pending_execute_results_type pending_execute_results_;
-
       values_cache_type values_cache_;
 
 
+    friend class subscription_execute_manager;
+    friend class subscription_write_manager;
 };
 
 

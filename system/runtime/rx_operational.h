@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -43,14 +43,14 @@
 namespace rx_platform {
 namespace runtime {
 class runtime_process_context;
-namespace logic_blocks {
-class method_data;
-} // namespace logic_blocks
-
 namespace tag_blocks {
 class binded_tags;
-
 } // namespace tag_blocks
+
+namespace logic_blocks {
+class method_data;
+
+} // namespace logic_blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -60,6 +60,12 @@ class binded_tags;
 namespace rx_platform {
 
 namespace runtime {
+namespace logic_blocks {
+class logic_holder;
+} // namespace logic_blocks
+namespace display_blocks {
+class displays_holder;
+} // namespace logic_blocks
 
 namespace tag_blocks {
 

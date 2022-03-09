@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,8 +30,8 @@
 
 #include "pch.h"
 
-#include "system/serialization/rx_ser_json.h"
-#include "system/serialization/rx_ser_bin.h"
+#include "lib/rx_ser_json.h"
+#include "lib/rx_ser_bin.h"
 
 // rx_file_internals
 #include "storage/rx_file_internals.h"
@@ -62,7 +62,7 @@ rx_result rx_json_file::open_for_read (const string_type& data, const string_typ
 	if (writer_)
 		return "File storage "s + file_path + " already opened for writing";
 
-	reader_ = std::make_unique<rx_platform::serialization::json_reader>();
+	reader_ = std::make_unique<serialization::json_reader>();
 	if (reader_->parse_data(data))
 	{
 		return true;
@@ -83,7 +83,7 @@ rx_result rx_json_file::open_for_write (const string_type& file_path)
 	if (writer_)
 		return "File storage "s + file_path + " already opened for writing";
 
-	writer_ = std::make_unique<rx_platform::serialization::pretty_json_writer>();
+	writer_ = std::make_unique<serialization::pretty_json_writer>();
 	return true;
 }
 
@@ -128,14 +128,37 @@ base_meta_writer& rx_binary_file::write_stream ()
 	return *writer_;
 }
 
-rx_result rx_binary_file::open_for_read (const string_type& file_path)
+rx_result rx_binary_file::open_for_read (const byte_string& data, const string_type& file_path)
 {
-	return RX_NOT_IMPLEMENTED;
+	if (reader_)
+		return "File storage "s + file_path + " already opened for reading";
+	if (writer_)
+		return "File storage "s + file_path + " already opened for writing";
+
+	buffer_.reinit();
+	if (data.empty())
+		return "Empty data";
+	uint8_t be = data[0];
+	size_t size = data.size();
+	buffer_.reinit();
+	buffer_.push_data(&data[1], size - 1);
+	reader_ = std::make_unique<serialization::std_buffer_reader>(buffer_);
+	
+	return true;
 }
 
 rx_result rx_binary_file::open_for_write (const string_type& file_path)
 {
-	return RX_NOT_IMPLEMENTED;
+	if (reader_)
+		return "File storage "s + file_path + " already opened for reading";
+	if (writer_)
+		return "File storage "s + file_path + " already opened for writing";
+
+	buffer_.reinit();
+	uint8_t be = rx_big_endian != 0 ? 1 : 0;
+	buffer_.push_data(be);
+	writer_ = std::make_unique<serialization::std_buffer_writer>(buffer_);
+	return true;
 }
 
 rx_result rx_binary_file::close_read (const string_type& file_path)
@@ -156,9 +179,10 @@ rx_result rx_binary_file::close_write (const string_type& file_path)
 	return true;
 }
 
-rx_result rx_binary_file::get_data (string_type& data)
+rx_result rx_binary_file::get_data (byte_string& data)
 {
-	return RX_NOT_IMPLEMENTED;
+	data = writer_->get_data();
+	return true;
 }
 
 

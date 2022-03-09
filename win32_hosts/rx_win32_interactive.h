@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -74,6 +74,8 @@ class win32_console_host : public host::interactive::interactive_console_host
       bool supports_ansi () const;
 
       string_type get_full_path (const string_type& path);
+
+      void fill_plugin_libs (string_array& paths);
 
 	  template<class tupleType>
 	  auto register_types(tupleType before)

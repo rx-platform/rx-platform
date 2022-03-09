@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -35,7 +35,7 @@
 #include "system/server/rx_identity.h"
 
 
-#include "system/serialization/rx_ser_bin.h"
+#include "lib/rx_ser_bin.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
 
 

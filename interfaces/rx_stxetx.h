@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -38,7 +38,7 @@
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
 // rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
+#include "lib/rx_io_buffers.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -91,7 +91,7 @@ class stxetx_endpoint
 
       stxetx_port *port_;
 
-      rx_platform::runtime::io_types::rx_io_buffer collect_buffer_;
+      rx::io::rx_io_buffer collect_buffer_;
 
 
       bool collecting_;

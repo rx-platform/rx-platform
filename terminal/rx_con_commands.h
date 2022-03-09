@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -283,10 +283,6 @@ time related stuff ( start time, current time... )");
 };
 
 
-struct sleep_data_t : public pointers::struct_reference
-{
-	uint64_t started;
-};
 
 
 

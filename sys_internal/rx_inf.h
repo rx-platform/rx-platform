@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -33,12 +33,12 @@
 
 
 
+// rx_job
+#include "system/threads/rx_job.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_job
-#include "lib/rx_job.h"
-// rx_thread
-#include "lib/rx_thread.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -94,7 +94,7 @@ used for I/O pool and general pool\r\n\
       uint16_t get_pool_size () const;
 
 
-      rx::threads::dispatcher_pool& get_pool ()
+      rx_platform::threads::dispatcher_pool& get_pool ()
       {
         return pool_;
       }
@@ -106,7 +106,7 @@ used for I/O pool and general pool\r\n\
   private:
 
 
-      rx::threads::dispatcher_pool pool_;
+      rx_platform::threads::dispatcher_pool pool_;
 
 
       int threads_count_;
@@ -119,7 +119,7 @@ used for I/O pool and general pool\r\n\
 
 
 
-class dispatcher_subscribers_job : public rx::jobs::periodic_job  
+class dispatcher_subscribers_job : public rx_platform::jobs::periodic_job  
 {
 	DECLARE_REFERENCE_PTR(dispatcher_subscribers_job);
 
@@ -144,7 +144,7 @@ class dispatcher_subscribers_job : public rx::jobs::periodic_job
 
 
 
-class domains_pool : public rx::threads::job_thread, 
+class domains_pool : public rx_platform::threads::job_thread, 
                      	public rx_platform::runtime::items::object_runtime  
 {
 	DECLARE_REFERENCE_PTR(domains_pool);
@@ -173,9 +173,9 @@ thread pool resources\r\n\
 
       void clear ();
 
-      void append (rx::jobs::timer_job_ptr job, uint32_t domain);
+      void append (timer_job_ptr job, uint32_t domain);
 
-      rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
+      threads::job_thread* get_executer (rx_thread_handle_t domain);
 
       rx_internal::sys_runtime::data_source::data_controler* get_data_controler (rx_thread_handle_t domain);
 
@@ -222,7 +222,7 @@ used for special executer types\r\n\
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
 
-      rx::threads::physical_job_thread& get_pool ()
+      rx_platform::threads::physical_job_thread& get_pool ()
       {
         return pool_;
       }
@@ -240,7 +240,7 @@ used for special executer types\r\n\
   private:
 
 
-      rx::threads::physical_job_thread pool_;
+      rx_platform::threads::physical_job_thread pool_;
 
       sys_runtime::data_source::data_controler *data_controler_;
 
@@ -276,7 +276,7 @@ calculation ( normal priority)");
 
       void deinitialize ();
 
-      void append_timer_job (rx::jobs::timer_job_ptr job, threads::job_thread* whose = nullptr);
+      void append_timer_job (timer_job_ptr job, threads::job_thread* whose = nullptr);
 
       rx_result start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data);
 
@@ -288,15 +288,15 @@ calculation ( normal priority)");
 
       namespace_item_attributes get_attributes () const;
 
-      void append_job (rx::jobs::job_ptr job);
+      void append_job (job_ptr job);
 
-      rx::threads::job_thread* get_executer (rx_thread_handle_t domain);
+      threads::job_thread* get_executer (rx_thread_handle_t domain);
 
-      void append_calculation_job (rx::jobs::timer_job_ptr job);
+      void append_calculation_job (timer_job_ptr job, threads::job_thread* whose = nullptr);
 
-      void append_io_job (rx::jobs::job_ptr job);
+      void append_io_job (job_ptr job);
 
-      void append_timer_io_job (rx::jobs::timer_job_ptr job);
+      void append_timer_io_job (timer_job_ptr job);
 
       rx_time get_created_time (values::rx_value& val) const;
 
@@ -331,9 +331,9 @@ calculation ( normal priority)");
 
 
 
-      std::unique_ptr<rx::threads::timer> general_timer_;
+      std::unique_ptr<rx_platform::threads::timer> general_timer_;
 
-      std::unique_ptr<rx::threads::timer> calculation_timer_;
+      std::unique_ptr<rx_platform::threads::timer> calculation_timer_;
 
       rx_reference<server_dispatcher_object> io_pool_;
 

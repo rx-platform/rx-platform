@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -30,6 +30,8 @@
 
 #include "pch.h"
 
+#include "system/server/rx_log.h"
+#include "system/server/rx_server.h"
 
 // rx_ns_resolver
 #include "system/server/rx_ns_resolver.h"
@@ -48,6 +50,7 @@
 
 #include "system/runtime/rx_blocks.h"
 #include "rx_configuration.h"
+#include "sys_internal/rx_inf.h"
 
 
 namespace rx_platform {
@@ -181,13 +184,14 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 
 // Class rx_platform::runtime::runtime_start_context 
 
-runtime_start_context::runtime_start_context (structure::runtime_item& root, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, relations::relations_holder* relations)
+runtime_start_context::runtime_start_context (structure::runtime_item& root, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, relations::relations_holder* relations, threads::job_thread* jobs_queue)
       : context(context),
         relations_(relations),
         tags(binded),
         directories(directories),
         now(rx_time::now()),
-        simulation(false)
+        simulation(false),
+        queue(jobs_queue)
     , structure(root)
 {
 }
@@ -204,6 +208,11 @@ rx_result runtime_start_context::register_relation_subscriber (const string_type
 	return relations_->register_relation_subscriber(name, who);
 }
 
+rx_result runtime_start_context::register_extern_relation_subscriber (const string_type& name, relation_subscriber_data* who)
+{
+	return relations_->register_extern_relation_subscriber(name, who);
+}
+
 rx_result runtime_start_context::set_item (const string_type& path, rx_simple_value&& value)
 {
 	return tags->set_item(path, std::move(value), *this);
@@ -212,6 +221,21 @@ rx_result runtime_start_context::set_item (const string_type& path, rx_simple_va
 rx_result runtime_start_context::get_item (const string_type& path, rx_simple_value& val)
 {
 	return tags->get_item(path, val, *this);
+}
+
+void runtime_start_context::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, queue);
+}
+
+void runtime_start_context::add_calc_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_calculation_job(job, queue);
+}
+
+void runtime_start_context::add_io_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_io_job(job);
 }
 
 
@@ -308,9 +332,9 @@ void mappers_stack::pop_mapper (const rx_node_id& id)
 	}
 }
 
-std::vector<rx_value> mappers_stack::get_mapped_values (const rx_node_id& id, const string_type& path)
+std::vector<rx_simple_value> mappers_stack::get_mapping_values (const rx_node_id& id, const string_type& path)
 {
-	std::vector<rx_value> ret_value;
+	std::vector<rx_simple_value> ret_value;
 	auto it = mappers_.find(id);
 	if (it != mappers_.end() && !it->second.empty())
 	{
@@ -318,7 +342,7 @@ std::vector<rx_value> mappers_stack::get_mapped_values (const rx_node_id& id, co
 		{
 			rx_simple_value val;
 			if (one->item->get_local_value(path, val))
-				ret_value.emplace_back(rx_value(std::move(val), rx_time::now()));
+				ret_value.emplace_back(std::move(val));
 		}
 	}
 	return ret_value;
@@ -355,9 +379,9 @@ void sources_stack::pop_source (const rx_node_id& id)
 	}
 }
 
-std::vector<rx_value> sources_stack::get_sourced_values (const rx_node_id& id, const string_type& path)
+std::vector<rx_simple_value> sources_stack::get_source_values (const rx_node_id& id, const string_type& path)
 {
-	std::vector<rx_value> ret_value;
+	std::vector<rx_simple_value> ret_value;
 	auto it = sources_.find(id);
 	if (it != sources_.end() && !it->second.empty())
 	{
@@ -365,7 +389,7 @@ std::vector<rx_value> sources_stack::get_sourced_values (const rx_node_id& id, c
 		{
 			rx_simple_value val;
 			if ((*one_it)->item->get_local_value(path, val))
-				ret_value.emplace_back(rx_value(std::move(val), rx_time::now()));
+				ret_value.emplace_back(std::move(val));
 		}
 	}
 	return ret_value;

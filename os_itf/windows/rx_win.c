@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -49,48 +49,6 @@
 
 
 
-rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size)
-{
-	size_t msg_len = 0;
-	char* help_ptr;
-	LPSTR msg = NULL;
-	DWORD err = GetLastError();
-	DWORD ret = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM |
-		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL,
-		err,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-		(LPSTR)&msg,
-		1,
-		NULL);
-	if (ret)
-	{
-		size_t msg_len = strlen(msg);
-		if (msg_len > 0)
-		{
-			help_ptr = msg + msg_len - 1;
-			while (help_ptr > msg && *help_ptr == '\r' || *help_ptr == '\n')
-				help_ptr--;
-			*(help_ptr + 1) = '\0';
-		}
-		if(text)
-			snprintf(buffer, buffer_size, "%s. %s (%u)", text, msg, err);
-		else
-			snprintf(buffer, buffer_size, "%s (%u)", msg, err);
-		LocalFree((LPVOID)msg);
-	}
-	else
-	{
-		if (text)
-			snprintf(buffer, buffer_size, "%s. Error retriveing error code (%u)", text, err);
-		else
-			snprintf(buffer, buffer_size, "Error retriveing error code (%u)", err);
-	}
-	return err;
-}
-
-
 typedef DWORD(__stdcall * 
 	NtSetInformationProcess_t)(
 	IN HANDLE               ProcessHandle,
@@ -112,105 +70,6 @@ typedef DWORD(__stdcall *
 	OUT PULONG              MaximumResolution,
 	OUT PULONG              CurrentResolution
 	);
-
-
-
-uint32_t rx_border_rand(uint32_t min, uint32_t max)
-{
-	if (max > min)
-	{
-		uint32_t diff = (max - min);
-		if (diff > RAND_MAX)
-		{
-			int shifts = 0;
-			while (diff > RAND_MAX)
-			{
-				shifts++;
-				diff >>= 1;
-			}
-			uint32_t gen = rand()<<shifts;
-			gen = gen % (max - min) + min;
-			return gen;
-		}
-		else
-		{
-			uint32_t gen = rand();
-			gen = gen % (max - min) + min;
-			return gen;
-		}
-	}
-	else
-		return min;
-}
-
-size_t g_page_size = 0;
-
-size_t rx_os_page_size()
-{
-	RX_ASSERT(g_page_size);
-	return g_page_size;
-}
-void* rx_allocate_os_memory(size_t size)
-{
-	return VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE);
-}
-
-
-void rx_deallocate_os_memory(void* p, size_t size)
-{
-	VirtualFree(p, 0, MEM_RELEASE);
-}
-
-void* rx_allocate_thread_memory(size_t size)
-{
-	return NULL;
-}
-
-
-
-uint16_t rx_swap_2bytes(uint16_t val)
-{
-	return _byteswap_ushort(val);
-}
-uint32_t rx_swap_4bytes(uint32_t val)
-{
-	return _byteswap_ulong(val);
-}
-uint64_t rx_swap_8bytes(uint64_t val)
-{
-	return _byteswap_uint64(val);
-}
-
-uint32_t rx_atomic_add_fetch_32(volatile uint32_t* val, int add)
-{
-	return (uint32_t)InterlockedAdd((LONG*)val, add);
-}
-
-uint32_t rx_atomic_inc_fetch_32(volatile uint32_t* val)
-{
-	return (uint32_t)InterlockedIncrement((LONG*)val);
-}
-uint32_t rx_atomic_dec_fetch_32(volatile uint32_t* val)
-{
-	return (uint32_t)InterlockedDecrement((LONG*)val);
-}
-uint32_t rx_atomic_fetch_32(volatile uint32_t* val)
-{
-	return (uint32_t)InterlockedAdd((LONG*)val, 0);
-}
-
-uint64_t rx_atomic_inc_fetch_64(volatile uint64_t* val)
-{
-	return (uint64_t)InterlockedIncrement64((LONG64*)val);
-}
-uint64_t rx_atomic_dec_fetch_64(volatile uint64_t* val)
-{
-	return (uint64_t)InterlockedDecrement64((LONG64*)val);
-}
-uint64_t rx_atomic_fetch_64(volatile uint64_t* val)
-{
-	return (uint64_t)InterlockedAdd64((LONG64*)val, 0);
-}
 
 
 void init_fixed_drives();
@@ -236,8 +95,6 @@ const char* rx_get_node_name()
 	return rx_server_name;
 }
 
-
-extern HCRYPTPROV hcrypt;
 
 const char* g_ositf_version = "ERROR!!!";
 char ver_buffer[0x100];
@@ -417,10 +274,6 @@ void rx_init_hal_version()
 {
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;
-	SYSTEM_INFO sys;
-	ZeroMemory(&sys, sizeof(sys));
-	GetSystemInfo(&sys);
-	g_page_size = sys.dwPageSize;
 }
 
 struct WSAData wsaData;
@@ -449,10 +302,6 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls)
 	} bint = { 0x01020304 };
 	rx_big_endian = (bint.c[0] == 1 ? 1 : 0);
 
-	SYSTEM_INFO sys;
-	ZeroMemory(&sys, sizeof(sys));
-	GetSystemInfo(&sys);
-	g_page_size = sys.dwPageSize;
 
 
 	DWORD err = 0;
@@ -492,8 +341,6 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls)
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
 
-	BOOL cret = CryptAcquireContext(&hcrypt, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
-
 
 
 #ifndef _DEBUG
@@ -521,8 +368,6 @@ void rx_deinitialize_os()
 	if(drives)
 		free(drives);
 
-	if(hcrypt)
-		CryptReleaseContext(hcrypt,0);
 	WSACleanup();
 
 	if (init_common_result)
@@ -863,118 +708,6 @@ void rx_collect_memory_info(size_t* total, size_t* free, size_t* process)
 	*free = (size_t)statex.ullAvailPhys;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// slim lock apstraction
-void rx_slim_lock_create(pslim_lock_t plock)
-{
-	CRITICAL_SECTION* cs = (CRITICAL_SECTION*)plock;
-	InitializeCriticalSection(cs);
-}
-void rx_slim_lock_destroy(pslim_lock_t plock)
-{
-	CRITICAL_SECTION* cs = (CRITICAL_SECTION*)plock;
-	DeleteCriticalSection(cs);
-}
-void rx_slim_lock_aquire(pslim_lock_t plock)
-{
-	CRITICAL_SECTION* cs = (CRITICAL_SECTION*)plock;
-	EnterCriticalSection(cs);
-}
-void rx_slim_lock_release(pslim_lock_t plock)
-{
-	CRITICAL_SECTION* cs = (CRITICAL_SECTION*)plock;
-	LeaveCriticalSection(cs);
-}
-
-
-
-void rx_rw_slim_lock_create(prw_slim_lock_t plock)
-{
-	PSRWLOCK lock = (PSRWLOCK)plock;
-	InitializeSRWLock(lock);
-}
-void rx_rw_slim_lock_destroy(prw_slim_lock_t plock)
-{
-	// nothing to do on windows, starange but jebi ga
-}
-void rx_rw_slim_lock_aquire_reader(prw_slim_lock_t plock)
-{
-	PSRWLOCK lock = (PSRWLOCK)plock;
-	AcquireSRWLockShared(lock);
-}
-void rx_rw_slim_lock_release_reader(prw_slim_lock_t plock)
-{
-	PSRWLOCK lock = (PSRWLOCK)plock;
-	ReleaseSRWLockShared(lock);
-}
-void rx_rw_slim_lock_aquire_writter(prw_slim_lock_t plock)
-{
-	PSRWLOCK lock = (PSRWLOCK)plock;
-	AcquireSRWLockExclusive(lock);
-}
-void rx_rw_slim_lock_release_writter(prw_slim_lock_t plock)
-{
-	PSRWLOCK lock = (PSRWLOCK)plock;
-	ReleaseSRWLockExclusive(lock);
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// handles abstractions ( wait and the rest of the stuff
-uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
-{
-	DWORD ret = WaitForSingleObject(what, timeout);
-	if (ret == WAIT_OBJECT_0)
-		return RX_WAIT_0;
-	else if (ret == WAIT_TIMEOUT)
-		return RX_WAIT_TIMEOUT;
-	else
-		return RX_WAIT_ERROR;
-
-}
-uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout)
-{
-	DWORD to_sleep = 0;
-	if (timeout > 50)
-		to_sleep = (DWORD)((timeout - 50) / 1000) + 1;
-	DWORD ret = WaitForSingleObject(what, to_sleep);
-	if (ret == WAIT_OBJECT_0)
-		return RX_WAIT_0;
-	else if (ret == WAIT_TIMEOUT)
-		return RX_WAIT_TIMEOUT;
-	else
-		return RX_WAIT_ERROR;
-
-}
-uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t timeout)
-{
-	DWORD ret = WaitForMultipleObjects((DWORD)count, what, FALSE, timeout);
-	if (ret >= WAIT_OBJECT_0 && ret<(WAIT_OBJECT_0 + count))
-		return RX_WAIT_0 + (ret - WAIT_OBJECT_0);
-	else if (ret == WAIT_TIMEOUT)
-		return RX_WAIT_TIMEOUT;
-	else
-		return RX_WAIT_ERROR;
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// event abstractions ( wait and the rest of the stuff
-sys_handle_t rx_event_create(int initialy_set)
-{
-	return CreateEvent(NULL, FALSE, initialy_set, NULL);
-}
-int rx_event_destroy(sys_handle_t hndl)
-{
-	return CloseHandle(hndl);
-}
-int rx_event_set(sys_handle_t hndl)
-{
-	return SetEvent(hndl);
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

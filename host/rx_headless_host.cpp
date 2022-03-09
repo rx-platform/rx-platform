@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -145,8 +145,8 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 			std::cout << "========================================================\r\n\r\n";
 			std::cout << "Starting log...";
 			if (log_subscriber)
-				rx::log::log_object::instance().register_subscriber(log_subscriber);
-			ret = rx::log::log_object::instance().start(config_.management.test_log);
+				rx_platform::log::log_object::instance().register_subscriber(log_subscriber);
+			ret = rx_platform::log::log_object::instance().start(config_.management.test_log);
 			if (ret)
 			{
 				std::cout << "OK\r\n";
@@ -228,7 +228,7 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing security:\r\n";
 					rx_dump_error_result(std::cout, ret);
 				}
-				rx::log::log_object::instance().deinitialize();
+				rx_platform::log::log_object::instance().deinitialize();
 			}
 
 			rx_deinitialize_os();
@@ -293,7 +293,7 @@ int headless_platform_host::deinitialize_platform ()
 	deinitialize_storages();
 
 	rx_internal::interfaces::io_endpoints::dispatcher_subscriber::deinitialize();
-	rx::threads::thread::deinitialize();
+	rx_platform::threads::thread::deinitialize();
 
 	rx_deinitialize_os();
 
@@ -476,7 +476,7 @@ rx_result headless_platform_host::register_constructors ()
 // Class host::headless::rx_thread_synchronizer 
 
 
-void rx_thread_synchronizer::append (jobs::job_ptr pjob)
+void rx_thread_synchronizer::append (job_ptr pjob)
 {
 	synchronize_callback_(pjob);
 }

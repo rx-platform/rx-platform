@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -190,7 +190,7 @@ rx_value_t get_arithmetic_result_type(rx_value_t left, rx_value_t right, bool ad
 rx_value add_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
-	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, true);
+	rx_value_t ret_type = get_arithmetic_result_type(left.get_type(), right.get_type(), true);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type == RX_BOOL_TYPE)
@@ -219,14 +219,14 @@ rx_value add_values(const rx_value& left, const rx_value& right)
 		}
 		else if (ret_type == RX_TIME_TYPE)
 		{// time
-			result.assign_static(rx_time(left.value.value.time_value) + right.get_unassigned());
+			result.assign_static(rx_time(left.c_ptr()->value.value.time_value) + right.get_unassigned());
 		}
-		else if (ret_type == RX_BYTES_TYPE && left.value.value_type == RX_BYTES_TYPE && right.value.value_type == RX_BYTES_TYPE)
+		else if (ret_type == RX_BYTES_TYPE && left.get_type() == RX_BYTES_TYPE && right.get_type() == RX_BYTES_TYPE)
 		{
 			size_t size1 = 0;
 			size_t size2 = 0;
-			const uint8_t* ptr1 = rx_c_ptr(&left.value.value.bytes_value, &size1);
-			const uint8_t* ptr2 = rx_c_ptr(&right.value.value.bytes_value, &size2);
+			const uint8_t* ptr1 = rx_c_ptr(&left.c_ptr()->value.value.bytes_value, &size1);
+			const uint8_t* ptr2 = rx_c_ptr(&right.c_ptr()->value.value.bytes_value, &size2);
 			size_t new_size = size1 + size2;
 			byte_string temp_buff;
 			if (new_size)
@@ -240,14 +240,14 @@ rx_value add_values(const rx_value& left, const rx_value& right)
 			}
 			result.assign_static(temp_buff);
 		}
-		else if (ret_type == RX_STRING_TYPE && left.value.value_type == RX_STRING_TYPE)
+		else if (ret_type == RX_STRING_TYPE && left.get_type() == RX_STRING_TYPE)
 		{
-			size_t size1 = left.value.value.string_value.size;
-			const char* ptr1 = rx_c_str(&left.value.value.string_value);
-			if (right.value.value_type == RX_STRING_TYPE)
+			size_t size1 = left.c_ptr()->value.value.string_value.size;
+			const char* ptr1 = rx_c_str(&left.c_ptr()->value.value.string_value);
+			if (right.c_ptr()->value.value_type == RX_STRING_TYPE)
 			{// do dynamic stuff
-				size_t size2 = right.value.value.string_value.size;
-				const char* ptr2 = rx_c_str(&right.value.value.string_value);
+				size_t size2 = right.c_ptr()->value.value.string_value.size;
+				const char* ptr2 = rx_c_str(&right.c_ptr()->value.value.string_value);
 				size_t new_size = size1 + size2;
 				string_type temp_buff;
 				if (new_size)
@@ -292,7 +292,7 @@ rx_value add_values(const rx_value& left, const rx_value& right)
 rx_value sub_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
-	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, false);
+	rx_value_t ret_type = get_arithmetic_result_type(left.get_type(), right.get_type(), false);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type == RX_BOOL_TYPE)
@@ -321,7 +321,7 @@ rx_value sub_values(const rx_value& left, const rx_value& right)
 		}
 		else if (ret_type == RX_TIME_TYPE)
 		{// time
-			result.assign_static(rx_time(left.value.value.time_value) - right.get_unassigned());
+			result.assign_static(rx_time(left.c_ptr()->value.value.time_value) - right.get_unassigned());
 		}
 		else
 		{
@@ -339,7 +339,7 @@ rx_value sub_values(const rx_value& left, const rx_value& right)
 rx_value mul_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
-	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, false);
+	rx_value_t ret_type = get_arithmetic_result_type(left.c_ptr()->value.value_type, right.c_ptr()->value.value_type, false);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type == RX_BOOL_TYPE)
@@ -382,7 +382,7 @@ rx_value mul_values(const rx_value& left, const rx_value& right)
 rx_value div_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
-	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, false);
+	rx_value_t ret_type = get_arithmetic_result_type(left.get_type(), right.get_type(), false);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type == RX_BOOL_TYPE)
@@ -445,7 +445,7 @@ rx_value div_values(const rx_value& left, const rx_value& right)
 rx_value mod_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
-	rx_value_t ret_type = get_arithmetic_result_type(left.value.value_type, right.value.value_type, false);
+	rx_value_t ret_type = get_arithmetic_result_type(left.get_type(), right.get_type(), false);
 	if (ret_type != RX_NULL_TYPE)
 	{
 		if (ret_type == RX_BOOL_TYPE)
@@ -1461,22 +1461,22 @@ void value_point_impl::arith (char o, rx_value& r, rx_value& h, char*& prog, cha
 	switch ((uint8_t)o)
 	{
 	case '>':
-		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) > 0);
+		r.assign_static<bool>(rx_compare_values(&r.c_ptr()->value, &h.c_ptr()->value) > 0);
 		break;
 	case GE_CODE:
-		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) >= 0);
+		r.assign_static<bool>(rx_compare_values(&r.c_ptr()->value, &h.c_ptr()->value) >= 0);
 		break;
 	case LE_CODE:
-		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) <= 0);
+		r.assign_static<bool>(rx_compare_values(&r.c_ptr()->value, &h.c_ptr()->value) <= 0);
 		break;
 	case NE_CODE:
-		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) != 0);
+		r.assign_static<bool>(rx_compare_values(&r.c_ptr()->value, &h.c_ptr()->value) != 0);
 		break;
 	case '<':
-		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) < 0);
+		r.assign_static<bool>(rx_compare_values(&r.c_ptr()->value, &h.c_ptr()->value) < 0);
 		break;
 	case '=':
-		r.assign_static<bool>(rx_compare_values(&r.value, &h.value) == 0);
+		r.assign_static<bool>(rx_compare_values(&r.c_ptr()->value, &h.c_ptr()->value) == 0);
 		break;
 	case '+':
 		r = add_values(r, h);

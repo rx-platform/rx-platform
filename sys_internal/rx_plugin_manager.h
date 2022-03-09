@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -33,10 +33,10 @@
 
 
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_plugin
 #include "system/libraries/rx_plugin.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 
 using rx_internal::terminal::console_context_ptr;
 

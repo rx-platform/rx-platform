@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -108,16 +108,38 @@ rx_result win32_headless_host::setup_console (int argc, char* argv[])
 	return true;
 }
 
+void win32_headless_host::fill_plugin_libs (string_array& paths)
+{
+	fill_plugin_paths(paths);
+}
+
+
+// Class win32::win32_dll_host 
+
+win32_dll_host::win32_dll_host (const std::vector<storage_base::rx_platform_storage_type*>& storages, const string_type& host_name, const string_type& local_dir)
+      : local_dir_override_(local_dir),
+        host_name_(host_name)
+	, win32_headless_host(storages)
+{
+}
+
+
+
+string_type win32_dll_host::get_host_name ()
+{
+	return host_name_;
+}
+
+rx_result win32_dll_host::fill_host_directories (hosting::rx_host_directories& data)
+{
+	auto result = win32_headless_host::fill_host_directories(data);
+	if (result && !local_dir_override_.empty())
+	{
+		data.local_folder = local_dir_override_;
+	}
+	return result;
+}
+
 
 } // namespace win32
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	string_type ret;
-	get_win_host_name(ret);
-	return ret;
-
-#endif

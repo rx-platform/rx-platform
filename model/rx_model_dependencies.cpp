@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -518,7 +518,7 @@ rx_result local_dependecy_builder::build_types ()
 
 	rx_result ret = create_simple_types<variable_type>(variable_types_, built_variable_types_);
 	if (!ret)
-		return ret; 
+		return ret;
 	ret = create_simple_types<struct_type>(struct_types_, built_struct_types_);
 	if (!ret)
 		return ret;
@@ -871,8 +871,6 @@ rx_result local_dependecy_builder::add_query_simple_type_concrete(local_dependec
 template<typename typeT>
 rx_result local_dependecy_builder::create_types(local_dependecy_builder::container_t<typeT>& data, std::vector<typename typeT::smart_ptr>& built)
 {
-	using algorithm_t = typename typeT::algorithm_type;
-	using type_ptr = typename typeT::smart_ptr;
 	rx_result ret = true;
 	std::vector<std::pair<string_type, string_type> > to_add;
 	to_add.reserve(data.size());
@@ -920,7 +918,6 @@ rx_result local_dependecy_builder::create_types(local_dependecy_builder::contain
 template<typename typeT>
 rx_result local_dependecy_builder::delete_types(container_t<typeT>& data)
 {
-	using type_ptr = typename typeT::smart_ptr;
 	rx_result ret = true;
 	for (auto it = data.rbegin(); it!=data.rend(); it++)
 	{
@@ -939,7 +936,6 @@ rx_result local_dependecy_builder::delete_types(container_t<typeT>& data)
 template<typename typeT>
 rx_result local_dependecy_builder::create_simple_types(local_dependecy_builder::container_t<typeT>& data, std::vector<typename typeT::smart_ptr>& built)
 {
-	using type_ptr = typename typeT::smart_ptr;
 	rx_result ret = true;
 	std::vector<string_type> add_order;
 	std::vector<std::pair<string_type, string_type> > local_to_add;
@@ -1015,7 +1011,6 @@ rx_result local_dependecy_builder::create_simple_types(local_dependecy_builder::
 template<typename typeT>
 rx_result local_dependecy_builder::delete_simple_types(container_t<typeT>& data)
 {
-	using type_ptr = typename typeT::smart_ptr;
 	rx_result ret = true; std::vector<string_type> add_order;
 	std::vector<std::pair<string_type, string_type> > local_to_add;
 	local_to_add.reserve(data.size());
@@ -1023,7 +1018,7 @@ rx_result local_dependecy_builder::delete_simple_types(container_t<typeT>& data)
 	for (const auto& one : data)
 	{
 		if (one.second.create)
-		{			
+		{
 			auto it_local = data.find(one.second.item->meta_info.parent.to_string());
 			if (it_local != data.end())
 			{

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -35,7 +35,7 @@
 #include "interfaces/rx_full_duplex_packet.h"
 
 #include "interfaces/rx_endpoints.h"
-using namespace rx_platform::runtime::io_types;
+using namespace rx::io;
 
 
 namespace rx_internal {

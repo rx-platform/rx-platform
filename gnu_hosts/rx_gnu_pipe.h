@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -63,6 +63,8 @@ class gnu_pipe_host : public host::pipe::rx_pipe_host
       string_type get_full_path (const string_type& path);
 
       bool supports_ansi () const;
+
+      void fill_plugin_libs (string_array& paths);
 
 
   protected:

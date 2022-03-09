@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -34,12 +34,12 @@
 
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
 
-// rx_anonymus_pipes
-#include "host/rx_anonymus_pipes.h"
+// rx_log
+#include "system/server/rx_log.h"
 // rx_host
 #include "system/hosting/rx_host.h"
-// rx_log
-#include "lib/rx_log.h"
+// rx_anonymus_pipes
+#include "host/rx_anonymus_pipes.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -52,7 +52,7 @@ namespace pipe {
 
 
 
-class rx_pipe_stdout_log_subscriber : public rx::log::log_subscriber  
+class rx_pipe_stdout_log_subscriber : public rx_platform::log::log_subscriber  
 {
 	typedef std::vector<log::log_event_data> pending_events_type;
 

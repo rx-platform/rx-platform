@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 
 
 // rx_thread
-#include "lib/rx_thread.h"
+#include "system/threads/rx_thread.h"
 // rx_data_source
 #include "runtime_internal/rx_data_source.h"
 // rx_inf
@@ -88,9 +88,9 @@ rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_d
 			one->reserve();
 		}
 	}
-	general_timer_ = std::make_unique<rx::threads::timer>("Timer", 0);
+	general_timer_ = std::make_unique<threads::timer>("Timer", 0);
 	if (data.has_calculation_timer)
-		calculation_timer_ = std::make_unique<rx::threads::timer>("Calc",0);
+		calculation_timer_ = std::make_unique<threads::timer>("Calc",0);
 
 	extern_executer_ = data.extern_executer;
 
@@ -158,7 +158,7 @@ void server_runtime::deinitialize ()
 	delete this;
 }
 
-void server_runtime::append_timer_job (rx::jobs::timer_job_ptr job, threads::job_thread* whose)
+void server_runtime::append_timer_job (timer_job_ptr job, threads::job_thread* whose)
 {
 	if(whose==nullptr)
 		whose = get_executer(rx_thread_context());
@@ -250,7 +250,7 @@ namespace_item_attributes server_runtime::get_attributes () const
 	return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
 }
 
-void server_runtime::append_job (rx::jobs::job_ptr job)
+void server_runtime::append_job (job_ptr job)
 {
 	threads::job_thread* executer = get_executer(rx_thread_context());
 	RX_ASSERT(executer);
@@ -258,7 +258,7 @@ void server_runtime::append_job (rx::jobs::job_ptr job)
 		executer->append(job);
 }
 
-rx::threads::job_thread* server_runtime::get_executer (rx_thread_handle_t domain)
+threads::job_thread* server_runtime::get_executer (rx_thread_handle_t domain)
 {
 	uint8_t priority = RX_PRIORITY_FROM_DOMAIN(domain);
 	domain = (domain & RX_DOMAIN_TYPE_MASK);
@@ -296,21 +296,22 @@ rx::threads::job_thread* server_runtime::get_executer (rx_thread_handle_t domain
 	}
 }
 
-void server_runtime::append_calculation_job (rx::jobs::timer_job_ptr job)
+void server_runtime::append_calculation_job (timer_job_ptr job, threads::job_thread* whose)
 {
-	threads::job_thread* executer = get_executer(rx_thread_context());
+	if (whose == nullptr)
+		whose = get_executer(rx_thread_context());
 	if(calculation_timer_)
-		general_timer_->append_job(job, executer);
+		calculation_timer_->append_job(job, whose);
 	if (general_timer_)
-		general_timer_->append_job(job, executer);
+		general_timer_->append_job(job, whose);
 }
 
-void server_runtime::append_io_job (rx::jobs::job_ptr job)
+void server_runtime::append_io_job (job_ptr job)
 {
 	io_pool_->get_pool().append(job);
 }
 
-void server_runtime::append_timer_io_job (rx::jobs::timer_job_ptr job)
+void server_runtime::append_timer_io_job (timer_job_ptr job)
 {
 	if (general_timer_)
 		general_timer_->append_job(job, &io_pool_->get_pool());
@@ -506,7 +507,7 @@ void domains_pool::clear ()
 	workers_.clear();
 }
 
-void domains_pool::append (rx::jobs::timer_job_ptr job, uint32_t domain)
+void domains_pool::append (timer_job_ptr job, uint32_t domain)
 {
 	job_thread* thr = get_executer(domain);
 	RX_ASSERT(thr);
@@ -514,7 +515,7 @@ void domains_pool::append (rx::jobs::timer_job_ptr job, uint32_t domain)
 		thr->append(job);
 }
 
-rx::threads::job_thread* domains_pool::get_executer (rx_thread_handle_t domain)
+threads::job_thread* domains_pool::get_executer (rx_thread_handle_t domain)
 {
 	uint32_t size = pool_size_;
 	RX_ASSERT(size);

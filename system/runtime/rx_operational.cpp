@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -414,7 +414,7 @@ void connected_tags::runtime_stopped (const rx_time& now)
 		}
 	}
 	std::vector<update_item> update_data;
-	for (auto one : next_send_)
+	for (auto& one : next_send_)
 	{
 		auto monitor = one.first;
 		if (monitor)
@@ -671,7 +671,7 @@ bool connected_tags::process_runtime ()
 			next_send = next_send_;
 			next_send_.clear();			
 		}
-		for (auto one : next_send)
+		for (auto& one : next_send)
 		{
 			auto monitor = one.first;
 			if (monitor)

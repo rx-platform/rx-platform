@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -42,11 +42,6 @@ namespace memory {
 
 
 template<>
-bool rx_byte_swap(bool val)
-{
-	return val;
-}
-template<>
 int8_t rx_byte_swap(int8_t val)
 {
 	return val;
@@ -59,48 +54,43 @@ uint8_t rx_byte_swap(uint8_t val)
 template<>
 int16_t rx_byte_swap(int16_t val)
 {
-	return rx_swap_2bytes(val);
+	return bswap_16(val);
 }
 template<>
 uint16_t rx_byte_swap(uint16_t val)
 {
-	return rx_swap_2bytes(val);
+	return bswap_16(val);
 }
 template<>
 int32_t rx_byte_swap(int32_t val)
 {
-	return rx_swap_4bytes(val);
+	return bswap_32(val);
 }
 template<>
 uint32_t rx_byte_swap(uint32_t val)
 {
-	return rx_swap_4bytes(val);
+	return bswap_32(val);
 }
 template<>
 int64_t rx_byte_swap(int64_t val)
 {
-	return rx_swap_8bytes(val);
+	return bswap_64(val);
 }
 template<>
 uint64_t rx_byte_swap(uint64_t val)
 {
-	return rx_swap_8bytes(val);
+	return bswap_64(val);
 }
 template<>
 float rx_byte_swap(float val)
 {
-	uint32_t temp = alias_cast<uint32_t>(val);
-	temp = rx_swap_4bytes(temp);
-	return alias_cast<float>(temp);
+	return alias_cast<float>(bswap_32(alias_cast<uint32_t>(val)));
 }
 template<>
 double rx_byte_swap(double val)
 {
-    uint64_t temp = alias_cast<uint64_t>(val);
-	temp = rx_swap_8bytes(temp);
-	return alias_cast<double>(temp);;
+	return alias_cast<double>(bswap_64(alias_cast<uint64_t>(val)));
 }
-
 
 // Class rx::memory::std_vector_allocator 
 
@@ -119,12 +109,13 @@ std_vector_allocator::~std_vector_allocator()
 
 
 
-void std_vector_allocator::allocate (size_t size)
+bool std_vector_allocator::allocate (size_t size)
 {
 	if (size == 0)
 		size = 0x100;
 	buffer_.resize(size);
 	g_memory_consuption += (ref_counting_type)size;
+	return true;
 }
 
 void std_vector_allocator::deallocate ()
@@ -138,7 +129,7 @@ void std_vector_allocator::deallocate ()
 	}
 }
 
-void std_vector_allocator::reallocate (size_t new_size)
+bool std_vector_allocator::reallocate (size_t new_size)
 {
 	size_t buff_len = buffer_.size();
 	if (new_size > buff_len)
@@ -149,6 +140,7 @@ void std_vector_allocator::reallocate (size_t new_size)
 		buffer_.resize(buff_len);
 		g_memory_consuption += (ref_counting_type)(buff_len - old_len);
 	}
+	return true;
 }
 
 size_t std_vector_allocator::get_buffer_size () const
@@ -178,23 +170,31 @@ backward_simple_allocator::~backward_simple_allocator()
 
 
 
-void backward_simple_allocator::allocate (size_t size)
+bool backward_simple_allocator::allocate (size_t size)
 {
+	return false;
 }
 
 void backward_simple_allocator::deallocate ()
 {
 }
 
-void backward_simple_allocator::reallocate (size_t new_size)
+bool backward_simple_allocator::reallocate (size_t new_size)
 {
 	uint8_t* old_ptr = buffer_;
 	size_t old_size = size_;
 	size_ = new_size;
 	buffer_ = new uint8_t[size_];
+	if (!buffer_)
+	{
+		if (old_ptr)
+			delete[] old_ptr;
+		return false;
+	}
 	memmove(&buffer_[size_ - old_size - 1], old_ptr, old_size);
 	if (old_ptr)
 		delete[] old_ptr;
+	return true;
 }
 
 size_t backward_simple_allocator::get_buffer_size () const
@@ -234,13 +234,14 @@ page_aligned_buffer::~page_aligned_buffer()
 
 
 
-void page_aligned_buffer::alloc_buffer (size_t size)
+bool page_aligned_buffer::alloc_buffer (size_t size)
 {
 	if (buffer_)
 		free_buffer();
 	size_ = size;
 	if(size_)
 		buffer_ = static_cast<uint8_t*>(rx_allocate_os_memory(size));
+	return buffer_ != nullptr;
 }
 
 void page_aligned_buffer::free_buffer ()
@@ -272,3 +273,12 @@ size_t page_aligned_buffer::get_size () const
 } // namespace memory
 } // namespace rx
 
+namespace rx
+{
+namespace memory
+{
+template class std_strbuff<memory::std_vector_allocator>;
+template class memory_buffer_base< rx::memory::std_vector_allocator>;
+template class backward_memory_buffer_base< rx::memory::backward_simple_allocator>;
+}
+}

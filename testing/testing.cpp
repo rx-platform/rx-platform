@@ -2,14 +2,14 @@
 
 #include "pch.h"
 #include "testing.h"
-#include "lib/rx_thread.h"
-#include "lib/rx_job.h"
+#include "system/threads/rx_thread.h"
+#include "system/threads/rx_job.h"
 #include "interfaces/rx_io.h"
 #include "lib/rx_std.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/callbacks/rx_callback.h"
 #include "sys_internal/rx_inf.h"
-#include "lib/rx_log.h"
+#include "system/server/rx_log.h"
 #include "system/server/rx_server.h"
 #include "lib/rx_ptr.h"
 #include "interfaces/rx_stream_io.h"
@@ -24,7 +24,7 @@ namespace testing
 
 namespace obsolite
 {
-	class my_periodic_job : public rx::jobs::periodic_job
+	class my_periodic_job : public rx_platform::jobs::periodic_job
 	{
 		DECLARE_REFERENCE_PTR(my_periodic_job);
 	public:
@@ -39,8 +39,8 @@ namespace obsolite
 
 	void test_timers()
 	{
-		rx::threads::dispatcher_pool pool(2, "ime",55);
-		rx::threads::timer tm("tm",70);
+		rx_platform::threads::dispatcher_pool pool(2, "ime",55);
+		rx_platform::threads::timer tm("tm",70);
 
 		pool.run();
 		tm.start();
@@ -128,11 +128,11 @@ int test_smart_ptr()
 	return 0;
 }
 
-class my_thread : public rx::threads::thread
+class my_thread : public rx_platform::threads::thread
 {
 public:
 	my_thread()
-		: rx::threads::thread("Test",66)
+		: rx_platform::threads::thread("Test",66)
 	{
 
 	}
@@ -147,7 +147,7 @@ protected:
 	}
 };
 
-class my_job : public rx::jobs::job
+class my_job : public rx_platform::jobs::job
 {
 	DECLARE_REFERENCE_PTR(my_job);
 public:
@@ -226,7 +226,7 @@ void test_thread()
 
 	//my_listener lisent;
 	my_thread thread;
-	rx::threads::dispatcher_pool jthread(2,"test pool",78);
+	rx_platform::threads::dispatcher_pool jthread(2,"test pool",78);
 	//rx::thr_fx::physical_job_thread jthread;
 	jthread.run();
 	thread.start();
@@ -237,7 +237,7 @@ void test_thread()
 
 	std::function<void(int)> fptr(testing);
 
-	//rx::jobs::function_job<::smart_ptr job(testing,55);
+	//rx_platform::jobs::function_job<::smart_ptr job(testing,55);
 
 	//jthread.append(job);
 	//jthread.append(job);

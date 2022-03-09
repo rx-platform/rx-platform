@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -35,12 +35,12 @@
 
 // dummy
 #include "dummy.h"
-// rx_console
-#include "terminal/rx_console.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_console
+#include "terminal/rx_console.h"
 
 
 

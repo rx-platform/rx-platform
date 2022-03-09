@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -89,6 +89,13 @@ object_runtime::object_runtime()
 {
 }
 
+object_runtime::object_runtime (lock_reference_struct* extern_data)
+      : context_(nullptr),
+        executer_(-1)
+	, reference_object(extern_data)
+{
+}
+
 
 object_runtime::~object_runtime()
 {
@@ -135,6 +142,13 @@ rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 application_runtime::application_runtime()
       : context_(nullptr),
         executer_(-1)
+{
+}
+
+application_runtime::application_runtime (lock_reference_struct* extern_data)
+      : context_(nullptr),
+        executer_(-1)
+	, reference_object(extern_data)
 {
 }
 
@@ -186,6 +200,13 @@ domain_runtime::domain_runtime()
 {
 }
 
+domain_runtime::domain_runtime (lock_reference_struct* extern_data)
+      : context_(nullptr),
+        executer_(-1)
+	, reference_object(extern_data)
+{
+}
+
 
 domain_runtime::~domain_runtime()
 {
@@ -232,6 +253,13 @@ rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 port_runtime::port_runtime()
       : context_(nullptr),
         executer_(-1)
+{
+}
+
+port_runtime::port_runtime (lock_reference_struct* extern_data)
+      : context_(nullptr),
+        executer_(-1)
+	, reference_object(extern_data)
 {
 }
 
@@ -357,12 +385,12 @@ rx_result_with<security::security_context_ptr> port_runtime::create_security_con
 	return runtime_->get_instance_data().create_security_context(runtime_->meta_info());
 }
 
-rx_result_with<io_types::rx_io_buffer> port_runtime::alloc_io_buffer ()
+rx_result_with<io::rx_io_buffer> port_runtime::alloc_io_buffer ()
 {
 	return rx_internal::interfaces::port_stack::port_buffers::alloc_io_buffer(runtime_);
 }
 
-void port_runtime::release_io_buffer (io_types::rx_io_buffer buff)
+void port_runtime::release_io_buffer (io::rx_io_buffer buff)
 {
 	return rx_internal::interfaces::port_stack::port_buffers::release_io_buffer(runtime_, std::move(buff));
 }

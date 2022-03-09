@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -346,6 +346,46 @@ class subscription_write_done : public rx_message_base
       rx_uuid subscription_id;
 
       runtime_transaction_id_t transaction_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class subscription_execute_done : public rx_message_base  
+{
+    typedef std::pair<uint32_t, string_type> result_type;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      runtime_transaction_id_t transaction_id;
+
+      result_type result;
+
+      data::runtime_values_data data;
 
 
   protected:

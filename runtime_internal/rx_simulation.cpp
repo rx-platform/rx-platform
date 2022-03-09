@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -98,7 +98,7 @@ rx_result periodic_source::source_write (write_data&& data, runtime_process_cont
 
 rx_result periodic_source::start_source (runtime::runtime_start_context& ctx)
 {
-    timer_ = create_timer_function([this]()
+    timer_ = ctx.create_timer_function(smart_this(), [this]()
         {
             source_tick(rx_time::now());
         });

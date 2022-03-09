@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -58,9 +58,12 @@ namespace meta_algorithm {
 
 rx_result data_types_algorithm::serialize_type (const data_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	auto result = whose.meta_info.serialize_meta_data(stream, type, data_type::type_id);
-	if(!result)
-		return result;
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		auto result = whose.meta_info.serialize_meta_data(stream, type, data_type::type_id);
+		if (!result)
+			return result;
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 
@@ -79,7 +82,7 @@ rx_result data_types_algorithm::serialize_type (const data_type& whose, base_met
 				if (!stream.write_bool("simple", true))
 					return stream.get_error();
 
-				result = whose.complex_data.values_[one.second & data_type_def::index_mask].serialize_definition(stream);
+				auto result = whose.complex_data.values_[one.second & data_type_def::index_mask].serialize_definition(stream);
 				if (!result)
 					return result;
 
@@ -95,7 +98,7 @@ rx_result data_types_algorithm::serialize_type (const data_type& whose, base_met
 				if (!stream.write_bool("simple", false))
 					return stream.get_error();
 
-				result = data_blocks_algorithm::serialize_data_attribute(
+				auto result = data_blocks_algorithm::serialize_data_attribute(
 					whose.complex_data.children_[one.second & data_type_def::index_mask], stream);
 
 				if (!result)
@@ -127,8 +130,6 @@ rx_result data_types_algorithm::serialize_type (const data_type& whose, base_met
 
 rx_result data_types_algorithm::deserialize_type (data_type& whose, base_meta_reader& stream, uint8_t type)
 {
-	if (!whose.meta_info.deserialize_meta_data(stream, type, data_type::type_id))
-		return stream.get_error();
 	if (!stream.start_object("def"))
 		return stream.get_error();
 
@@ -257,8 +258,11 @@ rx_result data_types_algorithm::construct_runtime (const data_type& whose, data_
 template <class typeT>
 rx_result basic_types_algorithm<typeT>::serialize_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info.serialize_meta_data(stream, type, typeT::type_id))
-		return stream.get_error();
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		if (!whose.meta_info.serialize_meta_data(stream, type, typeT::type_id))
+			return stream.get_error();
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
@@ -310,8 +314,11 @@ rx_result basic_types_algorithm<typeT>::get_depends (const typeT& whose, depende
 template <>
 rx_result basic_types_algorithm<variable_type>::serialize_type(const variable_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info.serialize_meta_data(stream, type, variable_type::type_id))
-		return stream.get_error();
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		if (!whose.meta_info.serialize_meta_data(stream, type, variable_type::type_id))
+			return stream.get_error();
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
@@ -330,8 +337,11 @@ rx_result basic_types_algorithm<variable_type>::serialize_type(const variable_ty
 template <>
 rx_result basic_types_algorithm<struct_type>::serialize_type(const struct_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info.serialize_meta_data(stream, type, struct_type::type_id))
-		return stream.get_error();
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		if (!whose.meta_info.serialize_meta_data(stream, type, struct_type::type_id))
+			return stream.get_error();
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
@@ -348,8 +358,11 @@ rx_result basic_types_algorithm<struct_type>::serialize_type(const struct_type& 
 template <>
 rx_result basic_types_algorithm<source_type>::serialize_type(const source_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info.serialize_meta_data(stream, type, source_type::type_id))
-		return stream.get_error();
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		if (!whose.meta_info.serialize_meta_data(stream, type, source_type::type_id))
+			return stream.get_error();
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
@@ -366,8 +379,11 @@ rx_result basic_types_algorithm<source_type>::serialize_type(const source_type& 
 template <>
 rx_result basic_types_algorithm<mapper_type>::serialize_type(const mapper_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info.serialize_meta_data(stream, type, mapper_type::type_id))
-		return stream.get_error();
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		if (!whose.meta_info.serialize_meta_data(stream, type, mapper_type::type_id))
+			return stream.get_error();
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
@@ -385,8 +401,11 @@ rx_result basic_types_algorithm<mapper_type>::serialize_type(const mapper_type& 
 template <>
 rx_result basic_types_algorithm<event_type>::serialize_type(const event_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info.serialize_meta_data(stream, type, event_type::type_id))
-		return stream.get_error();
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		if (!whose.meta_info.serialize_meta_data(stream, type, event_type::type_id))
+			return stream.get_error();
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
@@ -407,8 +426,11 @@ rx_result basic_types_algorithm<event_type>::serialize_type(const event_type& wh
 template <>
 rx_result basic_types_algorithm<method_type>::serialize_type(const method_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info.serialize_meta_data(stream, type, method_type::type_id))
-		return stream.get_error();
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		if (!whose.meta_info.serialize_meta_data(stream, type, method_type::type_id))
+			return stream.get_error();
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
@@ -644,6 +666,9 @@ rx_result basic_types_algorithm<source_type>::construct(const source_type& whose
 	if (ret)
 	{
 		ret = filtered_data_algorithm::construct_complex_attribute(whose.filter_data, whose.complex_data.get_names_cache(), ctx);
+		if (ret)
+		{
+		}
 	}
 	return ret;
 }
@@ -819,8 +844,11 @@ template class basic_types_algorithm<basic_types::display_type>;
 template <class typeT>
 rx_result object_types_algorithm<typeT>::serialize_type (const typeT& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info.serialize_meta_data(stream, type, typeT::type_id))
-		return stream.get_error();
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		if (!whose.meta_info.serialize_meta_data(stream, type, typeT::type_id))
+			return stream.get_error();
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
@@ -907,8 +935,11 @@ template class object_types_algorithm<object_types::domain_type>;
 
 rx_result relation_type_algorithm::serialize_type (const relation_type& whose, base_meta_writer& stream, uint8_t type)
 {
-	if (!whose.meta_info.serialize_meta_data(stream, type, relation_type::type_id))
-		return stream.get_error();
+	if (type != STREAMING_TYPE_MESSAGE)
+	{
+		if (!whose.meta_info.serialize_meta_data(stream, type, relation_type::type_id))
+			return stream.get_error();
+	}
 	if (!stream.start_object("def"))
 		return stream.get_error();
 
@@ -1101,7 +1132,6 @@ rx_result object_data_algorithm<typeT>::deserialize_object_data (object_types::o
 		if (!stream.end_object())
 			return stream.get_error();
 	}
-
 	if (!stream.start_array("programs"))
 		return stream.get_error();
 	while (!stream.array_end())

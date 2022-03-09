@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -46,6 +46,7 @@
 #include "version/rx_code_macros.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/runtime/rx_value_templates.h"
+#include "system/libraries/rx_plugin.h"
 
 
 #define RX_LICENSE_MESSAGE "\
@@ -53,7 +54,7 @@
 Copyright (c) 2022 ENSACO Solutions doo\r\n\r\n\
 This program comes with ABSOLUTELY NO WARRANTY.\r\n\
 This is free software, and you are welcome to redistribute it\r\n\
-under certain conditions; type `license' for details.\r\n\
+under certain conditions; type <license> for details.\r\n\
 \r\n"
 
 

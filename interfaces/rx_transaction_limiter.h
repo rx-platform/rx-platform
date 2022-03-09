@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -41,7 +41,7 @@
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
 // rx_io_buffers
-#include "system/runtime/rx_io_buffers.h"
+#include "lib/rx_io_buffers.h"
 // rx_io_addr
 #include "lib/rx_io_addr.h"
 
@@ -89,7 +89,7 @@ class limiter_transaction_data
       bool is_write () const;
 
 
-      rx_platform::runtime::io_types::rx_io_buffer buffer;
+      rx::io::rx_io_buffer buffer;
 
       rx::io::any_address to;
 

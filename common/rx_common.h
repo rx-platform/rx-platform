@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -59,9 +59,26 @@ typedef struct rx_platform_init_data_t
 
 
 
+typedef uint32_t runtime_handle_t;
+typedef uint32_t runtime_transaction_id_t;
+
+typedef intptr_t rx_security_handle_t;
+
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data);
 RX_COMMON_API void rx_deinit_common_library();
+
+
+RX_COMMON_API uint32_t rx_border_rand(uint32_t min, uint32_t max);
+
+RX_COMMON_API size_t rx_os_page_size();
+RX_COMMON_API void* rx_allocate_os_memory(size_t size);
+RX_COMMON_API void rx_deallocate_os_memory(void* p, size_t size);
+
+RX_COMMON_API rx_module_handle_t rx_load_library(const char* path);
+RX_COMMON_API rx_func_addr_t rx_get_func_address(rx_module_handle_t module_handle, const char* name);
+RX_COMMON_API void rx_unload_library(rx_module_handle_t module_handle);
+
 
 
 // match pattern function
@@ -154,6 +171,58 @@ RX_COMMON_API int rx_os_collect_time(const struct rx_full_time_t* full, struct r
 RX_COMMON_API rx_timer_ticks_t rx_get_tick_count();
 RX_COMMON_API rx_timer_ticks_t rx_get_us_ticks();
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	// slim lock abstraction
+	// 1. light weight
+	// 2. reentrant
+	// 3. small object so no malloc/free stuff ( header should define size of object )
+typedef struct slim_lock_def
+{
+	char data[SLIM_LOCK_SIZE];
+} slim_lock_t, * pslim_lock_t;
+
+
+typedef struct rw_slim_lock_def
+{
+	char data[RW_SLIM_LOCK_SIZE];
+} rw_slim_lock_t, * prw_slim_lock_t;
+
+
+RX_COMMON_API void rx_slim_lock_create(pslim_lock_t plock);
+RX_COMMON_API void rx_slim_lock_destroy(pslim_lock_t plock);
+RX_COMMON_API void rx_slim_lock_aquire(pslim_lock_t plock);
+RX_COMMON_API void rx_slim_lock_release(pslim_lock_t plock);
+
+RX_COMMON_API void rx_rw_slim_lock_create(prw_slim_lock_t plock);
+RX_COMMON_API void rx_rw_slim_lock_destroy(prw_slim_lock_t plock);
+RX_COMMON_API void rx_rw_slim_lock_aquire_reader(prw_slim_lock_t plock);
+RX_COMMON_API void rx_rw_slim_lock_release_reader(prw_slim_lock_t plock);
+RX_COMMON_API void rx_rw_slim_lock_aquire_writter(prw_slim_lock_t plock);
+RX_COMMON_API void rx_rw_slim_lock_release_writter(prw_slim_lock_t plock);
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// handles abstractions ( wait and the rest of the stuff
+#define RX_INFINITE 0xffffffff
+#define RX_WAIT_0 0
+#define RX_WAIT_TIMEOUT 0x102
+#define RX_WAIT_ERROR 0xffffffff
+
+RX_COMMON_API uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout);
+RX_COMMON_API uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout);
+RX_COMMON_API uint32_t rx_handle_wait_for_multiple(sys_handle_t* what, size_t count, uint32_t timeout);
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// event abstractions ( wait and the rest of the stuff
+RX_COMMON_API sys_handle_t rx_event_create(int initialy_set);
+RX_COMMON_API int rx_event_destroy(sys_handle_t hndl);
+RX_COMMON_API int rx_event_set(sys_handle_t hndl);
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // values stuff
 
@@ -282,6 +351,28 @@ RX_COMMON_API rx_timer_ticks_t rx_get_us_ticks();
 
 
 typedef uint_fast8_t rx_value_t;
+typedef int32_t rx_count_ref_t;
+
+struct lock_reference_struct_t;
+typedef void(*reference_destroy_func_t)(void* ref);
+
+typedef struct lock_reference_def_struct_t
+{
+	reference_destroy_func_t destroy_reference;
+
+} lock_reference_def_struct;
+
+typedef struct lock_reference_struct_t
+{
+	void* target;
+	rx_count_ref_t ref_count;
+	lock_reference_def_struct* def;
+
+} lock_reference_struct;
+
+RX_COMMON_API void rx_init_lock_reference(lock_reference_struct* data, void* target, lock_reference_def_struct* def);
+RX_COMMON_API void rx_aquire_lock_reference(lock_reference_struct* data);
+RX_COMMON_API void rx_release_lock_reference(lock_reference_struct* data);
 
 
 RX_COMMON_API int rx_parse_value_type_name(const char* strtype, rx_value_t* type);
@@ -292,6 +383,7 @@ typedef struct string_value_struct_t
 	size_t size;
 	char* value;
 } string_value_struct;
+
 
 
 RX_COMMON_API int rx_init_string_value_struct(string_value_struct* data, const char* val, int count);
@@ -310,6 +402,7 @@ RX_COMMON_API int rx_init_bytes_value_struct(bytes_value_struct* data, const uin
 RX_COMMON_API const uint8_t* rx_c_ptr(const bytes_value_struct* data, size_t* size);
 RX_COMMON_API int rx_copy_bytes_value(bytes_value_struct* dest, const bytes_value_struct* src);
 RX_COMMON_API void rx_destory_bytes_value_struct(bytes_value_struct* data);
+
 
 union rx_value_union;
 
@@ -495,6 +588,18 @@ RX_COMMON_API int rx_get_unassigned_value(const struct typed_value_type* val, si
 RX_COMMON_API int rx_get_bool_value(const struct typed_value_type* val, size_t idx, int* value);
 RX_COMMON_API int rx_get_string_value(const struct typed_value_type* val, size_t idx, string_value_struct* value);
 
+
+typedef struct values_array_struct_t
+{
+	size_t size;
+	struct typed_value_type* values;
+
+} values_array_struct;
+
+
+RX_COMMON_API int rx_init_values_array_struct(values_array_struct* data, const struct typed_value_type* values, size_t len);
+RX_COMMON_API void rx_destory_values_array_struct(values_array_struct* data);
+
 union rx_reference_data
 {
 	string_value_struct path;
@@ -524,8 +629,83 @@ RX_COMMON_API int rx_reference_from_string(rx_reference_struct* data, const char
 
 RX_COMMON_API void rx_deinit_reference(rx_reference_struct* ref);
 
+typedef struct rx_result_data_t
+{
+	uint32_t code;
+	string_value_struct text;
+} rx_result_data;
+
+
+#define RESULT_STATIC_SIZE 0x4
+#define UNDEFINED_RESULT_TEXT "Undefined error"
+
+typedef union rx_result_union_t
+{
+	rx_result_data* ptr_data;
+	rx_result_data static_data[RESULT_STATIC_SIZE];
+
+} rx_result_union;
+
+typedef struct rx_result_struct_t
+{
+	size_t count;
+	rx_result_union data;
+
+} rx_result_struct;
+
+RX_COMMON_API void rx_init_result_struct(rx_result_struct* res);
+RX_COMMON_API int rx_init_result_struct_with_error(rx_result_struct* res, uint32_t code, const char* text, int count);
+RX_COMMON_API int rx_init_result_struct_with_errors(rx_result_struct* res, uint32_t* codes, const char** texts, size_t errors_count);
+RX_COMMON_API int rx_result_add_error(rx_result_struct* res, uint32_t code, const char* tex, int countt);
+
+RX_COMMON_API void rx_move_result_struct(rx_result_struct* res, rx_result_struct* src);
+RX_COMMON_API int rx_copy_result_struct(rx_result_struct* res, const rx_result_struct* src);
+
+RX_COMMON_API int rx_result_ok(const rx_result_struct* res);
+RX_COMMON_API size_t rx_result_errors_count(const rx_result_struct* res);
+RX_COMMON_API const char* rx_result_get_error(const rx_result_struct* res, size_t idx, uint32_t* code);
+
+RX_COMMON_API void rx_destroy_result_struct(rx_result_struct* res);
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// cryptography
+
+
+// KP_MODE
+#define RX_CRYPT_MODE_CBC          1       // Cipher block chaining
+#define RX_CRYPT_MODE_ECB          2       // Electronic code book
+#define RX_CRYPT_MODE_OFB          3       // Output feedback mode
+#define RX_CRYPT_MODE_CFB          4       // Cipher feedback mode
+#define RX_CRYPT_MODE_CTS          5       // Cipher-text stealing mode
+
+	// these are ones implement so far
+#define RX_SYMETRIC_AES128 1
+#define RX_SYMETRIC_AES192 2
+#define RX_SYMETRIC_AES256 3
+
+#define RX_HASH_SHA256 4
+#define RX_HASH_SHA1 5
+
+RX_COMMON_API crypt_key_t rx_crypt_create_symetric_key(const void* data, size_t size, int alg, int mode);
+RX_COMMON_API int rx_crypt_set_IV(crypt_key_t key, const void* data);
+RX_COMMON_API void rx_crypt_destroy_key(crypt_key_t key);
+RX_COMMON_API int rx_crypt_decrypt(crypt_key_t key, const void* chiper, void* plain, size_t* size);
+
+RX_COMMON_API int rx_crypt_gen_random(void* buffer, size_t size);
+
+RX_COMMON_API crypt_hash_t rx_crypt_create_hash(crypt_key_t key, int alg);
+RX_COMMON_API void rx_crypt_destroy_hash(crypt_hash_t hash);
+RX_COMMON_API int rx_crypt_hash_data(crypt_hash_t hhash, const void* buffer, size_t size);
+RX_COMMON_API int rx_crypt_get_hash(crypt_hash_t hhash, void* buffer, size_t* size);
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+	// error handling here
+
+RX_COMMON_API rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size);
+
 /*
-RX_COMMON_API int rx_is_path_reference(const rx_reference_struct* ref); 
+RX_COMMON_API int rx_is_path_reference(const rx_reference_struct* ref);
 RX_COMMON_API int rx_is_id_reference(const rx_reference_struct* ref);
 
 RX_COMMON_API int rx_get_path_reference(const rx_reference_struct* ref, const char** path);

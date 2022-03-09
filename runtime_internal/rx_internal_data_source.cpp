@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -171,10 +171,15 @@ void internal_data_subscription::write_item (const value_handle_extended& handle
 		else
 		{
 			RX_ASSERT(results.size() == 1);
-			if(!results.empty())
-				controler_->result_received(handle.make_handle(), std::move(results[0]), id);
+			if (!results.empty())
+			{
+				if(!results[0])
+					controler_->result_received(handle.make_handle(), std::move(results[0]), id);
+			}
 			else
+			{
 				controler_->result_received(handle.make_handle(), "Unexpected error", id);
+			}
 		}
 	}
 }

@@ -8,7 +8,7 @@
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
-*  This file is part of {rx-platform}
+*  This file is part of {rx-platform} 
 *
 *  
 *  {rx-platform} is free software: you can redistribute it and/or modify
@@ -36,6 +36,7 @@
 
 #define DECLARE_CODE_INFO(subsytem,major, minor, build,comment) \
 public:\
+	static rx_time compile_time() { static rx_time ret; if(!ret.is_valid_time())create_module_compile_time(__DATE__, __TIME__, &ret); return ret;}\
 	static constexpr  std::array<int, 3> code_version() { return {major, minor, build}; }\
 	string_type get_class_name () const\
 	{\
