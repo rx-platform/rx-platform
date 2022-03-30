@@ -60,16 +60,16 @@ namespace structure {
 
 
 template class runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x3f>;
 
 template class runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
@@ -101,27 +101,87 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 		case rt_const_index_type:
 			// const value
 			if (type != runtime_value_type::persistent_runtime_value)
-				data.add_value(one.name, const_values[(one.index >> rt_type_shift)].value);
+			{
+				if (!const_values[(one.index >> rt_type_shift)].is_array())
+				{
+					data.add_value(one.name, const_values[(one.index >> rt_type_shift)].get_item()->value);
+				}
+				else
+				{
+					std::vector<rx_simple_value> temp_vals;
+					temp_vals.reserve(const_values[(one.index >> rt_type_shift)].get_size());
+					for (int i = 0; i < const_values[(one.index >> rt_type_shift)].get_size(); i++)
+					{
+						temp_vals.push_back(const_values[(one.index >> rt_type_shift)].get_item(i)->value);
+					}
+					data.add_value(one.name, std::move(temp_vals));
+				}
+			}
 			break;
 		case rt_value_index_type:
 			// simple value
-			if (type != runtime_value_type::persistent_runtime_value
-				|| values[(one.index >> rt_type_shift)].value_opt[runtime::structure::value_opt_persistent])
-				data.add_value(one.name, values[(one.index >> rt_type_shift)].value.to_simple());
+			if (!values[(one.index >> rt_type_shift)].is_array())
+			{
+				if (type != runtime_value_type::persistent_runtime_value
+					|| values[(one.index >> rt_type_shift)].get_item()->value_opt[runtime::structure::value_opt_persistent])
+					data.add_value(one.name, values[(one.index >> rt_type_shift)].get_item()->value.to_simple());
+			}
+			else
+			{
+				std::vector<rx_simple_value> temp_vals;
+				temp_vals.reserve(values[(one.index >> rt_type_shift)].get_size());
+				for (int i = 0; i < values[(one.index >> rt_type_shift)].get_size(); i++)
+				{
+					if (type != runtime_value_type::persistent_runtime_value
+						|| values[(one.index >> rt_type_shift)].get_item(i)->value_opt[runtime::structure::value_opt_persistent])
+						temp_vals.push_back(values[(one.index >> rt_type_shift)].get_item(i)->value.to_simple());
+				}
+				data.add_value(one.name, std::move(temp_vals));
+			}
 			break;
 		case rt_variable_index_type:
 			if constexpr (has_variables())
 			{
-				if (type == runtime_value_type::simple_runtime_value)
+				if (!variables.collection[(one.index >> rt_type_shift)].is_array())
 				{
-					data.add_value(one.name, variables.collection[(one.index >> rt_type_shift)].value.to_simple());
+					if (type == runtime_value_type::simple_runtime_value)
+					{
+						data.add_value(one.name, variables.collection[(one.index >> rt_type_shift)].get_item()->value.to_simple());
+					}
+					else
+					{
+						data::runtime_values_data child_data;
+						variables.collection[(one.index >> rt_type_shift)].get_item()->collect_data(child_data, type);
+						if (!child_data.empty())
+							data.add_child(one.name, std::move(child_data));
+					}
 				}
 				else
 				{
-					data::runtime_values_data child_data;
-					variables.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
-					if(!child_data.empty())
-						data.add_child(one.name, std::move(child_data));
+					if (type == runtime_value_type::simple_runtime_value)
+					{
+						std::vector<rx_simple_value> temp_vals;
+						temp_vals.reserve(variables.collection[(one.index >> rt_type_shift)].get_size());
+						for (int i = 0; i < variables.collection[(one.index >> rt_type_shift)].get_size(); i++)
+						{
+							temp_vals.push_back(variables.collection[(one.index >> rt_type_shift)].get_item(i)->value.to_simple());
+						}
+						data.add_value(one.name, std::move(temp_vals));
+					}
+					else
+					{
+						std::vector<data::runtime_values_data> childs;
+						childs.reserve(variables.collection[(one.index >> rt_type_shift)].get_size());
+						for (int i = 0; i < variables.collection[(one.index >> rt_type_shift)].get_size(); i++)
+						{
+							data::runtime_values_data child_data;
+							variables.collection[(one.index >> rt_type_shift)].get_item(i)->collect_data(child_data, type);
+							if (!child_data.empty())
+								childs.push_back(std::move(child_data));
+						}
+						if(!childs.empty())
+							data.add_array_child(one.name, std::move(childs));
+					}
 				}
 			}
 			break;
@@ -129,10 +189,28 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 			{
 				if constexpr (has_structs())
 				{
-					data::runtime_values_data child_data;
-					structs.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
-					if (!child_data.empty())
-						data.add_child(one.name, std::move(child_data));
+					if (!structs.collection[(one.index >> rt_type_shift)].is_array())
+					{
+						data::runtime_values_data child_data;
+						structs.collection[(one.index >> rt_type_shift)].get_item()->collect_data(child_data, type);
+						if (!child_data.empty())
+							data.add_child(one.name, std::move(child_data));
+					}
+					else
+					{
+						std::vector<data::runtime_values_data> childs;
+						childs.reserve(structs.collection[(one.index >> rt_type_shift)].get_size());
+						for (int i = 0; i < structs.collection[(one.index >> rt_type_shift)].get_size(); i++)
+						{
+							data::runtime_values_data child_data;
+							structs.collection[(one.index >> rt_type_shift)].get_item(i)->collect_data(child_data, type);
+							if (!child_data.empty())
+								childs.push_back(std::move(child_data));
+						}
+						if (!childs.empty())
+							data.add_array_child(one.name, std::move(childs));
+					}
+
 				}
 			}
 			break;
@@ -207,80 +285,183 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 		{
 		case rt_const_index_type:
 			{// const value
-				auto it = data.values.find(one.name);
-				if (it != data.values.end())
+				if (!const_values[(one.index >> rt_type_shift)].is_array())
 				{
-					const_values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value));
+					auto val = data.get_value(one.name);
+					if (!val.is_null())
+					{
+						const_values[one.index >> rt_type_shift].get_item()->set_value(std::move(val));
+					}
+				}
+				else
+				{
+					std::vector<rx_simple_value> vals;
+					if (data.get_array_value(one.name, vals))
+					{
+						size_t dim = std::min<size_t>(vals.size(), const_values[(one.index >> rt_type_shift)].get_size());
+						for (size_t i = 0; i < dim; i++)
+						{
+							const_values[one.index >> rt_type_shift].get_item((int)i)->set_value(std::move(vals[i]));
+						}
+					}
 				}
 			}
 			break;
 		case rt_value_index_type:
 			{// value
-				auto it = data.values.find(one.name);
-				if (it != data.values.end())
+				if (!values[(one.index >> rt_type_shift)].is_array())
 				{
-					values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value), rx_time::now());
+					auto val = data.get_value(one.name);
+					if (!val.is_null())
+					{
+						values[one.index >> rt_type_shift].get_item()->set_value(std::move(val), rx_time::now());
+					}
+				}
+				else
+				{
+					std::vector<rx_simple_value> vals;
+					if (data.get_array_value(one.name, vals))
+					{
+						rx_time now = rx_time::now();
+						size_t dim = std::min<size_t>(vals.size(), values[(one.index >> rt_type_shift)].get_size());
+						for (size_t i = 0; i < dim; i++)
+						{
+							values[one.index >> rt_type_shift].get_item((int)i)->set_value(std::move(vals[i]), now);
+						}
+					}
 				}
 			}
 			break;
 		case rt_variable_index_type:
 			{// variable
 				// check for simple value first
-				auto it_vals = data.values.find(one.name);
-				if (it_vals != data.values.end())
+				if constexpr (has_variables())
 				{
-					variables.collection[one.index >> rt_type_shift].set_value(rx_simple_value(it_vals->second.value));
-				}
-				// now check for complex values
-				auto it = data.children.find(one.name);
-				if (it != data.children.end())
-				{
-					variables.collection[one.index >> rt_type_shift].fill_data(it->second);
+					if (!variables.collection[(one.index >> rt_type_shift)].is_array())
+					{
+						auto val = data.get_value(one.name);
+						if (!val.is_null())
+						{
+							variables.collection[one.index >> rt_type_shift].get_item()->set_value(std::move(val));
+						}
+						auto it = data.children.find(one.name);
+						if (it != data.children.end())
+						{
+							if (std::holds_alternative<data::runtime_values_data>(it->second))
+							{
+								variables.collection[one.index >> rt_type_shift].get_item()->fill_data(
+									std::get< data::runtime_values_data>(it->second));
+							}
+						}
+					}
+					else
+					{
+						std::vector<rx_simple_value> vals;
+						if (data.get_array_value(one.name, vals))
+						{
+							size_t dim = std::min<size_t>(vals.size(), variables.collection[(one.index >> rt_type_shift)].get_size());
+							for (size_t i = 0; i < dim; i++)
+							{
+								variables.collection[one.index >> rt_type_shift].get_item((int)i)->set_value(std::move(vals[i]));
+							}
+						}
+						auto it = data.children.find(one.name);
+						if (it != data.children.end())
+						{
+							if (std::holds_alternative<std::vector<data::runtime_values_data> >(it->second))
+							{
+								auto& childs = std::get<std::vector<data::runtime_values_data>>(it->second);
+								size_t dim = std::min<size_t>(childs.size(), variables.collection[(one.index >> rt_type_shift)].get_size());
+								for (size_t i = 0; i < dim; i++)
+								{
+									variables.collection[one.index >> rt_type_shift].get_item((int)i)->fill_data(childs[i]);
+								}
+							}
+						}
+					}
 				}
 			}
 			break;
 		case rt_struct_index_type:
 			{// struct
-				auto it = data.children.find(one.name);
-				if (it != data.children.end())
+				if constexpr (has_structs())
 				{
-					structs.collection[one.index >> rt_type_shift].fill_data(it->second);
+					if (!structs.collection[(one.index >> rt_type_shift)].is_array())
+					{
+						auto it = data.children.find(one.name);
+						if (it != data.children.end())
+						{
+							if (std::holds_alternative<data::runtime_values_data>(it->second))
+							{
+								structs.collection[one.index >> rt_type_shift].get_item()->fill_data(
+									std::get< data::runtime_values_data>(it->second));
+							}
+						}
+					}
+					else
+					{
+						auto it = data.children.find(one.name);
+						if (it != data.children.end())
+						{
+							if (std::holds_alternative<std::vector<data::runtime_values_data> >(it->second))
+							{
+								auto& childs = std::get<std::vector<data::runtime_values_data>>(it->second);
+								size_t dim = std::min<size_t>(childs.size(), structs.collection[(one.index >> rt_type_shift)].get_size());
+								for (size_t i = 0; i < dim; i++)
+								{
+									structs.collection[one.index >> rt_type_shift].get_item((int)i)->fill_data(childs[i]);
+								}
+							}
+						}
+					}
 				}
 			}
 			break;
 		case rt_source_index_type:
 			{// source
-				auto it = data.children.find(one.name);
-				if (it != data.children.end())
+				if constexpr (has_sources())
 				{
-					sources.collection[one.index >> rt_type_shift].fill_data(it->second);
+					auto it = data.children.find(one.name);
+					if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
+					{
+						sources.collection[one.index >> rt_type_shift].fill_data(std::get<data::runtime_values_data>(it->second));
+					}
 				}
 			}
 			break;
 		case rt_mapper_index_type:
-			{// source
-				auto it = data.children.find(one.name);
-				if (it != data.children.end())
+			{// mapper
+				if constexpr (has_mappers())
 				{
-					mappers.collection[one.index >> rt_type_shift].fill_data(it->second);
+					auto it = data.children.find(one.name);
+					if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
+					{
+						mappers.collection[one.index >> rt_type_shift].fill_data(std::get<data::runtime_values_data>(it->second));
+					}
 				}
 			}
 			break;
 		case rt_filter_index_type:
-			{// source
-				auto it = data.children.find(one.name);
-				if (it != data.children.end())
+			{// filter
+				if constexpr (has_filters())
 				{
-					filters.collection[one.index >> rt_type_shift].fill_data(it->second);
+					auto it = data.children.find(one.name);
+					if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
+					{
+						filters.collection[one.index >> rt_type_shift].fill_data(std::get<data::runtime_values_data>(it->second));
+					}
 				}
 			}
 			break;
 		case rt_event_index_type:
-			{// source
-				auto it = data.children.find(one.name);
-				if (it != data.children.end())
+			{// event
+				if constexpr (has_events())
 				{
-					events.collection[one.index >> rt_type_shift].fill_data(it->second);
+					auto it = data.children.find(one.name);
+					if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
+					{
+						events.collection[one.index >> rt_type_shift].fill_data(std::get<data::runtime_values_data>(it->second));
+					}
 				}
 			}
 			break;
@@ -329,43 +510,191 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		{
 			mine = path.substr(0, idx);
 			bellow = path.substr(idx + 1);
-			auto idx = internal_get_index(mine);
+			int array_idx = -1;
+			auto idx = internal_get_index(mine, array_idx);
 			if (idx && is_complex_index(idx))
 			{
-				switch (idx & rt_type_mask)
+				if (array_idx < 0)
 				{
-				case rt_variable_index_type:
-					return variables.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
-				case rt_struct_index_type:
-					return structs.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
-				case rt_source_index_type:
-					return sources.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
-				case rt_mapper_index_type:
-					return mappers.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
-				case rt_filter_index_type:
-					return filters.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
-				case rt_event_index_type:
-					return events.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
-				default:
-					RX_ASSERT(false);
+					switch (idx & rt_type_mask)
+					{
+					case rt_variable_index_type:
+						if (variables.collection[(idx >> rt_type_shift)].is_array())
+							return "Expected array index!";
+						else
+							return variables.collection[idx >> rt_type_shift].get_item()->get_value(bellow, val, ctx);
+					case rt_struct_index_type:
+						if (structs.collection[(idx >> rt_type_shift)].is_array())
+							return "Expected array index!";
+						else
+							return structs.collection[idx >> rt_type_shift].get_item()->get_value(bellow, val, ctx);
+					case rt_source_index_type:
+						return sources.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+					case rt_mapper_index_type:
+						return mappers.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+					case rt_filter_index_type:
+						return filters.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+					case rt_event_index_type:
+						return events.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+					default:
+						RX_ASSERT(false);
+					}
+				}
+				else
+				{
+					switch (idx & rt_type_mask)
+					{
+					case rt_variable_index_type:
+						if (!variables.collection[(idx >> rt_type_shift)].is_array())
+							return "Not an array!";
+						else if (array_idx < variables.collection[idx >> rt_type_shift].get_size())
+							return variables.collection[idx >> rt_type_shift].get_item(array_idx)->get_value(bellow, val, ctx);
+						else
+							return "Out of bounds!";
+					case rt_struct_index_type:
+						if (!structs.collection[(idx >> rt_type_shift)].is_array())
+							return "Not an array!";
+						else if (array_idx < structs.collection[idx >> rt_type_shift].get_size())
+							return structs.collection[idx >> rt_type_shift].get_item(array_idx)->get_value(bellow, val, ctx);
+						else
+							return "Out of bounds!";
+					case rt_source_index_type:
+					case rt_mapper_index_type:
+					case rt_filter_index_type:
+					case rt_event_index_type:
+						return "Not an array!";
+					default:
+						RX_ASSERT(false);
+					}
 				}
 			}
 		}
 		else// its' ours
 		{
-			auto idx = internal_get_index(path);
+			int array_idx = -1;
+			auto idx = internal_get_index(path, array_idx);
 			if (idx && is_value_index(idx))
 			{
 				switch (idx & rt_type_mask)
 				{
 				case rt_const_index_type:
-					val = const_values[idx >> rt_type_shift].get_value(ctx);
-					return true;
+					if (array_idx < 0)
+					{
+						if (!const_values[(idx >> rt_type_shift)].is_array())
+						{
+							val = const_values[idx >> rt_type_shift].get_item()->get_value(ctx);
+							return true;
+						}
+						else
+						{
+							rx_simple_value temp_val;
+							uint32_t len;
+							auto size = const_values[idx >> rt_type_shift].get_size();
+							RX_ASSERT(size >= 0);
+							if (size >= 0)
+							{
+								len = (uint32_t)size;
+								temp_val.assign_static(len);
+								val = ctx->adapt_value(temp_val);
+								return true;
+							}
+						}
+					}
+					else
+					{
+						if (!const_values[(idx >> rt_type_shift)].is_array())
+						{
+							return "Not an array!";
+						}
+						else if(array_idx< const_values[(idx >> rt_type_shift)].get_size())
+						{
+							val = const_values[idx >> rt_type_shift].get_item(array_idx)->get_value(ctx);
+							return true;
+						}
+						else
+						{
+							return "Out of bounds!";
+						}
+					}
 				case rt_value_index_type:
-					val = values[idx >> rt_type_shift].get_value(ctx);
+					if (array_idx < 0)
+					{
+						if (!values[(idx >> rt_type_shift)].is_array())
+						{
+							val = values[idx >> rt_type_shift].get_item()->get_value(ctx);
+							return true;
+						}
+						else
+						{
+							rx_simple_value temp_val;
+							uint32_t len;
+							auto size = values[idx >> rt_type_shift].get_size();
+							RX_ASSERT(size >= 0);
+							if (size >= 0)
+							{
+								len = (uint32_t)size;
+								temp_val.assign_static(len);
+								val = ctx->adapt_value(temp_val);
+								return true;
+							}
+						}
+					}
+					else
+					{
+						if (!values[(idx >> rt_type_shift)].is_array())
+						{
+							return "Not an array!";
+						}
+						else if (array_idx < values[(idx >> rt_type_shift)].get_size())
+						{
+							val = values[idx >> rt_type_shift].get_item(array_idx)->get_value(ctx);
+							return true;
+						}
+						else
+						{
+							return "Out of bounds!";
+						}
+					}
 					return true;
 				case rt_variable_index_type:
-					val = variables.collection[idx >> rt_type_shift].get_value(ctx);
+					if (array_idx < 0)
+					{
+						if (!variables.collection[(idx >> rt_type_shift)].is_array())
+						{
+							val = variables.collection[idx >> rt_type_shift].get_item()->get_value(ctx);
+							return true;
+						}
+						else
+						{
+							rx_simple_value temp_val;
+							uint32_t len;
+							auto size = variables.collection[idx >> rt_type_shift].get_size();
+							RX_ASSERT(size >= 0);
+							if (size >= 0)
+							{
+								len = (uint32_t)size;
+								temp_val.assign_static(len);
+								val = ctx->adapt_value(temp_val);
+								return true;
+							}
+						}
+					}
+					else
+					{
+						if (!variables.collection[(idx >> rt_type_shift)].is_array())
+						{
+							return "Not an array!";
+						}
+						else if (array_idx < variables.collection[(idx >> rt_type_shift)].get_size())
+						{
+							val = variables.collection[idx >> rt_type_shift].get_item(array_idx)->get_value(ctx);
+							return true;
+						}
+						else
+						{
+							return "Out of bounds!";
+						}
+					}
 					return true;
 				}
 			}
@@ -377,18 +706,68 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
 void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::object_state_changed (runtime_process_context* ctx)
 {
-	if (has_structs())
+	if constexpr (has_structs())
 	{
 		for (auto& one : structs.collection)
-			one.item->object_state_changed(ctx);
+		{
+			if (one.is_array())
+			{
+				for(int i=0; i<one.get_size(); i++)
+					one.get_item(i)->object_state_changed(ctx);
+			}
+			else
+			{
+				one.get_item()->object_state_changed(ctx);
+			}
+		}
 	}
-	if (has_variables())
+	if constexpr (has_variables())
 	{
 		for (auto& one : variables.collection)
-			one.item->object_state_changed(ctx);
+		{
+			if (one.is_array())
+			{
+				for (int i = 0; i < one.get_size(); i++)
+					one.get_item(i)->object_state_changed(ctx);
+			}
+			else
+			{
+				one.get_item()->object_state_changed(ctx);
+			}
+		}
+	}
+	if constexpr (has_sources())
+	{
+		for (auto& one : sources.collection)
+			one.object_state_changed(ctx);
+	}
+	if constexpr (has_mappers())
+	{
+		for (auto& one : mappers.collection)
+			one.object_state_changed(ctx);
+	}
+	if constexpr (has_events())
+	{
+		for (auto& one : events.collection)
+			one.object_state_changed(ctx);
+	}
+	if constexpr (has_filters())
+	{
+		for (auto& one : filters.collection)
+			one.object_state_changed(ctx);
 	}
 	for (auto& one : values)
-		one.object_state_changed(ctx);
+	{
+		if (one.is_array())
+		{
+			for (int i = 0; i < one.get_size(); i++)
+				one.get_item(i)->object_state_changed(ctx);
+		}
+		else
+		{
+			one.get_item()->object_state_changed(ctx);
+		}
+	}
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
@@ -418,39 +797,89 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			break;
 		case rt_variable_index_type:
 			// variable
-			ctx.path.push_to_path(one.name);
-			ret = variables.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_variables())
+			{
+				if (variables.collection[one.index >> rt_type_shift].is_array())
+				{
+					char buff[0x100];
+					for (int i = 0; i < variables.collection[one.index >> rt_type_shift].get_size(); i++)
+					{
+						sprintf(buff, "%s[%d]", one.name.c_str(), i);
+						ctx.path.push_to_path(buff);
+						ret = variables.collection[one.index >> rt_type_shift].get_item(i)->initialize_runtime(ctx);
+						if (!ret)
+							break;
+						ctx.path.pop_from_path();
+					}
+				}
+				else
+				{
+					ctx.path.push_to_path(one.name);
+					ret = variables.collection[one.index >> rt_type_shift].get_item()->initialize_runtime(ctx);
+					ctx.path.pop_from_path();
+				}
+			}
 			break;
 		case rt_struct_index_type:
 			// struct
-			ctx.path.push_to_path(one.name);
-			ret = structs.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_structs())
+			{
+				if (structs.collection[one.index >> rt_type_shift].is_array())
+				{
+					char buff[0x100];
+					for (int i = 0; i < structs.collection[one.index >> rt_type_shift].get_size(); i++)
+					{
+						sprintf(buff, "%s[%d]", one.name.c_str(), i);
+						ctx.path.push_to_path(buff);
+						ret = structs.collection[one.index >> rt_type_shift].get_item(i)->initialize_runtime(ctx);
+						if (!ret)
+							break;
+						ctx.path.pop_from_path();
+					}
+				}
+				else
+				{
+					ctx.path.push_to_path(one.name);
+					ret = structs.collection[one.index >> rt_type_shift].get_item()->initialize_runtime(ctx);
+					ctx.path.pop_from_path();
+				}
+			}
 			break;
 		case rt_source_index_type:
 			// source
-			ctx.path.push_to_path(one.name);
-			ret = sources.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_sources())
+			{
+				ctx.path.push_to_path(one.name);
+				ret = sources.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+				ctx.path.pop_from_path();
+			}
 			break;
 		case rt_mapper_index_type:
 			// mapper
-			ctx.path.push_to_path(one.name);
-			ret = mappers.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_mappers())
+			{
+				ctx.path.push_to_path(one.name);
+				ret = mappers.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+				ctx.path.pop_from_path();
+			}
 			break;
 		case rt_filter_index_type:
 			// filter
-			ctx.path.push_to_path(one.name);
-			ret = filters.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_filters())
+			{
+				ctx.path.push_to_path(one.name);
+				ret = filters.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+				ctx.path.pop_from_path();
+			}
 			break;
 		case rt_event_index_type:
 			// event
-			ctx.path.push_to_path(one.name);
-			ret = events.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_events())
+			{
+				ctx.path.push_to_path(one.name);
+				ret = events.collection[one.index >> rt_type_shift].initialize_runtime(ctx);
+				ctx.path.pop_from_path();
+			}
 			break;
 		default:
 			RX_ASSERT(false);// shouldn't happened
@@ -488,27 +917,61 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			break;
 		case rt_variable_index_type:
 			// variable
-			ret = variables.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			if constexpr (has_variables())
+			{
+				if (variables.collection[one.index >> rt_type_shift].is_array())
+				{
+					for (int i = 0; i < variables.collection[one.index >> rt_type_shift].get_size(); i++)
+					{
+						ret = variables.collection[one.index >> rt_type_shift].get_item(i)->deinitialize_runtime(ctx);
+						if (!ret)
+							break;
+					}
+				}
+				else
+				{
+					ret = variables.collection[one.index >> rt_type_shift].get_item()->deinitialize_runtime(ctx);
+				}
+			}
 			break;
 		case rt_struct_index_type:
 			// struct
-			ret = structs.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			if constexpr (has_structs())
+			{
+				if (structs.collection[one.index >> rt_type_shift].is_array())
+				{
+					for (int i = 0; i < structs.collection[one.index >> rt_type_shift].get_size(); i++)
+					{
+						ret = structs.collection[one.index >> rt_type_shift].get_item(i)->deinitialize_runtime(ctx);
+						if (!ret)
+							break;
+					}
+				}
+				else
+				{
+					ret = structs.collection[one.index >> rt_type_shift].get_item()->deinitialize_runtime(ctx);
+				}
+			}
 			break;
 		case rt_source_index_type:
 			// source
-			ret = sources.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			if constexpr (has_sources())
+				ret = sources.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
 			break;
 		case rt_mapper_index_type:
 			// mapper
-			ret = mappers.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			if constexpr (has_mappers())
+				ret = mappers.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
 			break;
 		case rt_filter_index_type:
 			// filter
-			ret = filters.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			if constexpr (has_filters())
+				ret = filters.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
 			break;
 		case rt_event_index_type:
 			// event
-			ret = events.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
+			if constexpr (has_events())
+				ret = events.collection[one.index >> rt_type_shift].deinitialize_runtime(ctx);
 			break;
 		default:
 			RX_ASSERT(false);// shouldn't happened
@@ -532,27 +995,72 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			break;
 		case rt_variable_index_type:
 			// variable
-			ctx.path.push_to_path(one.name);
-			ret = variables.collection[one.index >> rt_type_shift].start_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_variables())
+			{
+				if (variables.collection[one.index >> rt_type_shift].is_array())
+				{
+					char buff[0x100];
+					for (int i = 0; i < variables.collection[one.index >> rt_type_shift].get_size(); i++)
+					{
+						sprintf(buff, "%s[%d]", one.name.c_str(), i);
+						ctx.path.push_to_path(buff);
+						ret = variables.collection[one.index >> rt_type_shift].get_item(i)->start_runtime(ctx);
+						if (!ret)
+							break;
+						ctx.path.pop_from_path();
+					}
+				}
+				else
+				{
+					ctx.path.push_to_path(one.name);
+					ret = variables.collection[one.index >> rt_type_shift].get_item()->start_runtime(ctx);
+					ctx.path.pop_from_path();
+				}
+			}
+			break;
 			break;
 		case rt_struct_index_type:
 			// struct
-			ctx.path.push_to_path(one.name);
-			ret = structs.collection[one.index >> rt_type_shift].start_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_structs())
+			{
+				if (structs.collection[one.index >> rt_type_shift].is_array())
+				{
+					char buff[0x100];
+					for (int i = 0; i < structs.collection[one.index >> rt_type_shift].get_size(); i++)
+					{
+						sprintf(buff, "%s[%d]", one.name.c_str(), i);
+						ctx.path.push_to_path(buff);
+						ret = structs.collection[one.index >> rt_type_shift].get_item(i)->start_runtime(ctx);
+						if (!ret)
+							break;
+						ctx.path.pop_from_path();
+					}
+				}
+				else
+				{
+					ctx.path.push_to_path(one.name);
+					ret = structs.collection[one.index >> rt_type_shift].get_item()->start_runtime(ctx);
+					ctx.path.pop_from_path();
+				}
+			}
 			break;
 		case rt_source_index_type:
 			// source
-			ctx.path.push_to_path(one.name);
-			ret = sources.collection[one.index >> rt_type_shift].start_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_sources())
+			{
+				ctx.path.push_to_path(one.name);
+				ret = sources.collection[one.index >> rt_type_shift].start_runtime(ctx);
+				ctx.path.pop_from_path();
+			}
 			break;
 		case rt_mapper_index_type:
 			// mapper
-			ctx.path.push_to_path(one.name);
-			ret = mappers.collection[one.index >> rt_type_shift].start_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_mappers())
+			{
+				ctx.path.push_to_path(one.name);
+				ret = mappers.collection[one.index >> rt_type_shift].start_runtime(ctx);
+				ctx.path.pop_from_path();
+			}
 			break;
 		case rt_filter_index_type:
 			// filter
@@ -562,9 +1070,12 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			break;
 		case rt_event_index_type:
 			// event
-			ctx.path.push_to_path(one.name);
-			ret = events.collection[one.index >> rt_type_shift].start_runtime(ctx);
-			ctx.path.pop_from_path();
+			if constexpr (has_events())
+			{
+				ctx.path.push_to_path(one.name);
+				ret = events.collection[one.index >> rt_type_shift].start_runtime(ctx);
+				ctx.path.pop_from_path();
+			}
 			break;
 		default:
 			RX_ASSERT(false);// shouldn't happened
@@ -581,34 +1092,68 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	rx_result ret(true);
 	for (auto& one : items)
 	{
-		switch (one.index&rt_type_mask)
+		switch (one.index & rt_type_mask)
 		{
 		case rt_const_index_type:
 		case rt_value_index_type:
 			break;
 		case rt_variable_index_type:
 			// variable
-			ret = variables.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			if constexpr (has_variables())
+			{
+				if (variables.collection[one.index >> rt_type_shift].is_array())
+				{
+					for (int i = 0; i < variables.collection[one.index >> rt_type_shift].get_size(); i++)
+					{
+						ret = variables.collection[one.index >> rt_type_shift].get_item(i)->stop_runtime(ctx);
+						if (!ret)
+							break;
+					}
+				}
+				else
+				{
+					ret = variables.collection[one.index >> rt_type_shift].get_item()->stop_runtime(ctx);
+				}
+			}
 			break;
 		case rt_struct_index_type:
 			// struct
-			ret = structs.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			if constexpr (has_structs())
+			{
+				if (structs.collection[one.index >> rt_type_shift].is_array())
+				{
+					for (int i = 0; i < structs.collection[one.index >> rt_type_shift].get_size(); i++)
+					{
+						ret = structs.collection[one.index >> rt_type_shift].get_item(i)->stop_runtime(ctx);
+						if (!ret)
+							break;
+					}
+				}
+				else
+				{
+					ret = structs.collection[one.index >> rt_type_shift].get_item()->stop_runtime(ctx);
+				}
+			}
 			break;
 		case rt_source_index_type:
 			// source
-			ret = sources.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			if constexpr (has_sources())
+				ret = sources.collection[one.index >> rt_type_shift].stop_runtime(ctx);
 			break;
 		case rt_mapper_index_type:
 			// mapper
-			ret = mappers.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			if constexpr (has_mappers())
+				ret = mappers.collection[one.index >> rt_type_shift].stop_runtime(ctx);
 			break;
 		case rt_filter_index_type:
 			// filter
-			ret = filters.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			if constexpr (has_filters())
+				ret = filters.collection[one.index >> rt_type_shift].stop_runtime(ctx);
 			break;
 		case rt_event_index_type:
 			// event
-			ret = events.collection[one.index >> rt_type_shift].stop_runtime(ctx);
+			if constexpr (has_events())
+				ret = events.collection[one.index >> rt_type_shift].stop_runtime(ctx);
 			break;
 		default:
 			RX_ASSERT(false);// shouldn't happened
@@ -628,22 +1173,61 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{// bellow us, split it
 		mine = path.substr(0, idx);
 		string_view_type bellow = path.substr(idx + 1);
-		auto idx = internal_get_index(mine);
+		int array_idx = -1;
+		auto idx = internal_get_index(mine, array_idx);
 		if (idx && is_complex_index(idx))
 		{
 			switch (idx & rt_type_mask)
 			{
 			case rt_variable_index_type:
-				return variables.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
+				if (array_idx < 0)
+				{
+					if (!variables.collection[idx >> rt_type_shift].is_array())
+						return variables.collection[idx >> rt_type_shift].get_item()->get_value_ref(bellow, ref);
+					else
+						return "Invalid array index";
+				}
+				else
+				{
+					if (!variables.collection[idx >> rt_type_shift].is_array())
+						return "Not an array";
+					else if (array_idx < variables.collection[idx >> rt_type_shift].get_size())
+						return variables.collection[idx >> rt_type_shift].get_item(array_idx)->get_value_ref(bellow, ref);
+					else
+						return "Out of bounds!";
+				}
 			case rt_struct_index_type:
-				return structs.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
+				if (array_idx < 0)
+				{
+					if (!structs.collection[idx >> rt_type_shift].is_array())
+						return structs.collection[idx >> rt_type_shift].get_item()->get_value_ref(bellow, ref);
+					else
+						return "Invalid array index";
+				}
+				else
+				{
+					if (!structs.collection[idx >> rt_type_shift].is_array())
+						return "Not an array";
+					else if (array_idx < structs.collection[idx >> rt_type_shift].get_size())
+						return structs.collection[idx >> rt_type_shift].get_item(array_idx)->get_value_ref(bellow, ref);
+					else
+						return "Out of bounds!";
+				}
 			case rt_source_index_type:
+				if (array_idx >= 0)
+					return "Not an array!";
 				return sources.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
 			case rt_mapper_index_type:
+				if (array_idx >= 0)
+					return "Not an array!";
 				return mappers.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
 			case rt_filter_index_type:
+				if (array_idx >= 0)
+					return "Not an array!";
 				return filters.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
 			case rt_event_index_type:
+				if (array_idx >= 0)
+					return "Not an array!";
 				return events.collection[idx >> rt_type_shift].get_value_ref(bellow, ref);
 			default:
 				RX_ASSERT(false);
@@ -652,30 +1236,83 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	}
 	else// its' ours
 	{
-		auto idx = internal_get_index(path);
+		int array_idx = -1;
+		auto idx = internal_get_index(path, array_idx);
 		if (idx && is_value_index(idx))
 		{
 			switch (idx&rt_type_mask)
 			{
 			case rt_const_index_type:
-				ref.ref_type = rt_value_ref_type::rt_const_value;
-				ref.ref_value_ptr.const_value = &const_values[idx >> rt_type_shift];
+				if (array_idx < 0)
+				{
+					ref.ref_type = rt_value_ref_type::rt_const_value;
+					if (!const_values[idx >> rt_type_shift].is_array())
+						ref.ref_value_ptr.const_value = const_values[idx >> rt_type_shift].get_item();
+					else
+						return "Invalid array index";
+				}
+				else
+				{
+					ref.ref_type = rt_value_ref_type::rt_const_value;
+					if (!const_values[idx >> rt_type_shift].is_array())
+						return "Not an array";
+					else if (array_idx < const_values[idx >> rt_type_shift].get_size())
+						ref.ref_value_ptr.const_value = const_values[idx >> rt_type_shift].get_item(array_idx);
+					else
+						return "Out of bounds!";
+				}
 				return true;
 			case rt_value_index_type:
-				ref.ref_type = rt_value_ref_type::rt_value;
-				ref.ref_value_ptr.value = &values[idx >> rt_type_shift];
+				if (array_idx < 0)
+				{
+					ref.ref_type = rt_value_ref_type::rt_value;
+					if (!values[idx >> rt_type_shift].is_array())
+						ref.ref_value_ptr.value = values[idx >> rt_type_shift].get_item();
+					else
+						return "Invalid array index";
+				}
+				else
+				{
+					ref.ref_type = rt_value_ref_type::rt_value;
+					if (!values[idx >> rt_type_shift].is_array())
+						return "Not an array";
+					else if (array_idx < values[idx >> rt_type_shift].get_size())
+						ref.ref_value_ptr.value = values[idx >> rt_type_shift].get_item(array_idx);
+					else
+						return "Out of bounds!";
+				}
 				return true;
 			case rt_variable_index_type:
-				ref.ref_type = rt_value_ref_type::rt_variable;
-				ref.ref_value_ptr.variable = &variables.collection[idx >> rt_type_shift];
+				if (array_idx < 0)
+				{
+					ref.ref_type = rt_value_ref_type::rt_variable;
+					if (!variables.collection[idx >> rt_type_shift].is_array())
+						ref.ref_value_ptr.variable = variables.collection[idx >> rt_type_shift].get_item();
+					else
+						return "Invalid array index";
+				}
+				else
+				{
+					ref.ref_type = rt_value_ref_type::rt_variable;
+					if (!variables.collection[idx >> rt_type_shift].is_array())
+						return "Not an array";
+					else if (array_idx < variables.collection[idx >> rt_type_shift].get_size())
+						ref.ref_value_ptr.variable = variables.collection[idx >> rt_type_shift].get_item(array_idx);
+					else
+						return "Out of bounds!";
+				}
 				return true;
 			case rt_source_index_type:
+				if (array_idx >= 0)
+					return "Not an array!";
 				if(!is_var)
 					return string_type(path) + " not valid!";
 				ref.ref_type = rt_value_ref_type::rt_full_value;
 				ref.ref_value_ptr.full_value = &sources.collection[idx >> rt_type_shift].input_value;
 				return true;
 			case rt_mapper_index_type:
+				if (array_idx >= 0)
+					return "Not an array!";
 				if (!is_var)
 					return string_type(path) + " not valid!";
 				ref.ref_type = rt_value_ref_type::rt_full_value;
@@ -701,23 +1338,50 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			{
 			case rt_const_index_type:
 				one_attr.name = one.name;
-				one_attr.value = const_values[(one.index >> rt_type_shift)].get_value(ctx);
-				one_attr.type = rx_attribute_type::const_attribute_type;
+				if (!const_values[(one.index >> rt_type_shift)].is_array())
+				{
+					one_attr.value = const_values[(one.index >> rt_type_shift)].get_item()->get_value(ctx);
+					one_attr.type = rx_attribute_type::const_attribute_type;
+				}
+				else
+				{
+					one_attr.type = rx_attribute_type::const_array_attribute_type;
+				}
 				break;
 			case rt_value_index_type:
 				one_attr.name = one.name;
-				one_attr.value = values[(one.index >> rt_type_shift)].get_value(ctx);
-				one_attr.type = rx_attribute_type::value_attribute_type;
+				if (!values[(one.index >> rt_type_shift)].is_array())
+				{
+					one_attr.value = values[(one.index >> rt_type_shift)].get_item()->get_value(ctx);
+					one_attr.type = rx_attribute_type::value_attribute_type;
+				}
+				else
+				{
+					one_attr.type = rx_attribute_type::value_array_attribute_type;
+				}
 				break;
 			case rt_variable_index_type:
 				one_attr.name = one.name;
-				if constexpr (has_variables())
-					one_attr.value = variables.collection[(one.index >> rt_type_shift)].get_value(ctx);
-				one_attr.type = rx_attribute_type::variable_attribute_type;
+				if (!variables.collection[(one.index >> rt_type_shift)].is_array())
+				{
+					one_attr.value = variables.collection[(one.index >> rt_type_shift)].get_item()->get_value(ctx);
+					one_attr.type = rx_attribute_type::variable_attribute_type;
+				}
+				else
+				{
+					one_attr.type = rx_attribute_type::variable_array_attribute_type;
+				}
 				break;
 			case rt_struct_index_type:
 				one_attr.name = one.name;
-				one_attr.type = rx_attribute_type::struct_attribute_type;
+				if (!structs.collection[(one.index >> rt_type_shift)].is_array())
+				{
+					one_attr.type = rx_attribute_type::struct_attribute_type;
+				}
+				else
+				{
+					one_attr.type = rx_attribute_type::struct_array_attribute_type;
+				}
 				break;
 			case rt_source_index_type:
 				one_attr.name = one.name;
@@ -769,16 +1433,68 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		{
 			mine = path;
 		}
-		auto item_idx = internal_get_index(mine);
-		if (item_idx && is_complex_index(item_idx))
+		string_type prefix_bellow = prefix.empty() ? mine : prefix + RX_OBJECT_DELIMETER + mine;
+		int array_idx = -1;
+		auto item_idx = internal_get_index(mine, array_idx);
+		if (item_idx)
 		{
-			string_type prefix_bellow = prefix.empty() ? mine : prefix + RX_OBJECT_DELIMETER + mine;
-			switch (item_idx & rt_type_mask)
+			if (array_idx < 0)
 			{
+				switch (item_idx & rt_type_mask)
+				{
 				case rt_variable_index_type:
-					return variables.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+					if (variables.collection[(item_idx >> rt_type_shift)].is_array())
+					{
+						if (bellow.empty())
+						{
+							for (int i = 0; i < variables.collection[(item_idx >> rt_type_shift)].get_size(); i++)
+							{
+								char temp_buff[0x20];
+								runtime_item_attribute one_attr;
+								sprintf(temp_buff, "[%d]", i);
+								one_attr.name = mine + temp_buff;
+								one_attr.type = rx_attribute_type::variable_attribute_type;
+								one_attr.value = variables.collection[(item_idx >> rt_type_shift)].get_item(i)->get_value(ctx);
+								if (prefix.empty())
+									one_attr.full_path = one_attr.name;
+								else
+									one_attr.full_path = prefix + RX_OBJECT_DELIMETER + one_attr.name;
+								items.emplace_back(std::move(one_attr));
+							}
+							return true;
+						}
+					}
+					else
+					{
+						return variables.collection[item_idx >> rt_type_shift].get_item()->browse_items(prefix_bellow, bellow, filter, items, ctx);
+					}
+					break;
 				case rt_struct_index_type:
-					return structs.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+					if (structs.collection[(item_idx >> rt_type_shift)].is_array())
+					{
+						if (bellow.empty())
+						{
+							for (int i = 0; i < structs.collection[(item_idx >> rt_type_shift)].get_size(); i++)
+							{
+								char temp_buff[0x20];
+								runtime_item_attribute one_attr;
+								sprintf(temp_buff, "[%d]", i);
+								one_attr.name = mine + temp_buff;
+								one_attr.type = rx_attribute_type::struct_attribute_type;
+								if (prefix.empty())
+									one_attr.full_path = one_attr.name;
+								else
+									one_attr.full_path = prefix + RX_OBJECT_DELIMETER + one_attr.name;
+								items.emplace_back(std::move(one_attr));
+							}
+							return true;
+						}
+					}
+					else
+					{
+						return structs.collection[item_idx >> rt_type_shift].get_item()->browse_items(prefix_bellow, bellow, filter, items, ctx);
+					}
+					break;
 				case rt_source_index_type:
 					return sources.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
 				case rt_mapper_index_type:
@@ -787,8 +1503,79 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 					return filters.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
 				case rt_event_index_type:
 					return events.collection[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+				case rt_const_index_type:
+					if (const_values[(item_idx >> rt_type_shift)].is_array() && bellow.empty())
+					{
+						for (int i = 0; i < const_values[(item_idx >> rt_type_shift)].get_size(); i++)
+						{
+							char temp_buff[0x20];
+							runtime_item_attribute one_attr;
+							sprintf(temp_buff, "[%d]", i);
+							one_attr.name = mine + temp_buff;
+							one_attr.type = rx_attribute_type::const_attribute_type;
+							one_attr.value = const_values[(item_idx >> rt_type_shift)].get_item(i)->get_value(ctx);
+							if (prefix.empty())
+								one_attr.full_path = one_attr.name;
+							else
+								one_attr.full_path = prefix + RX_OBJECT_DELIMETER + one_attr.name;
+							items.emplace_back(std::move(one_attr));
+						}
+						return true;
+					}
+					break;
+				case rt_value_index_type:
+					if (values[(item_idx >> rt_type_shift)].is_array() && bellow.empty())
+					{
+						for (int i = 0; i < values[(item_idx >> rt_type_shift)].get_size(); i++)
+						{
+							char temp_buff[0x20];
+							runtime_item_attribute one_attr;
+							sprintf(temp_buff, "[%d]", i);
+							one_attr.name = mine + temp_buff;
+							one_attr.type = rx_attribute_type::value_attribute_type;
+							one_attr.value = values[(item_idx >> rt_type_shift)].get_item(i)->get_value(ctx);
+							if (prefix.empty())
+								one_attr.full_path = one_attr.name;
+							else
+								one_attr.full_path = prefix + RX_OBJECT_DELIMETER + one_attr.name;
+							items.emplace_back(std::move(one_attr));
+						}
+						return true;
+					}
+					break;
+				}
+			}
+			else
+			{
+				runtime_item_attribute one_attr;
+				switch (item_idx & rt_type_mask)
+				{
+				case rt_variable_index_type:
+					if (variables.collection[(item_idx >> rt_type_shift)].is_array()
+						&& array_idx< variables.collection[(item_idx >> rt_type_shift)].get_size())
+					{
+						return variables.collection[item_idx >> rt_type_shift].get_item(array_idx)->browse_items(prefix_bellow, bellow, filter, items, ctx);
+					}
+					break;
+				case rt_struct_index_type:
+					if (structs.collection[(item_idx >> rt_type_shift)].is_array()
+						&& array_idx < structs.collection[(item_idx >> rt_type_shift)].get_size())
+					{
+						return structs.collection[item_idx >> rt_type_shift].get_item(array_idx)->browse_items(prefix_bellow, bellow, filter, items, ctx);
+					}
+					break;
 				default:
-					RX_ASSERT(false);
+					one_attr.type = rx_attribute_type::invalid_attribute_type_type;
+				}
+				if (one_attr.type != rx_attribute_type::invalid_attribute_type_type)
+				{
+					if (prefix_bellow.empty())
+						one_attr.full_path = one_attr.name;
+					else
+						one_attr.full_path = prefix_bellow + RX_OBJECT_DELIMETER + one_attr.name;
+
+					items.emplace_back(std::move(one_attr));
+				}
 			}
 		}
 		return prefix + path + " not found!";
@@ -815,33 +1602,52 @@ const runtime_item* runtime_data<variables_type,structs_type,sources_type,mapper
 		mine = path.substr(0, in);
 		rest = path.substr(in + 1);
 	}
+	int array_idx = -1;
+	mine = extract_index(mine, array_idx);
 	// now compare it
 	for (const auto& one : this->items)
 	{
 		if (is_complex_index(one.index) && one.name == mine)
 		{
-			switch (one.index&rt_type_mask)
+			if (array_idx < 0)
 			{
-			case rt_variable_index_type:
-				ret = variables.collection[one.index >> rt_type_shift].item.get();
-				break;
-			case rt_struct_index_type:
-				ret = structs.collection[one.index >> rt_type_shift].item.get();
-				break;
-			case rt_source_index_type:
-				ret = sources.collection[one.index >> rt_type_shift].item.get();
-				break;
-			case rt_mapper_index_type:
-				ret = mappers.collection[one.index >> rt_type_shift].item.get();
-				break;
-			case rt_filter_index_type:
-				ret = filters.collection[one.index >> rt_type_shift].item.get();
-				break;
-			case rt_event_index_type:
-				ret = events.collection[one.index >> rt_type_shift].item.get();
-				break;
-			default:
-				RX_ASSERT(false);
+				switch (one.index & rt_type_mask)
+				{
+				case rt_variable_index_type:
+					if(!variables.collection[one.index >> rt_type_shift].is_array())
+						ret = variables.collection[one.index >> rt_type_shift].get_item()->item.get();
+					break;
+				case rt_struct_index_type:
+					if (!structs.collection[one.index >> rt_type_shift].is_array())
+						ret = structs.collection[one.index >> rt_type_shift].get_item()->item.get();
+					break;
+				case rt_source_index_type:
+					ret = sources.collection[one.index >> rt_type_shift].item.get();
+					break;
+				case rt_mapper_index_type:
+					ret = mappers.collection[one.index >> rt_type_shift].item.get();
+					break;
+				case rt_filter_index_type:
+					ret = filters.collection[one.index >> rt_type_shift].item.get();
+					break;
+				case rt_event_index_type:
+					ret = events.collection[one.index >> rt_type_shift].item.get();
+					break;
+				}
+			}
+			else
+			{
+				switch (one.index & rt_type_mask)
+				{
+				case rt_variable_index_type:
+					if (variables.collection[one.index >> rt_type_shift].is_array() && array_idx < variables.collection[one.index >> rt_type_shift].get_size())
+						ret = variables.collection[one.index >> rt_type_shift].get_item(array_idx)->item.get();
+					break;
+				case rt_struct_index_type:
+					if (structs.collection[one.index >> rt_type_shift].is_array() && array_idx < structs.collection[one.index >> rt_type_shift].get_size())
+						ret = structs.collection[one.index >> rt_type_shift].get_item(array_idx)->item.get();
+					break;
+				}
 			}
 		}
 		if (ret)
@@ -946,15 +1752,38 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{// bellow us, split it
 		mine = path.substr(0, idx);
 		string_type bellow = path.substr(idx + 1);
-		auto idx = internal_get_index(mine);
+		int array_idx = -1;
+		auto idx = internal_get_index(mine, array_idx);
 		if (idx && is_complex_index(idx))
 		{
 			switch (idx & rt_type_mask)
 			{
 			case rt_variable_index_type:
-				return variables.collection[idx >> rt_type_shift].get_local_value(bellow, val);
+				if (array_idx < 0 && !variables.collection[idx >> rt_type_shift].is_array())
+				{
+					return variables.collection[idx >> rt_type_shift].get_item()->get_local_value(bellow, val);
+				}
+				else if (array_idx >= 0 && array_idx < variables.collection[idx >> rt_type_shift].get_size())
+				{
+					return variables.collection[idx >> rt_type_shift].get_item(array_idx)->get_local_value(bellow, val);
+				}
+				else
+				{
+					return "Index out of bounds";
+				}
 			case rt_struct_index_type:
-				return structs.collection[idx >> rt_type_shift].get_local_value(bellow, val);
+				if (array_idx < 0 && !structs.collection[idx >> rt_type_shift].is_array())
+				{
+					return structs.collection[idx >> rt_type_shift].get_item()->get_local_value(bellow, val);
+				}
+				else if (array_idx >= 0 && array_idx < structs.collection[idx >> rt_type_shift].get_size())
+				{
+					return structs.collection[idx >> rt_type_shift].get_item(array_idx)->get_local_value(bellow, val);
+				}
+				else
+				{
+					return "Index out of bounds";
+				}
 			case rt_source_index_type:
 				return sources.collection[idx >> rt_type_shift].get_local_value(bellow, val);
 			case rt_mapper_index_type:
@@ -970,19 +1799,61 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	}
 	else// its' ours
 	{
-		auto idx = internal_get_index(path);
+		int array_idx = -1;
+		auto idx = internal_get_index(path, array_idx);
 		if (idx && is_value_index(idx))
 		{
 			switch (idx & rt_type_mask)
 			{
 			case rt_const_index_type:
-				val = const_values[idx >> rt_type_shift].simple_get_value();
-				return true;
+				if (!const_values[idx >> rt_type_shift].is_array())
+				{
+					val = const_values[idx >> rt_type_shift].get_item()->simple_get_value();
+					return true;
+				}
+				else if (array_idx < const_values[idx >> rt_type_shift].get_size())
+				{
+					val = const_values[idx >> rt_type_shift].get_item(array_idx)->simple_get_value();
+					return true;
+				}
+				else
+				{
+					return "Index out of bounds";
+				}
 			case rt_value_index_type:
-				val = values[idx >> rt_type_shift].simple_get_value();
-				return true;
+				if (!values[idx >> rt_type_shift].is_array())
+				{
+					val = values[idx >> rt_type_shift].get_item()->simple_get_value();
+					return true;
+				}
+				else if (array_idx < values[idx >> rt_type_shift].get_size())
+				{
+					val = values[idx >> rt_type_shift].get_item(array_idx)->simple_get_value();
+					return true;
+				}
+				else
+				{
+					return "Index out of bounds";
+				}
 			case rt_variable_index_type:
-				break;// nothing to do, variables are not treated as local
+				if constexpr (has_variables())
+				{
+					if (!variables.collection[idx >> rt_type_shift].is_array())
+					{
+						val = variables.collection[idx >> rt_type_shift].get_item()->simple_get_value();
+						return true;
+					}
+					else if (array_idx < variables.collection[idx >> rt_type_shift].get_size())
+					{
+						val = variables.collection[idx >> rt_type_shift].get_item(array_idx)->simple_get_value();
+						return true;
+					}
+					else
+					{
+						return "Index out of bounds";
+					}
+				}
+				break;
 			default:
 				RX_ASSERT(false);
 			}
@@ -992,12 +1863,51 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 }
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-members_index_type runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::internal_get_index (string_view_type name) const
+string_view_type runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::extract_index (string_view_type name, int& idx) const
 {
+	string_view_type ret;
+	if (name.empty())
+		return string_view_type();
+	if (*name.rbegin() == ']')
+	{
+		size_t str_idx = name.rfind('[');
+		if (str_idx != string_type::npos && str_idx < name.size() - 2)
+		{
+			uint16_t unsigned_idx;
+			string_view_type number = name.substr(str_idx + 1, name.size() - str_idx /*We know this because of the upper condition*/ - 2);
+			auto  result = std::from_chars(number.data(), number.data() + number.size(), unsigned_idx);
+			if (result.ec != std::errc())
+				return ret;//error
+			idx = unsigned_idx;
+			ret = name.substr(0, str_idx);
+		}
+		else
+		{
+			return string_view_type();
+		}
+	}
+	else
+	{
+		idx = -1;
+		ret = name;
+	}
+	return ret;
+}
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+members_index_type runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::internal_get_index (string_view_type name, int& idx) const
+{
+	int item_idx = -1;
+	name = extract_index(name, item_idx);
+	if (name.empty())
+		return 0;
 	for (const auto& one : items)
 	{
 		if (one.name == name)
+		{
+			idx = item_idx;
 			return one.index;
+		}
 	}
 	return 0;
 }
@@ -1023,11 +1933,13 @@ bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
 	if (idx == string_type::npos)
 	{
-		return internal_get_index(path) != 0;
+		int array_idx;
+		return internal_get_index(path, array_idx) != 0;
 	}
 	else
 	{
-		return internal_get_index(path.substr(0, idx)) != 0;
+		int array_idx;
+		return internal_get_index(path.substr(0, idx), array_idx) != 0;
 	}
 	return false;
 }
@@ -1216,11 +2128,11 @@ void variable_data::collect_data (data::runtime_values_data& data, runtime_value
 
 void variable_data::fill_data (const data::runtime_values_data& data)
 {
-	auto it = data.values.find(RX_DEFAULT_VARIABLE_NAME);
-	if (it != data.values.end())
+	auto val = data.get_value(RX_DEFAULT_VARIABLE_NAME);
+	if (!val.is_null())
 	{
 		rx_value_t my_type = value.get_type();
-		value = rx_value(it->second.value, rx_time::now());
+		value = rx_value(val, rx_time::now());
 		value.convert_to(my_type);
 	}
 	item->fill_data(data);
@@ -1469,6 +2381,16 @@ void variable_data::variable_result_pending (runtime_process_context* ctx, rx_re
 	}
 }
 
+void variable_data::object_state_changed (runtime_process_context* ctx)
+{
+	item->object_state_changed(ctx);
+}
+
+rx_simple_value variable_data::simple_get_value () const
+{
+	return value.to_simple();
+}
+
 
 // Class rx_platform::runtime::structure::struct_data 
 
@@ -1561,6 +2483,11 @@ rx_result struct_data::get_local_value (const string_type& path, rx_simple_value
 	return item->get_local_value(path, val);
 }
 
+void struct_data::object_state_changed (runtime_process_context* ctx)
+{
+	item->object_state_changed(ctx);
+}
+
 
 // Class rx_platform::runtime::structure::mapper_data 
 
@@ -1594,6 +2521,9 @@ void mapper_data::fill_data (const data::runtime_values_data& data)
 
 rx_result mapper_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+	rx_value_t val_type=ctx.structure.get_current_item().get_local_as<rx_value_t>("ValueType", RX_NULL_TYPE);
+	if(val_type!= RX_NULL_TYPE)
+		mapped_value.value.convert_to(val_type);
 	my_variable_ = ctx.variables.get_current_variable();
 	if (mapped_value.value.get_type() == RX_NULL_TYPE && my_variable_)
 		mapped_value.value.convert_to(my_variable_->value.get_type());
@@ -1835,6 +2765,11 @@ rx_value mapper_data::get_value (runtime_process_context* ctx) const
 	return mapped_value.get_value(ctx);
 }
 
+void mapper_data::object_state_changed (runtime_process_context* ctx)
+{
+	item->object_state_changed(ctx);
+}
+
 
 // Class rx_platform::runtime::structure::source_data 
 
@@ -1868,6 +2803,9 @@ void source_data::fill_data (const data::runtime_values_data& data)
 
 rx_result source_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+	rx_value_t val_type = ctx.structure.get_current_item().get_local_as<rx_value_t>("ValueType", RX_NULL_TYPE);
+	if (val_type != RX_NULL_TYPE)
+		input_value.value.convert_to(val_type);
 	my_variable_ = ctx.variables.get_current_variable();
 	if (input_value.value.get_type() == RX_NULL_TYPE && my_variable_)
 		input_value.value.convert_to(my_variable_->value.get_type());
@@ -2079,6 +3017,11 @@ rx_value source_data::get_value (runtime_process_context* ctx) const
 	return input_value.get_value(ctx);
 }
 
+void source_data::object_state_changed (runtime_process_context* ctx)
+{
+	item->object_state_changed(ctx);
+}
+
 
 // Class rx_platform::runtime::structure::event_data 
 
@@ -2158,8 +3101,8 @@ rx_result event_data::get_value (const string_type& path, rx_value& val, runtime
 	else
 	{
 		auto idx = path.find(RX_OBJECT_DELIMETER);
-		string_view_type sub_path;
-		string_view_type rest_path;
+		string_type sub_path;
+		string_type rest_path;
 		if (idx != string_type::npos)
 		{
 			sub_path = path.substr(0, idx);
@@ -2256,6 +3199,11 @@ const runtime_item* event_data::get_child_item (string_view_type path) const
 rx_result event_data::get_local_value (const string_type& path, rx_simple_value& val) const
 {
 	return item->get_local_value(path, val);
+}
+
+void event_data::object_state_changed (runtime_process_context* ctx)
+{
+	item->object_state_changed(ctx);
 }
 
 
@@ -2407,6 +3355,11 @@ rx_result filter_data::get_local_value (const string_type& path, rx_simple_value
 rx_result filter_data::filter_changed ()
 {
 	return RX_NOT_IMPLEMENTED;
+}
+
+void filter_data::object_state_changed (runtime_process_context* ctx)
+{
+	item->object_state_changed(ctx);
 }
 
 
@@ -2592,14 +3545,43 @@ void block_data::collect_data (data::runtime_values_data& data, runtime_value_ty
 		{
 			case rt_const_index_type:
 				// simple value
-				data.add_value(one.name, values[(one.index >> rt_type_shift)].value);
+				{
+					auto& this_val = values[(one.index >> rt_type_shift)];
+					if (this_val.is_array())
+					{
+						std::vector<rx_simple_value> vals;
+						for (int i = 0; i < this_val.get_size(); i++)
+							vals.push_back(this_val.get_item(i)->value);
+						data.add_value(one.name, std::move(vals));
+					}
+					else
+					{
+						data.add_value(one.name, this_val.get_item()->value);
+					}
+				}
 				break;
 			case rt_data_index_type:
 				{
-					data::runtime_values_data child_data;
-					children[(one.index >> rt_type_shift)].collect_data(child_data, type);
-					if (!child_data.empty())
-						data.add_child(one.name, std::move(child_data));
+					auto& this_val = children[(one.index >> rt_type_shift)];
+					if (this_val.is_array())
+					{
+						std::vector<data::runtime_values_data> childs;
+						for (int i = 0; i < this_val.get_size(); i++)
+						{
+							data::runtime_values_data child_data;
+							this_val.get_item(i)->collect_data(child_data, type);
+							if (!child_data.empty())
+								childs.push_back(std::move(child_data));
+						}
+						data.add_array_child(one.name, std::move(childs));
+					}
+					else
+					{
+						data::runtime_values_data child_data;
+						this_val.get_item()->collect_data(child_data, type);
+						if (!child_data.empty())
+							data.add_child(one.name, std::move(child_data));
+					}
 				}
 				break;
 			default:
@@ -2616,19 +3598,57 @@ void block_data::fill_data (const data::runtime_values_data& data)
 		{
 		case rt_const_index_type:
 			{// simple value
-				auto it = data.values.find(one.name);
-				if (it != data.values.end())
+				if (!values[one.index >> rt_type_shift].is_array())
 				{
-					values[one.index >> rt_type_shift].set_value(rx_simple_value(it->second.value));
+					auto val = data.get_value(one.name);
+					if (!val.is_null())
+					{
+						values[one.index >> rt_type_shift].get_item()->set_value(std::move(val));
+					}
+				}
+				else
+				{
+					std::vector<rx_simple_value> vals;
+					if (data.get_array_value(one.name, vals))
+					{
+						size_t dim = std::min<size_t>(vals.size(), values[(one.index >> rt_type_shift)].get_size());
+						for (size_t i = 0; i < dim; i++)
+						{
+							values[one.index >> rt_type_shift].get_item((int)i)->set_value(std::move(vals[i]));
+						}
+					}
 				}
 			}
 			break;
 		case rt_data_index_type:
 			{// child value
-				auto it = data.children.find(one.name);
-				if (it != data.children.end())
+				if (!children[(one.index >> rt_type_shift)].is_array())
 				{
-					children[one.index >> rt_type_shift].fill_data(it->second);
+					auto it = data.children.find(one.name);
+					if (it != data.children.end())
+					{
+						if (std::holds_alternative<data::runtime_values_data>(it->second))
+						{
+							children[one.index >> rt_type_shift].get_item()->fill_data(
+								std::get< data::runtime_values_data>(it->second));
+						}
+					}
+				}
+				else
+				{
+					auto it = data.children.find(one.name);
+					if (it != data.children.end())
+					{
+						if (std::holds_alternative<std::vector<data::runtime_values_data> >(it->second))
+						{
+							auto& childs = std::get<std::vector<data::runtime_values_data>>(it->second);
+							size_t dim = std::min<size_t>(childs.size(), children[(one.index >> rt_type_shift)].get_size());
+							for (size_t i = 0; i < dim; i++)
+							{
+								children[one.index >> rt_type_shift].get_item((int)i)->fill_data(childs[i]);
+							}
+						}
+					}
 				}
 			}
 			break;
@@ -2676,13 +3696,29 @@ rx_result block_data::get_value (string_view_type path, rx_value& val, runtime_p
 		{
 			mine = path.substr(0, idx);
 			bellow = path.substr(idx + 1);
-			auto idx = internal_get_index(mine);
+			int array_idx = -1;
+			auto idx = internal_get_index(mine, array_idx);
 			if (idx && is_complex_index(idx))
 			{
 				switch (idx & rt_type_mask)
 				{
 				case rt_data_index_type:
-					return children[idx >> rt_type_shift].get_value(bellow, val, ctx);
+					if (array_idx < 0)
+					{
+						if (!children[idx >> rt_type_shift].is_array())
+							return children[idx >> rt_type_shift].get_item()->get_value(bellow, val, ctx);
+						else
+							return "Not an array!";
+					}
+					else
+					{
+						if (!values[idx >> rt_type_shift].is_array())
+							return "Not an array";
+						else if (array_idx < values[idx >> rt_type_shift].get_size())
+							return children[idx >> rt_type_shift].get_item(array_idx)->get_value(bellow, val, ctx);
+						else
+							return "Out of bounds!";
+					}
 				default:
 					RX_ASSERT(false);
 				}
@@ -2690,14 +3726,42 @@ rx_result block_data::get_value (string_view_type path, rx_value& val, runtime_p
 		}
 		else// its' ours
 		{
-			auto idx = internal_get_index(path);
+			int array_idx = -1;
+			auto idx = internal_get_index(path, array_idx);
 			if (idx && is_value_index(idx))
 			{
 				switch (idx & rt_type_mask)
 				{
 				case rt_const_index_type:
-					val = values[idx >> rt_type_shift].get_value(ctx);
-					return true;
+					if (array_idx < 0)
+					{
+						if (!values[idx >> rt_type_shift].is_array())
+						{
+							val = values[idx >> rt_type_shift].get_item()->get_value(ctx);
+							return true;
+						}
+						else
+						{
+							return "Not an array!";
+						}
+
+					}
+					else
+					{
+						if (!values[idx >> rt_type_shift].is_array())
+						{
+							return "Not an array";
+						}
+						else if (array_idx < values[idx >> rt_type_shift].get_size())
+						{
+							val = values[idx >> rt_type_shift].get_item(array_idx)->get_value(ctx);
+							return true;
+						}
+						else
+						{
+							return "Out of bounds!";
+						}
+					}
 				default:
 						RX_ASSERT(false);
 				}
@@ -2720,13 +3784,29 @@ rx_result block_data::get_value_ref (string_view_type path, rt_value_ref& ref, b
 	{// bellow us, split it
 		mine = path.substr(0, idx);
 		string_view_type bellow = path.substr(idx + 1);
-		auto idx = internal_get_index(mine);
+		int array_idx = -1;
+		auto idx = internal_get_index(mine, array_idx);
 		if (idx && is_complex_index(idx))
 		{
 			switch (idx & rt_type_mask)
 			{
-			case rt_data_index_type:
-				return children[idx >> rt_type_shift].get_value_ref(bellow, ref, false);
+			case rt_const_index_type:
+				if (array_idx < 0)
+				{
+					if (!children[idx >> rt_type_shift].is_array())
+						return children[idx >> rt_type_shift].get_item()->get_value_ref(bellow, ref, false);
+					else
+						return "Invalid array index";
+				}
+				else
+				{
+					if (!children[idx >> rt_type_shift].is_array())
+						return "Not an array";
+					else if (array_idx < children[idx >> rt_type_shift].get_size())
+						return children[idx >> rt_type_shift].get_item(array_idx)->get_value_ref(bellow, ref, false);
+					else
+						return "Out of bounds!";
+				}
 			default:
 				RX_ASSERT(false);
 			}
@@ -2734,14 +3814,31 @@ rx_result block_data::get_value_ref (string_view_type path, rt_value_ref& ref, b
 	}
 	else// its' ours
 	{
-		auto idx = internal_get_index(path);
+		int array_idx = -1;
+		auto idx = internal_get_index(path, array_idx);
 		if (idx && is_value_index(idx))
 		{
 			switch (idx & rt_type_mask)
 			{
 			case rt_const_index_type:
-				ref.ref_type = rt_value_ref_type::rt_const_value;
-				ref.ref_value_ptr.const_value = &values[idx >> rt_type_shift];
+				if (array_idx < 0)
+				{
+					ref.ref_type = rt_value_ref_type::rt_const_value;
+					if (!values[idx >> rt_type_shift].is_array())
+						ref.ref_value_ptr.const_value = values[idx >> rt_type_shift].get_item();
+					else
+						return "Invalid array index";
+				}
+				else
+				{
+					ref.ref_type = rt_value_ref_type::rt_const_value;
+					if (!values[idx >> rt_type_shift].is_array())
+						return "Not an array";
+					else if (array_idx < values[idx >> rt_type_shift].get_size())
+						ref.ref_value_ptr.const_value = values[idx >> rt_type_shift].get_item(array_idx);
+					else
+						return "Out of bounds!";
+				}
 				return true;
 			default:
 				RX_ASSERT(false);// has to be because of is_value_index;
@@ -2762,12 +3859,22 @@ rx_result block_data::browse_items (const string_type& prefix, const string_type
 			{
 			case rt_const_index_type:
 				one_attr.name = one.name;
-				one_attr.value = values[(one.index >> rt_type_shift)].get_value(ctx);
-				one_attr.type = rx_attribute_type::const_attribute_type;
+				if (!values[(one.index >> rt_type_shift)].is_array())
+				{
+					one_attr.value = values[(one.index >> rt_type_shift)].get_item()->get_value(ctx);
+					one_attr.type = rx_attribute_type::const_attribute_type;
+				}
+				else
+				{
+					one_attr.type = rx_attribute_type::const_array_attribute_type;
+				}
 				break;
 			case rt_data_index_type:
 				one_attr.name = one.name;
-				one_attr.type = rx_attribute_type::data_attribute_type;
+				if (!values[(one.index >> rt_type_shift)].is_array())
+					one_attr.type = rx_attribute_type::data_attribute_type;
+				else
+					one_attr.type = rx_attribute_type::data_array_attribute_type;
 				break;
 			default:
 				RX_ASSERT(false);
@@ -2795,14 +3902,61 @@ rx_result block_data::browse_items (const string_type& prefix, const string_type
 		{
 			mine = path;
 		}
-		auto item_idx = internal_get_index(mine);
-		if (item_idx && is_complex_index(item_idx))
+		int array_idx = -1;
+		auto item_idx = internal_get_index(mine, array_idx);
+		if (item_idx)
 		{
 			string_type prefix_bellow = prefix.empty() ? mine : prefix + RX_OBJECT_DELIMETER + mine;
 			switch (item_idx & rt_type_mask)
 			{
 			case rt_data_index_type:
-				return children[item_idx >> rt_type_shift].browse_items(prefix_bellow, bellow, filter, items, ctx);
+				if (children[(item_idx >> rt_type_shift)].is_array())
+				{
+					if (bellow.empty())
+					{// browse array
+						for (int i = 0; i < children[(item_idx >> rt_type_shift)].get_size(); i++)
+						{
+							char temp_buff[0x20];
+							runtime_item_attribute one_attr;
+							sprintf(temp_buff, "[%d]", i);
+							one_attr.name = mine + temp_buff;
+							one_attr.type = rx_attribute_type::data_attribute_type;
+							if (prefix.empty())
+								one_attr.full_path = one_attr.name;
+							else
+								one_attr.full_path = prefix + RX_OBJECT_DELIMETER + one_attr.name;
+							items.emplace_back(std::move(one_attr));
+						}
+					}
+					else
+					{// browse bellow
+						return children[item_idx >> rt_type_shift].get_item(array_idx)->browse_items(prefix_bellow, bellow, filter, items, ctx);
+					}
+				}
+				else
+				{
+					return children[item_idx >> rt_type_shift].get_item(0)->browse_items(prefix_bellow, bellow, filter, items, ctx);
+				}
+			case rt_const_index_type:
+				if (values[(item_idx >> rt_type_shift)].is_array())
+				{
+					for (int i = 0; i < values[(item_idx >> rt_type_shift)].get_size(); i++)
+					{
+						char temp_buff[0x20];
+						runtime_item_attribute one_attr;
+						sprintf(temp_buff, "[%d]", i);
+						one_attr.name = mine + temp_buff;
+						one_attr.type = rx_attribute_type::const_attribute_type;
+						one_attr.value = values[(item_idx >> rt_type_shift)].get_item(i)->get_value(ctx);
+						if (prefix.empty())
+							one_attr.full_path = one_attr.name;
+						else
+							one_attr.full_path = prefix + RX_OBJECT_DELIMETER + one_attr.name;
+						items.emplace_back(std::move(one_attr));
+					}
+					return true;
+				}
+				break;
 			default:
 				RX_ASSERT(false);
 
@@ -2830,6 +3984,8 @@ const runtime_item* block_data::get_child_item (string_view_type path) const
 		mine = path.substr(0, in);
 		rest = path.substr(in + 1);
 	}
+	int array_idx = -1;
+	mine = extract_index(mine, array_idx);
 	// now compare it
 	for (const auto& one : this->items)
 	{
@@ -2838,7 +3994,7 @@ const runtime_item* block_data::get_child_item (string_view_type path) const
 			switch (one.index & rt_type_mask)
 			{
 				case rt_data_index_type:
-					ret = &children[one.index >> rt_type_shift];
+					ret = children[one.index >> rt_type_shift].get_item();
 					break;
 				default:
 					RX_ASSERT(false);
@@ -2917,13 +4073,26 @@ rx_result block_data::get_local_value (const string_type& path, rx_simple_value&
 	{// bellow us, split it
 		mine = path.substr(0, idx);
 		string_type bellow = path.substr(idx + 1);
-		auto idx = internal_get_index(mine);
+		int array_idx = -1;
+		auto idx = internal_get_index(mine, array_idx);
 		if (idx && is_complex_index(idx))
 		{
 			switch (idx & rt_type_mask)
 			{
 			case rt_data_index_type:
-				return children[idx >> rt_type_shift].get_local_value(bellow, val);
+				if (array_idx < 0 && !children[idx >> rt_type_shift].is_array())
+				{
+					return children[idx >> rt_type_shift].get_item()->get_local_value(bellow, val);
+				}
+				else if (array_idx >= 0 && array_idx < children[idx >> rt_type_shift].get_size())
+				{
+					return children[idx >> rt_type_shift].get_item(array_idx)->get_local_value(bellow, val);
+				}
+				else
+				{
+					return "Index out of bounds";
+				}
+
 			default:
 				RX_ASSERT(false);
 			}
@@ -2931,14 +4100,27 @@ rx_result block_data::get_local_value (const string_type& path, rx_simple_value&
 	}
 	else// its' ours
 	{
-		auto idx = internal_get_index(path);
+		int array_idx = -1;
+		auto idx = internal_get_index(path, array_idx);
 		if (idx && is_value_index(idx))
 		{
 			switch (idx & rt_type_mask)
 			{
 			case rt_const_index_type:
-				val = values[idx >> rt_type_shift].simple_get_value();
-				return true;
+				if (array_idx < 0 && !values[idx >> rt_type_shift].is_array())
+				{
+					val = values[idx >> rt_type_shift].get_item()->simple_get_value();
+					return true;
+				}
+				else if (array_idx >=0 && array_idx < values[idx >> rt_type_shift].get_size())
+				{
+					val = values[idx >> rt_type_shift].get_item(array_idx)->simple_get_value();
+					return true;
+				}
+				else
+				{
+					return "Index out of bounds";
+				}
 			default:
 				RX_ASSERT(false);
 			}
@@ -2947,12 +4129,50 @@ rx_result block_data::get_local_value (const string_type& path, rx_simple_value&
 	return path + " not found!";
 }
 
-members_index_type block_data::internal_get_index (string_view_type name) const
+string_view_type block_data::extract_index (string_view_type name, int& idx) const
 {
+	string_view_type ret;
+	if (name.empty())
+		return string_view_type();
+	if (*name.rbegin() == ']')
+	{
+		size_t str_idx = name.rfind('[');
+		if (str_idx != string_type::npos && str_idx < name.size() - 2)
+		{
+			uint16_t unsigned_idx;
+			string_view_type number = name.substr(str_idx + 1, name.size() - str_idx /*We know this because of the upper condition*/ - 2);
+			auto  result = std::from_chars(number.data(), number.data() + number.size(), unsigned_idx);
+			if (result.ec != std::errc())
+				return ret;//error
+			idx = unsigned_idx;
+			ret = name.substr(0, str_idx);
+		}
+		else
+		{
+			return string_view_type();
+		}
+	}
+	else
+	{
+		idx = -1;
+		ret = name;
+	}
+	return ret;
+}
+
+members_index_type block_data::internal_get_index (string_view_type name, int& idx) const
+{
+	int item_idx = -1;
+	name = extract_index(name, item_idx);
+	if (name.empty())
+		return 0;
 	for (const auto& one : items)
 	{
 		if (one.name == name)
+		{
+			idx = item_idx;
 			return one.index;
+		}
 	}
 	return 0;
 }
@@ -2970,13 +4190,14 @@ bool block_data::is_complex_index (members_index_type idx) const
 bool block_data::is_this_yours (string_view_type path) const
 {
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
+	int array_idx = -1;
 	if (idx == string_type::npos)
 	{
-		return internal_get_index(path) != 0;
+		return internal_get_index(path, array_idx) != 0;
 	}
 	else
 	{
-		return internal_get_index(path.substr(0, idx)) != 0;
+		return internal_get_index(path.substr(0, idx), array_idx) != 0;
 	}
 	return false;
 }
@@ -2997,20 +4218,26 @@ rx_result block_data::create_safe_runtime_data (const data::runtime_values_data&
 		{
 		case rt_const_index_type:
 			{
-				auto it = in.values.find(one.name);
-				if (it == in.values.end())
+				if (!values[(one.index >> rt_type_shift)].is_array())
 				{
-					return "Missing argument "s + one.name;
+					auto val = in.get_value(one.name);
+					if (!val.is_null())
+					{
+						return "Missing argument "s + one.name;
+					}
+					string_type temp_name = one.name;
+
+					auto val_type = values[(one.index >> rt_type_shift)].get_item()->value.get_type();
+					if (!val.convert_to(val_type))
+					{
+						return RX_INVALID_CONVERSION " for "s + one.name;
+					}
+					out.add_value(one.name, std::move(val));
 				}
-				string_type temp_name = one.name;
-				data::runtime_value temp_val;
-				temp_val.value = it->second.value;
-				auto val_type = values[(one.index >> rt_type_shift)].value.get_type();
-				if (!temp_val.value.convert_to(val_type))
+				else
 				{
-					return RX_INVALID_CONVERSION " for "s + one.name;
+					return RX_NOT_IMPLEMENTED;
 				}
-				out.values.emplace(one.name, std::move(temp_val));
 			}
 			break;
 		case rt_data_index_type:
@@ -3057,6 +4284,9 @@ execute_task::~execute_task()
 {
 }
 
+
+
+// Parameterized Class rx_platform::runtime::structure::array_wrapper 
 
 
 } // namespace structure

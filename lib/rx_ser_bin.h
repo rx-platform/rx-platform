@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -65,7 +65,7 @@ class binary_reader : public base_meta_reader
     typedef std::vector<binary_read_stack_data> stack_type;
 
   public:
-      binary_reader (buffer_type& buffer);
+      binary_reader (buffer_type& buffer, int version = RX_CURRENT_SERIALIZE_VERSION);
 
       ~binary_reader();
 
@@ -255,13 +255,13 @@ class binary_writer : public base_meta_writer
 
 typedef binary_writer<memory::std_vector_allocator, false> std_buffer_writer;
 
-// Parameterized Class rx::serialization::binary_reader 
+// Parameterized Class rx::serialization::binary_reader
 
 template <typename allocT, bool swap_bytes>
-binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer)
+binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer, int version)
       : buffer_(buffer),
         swap_bytes_(false)
-    , base_meta_reader(RX_CURRENT_SERIALIZE_VERSION)
+    , base_meta_reader(version)
 {
 }
 
@@ -691,7 +691,7 @@ string_type binary_reader<allocT,swap_bytes>::get_error () const
 }
 
 
-// Parameterized Class rx::serialization::binary_writer 
+// Parameterized Class rx::serialization::binary_writer
 
 template <typename allocT, bool swap_bytes>
 binary_writer<allocT,swap_bytes>::binary_writer (buffer_type& buffer, int version)
@@ -1012,8 +1012,24 @@ bool binary_writer<allocT,swap_bytes>::write_init_values (const char* name, cons
     {
         if (!write_string("name", one.first.c_str()))
             return false;
-        if (!write_init_values(one.first.c_str(), one.second))
-            return false;
+        if (std::holds_alternative<data::runtime_values_data>(one.second))
+        {
+            if (!write_init_values(one.first.c_str(), std::get<data::runtime_values_data>(one.second)))
+                return false;
+        }
+        else
+        {
+            auto& childs = std::get<std::vector<data::runtime_values_data> >(one.second);
+            if (!start_array(one.first.c_str(), childs.size()))
+                return false;
+            for (size_t i = 0; i < childs.size(); i++)
+            {
+                if (!write_init_values(one.first.c_str(), childs[i]))
+                    return false;
+            }
+            if (!end_array())
+                return false;
+        }
     }
     count = (uint32_t)values.values.size();
     if (!write_uint("values", count))
@@ -1022,8 +1038,24 @@ bool binary_writer<allocT,swap_bytes>::write_init_values (const char* name, cons
     {
         if (!write_string("name", one.first.c_str()))
             return false;
-        if (!one.second.value.serialize(one.first.c_str(), *this))
-            return false;
+        if (std::holds_alternative<rx_simple_value>(one.second))
+        {
+            if (!std::get<rx_simple_value>(one.second).serialize(one.first.c_str(), *this))
+                return false;
+        }
+        else
+        {
+            auto& vals = std::get<std::vector<rx_simple_value> >(one.second);
+            if (!start_array(one.first.c_str(), vals.size()))
+                return false;
+            for (size_t i = 0; i < vals.size(); i++)
+            {
+                if (!vals[i].serialize(one.first.c_str(), *this))
+                    return false;
+            }
+            if (!end_array())
+                return false;
+        }
     }
     if (name)
     {

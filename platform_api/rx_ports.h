@@ -95,6 +95,42 @@ class rx_port : public rx_runtime
       static rx_item_type runtime_type_id;
 
       template<typename funcT>
+      runtime_handle_t post_job(funcT func, uint32_t period = 0)
+      {
+          callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
+          return post_job_internal(RX_JOB_REGULAR, data, period);
+      }
+      template<typename funcT>
+      runtime_handle_t post_job_with_anchor(funcT func, rx_reference_ptr anchor, uint32_t period = 0)
+      {
+          callback_data::smart_ptr data = rx_create_reference<callback_data>(anchor, std::forward<funcT>(func));
+          return post_job_internal(RX_JOB_REGULAR, data, period);
+      }
+      template<typename funcT>
+      runtime_handle_t post_io_job(funcT func, uint32_t period = 0)
+      {
+          callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
+          return post_job_internal(RX_JOB_IO, data, period);
+      }
+      template<typename funcT>
+      runtime_handle_t post_io_job_with_anchor(funcT func, rx_reference_ptr anchor, uint32_t period = 0)
+      {
+          callback_data::smart_ptr data = rx_create_reference<callback_data>(anchor, std::forward<funcT>(func));
+          return post_job_internal(RX_JOB_IO, data, period);
+      }
+      template<typename funcT>
+      runtime_handle_t post_slow_job(funcT func, uint32_t period = 0)
+      {
+          callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
+          return post_job_internal(RX_JOB_SLOW, data, period);
+      }
+      template<typename funcT>
+      runtime_handle_t post_slow_job_with_anchor(funcT func, rx_reference_ptr anchor, uint32_t period = 0)
+      {
+          callback_data::smart_ptr data = rx_create_reference<callback_data>(anchor, std::forward<funcT>(func));
+          return post_job_internal(RX_JOB_SLOW, data, period);
+      }
+      template<typename funcT>
       runtime_handle_t create_timer(funcT func, uint32_t period)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
@@ -190,8 +226,15 @@ public:
 
       void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
+      void status_received_packet ();
+
+      void status_sent_packet ();
+
 
   protected:
+
+      virtual rx_result initialize_status (rx_init_context& ctx);
+
 
   private:
 
@@ -202,6 +245,10 @@ public:
 
 
       active_endpoints_type active_endpoints_;
+
+      remote_owned_value<int64_t> received_;
+
+      remote_owned_value<int64_t> sent_;
 
 
 };
@@ -306,10 +353,16 @@ public:
 
       void stack_assembled ();
 
+      void status_received_packet ();
+
+      void status_sent_packet ();
+
 
   protected:
 
       rx_reference<endpointT> get_endpoint (rx_protocol_stack_endpoint* stack);
+
+      virtual rx_result initialize_status (rx_init_context& ctx);
 
 
   private:
@@ -319,6 +372,10 @@ public:
 
 
       active_endpoints_type active_endpoints_;
+
+      remote_owned_value<int64_t> received_;
+
+      remote_owned_value<int64_t> sent_;
 
 
 };
@@ -399,6 +456,34 @@ rx_protocol_stack_endpoint* rx_transport_port<endpointT>::construct_endpoint_int
     }
     active_endpoints_.emplace(stack, std::move(ep));
     return stack;
+}
+
+template <typename endpointT>
+void rx_transport_port<endpointT>::status_received_packet ()
+{
+    received_ += 1;
+}
+
+template <typename endpointT>
+void rx_transport_port<endpointT>::status_sent_packet ()
+{
+    sent_ += 1;
+}
+
+template <typename endpointT>
+rx_result rx_transport_port<endpointT>::initialize_status (rx_init_context& ctx)
+{
+    rx_result result;
+
+    auto one_result = received_.bind("Status.RxPackets", ctx);
+    if (!one_result)
+        result.register_error("Error connecting Status.RxPackets:"s + one_result.errors_line());
+    one_result = sent_.bind("Status.TxPackets", ctx);
+    if (!one_result)
+        result.register_error("Error connecting Status.TxPackets:"s + one_result.errors_line());
+
+
+    return result;
 }
 
 
@@ -674,6 +759,34 @@ template <typename endpointT>
 void rx_server_slave_port<endpointT>::stack_assembled ()
 {
     this->listen(nullptr, nullptr);
+}
+
+template <typename endpointT>
+void rx_server_slave_port<endpointT>::status_received_packet ()
+{
+    received_ += 1;
+}
+
+template <typename endpointT>
+void rx_server_slave_port<endpointT>::status_sent_packet ()
+{
+    sent_ += 1;
+}
+
+template <typename endpointT>
+rx_result rx_server_slave_port<endpointT>::initialize_status (rx_init_context& ctx)
+{
+    rx_result result;
+
+    auto one_result = received_.bind("Status.RxPackets", ctx);
+    if (!one_result)
+        result.register_error("Error connecting Status.RxPackets:"s + one_result.errors_line());
+    one_result = sent_.bind("Status.TxPackets", ctx);
+    if (!one_result)
+        result.register_error("Error connecting Status.TxPackets:"s + one_result.errors_line());
+
+
+    return result;
 }
 
 

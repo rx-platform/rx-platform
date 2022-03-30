@@ -134,6 +134,8 @@ class extern_port_runtime : public port_runtime
 
       void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
+      void post_own_job (plugin_job_struct* what);
+
 
   protected:
 

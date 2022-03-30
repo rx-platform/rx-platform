@@ -839,19 +839,6 @@ sys_handle_t rx_current_thread()
 	return (sys_handle_t)(intptr_t)GetCurrentThreadId();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// basic abstractions
-void rx_ms_sleep(uint32_t timeout)
-{
-	Sleep(timeout);
-}
-void rx_usleep(uint64_t timeout)
-{
-	Sleep((DWORD)(timeout/1000));
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
 // directories stuff
 
 
@@ -1343,6 +1330,10 @@ uint32_t rx_socket_read_from(struct rx_io_register_data_t* what, size_t* readed,
 		int err = WSAGetLastError();
 		if (err != WSA_IO_PENDING)
 			return RX_ERROR;
+	}
+	else
+	{
+		return RX_ASYNC;
 	}
 	return RX_ASYNC;
 }

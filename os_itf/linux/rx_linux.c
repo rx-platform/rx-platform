@@ -536,36 +536,6 @@ sys_handle_t rx_current_thread()
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// basic apstractions
-void rx_ms_sleep(uint32_t timeout)
-{
-	if (timeout)
-	{
-		struct timespec ts;
-		ts.tv_sec = timeout / 1000;
-		ts.tv_nsec = timeout % 1000 * 1000000;
-		clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
-	}
-	else//sleep 0 just give over the procesor
-		sched_yield();
-}
-void rx_us_sleep(uint64_t timeout)
-{
-	if (timeout)
-	{
-		struct timespec ts;
-		ts.tv_sec = timeout / 1000000ul;
-		ts.tv_nsec = timeout % 1000000ul * 1000;
-		clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
-	}
-	else//sleep 0 just give over the procesor
-		sched_yield();
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // file handling functions

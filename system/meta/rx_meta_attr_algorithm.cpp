@@ -83,7 +83,97 @@ string_type get_subitem_type_name(rx_subitem_type type)
 	}
 }
 }
+template <>
+rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::serialize_complex_attribute(const def_blocks::struct_attribute& whose, base_meta_writer& stream)
+{
+	if (!stream.write_string("name", whose.name_.c_str()))
+		return stream.get_error();
+	if (!stream.write_item_reference("target", whose.target_))
+		return stream.get_error();
+	if (stream.get_version() >= RX_ARRAYS_VERSION)
+	{
+		if (!stream.write_int("array", whose.array_size_))
+			return stream.get_error();
+	}
+	else
+	{
+		if (whose.array_size_ >= 0)
+			return "Can not serialize array value with this version!";
+	}
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.write_string("description", whose.description_.c_str()))
+			return stream.get_error();
+	}
+	return true;
+}
 
+template <>
+rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::deserialize_complex_attribute(def_blocks::struct_attribute& whose, base_meta_reader& stream)
+{
+	if (!stream.read_string("name", whose.name_))
+		return stream.get_error();
+	if (!stream.read_item_reference("target", whose.target_))
+		return stream.get_error();
+	if (stream.get_version() >= RX_ARRAYS_VERSION)
+	{
+		if (!stream.read_int("array", whose.array_size_))
+			return stream.get_error();
+	}
+	else
+	{
+		whose.array_size_ = -1;
+	}
+	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
+	{
+		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
+	return true;
+}
+template <>
+rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::construct_complex_attribute(const def_blocks::struct_attribute& whose, construct_context& ctx)
+{
+	rx_node_id target;
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::struct_attribute::TargetType>());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target = resolve_result.value();
+	if (whose.array_size_ < 0)
+	{
+		auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::struct_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+		if (temp)
+		{
+			return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
+		}
+		else
+		{
+			return temp.errors();
+		}
+	}
+	else
+	{
+		std::vector<runtime::structure::struct_data> data;
+		data.reserve(whose.array_size_);
+		for (int i = 0; i < whose.array_size_; i++)
+		{
+			auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::struct_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+			if (temp)
+			{
+				data.push_back(temp.move_value());
+			}
+			else
+			{
+				return temp.errors();
+			}
+		}
+		return ctx.runtime_data().add(whose.name_, std::move(data), target);
+	}
+}
 
 // Variable Attribute is a special case!!!
 template<>
@@ -95,8 +185,36 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_compl
 		return stream.get_error();
 	if (!stream.write_bool("ro", whose.read_only_))
 		return stream.get_error();
-	if (!whose.storage_.serialize("value", stream))
-		return stream.get_error();
+	if (stream.get_version() >= RX_ARRAYS_VERSION)
+	{
+		if (!stream.write_int("array", whose.array_size_))
+			return stream.get_error();
+		if (whose.array_size_ < 0)
+		{
+			if (!whose.value_.serialize("value", stream))
+				return stream.get_error();
+		}
+		else
+		{
+			if (!stream.start_array("values", whose.array_size_))
+				return stream.get_error();
+			for (int i = 0; i < whose.array_size_; i++)
+			{
+				if (!whose.values_[i].serialize("value", stream))
+					return stream.get_error();
+			}
+			if (!stream.end_array())
+				return stream.get_error();
+		}
+	}
+	else
+	{
+		if (whose.array_size_ >= 0)
+			return "Can not serialize array value with this version!";
+
+		if (!whose.value_.serialize("value", stream))
+			return stream.get_error();
+	}
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.write_string("description", whose.description_.c_str()))
@@ -118,8 +236,36 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_com
 		return stream.get_error();
 	if (!stream.read_bool("ro", whose.read_only_))
 		return stream.get_error();
-	if (!whose.storage_.deserialize("value", stream))
-		return stream.get_error();
+	if (stream.get_version() >= RX_ARRAYS_VERSION)
+	{
+		if (!stream.read_int("array", whose.array_size_))
+			return stream.get_error();
+		if (whose.array_size_ < 0)
+		{
+			if (!whose.value_.deserialize("value", stream))
+				return stream.get_error();
+		}
+		else
+		{
+			if (!stream.start_array("values"))
+				return stream.get_error();
+
+			whose.values_.clear();
+			while (!stream.array_end())
+			{
+				values::rx_simple_value temp;
+				if (!temp.deserialize("value", stream))
+					return stream.get_error();
+				whose.values_.push_back(std::move(temp));
+			}
+		}
+	}
+	else
+	{
+		whose.array_size_ = -1;
+		if (!whose.value_.deserialize("value", stream))
+			return stream.get_error();
+	}
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.read_string("description", whose.description_))
@@ -144,17 +290,49 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
-	if (temp)
+	if (whose.array_size_ < 0)
 	{
-		temp.value().value = whose.get_value(ctx.now);
-		temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
-		temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
-		return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target);
+		auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+		if (temp)
+		{
+			temp.value().value = whose.get_value(ctx.now);
+			temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
+			temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+			return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target);
+		}
+		else
+		{
+			return temp.errors();
+		}
 	}
 	else
 	{
-		return temp.errors();
+		auto vals = whose.get_values(ctx.now);
+		int vals_size = (int)vals.size();
+		if (vals_size == 0)
+			return "Invalid initialization values!";
+		rx_value first = vals[0];
+		std::vector<runtime::structure::variable_data> data;
+		data.reserve(whose.array_size_);
+		for (int i = 0; i < whose.array_size_; i++)
+		{
+			auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+			if (temp)
+			{
+				if (i < vals_size)
+					temp.value().value = vals[i];
+				else
+					temp.value().value = first;
+				temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
+				temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+				data.push_back(temp.move_value());
+			}
+			else
+			{
+				return temp.errors();
+			}
+		}
+		return ctx.runtime_data().add_variable(whose.name_, std::move(data), target);
 	}
 }
 
@@ -179,11 +357,6 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::serialize_complex
 		if (!stream.write_bool("sim", whose.io_.simulation))
 			return stream.get_error();
 		if (!stream.write_bool("proc", whose.io_.process))
-			return stream.get_error();
-	}
-	if (stream.get_version() >= RX_SRC_MAP_TYPE_VERSION)
-	{
-		if(!stream.write_value_type("type", whose.value_type_))
 			return stream.get_error();
 	}
 	return true;
@@ -216,15 +389,7 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::deserialize_compl
 		whose.io_.simulation = true;
 		whose.io_.process = true;
 	}
-	if (stream.get_version() >= RX_SRC_MAP_TYPE_VERSION)
-	{
-		if (!stream.read_value_type("type", whose.value_type_))
-			return stream.get_error();
-	}
-	else
-	{
-		whose.value_type_ = RX_NULL_TYPE;
-	}
+
 	return true;
 }
 template<>
@@ -245,7 +410,6 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
 		temp.value().source_id = target;
-		temp.value().input_value.value.convert_to(whose.get_value_type());
 		temp.value().input_value.value.set_time(ctx.now);
 		temp.value().input_value.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
 		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
@@ -280,11 +444,6 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::serialize_complex
 		if (!stream.write_bool("proc", whose.io_.process))
 			return stream.get_error();
 	}
-	if (stream.get_version() >= RX_SRC_MAP_TYPE_VERSION)
-	{
-		if (!stream.write_value_type("type", whose.value_type_))
-			return stream.get_error();
-	}
 	return true;
 }
 template<>
@@ -315,15 +474,7 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::deserialize_compl
 		whose.io_.simulation = true;
 		whose.io_.process = true;
 	}
-	if (stream.get_version() >= RX_SRC_MAP_TYPE_VERSION)
-	{
-		if (!stream.read_value_type("type", whose.value_type_))
-			return stream.get_error();
-	}
-	else
-	{
-		whose.value_type_ = RX_NULL_TYPE;
-	}
+		
 	return true;
 }
 template<>
@@ -347,7 +498,6 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
 		temp.value().mapper_id = target;
-		temp.value().mapped_value.value.convert_to(whose.get_value_type());
 		temp.value().mapped_value.value.set_time(ctx.now);
 		temp.value().mapped_value.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
 		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
@@ -877,28 +1027,58 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 			// constant values
 		case complex_data_type::const_values_mask:
 			{
-				rx_result ret = ctx.runtime_data().add_const_value(
-					one.first,
-					whose.const_values_[one.second & complex_data_type::index_mask].get_value());
-				if (!ret)
+				if (whose.const_values_[one.second & complex_data_type::index_mask].get_array_size() < 0)
 				{
-					ret.register_error("Unable to add const value "s + one.first + "!");
-					return ret;
+					rx_result ret = ctx.runtime_data().add_const_value(
+						one.first,
+						whose.const_values_[one.second & complex_data_type::index_mask].get_value());
+					if (!ret)
+					{
+						ret.register_error("Unable to add const value "s + one.first + "!");
+						return ret;
+					}
+				}
+				else
+				{
+					rx_result ret = ctx.runtime_data().add_const_value(
+						one.first,
+						whose.const_values_[one.second & complex_data_type::index_mask].get_values());
+					if (!ret)
+					{
+						ret.register_error("Unable to add const value "s + one.first + "!");
+						return ret;
+					}
 				}
 			}
 			break;
 			// simple values
 		case complex_data_type::simple_values_mask:
 			{
-				rx_result ret = ctx.runtime_data().add_value(
-					one.first,
-					whose.simple_values_[one.second & complex_data_type::index_mask].get_value(ctx.now),
-					whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
-					whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent());
-				if (!ret)
+				if (whose.simple_values_[one.second & complex_data_type::index_mask].get_array_size() < 0)
 				{
-					ret.register_error("Unable to add simple value "s + one.first + "!");
-					return ret;
+					rx_result ret = ctx.runtime_data().add_value(
+						one.first,
+						whose.simple_values_[one.second & complex_data_type::index_mask].get_value(ctx.now),
+						whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
+						whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent());
+					if (!ret)
+					{
+						ret.register_error("Unable to add simple value "s + one.first + "!");
+						return ret;
+					}
+				}
+				else
+				{
+					rx_result ret = ctx.runtime_data().add_value(
+						one.first,
+						whose.simple_values_[one.second & complex_data_type::index_mask].get_values(ctx.now),
+						whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
+						whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent());
+					if (!ret)
+					{
+						ret.register_error("Unable to add simple value "s + one.first + "!");
+						return ret;
+					}
 				}
 			}
 			break;

@@ -36,6 +36,8 @@
 
 // dummy
 #include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
@@ -197,6 +199,9 @@ TCP Server port class. implementation of an TCP/IP4 client side, connect...");
       void release_buffer (buffer_ptr what);
 
       buffer_ptr get_buffer ();
+
+
+      rx_platform::runtime::io_types::external_port_status status;
 
 
   protected:

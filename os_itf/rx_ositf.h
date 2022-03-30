@@ -268,8 +268,6 @@ extern "C" {
 	int rx_thread_join(sys_handle_t what);
 	int rx_thread_close(sys_handle_t what);
 	sys_handle_t rx_current_thread();
-	void rx_ms_sleep(uint32_t timeout);
-	void rx_us_sleep(uint64_t timeout);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 

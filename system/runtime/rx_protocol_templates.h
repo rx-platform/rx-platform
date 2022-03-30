@@ -207,6 +207,7 @@ void slave_server_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endp
     auto it = active_endpoints_.find(what);
     if (it != active_endpoints_.end())
     {
+        it->second->close_endpoint();
         active_endpoints_.erase(it);
     }
 }

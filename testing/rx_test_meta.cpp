@@ -207,7 +207,7 @@ typename T::instance_data_t create_runtime_prototype(const string_type& rt_name,
 				 out << ANSI_COLOR_YELLOW "changing initialization data for object\r\n" ANSI_COLOR_RESET;
 				 data::runtime_values_data init_data;
 				 runtime::algorithms::runtime_holder_algorithms<object_type>::collect_data(init_data, runtime_value_type::simple_runtime_value, *test_object);
-				 init_data.children["structName"].values["structVal"].value.assign_static(113);
+				 //init_data.children["structName"].values["structVal"].simple_item.assign_static(113);
 				 runtime::algorithms::runtime_holder_algorithms<object_type>::fill_data(init_data, *test_object);
 
 				 out << ANSI_COLOR_YELLOW "Dumping test_object\r\n" ANSI_COLOR_RESET;

@@ -163,10 +163,10 @@ rx_result relation_data::stop_relation (runtime::runtime_stop_context& ctx)
 
 void relation_data::fill_data (const data::runtime_values_data& data, runtime_process_context* ctx)
 {
-	auto it = data.values.find(name);
-	if (it != data.values.end())
+	auto init_val = data.get_value(name);
+	if (!init_val.is_null())
 	{
-		target_path = it->second.value.get_string();
+		target_path = init_val.get_string();
 	}
 	rx_simple_value val;
 	val.assign_static(target_path.c_str());

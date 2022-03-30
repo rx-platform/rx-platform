@@ -138,6 +138,8 @@ struct index_data
 
 
 
+
+
 template <class typeT>
 class empty 
 {
@@ -180,7 +182,7 @@ class has
           std::vector<typeT> temp;
           temp.reserve(source.size());
           for (auto&& one : source)
-              temp.emplace_back(std::move(one.second));
+              temp.push_back(std::move(one.second));
 		  collection = collection_type(std::move(temp));
 	  }
 	  collection_type collection;
@@ -382,6 +384,8 @@ class struct_data
 
       rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
 
+      void object_state_changed (runtime_process_context* ctx);
+
 
       runtime_item::smart_ptr item;
 
@@ -462,6 +466,8 @@ public:
 
       rx_result filter_changed ();
 
+      void object_state_changed (runtime_process_context* ctx);
+
 
       runtime_item::smart_ptr item;
 
@@ -538,157 +544,6 @@ class write_task
 
 
   protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class block_data : public runtime_item  
-{
-    typedef const_size_vector<const_value_data> values_type;
-    typedef const_size_vector<block_data> children_type;
-
-    typedef const_size_vector<index_data> items_type;
-
-
-  public:
-
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
-
-      void fill_data (const data::runtime_values_data& data);
-
-      rx_result get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const;
-
-      void object_state_changed (runtime_process_context* ctx);
-
-      rx_result get_value_ref (string_view_type path, rt_value_ref& ref, bool is_var);
-
-      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
-
-      const runtime_item* get_child_item (string_view_type path) const;
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      runtime_filters_type& get_filters ();
-
-      runtime_sources_type& get_sources ();
-
-      runtime_mappers_type& get_mappers ();
-
-      runtime_events_type& get_events ();
-
-      runtime_variables_type& get_variables ();
-
-      runtime_structs_type& get_structs ();
-
-      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
-
-      bool is_this_yours (string_view_type path) const;
-
-      void read_struct (string_view_type path, read_struct_data data) const;
-
-      void write_struct (string_view_type path, write_struct_data data);
-
-      rx_result create_safe_runtime_data (const data::runtime_values_data& in, data::runtime_values_data& out);
-
-
-      values_type values;
-
-      children_type children;
-
-
-      items_type items;
-
-
-  protected:
-
-  private:
-
-      members_index_type internal_get_index (string_view_type name) const;
-
-      bool is_value_index (members_index_type idx) const;
-
-      bool is_complex_index (members_index_type idx) const;
-
-
-
-};
-
-
-
-
-
-
-
-class event_data 
-{
-public:
-	~event_data() = default;
-	event_data(const event_data&) = delete;
-	event_data(event_data&&) noexcept = default;
-	event_data& operator=(const event_data&) = delete;
-	event_data& operator=(event_data&&) noexcept = default;
-	operator bool() const
-	{
-		return event_ptr;
-	}
-    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::event_attribute>;
-
-  public:
-      event_data();
-
-      event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var, const event_data& prototype);
-
-
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
-
-      void fill_data (const data::runtime_values_data& data);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void process_runtime (runtime_process_context* ctx);
-
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
-
-      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
-
-      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
-
-      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
-
-
-      block_data arguments;
-
-
-      runtime_item::smart_ptr item;
-
-      static string_type type_name;
-
-      event_runtime_ptr event_ptr;
-
-	  typedef std::unique_ptr<event_data> smart_ptr;
-  protected:
-
-      const runtime_item* get_child_item (string_view_type path) const;
-
 
   private:
 
@@ -809,6 +664,10 @@ class variable_data
 
       void variable_result_pending (runtime_process_context* ctx, rx_result&& result, runtime_transaction_id_t id);
 
+      void object_state_changed (runtime_process_context* ctx);
+
+      rx_simple_value simple_get_value () const;
+
 
       rx::values::rx_value value;
 
@@ -899,6 +758,8 @@ public:
       rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
 
       rx_value get_value (runtime_process_context* ctx) const;
+
+      void object_state_changed (runtime_process_context* ctx);
 
 
       full_value_data mapped_value;
@@ -999,6 +860,8 @@ class source_data
 
       rx_value get_value (runtime_process_context* ctx) const;
 
+      void object_state_changed (runtime_process_context* ctx);
+
 
       full_value_data input_value;
 
@@ -1028,6 +891,457 @@ class source_data
       rx_value current_value_;
 
       io_capabilities io_;
+
+
+};
+
+
+
+
+
+
+class mapper_write_task : public write_task  
+{
+
+  public:
+      mapper_write_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id);
+
+
+      void process_result (rx_result&& result);
+
+
+  protected:
+
+  private:
+
+
+      mapper_data *my_mapper_;
+
+
+      runtime_transaction_id_t transaction_id_;
+
+
+};
+
+
+
+
+
+
+template <class typeT>
+class array_wrapper 
+{
+
+#ifdef _MSC_VER
+#ifdef _DEBUG
+#undef new
+#endif
+#endif
+
+    struct array_wrapper_union_t
+    {
+        int size;
+        union
+        {
+            typeT simple_item;
+            typeT* array_item;
+        };
+        void destroy() noexcept
+        {
+            if (size < 0)
+            {
+                simple_item.~typeT();
+            }
+            else
+            {
+                if (size)
+                {
+                    delete[] array_item;
+                }
+                else
+                {
+                    RX_ASSERT(array_item == nullptr);
+                }
+            }
+        }
+        array_wrapper_union_t()
+        {
+            size = -1;
+            new(&simple_item)typeT();
+        }
+        array_wrapper_union_t(const array_wrapper_union_t& right)
+        {
+            size = right.size;
+            if (size < 0)
+            {
+                new(&simple_item)typeT(right.simple_item);
+            }
+            else if (size > 0)
+            {
+                array_item = new typeT[size];
+                for (int i = 0; i < size; i++)
+                {
+                    array_item[i] = right.array_item[i];
+                }
+            }
+            else
+            {
+                array_item = 0;
+            }
+        }
+        array_wrapper_union_t(array_wrapper_union_t&& right) noexcept
+        {
+            size = right.size;
+            right.size = 0;
+            if (size < 0)
+            {
+                new(&simple_item)typeT(std::move(right.simple_item));
+            }
+            else
+            {
+                array_item = right.array_item;
+                right.array_item = nullptr;
+            }
+        }
+        array_wrapper_union_t(const typeT& right)
+        {
+            size = -1;
+            new(&simple_item)typeT(right);
+        }
+        array_wrapper_union_t& operator=(const typeT& right)
+        {
+            this->destroy();
+            size = -1;
+            new(&simple_item)typeT(right);
+        }
+        array_wrapper_union_t(typeT&& right)
+        {
+            size = -1;
+            new(&simple_item)typeT(std::move(right));
+        }
+        array_wrapper_union_t& operator=(typeT&& right) noexcept
+        {
+            this->destroy();
+            size = -1;
+            new(&simple_item)typeT(std::move(right));
+        }
+        array_wrapper_union_t(std::initializer_list<typeT> init_list)
+        {
+            size = (int)init_list.size();
+            if (size)
+            {
+                array_item = new typeT[size];
+                size_t idx = 0;
+                for (auto one : init_list)
+                {
+                    array_item[idx++] = std::move(one);
+                }
+            }
+            else
+                array_item = nullptr;
+        }
+
+        explicit array_wrapper_union_t(std::vector<typeT>&& from)
+        {
+            size = (int)from.size();
+            if (size)
+            {
+                array_item = new typeT[size];
+                size_t idx = 0;
+                for (auto& one : from)
+                {
+                    array_item[idx++] = std::move(one);
+                }
+            }
+            else
+                array_item = nullptr;
+        }
+        explicit array_wrapper_union_t(const std::vector<typeT>& from)
+        {
+            size = (int)from.size();
+            if (size)
+            {
+                array_item = new typeT[size];
+                size_t idx = 0;
+                for (const auto& one : from)
+                {
+                    array_item[idx++] = one;
+                }
+            }
+            else
+                array_item = nullptr;
+        }
+
+        ~array_wrapper_union_t()
+        {
+            destroy();
+        }
+    };
+
+
+
+#ifdef _MSC_VER
+#ifdef _DEBUG
+#define new DEBUG_CLIENTBLOCK
+#endif
+#endif
+
+    typedef typename std::vector<typeT> container_t;
+
+  public:
+      array_wrapper()
+      {
+      }
+    array_wrapper(const array_wrapper& right)
+        : data_(right.data_)
+    {
+    }
+    array_wrapper(array_wrapper&& right) noexcept
+        : data_(std::move(right.data_))
+    {
+    }
+    array_wrapper(const typeT& right)
+        : data_(right)
+    {
+    }
+    array_wrapper(typeT&& right) noexcept
+        : data_(std::move(right))
+    {
+    }
+    array_wrapper& operator=(const typeT& right)
+    {
+        data_ = right;
+        return this;
+    }
+    array_wrapper& operator=(typeT&& right) noexcept
+    {
+        data_ = std::move(right);
+        return this;
+    }
+    array_wrapper(std::initializer_list<typeT> init_list)
+        : data_(std::move(init_list))
+    {
+    }
+
+    explicit array_wrapper(std::vector<typeT>&& from)
+        : data_(std::move(from))
+    {
+    }
+    explicit array_wrapper(const std::vector<typeT>& from)
+        : data_(from)
+    {
+    }
+    bool is_array() const
+    {
+        return data_.size >= 0;
+    }
+    const typeT* get_item(int array_idx) const
+    {
+        if (array_idx < 0 && data_.size < 0)
+        {
+            return &data_.simple_item;
+        }
+        else if (data_.size > 0 && array_idx >= 0 && array_idx < data_.size)
+        {
+            return &data_.array_item[array_idx];
+        }
+        else
+        {
+            RX_ASSERT(false);
+            return nullptr;
+        }
+    }
+    typeT* get_item(int array_idx)
+    {
+        if (array_idx < 0 && data_.size < 0)
+        {
+            return &data_.simple_item;
+        }
+        else if (data_.size > 0 && array_idx >= 0 && array_idx < data_.size)
+        {
+            return &data_.array_item[array_idx];
+        }
+        else
+        {
+            RX_ASSERT(false);
+            return nullptr;
+        }
+    }
+    const typeT* get_item() const
+    {
+        return get_item(-1);
+    }
+    typeT* get_item()
+    {
+        return get_item(-1);
+    }
+    int get_size() const
+    {
+        return data_.size;
+    }
+
+  protected:
+
+  private:
+
+
+      array_wrapper_union_t data_;
+
+
+};
+
+
+
+
+
+
+
+class block_data : public runtime_item  
+{
+    typedef const_size_vector<array_wrapper<const_value_data> > values_type;
+    typedef const_size_vector< array_wrapper<block_data> > children_type;
+
+    typedef const_size_vector<index_data> items_type;
+
+
+  public:
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const;
+
+      void object_state_changed (runtime_process_context* ctx);
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref, bool is_var);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      const runtime_item* get_child_item (string_view_type path) const;
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      runtime_filters_type& get_filters ();
+
+      runtime_sources_type& get_sources ();
+
+      runtime_mappers_type& get_mappers ();
+
+      runtime_events_type& get_events ();
+
+      runtime_variables_type& get_variables ();
+
+      runtime_structs_type& get_structs ();
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      bool is_this_yours (string_view_type path) const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void write_struct (string_view_type path, write_struct_data data);
+
+      rx_result create_safe_runtime_data (const data::runtime_values_data& in, data::runtime_values_data& out);
+
+
+      values_type values;
+
+      children_type children;
+
+
+      items_type items;
+
+
+  protected:
+
+  private:
+
+      string_view_type extract_index (string_view_type name, int& idx) const;
+
+      members_index_type internal_get_index (string_view_type name, int& idx) const;
+
+      bool is_value_index (members_index_type idx) const;
+
+      bool is_complex_index (members_index_type idx) const;
+
+
+
+};
+
+
+
+
+
+
+
+class event_data 
+{
+public:
+	~event_data() = default;
+	event_data(const event_data&) = delete;
+	event_data(event_data&&) noexcept = default;
+	event_data& operator=(const event_data&) = delete;
+	event_data& operator=(event_data&&) noexcept = default;
+	operator bool() const
+	{
+		return event_ptr;
+	}
+    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::event_attribute>;
+
+  public:
+      event_data();
+
+      event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var, const event_data& prototype);
+
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      void process_runtime (runtime_process_context* ctx);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      void object_state_changed (runtime_process_context* ctx);
+
+
+      block_data arguments;
+
+
+      runtime_item::smart_ptr item;
+
+      static string_type type_name;
+
+      event_runtime_ptr event_ptr;
+
+	  typedef std::unique_ptr<event_data> smart_ptr;
+  protected:
+
+      const runtime_item* get_child_item (string_view_type path) const;
+
+
+  private:
 
 
 };
@@ -1071,8 +1385,8 @@ class runtime_data : public runtime_item
 	  {
 		  return events_type::can_insert();
 	  }
-	  typedef const_size_vector<const_value_data> const_values_type;
-	  typedef const_size_vector<value_data> values_type;
+	  typedef const_size_vector<array_wrapper<const_value_data> > const_values_type;
+	  typedef const_size_vector< array_wrapper<value_data> > values_type;
       typedef const_size_vector<indirect_value_data> indirect_values_type;
 
 
@@ -1147,7 +1461,9 @@ class runtime_data : public runtime_item
 
   private:
 
-      members_index_type internal_get_index (string_view_type name) const;
+      string_view_type extract_index (string_view_type name, int& idx) const;
+
+      members_index_type internal_get_index (string_view_type name, int& idx) const;
 
       bool is_value_index (members_index_type idx) const;
 
@@ -1163,8 +1479,8 @@ class runtime_data : public runtime_item
 // empty item data
 // only values and const values are there
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
@@ -1173,8 +1489,8 @@ typedef runtime_data<
 // variables item data
 // only variables are there
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
@@ -1184,8 +1500,8 @@ typedef runtime_data<
 // structs item data
 // only structs are there
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
@@ -1195,8 +1511,8 @@ typedef runtime_data<
 // basic item data
 // structs and variables are there
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
@@ -1206,8 +1522,8 @@ typedef runtime_data<
 // basic item data
 // mixed empty<->has
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
@@ -1217,8 +1533,8 @@ typedef runtime_data<
 // full item data
 // all the sub items are there
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
@@ -1228,512 +1544,512 @@ typedef runtime_data<
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 // exact constant-named runtime data types
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x00> runtime_data_type00;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x01> runtime_data_type01;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x02> runtime_data_type02;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x03> runtime_data_type03;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x04> runtime_data_type04;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x05> runtime_data_type05;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x06> runtime_data_type06;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x07> runtime_data_type07;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x08> runtime_data_type08;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x09> runtime_data_type09;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x0a> runtime_data_type0a;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x0b> runtime_data_type0b;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x0c> runtime_data_type0c;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x0d> runtime_data_type0d;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x0e> runtime_data_type0e;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	empty<event_data>, 0x0f> runtime_data_type0f;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x10> runtime_data_type10;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x11> runtime_data_type11;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x12> runtime_data_type12;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x13> runtime_data_type13;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x14> runtime_data_type14;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x15> runtime_data_type15;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x16> runtime_data_type16;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x17> runtime_data_type17;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x18> runtime_data_type18;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x19> runtime_data_type19;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x1a> runtime_data_type1a;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x1b> runtime_data_type1b;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x1c> runtime_data_type1c;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x1d> runtime_data_type1d;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x1e> runtime_data_type1e;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	empty<event_data>, 0x1f> runtime_data_type1f;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x20> runtime_data_type20;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x21> runtime_data_type21;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x22> runtime_data_type22;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x23> runtime_data_type23;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x24> runtime_data_type24;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x25> runtime_data_type25;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x26> runtime_data_type26;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x27> runtime_data_type27;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x28> runtime_data_type28;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x29> runtime_data_type29;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x2a> runtime_data_type2a;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x2b> runtime_data_type2b;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x2c> runtime_data_type2c;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x2d> runtime_data_type2d;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x2e> runtime_data_type2e;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
 	has<event_data>, 0x2f> runtime_data_type2f;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x30> runtime_data_type30;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x31> runtime_data_type31;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x32> runtime_data_type32;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x33> runtime_data_type33;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x34> runtime_data_type34;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x35> runtime_data_type35;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x36> runtime_data_type36;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x37> runtime_data_type37;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x38> runtime_data_type38;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x39> runtime_data_type39;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x3a> runtime_data_type3a;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x3b> runtime_data_type3b;
 
 typedef runtime_data<
-	empty<variable_data>,
-	empty<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x3c> runtime_data_type3c;
 
 typedef runtime_data<
-	has<variable_data>,
-	empty<struct_data>,
+	has<array_wrapper<variable_data> >,
+	empty<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x3d> runtime_data_type3d;
 
 typedef runtime_data<
-	empty<variable_data>,
-	has<struct_data>,
+	empty<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
 	has<event_data>, 0x3e> runtime_data_type3e;
 
 typedef runtime_data<
-	has<variable_data>,
-	has<struct_data>,
+	has<array_wrapper<variable_data> >,
+	has<array_wrapper<struct_data> >,
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
@@ -1741,34 +2057,6 @@ typedef runtime_data<
 
 // ugly function for creating data holder depending on runtime type
 runtime_item::smart_ptr create_runtime_data(uint_fast8_t type_id);
-
-
-
-
-
-
-class mapper_write_task : public write_task  
-{
-
-  public:
-      mapper_write_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id);
-
-
-      void process_result (rx_result&& result);
-
-
-  protected:
-
-  private:
-
-
-      mapper_data *my_mapper_;
-
-
-      runtime_transaction_id_t transaction_id_;
-
-
-};
 
 
 } // namespace structure

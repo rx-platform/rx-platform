@@ -102,6 +102,14 @@ void job::process_wrapper ()
     process();
 }
 
+void job::pre_process_job ()
+{
+}
+
+void job::post_process_job ()
+{
+}
+
 
 // Class rx_platform::jobs::timer_job 
 
@@ -109,7 +117,8 @@ timer_job::timer_job()
       : next_(0x0),
         period_(0x0),
         suspended_(true),
-        period_error_(0)
+        period_error_(0),
+        processing_count_(0)
   , executer_(nullptr), my_timer_(nullptr)
 {
 }
@@ -149,6 +158,23 @@ void timer_job::wake_timer ()
 {
 	if (my_timer_)
 		my_timer_->wake_up();
+}
+
+rx_timer_ticks_t timer_job::internal_tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove)
+{
+	//if (processing_count_++ > 1)
+	//	return 0;// we're second
+	//else
+		return tick(current_tick, random_offset, remove);
+}
+
+void timer_job::process_wrapper1 ()
+{
+	job::process_wrapper();
+	if (processing_count_-- > 0 && my_timer_)
+	{
+		my_timer_->wake_up();
+	}
 }
 
 

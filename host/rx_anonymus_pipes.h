@@ -38,6 +38,8 @@
 #include "dummy.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 
@@ -167,6 +169,9 @@ Local Pipe class. implementation of an local pipe port");
       void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
       rx_result stop_passive ();
+
+
+      rx_platform::runtime::io_types::external_port_status status;
 
       void remove_endpoint(rx_protocol_stack_endpoint* what)
       {

@@ -34,7 +34,6 @@
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
 
-#include "system/runtime/rx_rt_struct.h"
 #include "system/runtime/rx_blocks.h"
 #include "rx_def_blocks.h"
 #include "model/rx_meta_internals.h"
@@ -171,9 +170,10 @@ void construct_context::push_overrides (const string_type& name, const data::run
 	else
 	{
 		RX_ASSERT(!name.empty());
-		auto& new_one = overrides_stack_.top()->add_child(name);
-		new_one = *vals;
-		overrides_stack_.push(&new_one);
+		auto new_one = overrides_stack_.top()->add_child(name);
+		if(new_one)
+			*new_one = *vals;
+		overrides_stack_.push(new_one);
 	}
 }
 
@@ -199,7 +199,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_stack().push_back(runtime_data_prototype());
 }
 
-runtime_data_prototype construct_context::pop_rt_name ()
+rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(*runtime_stack().rbegin());
@@ -318,7 +318,9 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 	if (idx < 0)
 	{// new one
 		members_index_type new_idx = static_cast<members_index_type>(const_values.size());
-		const_values.push_back({ value });
+		runtime::structure::const_value_data temp;
+		temp.value = std::move(value);
+		const_values.emplace_back(std::move(temp));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_const_index_type });
 		return true;
 	}
@@ -329,27 +331,125 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 		{
 		case rt_const_index_type:
 			{
-				if(value.get_type() != const_values[elem.index>> rt_type_shift].value.get_type())
+				auto& this_val = const_values[elem.index >> rt_type_shift];
+				if(this_val.is_array())
+					return "Can't override constant value, can not replace array with simple value!";
+				if(value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override constant value, wrong value type!";
 
 				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
-				const_values.push_back({ value });
+				runtime::structure::const_value_data temp;
+				temp.value = std::move(value);
+				const_values.emplace_back(std::move(temp));
 				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
 			}
 			break;
 		case rt_value_index_type:
 			{
-				if (value.get_type() != values[elem.index >> rt_type_shift].value.get_type())
+				auto& this_val = values[elem.index >> rt_type_shift];
+				if (this_val.is_array())
+					return "Can't override constant value, can not replace array with simple value!";
+				if (value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override value, wrong value type!";
 
 				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
-				const_values.push_back({ value });
+				runtime::structure::const_value_data temp;
+				temp.value = std::move(value);
+				const_values.emplace_back(std::move(temp));
 				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
 			}
 			break;
 		case rt_variable_index_type:
 			return "Well, don't know what to do with this one?"s + RX_NOT_SUPPORTED;
 			break;
+		default:
+			return name + " has invalid type to override";
+		}
+		return true;
+	}
+}
+
+rx_result runtime_data_prototype::add_const_value (const string_type& name, std::vector<values::rx_simple_value> value)
+{
+	auto idx = check_member_name(name);
+	if (idx < 0)
+	{// new one
+		members_index_type new_idx = static_cast<members_index_type>(const_values.size());
+		std::vector<runtime::structure::const_value_data> temp_array;
+		int size = (int)value.size();
+		if (size > 0)
+		{
+			for (int i = 0; i < size; i++)
+			{
+				runtime::structure::const_value_data temp;
+				temp.value = std::move(value[i]);
+				temp_array.push_back(std::move(temp));
+			}
+		}
+		const_values.emplace_back(temp_array);
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_const_index_type });
+		return true;
+	}
+	else
+	{// override so check it
+		auto& elem = items[idx];
+		switch (elem.index & rt_type_mask)
+		{
+		case rt_const_index_type:
+			{
+				auto& this_val = const_values[elem.index >> rt_type_shift];
+				if (!this_val.is_array())
+					return "Can't override constant value, can not replace simple value with array!";
+				if (value[0].get_type() != this_val.get_item(0)->value.get_type())
+					return "Can't override constant value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
+
+				std::vector<runtime::structure::const_value_data> temp_array;
+				int size = (int)value.size();
+				if (size > 0)
+				{
+					for (int i = 0; i < size; i++)
+					{
+						runtime::structure::const_value_data temp;
+						temp.value = std::move(value[i]);
+						temp_array.push_back(std::move(temp));
+					}
+				}
+				const_values.emplace_back(std::move(temp_array));
+				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
+			}
+			break;
+		case rt_value_index_type:
+			{
+				auto& this_val = values[elem.index >> rt_type_shift];
+				if (!this_val.is_array())
+					return "Can't override constant value, can not replace simple value with array!";
+				if (value[0].get_type() != values[elem.index >> rt_type_shift].get_item(0)->value.get_type())
+					return "Can't override value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
+				
+				std::vector<runtime::structure::const_value_data> temp_array;
+				int size = (int)value.size();
+				if (size > 0)
+				{
+					for (int i = 0; i < size; i++)
+					{
+						runtime::structure::const_value_data temp;
+						temp.value = std::move(value[i]);
+						temp_array.push_back(std::move(temp));
+					}
+				}
+				const_values.emplace_back(std::move(temp_array));
+				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
+			}
+			break;
+		case rt_variable_index_type:
+			return "Well, don't know what to do with this one?"s + RX_NOT_SUPPORTED;
+			break;
+		default:
+			return name + " has invalid type to override";
 		}
 		return true;
 	}
@@ -376,7 +476,10 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 		{
 		case rt_const_index_type:
 			{
-				if (value.get_type() != const_values[elem.index >> rt_type_shift].value.get_type())
+				auto& this_val = const_values[elem.index >> rt_type_shift];
+				if (this_val.is_array())
+					return "Can't override constant value, can not replace array with simple value!";
+				if (value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override constant value, wrong value type!";
 
 				members_index_type new_idx = static_cast<members_index_type>(values.size());
@@ -384,13 +487,17 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 				temp_val.value = std::move(value);
 				temp_val.value_opt[runtime::structure::value_opt_readonly] = read_only;
 				temp_val.value_opt[runtime::structure::value_opt_persistent] = persistent;
-				values.push_back({ temp_val });
+				values.push_back(std::move(temp_val));
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}
 			break;
 		case rt_value_index_type:
 			{
-				if (value.get_type() != values[elem.index >> rt_type_shift].value.get_type())
+				auto& this_val = values[elem.index >> rt_type_shift];
+				if (this_val.is_array())
+					return "Can't override constant value, can not replace array with simple value!";
+
+				if (value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override value, wrong value type!";
 
 				members_index_type new_idx = static_cast<members_index_type>(values.size());
@@ -398,13 +505,101 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 				temp_val.value = std::move(value);
 				temp_val.value_opt[runtime::structure::value_opt_readonly] = read_only;
 				temp_val.value_opt[runtime::structure::value_opt_persistent] = persistent;
-				values.push_back({ temp_val });
+				values.push_back(std::move(temp_val));
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}
 			break;
 		case rt_variable_index_type:
 			return "Well, don't know what to do with this one?"s + RX_NOT_SUPPORTED;
 			break;
+		default:
+			return name + " has invalid type to override";
+		}
+		return true;
+	}
+}
+
+rx_result runtime_data_prototype::add_value (const string_type& name, std::vector<rx_timed_value> value, bool read_only, bool persistent)
+{
+	auto idx = check_member_name(name);
+	if (idx < 0)
+	{// new one
+		members_index_type new_idx = static_cast<members_index_type>(values.size());
+		std::vector<runtime::structure::value_data> temp_array;
+		int size = (int)value.size();
+		if (size > 0)
+		{
+			for (int i = 0; i < size; i++)
+			{
+				runtime::structure::value_data temp;
+				temp.value = std::move(value[i]);
+				temp_array.push_back(std::move(temp));
+			}
+		}
+		values.emplace_back(temp_array);
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_index_type });
+		return true;
+	}
+	else
+	{// override so check it
+		auto& elem = items[idx];
+		switch (elem.index & rt_type_mask)
+		{
+		case rt_const_index_type:
+			{
+				auto& this_val = const_values[elem.index >> rt_type_shift];
+				if (!this_val.is_array())
+					return "Can't override constant value, can not replace simple value with array!";
+				if (value[0].get_type() != this_val.get_item(0)->value.get_type())
+					return "Can't override constant value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(values.size());
+
+				std::vector<runtime::structure::value_data> temp_array;
+				int size = (int)value.size();
+				if (size > 0)
+				{
+					for (int i = 0; i < size; i++)
+					{
+						runtime::structure::value_data temp;
+						temp.value = std::move(value[i]);
+						temp_array.push_back(std::move(temp));
+					}
+				}
+				values.emplace_back(std::move(temp_array));
+				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
+			}
+			break;
+		case rt_value_index_type:
+			{
+				auto& this_val = values[elem.index >> rt_type_shift];
+				if (!this_val.is_array())
+					return "Can't override constant value, can not replace simple value with array!";
+				if (value[0].get_type() != values[elem.index >> rt_type_shift].get_item(0)->value.get_type())
+					return "Can't override value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(values.size());
+
+				std::vector<runtime::structure::value_data> temp_array;
+				int size = (int)value.size();
+				if (size > 0)
+				{
+					for (int i = 0; i < size; i++)
+					{
+						runtime::structure::value_data temp;
+						temp.value = std::move(value[i]);
+						temp_array.push_back(std::move(temp));
+					}
+				}
+				values.emplace_back(std::move(temp_array));
+				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
+			}
+			break;
+		case rt_variable_index_type:
+			return "Well, don't know what to do with this one?"s + RX_NOT_SUPPORTED;
+			break;
+		default:
+			return name + " has invalid type to override";
 		}
 		return true;
 	}
@@ -483,6 +678,42 @@ rx_result runtime_data_prototype::add (const string_type& name, runtime::structu
 	}
 }
 
+rx_result runtime_data_prototype::add (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id)
+{
+	auto idx = check_member_name(name);
+	if (idx < 0)
+	{
+		members_index_type new_idx = static_cast<members_index_type>(structs.size());
+		structs.emplace_back(std::move(id), std::move(value));
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_struct_index_type });
+		return true;
+	}
+	else
+	{
+		// override so check it
+		auto& elem = items[idx];
+		switch (elem.index & rt_type_mask)
+		{
+		case rt_struct_index_type:
+			{
+				auto& this_val = structs[elem.index >> rt_type_shift].second;
+				if (this_val.is_array())
+					return "Can't override constant value, can not replace array with simple value!";
+				if (id != structs[elem.index >> rt_type_shift].first &&
+					!rx_internal::model::platform_types_manager::instance().get_simple_type_repository<basic_types::struct_type>().is_derived_from(id, structs[elem.index >> rt_type_shift].first))
+					return "Can't override variable, wrong variable type!";
+				members_index_type new_idx = static_cast<members_index_type>(structs.size());
+				structs.emplace_back(std::move(id), std::move(value));
+				elem.index = (new_idx << rt_type_shift) | rt_struct_index_type;
+			}
+			break;
+		default:
+			return name + " has invalid type to override";
+		}
+		return true;
+	}
+}
+
 rx_result runtime_data_prototype::add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_node_id id)
 {
 	auto idx = check_member_name(name);
@@ -501,7 +732,10 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 		{
 		case rt_const_index_type:
 			{
-				if (value.value.get_type() != const_values[elem.index >> rt_type_shift].value.get_type())
+				auto& this_val = const_values[elem.index >> rt_type_shift];
+				if (this_val.is_array())
+					return "Can't override constant value, can not replace array with simple value!";
+				if (value.value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override constant value, wrong value type!";
 
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
@@ -511,7 +745,10 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 			break;
 		case rt_value_index_type:
 			{
-				if (value.value.get_type() != values[elem.index >> rt_type_shift].value.get_type())
+				auto& this_val = values[elem.index >> rt_type_shift];
+				if (this_val.is_array())
+					return "Can't override constant value, can not replace array with simple value!";
+				if (value.value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override value, wrong value type!";
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
 				variables.emplace_back(std::move(id), std::move(value));
@@ -520,7 +757,10 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 			break;
 		case rt_variable_index_type:
 			{
-				if (value.value.get_type() != variables[elem.index >> rt_type_shift].second.value.get_type())
+				auto& this_val = variables[elem.index >> rt_type_shift].second;
+				if (this_val.is_array())
+					return "Can't override constant value, can not replace array with simple value!";
+				if (value.value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override variable, wrong value type!";
 				if(id != variables[elem.index >> rt_type_shift].first &&
 					!rx_internal::model::platform_types_manager::instance().get_simple_type_repository<basic_types::variable_type>().is_derived_from(id, variables[elem.index >> rt_type_shift].first))
@@ -531,7 +771,70 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 			}
 			break;
 		default:
-			return "JOJ!!!";
+			return name + " has invalid type to override";
+		}
+		return true;
+	}
+}
+
+rx_result runtime_data_prototype::add_variable (const string_type& name, std::vector<runtime::structure::variable_data> value, rx_node_id id)
+{
+	auto idx = check_member_name(name);
+	if (idx < 0)
+	{
+		members_index_type new_idx = static_cast<members_index_type>(variables.size());
+		variables.emplace_back(std::move(id), std::move(value));
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_variable_index_type });
+		return true;
+	}
+	else
+	{
+		// override so check it
+		auto& elem = items[idx];
+		switch (elem.index & rt_type_mask)
+		{
+		case rt_const_index_type:
+			{
+				auto& this_val = const_values[elem.index >> rt_type_shift];
+				if (!this_val.is_array())
+					return "Can't override constant value, can not replace simple value with array!";
+				if (value[0].value.get_type() != this_val.get_item(0)->value.get_type())
+					return "Can't override constant value, wrong value type!";
+
+				members_index_type new_idx = static_cast<members_index_type>(variables.size());
+				variables.emplace_back(std::move(id), std::move(value));
+				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
+			}
+			break;
+		case rt_value_index_type:
+			{
+				auto& this_val = values[elem.index >> rt_type_shift];
+				if (!this_val.is_array())
+					return "Can't override constant value, can not replace simple value with array!";
+				if (value[0].value.get_type() != this_val.get_item(0)->value.get_type())
+					return "Can't override value, wrong value type!";
+				members_index_type new_idx = static_cast<members_index_type>(variables.size());
+				variables.emplace_back(std::move(id), std::move(value));
+				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
+			}
+			break;
+		case rt_variable_index_type:
+			{
+				auto& this_val = variables[elem.index >> rt_type_shift].second;
+				if (this_val.is_array())
+					return "Can't override constant value, can not replace array with simple value!";
+				if (value[0].value.get_type() != this_val.get_item(0)->value.get_type())
+					return "Can't override variable, wrong value type!";
+				if (id != variables[elem.index >> rt_type_shift].first &&
+					!rx_internal::model::platform_types_manager::instance().get_simple_type_repository<basic_types::variable_type>().is_derived_from(id, variables[elem.index >> rt_type_shift].first))
+					return "Can't override variable, wrong variable type!";
+				members_index_type new_idx = static_cast<members_index_type>(variables.size());
+				variables.emplace_back(std::move(id), std::move(value));
+				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
+			}
+			break;
+		default:
+			return name + " has invalid type to override";
 		}
 		return true;
 	}
@@ -628,23 +931,23 @@ template <class runtime_data_type>
 runtime_item::smart_ptr create_runtime_data_from_prototype(runtime_data_prototype& prototype)
 {
 	std::unique_ptr<runtime_data_type> ret = std::make_unique<runtime_data_type>();
-	if (runtime_data_type::has_variables())
+	if constexpr (runtime_data_type::has_variables())
 	{
 		ret->variables.copy_from(std::move(prototype.variables));
 	}
-	if (runtime_data_type::has_structs())
+	if constexpr (runtime_data_type::has_structs())
 		ret->structs.copy_from(std::move(prototype.structs));
-	if (runtime_data_type::has_sources())
+	if constexpr (runtime_data_type::has_sources())
 		ret->sources.copy_from(std::move(prototype.sources));
-	if (runtime_data_type::has_mappers())
+	if constexpr (runtime_data_type::has_mappers())
 		ret->mappers.copy_from(std::move(prototype.mappers));
-	if (runtime_data_type::has_filters())
+	if constexpr (runtime_data_type::has_filters())
 		ret->filters.copy_from(std::move(prototype.filters));
-	if (runtime_data_type::has_events())
+	if constexpr (runtime_data_type::has_events())
 		ret->events.copy_from(std::move(prototype.events));
 
-	ret->values = const_size_vector<value_data>(std::move(prototype.values));
-	ret->const_values = const_size_vector<const_value_data>(std::move(prototype.const_values));
+	ret->values = const_size_vector< array_wrapper<value_data> >(std::move(prototype.values));
+	ret->const_values = const_size_vector<array_wrapper<const_value_data> >(std::move(prototype.const_values));
 	ret->items = const_size_vector<index_data>(std::move(prototype.items));
 
 	return ret;
@@ -873,7 +1176,9 @@ void data_blocks_prototype::add_value (const string_type& name, rx_simple_value 
 	if (check_name(name))
 	{
 		members_index_type new_idx = static_cast<members_index_type>(values.size());
-		values.push_back({ val });
+		runtime::structure::const_value_data temp;
+		temp.value = std::move(val);
+		values.emplace_back(std::move(temp));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_const_index_type });
 	}
 }
@@ -891,15 +1196,27 @@ bool data_blocks_prototype::check_name (const string_type& name) const
 runtime::structure::block_data data_blocks_prototype::create_runtime ()
 {
 	runtime::structure::block_data ret;
-	std::vector<block_data> complex_items;
+	std::vector< runtime::structure::array_wrapper<block_data> > complex_items;
 	complex_items.reserve(children.size());
 	for (auto& one : children)
 	{
-		complex_items.emplace_back(one.create_runtime());
+		if (one.is_array())
+		{
+			std::vector<block_data> temp_array;
+			for (int i = 0; i < one.get_size(); i++)
+			{
+				temp_array.push_back(one.get_item(i)->create_runtime());
+			}
+			complex_items.emplace_back(std::move(temp_array));
+		}
+		else
+		{
+			complex_items.emplace_back(one.get_item()->create_runtime());
+		}
 	}
 	ret.items = const_size_vector<index_data>(std::move(items));
-	ret.values = const_size_vector<const_value_data>(std::move(values));
-	ret.children = const_size_vector<block_data>(std::move(complex_items));
+	ret.values = const_size_vector<runtime::structure::array_wrapper<const_value_data> >(std::move(values));
+	ret.children = const_size_vector<runtime::structure::array_wrapper<block_data> >(std::move(complex_items));
 	return ret;
 }
 

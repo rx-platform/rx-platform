@@ -287,47 +287,47 @@ rx_result first_plugin::build_plugin ()
 {
 	RX_PLUGIN_LOG_WARNING("first_plugin", 100, "****Building dynamic plugin.");
 	auto result = rx_platform_api::register_item_binary_with_code<first_source>("mojSource", "subFolder"
-		, rx_node_id(17,8), RX_EXTERN_SOURCE_TYPE_ID, c_def_mojSource, sizeof(c_def_mojSource));
+		, rx_node_id(17,8), RX_EXTERN_SOURCE_TYPE_ID, c_def_mojSource, sizeof(c_def_mojSource), 0x10006);
 	if (!result)
 		return result;
 	result = rx_platform_api::register_item_binary_with_code<first_filter>("mojFilter", ""
-		, rx_node_id(18, 8), RX_CLASS_FILTER_BASE_ID, c_def_mojFilter, sizeof(c_def_mojFilter));
+		, rx_node_id(18, 8), RX_CLASS_FILTER_BASE_ID, c_def_mojFilter, sizeof(c_def_mojFilter), 0x10006);
 	if (!result)
 		return result;
 	result = rx_platform_api::register_item_binary_with_code<first_mapper>("mojMapper", "subFolder"
-		, rx_node_id(19, 8), RX_EXTERN_MAPPER_TYPE_ID,  c_def_mojMapper, sizeof(c_def_mojMapper));
+		, rx_node_id(19, 8), RX_EXTERN_MAPPER_TYPE_ID,  c_def_mojMapper, sizeof(c_def_mojMapper), 0x10006);
 	if (!result)
 		return result;
 
 	result = rx_platform_api::register_item_binary_with_code<first_object>("mojObject", "subObjekti"
-		, rx_node_id(20, 8), RX_USER_OBJECT_TYPE_ID, c_def_mojObject, sizeof(c_def_mojObject));
+		, rx_node_id(20, 8), RX_USER_OBJECT_TYPE_ID, c_def_mojObject, sizeof(c_def_mojObject), 0x10006);
 	if (!result)
 		return result;
 	result = rx_platform_api::register_item_binary_with_code<first_domain>("mojDomen", "subObjekti"
-		, rx_node_id(21, 8), RX_USER_DOMAIN_TYPE_ID, c_def_mojDomen, sizeof(c_def_mojDomen));
+		, rx_node_id(21, 8), RX_USER_DOMAIN_TYPE_ID, c_def_mojDomen, sizeof(c_def_mojDomen), 0x10006);
 	if (!result)
 		return result;
 	result = rx_platform_api::register_item_binary_with_code<first_application>("mojaApp", "subObjekti"
-		, rx_node_id(22, 8), RX_USER_APP_TYPE_ID, c_def_mojaApp, sizeof(c_def_mojaApp));
+		, rx_node_id(22, 8), RX_USER_APP_TYPE_ID, c_def_mojaApp, sizeof(c_def_mojaApp), 0x10006);
 	if (!result)
 		return result;
 
 	result = rx_platform_api::register_item_binary_with_code<first_transport_port>("mojTransportPort", "subObjekti"
-		, rx_node_id(23, 8), RX_TRANSPORT_PORT_TYPE_ID, c_def_mojTransportPort, sizeof(c_def_mojTransportPort));
+		, rx_node_id(23, 8), RX_TRANSPORT_PORT_TYPE_ID, c_def_mojTransportPort, sizeof(c_def_mojTransportPort), 0x10006);
 	if (!result)
 		return result;
 	result = rx_platform_api::register_item_binary_with_code<first_server_port>("mojServerPort", "subObjekti"
-		, rx_node_id(24, 8), RX_APPLICATION_PORT_TYPE_ID, c_def_mojServerPort, sizeof(c_def_mojServerPort));
+		, rx_node_id(24, 8), RX_APPLICATION_PORT_TYPE_ID, c_def_mojServerPort, sizeof(c_def_mojServerPort), 0x10006);
 	if (!result)
 		return result;
 	result = rx_platform_api::register_item_binary_with_code<first_client_port>("mojClientPort", "subObjekti"
-		, rx_node_id(25, 8), RX_APPLICATION_PORT_TYPE_ID, c_def_mojClientPort, sizeof(c_def_mojClientPort));
+		, rx_node_id(25, 8), RX_APPLICATION_PORT_TYPE_ID, c_def_mojClientPort, sizeof(c_def_mojClientPort), 0x10006);
 	if (!result)
 		return result;
 
 
 	result = rx_platform_api::register_item_binary(rx_item_type::rx_relation_type, "mojaRel", "subObjekti"
-		, rx_node_id(26, 8), RX_NS_PORT_REF_ID, c_def_mojaRel, sizeof(c_def_mojaRel));
+		, rx_node_id(26, 8), RX_NS_PORT_REF_ID, c_def_mojaRel, sizeof(c_def_mojaRel), 0x10006);
 	if (!result)
 		return result;
 

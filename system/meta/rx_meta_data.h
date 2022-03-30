@@ -109,7 +109,12 @@ enum rx_attribute_type
     method_attribute_type = 11,
     program_attribute_type = 12,
     data_attribute_type = 13,
-    display_attribute_type = 14
+    display_attribute_type = 14,
+    const_array_attribute_type = 15,
+    value_array_attribute_type = 16,
+    variable_array_attribute_type = 17,
+    struct_array_attribute_type = 18,
+    data_array_attribute_type = 19
 };
 struct runtime_item_attribute
 {

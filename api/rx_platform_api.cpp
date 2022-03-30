@@ -42,6 +42,7 @@
 #include "system/runtime/rx_extern_blocks.h"
 #include "system/runtime/rx_extern_items.h"
 #include "runtime_internal/rx_runtime_internal.h"
+#include "system/libraries/rx_plugin.h"
 
 
 
@@ -230,28 +231,35 @@ extern "C" {
 
 	RX_PLATFORM_API rx_result_struct rxRegisterItem(uintptr_t plugin, uint8_t item_type, const char* name, const char* path
 		, const rx_node_id_struct* id, const rx_node_id_struct* parent
-		, uint32_t version, rx_time_struct modified, const uint8_t* data, size_t count)
+		, uint32_t version, rx_time_struct modified, uint32_t stream_version, const uint8_t* data, size_t count)
 	{
 		if (count < 0x10 || data == nullptr)
 			return rx_result("Invalid data!").move();
 		uint8_t be = data[0];
+		auto plugin_obj = library::rx_dynamic_plugin::get_registered_plugin(plugin);
+		if(!plugin_obj)
+			return rx_result("Invalid plugin!").move();
+
 		memory::std_buffer buffer;
 		buffer.push_data(data, count);
-		rx::serialization::std_buffer_reader stream(buffer);
+		rx::serialization::std_buffer_reader stream(buffer, stream_version > 0 ? stream_version : plugin_obj->get_stream_version());
 
 		return create_type_from_stream((rx_item_type)item_type, name, path, id, parent, version, modified, stream).move();
 	}
-
 	RX_PLATFORM_API rx_result_struct rxRegisterRuntimeItem(uintptr_t plugin, uint8_t item_type, const char* name, const char* path
 		, const rx_node_id_struct* id, const rx_node_id_struct* parent
-		, uint32_t version, rx_time_struct modified, const uint8_t* data, size_t count)
+		, uint32_t version, rx_time_struct modified, uint32_t stream_version, const uint8_t* data, size_t count)
 	{
 		if (count < 0x10 || data == nullptr)
 			return rx_result("Invalid data!").move();
 		uint8_t be = data[0];
+		auto plugin_obj = library::rx_dynamic_plugin::get_registered_plugin(plugin);
+		if (!plugin_obj)
+			return rx_result("Invalid plugin!").move();
+
 		memory::std_buffer buffer;
 		buffer.push_data(data, count);
-		rx::serialization::std_buffer_reader stream(buffer);
+		rx::serialization::std_buffer_reader stream(buffer, stream_version > 0 ? stream_version : plugin_obj->get_stream_version());
 
 		return rx_result(RX_NOT_IMPLEMENTED).move();
 		//return create_type_from_stream((rx_item_type)item_type, name, path, id, parent, version, stream).move();
@@ -696,6 +704,37 @@ void extern_timers::destroy_timer (runtime_handle_t handle)
 	}
 	if (job_ptr)
 		job_ptr->cancel();
+}
+
+
+// Class rx_platform::extern_job 
+
+extern_job::extern_job (plugin_job_struct* extern_data)
+      : extern_data_(extern_data),
+        anchor_(&extern_data->anchor)
+{
+}
+
+
+
+void extern_job::process ()
+{
+	extern_data_->process(extern_data_->anchor.target);
+}
+
+
+// Class rx_platform::extern_period_job 
+
+extern_period_job::extern_period_job (plugin_job_struct* extern_data)
+      : anchor_(&extern_data->anchor),
+        extern_data_(extern_data)
+{
+}
+
+
+
+void extern_period_job::process ()
+{
 }
 
 

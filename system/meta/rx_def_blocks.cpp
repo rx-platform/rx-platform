@@ -155,15 +155,17 @@ rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 // Class rx_platform::meta::def_blocks::const_value_def 
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value, bool config_only)
-	: name_(name)
-	, storage_(std::move(value))
+      : array_size_(-1)
+	, name_(name)
+	, value_(std::move(value))
 	, config_only_(config_only)
 {
 }
 
 const_value_def::const_value_def (const string_type& name, const rx_simple_value& value, bool config_only)
-	: name_(name)
-	, storage_(value)
+      : array_size_(-1)
+	, name_(name)
+	, value_(value)
 	, config_only_(config_only)
 {
 }
@@ -174,8 +176,36 @@ rx_result const_value_def::serialize_definition (base_meta_writer& stream) const
 {
 	if (!stream.write_string("name", name_.c_str()))
 		return stream.get_error();
-	if (!storage_.serialize("value", stream))
-		return stream.get_error();
+    if(stream.get_version()>=RX_ARRAYS_VERSION)
+    {
+        if (!stream.write_int("array", array_size_))
+            return stream.get_error();
+        if(array_size_<0)
+        {
+            if (!value_.serialize("value", stream))
+                return stream.get_error();
+        }
+        else
+        {
+            if(!stream.start_array("values", array_size_))
+                return stream.get_error();
+            for(int i=0; i<array_size_; i++)
+            {
+                if (!values_[i].serialize("value", stream))
+                    return stream.get_error();
+            }
+            if(!stream.end_array())
+                return stream.get_error();
+        }
+    }
+    else
+    {
+        if(array_size_>=0)
+            return "Can not serialize array value with this version!";
+
+        if (!value_.serialize("value", stream))
+            return stream.get_error();
+    }
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.write_string("description", description_.c_str()))
@@ -190,8 +220,36 @@ rx_result const_value_def::deserialize_definition (base_meta_reader& stream)
 {
 	if (!stream.read_string("name", name_))
 		return stream.get_error();
-	if (!storage_.deserialize("value", stream))
-		return stream.get_error();
+    if(stream.get_version()>=RX_ARRAYS_VERSION)
+    {
+        if (!stream.read_int("array", array_size_))
+            return stream.get_error();
+        if(array_size_<0)
+        {
+            if (!value_.deserialize("value", stream))
+                return stream.get_error();
+        }
+        else
+        {
+            if(!stream.start_array("values"))
+                return stream.get_error();
+
+			values_.clear();
+            while(!stream.array_end())
+            {
+                values::rx_simple_value temp;
+                if(!temp.deserialize("value", stream))
+                    return stream.get_error();
+				values_.push_back(std::move(temp));
+            }
+        }
+    }
+    else
+    {
+        array_size_=-1;
+        if (!value_.deserialize("value", stream))
+            return stream.get_error();
+    }
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.read_string("description", description_))
@@ -208,7 +266,12 @@ rx_result const_value_def::deserialize_definition (base_meta_reader& stream)
 
 rx_simple_value const_value_def::get_value () const
 {
-	return storage_;
+	return value_;
+}
+
+std::vector<values::rx_simple_value> const_value_def::get_values () const
+{
+	return values_;
 }
 
 
@@ -297,16 +360,18 @@ mapper_attribute::mapper_attribute (const string_type& name, const string_type& 
 // Class rx_platform::meta::def_blocks::simple_value_def 
 
 simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& value, bool read_only, bool persistent)
-	: name_(name)
-	, storage_(std::move(value))
+      : array_size_(-1)
+	, name_(name)
+	, value_(std::move(value))
 	, read_only_(read_only)
 	, persistent_(persistent)
 {
 }
 
 simple_value_def::simple_value_def (const string_type& name, const rx_simple_value& value, bool read_only, bool persistent)
-	: name_(name)
-	, storage_(value)
+      : array_size_(-1)
+	, name_(name)
+	, value_(value)
 	, read_only_(read_only)
 	, persistent_(persistent)
 {
@@ -320,8 +385,36 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream) cons
 		return stream.get_error();
 	if (!stream.write_bool("ro", read_only_))
 		return stream.get_error();
-	if (!storage_.serialize("value", stream))
-		return stream.get_error();
+	if (stream.get_version() >= RX_ARRAYS_VERSION)
+	{
+		if (!stream.write_int("array", array_size_))
+			return stream.get_error();
+		if (array_size_ < 0)
+		{
+			if (!value_.serialize("value", stream))
+				return stream.get_error();
+		}
+		else
+		{
+			if (!stream.start_array("values", array_size_))
+				return stream.get_error();
+			for (int i = 0; i < array_size_; i++)
+			{
+				if (!values_[i].serialize("value", stream))
+					return stream.get_error();
+			}
+			if (!stream.end_array())
+				return stream.get_error();
+		}
+	}
+	else
+	{
+		if (array_size_ >= 0)
+			return "Can not serialize array value with this version!";
+
+		if (!value_.serialize("value", stream))
+			return stream.get_error();
+	}
 	if (stream.get_version() >= RX_PERSISTENCE_VERSION)
 	{
 		if (!stream.write_bool("persist", persistent_))
@@ -341,8 +434,36 @@ rx_result simple_value_def::deserialize_definition (base_meta_reader& stream)
 		return stream.get_error();
 	if (!stream.read_bool("ro", read_only_))
 		return stream.get_error();
-	if (!storage_.deserialize("value", stream))
-		return stream.get_error();
+	if (stream.get_version() >= RX_ARRAYS_VERSION)
+	{
+		if (!stream.read_int("array", array_size_))
+			return stream.get_error();
+		if (array_size_ < 0)
+		{
+			if (!value_.deserialize("value", stream))
+				return stream.get_error();
+		}
+		else
+		{
+			if (!stream.start_array("values"))
+				return stream.get_error();
+
+			values_.clear();
+			while (!stream.array_end())
+			{
+				values::rx_simple_value temp;
+				if (!temp.deserialize("value", stream))
+					return stream.get_error();
+				values_.push_back(std::move(temp));
+			}
+		}
+	}
+	else
+	{
+		array_size_ = -1;
+		if (!value_.deserialize("value", stream))
+			return stream.get_error();
+	}
 	if (stream.get_version() >= RX_PERSISTENCE_VERSION)
 	{
 		if (!stream.read_bool("persist", persistent_))
@@ -358,7 +479,17 @@ rx_result simple_value_def::deserialize_definition (base_meta_reader& stream)
 
 rx_timed_value simple_value_def::get_value (rx_time now) const
 {
-	return rx_timed_value(storage_, now);
+	return rx_timed_value(value_, now);
+}
+
+std::vector<values::rx_timed_value> simple_value_def::get_values (rx_time now) const
+{
+	std::vector<values::rx_timed_value> ret;
+	for(const auto & one : values_)
+	{
+		ret.push_back(rx_timed_value(one, now));
+	}
+	return ret;
 }
 
 
@@ -381,13 +512,15 @@ source_attribute::source_attribute (const string_type& name, const string_type& 
 // Class rx_platform::meta::def_blocks::struct_attribute 
 
 struct_attribute::struct_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name)
+      : name_(name),
+        array_size_(-1)
 	, target_(id)
 {
 }
 
 struct_attribute::struct_attribute (const string_type& name, const string_type& target_name)
-      : name_(name)
+      : name_(name),
+        array_size_(-1)
 	, target_(target_name)
 {
 }
@@ -397,15 +530,17 @@ struct_attribute::struct_attribute (const string_type& name, const string_type& 
 // Class rx_platform::meta::def_blocks::variable_attribute 
 
 variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
-      : name_(name)
+      : name_(name),
+        array_size_(-1)
 	, target_(id)
-	, storage_(std::move(value))
+	, value_(std::move(value))
 	, read_only_(read_only)
 {
 }
 
 variable_attribute::variable_attribute (const string_type& name, const string_type& target_name)
-      : name_(name)
+      : name_(name),
+        array_size_(-1)
 	, target_(target_name)
 	, read_only_(false)
 {
@@ -415,7 +550,17 @@ variable_attribute::variable_attribute (const string_type& name, const string_ty
 
 rx_value variable_attribute::get_value (rx_time now) const
 {
-	return rx_value(storage_, now);
+	return rx_value(value_, now);
+}
+
+std::vector<values::rx_value> variable_attribute::get_values (rx_time now) const
+{
+	std::vector<values::rx_value> ret;
+	for (const auto& one : values_)
+	{
+		ret.push_back(rx_value(one, now));
+	}
+	return ret;
 }
 
 
@@ -453,13 +598,15 @@ rx_result filtered_data_type::register_filter (const string_type& name, const rx
 // Class rx_platform::meta::def_blocks::data_attribute 
 
 data_attribute::data_attribute (const string_type& name, const rx_node_id& id)
-      : name_(name)
+      : name_(name),
+        array_size_(-1)
 	, target_(id)
 {
 }
 
 data_attribute::data_attribute (const string_type& name, const string_type& target_name)
-      : name_(name)
+      : name_(name),
+        array_size_(-1)
 	, target_(target_name)
 {
 }

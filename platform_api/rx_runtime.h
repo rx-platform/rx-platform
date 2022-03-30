@@ -471,6 +471,8 @@ class rx_runtime : public rx::pointers::reference_object
 
   protected:
 
+      rx_result post_job_internal (int type, callback_data::smart_ptr callback, uint32_t period);
+
       runtime_handle_t create_timer_internal (int type, callback_data::smart_ptr callback, uint32_t period);
 
 

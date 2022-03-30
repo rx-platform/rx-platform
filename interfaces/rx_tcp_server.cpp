@@ -147,6 +147,11 @@ void tcp_server_endpoint::disconnected (rx_security_handle_t identity)
 
 bool tcp_server_endpoint::readed (const void* data, size_t count, rx_security_handle_t identity)
 {
+    if (my_port_)
+    {
+        my_port_->status.received_packet(count);
+    }
+
     rx_const_packet_buffer buffer{ (const uint8_t*)data, count, 0 };
 
     recv_protocol_packet up = rx_create_recv_packet(0, &buffer, 0, 0);
@@ -181,6 +186,10 @@ rx_protocol_result_t tcp_server_endpoint::send_function (rx_protocol_stack_endpo
         bool ret = self->tcp_socket_->write(io_buffer);
         if (!ret)
             self->my_port_->release_buffer(io_buffer);
+        if (ret)
+        {
+            self->my_port_->status.sent_packet(packet.buffer->size);
+        }
         return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
     }
     else
@@ -256,6 +265,7 @@ void tcp_server_endpoint::socket_holder_t::disconnect()
 
 rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+    auto result = status.initialize(ctx);
     auto bind_result = recv_timeout_.bind("Timeouts.ReceiveTimeout", ctx);
     if (!bind_result)
         RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");

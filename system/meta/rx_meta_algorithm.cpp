@@ -1388,7 +1388,7 @@ rx_result relation_blocks_algorithm::construct_relation_attribute (const object_
 		ret.register_error("Unable to resolve relation type");
 		return ret.errors();
 	}
-	auto relation_type_id = resolve_result.value();
+	rx_node_id relation_type_id = resolve_result.value();
 	rx_node_id target_base_id;
 	if (!whose.target.is_null())
 	{

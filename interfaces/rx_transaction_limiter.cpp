@@ -172,6 +172,8 @@ rx_protocol_result_t limiter_endpoint::received_packet (recv_protocol_packet pac
             removed = remove_pending();
         }
     }
+    if (!options.use_packet_id)
+        packet.id = removed.id;
     auto result = rx_move_packet_up(&stack_endpoint_, packet);
     if (result == RX_PROTOCOL_OK)
     {
@@ -261,8 +263,9 @@ limiter_endpoint::removed_transaction_data limiter_endpoint::remove_pending_pack
         {
             auto ticks = rx_get_us_ticks() - one->arrived_tick;
             bool is_write = one->is_write();
+            auto id = one->packet.id;
             release_transaction(std::move(one));
-            return { ticks, is_write, true };
+            return { ticks, is_write, true, id };
         }
     }
     return {};
@@ -276,8 +279,9 @@ limiter_endpoint::removed_transaction_data limiter_endpoint::remove_pending ()
         {
             auto ticks = rx_get_us_ticks() - one->arrived_tick;
             bool is_write = one->is_write();
+            auto id = one->packet.id;
             release_transaction(std::move(one));
-            return { ticks, is_write, true };
+            return { ticks, is_write, true, id };
         }
     }
     return {};
@@ -593,7 +597,7 @@ limit_options_t transaction_limiter_port::get_limit_options () const
     ret.ignore_zeros = ignore_zeros_;
     ret.use_packet_id = use_packet_id_;
     ret.limit = limit_;
-    if (ret.limit > 1 && ret.use_packet_id)
+    if (ret.limit > 1 && !ret.use_packet_id)
         ret.limit = 1;
     return ret;
 }

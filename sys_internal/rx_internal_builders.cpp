@@ -675,6 +675,7 @@ rx_result basic_types_builder::do_build ()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		map->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
 		build_basic_type<basic_types::mapper_type>(dir, map);
 		auto evnt = create_type<basic_types::event_type>(meta::type_creation_data{
 			RX_CLASS_EVENT_BASE_NAME
@@ -699,6 +700,7 @@ rx_result basic_types_builder::do_build ()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		src->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
 		build_basic_type<basic_types::source_type>(dir, src);
 
 		auto met = create_type<basic_types::method_type>(meta::type_creation_data{

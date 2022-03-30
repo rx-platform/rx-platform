@@ -150,6 +150,31 @@ RX_COMMON_API rx_timer_ticks_t rx_get_us_ticks()
 	return ret;
 }
 
+RX_COMMON_API void rx_ms_sleep(uint32_t timeout)
+{
+    if (timeout)
+    {
+        struct timespec ts;
+        ts.tv_sec = timeout / 1000;
+        ts.tv_nsec = timeout % 1000 * 1000000;
+        clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+    }
+    else//sleep 0 just give over the procesor
+        sched_yield();
+}
+RX_COMMON_API void rx_us_sleep(uint64_t timeout)
+{
+    if (timeout)
+    {
+        struct timespec ts;
+        ts.tv_sec = timeout / 1000000ul;
+        ts.tv_nsec = timeout % 1000000ul * 1000;
+        clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, NULL);
+    }
+    else//sleep 0 just give over the procesor
+        sched_yield();
+}
+
 #define TIME_CONVERSION_CONST  116444736000000000ull
 
 uint64_t timeval_to_rx_time(const struct timespec* tv)

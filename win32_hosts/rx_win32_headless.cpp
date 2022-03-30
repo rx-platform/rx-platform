@@ -111,6 +111,10 @@ rx_result win32_headless_host::setup_console (int argc, char* argv[])
 void win32_headless_host::fill_plugin_libs (string_array& paths)
 {
 	fill_plugin_paths(paths);
+
+#ifdef _DEBUG
+	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
+#endif
 }
 
 

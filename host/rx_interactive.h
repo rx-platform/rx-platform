@@ -39,6 +39,8 @@
 #include "dummy.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_host
@@ -197,6 +199,9 @@ Standard IO class. implementation of an standard IO console port");
       rx_result stop_passive ();
 
       void terminal_size_changed (int width, int height);
+
+
+      rx_platform::runtime::io_types::external_port_status status;
 
       void remove_endpoint(rx_protocol_stack_endpoint* what)
       {

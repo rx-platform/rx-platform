@@ -586,7 +586,7 @@ uint32_t timer::handler ()
 	{
 		lock_.lock();
 
-		uint64_t min = 0ull - 1ull;
+		rx_timer_ticks_t min = 0ull - 1ull;
 
 		auto it = jobs_.begin();
 		rx_timer_ticks_t tick = rx_get_us_ticks();
@@ -596,7 +596,7 @@ uint32_t timer::handler ()
 			timer_job_ptr one = *it;
 			if (!one->is_canceled())
 			{
-				rx_timer_ticks_t temp = one->tick(tick, get_random_time_offset(*one), remove);
+				rx_timer_ticks_t temp = one->internal_tick(tick, get_random_time_offset(*one), remove);
 				if (!remove)
 				{
 					if(temp && temp < min)

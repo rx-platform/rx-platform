@@ -46,20 +46,20 @@ extern "C" {
 	RX_PLATFORM_API void rxWriteLog(uintptr_t plugin, int type, const char* library, const char* source, uint16_t level, const char* code, const char* message);
 	RX_PLATFORM_API rx_result_struct rxRegisterItem(uintptr_t plugin, uint8_t item_type, const char* name, const char* path
 		, const rx_node_id_struct* id, const rx_node_id_struct* parent
-		, uint32_t version, rx_time_struct modified, const uint8_t* data, size_t count);
+		, uint32_t version, rx_time_struct modified, uint32_t stream_version, const uint8_t* data, size_t count);
 	RX_PLATFORM_API rx_result_struct rxRegisterRuntimeItem(uintptr_t plugin, uint8_t item_type, const char* name, const char* path
 		, const rx_node_id_struct* id, const rx_node_id_struct* parent
-		, uint32_t version, rx_time_struct modified, const uint8_t* data, size_t count);
+		, uint32_t version, rx_time_struct modified, uint32_t stream_version, const uint8_t* data, size_t count);
 	RX_PLATFORM_API void rxLockRuntimeManager();
 	RX_PLATFORM_API void rxUnlockRuntimeManager();
 
 	typedef void(*rxWriteLog_t)(uintptr_t plugin, int type, const char* library, const char* source, uint16_t level, const char* code, const char* message);
 	typedef rx_result_struct(*rxRegisterItem_t)(uintptr_t plugin, uint8_t item_type, const char* name, const char* path
 		, const rx_node_id_struct* id, const rx_node_id_struct* parent
-		, uint32_t version, rx_time_struct modified, const uint8_t* data, size_t count);
+		, uint32_t version, rx_time_struct modified, uint32_t stream_version, const uint8_t* data, size_t count);
 	typedef rx_result_struct(*rxRegisterRuntimeItem_t)(uintptr_t plugin, uint8_t item_type, const char* name, const char* path
 		, const rx_node_id_struct* id, const rx_node_id_struct* parent
-		, uint32_t version, rx_time_struct modified, const uint8_t* data, size_t count);
+		, uint32_t version, rx_time_struct modified, uint32_t stream_version, const uint8_t* data, size_t count);
 	typedef void(*rxLockRuntimeManager_t)();
 	typedef void(*rxUnlockRuntimeManager_t)();
 
@@ -178,6 +178,10 @@ extern "C" {
 #define RX_TIMER_CALC 1
 #define RX_TIMER_IO 2
 
+#define RX_JOB_REGULAR 0
+#define RX_JOB_IO 1
+#define RX_JOB_SLOW 2
+
 	RX_PLATFORM_API const char* rxStartCtxGetCurrentPath(start_ctx_ptr ctx);
 	typedef const char* (*rxStartCtxGetCurrentPath_t)(start_ctx_ptr ctx);
 
@@ -255,6 +259,7 @@ extern "C" {
 
 
 	// common host stuff, timers...
+	typedef rx_result_struct(*rx_post_job_t)(void* whose, int type, plugin_job_struct* job, uint32_t period);
 	typedef runtime_handle_t(*rx_create_timer_t)(void* whose, int type, plugin_job_struct* job, uint32_t period);
 	typedef void(*rx_start_timer_t)(void* whose, runtime_handle_t timer, uint32_t period);
 	typedef void(*rx_suspend_timer_t)(void* whose, runtime_handle_t timer);
@@ -262,6 +267,7 @@ extern "C" {
 
 	typedef struct host_runtime_def_struct_t
 	{
+		rx_post_job_t post_job;
 		rx_create_timer_t create_timer;
 		rx_start_timer_t start_timer;
 		rx_suspend_timer_t suspend_timer;

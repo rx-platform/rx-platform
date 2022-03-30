@@ -373,14 +373,63 @@ rx_protocol_result_t opcua_bin_bytes_send(struct rx_protocol_stack_endpoint* ref
 	}
 	else
 	{
-		assert(0);
-		result = reference->allocate_packet(reference, &my_buffer);
-		if (result != RX_PROTOCOL_OK)
-			return result;
-		result = rx_push_to_packet(&my_buffer, packet.buffer->buffer_ptr, packet.buffer->size);
-		if (result != RX_PROTOCOL_OK)
-			return result;
-		return RX_PROTOCOL_NOT_IMPLEMENTED;
+		int last = 0;
+		size_t idx = 0;
+		size_t packet_size = 0;
+		size_t max_data = transport->connection_data.send_buffer_size - headers_size;
+		send_protocol_packet splited_packet = packet;
+		while (idx < size)
+		{
+			result = reference->allocate_packet(reference, &my_buffer);
+			if (result != RX_PROTOCOL_OK)
+				return result;
+			if (size - idx > max_data)
+			{
+				packet_size = max_data;
+			}
+			else
+			{
+				packet_size = size - idx;
+				last = 1;
+			}
+			result = rx_push_to_packet(&my_buffer, packet.buffer->buffer_ptr + idx, packet_size);
+			if (result != RX_PROTOCOL_OK)
+				return result;
+			idx += packet_size;
+
+			buffer_front_ptr = (uint8_t*)rx_alloc_from_packet_front(&my_buffer
+				, headers_size, &result);
+			if (result != RX_PROTOCOL_OK)
+				return result;
+			header = (opcua_transport_header*)buffer_front_ptr;
+			sec_header = (opcua_security_simetric_header*)&buffer_front_ptr[sizeof(opcua_transport_header)];
+			sequence_header = (opcua_sequence_header*)&buffer_front_ptr[sizeof(opcua_transport_header) + sizeof(opcua_security_simetric_header)];
+			// header
+			header->is_final = last!=0 ? 'F' : 'C';
+			header->message_type[0] = 'M';
+			header->message_type[1] = 'S';
+			header->message_type[2] = 'G';
+			header->message_size = (uint32_t)rx_get_packet_usable_data(&my_buffer);
+			// security header
+			sec_header->channel_id = 0;
+			sec_header->token_id = 0;
+			// sequence header
+			sequence_header->request_id = transport->current_request_id;
+			sequence_header->sequence_number = transport->current_sequence_id;
+			// TODO - handle rollover
+			transport->current_sequence_id++;
+
+			packet.id = sequence_header->request_id;
+
+			splited_packet.buffer = &my_buffer;
+			result = rx_move_packet_down(reference, splited_packet);
+
+			reference->release_packet(reference, &my_buffer);
+
+			if (result != RX_PROTOCOL_OK)
+				return result;
+		}
+		transport->current_request_id++;
 	}
 
 	return RX_PROTOCOL_OK;

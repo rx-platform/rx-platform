@@ -278,6 +278,14 @@ void rx_runtime::bind_runtime (host_runtime_def_struct* impl, void* target)
     impl_ = impl;
 }
 
+rx_result rx_runtime::post_job_internal (int type, callback_data::smart_ptr callback, uint32_t period)
+{
+    if (impl_->post_job)
+        return impl_->post_job(target_, type, callback->c_ptr(), period);
+    else
+        return RX_NOT_SUPPORTED;
+}
+
 runtime_handle_t rx_runtime::create_timer_internal (int type, callback_data::smart_ptr callback, uint32_t period)
 {
     if (impl_->create_timer)

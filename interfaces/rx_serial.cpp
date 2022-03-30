@@ -69,7 +69,14 @@ rx_protocol_result_t serial_endpoint::send_function (rx_protocol_stack_endpoint*
 {
     serial_endpoint* self = reinterpret_cast<serial_endpoint*>(reference->user_data);
     if (self->serial_port_)
-        return self->send_packet(packet);
+    {
+        auto ret = self->send_packet(packet);
+        if (ret == RX_PROTOCOL_OK)
+        {
+            self->my_port_->status.sent_packet(packet.buffer->size);
+        }
+        return ret;
+    }
     else
         return RX_PROTOCOL_CLOSED;
 }
@@ -133,6 +140,10 @@ bool serial_endpoint::readed (const void* data, size_t count, rx_security_handle
     bufft[count] = '\0';
     printf("\r\n***********Recevied:%s\r\n", bufft);
     */
+    if (my_port_)
+    {
+        my_port_->status.received_packet(count);
+    }
     rx_const_packet_buffer buff{};
     rx_init_const_packet_buffer(&buff, data, count);
     recv_protocol_packet up = rx_create_recv_packet(0, &buff, 0, 0);
@@ -320,7 +331,8 @@ serial_port::serial_port()
 
 rx_result serial_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    
+
+    auto result = status.initialize(ctx);
 
     port_data_.port = rx_gate::instance().resolve_serial_alias(ctx.get_item_static("Options.Port", ""s));
     port_data_.baud_rate = ctx.get_item_static<uint32_t>("Options.BaudRate", 19200);

@@ -193,6 +193,8 @@ public:
 
       rx_simple_value get_value () const;
 
+      std::vector<values::rx_simple_value> get_values () const;
+
 
       const string_type& get_name () const
       {
@@ -212,6 +214,12 @@ public:
       }
 
 
+      const int get_array_size () const
+      {
+        return array_size_;
+      }
+
+
 
   protected:
 
@@ -224,7 +232,11 @@ public:
 
       bool config_only_;
 
-      values::rx_simple_value storage_;
+      int array_size_;
+
+      std::vector<values::rx_simple_value> values_;
+
+      values::rx_simple_value value_;
 
 
 };
@@ -321,6 +333,8 @@ public:
 
       rx_timed_value get_value (rx_time now) const;
 
+      std::vector<values::rx_timed_value> get_values (rx_time now) const;
+
 
       const string_type& get_name () const
       {
@@ -346,6 +360,12 @@ public:
       }
 
 
+      const int get_array_size () const
+      {
+        return array_size_;
+      }
+
+
 
   protected:
 
@@ -360,7 +380,11 @@ public:
 
       string_type description_;
 
-      values::rx_simple_value storage_;
+      int array_size_;
+
+      std::vector<values::rx_simple_value> values_;
+
+      values::rx_simple_value value_;
 
 
 };
@@ -524,6 +548,12 @@ class struct_attribute
       }
 
 
+      const int get_array_size () const
+      {
+        return array_size_;
+      }
+
+
 
   protected:
 
@@ -535,6 +565,8 @@ class struct_attribute
       rx_item_reference target_;
 
       string_type description_;
+
+      int array_size_;
 
 
 };
@@ -564,6 +596,8 @@ class variable_attribute
 
 
       rx_value get_value (rx_time now) const;
+
+      std::vector<values::rx_value> get_values (rx_time now) const;
 
 
       const string_type& get_name () const
@@ -596,6 +630,12 @@ class variable_attribute
       }
 
 
+      const int get_array_size () const
+      {
+        return array_size_;
+      }
+
+
 
   protected:
 
@@ -612,7 +652,11 @@ class variable_attribute
 
       string_type description_;
 
-      values::rx_simple_value storage_;
+      int array_size_;
+
+      std::vector<values::rx_simple_value> values_;
+
+      values::rx_simple_value value_;
 
 
 };
@@ -753,12 +797,6 @@ class mapper_attribute
       }
 
 
-      const rx_value_t get_value_type () const
-      {
-        return value_type_;
-      }
-
-
       const string_type& get_description () const
       {
         return description_;
@@ -777,8 +815,6 @@ class mapper_attribute
       string_type name_;
 
       rx_item_reference target_;
-
-      rx_value_t value_type_;
 
       string_type description_;
 
@@ -828,12 +864,6 @@ class source_attribute
       }
 
 
-      const rx_value_t get_value_type () const
-      {
-        return value_type_;
-      }
-
-
       const string_type& get_description () const
       {
         return description_;
@@ -852,8 +882,6 @@ class source_attribute
       string_type name_;
 
       rx_item_reference target_;
-
-      rx_value_t value_type_;
 
       string_type description_;
 
@@ -993,6 +1021,12 @@ public:
       }
 
 
+      const int get_array_size () const
+      {
+        return array_size_;
+      }
+
+
 
   protected:
 
@@ -1004,6 +1038,8 @@ public:
       rx_item_reference target_;
 
       string_type description_;
+
+      int array_size_;
 
 
 };

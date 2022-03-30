@@ -223,8 +223,10 @@ struct json_reader_data
 			}
 			else if (temp.IsObject())
 			{
-				auto& child = values.add_child(name);
-				if (!internal_read_init_values(child, temp))
+				auto child = values.add_child(name);
+				if (!child)
+					return false;
+				if (!internal_read_init_values(*child, temp))
 					return false;
 			}
 			else if (!temp.IsNull())
@@ -954,33 +956,12 @@ bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
 
 bool json_reader::read_value_type (const char* name, rx_value_t& val)
 {
-	if (get_version() >= RX_VALUE_TYPE_VERSION)
-	{
-		string_type str_type;
-		auto ret = read_string(name, str_type);
-		if (!ret)
-			return ret;
-		rx_value_t type;
-		auto parse_result = rx_parse_value_type_name(str_type.c_str(), &type);
-		if (parse_result)
-		{
-			val = type;
-			return true;
-		}
-		else
-		{
-			return parse_result;
-		}
-	}
-	else
-	{
-		uint8_t temp;
-		auto ret = read_byte(name, temp);
-		if (!ret)
-			return false;
-		val = temp;
-		return true;
-	}
+	uint8_t temp;
+	auto ret = read_byte(name, temp);
+	if (!ret)
+		return false;
+	val = temp;
+	return true;
 }
 
 string_type json_reader::get_error () const
@@ -1431,13 +1412,45 @@ bool json_writer_type<writerT>::write_init_values (const char* name, const data:
 	}
 	for (const auto& one : values.children)
 	{
-		if (!write_init_values(one.first.c_str(), one.second))
-			return false;
+		if (std::holds_alternative<data::runtime_values_data>(one.second))
+		{
+			if (!write_init_values(one.first.c_str(), std::get<data::runtime_values_data>(one.second)))
+				return false;
+		}
+		else
+		{
+			auto& childs = std::get<std::vector<data::runtime_values_data> >(one.second);
+			if (!start_array(one.first.c_str(), childs.size()))
+				return false;
+			for (int i = 0; i < childs.size(); i++)
+			{
+				if (!write_init_values(one.first.c_str(), childs[i]))
+					return false;
+			}
+			if (!end_array())
+				return false;
+		}
 	}
 	for (const auto& one : values.values)
 	{
-		if (!one.second.value.weak_serialize(one.first.c_str(), *this))
-			return false;
+		if (std::holds_alternative<rx_simple_value>(one.second))
+		{
+			if (!std::get<rx_simple_value>(one.second).weak_serialize(one.first.c_str(), *this))
+				return false;
+		}
+		else
+		{
+			auto& vals = std::get<std::vector<rx_simple_value> >(one.second);
+			if (!start_array(one.first.c_str(), vals.size()))
+				return false;
+			for (int i = 0; i < vals.size(); i++)
+			{
+				if (!vals[i].weak_serialize(one.first.c_str(), *this))
+					return false;
+			}
+			if (!end_array())
+				return false;
+		}
 	}
 	if (name)
 	{
@@ -1485,15 +1498,7 @@ bool json_writer_type<writerT>::write_item_reference (const char* name, const rx
 template <class writerT>
 bool json_writer_type<writerT>::write_value_type (const char* name, rx_value_t val)
 {
-	if (get_version() >= RX_VALUE_TYPE_VERSION)
-	{
-		const char* str_type = rx_get_value_type_name(val);
-		return write_string(name, str_type);
-	}
-	else
-	{
-		return write_byte(name, val);
-	}
+	return write_byte(name, val);
 }
 
 template <class writerT>

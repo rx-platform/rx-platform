@@ -63,7 +63,7 @@ void write_log(log_event_type type, const char* library, const char* source, uin
 }
 rx_result register_item_binary(rx_item_type type, const string_type& name, const string_type& path
 	, const rx_node_id& id, const rx_node_id& parent
-	, uint32_t version, rx_time modified, const uint8_t* data, size_t count)
+	, uint32_t version, rx_time modified, const uint8_t* data, size_t count, uint32_t stream_version)
 {
 	if (api_plugin_root.empty())
 		return "Operation not possible at this moment!";
@@ -74,13 +74,13 @@ rx_result register_item_binary(rx_item_type type, const string_type& name, const
 	if(!path.empty())
 		real_path += RX_DIR_DELIMETER + path;
 	
-	rx_result ret = api_reg_item_binary_func(g_plugin, (uint8_t)type, name.c_str(), real_path.c_str(), id.c_ptr(), parent.c_ptr(), version, modified, data, count);
+	rx_result ret = api_reg_item_binary_func(g_plugin, (uint8_t)type, name.c_str(), real_path.c_str(), id.c_ptr(), parent.c_ptr(), version, modified, stream_version, data, count);
 	return ret;
 }
 rx_result register_item_binary(rx_item_type type, const string_type& name, const string_type& path, const rx_node_id& id
-	, const rx_node_id& parent, const uint8_t* data, size_t count)
+	, const rx_node_id& parent, const uint8_t* data, size_t count, uint32_t stream_version)
 {
-	return register_item_binary(type, name, path, id, parent, 0x10000, rx_time::now(), data, count);
+	return register_item_binary(type, name, path, id, parent, 0x10000, rx_time::now(), data, count, stream_version);
 }
 
 

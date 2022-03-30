@@ -174,6 +174,60 @@ class extern_timers
 };
 
 
+
+
+
+
+class extern_job : public jobs::job  
+{
+
+  public:
+      extern_job (plugin_job_struct* extern_data);
+
+
+      void process ();
+
+
+  protected:
+
+  private:
+
+
+      plugin_job_struct* extern_data_;
+
+      rx_reference_ptr anchor_;
+
+
+};
+
+
+
+
+
+
+class extern_period_job : public jobs::post_period_job  
+{
+
+  public:
+      extern_period_job (plugin_job_struct* extern_data);
+
+
+      void process ();
+
+
+  protected:
+
+  private:
+
+
+      rx_reference_ptr anchor_;
+
+      plugin_job_struct* extern_data_;
+
+
+};
+
+
 } // namespace rx_platform
 
 

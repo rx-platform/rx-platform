@@ -67,17 +67,22 @@ void fill_plugin_paths(string_array& paths)
 	{
 		if (buff[0] == '"')
 		{
-			search_dir = rx::rx_combine_paths(&buff[1], "bin/plugins");
+			search_dir = rx::rx_combine_paths(&buff[1], "bin\\plugins");
 		}
 		else
 		{
-			search_dir = rx::rx_combine_paths(buff, "bin/plugins");
+			search_dir = rx::rx_combine_paths(buff, "bin\\plugins");
 		}
 	}
 	if (!search_dir.empty())
 	{
+		string_array files;
 		string_array dirs;
-		rx_list_files(search_dir, "*.dll", paths, dirs);
+		rx_list_files(search_dir, "*.dll", files, dirs);
+		for (const auto& one : files)
+		{
+			paths.emplace_back(rx_combine_paths(search_dir, one));
+		}
 	}
 #endif
 }
@@ -146,7 +151,7 @@ string_type get_storage_directory()
 	if (GetEnvironmentVariableA("ProgramData", buff, sizeof(buff)))
 	{
 		if (buff[0] == '"')
-			return rx::rx_combine_paths(&buff[1], "rx-platform/storage");
+			return rx::rx_combine_paths(buff, "rx-platform/storage");
 		else
 			return rx::rx_combine_paths(&buff[1], "rx-platform/storage");
 	}

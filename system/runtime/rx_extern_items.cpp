@@ -39,7 +39,11 @@
 
 extern "C"
 {
-
+    rx_result_struct c_object_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
+    {
+        return rx_result(RX_NOT_IMPLEMENTED).move();
+        
+    }
     runtime_handle_t c_object_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
         rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
@@ -74,13 +78,18 @@ extern "C"
     host_object_def_struct _g_object_def_
     {
         {
-            c_object_create_timer
+            c_object_post_job
+            , c_object_create_timer
             , c_object_start_timer
             , c_object_suspend_timer
             , c_object_destroy_timer
         }
     };
+    rx_result_struct c_application_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
+    {
+        return rx_result(RX_NOT_IMPLEMENTED).move();
 
+    }
     runtime_handle_t c_application_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
         rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
@@ -115,14 +124,19 @@ extern "C"
     host_application_def_struct _g_application_def_
     {
         {
-            c_application_create_timer
+            c_application_post_job
+            , c_application_create_timer
             , c_application_start_timer
             , c_application_suspend_timer
             , c_application_destroy_timer
         }
     };
 
+    rx_result_struct c_domain_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
+    {
+        return rx_result(RX_NOT_IMPLEMENTED).move();
 
+    }
     runtime_handle_t c_domain_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
         rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
@@ -157,7 +171,8 @@ extern "C"
     host_domain_def_struct _g_domain_def_
     {
         {
-            c_domain_create_timer
+            c_domain_post_job
+            , c_domain_create_timer
             , c_domain_start_timer
             , c_domain_suspend_timer
             , c_domain_destroy_timer
@@ -208,6 +223,25 @@ extern "C"
         temp.attach(&buffer);
         self->release_io_buffer(std::move(temp));
     }
+    rx_result_struct c_port_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
+    {
+        rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
+        switch (type)
+        {
+        case RX_JOB_REGULAR:
+            if (period == 0)
+            {
+                self->post_own_job(job);
+                return rx_result(true).move();
+            }
+        case RX_JOB_SLOW:
+            //return rx_platform::extern_timers::instance().create_calc_timer(job, period, self->get_jobs_queue());
+        case RX_JOB_IO:
+            //return rx_platform::extern_timers::instance().create_timer(job, period, rx_internal::infrastructure::server_runtime::instance().get_executer(RX_DOMAIN_IO));
+        default:
+            return rx_result(RX_NOT_SUPPORTED).move();
+        }
+    }
 
     runtime_handle_t c_port_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
@@ -252,7 +286,8 @@ extern "C"
         ,c_disconnect_stack_endpoint
 
         ,{
-            c_port_create_timer
+            c_port_post_job
+            , c_port_create_timer
             , c_port_start_timer
             , c_port_suspend_timer
             , c_port_destroy_timer
@@ -436,6 +471,12 @@ void extern_port_runtime::extract_bind_address (const data::runtime_values_data&
     {
         impl_->def->extract_bind_address(impl_->anchor.target, (uint8_t*)temp_buff.get_data(), temp_buff.get_size(), &local_addr, &remote_addr);
     }
+}
+
+void extern_port_runtime::post_own_job (plugin_job_struct* what)
+{
+    auto job = rx_create_reference<extern_job>(what);
+    get_context()->own_pending(job);
 }
 
 

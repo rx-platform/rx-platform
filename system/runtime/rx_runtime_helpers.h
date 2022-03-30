@@ -226,6 +226,8 @@ typedef std::function<void(const rx_value&)> binded_callback_t;
 }
 using tag_blocks::tags_callback_ptr;
 namespace structure {
+template<typename typeT>
+class array_wrapper;
 class const_value_data;
 class value_data;
 class full_value_data;
@@ -244,8 +246,8 @@ class method_data;
 }
 
 
-typedef rx::const_size_vector<structure::variable_data> runtime_variables_type;
-typedef rx::const_size_vector<structure::struct_data> runtime_structs_type;
+typedef rx::const_size_vector<structure::array_wrapper<structure::variable_data> > runtime_variables_type;
+typedef rx::const_size_vector< structure::array_wrapper<structure::struct_data> > runtime_structs_type;
 typedef rx::const_size_vector<structure::event_data> runtime_events_type;
 typedef rx::const_size_vector<structure::filter_data> runtime_filters_type;
 typedef rx::const_size_vector<structure::source_data> runtime_sources_type;

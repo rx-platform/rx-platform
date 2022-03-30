@@ -34,16 +34,16 @@
 
 #include "lib/rx_const_size_vector.h"
 
+// rx_io_buffers
+#include "lib/rx_io_buffers.h"
+// rx_io_addr
+#include "lib/rx_io_addr.h"
 // dummy
 #include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
-// rx_io_buffers
-#include "lib/rx_io_buffers.h"
-// rx_io_addr
-#include "lib/rx_io_addr.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -128,6 +128,8 @@ class limiter_endpoint
         uint64_t ticks = 0;
         bool write = false;
         bool found = false;
+        rx_packet_id_type id;
+
     };
     struct timeouts_type
     {
@@ -228,7 +230,7 @@ struct limit_options_t
 
 class transaction_limiter_port : public transaction_limiter_port_base  
 {
-    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+    DECLARE_CODE_INFO("rx", 1, 1, 0, "\
 Transaction limiter port, limits the transactions sent by master/client.\r\n\
 Use limit value 1 for enabling half-duplex connection, or 0 for no limit.");
 

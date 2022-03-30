@@ -62,6 +62,7 @@ udp_port::~udp_port()
 
 rx_result udp_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+    auto result = status.initialize(ctx);
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
     addr = rx_gate::instance().resolve_ip4_alias(addr);
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
@@ -228,7 +229,14 @@ rx_protocol_result_t udp_endpoint::send_function (rx_protocol_stack_endpoint* re
 {
     udp_endpoint* self = reinterpret_cast<udp_endpoint*>(reference->user_data);
     if (self->udp_socket_)
-        return self->send_packet(packet);
+    {
+        auto ret = self->send_packet(packet);
+        if(ret==RX_PROTOCOL_OK)
+        {
+            self->my_port_->status.sent_packet(packet.buffer->size);
+        }
+        return ret;
+    }
     else
         return RX_PROTOCOL_CLOSED;
 }
@@ -284,6 +292,16 @@ void udp_endpoint::disconnected (rx_security_handle_t identity)
 
 bool udp_endpoint::readed (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity)
 {
+    if (my_port_)
+    {
+    
+        my_port_->status.received_packet(count);
+    }
+    else
+    {
+        RX_ASSERT(false);
+    }
+
     io::ip4_address ip4addr(addr);
     if (!ip4addr.is_valid())
         return false;

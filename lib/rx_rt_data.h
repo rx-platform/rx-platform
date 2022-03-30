@@ -48,30 +48,17 @@ namespace data {
 
 
 
-class runtime_value 
-{
-
-  public:
-
-      values::rx_simple_value value;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 class runtime_values_data 
 {
-	typedef std::map<string_type, runtime_value> values_type;
-	typedef std::map<string_type, runtime_values_data> children_type;
+
+    typedef rx_simple_value value_type;
+    typedef std::vector<rx_simple_value> array_value_type;
+	typedef std::map<string_type, std::variant<value_type, array_value_type> > values_type;
+
+    typedef runtime_values_data child_type;
+    typedef std::vector<runtime_values_data> array_child_type;
+	typedef std::map<string_type, std::variant<child_type, array_child_type> > children_type;
+
 
   public:
 
@@ -79,11 +66,19 @@ class runtime_values_data
 
       void add_value (const string_type& name, rx_simple_value&& value);
 
-      runtime_values_data& add_child (const string_type& name);
+      void add_value (const string_type& name, std::vector<rx_simple_value> value);
 
-      runtime_values_data& add_child (const string_type& name, runtime_values_data&& data);
+      runtime_values_data* add_child (const string_type& name);
+
+      void add_child (const string_type& name, runtime_values_data&& data);
+
+      std::vector<runtime_values_data>* add_array_child (const string_type& name, size_t size);
+
+      void add_array_child (const string_type& name, std::vector<runtime_values_data> data);
 
       rx_simple_value get_value (const string_type& path) const;
+
+      bool get_array_value (const string_type& path, std::vector<rx_simple_value>& val) const;
 
       bool empty () const;
 
@@ -110,6 +105,9 @@ class runtime_values_data
   protected:
 
   private:
+
+      string_view_type extract_index (string_view_type name, int& idx) const;
+
 
 
 };

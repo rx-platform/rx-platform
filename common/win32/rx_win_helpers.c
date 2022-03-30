@@ -222,6 +222,14 @@ RX_COMMON_API rx_timer_ticks_t rx_get_us_ticks()
 		return GetTickCount64() * 1000ULL;
 	}
 }
+RX_COMMON_API void rx_ms_sleep(uint32_t timeout)
+{
+	Sleep(timeout);
+}
+RX_COMMON_API void rx_usleep(uint64_t timeout)
+{
+	Sleep((DWORD)(timeout / 1000));
+}
 
 RX_COMMON_API int rx_os_get_system_time(struct rx_time_struct_t* st)
 {

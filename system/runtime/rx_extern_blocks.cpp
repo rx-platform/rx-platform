@@ -71,6 +71,7 @@ extern "C"
 
         ,{
             nullptr
+            , nullptr
             , c_source_start_timer
             , c_source_suspend_timer
             , c_source_destroy_timer
@@ -112,6 +113,7 @@ extern "C"
 
         ,{
             nullptr
+            , nullptr
             , c_mapper_start_timer
             , c_mapper_suspend_timer
             , c_mapper_destroy_timer
@@ -145,6 +147,7 @@ extern "C"
 
         ,{
             nullptr
+            , nullptr
             , c_filter_start_timer
             , c_filter_suspend_timer
             , c_filter_destroy_timer
@@ -322,12 +325,9 @@ rx_result extern_mapper_runtime::mapper_write (runtime_transaction_id_t id, bool
     return true;
 }
 
-void extern_mapper_runtime::current_value () const
-{
-}
-
 void extern_mapper_runtime::extern_map_current_value () const
 {
+    map_current_value();
 }
 
 

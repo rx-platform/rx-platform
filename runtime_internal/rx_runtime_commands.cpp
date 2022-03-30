@@ -311,16 +311,32 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 						is_value = true;
 						table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
 						break;
+					case rx_attribute_type::const_array_attribute_type:
+						value = RX_TERMINAL_ARRAY_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
+						break;
 					case rx_attribute_type::value_attribute_type:
 						is_value = true;
 						table[idx].emplace_back(one.name, ANSI_RX_VALUE_COLOR, ANSI_COLOR_RESET);
 						break;
+					case rx_attribute_type::value_array_attribute_type:
+						value = RX_TERMINAL_ARRAY_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_VALUE_COLOR, ANSI_COLOR_RESET);
+						break;
 					case rx_attribute_type::variable_attribute_type:
 						is_value = true;
-						//postfix = RX_TERMINAL_STRUCT_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::variable_array_attribute_type:
+						is_value = false;
+						value = RX_TERMINAL_ARRAY_SYMBOL;
 						table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
 						break;
 					case rx_attribute_type::struct_attribute_type:
+						table[idx].emplace_back(one.name, ANSI_RX_STRUCT_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::struct_array_attribute_type:
+						value = RX_TERMINAL_ARRAY_SYMBOL;
 						table[idx].emplace_back(one.name, ANSI_RX_STRUCT_COLOR, ANSI_COLOR_RESET);
 						break;
 					case rx_attribute_type::filter_attribute_type:

@@ -132,8 +132,6 @@ class extern_mapper_runtime : public mapper_runtime
 
       rx_result mapper_write (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val);
 
-      void current_value () const;
-
       void extern_map_current_value () const;
 
 

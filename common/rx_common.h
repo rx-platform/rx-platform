@@ -171,6 +171,9 @@ RX_COMMON_API int rx_os_collect_time(const struct rx_full_time_t* full, struct r
 RX_COMMON_API rx_timer_ticks_t rx_get_tick_count();
 RX_COMMON_API rx_timer_ticks_t rx_get_us_ticks();
 
+RX_COMMON_API void rx_ms_sleep(uint32_t timeout);
+RX_COMMON_API void rx_us_sleep(uint64_t timeout);
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// slim lock abstraction

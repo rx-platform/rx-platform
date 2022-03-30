@@ -107,7 +107,7 @@ class job : private rx::pointers::reference_object
 
       virtual void process () = 0;
 
-      void process_wrapper ();
+      virtual void process_wrapper ();
 
 
       const rx_criticalness get_criticalness () const
@@ -151,6 +151,10 @@ class job : private rx::pointers::reference_object
 
       void release_unsafe_ptr ();
 
+      virtual void pre_process_job ();
+
+      virtual void post_process_job ();
+
 
 
       std::atomic<bool> canceled_;
@@ -193,6 +197,8 @@ class timer_job : public job
 
       void unlock ();
 
+      void process_wrapper1 ();
+
       static constexpr uint64_t max_sleep_period = 200;
   protected:
 
@@ -215,11 +221,16 @@ class timer_job : public job
 
   private:
 
+      rx_timer_ticks_t internal_tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove);
+
+
 
       threads::timer *my_timer_;
 
 
       locks::lockable lock_;
+
+      std::atomic<int> processing_count_;
 
 
     friend class threads::timer;

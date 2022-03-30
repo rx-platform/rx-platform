@@ -173,9 +173,9 @@ void logic_holder::fill_data (const data::runtime_values_data& data, runtime_pro
     for (auto& one : runtime_programs_)
     {
         auto it = data.children.find(one.name);
-        if (it != data.children.end())
+        if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
         {
-            one.item->fill_data(it->second);
+            one.fill_data(std::get< data::runtime_values_data>(it->second));
             break;
         }
         
@@ -183,9 +183,9 @@ void logic_holder::fill_data (const data::runtime_values_data& data, runtime_pro
     for (auto& one : runtime_methods_)
     {
         auto it = data.children.find(one.name);
-        if (it != data.children.end())
+        if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
         {
-            one.item->fill_data(it->second);
+            one.fill_data(std::get< data::runtime_values_data>(it->second));
             break;
         }
     }

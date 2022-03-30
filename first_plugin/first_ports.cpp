@@ -82,6 +82,10 @@ rx_result first_transport_port::deinitialize_port ()
 void first_transport_port::timer_tick ()
 {
 	RX_PLUGIN_LOG_DEBUG("first_transport_port", 100, _rx_func_);
+	this->post_job([this]()
+		{
+			RX_PLUGIN_LOG_DEBUG("first_transport_port", 100, "Usao u posted function");
+		});
 	destroy_timer(timer_);
 	timer_ = 0;
 }

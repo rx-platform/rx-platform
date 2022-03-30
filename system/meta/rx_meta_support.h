@@ -59,10 +59,10 @@ namespace meta {
 
 class runtime_data_prototype 
 {
-	typedef std::vector<runtime::structure::const_value_data> const_values_type;
-	typedef std::vector<runtime::structure::value_data> values_type;
-	typedef std::vector<std::pair<rx_node_id, runtime::structure::variable_data> > variables_type;
-	typedef std::vector< std::pair<rx_node_id, runtime::structure::struct_data> > structs_type;
+	typedef std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > const_values_type;
+	typedef std::vector< runtime::structure::array_wrapper<runtime::structure::value_data> > values_type;
+	typedef std::vector<std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::variable_data> > > variables_type;
+	typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::struct_data> > > structs_type;
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::source_data> > sources_type;
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::mapper_data> > mappers_type;
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::filter_data> > filters_type;
@@ -74,13 +74,21 @@ class runtime_data_prototype
 
       rx_result add_const_value (const string_type& name, rx_simple_value value);
 
+      rx_result add_const_value (const string_type& name, std::vector<values::rx_simple_value> value);
+
       rx_result add_value (const string_type& name, rx_timed_value value, bool read_only, bool persistent);
+
+      rx_result add_value (const string_type& name, std::vector<rx_timed_value> value, bool read_only, bool persistent);
 
       rx_result add (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id);
 
       rx_result add (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id);
 
+      rx_result add (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id);
+
       rx_result add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_node_id id);
+
+      rx_result add_variable (const string_type& name, std::vector<runtime::structure::variable_data> value, rx_node_id id);
 
       rx_result add (const string_type& name, runtime::structure::source_data&& value, rx_node_id id);
 
@@ -509,7 +517,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      runtime_data_prototype pop_rt_name ();
+      rx_platform::meta::runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 
@@ -578,8 +586,8 @@ class construct_context
 
 class data_blocks_prototype 
 {
-    typedef std::vector<runtime::structure::const_value_data> values_type;
-    typedef std::vector<data_blocks_prototype> children_type;
+    typedef std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > values_type;
+    typedef std::vector< runtime::structure::array_wrapper<data_blocks_prototype> > children_type;
 
     typedef std::vector<runtime::structure::index_data> items_type;
 
