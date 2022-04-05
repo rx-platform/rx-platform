@@ -127,6 +127,12 @@ rx_result http_json_object_reader::do_with_item (string_view_type sub_item, http
 	rx_reference_ptr anchor = req.whose;
 	bool persist = req.params.count("persist");
 
+	runtime_value_type val_type = runtime_value_type::simple_runtime_value;
+	if (req.params.count("full"))
+		val_type = runtime_value_type::full_runtime_value;
+	if (req.params.count("persist"))
+		val_type = runtime_value_type::persistent_runtime_value;
+
 	read_data.callback = read_struct_callback_t(anchor, [this, req = std::move(req), resp = std::move(resp)](rx_result result, data::runtime_values_data data) mutable
 	{
 		if (req.params.count("pretty") > 0)
@@ -193,7 +199,7 @@ rx_result http_json_object_reader::do_with_item (string_view_type sub_item, http
 			http_server::instance().send_response(req, resp);
 	});
 
-	read_data.type = persist ? runtime_value_type::persistent_runtime_value : runtime_value_type::simple_runtime_value;
+	read_data.type = val_type;
 	item->read_struct(sub_item, std::move(read_data));
 	return true;
 }

@@ -102,8 +102,8 @@ rx_result tags_holder::deinitialize_runtime (runtime_deinit_context& ctx)
 rx_result tags_holder::start_runtime (runtime_start_context& ctx)
 {
 	ctx.structure.push_item(*item_);
-	ctx.simulation |= item_->get_local_as("Object.Simulate", false);
-	ctx.set_item_static("Object.SimActive", ctx.simulation);
+	ctx.simulation |= item_->get_local_as("_Object.Simulate", false);
+	ctx.set_item_static("_Object.SimActive", ctx.simulation);
 	auto result = item_->start_runtime(ctx);
 	return result;
 }
@@ -164,28 +164,28 @@ common_runtime_tags::common_runtime_tags()
 
 rx_result common_runtime_tags::initialize_runtime (runtime_init_context& ctx)
 {
-	auto bind_result = last_scan_time_.bind("Object.LastScanTime", ctx);
+	auto bind_result = last_scan_time_.bind("_Object.LastScanTime", ctx);
 	if (bind_result)
 	{
-		bind_result = max_scan_time_.bind("Object.MaxScanTime", ctx);
+		bind_result = max_scan_time_.bind("_Object.MaxScanTime", ctx);
 		if (bind_result)
 		{
-			bind_result = loop_count_.bind("Object.LoopCount", ctx);
+			bind_result = loop_count_.bind("_Object.LoopCount", ctx);
 			if (bind_result)
 			{
-				bind_result = on_.bind("Object.On", ctx);
+				bind_result = on_.bind("_Object.On", ctx);
 				if (bind_result)
 				{
-					bind_result = test_.bind("Object.Test", ctx);
+					bind_result = test_.bind("_Object.Test", ctx);
 					if (bind_result)
 					{
-						bind_result = blocked_.bind("Object.Blocked", ctx);
+						bind_result = blocked_.bind("_Object.Blocked", ctx);
 						if (bind_result)
 						{
-							bind_result = simulate_.bind("Object.Simulate", ctx);
+							bind_result = simulate_.bind("_Object.Simulate", ctx);
 							if (bind_result)
 							{
-								bind_result = queues_size_.bind("Object.ProcessQueues", ctx);
+								bind_result = queues_size_.bind("_Object.ProcessQueues", ctx);
 							}
 						}
 					}

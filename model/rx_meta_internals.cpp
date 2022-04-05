@@ -532,7 +532,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	rx_time now = rx_time::now();
 	ts_value.assign_static(now, now);
 	auto rt_data = ctx.pop_rt_name();
-	rt_data.add_const_value("Name", name_value);
+	rt_data.add_const_value("_Name", name_value);
 	ret.ptr->tags_.set_runtime_data(create_runtime_data(rt_data));
 	// now handle methods, programs and rest of the stuff
 

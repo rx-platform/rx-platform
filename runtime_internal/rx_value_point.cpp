@@ -190,6 +190,7 @@ rx_value_t get_arithmetic_result_type(rx_value_t left, rx_value_t right, bool ad
 rx_value add_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
+	result.set_good_locally();
 	rx_value_t ret_type = get_arithmetic_result_type(left.get_type(), right.get_type(), true);
 	if (ret_type != RX_NULL_TYPE)
 	{
@@ -292,6 +293,7 @@ rx_value add_values(const rx_value& left, const rx_value& right)
 rx_value sub_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
+	result.set_good_locally();
 	rx_value_t ret_type = get_arithmetic_result_type(left.get_type(), right.get_type(), false);
 	if (ret_type != RX_NULL_TYPE)
 	{
@@ -339,6 +341,7 @@ rx_value sub_values(const rx_value& left, const rx_value& right)
 rx_value mul_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
+	result.set_good_locally();
 	rx_value_t ret_type = get_arithmetic_result_type(left.c_ptr()->value.value_type, right.c_ptr()->value.value_type, false);
 	if (ret_type != RX_NULL_TYPE)
 	{
@@ -382,6 +385,7 @@ rx_value mul_values(const rx_value& left, const rx_value& right)
 rx_value div_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
+	result.set_good_locally();
 	rx_value_t ret_type = get_arithmetic_result_type(left.get_type(), right.get_type(), false);
 	if (ret_type != RX_NULL_TYPE)
 	{
@@ -445,6 +449,7 @@ rx_value div_values(const rx_value& left, const rx_value& right)
 rx_value mod_values(const rx_value& left, const rx_value& right)
 {
 	rx_value result;
+	result.set_good_locally();
 	rx_value_t ret_type = get_arithmetic_result_type(left.get_type(), right.get_type(), false);
 	if (ret_type != RX_NULL_TYPE)
 	{
@@ -952,14 +957,27 @@ bool value_point_impl::translate_path (const string_type& path, string_type& tra
 {
 	if (context_)
 	{
-		if (path.size() > 2 && path[0] == RX_OBJECT_DELIMETER && path[1] != RX_DIR_DELIMETER)
+		if (path.size() > 2 && path[0] == RX_OBJECT_DELIMETER && path[1] != RX_DIR_DELIMETER && path[1] != RX_OBJECT_DELIMETER)
 		{
 			translated = context_->meta_info.get_full_path() + path;
 			return true;
 		}
-		else if (path.size() > 1 && path[0] != RX_DIR_DELIMETER)
+		else
 		{
-			translated = context_->get_directory_resolver()->resolve_item(path);
+			size_t idx = path.find_first_not_of(RX_OBJECT_DELIMETER_STR RX_DIR_DELIMETER_STR);
+			if (idx != string_type::npos)
+			{
+				idx = path.find(RX_OBJECT_DELIMETER, idx);
+				if (idx != string_type::npos)
+				{
+					rx_namespace_item item = context_->get_directory_resolver()->resolve_item(path.substr(0, idx));
+					if (item)
+					{
+						translated = item.get_meta().get_full_path() + path.substr(idx);
+						return true;
+					}
+				}
+			}
 		}
 	}
 	return false;

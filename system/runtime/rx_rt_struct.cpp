@@ -96,6 +96,8 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 {
 	for (const auto& one : items)
 	{
+		if (!one.name.empty() && one.name[0] == '_' && type == runtime_value_type::simple_runtime_value)
+			continue;
 		switch (one.index & rt_type_mask)
 		{
 		case rt_const_index_type:

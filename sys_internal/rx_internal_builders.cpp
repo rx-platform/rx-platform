@@ -896,7 +896,7 @@ void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, st
 template<class T>
 void basic_types_builder::build_basic_object_type(rx_directory_ptr dir, rx_reference<T> what)
 {
-	what->complex_data.register_struct("Object", RX_NS_OBJECT_DATA_ID);
+	what->complex_data.register_struct("_Object", RX_NS_OBJECT_DATA_ID);
 	add_type_to_configuration(dir, what, true);
 }
 template<class T>
