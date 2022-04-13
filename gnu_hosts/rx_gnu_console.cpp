@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -39,6 +39,21 @@
 
 // rx_gnu_console
 #include "gnu_hosts/rx_gnu_console.h"
+
+
+void dump_termio(struct termios* tm)
+{
+    return;
+    //printf("Termios:\r\nc_iflag:%08x\r\nc_oflag:%08xc_iflag:%08x")
+
+    int flags;
+
+	flags=fcntl(STDIN_FILENO, F_GETFL, 0);
+	if(flags<0)
+	{
+        perror("Error reading fl");
+	}
+}
 
 namespace
 {
@@ -67,7 +82,7 @@ void sig_handler_swinch(int s)
 
 namespace gnu {
 
-// Class gnu::gnu_console_host 
+// Class gnu::gnu_console_host
 
 gnu_console_host::gnu_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : width_(0),
@@ -119,15 +134,23 @@ bool gnu_console_host::break_host (const string_type& msg)
 bool gnu_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
 {
   static bool first=true;
+
   if(first)
   {
     first=false;
     adjust_terminal_size();
   }
-  uint32_t read=0;
-  bool ret = (RX_OK == rx_file_read(STDIN_FILENO,&chars[0],0x100, &read));
-  count=read;
-  return ret;
+
+  int ret_val = read(STDIN_FILENO,&chars[0],0x100);
+  if(ret_val<0)
+  {
+    return false;
+  }
+  else
+  {
+    count=ret_val;
+    return true;
+  }
 }
 
 bool gnu_console_host::write_stdout (const void* data, size_t size)
@@ -141,34 +164,38 @@ rx_result gnu_console_host::setup_console (int argc, char* argv[])
 {
 	main_pid = pthread_self();
 
+	// setup blocking calls for stdin
+
+
 	termios ttynew;
 
 	if (tcgetattr(STDIN_FILENO, &ttyold_) != 0)
 	{
-		fprintf(stderr, "Failed getting terminal attributes\n");
+		perror("Failed getting terminal attributes\n");
 	}
 	else
 	{
 		ttynew = ttyold_;
 
-		ttynew.c_iflag = 0;
-		ttynew.c_oflag = 0;
+        cfmakeraw(&ttynew);
+		//ttynew.c_iflag = 0;
+		//ttynew.c_oflag = 0;
 
 		// disable canonical mode (don't buffer by line)
-		ttynew.c_lflag &= ~ICANON;
+		//ttynew.c_lflag &= ~ICANON;
 
 		// disable local echo
-		ttynew.c_lflag &= ~ECHO;
+		//ttynew.c_lflag &= ~ECHO;
 
 		// do not process ETX (Ctrl-C)
-		ttynew.c_lflag &= ~VINTR;
+	//	ttynew.c_lflag &= ~VINTR;
 
-		ttynew.c_cc[VMIN] = 1;
-		ttynew.c_cc[VTIME] = 1;
+	//	ttynew.c_cc[VMIN] = 1;
+	//	ttynew.c_cc[VTIME] = 1;
 
 		// set new terminal attributes
-		if (tcsetattr(STDIN_FILENO, TCSANOW, &ttynew) != 0)
-			fprintf(stderr, "Failed setting terminal attributes\n");
+		if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ttynew) != 0)
+			perror("Failed setting terminal attributes\n");
 	}
 
 
@@ -194,7 +221,7 @@ rx_result gnu_console_host::setup_console (int argc, char* argv[])
 void gnu_console_host::restore_console ()
 {
 	//set old terminal attributes
-	if (tcsetattr(STDIN_FILENO, TCSANOW, &ttyold_) != 0)
+	if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ttyold_) != 0)
 		perror("Failed setting terminal attributes\n");
 
 }

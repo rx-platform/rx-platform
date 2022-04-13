@@ -33,10 +33,10 @@
 
 
 
-// rx_lock
-#include "lib/rx_lock.h"
 // rx_win32_headless
 #include "win32_hosts/rx_win32_headless.h"
+// rx_lock
+#include "lib/rx_lock.h"
 
 
 #define SERVICE_DESC "{rx-platform} Win32 Service"
@@ -77,12 +77,12 @@ class win32_service_host : public win32_headless_host
 
       string_type get_host_name ();
 
+      string_type get_default_user_storage () const;
+
 
   protected:
 
       static string_type get_win32_service_info ();
-
-      rx_result fill_host_directories (hosting::rx_host_directories& data);
 
 
   private:

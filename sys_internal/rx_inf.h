@@ -33,12 +33,12 @@
 
 
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_job
 #include "system/threads/rx_job.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -296,6 +296,8 @@ calculation ( normal priority)");
 
       void append_io_job (job_ptr job);
 
+      void append_slow_job (job_ptr job);
+
       void append_timer_io_job (timer_job_ptr job);
 
       rx_time get_created_time (values::rx_value& val) const;
@@ -344,6 +346,8 @@ calculation ( normal priority)");
       workers_type workers_;
 
       rx_reference<physical_thread_object> meta_pool_;
+
+      rx_reference<server_dispatcher_object> slow_pool_;
 
 
       threads::job_thread* extern_executer_;

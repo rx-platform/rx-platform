@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -47,7 +47,6 @@
 
 #include "api/rx_meta_api.h"
 
-
 //#define INTERACTIVE_HOST_INFO "Interactive Console Host Ver 0.9.2"
 
 
@@ -55,7 +54,7 @@ namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host 
+// Class host::interactive::interactive_console_host
 
 interactive_console_host::interactive_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : exit_(false)
@@ -394,7 +393,7 @@ rx_result interactive_console_host::build_host (hosting::host_platform_builder& 
 {
 #ifndef RX_MIN_MEMORY
 	auto dir_result = rx_gate::instance().add_directory(builder.host_root + RX_DIR_DELIMETER_STR "types");
-	
+
 	auto detail_struct_type = rx_create_reference<meta::basic_types::struct_type>();
 	detail_struct_type->meta_info.name = RX_STD_IO_DETAILS_TYPE_NAME;
 	detail_struct_type->meta_info.id = rx_node_id(RX_STD_IO_DETAILS_TYPE_ID, 3);
@@ -562,7 +561,7 @@ string_type interactive_console_host::get_default_user_storage () const
 }
 
 
-// Class host::interactive::interactive_console_port 
+// Class host::interactive::interactive_console_port
 
 interactive_console_port::interactive_console_port (interactive_console_host* host)
       : listening_(false)
@@ -645,7 +644,7 @@ void interactive_console_port::terminal_size_changed (int width, int height)
 }
 
 
-// Class host::interactive::interactive_console_endpoint 
+// Class host::interactive::interactive_console_endpoint
 
 interactive_console_endpoint::interactive_console_endpoint (interactive_console_host* host, interactive_console_port* my_port)
       : host_(host),
@@ -679,11 +678,13 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 
 	size_t count;
 
+
 	while (!host_->exit())
 	{
 		count = 0;
 
 		rx_const_packet_buffer buffer{};
+
 		bool result = host_->read_stdin(in_buffer, count);
 		if (!result)
 		{

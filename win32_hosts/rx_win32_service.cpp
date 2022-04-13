@@ -386,20 +386,22 @@ string_type win32_service_host::get_host_name ()
 	return RX_WIN32_SERVICE_HOST;
 }
 
-rx_result win32_service_host::fill_host_directories (hosting::rx_host_directories& data)
+string_type win32_service_host::get_default_user_storage () const
 {
-	auto result = win32_headless_host::fill_host_directories(data);
+	hosting::rx_host_directories data;
+	auto result = const_cast<win32_service_host*>(this)->fill_host_directories(data);
 	if (result && is_service_)
 	{
 		string_type temp = data.system_storage;
 		auto idx = temp.rfind('/');
 		if (idx != string_type::npos)
 			temp = temp.substr(0, idx + 1) + RX_WIN32_SERVICE_HOST;
-		data.user_storage = temp;
+		return temp;
 	}
-	return result;
+	return "";
 }
 
 
 } // namespace win32
+
 

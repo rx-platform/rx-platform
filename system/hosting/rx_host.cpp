@@ -607,6 +607,7 @@ rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_bas
 	fill_plugin_libs(libs);
 	for (auto& one : libs)
 	{
+		HOST_LOG_INFO("Base", 999, "Trying to load library "s + one + "...");
 		auto one_plugin = std::make_unique< library::rx_dynamic_plugin>(one);
 		auto result = one_plugin->bind_plugin();
 		if (result)

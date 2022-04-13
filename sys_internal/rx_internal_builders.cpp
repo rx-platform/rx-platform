@@ -1733,6 +1733,8 @@ rx_result support_types_builder::do_build ()
 		what->complex_data.register_simple_value_static<uint32_t>("SendTimeout", 1000, false, true);
 		what->complex_data.register_simple_value_static<uint32_t>("ConnectTimeout", 2000, false, true);
 		what->complex_data.register_simple_value_static<uint32_t>("ReconnectTimeout", 5000, false, true);
+		what->complex_data.register_simple_value_static<uint32_t>("LinearReconnectTimeout", 5000, false, true);
+		what->complex_data.register_simple_value_static<uint32_t>("MaxReconnectTimeout", 5000, false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -1744,6 +1746,9 @@ rx_result support_types_builder::do_build ()
 			});
 		what->complex_data.register_simple_value_static<uint32_t>("ReadTimeout", 200, false, true);
 		what->complex_data.register_simple_value_static<uint32_t>("WriteTimeout", 500, false, true);
+		what->complex_data.register_simple_value_static<uint32_t>("ReconnectTimeout", 5000, false, true);
+		what->complex_data.register_simple_value_static<uint32_t>("LinearReconnectTimeout", 5000, false, true);
+		what->complex_data.register_simple_value_static<uint32_t>("MaxReconnectTimeout", 5000, false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 

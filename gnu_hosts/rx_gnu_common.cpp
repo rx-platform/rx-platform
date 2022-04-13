@@ -95,8 +95,13 @@ void fill_plugin_paths(string_array& paths)
 	string_type search_dir("/usr/lib/rx-platform/plugins");
 	if (!search_dir.empty())
 	{
+		string_array files;
 		string_array dirs;
-		rx_list_files(search_dir, "*.dll", paths, dirs);
+		rx_list_files(search_dir, "*.so", files, dirs);
+		for (const auto& one : files)
+		{
+			paths.emplace_back(rx_combine_paths(search_dir, one));
+		}
 	}
 #endif
 }

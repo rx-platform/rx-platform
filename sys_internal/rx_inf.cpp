@@ -74,6 +74,9 @@ rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_d
 	if (data.io_pool_size <= 0)
 		data.io_pool_size = 1;
 	io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO);
+
+	slow_pool_ = server_dispatcher_object::smart_ptr(5, "Slow", RX_DOMAIN_SLOW);
+
 	meta_pool_ = rx_create_reference<physical_thread_object>(META_POOL_NAME, RX_DOMAIN_META);
 
 	if (data.has_unassigned_pool)
@@ -137,6 +140,9 @@ void server_runtime::deinitialize ()
 
 	if (io_pool_)
 		io_pool_ = server_dispatcher_object::smart_ptr::null_ptr;
+
+	if (slow_pool_)
+		slow_pool_ = server_dispatcher_object::smart_ptr::null_ptr;
 	if (unassigned_pool_)
 		unassigned_pool_ = physical_thread_object::smart_ptr::null_ptr;
 	if (meta_pool_)
@@ -174,6 +180,8 @@ rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_
 
 	if (meta_pool_)
 		meta_pool_->get_pool().run(RX_PRIORITY_IDLE);
+	if (slow_pool_)
+		slow_pool_->get_pool().run(RX_PRIORITY_IDLE);
 	if (io_pool_)
 		io_pool_->get_pool().run(RX_PRIORITY_HIGH);
 	if (unassigned_pool_)
@@ -208,6 +216,8 @@ void server_runtime::stop ()
 	
 	if (io_pool_)
 		io_pool_->get_pool().end();
+	if (slow_pool_)
+		slow_pool_->get_pool().end();
 	if (unassigned_pool_)
 		unassigned_pool_->get_pool().end();
 
@@ -276,9 +286,18 @@ threads::job_thread* server_runtime::get_executer (rx_thread_handle_t domain)
 			return &io_pool_->get_pool();
 		case RX_DOMAIN_META:
 			return &meta_pool_->get_pool();
+		case RX_DOMAIN_SLOW:
+			if(slow_pool_)
+				return &slow_pool_->get_pool();
+			else if (unassigned_pool_)
+				return &unassigned_pool_->get_pool();
+			else
+				return &meta_pool_->get_pool();
 		case RX_DOMAIN_EXTERN:
 			if (extern_executer_)
 				return extern_executer_;
+			else
+				return &meta_pool_->get_pool();
 		default:
 			if (unassigned_pool_)
 				return &unassigned_pool_->get_pool();
@@ -309,6 +328,14 @@ void server_runtime::append_calculation_job (timer_job_ptr job, threads::job_thr
 void server_runtime::append_io_job (job_ptr job)
 {
 	io_pool_->get_pool().append(job);
+}
+
+void server_runtime::append_slow_job (job_ptr job)
+{
+	if (slow_pool_)
+		slow_pool_->get_pool().append(job);
+	else
+		meta_pool_->get_pool().append(job);
 }
 
 void server_runtime::append_timer_io_job (timer_job_ptr job)
