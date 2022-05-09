@@ -663,6 +663,8 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 		// skip blanks first
 		if (iswhite(*prog))
 			prog++;
+		if (*prog == '\0')
+			break;
 		//find operators now
 		if (*prog == '!' || *prog == '<' || *prog == '>')
 		{

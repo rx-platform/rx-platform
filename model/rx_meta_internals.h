@@ -228,13 +228,11 @@ class inheritance_hash
 
 	struct relation_elements_data
 	{
-		hash_elements_type unordered;
+        std::map<rx_node_id, size_t> unordered;
 		rx_node_ids ordered;
 	};
 
-	// this here is pointer type so we don't have copying of whole set just pointer
 	typedef std::map<rx_node_id, relation_elements_data> relation_map_type;
-
 	typedef std::map<rx_node_id, hash_elements_type> relation_hash_type;
 
   public:
@@ -373,10 +371,16 @@ public:
 	{
 		RTypePtr target;
 		runtime_state state;
+        rx_node_id type;
         checkout_data checkout;
 	};
+    struct type_data_t
+    {
+        Tptr type_ptr;
+        rx_node_id super_type;
+    };
 	typedef typename std::map<rx_node_id, runtime_data_t> registered_objects_type;
-	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
+	typedef typename std::map<rx_node_id, type_data_t> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> > constructors_type;
     typedef typename std::map<rx_node_id, std::function<RBeh()> > behaviors_type;
 

@@ -214,7 +214,7 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_result_callb
 	rx_post_function_to(what->get_executer(), what, 
 		[](rx_object_ptr whose, rx_result_callback&& callback)
 		{
-			runtime::runtime_stop_context stop_ctx;
+			runtime::runtime_stop_context stop_ctx(whose->meta_info(),  &whose->get_context());
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
@@ -223,7 +223,7 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_result_callb
 				rx_post_function_to(RX_DOMAIN_META, whose, 
 					[](rx_object_ptr whose, rx_result_callback&& callback)
 					{
-						runtime::runtime_deinit_context deinit_ctx;
+						runtime::runtime_deinit_context deinit_ctx(whose->meta_info());
 						auto result = whose->deinitialize_runtime(deinit_ctx);
 						if(result)
 							result = whose->get_instance_data().after_deinit_runtime(whose, deinit_ctx);
@@ -404,7 +404,7 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, rx_result_callb
 {
 	rx_post_function_to(what->get_executer(), what, [](rx_domain_ptr whose, rx_result_callback&& callback)
 		{
-			runtime::runtime_stop_context stop_ctx;
+			runtime::runtime_stop_context stop_ctx(whose->meta_info(), &whose->get_context());
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
@@ -413,7 +413,7 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, rx_result_callb
 				rx_post_function_to(RX_DOMAIN_META, whose,
 					[](rx_domain_ptr whose, rx_result_callback&& callback)
 					{
-						runtime::runtime_deinit_context deinit_ctx;
+						runtime::runtime_deinit_context deinit_ctx(whose->meta_info());
 						auto result = whose->deinitialize_runtime(deinit_ctx);
 						if (result)
 							result = whose->get_instance_data().after_deinit_runtime(whose, deinit_ctx);
@@ -590,7 +590,7 @@ rx_result port_algorithms::deinit_runtime (rx_port_ptr what, rx_result_callback&
 {
 	rx_post_function_to(what->get_executer(), what, [](rx_port_ptr whose, rx_result_callback&& callback)
 		{
-			runtime::runtime_stop_context stop_ctx;
+			runtime::runtime_stop_context stop_ctx(whose->meta_info(), &whose->get_context());
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
@@ -599,7 +599,7 @@ rx_result port_algorithms::deinit_runtime (rx_port_ptr what, rx_result_callback&
 				rx_post_function_to(RX_DOMAIN_META, whose,
 					[](rx_port_ptr whose, rx_result_callback&& callback)
 					{
-						runtime::runtime_deinit_context deinit_ctx;
+						runtime::runtime_deinit_context deinit_ctx(whose->meta_info());
 						auto result = whose->deinitialize_runtime(deinit_ctx);
 						if(result)
 							result = whose->get_instance_data().after_deinit_runtime(whose, deinit_ctx);
@@ -789,7 +789,7 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, rx_re
 {
 	rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, rx_result_callback&& callback)
 		{
-			runtime::runtime_stop_context stop_ctx;
+			runtime::runtime_stop_context stop_ctx(whose->meta_info(), &whose->get_context());
 			auto result = stop_runtime(whose, stop_ctx);
 			if (result)
 			{
@@ -799,7 +799,7 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, rx_re
 					[](rx_application_ptr whose, rx_result_callback&& callback)
 						{
 
-							runtime::runtime_deinit_context deinit_ctx;
+							runtime::runtime_deinit_context deinit_ctx(whose->meta_info());
 							auto result = whose->deinitialize_runtime(deinit_ctx);
 							if (result)
 							{
@@ -872,7 +872,7 @@ void shutdown_algorithms::stop_applications (std::vector<rx_application_ptr> app
 	{
 		std::vector<rx_port_ptr> ports = app->get_instance_data().get_ports();
 		stop_ports(std::move(ports));
-		runtime::runtime_stop_context stop_ctx;
+		runtime::runtime_stop_context stop_ctx(app->meta_info(), &app->get_context());
 		algorithms::application_algorithms::stop_runtime(app, stop_ctx);
 	}
 }
@@ -883,7 +883,7 @@ void shutdown_algorithms::stop_domains (std::vector<rx_domain_ptr> domains)
 	{
 		std::vector<rx_object_ptr> objects = domain->get_instance_data().get_objects();
 		stop_objects(std::move(objects));
-		runtime::runtime_stop_context stop_ctx;
+		runtime::runtime_stop_context stop_ctx(domain->meta_info(), &domain->get_context());;
 		algorithms::domain_algorithms::stop_runtime(domain, stop_ctx);
 	}
 }
@@ -892,7 +892,7 @@ void shutdown_algorithms::stop_ports (std::vector<rx_port_ptr> ports)
 {
 	for (auto port : ports)
 	{
-		runtime::runtime_stop_context stop_ctx;
+		runtime::runtime_stop_context stop_ctx(port->meta_info(), &port->get_context());;
 		algorithms::port_algorithms::stop_runtime(port, stop_ctx);
 	}
 }
@@ -901,7 +901,7 @@ void shutdown_algorithms::stop_objects (std::vector<rx_object_ptr> objects)
 {
 	for (auto one : objects)
 	{
-		runtime::runtime_stop_context stop_ctx;
+		runtime::runtime_stop_context stop_ctx(one->meta_info(), &one->get_context());;
 		algorithms::object_algorithms::stop_runtime(one, stop_ctx);
 	}
 }
@@ -914,7 +914,7 @@ void shutdown_algorithms::deinit_applications (std::vector<rx_application_ptr> a
 		deinit_ports(std::move(ports));
 		std::vector<rx_domain_ptr> domains = app->get_instance_data().get_domains();
 		deinit_domains(std::move(domains));
-		runtime::runtime_deinit_context deinit_ctx;
+		runtime::runtime_deinit_context deinit_ctx(app->meta_info());
 		app->deinitialize_runtime(deinit_ctx);
 		app->get_instance_data().after_deinit_runtime(app, deinit_ctx);
 		platform_runtime_manager::instance().applications_.erase(app->meta_info().id);
@@ -928,7 +928,7 @@ void shutdown_algorithms::deinit_domains (std::vector<rx_domain_ptr> domains)
 		std::vector<rx_object_ptr> objects = domain->get_instance_data().get_objects();
 		deinit_objects(std::move(objects));
 		algorithms::domain_algorithms::disconnect_application(domain);
-		runtime::runtime_deinit_context deinit_ctx;
+		runtime::runtime_deinit_context deinit_ctx(domain->meta_info());
 		domain->deinitialize_runtime(deinit_ctx);
 		domain->get_instance_data().after_deinit_runtime(domain, deinit_ctx);
 	}
@@ -939,7 +939,7 @@ void shutdown_algorithms::deinit_ports (std::vector<rx_port_ptr> ports)
 	for (auto port : ports)
 	{
 		algorithms::port_algorithms::disconnect_application(port);
-		runtime::runtime_deinit_context deinit_ctx;
+		runtime::runtime_deinit_context deinit_ctx(port->meta_info());
 		port->deinitialize_runtime(deinit_ctx);
 		port->get_instance_data().after_deinit_runtime(port, deinit_ctx);
 	}
@@ -950,7 +950,7 @@ void shutdown_algorithms::deinit_objects (std::vector<rx_object_ptr> objects)
 	for (auto one : objects)
 	{
 		algorithms::object_algorithms::disconnect_domain(one);
-		runtime::runtime_deinit_context deinit_ctx;
+		runtime::runtime_deinit_context deinit_ctx(one->meta_info());
 		one->deinitialize_runtime(deinit_ctx);
 		one->get_instance_data().after_deinit_runtime(one, deinit_ctx);
 	}

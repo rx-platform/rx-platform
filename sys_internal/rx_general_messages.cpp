@@ -183,7 +183,7 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
     if (hosts.size() > 0)
         response->os_host = hosts[0];
     if (hosts.size() > 1)
-        response->platform_host = hosts[1];
+        response->platform_host = *hosts.rbegin();
     response->start_time = rx_gate::instance().get_started();
     response->current_time = rx_time::now();
     /////////////////////////////////////////////////////////////////////////

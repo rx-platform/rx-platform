@@ -250,6 +250,9 @@ class application_instance_data
       }
 
 
+
+      locks::slim_lock ports_lock;
+
       application_instance_data(application_instance_data&& right) noexcept = default;
       application_instance_data(const application_instance_data& right) = default;
   protected:

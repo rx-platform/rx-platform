@@ -37,6 +37,7 @@
 #include "lib/rx_ptr.h"
 
 #include "system/runtime/rx_runtime_helpers.h"
+#include "system/http_support/rx_http_request.h"
 
 
 namespace rx_platform {
@@ -49,6 +50,7 @@ namespace displays {
 
 class display_runtime : public rx::pointers::reference_object  
 {
+    DECLARE_REFERENCE_PTR(display_runtime);
 
   public:
       display_runtime();
@@ -66,13 +68,19 @@ class display_runtime : public rx::pointers::reference_object
 
       bool load_display (base_meta_reader& stream, uint8_t type);
 
-      virtual rx_result initialize_display (runtime::runtime_init_context& ctx);
+      virtual rx_result initialize_display (runtime::runtime_init_context& ctx, const string_type& disp_path);
 
-      virtual rx_result deinitialize_display (runtime::runtime_deinit_context& ctx);
+      virtual rx_result deinitialize_display (runtime::runtime_deinit_context& ctx, const string_type& disp_path);
 
-      virtual rx_result start_display (runtime::runtime_start_context& ctx);
+      virtual rx_result start_display (runtime::runtime_start_context& ctx, const string_type& disp_path);
 
-      virtual rx_result stop_display (runtime::runtime_stop_context& ctx);
+      virtual rx_result stop_display (runtime::runtime_stop_context& ctx, const string_type& disp_path);
+
+      virtual rx_result register_display (runtime::runtime_start_context& ctx, const string_type& disp_path);
+
+      virtual rx_result unregister_display (runtime::runtime_stop_context& ctx, const string_type& disp_path);
+
+      virtual rx_result handle_request (rx_platform::http::http_request& req, rx_platform::http::http_response& resp);
 
 
   protected:

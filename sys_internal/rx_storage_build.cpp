@@ -61,7 +61,7 @@ configuration_storage_builder::~configuration_storage_builder()
 
 
 
-rx_result configuration_storage_builder::do_build ()
+rx_result configuration_storage_builder::do_build (configuration_data_t& config)
 {
 	auto result = build_from_storage(ns::rx_directory_cache::instance().get_root(), *storage_);
 	if (!result)

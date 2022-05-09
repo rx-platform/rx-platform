@@ -148,6 +148,12 @@ rx_namespace_item rx_directory_resolver::resolve_item (const string_type& path) 
 	string_type dir_path;
 	string_type item_name;
 	rx_split_path(path, dir_path, item_name);
+	if (dir_path.empty())
+	{
+		rx_namespace_item ret = rx_directory_cache::instance().get_cached_item(item_name);
+		if (ret)
+			return ret;
+	}
 	for (auto& one : directories_)
 	{
 		string_type resolved;

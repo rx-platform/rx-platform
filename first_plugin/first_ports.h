@@ -47,6 +47,7 @@ class first_transport_port;
 
 using rx_platform_api::local_value;
 using rx_platform_api::owned_value;
+using rx_platform_api::remote_owned_value;
 
 
 
@@ -294,7 +295,7 @@ First Client Port. Client Port implementation in test plugin.");
 
       local_value<string_type> command;
 
-      owned_value<string_type> response;
+      remote_owned_value<string_type> response;
 
 
   protected:

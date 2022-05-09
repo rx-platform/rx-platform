@@ -77,23 +77,41 @@ bool display_runtime::load_display (base_meta_reader& stream, uint8_t type)
 	return false;
 }
 
-rx_result display_runtime::initialize_display (runtime::runtime_init_context& ctx)
+rx_result display_runtime::initialize_display (runtime::runtime_init_context& ctx, const string_type& disp_path)
 {
 	return true;
 }
 
-rx_result display_runtime::deinitialize_display (runtime::runtime_deinit_context& ctx)
+rx_result display_runtime::deinitialize_display (runtime::runtime_deinit_context& ctx, const string_type& disp_path)
 {
 	return true;
 }
 
-rx_result display_runtime::start_display (runtime::runtime_start_context& ctx)
+rx_result display_runtime::start_display (runtime::runtime_start_context& ctx, const string_type& disp_path)
 {
 	return true;
 }
 
-rx_result display_runtime::stop_display (runtime::runtime_stop_context& ctx)
+rx_result display_runtime::stop_display (runtime::runtime_stop_context& ctx, const string_type& disp_path)
 {
+	return true;
+}
+
+rx_result display_runtime::register_display (runtime::runtime_start_context& ctx, const string_type& disp_path)
+{
+	return RX_NOT_SUPPORTED;
+}
+
+rx_result display_runtime::unregister_display (runtime::runtime_stop_context& ctx, const string_type& disp_path)
+{
+	return RX_NOT_SUPPORTED;
+}
+
+rx_result display_runtime::handle_request (rx_platform::http::http_request& req, rx_platform::http::http_response& resp)
+{
+	resp.set_string_content("Display handler not implemented!");
+	resp.headers["Content-Type"] = "text/plain";
+	resp.result = 200;
 	return true;
 }
 

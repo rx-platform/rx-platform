@@ -102,6 +102,8 @@ struct runtime_data_t
 
 struct management_data_t
 {
+    bool debug = false;
+    uint32_t wd_timer_period = 1000;
     string_type telnet_addr = "127.0.0.1";
     uint16_t telnet_port = 0;
     string_type logs_directory;
@@ -113,7 +115,6 @@ struct meta_configuration_data_t
 {
     bool build_system_from_code = false;
     string_type instance_name;
-    uint32_t wd_timer_period = 1000;
 };
 
 

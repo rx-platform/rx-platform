@@ -147,6 +147,10 @@ void server_command_manager::register_internal_commands ()
 		nullptr ,RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {
 			return rx_create_reference<protocols::opcua::opcua_transport_port>();
 		});
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport_port>(
+		nullptr, RX_OPCUA_SEC_NONE_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_transport_port>();
+		});
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_VT00_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::terminal::term_ports::vt100_port>();

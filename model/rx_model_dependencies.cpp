@@ -872,8 +872,10 @@ template<typename typeT>
 rx_result local_dependecy_builder::create_types(local_dependecy_builder::container_t<typeT>& data, std::vector<typename typeT::smart_ptr>& built)
 {
 	rx_result ret = true;
-	std::vector<std::pair<string_type, string_type> > to_add;
-	to_add.reserve(data.size());
+	std::vector<string_type> add_order;
+	std::vector<std::pair<string_type, string_type> > local_to_add;
+	local_to_add.reserve(data.size());
+	add_order.reserve(data.size());
 	for (const auto& one : data)
 	{
 		if (one.second.create)
@@ -883,33 +885,59 @@ rx_result local_dependecy_builder::create_types(local_dependecy_builder::contain
 			auto parent_id = algorithms::resolve_reference(one.second.item->meta_info.parent, dirs);
 			if (parent_id)
 			{
-				to_add.emplace_back(one.second.item->meta_info.get_full_path(), string_type());
+				local_to_add.emplace_back(one.second.item->meta_info.get_full_path(), string_type());
 			}
 			else
 			{
 				auto it_local = data.find(one.second.item->meta_info.parent.to_string());
 				if (it_local != data.end())
 				{
-					to_add.emplace_back(one.second.item->meta_info.get_full_path(), one.second.item->meta_info.parent.to_string());
+					local_to_add.emplace_back(one.second.item->meta_info.get_full_path(), one.second.item->meta_info.parent.to_string());
 				}
 				else
 				{//!!!
-					to_add.emplace_back(one.second.item->meta_info.get_full_path(), string_type());
+					local_to_add.emplace_back(one.second.item->meta_info.get_full_path(), string_type());
 				}
 			}
 		}
 	}
-	for (auto& one : data)
-	{
-		if (one.second.create)
-		{
+	std::set<string_type> to_add;
+	// first add all items to set for faster search
+	for (const auto& one : local_to_add)
+		to_add.insert(one.first);
 
-			auto result = algorithms::types_model_algorithm<typeT>::create_type_sync(
-				one.second.item);
-			if (!result)
-				return result.errors();
-			if (one.second.save_result)
-				built.emplace_back(result.move_value());
+	while (!to_add.empty())
+	{
+		// check for items not dependent on any items and add them next
+		for (auto& one : local_to_add)
+		{
+			if (!one.first.empty())
+			{
+				auto it_help = to_add.find(one.second);
+				if (it_help == to_add.end())
+				{
+					add_order.push_back(one.first);
+					to_add.erase(one.first);
+					one.first.clear();
+				}
+			}
+		}
+	}
+	for (auto& one : add_order)
+	{
+		auto it = data.find(one);
+		RX_ASSERT(it != data.end());
+		if (it != data.end())
+		{
+			if (it->second.create)
+			{
+				auto result = algorithms::types_model_algorithm<typeT>::create_type_sync(
+					it->second.item);
+				if (!result)
+					return result.errors();
+				if (it->second.save_result)
+					built.emplace_back(result.move_value());
+			}
 		}
 	}
 	return ret;

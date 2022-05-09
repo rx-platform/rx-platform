@@ -125,6 +125,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
             runtime_holder_algorithms<typeT>::fire_job(*this);
         });
     ctx.context = &context_;
+    string_type rt_path = meta_info_.get_full_path();
     auto result = tags_.initialize_runtime(ctx, &relations_, &logic_, &displays_);
     if (result)
     {
@@ -134,7 +135,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
             result = logic_.initialize_logic(ctx);
             if (result)
             {
-                result = displays_.initialize_displays(ctx);
+                result = displays_.initialize_displays(ctx, rt_path);
             }
         }
     }
@@ -149,11 +150,12 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
 template <class typeT>
 rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& ctx)
 {
+    string_type rt_path = meta_info_.get_full_path();
     rx_result result = implementation_->deinitialize_runtime(ctx);
     if (result)
     {
         
-        result = displays_.deinitialize_displays(ctx);
+        result = displays_.deinitialize_displays(ctx, rt_path);
         if (result)
         {
             result = logic_.deinitialize_logic(ctx);
@@ -174,7 +176,7 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
 template <class typeT>
 rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
 {
-    
+    string_type rt_path = meta_info_.get_full_path();
     auto result = tags_.start_runtime(ctx);
     if (result)
     {
@@ -182,6 +184,10 @@ rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
         if (result)
         {
             result = logic_.start_logic(ctx);
+            if (result)
+            {
+                result = displays_.start_displays(ctx, rt_path);
+            }
         }
     }
     if (result)
@@ -195,10 +201,11 @@ rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
 template <class typeT>
 rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
 {
+    string_type rt_path = meta_info_.get_full_path();
     rx_result result = implementation_->stop_runtime(ctx);
     if (result)
     {
-        result = displays_.stop_displays(ctx);
+        result = displays_.stop_displays(ctx, rt_path);
         if (result)
         {
             result = logic_.stop_logic(ctx);
@@ -263,7 +270,7 @@ rx_result runtime_holder<typeT>::add_target_relation (relations::relation_data::
 template <class typeT>
 rx_result runtime_holder<typeT>::remove_target_relation (const string_type& name)
 {
-    runtime_stop_context ctx;
+    runtime_stop_context ctx(meta_info_, &context_);
     auto result = relations_.remove_target_relation(name, ctx);
     if (result)
     {
@@ -279,7 +286,7 @@ rx_result runtime_holder<typeT>::remove_target_relation (const string_type& name
 template <class typeT>
 typename typeT::instance_data_t runtime_holder<typeT>::get_definition_data ()
 {
-    typename typeT::instance_data_t def_data;
+    typename typeT::instance_data_t def_data{};
     def_data.meta_info = meta_info_;
     def_data.instance_data = instance_data_.get_data();
     def_data.overrides = overrides_;

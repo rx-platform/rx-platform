@@ -65,7 +65,9 @@ template class runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x3f>;
+	has<event_data>,
+	empty<const_block_data>,
+	empty<value_block_data>, 0x3f>;
 
 template class runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -73,7 +75,9 @@ template class runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x00>;
+	empty<event_data>,
+	empty<const_block_data>,
+	empty<value_block_data>, 0x00>;
 
 namespace
 {
@@ -91,8 +95,8 @@ runtime_variables_type g_empty_variables;
 // Parameterized Class rx_platform::runtime::structure::runtime_data 
 
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
 	for (const auto& one : items)
 	{
@@ -278,8 +282,8 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::fill_data (const data::runtime_values_data& data)
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::fill_data (const data::runtime_values_data& data)
 {
 	for (auto& one : items)
 	{
@@ -473,8 +477,8 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const
 {
 	if (path.empty())
 	{// our value
@@ -705,8 +709,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::object_state_changed (runtime_process_context* ctx)
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::object_state_changed (runtime_process_context* ctx)
 {
 	if constexpr (has_structs())
 	{
@@ -772,8 +776,8 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::initialize_runtime (runtime::runtime_init_context& ctx)
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	rx_result ret(true);
 	if constexpr (has_mappers())
@@ -906,8 +910,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	return ret;
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
 {
 	rx_result ret(true);
 	for (auto& one : items)
@@ -984,8 +988,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	return ret;
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::start_runtime (runtime::runtime_start_context& ctx)
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::start_runtime (runtime::runtime_start_context& ctx)
 {
 	rx_result ret(true);
 	for (auto& one : items)
@@ -1088,8 +1092,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	return ret;
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::stop_runtime (runtime::runtime_stop_context& ctx)
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::stop_runtime (runtime::runtime_stop_context& ctx)
 {
 	rx_result ret(true);
 	for (auto& one : items)
@@ -1166,8 +1170,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	return ret;
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_value_ref (string_view_type path, rt_value_ref& ref, bool is_var)
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_value_ref (string_view_type path, rt_value_ref& ref, bool is_var)
 {
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
 	string_view_type mine;
@@ -1328,8 +1332,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	return string_type(path) + " not found!";
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
 {
 	if (path.empty())
 	{
@@ -1585,8 +1589,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-const runtime_item* runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_child_item (string_view_type path) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+const runtime_item* runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_child_item (string_view_type path) const
 {
 	if (path.empty())
 		return this;
@@ -1667,8 +1671,8 @@ const runtime_item* runtime_data<variables_type,structs_type,sources_type,mapper
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-runtime_filters_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_filters ()
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+runtime_filters_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_filters ()
 {
 	if constexpr (has_filters())
 	{
@@ -1680,8 +1684,8 @@ runtime_filters_type& runtime_data<variables_type,structs_type,sources_type,mapp
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-runtime_sources_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_sources ()
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+runtime_sources_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_sources ()
 {
 	if constexpr (has_sources())
 	{
@@ -1693,8 +1697,8 @@ runtime_sources_type& runtime_data<variables_type,structs_type,sources_type,mapp
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-runtime_mappers_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_mappers ()
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+runtime_mappers_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_mappers ()
 {
 	if constexpr (has_mappers())
 	{
@@ -1706,8 +1710,8 @@ runtime_mappers_type& runtime_data<variables_type,structs_type,sources_type,mapp
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-runtime_events_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_events ()
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+runtime_events_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_events ()
 {
 	if constexpr (has_events())
 	{
@@ -1719,8 +1723,8 @@ runtime_events_type& runtime_data<variables_type,structs_type,sources_type,mappe
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-runtime_variables_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_variables ()
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+runtime_variables_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_variables ()
 {
 	if constexpr (has_variables())
 	{
@@ -1732,8 +1736,8 @@ runtime_variables_type& runtime_data<variables_type,structs_type,sources_type,ma
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-runtime_structs_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_structs ()
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+runtime_structs_type& runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_structs ()
 {
 	if constexpr (has_structs())
 	{
@@ -1745,8 +1749,8 @@ runtime_structs_type& runtime_data<variables_type,structs_type,sources_type,mapp
 	}
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::get_local_value (const string_type& path, rx_simple_value& val) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::get_local_value (const string_type& path, rx_simple_value& val) const
 {
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
 	string_type mine;
@@ -1864,8 +1868,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	return path + " not found!";
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-string_view_type runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::extract_index (string_view_type name, int& idx) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+string_view_type runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::extract_index (string_view_type name, int& idx) const
 {
 	string_view_type ret;
 	if (name.empty())
@@ -1896,8 +1900,8 @@ string_view_type runtime_data<variables_type,structs_type,sources_type,mappers_t
 	return ret;
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-members_index_type runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::internal_get_index (string_view_type name, int& idx) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+members_index_type runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::internal_get_index (string_view_type name, int& idx) const
 {
 	int item_idx = -1;
 	name = extract_index(name, item_idx);
@@ -1914,23 +1918,23 @@ members_index_type runtime_data<variables_type,structs_type,sources_type,mappers
 	return 0;
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::is_value_index (members_index_type idx) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::is_value_index (members_index_type idx) const
 {
 	auto temp = idx & rt_type_mask;
 	return temp == rt_const_index_type || temp == rt_value_index_type || temp == rt_variable_index_type
 		|| temp == rt_source_index_type || temp == rt_mapper_index_type;
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::is_complex_index (members_index_type idx) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::is_complex_index (members_index_type idx) const
 {
 	auto temp = idx & rt_type_mask;
 	return temp != rt_const_index_type && temp != rt_value_index_type && temp;
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::is_this_yours (string_view_type path) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::is_this_yours (string_view_type path) const
 {
 	size_t idx = path.find(RX_OBJECT_DELIMETER);
 	if (idx == string_type::npos)
@@ -1946,13 +1950,13 @@ bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 	return false;
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::read_struct (string_view_type path, read_struct_data data) const
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::read_struct (string_view_type path, read_struct_data data) const
 {
 }
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,type_id>::write_struct (string_view_type path, write_struct_data data)
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::write_struct (string_view_type path, write_struct_data data)
 {
 }
 
@@ -4289,6 +4293,150 @@ execute_task::~execute_task()
 
 
 // Parameterized Class rx_platform::runtime::structure::array_wrapper 
+
+
+// Class rx_platform::runtime::structure::const_block_data 
+
+string_type const_block_data::type_name = RX_CPP_STRUCT_TYPE_NAME;
+
+const_block_data::const_block_data()
+{
+}
+
+
+
+void const_block_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+{
+	my_data.collect_data(data, type);
+}
+
+void const_block_data::fill_data (const data::runtime_values_data& data)
+{
+	my_data.fill_data(data);
+}
+
+rx_result const_block_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	return my_data.initialize_runtime(ctx);
+}
+
+rx_result const_block_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return my_data.deinitialize_runtime(ctx);
+}
+
+rx_result const_block_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return my_data.start_runtime(ctx);
+}
+
+rx_result const_block_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return my_data.stop_runtime(ctx);
+}
+
+rx_result const_block_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+	return my_data.get_value(path, val, ctx);
+}
+
+rx_result const_block_data::get_value_ref (string_view_type path, rt_value_ref& ref)
+{
+	return my_data.get_value_ref(path, ref, false);
+}
+
+rx_result const_block_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+{
+	return my_data.browse_items(prefix, path, filter, items, ctx);
+}
+
+const runtime_item* const_block_data::get_child_item (string_view_type path) const
+{
+	return my_data.get_child_item(path);
+}
+
+rx_result const_block_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+	return my_data.get_local_value(path, val);
+}
+
+
+// Class rx_platform::runtime::structure::value_block_data 
+
+string_type value_block_data::type_name = RX_CPP_STRUCT_TYPE_NAME;
+
+value_block_data::value_block_data()
+{
+}
+
+
+
+void value_block_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+{
+	my_data.collect_data(data, type);
+}
+
+void value_block_data::fill_data (const data::runtime_values_data& data)
+{
+	my_data.fill_data(data);
+}
+
+rx_result value_block_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	auto ret = my_data.initialize_runtime(ctx);
+	if (ret)
+		timestamp = ctx.now;
+	return ret;
+}
+
+rx_result value_block_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return my_data.deinitialize_runtime(ctx);
+}
+
+rx_result value_block_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return my_data.start_runtime(ctx);
+}
+
+rx_result value_block_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return my_data.stop_runtime(ctx);
+}
+
+rx_result value_block_data::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
+{
+	auto result = my_data.get_value(path, val, ctx);
+	if (result && val.get_time() < timestamp)
+		val.set_time(timestamp);
+	return result;
+}
+
+rx_result value_block_data::get_value_ref (string_view_type path, rt_value_ref& ref)
+{
+	return my_data.get_value_ref(path, ref, false);
+}
+
+rx_result value_block_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const
+{
+	return my_data.browse_items(prefix, path, filter, items, ctx);
+}
+
+const runtime_item* value_block_data::get_child_item (string_view_type path) const
+{
+	return my_data.get_child_item(path);
+}
+
+rx_result value_block_data::get_local_value (const string_type& path, rx_simple_value& val) const
+{
+	return my_data.get_local_value(path, val);
+}
+
+void value_block_data::object_state_changed (runtime_process_context* ctx)
+{
+	if (ctx->get_mode_time() > timestamp)
+		timestamp = ctx->get_mode_time();
+}
 
 
 } // namespace structure

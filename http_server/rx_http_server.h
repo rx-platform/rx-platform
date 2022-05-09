@@ -38,6 +38,8 @@
 #include "system/http_support/rx_http_request.h"
 // rx_http
 #include "system/http_support/rx_http.h"
+// rx_http_displays
+#include "http_server/rx_http_displays.h"
 // rx_http_handlers
 #include "http_server/rx_http_handlers.h"
 // rx_http_mapping
@@ -61,12 +63,71 @@ namespace rx_http_server {
 
 
 
+class standard_request_filter : public rx_platform::http::http_request_filter  
+{
+
+  public:
+
+      rx_result handle_request_after (http_request& req, http_response& resp);
+
+      rx_result handle_request_before (http_request& req, http_response& resp);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class http_display_handler : public rx_platform::http::http_handler  
+{
+    struct display_result_type
+    {
+        http_request request;
+        http_response response;
+        operator bool() const
+        {
+            return request.whose;
+        }
+        display_result_type() = default;
+        display_result_type(display_result_type&&) noexcept = default;
+        display_result_type(const display_result_type&) = delete;
+        display_result_type& operator=(display_result_type&&) noexcept = default;
+        display_result_type& operator=(const display_result_type&) = delete;
+    };
+
+  public:
+
+      rx_result handle_request (http_request& req, http_response& resp);
+
+      const char* get_extension ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 
 class http_server 
 {
     typedef std::unique_ptr<http_request_filter> filter_ptr_t;
     typedef std::vector<filter_ptr_t> filters_type;
     typedef std::map<string_type, http_response> cached_items_type;
+    typedef std::map<string_type, string_type> cached_content_type;
 
   public:
 
@@ -84,10 +145,21 @@ class http_server
 
       void deinitialize ();
 
+      string_type get_global_content (const string_type& path);
 
-      const string_type& get_resources_path () const
+      string_type get_dynamic_content (const string_type& path);
+
+
+      http_displays::http_displays_repository& get_displays ()
       {
-        return resources_path_;
+        return displays_;
+      }
+
+
+
+      const string_type& get_static_path () const
+      {
+        return static_path_;
       }
 
 
@@ -106,34 +178,22 @@ class http_server
 
       filters_type filters_;
 
+      http_displays::http_displays_repository displays_;
 
-      string_type resources_path_;
+
+      string_type static_path_;
+
+      string_type global_path_;
+
+      string_type dynamic_path_;
 
       cached_items_type cached_items_;
 
       locks::slim_lock cache_lock_;
 
+      cached_content_type cached_globals_;
 
-};
-
-
-
-
-
-
-class standard_request_filter : public rx_platform::http::http_request_filter  
-{
-
-  public:
-
-      rx_result handle_request_after (http_request& req, http_response& resp);
-
-      rx_result handle_request_before (http_request& req, http_response& resp);
-
-
-  protected:
-
-  private:
+      cached_content_type cached_dynamic_;
 
 
 };

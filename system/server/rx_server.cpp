@@ -137,30 +137,40 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 			result = io_manager_->initialize(host, data.io);
 			if (result)
 			{
-				auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data.storage, data.meta_configuration);
 
-				if (build_result)
+				result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
+				if (!result)
 				{
-					for (auto one : scripts_)
-						one.second->initialize();
-
-					result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
-					if (!result)
-						result.register_error("Error initializing platform types manager!");
-					else
-					{
-						result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
-						if (!result)
-						{
-							result.register_error("Error initializing http server!");
-							rx_internal::rx_http_server::http_server::instance().deinitialize();
-						}
-					}
+					result.register_error("Error initializing http server!");
+					rx_internal::rx_http_server::http_server::instance().deinitialize();
 				}
 				else
 				{
-					result = build_result.errors();
-					result.register_error("Error building platform!");
+					auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data);
+
+					if (build_result)
+					{
+						for (auto one : scripts_)
+							one.second->initialize();
+
+						result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
+						if (!result)
+							result.register_error("Error initializing platform types manager!");
+						else
+						{
+							result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
+							if (!result)
+							{
+								result.register_error("Error initializing http server!");
+								rx_internal::rx_http_server::http_server::instance().deinitialize();
+							}
+						}
+					}
+					else
+					{
+						result = build_result.errors();
+						result.register_error("Error building platform!");
+					}
 				}
 				if (!result)
 				{

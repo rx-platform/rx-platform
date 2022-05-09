@@ -621,7 +621,7 @@ template<>
 rx_result meta_blocks_algorithm<def_blocks::display_attribute>::construct_complex_attribute(const def_blocks::display_attribute& whose, construct_context& ctx)
 {
 	rx_node_id target;
-	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::filter_attribute::TargetType>());
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::display_attribute::TargetType>());
 	if (!resolve_result)
 	{
 		rx_result ret(resolve_result.errors());

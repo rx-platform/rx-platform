@@ -38,8 +38,6 @@
 
 // rx_ns_resolver
 #include "system/server/rx_ns_resolver.h"
-// rx_job
-#include "system/threads/rx_job.h"
 // rx_tag_blocks
 #include "system/runtime/rx_tag_blocks.h"
 // rx_display_blocks
@@ -58,6 +56,8 @@
 #include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_job
+#include "system/threads/rx_job.h"
 
 #include "system/meta/rx_obj_types.h"
 #include "runtime_internal/rx_runtime_instance.h"
@@ -177,6 +177,12 @@ public:
       rx::data::runtime_values_data& get_overrides ()
       {
         return overrides_;
+      }
+
+
+      runtime_process_context& get_context ()
+      {
+        return context_;
       }
 
 

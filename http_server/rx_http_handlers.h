@@ -181,6 +181,28 @@ class css_file_handler : public text_file_handler
 };
 
 
+
+
+
+
+class js_file_handler : public text_file_handler  
+{
+
+  public:
+
+      const char* get_extension ();
+
+      const char* get_content_type ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace rx_http_server
 } // namespace rx_internal
 

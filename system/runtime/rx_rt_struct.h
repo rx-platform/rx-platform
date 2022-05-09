@@ -1351,8 +1351,110 @@ public:
 
 
 
+class const_block_data 
+{
 
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, uint_fast8_t type_id>
+  public:
+      const_block_data();
+
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+
+      block_data my_data;
+
+
+      static string_type type_name;
+
+
+  protected:
+
+      const runtime_item* get_child_item (string_view_type path) const;
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class value_block_data 
+{
+
+  public:
+      value_block_data();
+
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      void object_state_changed (runtime_process_context* ctx);
+
+
+      block_data my_data;
+
+
+      static string_type type_name;
+
+      rx_time timestamp;
+
+
+  protected:
+
+      const runtime_item* get_child_item (string_view_type path) const;
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
 class runtime_data : public runtime_item  
 {
   public:
@@ -1453,6 +1555,10 @@ class runtime_data : public runtime_item
 
       values_type values;
 
+      cblocks_type const_blocks;
+
+      vblocks_type value_blocks;
+
 
       items_type items;
 
@@ -1484,7 +1590,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x00> empty_item_data;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x00> empty_item_data;
 
 // variables item data
 // only variables are there
@@ -1494,7 +1602,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x01> variables_item_data;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x01> variables_item_data;
 
 
 // structs item data
@@ -1505,7 +1615,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x02> structs_item_data;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x02> structs_item_data;
 
 
 // basic item data
@@ -1516,7 +1628,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x03> basic_item_data;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x03> basic_item_data;
 
 
 // basic item data
@@ -1527,7 +1641,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x15> mixed_item_data;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x15> mixed_item_data;
 
 
 // full item data
@@ -1538,7 +1654,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x3f> full_item_data;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x3f> full_item_data;
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1549,7 +1667,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x00> runtime_data_type00;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x00> runtime_data_type00;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1557,7 +1677,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x01> runtime_data_type01;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x01> runtime_data_type01;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1565,7 +1687,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x02> runtime_data_type02;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x02> runtime_data_type02;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1573,7 +1697,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x03> runtime_data_type03;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x03> runtime_data_type03;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1581,7 +1707,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x04> runtime_data_type04;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x04> runtime_data_type04;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1589,7 +1717,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x05> runtime_data_type05;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x05> runtime_data_type05;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1597,7 +1727,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x06> runtime_data_type06;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x06> runtime_data_type06;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1605,7 +1737,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x07> runtime_data_type07;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x07> runtime_data_type07;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1613,7 +1747,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x08> runtime_data_type08;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x08> runtime_data_type08;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1621,7 +1757,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x09> runtime_data_type09;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x09> runtime_data_type09;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1629,7 +1767,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x0a> runtime_data_type0a;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x0a> runtime_data_type0a;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1637,7 +1777,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x0b> runtime_data_type0b;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x0b> runtime_data_type0b;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1645,7 +1787,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x0c> runtime_data_type0c;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x0c> runtime_data_type0c;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1653,7 +1797,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x0d> runtime_data_type0d;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x0d> runtime_data_type0d;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1661,7 +1807,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x0e> runtime_data_type0e;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x0e> runtime_data_type0e;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1669,7 +1817,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	empty<event_data>, 0x0f> runtime_data_type0f;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x0f> runtime_data_type0f;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1677,7 +1827,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x10> runtime_data_type10;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x10> runtime_data_type10;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1685,7 +1837,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x11> runtime_data_type11;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x11> runtime_data_type11;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1693,7 +1847,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x12> runtime_data_type12;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x12> runtime_data_type12;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1701,7 +1857,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x13> runtime_data_type13;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x13> runtime_data_type13;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1709,7 +1867,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x14> runtime_data_type14;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x14> runtime_data_type14;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1717,7 +1877,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x15> runtime_data_type15;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x15> runtime_data_type15;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1725,7 +1887,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x16> runtime_data_type16;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x16> runtime_data_type16;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1733,7 +1897,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x17> runtime_data_type17;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x17> runtime_data_type17;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1741,7 +1907,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x18> runtime_data_type18;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x18> runtime_data_type18;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1749,7 +1917,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x19> runtime_data_type19;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x19> runtime_data_type19;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1757,7 +1927,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x1a> runtime_data_type1a;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x1a> runtime_data_type1a;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1765,7 +1937,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x1b> runtime_data_type1b;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x1b> runtime_data_type1b;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1773,7 +1947,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x1c> runtime_data_type1c;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x1c> runtime_data_type1c;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1781,7 +1957,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x1d> runtime_data_type1d;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x1d> runtime_data_type1d;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1789,7 +1967,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x1e> runtime_data_type1e;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x1e> runtime_data_type1e;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1797,7 +1977,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	empty<event_data>, 0x1f> runtime_data_type1f;
+	empty<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x1f> runtime_data_type1f;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1805,7 +1987,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x20> runtime_data_type20;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x20> runtime_data_type20;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1813,7 +1997,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x21> runtime_data_type21;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x21> runtime_data_type21;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1821,7 +2007,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x22> runtime_data_type22;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x22> runtime_data_type22;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1829,7 +2017,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x23> runtime_data_type23;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x23> runtime_data_type23;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1837,7 +2027,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x24> runtime_data_type24;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x24> runtime_data_type24;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1845,7 +2037,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x25> runtime_data_type25;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x25> runtime_data_type25;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1853,7 +2047,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x26> runtime_data_type26;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x26> runtime_data_type26;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1861,7 +2057,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x27> runtime_data_type27;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x27> runtime_data_type27;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1869,7 +2067,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x28> runtime_data_type28;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x28> runtime_data_type28;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1877,7 +2077,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x29> runtime_data_type29;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x29> runtime_data_type29;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1885,7 +2087,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x2a> runtime_data_type2a;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x2a> runtime_data_type2a;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1893,7 +2097,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x2b> runtime_data_type2b;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x2b> runtime_data_type2b;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1901,7 +2107,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x2c> runtime_data_type2c;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x2c> runtime_data_type2c;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1909,7 +2117,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x2d> runtime_data_type2d;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x2d> runtime_data_type2d;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1917,7 +2127,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x2e> runtime_data_type2e;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x2e> runtime_data_type2e;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1925,7 +2137,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	empty<filter_data>,
-	has<event_data>, 0x2f> runtime_data_type2f;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x2f> runtime_data_type2f;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1933,7 +2147,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x30> runtime_data_type30;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x30> runtime_data_type30;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1941,7 +2157,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x31> runtime_data_type31;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x31> runtime_data_type31;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1949,7 +2167,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x32> runtime_data_type32;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x32> runtime_data_type32;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1957,7 +2177,9 @@ typedef runtime_data<
 	empty<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x33> runtime_data_type33;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x33> runtime_data_type33;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1965,7 +2187,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x34> runtime_data_type34;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x34> runtime_data_type34;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1973,7 +2197,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x35> runtime_data_type35;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x35> runtime_data_type35;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1981,7 +2207,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x36> runtime_data_type36;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x36> runtime_data_type36;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -1989,7 +2217,9 @@ typedef runtime_data<
 	has<source_data>,
 	empty<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x37> runtime_data_type37;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x37> runtime_data_type37;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -1997,7 +2227,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x38> runtime_data_type38;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x38> runtime_data_type38;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -2005,7 +2237,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x39> runtime_data_type39;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x39> runtime_data_type39;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -2013,7 +2247,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x3a> runtime_data_type3a;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x3a> runtime_data_type3a;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -2021,7 +2257,9 @@ typedef runtime_data<
 	empty<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x3b> runtime_data_type3b;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x3b> runtime_data_type3b;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -2029,7 +2267,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x3c> runtime_data_type3c;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x3c> runtime_data_type3c;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -2037,7 +2277,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x3d> runtime_data_type3d;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x3d> runtime_data_type3d;
 
 typedef runtime_data<
 	empty<array_wrapper<variable_data> >,
@@ -2045,7 +2287,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x3e> runtime_data_type3e;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x3e> runtime_data_type3e;
 
 typedef runtime_data<
 	has<array_wrapper<variable_data> >,
@@ -2053,7 +2297,9 @@ typedef runtime_data<
 	has<source_data>,
 	has<mapper_data>,
 	has<filter_data>,
-	has<event_data>, 0x3f> runtime_data_type3f;
+	has<event_data>,
+    empty<const_block_data>,
+    empty<value_block_data>, 0x3f> runtime_data_type3f;
 
 // ugly function for creating data holder depending on runtime type
 runtime_item::smart_ptr create_runtime_data(uint_fast8_t type_id);

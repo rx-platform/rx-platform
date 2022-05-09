@@ -108,13 +108,13 @@ class displays_holder
 
       rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
 
-      virtual rx_result initialize_displays (runtime::runtime_init_context& ctx);
+      virtual rx_result initialize_displays (runtime::runtime_init_context& ctx, const string_type& rt_path);
 
-      virtual rx_result deinitialize_displays (runtime::runtime_deinit_context& ctx);
+      virtual rx_result deinitialize_displays (runtime::runtime_deinit_context& ctx, const string_type& rt_path);
 
-      virtual rx_result start_displays (runtime::runtime_start_context& ctx);
+      virtual rx_result start_displays (runtime::runtime_start_context& ctx, const string_type& rt_path);
 
-      virtual rx_result stop_displays (runtime::runtime_stop_context& ctx);
+      virtual rx_result stop_displays (runtime::runtime_stop_context& ctx, const string_type& rt_path);
 
       void fill_data (const data::runtime_values_data& data, runtime_process_context* ctx);
 

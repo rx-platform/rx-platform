@@ -189,7 +189,7 @@ security::security_context_ptr port_instance_data::get_security_context () const
 }
 
 
-const rx_application_ptr port_instance_data::get_my_application () const
+rx_application_ptr port_instance_data::get_my_application ()
 {
   return my_application_;
 }
@@ -217,5 +217,30 @@ namespace port_stack {
 
 } // namespace port_stack
 } // namespace interfaces
+
+namespace sys_runtime {
+namespace runtime_core {
+namespace runtime_data {
+// Class rx_internal::sys_runtime::runtime_core::runtime_data::ports_auto_lock 
+
+ports_auto_lock::ports_auto_lock (runtime_core::runtime_data::port_instance_data* data)
+      : data_(data)
+{
+    locks::slim_lock* tmp = const_cast<locks::slim_lock*>(&data_->get_my_application()->get_instance_data().ports_lock);
+    tmp->lock();
+}
+
+
+ports_auto_lock::~ports_auto_lock()
+{
+    locks::slim_lock* tmp = const_cast<locks::slim_lock*>(&data_->get_my_application()->get_instance_data().ports_lock);
+    tmp->unlock();
+}
+
+
+
+} // namespace runtime_data
+} // namespace runtime_core
+} // namespace sys_runtime
 } // namespace rx_internal
 

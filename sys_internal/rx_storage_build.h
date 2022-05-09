@@ -58,7 +58,7 @@ class configuration_storage_builder : public rx_platform_builder
       ~configuration_storage_builder();
 
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:

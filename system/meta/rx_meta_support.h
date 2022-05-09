@@ -517,7 +517,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      rx_platform::meta::runtime_data_prototype pop_rt_name ();
+      runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 
@@ -575,6 +575,8 @@ class construct_context
       active_state_t state_;
 
       warnings_type warnings_;
+
+      int current_display_;
 
 
 };

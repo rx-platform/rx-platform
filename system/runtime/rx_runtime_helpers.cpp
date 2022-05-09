@@ -83,6 +83,12 @@ bool io_capabilities::get_output () const
 
 // Class rx_platform::runtime::runtime_deinit_context 
 
+runtime_deinit_context::runtime_deinit_context (const meta::meta_data& meta_data)
+      : meta(meta)
+{
+}
+
+
 
 // Class rx_platform::runtime::runtime_init_context 
 
@@ -240,6 +246,13 @@ void runtime_start_context::add_io_periodic_job (jobs::periodic_job::smart_ptr j
 
 
 // Class rx_platform::runtime::runtime_stop_context 
+
+runtime_stop_context::runtime_stop_context (const meta::meta_data& meta_data, runtime_process_context* context)
+      : context(context),
+        meta(meta)
+{
+}
+
 
 
 // Class rx_platform::runtime::runtime_structure_resolver 

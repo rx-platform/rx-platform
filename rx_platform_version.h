@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Molecule" 
 #define RX_SERVER_MAJOR_VERSION 1
 #define RX_SERVER_MINOR_VERSION 7
-#define RX_SERVER_BUILD_NUMBER 4
+#define RX_SERVER_BUILD_NUMBER 5
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -39,4 +39,5 @@
 // version 1.5.0 added callback support rx_any_callback<> and rx_remote_function<>
 // version 1.6.0 source input and mapper mapped value as tag
 // version 1.7.0 exporting functions for dynamic plugins
+// version 1.8.0 added block data to runtime struct
 

@@ -70,9 +70,9 @@ class rx_platform_builder
       virtual ~rx_platform_builder();
 
 
-      static rx_result build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta_configuration_data_t& meta_data);
+      static rx_result build_platform (hosting::rx_platform_host* host, configuration_data_t& config);
 
-      virtual rx_result do_build () = 0;
+      virtual rx_result do_build (configuration_data_t& config) = 0;
 
       static void deinitialize ();
 
@@ -115,7 +115,7 @@ class root_folder_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
@@ -130,29 +130,23 @@ class root_folder_builder : public rx_platform_builder
 
 
 
-class basic_types_builder : public rx_platform_builder  
+class basic_object_types_builder : public rx_platform_builder  
 {
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& onfcig);
 
 
   protected:
 
   private:
-		void build_object_data_struct_type(rx_directory_ptr dir, struct_type_ptr what);
-	    template<class T>
-		void build_basic_object_type(rx_directory_ptr dir, rx_reference<T> what);
-		template<class T>
-		void build_basic_domain_type(rx_directory_ptr dir, rx_reference<T> what);
-		template<class T>
-		void build_basic_application_type(rx_directory_ptr dir, rx_reference<T> what);
-		template<class T>
-		void build_basic_port_type(rx_directory_ptr dir, rx_reference<T> what);
-
-		template<class T>
-		void build_basic_type(rx_directory_ptr dir, rx_reference<T> what);
+        template<class T>
+        void build_standard_basic_object_type(configuration_data_t& config, rx_directory_ptr dir, rx_reference<T> what);
+		void build_basic_object_type(configuration_data_t& config, rx_directory_ptr dir, rx_object_type_ptr what);
+		void build_basic_domain_type(configuration_data_t& config, rx_directory_ptr dir, rx_domain_type_ptr what);
+		void build_basic_application_type(configuration_data_t& config, rx_directory_ptr dir, rx_application_type_ptr what);
+		void build_basic_port_type(configuration_data_t& config, rx_directory_ptr dir, rx_port_type_ptr what);
 
 };
 
@@ -166,7 +160,7 @@ class system_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
@@ -187,7 +181,7 @@ class port_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
@@ -207,7 +201,7 @@ class system_objects_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
@@ -227,7 +221,7 @@ class support_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
@@ -247,7 +241,7 @@ class relation_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
@@ -267,7 +261,7 @@ class simulation_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
@@ -287,7 +281,7 @@ class system_ports_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
@@ -307,13 +301,56 @@ class terminal_commands_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build ();
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
 
   private:
 
+
+};
+
+
+
+
+
+
+class http_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (configuration_data_t& config);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class basic_types_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (configuration_data_t& config);
+
+
+  protected:
+
+  private:
+      void build_object_data_struct_type(rx_directory_ptr dir, struct_type_ptr what);
+
+      template<class T>
+      void build_basic_type(rx_directory_ptr dir, rx_reference<T> what);
 
 };
 

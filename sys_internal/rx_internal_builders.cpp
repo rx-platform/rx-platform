@@ -214,16 +214,16 @@ rx_platform_builder & rx_platform_builder::operator=(const rx_platform_builder &
 
 
 
-rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, namespace_data_t& data, const meta_configuration_data_t& meta_data)
+rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, configuration_data_t& config)
 {
 	rx_result errors = register_system_constructors();
 	if (!errors)
 		return errors;
 
-	auto sys_builders = get_system_builders(data, meta_data, host);
-	auto user_builders = get_user_builders(data, host);
-	auto test_builders = get_test_builders(data, host);
-	auto other_builders = get_other_builders(data, host);
+	auto sys_builders = get_system_builders(config.storage, config.meta_configuration, host);
+	auto user_builders = get_user_builders(config.storage, host);
+	auto test_builders = get_test_builders(config.storage, host);
+	auto other_builders = get_other_builders(config.storage, host);
 
 	auto root = ns::rx_directory_cache::instance().get_root();
 
@@ -232,7 +232,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building system...");
 	for (auto& one : sys_builders)
 	{
-		auto result = one->do_build();
+		auto result = one->do_build(config);
 		if (!result)
 		{
 			BUILD_LOG_ERROR("rx_platform_builder", 900, "Error building platform system!");
@@ -242,14 +242,14 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	}
 	BUILD_LOG_INFO("rx_platform_builder", 900, "System built.");
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building unassigned system...");
-	errors = buid_unassigned(host, data);
+	errors = buid_unassigned(host, config.storage);
 	if (errors)
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Unassigned system built.");
 	// unassigned is critical so an error in building system is fatal
 	else
 		return errors;
 
-	if (meta_data.build_system_from_code)
+	if (config.meta_configuration.build_system_from_code)
 	//@@@@STUPID but have to be turned off for a while, hence the @'s :)
 	{
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Building host items...");
@@ -308,7 +308,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		if (storage_ptr)
 		{
 			storage::configuration_storage_builder builder(storage_ptr.value());
-			errors = builder.do_build();
+			errors = builder.do_build(config);
 			if (!errors)
 			{
 				errors.register_error("Unable to build host "s + host->get_host_name());
@@ -326,7 +326,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 			if (storage_ptr)
 			{
 				storage::configuration_storage_builder builder(storage_ptr.value());
-				errors = builder.do_build();
+				errors = builder.do_build(config);
 				if (!errors)
 				{
 					errors.register_error("Unable to build plugin "s + one->get_plugin_name());
@@ -343,7 +343,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 
 	for (auto& one : user_builders)
 	{
-		auto result = one->do_build();
+		auto result = one->do_build(config);
 		if (!result)
 		{
 			BUILD_LOG_ERROR("rx_platform_builder", 900, "Errors occurred while building platform user configuration!");
@@ -355,7 +355,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	{
 		for (auto& one : test_builders)
 		{
-			auto result = one->do_build();
+			auto result = one->do_build(config);
 			if (!result)
 			{
 				BUILD_LOG_WARNING("rx_platform_builder", 900, "Errors occurred while building platform test configuration!");
@@ -364,7 +364,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	}
 	for (auto& one : other_builders)
 	{
-		auto result = one->do_build();
+		auto result = one->do_build(config);
 		if (!result)
 		{
 			BUILD_LOG_WARNING("rx_platform_builder", 900, "Error building platform additional configuration!");
@@ -386,10 +386,12 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 		// types builders
 		builders.emplace_back(std::make_unique<basic_types_builder>());
 		builders.emplace_back(std::make_unique<support_types_builder>());
+		builders.emplace_back(std::make_unique<relation_types_builder>());
+		builders.emplace_back(std::make_unique<http_builder>());
+		builders.emplace_back(std::make_unique<basic_object_types_builder>());
 		builders.emplace_back(std::make_unique<terminal_commands_builder>());
 		builders.emplace_back(std::make_unique<system_types_builder>());
 		builders.emplace_back(std::make_unique<port_types_builder>());
-		builders.emplace_back(std::make_unique<relation_types_builder>());
 		builders.emplace_back(std::make_unique<simulation_types_builder>());
 		//// objects builders
 		builders.emplace_back(std::make_unique<system_objects_builder>());
@@ -559,7 +561,7 @@ void rx_platform_builder::recursive_destory_fs (rx_directory_ptr dir)
 // Class rx_internal::builders::root_folder_builder 
 
 
-rx_result root_folder_builder::do_build ()
+rx_result root_folder_builder::do_build (configuration_data_t& config)
 {
 	std::vector<std::pair<string_type, rx_storage_ptr> > dirs =
 	{
@@ -595,6 +597,8 @@ rx_result root_folder_builder::do_build ()
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_TERMINAL_NAME
 			, rx_storage_ptr::null_ptr },
+		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_HTTP_CLASSES_NAME
+			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_UNASSIGNED_NAME
 			, rx_storage_ptr::null_ptr }, // /unassigned
 	};
@@ -628,10 +632,10 @@ rx_result root_folder_builder::do_build ()
 }
 
 
-// Class rx_internal::builders::basic_types_builder 
+// Class rx_internal::builders::basic_object_types_builder 
 
 
-rx_result basic_types_builder::do_build ()
+rx_result basic_object_types_builder::do_build (configuration_data_t& config)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_BASE_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -639,135 +643,6 @@ rx_result basic_types_builder::do_build ()
 	if (dir_result)
 	{
 		auto dir = dir_result;
-		auto dtype = create_type<basic_types::data_type>(meta::type_creation_data{
-			RX_CLASS_DATA_BASE_NAME
-			, RX_CLASS_DATA_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		model::platform_types_manager::instance().get_data_types_repository().register_type(dtype);
-		dir->add_item(dtype->get_item_ptr());
-
-		//build base types, user extensible
-		auto str = create_type<basic_types::struct_type>(meta::type_creation_data{
-			RX_CLASS_STRUCT_BASE_NAME
-			, RX_CLASS_STRUCT_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_type<basic_types::struct_type>(dir, str);
-		auto var = create_type<basic_types::variable_type>(meta::type_creation_data{
-			RX_CLASS_VARIABLE_BASE_NAME
-			, RX_CLASS_VARIABLE_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_type<basic_types::variable_type>(dir, var);
-
-		// build base types, code only extensible
-		auto map = create_type<basic_types::mapper_type>(meta::type_creation_data{
-			RX_CLASS_MAPPER_BASE_NAME
-			, RX_CLASS_MAPPER_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		map->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
-		build_basic_type<basic_types::mapper_type>(dir, map);
-		auto evnt = create_type<basic_types::event_type>(meta::type_creation_data{
-			RX_CLASS_EVENT_BASE_NAME
-			, RX_CLASS_EVENT_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_type<basic_types::event_type>(dir, evnt);
-		auto filt = create_type<basic_types::filter_type>(meta::type_creation_data{
-			RX_CLASS_FILTER_BASE_NAME
-			, RX_CLASS_FILTER_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_type<basic_types::filter_type>(dir, filt);
-		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
-			RX_CLASS_SOURCE_BASE_NAME
-			, RX_CLASS_SOURCE_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		src->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
-		build_basic_type<basic_types::source_type>(dir, src);
-
-		auto met = create_type<basic_types::method_type>(meta::type_creation_data{
-			RX_CLASS_METHOD_BASE_NAME
-			, RX_CLASS_METHOD_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_type<basic_types::method_type>(dir, met);
-
-		auto prog = create_type<basic_types::program_type>(meta::type_creation_data{
-			RX_CLASS_PROGRAM_BASE_NAME
-			, RX_CLASS_PROGRAM_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_type<basic_types::program_type>(dir, prog);
-
-		auto disp = create_type<basic_types::display_type>(meta::type_creation_data{
-			RX_CLASS_DISPLAY_BASE_NAME
-			, RX_CLASS_DISPLAY_BASE_ID
-			, rx_node_id::null_id
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_basic_type<basic_types::display_type>(dir, disp);
-
-		//build general data for runtime objects
-		str = create_type<basic_types::struct_type>(meta::type_creation_data{
-			RX_NS_OBJECT_DATA_NAME
-			, RX_NS_OBJECT_DATA_ID
-			, RX_CLASS_STRUCT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		build_object_data_struct_type(dir, str);
-
-		// port related helper structures
-		str = create_type<struct_type>(meta::type_creation_data{
-			RX_PORT_STATUS_TYPE_NAME
-			, RX_PORT_STATUS_TYPE_ID
-			, RX_CLASS_STRUCT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		str->complex_data.register_simple_value_static("Binded", false, true, false);
-		str->complex_data.register_simple_value_static("Assembled", false, true, false);
-		str->complex_data.register_simple_value_static<int16_t>("Endpoints", 0, true, false);
-		str->complex_data.register_simple_value_static<int64_t>("RxPackets", 0, false, false);
-		str->complex_data.register_simple_value_static<int64_t>("TxPackets", 0, false, false);
-		str->complex_data.register_simple_value_static<uint32_t>("Buffers", 0, true, false);
-		str->complex_data.register_simple_value_static<int64_t>("DropedBuffers", 0, false, false);
-		add_simple_type_to_configuration<struct_type>(dir, str, false);
-
-		str = create_type<struct_type>(meta::type_creation_data{
-			RX_PORT_OPTIONS_TYPE_NAME
-			, RX_PORT_OPTIONS_TYPE_ID
-			, RX_CLASS_STRUCT_BASE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		str->complex_data.register_const_value_static<uint32_t>("BuffBackCapacity", 0x100);
-		str->complex_data.register_const_value_static<uint32_t>("BuffFrontCapacity", 0x10);
-		str->complex_data.register_const_value_static<uint32_t>("BuffDiscardSize", 0x1000);
-		add_simple_type_to_configuration<struct_type>(dir, str, false);
 
 		//build base object type
 		auto obj = create_type<object_type>(meta::object_type_creation_data{
@@ -778,7 +653,7 @@ rx_result basic_types_builder::do_build ()
 			, full_path
 			});
 		meta::object_types::relation_attribute rel_attr;
-		build_basic_object_type<object_type>(dir, obj);
+		build_basic_object_type(config, dir, obj);
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_USER_OBJECT_TYPE_NAME
 			, RX_USER_OBJECT_TYPE_ID
@@ -804,7 +679,7 @@ rx_result basic_types_builder::do_build ()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		build_basic_application_type<application_type>(dir, app);
+		build_basic_application_type(config, dir, app);
 		app = create_type<application_type>(meta::object_type_creation_data{
 			RX_USER_APP_TYPE_NAME
 			, RX_USER_APP_TYPE_ID
@@ -828,7 +703,7 @@ rx_result basic_types_builder::do_build ()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		build_basic_domain_type<domain_type>(dir, domain);
+		build_basic_domain_type(config, dir, domain);
 		domain = create_type<domain_type>(meta::object_type_creation_data{
 			RX_USER_DOMAIN_TYPE_NAME
 			, RX_USER_DOMAIN_TYPE_ID
@@ -853,7 +728,7 @@ rx_result basic_types_builder::do_build ()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		build_basic_port_type<port_type>(dir, port);
+		build_basic_port_type(config, dir, port);
 		// build relations
 		relation_type_data def_data;
 		def_data.abstract_type = true;
@@ -873,7 +748,7 @@ rx_result basic_types_builder::do_build ()
 		dir->add_item(relation->get_item_ptr());
 
 	}
-	BUILD_LOG_INFO("basic_types_builder", 900, "Basic types built.");
+	BUILD_LOG_INFO("basic_object_types_builder", 900, "Basic types built.");
 	return true;
 }
 
@@ -893,29 +768,40 @@ void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, st
 	what->complex_data.register_const_value_static("SimActive", false);
 	add_simple_type_to_configuration<struct_type>(dir, what, false);
 }
+
 template<class T>
-void basic_types_builder::build_basic_object_type(rx_directory_ptr dir, rx_reference<T> what)
+void basic_object_types_builder::build_standard_basic_object_type(configuration_data_t& config, rx_directory_ptr dir, rx_reference<T> what)
 {
 	what->complex_data.register_struct("_Object", RX_NS_OBJECT_DATA_ID);
+	if (config.management.debug)
+	{
+		what->object_data.register_display(def_blocks::display_attribute("index", RX_STANDARD_HTTP_DISPLAY_TYPE_ID), what->complex_data);
+	}
 	add_type_to_configuration(dir, what, true);
 }
-template<class T>
-void basic_types_builder::build_basic_domain_type(rx_directory_ptr dir, rx_reference<T> what)
+void basic_object_types_builder::build_basic_object_type(configuration_data_t& config, rx_directory_ptr dir, rx_object_type_ptr what)
+{
+	what->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "object_index.html");
+	build_standard_basic_object_type(config, dir, what);
+}
+void basic_object_types_builder::build_basic_domain_type(configuration_data_t& config, rx_directory_ptr dir, rx_domain_type_ptr what)
 {
 	what->complex_data.register_const_value_static("CPU", -1);
-	build_basic_object_type(dir, what);
+	what->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "domain_index.html");
+	build_standard_basic_object_type(config, dir, what);
 }
-template<class T>
-void basic_types_builder::build_basic_application_type(rx_directory_ptr dir, rx_reference<T> what)
+void basic_object_types_builder::build_basic_application_type(configuration_data_t& config, rx_directory_ptr dir, rx_application_type_ptr what)
 {
-	build_basic_domain_type(dir, what);
+	what->complex_data.register_const_value_static("CPU", -1);
+	what->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "app_index.html");
+	build_standard_basic_object_type(config , dir, what);
 }
-template<class T>
-void basic_types_builder::build_basic_port_type(rx_directory_ptr dir, rx_reference<T> what)
+void basic_object_types_builder::build_basic_port_type(configuration_data_t& config, rx_directory_ptr dir, rx_port_type_ptr what)
 {
 	what->complex_data.register_struct("Options", RX_PORT_OPTIONS_TYPE_ID);
 	what->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
-	build_basic_object_type(dir, what);
+	what->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "port_index.html");
+	build_standard_basic_object_type(config, dir, what);
 }
 template<class T>
 void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<T> what)
@@ -923,10 +809,17 @@ void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<T>
 	model::platform_types_manager::instance().get_simple_type_repository<T>().register_type(what);
 	dir->add_item(what->get_item_ptr());
 }
+
+template<>
+void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<rx_platform::meta::basic_types::data_type> what)
+{
+	model::platform_types_manager::instance().get_data_types_repository().register_type(what);
+	dir->add_item(what->get_item_ptr());
+}
 // Class rx_internal::builders::system_types_builder 
 
 
-rx_result system_types_builder::do_build ()
+rx_result system_types_builder::do_build (configuration_data_t& config)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SYSTEM_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -942,6 +835,8 @@ rx_result system_types_builder::do_build ()
 			, full_path
 			});
 		obj->complex_data.register_struct("Info", RX_NS_SYSTEM_INFO_TYPE_ID);
+		obj->object_data.register_display(def_blocks::display_attribute("index", RX_STATIC_HTTP_DISPLAY_TYPE_ID), obj->complex_data);
+		obj->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "index.html");
 		add_type_to_configuration(dir, obj, false);
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_NS_HOST_TYPE_NAME
@@ -1184,7 +1079,7 @@ void system_types_builder::build_host_info_struct_type(rx_directory_ptr dir, str
 // Class rx_internal::builders::port_types_builder 
 
 
-rx_result port_types_builder::do_build ()
+rx_result port_types_builder::do_build (configuration_data_t& config)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_PORT_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -1290,10 +1185,19 @@ rx_result port_types_builder::do_build ()
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
-
+		
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_OPCUA_TRANSPORT_PORT_TYPE_NAME
 			, RX_OPCUA_TRANSPORT_PORT_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_NONE_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_NONE_PORT_TYPE_ID
 			, RX_TRANSPORT_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
@@ -1387,7 +1291,7 @@ rx_result port_types_builder::do_build ()
 // Class rx_internal::builders::system_objects_builder 
 
 
-rx_result system_objects_builder::do_build ()
+rx_result system_objects_builder::do_build (configuration_data_t& config)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_SYSTEM_OBJ_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -1424,6 +1328,7 @@ rx_result system_objects_builder::do_build ()
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
+		instance_data.overrides.add_value_static("index.Resources.DisplayFile", "index.html");
 		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
 
 		instance_data = runtime_data::object_runtime_data();
@@ -1472,7 +1377,7 @@ rx_result system_objects_builder::do_build ()
 // Class rx_internal::builders::support_types_builder 
 
 
-rx_result support_types_builder::do_build ()
+rx_result support_types_builder::do_build (configuration_data_t& config)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SUPPORT_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -1653,6 +1558,28 @@ rx_result support_types_builder::do_build ()
 
 
 		auto what = create_type<struct_type>(meta::type_creation_data{
+			RX_DISPLAY_RESOURCE_TYPE_NAME
+			, RX_DISPLAY_RESOURCE_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_DISPLAY_STATUS_TYPE_NAME
+			, RX_DISPLAY_STATUS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static<int64_t>("Req", 0, false, false);
+		what->complex_data.register_simple_value_static<int64_t>("Failed", 0, false, false);
+		what->complex_data.register_simple_value_static<float>("LastReqTime", 0, false, false);
+		what->complex_data.register_simple_value_static<float>("MaxReqTime", 0, false, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_PHY_PORT_STATUS_TYPE_NAME
 			, RX_PHY_PORT_STATUS_TYPE_ID
 			, RX_PORT_STATUS_TYPE_ID
@@ -1853,7 +1780,7 @@ rx_result support_types_builder::do_build ()
 // Class rx_internal::builders::relation_types_builder 
 
 
-rx_result relation_types_builder::do_build ()
+rx_result relation_types_builder::do_build (configuration_data_t& config)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_RELATIONS_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -1929,7 +1856,7 @@ rx_result relation_types_builder::do_build ()
 // Class rx_internal::builders::simulation_types_builder 
 
 
-rx_result simulation_types_builder::do_build ()
+rx_result simulation_types_builder::do_build (configuration_data_t& config)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SIMULATION_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -1967,7 +1894,7 @@ rx_result simulation_types_builder::do_build ()
 // Class rx_internal::builders::system_ports_builder 
 
 
-rx_result system_ports_builder::do_build ()
+rx_result system_ports_builder::do_build (configuration_data_t& config)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_PORT_OBJ_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -2033,7 +1960,7 @@ rx_result system_ports_builder::do_build ()
 // Class rx_internal::builders::terminal_commands_builder 
 
 
-rx_result terminal_commands_builder::do_build ()
+rx_result terminal_commands_builder::do_build (configuration_data_t& config)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_TERMINAL_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -2113,6 +2040,248 @@ rx_result terminal_commands_builder::do_build ()
 
 	}
 	BUILD_LOG_INFO("terminal_commands_builder", 900, "Terminal commands built.");
+	return true;
+}
+
+
+// Class rx_internal::builders::http_builder 
+
+
+rx_result http_builder::do_build (configuration_data_t& config)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_HTTP_CLASSES_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir_result = ns::rx_directory_cache::instance().get_directory(full_path);
+	if (dir_result)
+	{
+		auto dir = dir_result;
+
+
+		auto str = create_type<struct_type>(meta::type_creation_data{
+			RX_HTTP_DISPLAY_STATUS_TYPE_NAME
+			, RX_HTTP_DISPLAY_STATUS_TYPE_ID
+			, RX_DISPLAY_STATUS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		str->complex_data.register_simple_value_static<string_type>("LastError", "OK", false, false);
+		add_simple_type_to_configuration<struct_type>(dir, str, false);
+
+
+		str = create_type<struct_type>(meta::type_creation_data{
+			RX_HTTP_DISPLAY_RESOURCE_TYPE_NAME
+			, RX_HTTP_DISPLAY_RESOURCE_TYPE_ID
+			, RX_DISPLAY_RESOURCE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		str->complex_data.register_const_value_static<string_type>("DisplayFile", "");
+		add_simple_type_to_configuration<struct_type>(dir, str, false);
+
+
+		auto disp = create_type<basic_types::display_type>(meta::type_creation_data{
+			RX_HTTP_DISPLAY_TYPE_NAME
+			, RX_HTTP_DISPLAY_TYPE_ID
+			, RX_CLASS_DISPLAY_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		disp->complex_data.register_struct("Resources", RX_HTTP_DISPLAY_RESOURCE_TYPE_ID);
+		disp->complex_data.register_struct("Status", RX_HTTP_DISPLAY_STATUS_TYPE_ID);
+		add_simple_type_to_configuration<display_type>(dir, disp, true);
+
+		// static http display
+
+		str = create_type<struct_type>(meta::type_creation_data{
+			RX_STATIC_HTTP_DISPLAY_RESOURCE_TYPE_NAME
+			, RX_STATIC_HTTP_DISPLAY_RESOURCE_TYPE_ID
+			, RX_HTTP_DISPLAY_RESOURCE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		str->complex_data.register_const_value_static<string_type>("HeaderFile", "static_header.html");
+		str->complex_data.register_const_value_static<string_type>("FooterFile", "static_footer.html");
+		add_simple_type_to_configuration<struct_type>(dir, str, false);
+		
+		disp = create_type<basic_types::display_type>(meta::type_creation_data{
+			RX_STATIC_HTTP_DISPLAY_TYPE_NAME
+			, RX_STATIC_HTTP_DISPLAY_TYPE_ID
+			, RX_HTTP_DISPLAY_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		disp->complex_data.register_struct("Resources", RX_STATIC_HTTP_DISPLAY_RESOURCE_TYPE_ID);
+		disp->complex_data.register_struct("Status", RX_HTTP_DISPLAY_STATUS_TYPE_ID);
+		add_simple_type_to_configuration<display_type>(dir, disp, true);
+
+		disp = create_type<basic_types::display_type>(meta::type_creation_data{
+			RX_STANDARD_HTTP_DISPLAY_TYPE_NAME
+			, RX_STANDARD_HTTP_DISPLAY_TYPE_ID
+			, RX_STATIC_HTTP_DISPLAY_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<display_type>(dir, disp, true);
+
+		disp = create_type<basic_types::display_type>(meta::type_creation_data{
+			RX_SIMPLE_HTTP_DISPLAY_TYPE_NAME
+			, RX_SIMPLE_HTTP_DISPLAY_TYPE_ID
+			, RX_STATIC_HTTP_DISPLAY_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		disp->complex_data.register_const_value_static<string_type>("Content", "");
+		disp->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "simple.html");
+		add_simple_type_to_configuration<display_type>(dir, disp, true);
+
+	}
+	return true;
+}
+
+
+// Class rx_internal::builders::basic_types_builder 
+
+
+rx_result basic_types_builder::do_build (configuration_data_t& config)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_BASE_CLASSES_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir_result = ns::rx_directory_cache::instance().get_directory(full_path);
+	if (dir_result)
+	{
+		auto dir = dir_result;
+		auto dtype = create_type<basic_types::data_type>(meta::type_creation_data{
+			RX_CLASS_DATA_BASE_NAME
+			, RX_CLASS_DATA_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::data_type>(dir, dtype);
+
+		//build base types, user extensible
+		auto str = create_type<basic_types::struct_type>(meta::type_creation_data{
+			RX_CLASS_STRUCT_BASE_NAME
+			, RX_CLASS_STRUCT_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::struct_type>(dir, str);
+		auto var = create_type<basic_types::variable_type>(meta::type_creation_data{
+			RX_CLASS_VARIABLE_BASE_NAME
+			, RX_CLASS_VARIABLE_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::variable_type>(dir, var);
+
+		// build base types, code only extensible
+		auto map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_CLASS_MAPPER_BASE_NAME
+			, RX_CLASS_MAPPER_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
+		build_basic_type<basic_types::mapper_type>(dir, map);
+		auto evnt = create_type<basic_types::event_type>(meta::type_creation_data{
+			RX_CLASS_EVENT_BASE_NAME
+			, RX_CLASS_EVENT_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::event_type>(dir, evnt);
+		auto filt = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_CLASS_FILTER_BASE_NAME
+			, RX_CLASS_FILTER_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::filter_type>(dir, filt);
+		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_CLASS_SOURCE_BASE_NAME
+			, RX_CLASS_SOURCE_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
+		build_basic_type<basic_types::source_type>(dir, src);
+
+		auto met = create_type<basic_types::method_type>(meta::type_creation_data{
+			RX_CLASS_METHOD_BASE_NAME
+			, RX_CLASS_METHOD_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::method_type>(dir, met);
+
+		auto prog = create_type<basic_types::program_type>(meta::type_creation_data{
+			RX_CLASS_PROGRAM_BASE_NAME
+			, RX_CLASS_PROGRAM_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::program_type>(dir, prog);
+
+		auto disp = create_type<basic_types::display_type>(meta::type_creation_data{
+			RX_CLASS_DISPLAY_BASE_NAME
+			, RX_CLASS_DISPLAY_BASE_ID
+			, rx_node_id::null_id
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_basic_type<basic_types::display_type>(dir, disp);
+
+		//build general data for runtime objects
+		str = create_type<basic_types::struct_type>(meta::type_creation_data{
+			RX_NS_OBJECT_DATA_NAME
+			, RX_NS_OBJECT_DATA_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		build_object_data_struct_type(dir, str);
+
+		// port related helper structures
+		str = create_type<struct_type>(meta::type_creation_data{
+			RX_PORT_STATUS_TYPE_NAME
+			, RX_PORT_STATUS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		str->complex_data.register_simple_value_static("Binded", false, true, false);
+		str->complex_data.register_simple_value_static("Assembled", false, true, false);
+		str->complex_data.register_simple_value_static<int16_t>("Endpoints", 0, true, false);
+		str->complex_data.register_simple_value_static<int64_t>("RxPackets", 0, false, false);
+		str->complex_data.register_simple_value_static<int64_t>("TxPackets", 0, false, false);
+		str->complex_data.register_simple_value_static<uint32_t>("Buffers", 0, true, false);
+		str->complex_data.register_simple_value_static<int64_t>("DropedBuffers", 0, false, false);
+		add_simple_type_to_configuration<struct_type>(dir, str, false);
+
+		str = create_type<struct_type>(meta::type_creation_data{
+			RX_PORT_OPTIONS_TYPE_NAME
+			, RX_PORT_OPTIONS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		str->complex_data.register_const_value_static<uint32_t>("BuffBackCapacity", 0x100);
+		str->complex_data.register_const_value_static<uint32_t>("BuffFrontCapacity", 0x10);
+		str->complex_data.register_const_value_static<uint32_t>("BuffDiscardSize", 0x1000);
+		add_simple_type_to_configuration<struct_type>(dir, str, false);
+
+
+	}
+	BUILD_LOG_INFO("basic_types_builder", 900, "Basic types built.");
 	return true;
 }
 

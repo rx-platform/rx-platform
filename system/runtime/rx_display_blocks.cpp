@@ -35,6 +35,7 @@
 // rx_display_blocks
 #include "system/runtime/rx_display_blocks.h"
 
+#include "http_server/rx_http_server.h"
 
 
 namespace rx_platform {
@@ -49,72 +50,103 @@ namespace display_blocks {
 rx_result displays_holder::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
 {
     size_t idx = path.find(RX_OBJECT_DELIMETER);
-    string_view_type name = path.substr(0, idx);
-    if (idx != string_type::npos)
+    if (!displays_.empty())
     {
-        for (auto& one : displays_)
+        string_type name = path.substr(0, idx);
+        if (idx != string_type::npos)
         {
-            if (one.name == name)
+            for (auto& one : displays_)
             {
-                return one.get_value(path.substr(idx + 1), val, ctx);
+                if (one.name == name)
+                {
+                    return one.get_value(path.substr(idx + 1), val, ctx);
+                }
             }
         }
     }
     return RX_INVALID_PATH;
 }
 
-rx_result displays_holder::initialize_displays (runtime::runtime_init_context& ctx)
+rx_result displays_holder::initialize_displays (runtime::runtime_init_context& ctx, const string_type& rt_path)
 {
     rx_result ret(true);
-    for (auto& one : displays_)
+    if (!displays_.empty())
     {
-        ret = one.item->initialize_runtime(ctx);
-        if (ret)
-            ret = one.display_ptr->initialize_display(ctx);
-        if (!ret)
-            return ret;
+        string_type sub_path = rt_path + RX_OBJECT_DELIMETER;
+        for (auto& one : displays_)
+        {
+            ctx.structure.push_item(*one.item);
+            ret = one.item->initialize_runtime(ctx);
+            if (!ret)
+                return ret;
+            ret = one.display_ptr->initialize_display(ctx, sub_path + one.name);
+            if (!ret)
+                return ret;
+            ctx.structure.pop_item();
+        }
     }
     return ret;
 }
 
-rx_result displays_holder::deinitialize_displays (runtime::runtime_deinit_context& ctx)
+rx_result displays_holder::deinitialize_displays (runtime::runtime_deinit_context& ctx, const string_type& rt_path)
 {
     rx_result ret(true);
     for (auto& one : displays_)
     {
+        string_type sub_path = rt_path + RX_OBJECT_DELIMETER;
         ret = one.item->deinitialize_runtime(ctx);
-        if (ret)
-            ret = one.display_ptr->deinitialize_display(ctx);
+        if (!ret)
+            return ret;
+        ret = one.display_ptr->deinitialize_display(ctx, sub_path + one.name);
         if (!ret)
             return ret;
     }
     return ret;
 }
 
-rx_result displays_holder::start_displays (runtime::runtime_start_context& ctx)
+rx_result displays_holder::start_displays (runtime::runtime_start_context& ctx, const string_type& rt_path)
 {
     rx_result ret(true);
-    for (auto& one : displays_)
+    if (!displays_.empty())
     {
-        ret = one.item->start_runtime(ctx);
-        if (ret)
-            ret = one.display_ptr->start_display(ctx);
-        if (!ret)
-            return ret;
+        string_type sub_path = rt_path + RX_OBJECT_DELIMETER;
+        for (auto& one : displays_)
+        {
+            ret = one.item->start_runtime(ctx);
+            if (!ret)
+                return ret;
+            string_type disp_path = sub_path + one.name;
+            ret = one.display_ptr->start_display(ctx, disp_path);
+            if (!ret)
+                return ret;
+            ret = one.display_ptr->register_display(ctx, disp_path);
+            if (!ret)
+                return ret;
+            
+        }
     }
     return ret;
 }
 
-rx_result displays_holder::stop_displays (runtime::runtime_stop_context& ctx)
+rx_result displays_holder::stop_displays (runtime::runtime_stop_context& ctx, const string_type& rt_path)
 {
     rx_result ret(true);
-    for (auto& one : displays_)
+    if (!displays_.empty())
     {
-        ret = one.item->stop_runtime(ctx);
-        if (ret)
-            ret = one.display_ptr->stop_display(ctx);
-        if (!ret)
-            return ret;
+        string_type sub_path = rt_path + RX_OBJECT_DELIMETER;
+        for (auto& one : displays_)
+        {
+            ret = one.item->stop_runtime(ctx);
+            if (!ret)
+                return ret;
+            string_type disp_path = sub_path + one.name;
+            ret = one.display_ptr->unregister_display(ctx, disp_path);
+            if (!ret)
+                return ret;
+            ret = one.display_ptr->stop_display(ctx, disp_path);
+            if (!ret)
+                return ret;
+        }
     }
     return ret;
 }
@@ -155,7 +187,10 @@ rx_result displays_holder::browse (const string_type& prefix, const string_type&
                 runtime_item_attribute args_attr;
                 args_attr.name = one.name;
                 args_attr.type = rx_attribute_type::display_attribute_type;
-                args_attr.full_path = prefix + RX_OBJECT_DELIMETER + args_attr.name;
+                if (prefix.empty())
+                    args_attr.full_path = args_attr.name;
+                else
+                    args_attr.full_path = prefix + RX_OBJECT_DELIMETER + args_attr.name;
                 items.emplace_back(std::move(args_attr));
             }
         }
@@ -173,13 +208,20 @@ rx_result displays_holder::browse (const string_type& prefix, const string_type&
                 mine = path.substr(0, idx);
                 bellow = path.substr(idx + 1);
             }
-            string_type new_prefix(prefix + RX_OBJECT_DELIMETER + mine);
+            string_type new_prefix;
+            if (prefix.empty())
+                new_prefix = mine;
+            else
+                new_prefix = prefix + RX_OBJECT_DELIMETER + mine;
             for (auto& one : displays_)
             {
-                ret = one.item->browse_items(new_prefix, bellow, filter, items, ctx);
-                if (!ret)
-                    break;
+                if (one.name == mine)
+                {
+                    ret = one.item->browse_items(new_prefix, bellow, filter, items, ctx);
+                    return ret;
+                }
             }
+            ret = RX_INVALID_PATH;
         }
     }
     return ret;
@@ -221,9 +263,9 @@ bool displays_holder::is_this_yours (string_view_type path) const
 rx_result displays_holder::get_value_ref (string_view_type path, rt_value_ref& ref)
 {
     size_t idx = path.find(RX_OBJECT_DELIMETER);
-    string_view_type name;
     if (idx != string_type::npos)
     {
+        string_view_type name = path.substr(0, idx);
         size_t len = idx;
         for (auto& one : displays_)
         {
@@ -267,6 +309,8 @@ void displays_holder::set_displays (std::vector<display_data> data)
 // Class rx_platform::runtime::display_blocks::display_data 
 
 display_data::display_data (structure::runtime_item::smart_ptr&& rt, display_runtime_ptr&& var, const display_data& prototype)
+    : display_ptr(std::move(var))
+    , item(std::move(rt))
 {
 }
 

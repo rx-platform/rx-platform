@@ -217,7 +217,7 @@ class port_instance_data
       security::security_context_ptr get_security_context () const;
 
 
-      const rx_application_ptr get_my_application () const;
+      rx_application_ptr get_my_application ();
 
       const rx_platform::meta::runtime_data::port_data& get_data () const
       {
@@ -254,6 +254,31 @@ class port_instance_data
 
 
       rx_thread_handle_t executer_;
+
+
+};
+
+
+
+
+
+
+
+struct ports_auto_lock 
+{
+
+      ports_auto_lock (runtime_core::runtime_data::port_instance_data* data);
+
+      ~ports_auto_lock();
+
+  public:
+
+  protected:
+
+  private:
+
+
+      port_instance_data* data_;
 
 
 };

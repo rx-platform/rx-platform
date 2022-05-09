@@ -462,6 +462,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("rx-port", "TCP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.other.rx_port))
 		("security", "Default security provider for {rx-platform}", cxxopts::value<string_type>(config.other.rx_security))
 
+		("debug" , "Force debugging options thorough the platform", cxxopts::value<bool>(config.management.debug))
 		("v,version", "Displays platform version")
 		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.meta_configuration.build_system_from_code))
 		("h,help", "Print help")

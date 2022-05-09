@@ -60,7 +60,6 @@ intptr_t read_handle(c_invalid_handle);
 intptr_t write_handle(c_invalid_handle);
 bool use_std = false;
 
-bool do_debug_level = false;
 bool do_trace_level = false;
 bool do_info_level = false;
 bool do_warning_level = false;
@@ -138,7 +137,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 	{
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
-		if (do_debug_level)
+		if (config.management.debug)
 			stdout_log_->log_query = log::rx_log_debug_level;
 		else if (do_trace_level)
 			stdout_log_->log_query = log::rx_log_trace_level;
@@ -614,7 +613,6 @@ void rx_pipe_host::add_command_line_options (hosting::command_line_options_t& op
 		("startlog", "Dump starting log", cxxopts::value<bool>(dump_start_log_))
 		("storageref", "Dump storage references", cxxopts::value<bool>(dump_storage_references_))
 		("wait", "Wait interactive on process startup and exit", cxxopts::value<bool>(debug_stop_))
-		("d,debug", "Wait keyboard hit on start and show debug level content, all events are listed to standard output", cxxopts::value<bool>(do_debug_level))
 		("t,trace", "Show trace level content all but debug events are listed to standard output", cxxopts::value<bool>(do_trace_level))
 		("info", "Show info level content all but debug and trace events are listed to standard output", cxxopts::value<bool>(do_info_level))
 		("w,warning", "Show warning level content only warning error and critical events are listed to standard output", cxxopts::value<bool>(do_warning_level))

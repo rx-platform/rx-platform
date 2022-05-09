@@ -489,6 +489,11 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag (const string_type&
 		{
 			return register_new_tag_ref(path, ref, monitor);
 		}
+		ref_result = parent_displays_->get_value_ref(path, ref);
+		if (ref_result)
+		{
+			return register_new_tag_ref(path, ref, monitor);
+		}
 
 		// try relations to see if there is something!!!
 		// relations code here!!!

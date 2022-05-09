@@ -60,7 +60,11 @@ void http_handlers_repository::register_standard_handlers ()
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<css_file_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<js_file_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<http_json_object_reader>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<http_display_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 }
 
@@ -84,7 +88,7 @@ rx_result http_file_handler::handle_request (http_request& req, http_response& r
 		resp.result = 405;
 		return true;
 	}
-	auto file_path = rx_combine_paths(rx_internal::rx_http_server::http_server::instance().get_resources_path(), req.path);
+	auto file_path = rx_combine_paths(rx_internal::rx_http_server::http_server::instance().get_static_path(), req.path);
 	auto file = rx_file(file_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
 	if (file)
 	{
@@ -171,6 +175,20 @@ const char* css_file_handler::get_content_type ()
 
 
 // Class rx_internal::rx_http_server::text_file_handler 
+
+
+// Class rx_internal::rx_http_server::js_file_handler 
+
+
+const char* js_file_handler::get_extension ()
+{
+	return "js";
+}
+
+const char* js_file_handler::get_content_type ()
+{
+	return "text/javascript";
+}
 
 
 } // namespace rx_http_server

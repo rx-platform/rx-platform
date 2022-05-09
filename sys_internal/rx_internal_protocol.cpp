@@ -478,21 +478,24 @@ void rx_protocol_connection::data_processed (message_ptr result)
 
 void rx_protocol_connection::request_received (request_message_ptr&& request)
 {
-	api::rx_context ctx;
-	ctx.active_path = current_directory_->meta_info().get_full_path();
-	ctx.object = smart_this();
-	message_ptr result_msg;
-	/*if (stream_version_ == 0 && request->get_type_id() != messages::rx_connection_context_request_id)
+	if (current_directory_)
 	{
-		result_msg = std::make_unique<messages::error_message>("No connection context."s, 99, request->request_id);
-	}
-	else*/
-	{
-		result_msg = request->do_job(ctx, smart_this());
-	}
-	if (result_msg)
-	{
-		send_message(std::move(result_msg));
+		api::rx_context ctx;
+		ctx.active_path = current_directory_->meta_info().get_full_path();
+		ctx.object = smart_this();
+		message_ptr result_msg;
+		/*if (stream_version_ == 0 && request->get_type_id() != messages::rx_connection_context_request_id)
+		{
+			result_msg = std::make_unique<messages::error_message>("No connection context."s, 99, request->request_id);
+		}
+		else*/
+		{
+			result_msg = request->do_job(ctx, smart_this());
+		}
+		if (result_msg)
+		{
+			send_message(std::move(result_msg));
+		}
 	}
 }
 

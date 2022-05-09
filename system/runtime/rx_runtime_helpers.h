@@ -62,16 +62,16 @@ class source_data;
 class mapper_data;
 } // namespace structure
 
-namespace relations {
-class relations_holder;
-} // namespace relations
-
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
 
 class relation_subscriber;
 class runtime_process_context;
+namespace relations {
+class relations_holder;
+} // namespace relations
+
 namespace tag_blocks {
 class binded_tags;
 
@@ -458,8 +458,13 @@ class variables_stack
 struct runtime_deinit_context 
 {
 
+      runtime_deinit_context (const meta::meta_data& meta_data);
+
 
       variables_stack variables;
+
+
+      const meta::meta_data& meta;
 
   public:
 
@@ -581,8 +586,15 @@ struct runtime_start_context
 struct runtime_stop_context 
 {
 
+      runtime_stop_context (const meta::meta_data& meta_data, runtime_process_context* context);
+
 
       variables_stack variables;
+
+      runtime_process_context *context;
+
+
+      const meta::meta_data& meta;
 
   public:
 

@@ -51,6 +51,7 @@ namespace data {
 class runtime_values_data 
 {
 
+public:
     typedef rx_simple_value value_type;
     typedef std::vector<rx_simple_value> array_value_type;
 	typedef std::map<string_type, std::variant<value_type, array_value_type> > values_type;
