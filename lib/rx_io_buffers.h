@@ -63,11 +63,14 @@ class rx_const_io_buffer
 
       static rx_const_packet_buffer create_from_chars (const string_type& str);
 
+      rx_const_packet_buffer* c_buffer ();
+
 	  template<typename T>
 	  rx_result read_from_buffer(T& val)
 	  {
-		  rx_protocol_result_t result;
+          static_assert(std::is_trivial<T>::value);
 
+          rx_protocol_result_t result;
 		  val = *((T*)rx_get_from_packet(buffer_, sizeof(T), &result));
 
 		  if (result == RX_PROTOCOL_OK)
@@ -131,6 +134,8 @@ class rx_io_buffer : public rx_packet_buffer
 	  template<typename T>
 	  rx_result write_to_buffer(const T& val)
 	  {
+          static_assert(std::is_trivial<T>::value);
+
 		  rx_protocol_result_t result;
 
 		  result = rx_push_to_packet(this, &val, sizeof(val));
@@ -143,6 +148,9 @@ class rx_io_buffer : public rx_packet_buffer
   protected:
 
   private:
+
+      void zero_memory ();
+
 
 
 };

@@ -40,8 +40,14 @@
 #include "system/runtime/rx_runtime_helpers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// soft_plc
-#include "soft_logic/soft_plc.h"
+
+namespace rx_platform {
+namespace logic {
+class program_context;
+
+} // namespace logic
+} // namespace rx_platform
+
 
 using rx_platform::runtime::execute_data;
 
@@ -85,10 +91,9 @@ public:
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      void process_program (runtime::runtime_process_context& ctx);
+      virtual void process_program (logic::program_context* context, runtime::runtime_process_context& rt_context) = 0;
 
-
-      sl_runtime::sl_program_holder& my_program ();
+      virtual std::unique_ptr<program_context> create_program_context (program_context* parent_context) = 0;
 
 
       string_type get_name () const
@@ -103,47 +108,12 @@ public:
   private:
 
 
-      sl_runtime::sl_program_holder my_program_;
-
-
       string_type name_;
 
 
 };
 
-
-
-
-
-
-class ladder_program : public program_runtime  
-{
-	DECLARE_REFERENCE_PTR(ladder_program);
-
-
-	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-ladder program class.");
-
-  public:
-      ladder_program();
-
-      ladder_program (const string_type& name, const rx_node_id& id);
-
-      ~ladder_program();
-
-
-  protected:
-
-      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize (base_meta_reader& stream, uint8_t type);
-
-
-  private:
-
-
-};
-
+typedef program_runtime::smart_ptr program_runtime_ptr;
 
 
 
@@ -187,6 +157,7 @@ class method_execution_context
 
 class method_runtime : public rx::pointers::reference_object  
 {
+    DECLARE_REFERENCE_PTR(method_runtime);
 
   public:
       method_runtime();
@@ -227,6 +198,78 @@ class method_runtime : public rx::pointers::reference_object
 };
 
 typedef method_runtime::smart_ptr method_runtime_ptr;
+
+
+
+
+
+class ladder_program : public program_runtime  
+{
+	DECLARE_REFERENCE_PTR(ladder_program);
+
+
+	DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+ladder program class.");
+
+  public:
+      ladder_program();
+
+      ladder_program (const string_type& name, const rx_node_id& id);
+
+      ~ladder_program();
+
+
+  protected:
+
+      rx_result serialize (base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (base_meta_reader& stream, uint8_t type);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class program_context 
+{
+
+  public:
+      program_context (program_context* parent, program_runtime_ptr runtime);
+
+
+      virtual void init_scan ();
+
+      virtual bool schedule_scan (uint32_t interval);
+
+      virtual void continue_scan () = 0;
+
+      virtual void set_waiting () = 0;
+
+      virtual void reset_waiting () = 0;
+
+      virtual ~program_context() = default;
+      program_context(const program_context&) = delete;
+      program_context(program_context&&) = delete;
+      program_context& operator=(const program_context&) = delete;
+      program_context& operator=(program_context&&) = delete;
+  protected:
+
+  private:
+
+
+      program_context *parent_;
+
+      program_runtime_ptr runtime_;
+
+
+};
+
 
 } // namespace logic
 } // namespace rx_platform

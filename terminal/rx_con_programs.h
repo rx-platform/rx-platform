@@ -33,10 +33,10 @@
 
 
 
+// rx_logic
+#include "system/logic/rx_logic.h"
 // rx_mem
 #include "lib/rx_mem.h"
-// sl_script
-#include "soft_logic/sl_script.h"
 
 #include "security/rx_security.h"
 #include "system/server/rx_ns.h"
@@ -50,6 +50,8 @@ namespace terminal {
 namespace console {
 
 namespace script {
+class console_program;
+typedef rx_reference<console_program> console_program_ptr;
 
 
 //	This class implements cancel, current directory and
@@ -58,16 +60,17 @@ namespace script {
 
 
 
-class console_program_context : public sl_runtime::sl_script::script_program_context  
+class console_program_context : public rx_platform::logic::program_context  
 {
 public:
     typedef console_program_context* smart_ptr;
     typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
     typedef std::map<size_t, rx_struct_ptr > instructions_data_type;
     typedef int pending_jobs_type;
+    friend class console_program;
 
   public:
-      console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory);
+      console_program_context (program_context* parent, console_program_ptr runtime, const string_type& current_directory);
 
       ~console_program_context();
 
@@ -79,6 +82,22 @@ public:
       void cancel_execution ();
 
       virtual api::rx_context create_api_context () = 0;
+
+      void raise_error ();
+
+      bool get_result () const;
+
+      virtual std::ostream& get_stdout () = 0;
+
+      virtual std::ostream& get_stderr () = 0;
+
+      void set_waiting ();
+
+      void reset_waiting ();
+
+      void continue_scan ();
+
+      void init_scan ();
 
 
       string_type get_current_directory ();
@@ -106,6 +125,8 @@ public:
       }
 
 
+      size_t get_current_line () const;
+
       template<typename T>
       pointers::reference<T> get_instruction_data()
       {
@@ -124,11 +145,18 @@ public:
       {
           for (const auto& one : result.errors())
               get_stderr() << ANSI_RX_ERROR_LIST ">>" ANSI_COLOR_RESET << one << "\r\n";
-          script_program_context::raise_error();
+          raise_error();
       }
   protected:
 
   private:
+
+      size_t next_line ();
+
+      virtual void send_results (bool result, bool done) = 0;
+
+      virtual void process_program (bool continue_scan) = 0;
+
 
 
       string_type current_directory_;
@@ -141,6 +169,12 @@ public:
 
       int terminal_height_;
 
+      size_t current_line_;
+
+      std::atomic_bool waiting_;
+
+      std::atomic_bool error_;
+
 
 };
 
@@ -150,7 +184,7 @@ public:
 
 
 
-class console_program : public sl_runtime::sl_script::sl_script_program  
+class console_program : public rx_platform::logic::program_runtime  
 {
     typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 
@@ -160,17 +194,22 @@ class console_program : public sl_runtime::sl_script::sl_script_program
       ~console_program();
 
 
-      std::unique_ptr<sl_runtime::program_context> create_program_context (sl_runtime::program_context* parent_context, sl_runtime::sl_program_holder* holder);
+      std::unique_ptr<logic::program_context> create_program_context (logic::program_context* parent_context);
 
-      void process_program (sl_runtime::program_context* context, const rx_time& now, bool debug);
+      void load (const string_type& text);
+
+      void process_program (logic::program_context* context, runtime::runtime_process_context& rt_context);
 
 
   protected:
 
-      bool parse_line (const string_type& line, std::ostream& out, std::ostream& err, sl_runtime::program_context* context);
+      bool parse_line (const string_type& line, std::ostream& out, std::ostream& err, console_program_context* context);
 
 
   private:
+
+
+      string_array lines_;
 
 
 };

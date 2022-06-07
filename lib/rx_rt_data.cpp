@@ -385,7 +385,7 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 				if (array_idx < 0 && std::holds_alternative<value_type>(val_it->second))
 					return std::get<value_type>(val_it->second);
 				else if ((int)array_idx >= 0 && std::holds_alternative<array_value_type>(val_it->second)
-					&& array_idx < std::get<array_value_type>(val_it->second).size())
+					&& array_idx < (int)std::get<array_value_type>(val_it->second).size())
 					return std::get<array_value_type>(val_it->second)[idx];
 
 			}

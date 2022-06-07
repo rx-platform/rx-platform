@@ -496,7 +496,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		}
 		else
 		{
-			return "Unable to construct base runtime!";
+			return "Unable to construct base runtime, no default constructor for the specified type!";
 		}
 	}
 
@@ -1251,10 +1251,13 @@ void instance_hash::deinitialize ()
 template <class typeT>
 simple_types_repository<typeT>::simple_types_repository()
 {
-	default_constructor_ = []()
+	if constexpr (typeT::has_default_constructor)
 	{
-		return rx_create_reference<RType>();
-	};
+		default_constructor_ = []()
+		{
+			return rx_create_reference<RType>();
+		};
+	}
 }
 
 
@@ -1379,7 +1382,16 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 		}
 	}
 	if (!ret)
-		ret = default_constructor_();
+	{
+		if constexpr (typeT::has_default_constructor)
+		{
+			ret = default_constructor_();
+		}
+		else
+		{
+			return "Unable to construct base runtime, no default constructor for the specified type!";
+		}
+	}
 
 	ctx.push_rt_name(rt_name);
 

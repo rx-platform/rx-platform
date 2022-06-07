@@ -32,13 +32,71 @@
 #define rx_opcua_binary_sec_h 1
 
 
+#include "rx_opcua_common.h"
 
 
 
-rx_protocol_result_t opcua_parse_open_message(struct rx_protocol_stack_endpoint* reference, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id);
-rx_protocol_result_t opcua_parse_close_message(struct rx_protocol_stack_endpoint* reference, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#pragma pack(push)
+#pragma pack(1)
+
+typedef struct opcua_security_simetric_header_def
+{
+	uint32_t channel_id;
+	uint32_t token_id;
+
+} opcua_security_simetric_header;
+
+typedef struct opcua_sequence_header_def
+{
+	uint32_t sequence_number;
+	uint32_t request_id;
+
+} opcua_sequence_header;
 
 
+#pragma pack(pop)
+
+// definition of transport struct
+typedef struct opcua_sec_none_protocol_def
+{
+	struct rx_protocol_stack_endpoint stack_entry;
+	// settings
+	int server_side;
+	// state
+	enum opcua_transport_state current_state;
+	opcua_acknowledge_message connection_data;
+	uint32_t received_sequence_id;
+	int last_chunk_received;
+	uint32_t current_request_id;
+	uint32_t current_sequence_id;
+
+	uint32_t channel_id;
+	uint32_t token_id;
+	// receive collector
+	rx_packet_buffer receive_buffer;
+
+	struct packed_decoder_type packet_decoder;
+	uint8_t header_buffer[sizeof(opcua_transport_header)];
+	rx_packet_buffer transport_receive_buffer;
+
+} opcua_sec_none_protocol_type;
+// initialize and deinitialize of transport
+rx_protocol_result_t opcua_bin_init_sec_none_client_transport(opcua_sec_none_protocol_type* transport);
+rx_protocol_result_t opcua_bin_init_sec_none_server_transport(opcua_sec_none_protocol_type* transport);
+rx_protocol_result_t opcua_bin_deinit_sec_none_transport(opcua_sec_none_protocol_type* transport);
+
+rx_protocol_result_t opcua_bin_sec_none_bytes_send(struct rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+rx_protocol_result_t opcua_bin_sec_none_bytes_received(struct rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

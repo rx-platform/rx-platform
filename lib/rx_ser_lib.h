@@ -128,7 +128,7 @@ public:
 
       virtual bool write_uint64 (const char* name, uint64_t val) = 0;
 
-      virtual bool write_bytes (const char* name, const uint8_t* val, size_t size) = 0;
+      virtual bool write_bytes (const char* name, const std::byte* val, size_t size) = 0;
 
       virtual bool write_version (const char* name, uint32_t val) = 0;
 

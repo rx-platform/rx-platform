@@ -278,7 +278,7 @@ class double_collection
     T first_collection_;
     T second_collection_;
 public:
-    void emplace_back(typename T::value_type&& elem)
+    void emplace_back(typename T::value_type elem)
     {
         if (first_)
             first_collection_.emplace_back(std::move(elem));
@@ -316,6 +316,7 @@ typedef std::vector<write_result_struct<structure::source_data> > source_results
 typedef std::vector<write_result_struct<structure::variable_data> > variable_results_type;
 
 typedef std::vector<method_execute_result_data> method_results_type;
+typedef std::vector<logic_blocks::program_data*> programs_type;
 
 typedef std::vector<remotes_data> remotes_data_type;
 
@@ -323,8 +324,7 @@ typedef std::vector<structure::variable_data*> variables_type;
 typedef std::vector<structure::filter_data*> filters_type;
 typedef std::vector<structure::event_data*> events_type;
 typedef std::vector<structure::struct_data*> structs_type;
-typedef std::vector<program_runtime_ptr> programs_type;
-typedef std::vector<method_runtime_ptr> methods_type;
+
 
 
 
@@ -391,7 +391,7 @@ class runtime_process_context
 
       bool should_process_status_change ();
 
-      void program_pending (program_runtime_ptr whose);
+      void program_pending (logic_blocks::program_data* whose);
 
       programs_type& get_programs_for_process ();
 

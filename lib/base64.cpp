@@ -27,20 +27,20 @@ namespace urke
 		'8', '9', '+', '/'
 	};
 
-	unsigned char getFrom(char ch)
+	std::byte getFrom(char ch)
 	{
 		for (size_t i = 0; i < sizeof(tabel_base64) / sizeof(tabel_base64[0]); i++)
 		{
 			if (ch == tabel_base64[i])
 			{
-				return (unsigned char)i;
+				return (std::byte)i;
 			}
 		}
 		*((int*)0) = 13;
-		return 0;
+		return std::byte{ 0 };
 	}
 
-	string get_base64(const unsigned char* data, size_t size)
+	string get_base64(const std::byte* data, size_t size)
 	{
 		string result;
 
@@ -61,41 +61,41 @@ namespace urke
 
 		for (size_t i = 0; i < size; i++)
 		{
-			unsigned char between;
+			std::byte between;
 
-			unsigned char first = data[i] & 0xfc;
+			std::byte first = data[i] & std::byte{ 0xfc };
 			first = first >> 2;
 
 			//////////////////////////////////////////////////
 
-			unsigned char second = data[i] & 0x03;
+			std::byte second = data[i] & std::byte{ 0x03 };
 			second = second << 4;
 			i++;
-			between = data[i] & 0xf0;
+			between = data[i] & std::byte{ 0xf0 };
 			between = between >> 4;
-			if (bonus == 2 && i >= size - 2) between = 0;
+			if (bonus == 2 && i >= size - 2) between = std::byte{ 0 };
 			second = second | between;
 
 			//////////////////////////////////////////////////
 
-			unsigned char third = data[i] & 0x0f;
+			std::byte third = data[i] & std::byte{ 0x0f };
 			third = third << 2;
-			if ((bonus == 1 || bonus == 2) && i >= size - 1) third = 0;
+			if ((bonus == 1 || bonus == 2) && i >= size - 1) third = std::byte{ 0 };
 			i++;
-			between = data[i] & 0xc0;
+			between = data[i] & std::byte{ 0xc0 };
 			between = between >> 6;
-			if ((bonus == 1 || bonus == 2) && i >= size - 1) between = 0;
+			if ((bonus == 1 || bonus == 2) && i >= size - 1) between = std::byte{ 0 };
 			third = third | between;
 
 			//////////////////////////////////////////////////
 
-			unsigned char fourth = data[i] & 0x3f;
-			if ((bonus == 1 || bonus == 2) && i >= size - 1) fourth = 0;
+			std::byte fourth = data[i] & std::byte{ 0x3f };
+			if ((bonus == 1 || bonus == 2) && i >= size - 1) fourth = std::byte{ 0 };
 
-			result += tabel_base64[first];
-			result += tabel_base64[second];
-			result += tabel_base64[third];
-			result += tabel_base64[fourth];
+			result += tabel_base64[std::to_integer<unsigned char>(first)];
+			result += tabel_base64[std::to_integer<unsigned char>(second)];
+			result += tabel_base64[std::to_integer<unsigned char>(third)];
+			result += tabel_base64[std::to_integer<unsigned char>(fourth)];
 
 		}
 
@@ -110,19 +110,19 @@ namespace urke
 	}
 
 
-	vector<unsigned char> reverse(vector<unsigned char>& back, int bonus);
+	vector<std::byte> reverse(vector<std::byte>& back, int bonus);
 
-	vector<unsigned char> get_data(const string& rez)
+	vector<std::byte> get_data(const string& rez)
 	{
 
-		vector<unsigned char> converted;
+		vector<std::byte> converted;
 
 		if (rez.empty())
 			return converted;
 
 		int bonus = 0;
 		size_t len = rez.length();
-		
+
 		for (size_t i = 0; i < rez.length(); i++)
 		{
 			if (rez[i] != '=')
@@ -144,39 +144,39 @@ namespace urke
 
 	}
 
-	vector<unsigned char> reverse(vector<unsigned char>& back, int bonus)
+	vector<std::byte> reverse(vector<std::byte>& back, int bonus)
 	{
-		unsigned char between;
+		std::byte between;
 
-		vector<unsigned char> end;
+		vector<std::byte> end;
 
 		if (bonus == 1)
 		{
-			back.push_back(0);
+			back.push_back(std::byte{ 0 });
 		}
 		else if (bonus == 2)
 		{
-			back.push_back(0);
-			back.push_back(0);
+			back.push_back(std::byte{ 0 });
+			back.push_back(std::byte{ 0 });
 		}
 
 		for (size_t i = 0; i < back.size(); i++)
 		{
-			unsigned char first = back[i] << 2;
+			std::byte first = back[i] << 2;
 			i++;
 			between = back[i] >> 4;
 			first = first | between;
 
 			/////////////////////////////////////////////
 
-			unsigned char second = back[i] << 4;
+			std::byte second = back[i] << 4;
 			i++;
 			between = back[i] >> 2;
 			second = second | between;
 
 			/////////////////////////////////////////////
 
-			unsigned char third = back[i] << 6;
+			std::byte third = back[i] << 6;
 			i++;
 			between = back[i];
 			third = third | between;

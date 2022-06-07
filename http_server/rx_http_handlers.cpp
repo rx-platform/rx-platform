@@ -97,7 +97,7 @@ rx_result http_file_handler::handle_request (http_request& req, http_response& r
 		auto result = rx_file_get_size(file, &size);
 		if (result == RX_OK)
 		{
-			resp.content.assign((size_t)size, 0);
+			resp.content.assign((size_t)size, std::byte{ 0 });
 			uint32_t readed = 0;
 			result = rx_file_read(file, &resp.content[0], (uint32_t)size, &readed);
 			if (result == RX_OK)

@@ -45,17 +45,15 @@
 #define CONSOLE_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Console",src,lvl,msg)
 #define CONSOLE_LOG_TRACE(src,lvl,msg) RX_TRACE("Console",src,lvl,msg)
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_con_programs
 #include "terminal/rx_con_programs.h"
-// soft_plc
-#include "soft_logic/soft_plc.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_internal {
 namespace terminal {
 namespace console {
-class console_runtime_program_executer;
+class console_runtime_program_context;
 class console_runtime;
 
 } // namespace console
@@ -100,6 +98,8 @@ class console_runtime : public rx::pointers::reference_object
 
       void set_terminal_size (int width, int height);
 
+      void process_program (bool continue_scan);
+
 
       const string_type get_current_directory () const
       {
@@ -116,13 +116,9 @@ class console_runtime : public rx::pointers::reference_object
   private:
 
 
-      std::unique_ptr<console_runtime_program_executer> program_executer_;
+      std::unique_ptr<console_runtime_program_context> program_context_;
 
-      script::console_program_context *program_context_;
-
-      sl_runtime::sl_program_holder program_holder_;
-
-      std::unique_ptr<sl_runtime::program_context> context_ownership_;
+      rx_reference<script::console_program> current_program_;
 
 
       string_type line_;
@@ -145,50 +141,11 @@ class console_runtime : public rx::pointers::reference_object
 
 
 
-class console_runtime_program_executer : public sl_runtime::program_executer  
-{
-
-  public:
-      console_runtime_program_executer (sl_runtime::sl_program_holder* program, rx_reference<console_runtime> host, security::security_context_ptr sec_context);
-
-
-      void start_program (uint32_t rate, std::unique_ptr<sl_runtime::program_context>&& context);
-
-      std::unique_ptr<sl_runtime::program_context> stop_program ();
-
-      void schedule_scan (uint32_t interval);
-
-
-  protected:
-
-  private:
-
-      void do_scan ();
-
-
-
-      rx_reference<console_runtime> host_;
-
-      script::console_program_context *program_context_;
-
-
-      security::security_context_ptr sec_context_;
-
-
-};
-
-
-
-
-
-
 class console_runtime_program_context : public script::console_program_context  
 {
 
   public:
-      console_runtime_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_runtime> runtime);
-
-      console_runtime_program_context (console_runtime_program_context&& right);
+      console_runtime_program_context (program_context* parent, script::console_program_ptr runtime, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_runtime> host);
 
       ~console_runtime_program_context();
 
@@ -198,6 +155,8 @@ class console_runtime_program_context : public script::console_program_context
       std::ostream& get_stderr ();
 
       api::rx_context create_api_context ();
+
+      bool schedule_scan (uint32_t interval);
 
 
       const buffer_ptr get_out () const
@@ -218,6 +177,8 @@ class console_runtime_program_context : public script::console_program_context
   private:
 
       void send_results (bool result, bool done);
+
+      void process_program (bool continue_scan);
 
 
 

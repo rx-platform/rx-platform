@@ -100,53 +100,6 @@ rx_result program_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 	return RX_NOT_IMPLEMENTED;
 }
 
-void program_runtime::process_program (runtime::runtime_process_context& ctx)
-{
-}
-
-
-sl_runtime::sl_program_holder& program_runtime::my_program ()
-{
-  return my_program_;
-}
-
-
-// Class rx_platform::logic::ladder_program 
-
-ladder_program::ladder_program()
-{
-}
-
-ladder_program::ladder_program (const string_type& name, const rx_node_id& id)
-	: program_runtime(name,id)
-{
-}
-
-
-ladder_program::~ladder_program()
-{
-}
-
-
-
-rx_result ladder_program::serialize (base_meta_writer& stream, uint8_t type) const
-{
-	auto result = program_runtime::serialize(stream, type);
-	if (!result)
-		return result;
-
-	return true;
-}
-
-rx_result ladder_program::deserialize (base_meta_reader& stream, uint8_t type)
-{
-	auto result = program_runtime::deserialize(stream, type);
-	if (!result)
-		return result;
-
-	return true;
-}
-
 
 // Class rx_platform::logic::method_runtime 
 
@@ -225,6 +178,65 @@ void method_execution_context::execution_complete (rx_result result)
 void method_execution_context::execution_complete (data::runtime_values_data data)
 {
 	execution_complete(true, std::move(data));
+}
+
+
+// Class rx_platform::logic::ladder_program 
+
+ladder_program::ladder_program()
+{
+}
+
+ladder_program::ladder_program (const string_type& name, const rx_node_id& id)
+	: program_runtime(name,id)
+{
+}
+
+
+ladder_program::~ladder_program()
+{
+}
+
+
+
+rx_result ladder_program::serialize (base_meta_writer& stream, uint8_t type) const
+{
+	auto result = program_runtime::serialize(stream, type);
+	if (!result)
+		return result;
+
+	return true;
+}
+
+rx_result ladder_program::deserialize (base_meta_reader& stream, uint8_t type)
+{
+	auto result = program_runtime::deserialize(stream, type);
+	if (!result)
+		return result;
+
+	return true;
+}
+
+
+// Class rx_platform::logic::program_context 
+
+program_context::program_context (program_context* parent, program_runtime_ptr runtime)
+      : runtime_(runtime)
+{
+}
+
+
+
+void program_context::init_scan ()
+{
+}
+
+bool program_context::schedule_scan (uint32_t interval)
+{
+	if (parent_)
+		return parent_->schedule_scan(interval);
+	else
+		return false;
 }
 
 

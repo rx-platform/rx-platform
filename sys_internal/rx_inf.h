@@ -82,7 +82,7 @@ used for I/O pool and general pool\r\n\
 ");
 
   public:
-      server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id);
+      server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask = 0);
 
       ~server_dispatcher_object();
 
@@ -158,7 +158,7 @@ thread pool resources\r\n\
 	typedef std::vector<rx_internal::sys_runtime::data_source::data_controler*> data_controlers_type;
 
   public:
-      domains_pool (uint32_t pool_size);
+      domains_pool (uint32_t pool_size, uint32_t start_cpu, uint32_t end_cpu);
 
       ~domains_pool();
 
@@ -195,6 +195,10 @@ thread pool resources\r\n\
 
 
       uint32_t pool_size_;
+
+      uint32_t start_cpu_;
+
+      uint32_t end_cpu_;
 
 
 };

@@ -387,8 +387,9 @@ job_thread::~job_thread()
 
 // Class rx_platform::threads::physical_job_thread 
 
-physical_job_thread::physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id)
-      : has_job_(false)
+physical_job_thread::physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask)
+      : has_job_(false),
+        cpu_mask_(cpu_mask)
 	, thread(name,rx_thread_id)
 {
 }
@@ -402,6 +403,10 @@ physical_job_thread::~physical_job_thread()
 
 uint32_t physical_job_thread::handler ()
 {
+	if (cpu_mask_)
+	{
+		auto ret = rx_thread_set_afinity(rx_current_thread(), cpu_mask_);
+	}
 	std::vector<job_ptr> queued;
 	bool exit = false;
 
@@ -491,8 +496,9 @@ void physical_job_thread::stop (uint32_t timeout)
 
 // Class rx_platform::threads::dispatcher_pool 
 
-dispatcher_pool::dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id)
-      : name_(name)
+dispatcher_pool::dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask)
+      : name_(name),
+        cpu_mask_(cpu_mask)
 {
 	dispatcher_ = rx_create_kernel_dispathcer(count);
 	for (int i = 0; i < count; i++)

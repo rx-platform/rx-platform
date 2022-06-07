@@ -82,14 +82,17 @@ void add_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what, bool 
 		}
 		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path());
 	}
-	result = dir->add_item(what->get_item_ptr());
-	if (!result)
+	else
 	{
-		for (const auto& one : result.errors())
+		result = dir->add_item(what->get_item_ptr());
+		if (!result)
 		{
-			BUILD_LOG_ERROR("builders", 500, one);
+			for (const auto& one : result.errors())
+			{
+				BUILD_LOG_ERROR("builders", 500, one);
+			}
+			BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path() + " to directory.");
 		}
-		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path() + " to directory.");
 	}
 }
 
@@ -107,13 +110,16 @@ void add_simple_type_to_configuration(rx_directory_ptr dir, rx_reference<T> what
 		}
 		BUILD_LOG_ERROR("builders", 500, "Unable to register "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path());
 	}
-	result = dir->add_item(what->get_item_ptr());
-	if (!result)
+	else
 	{
-		BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path() + " to directory.");
-		for (const auto& one : result.errors())
+		result = dir->add_item(what->get_item_ptr());
+		if (!result)
 		{
-			BUILD_LOG_ERROR("builders", 500, one);
+			BUILD_LOG_ERROR("builders", 500, "Unable to add "s + rx_item_type_name(T::type_id) + " "s + what->meta_info.get_full_path() + " to directory.");
+			for (const auto& one : result.errors())
+			{
+				BUILD_LOG_ERROR("builders", 500, one);
+			}
 		}
 	}
 }
@@ -171,7 +177,7 @@ rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance
 {
 	data.meta_info = create_meta_for_new(data.meta_info);
 	auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(std::move(data), std::move(runtime_data));
-	return true;
+	
 	if (create_result)
 	{
 		auto rx_type_item = create_result.value()->get_item_ptr();
@@ -185,7 +191,8 @@ rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance
 		create_result.register_error("Error creating "s + rx_item_type_name(T::RImplType::type_id) + " " + data.meta_info.get_full_path());
 		for(const auto& one : create_result.errors())
 			BUILD_LOG_ERROR("code_objects", 900, one.c_str());
-		return create_result.errors();
+		//return create_result.errors();
+		return true;
 	}
 }
 
@@ -392,6 +399,7 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 		builders.emplace_back(std::make_unique<terminal_commands_builder>());
 		builders.emplace_back(std::make_unique<system_types_builder>());
 		builders.emplace_back(std::make_unique<port_types_builder>());
+		builders.emplace_back(std::make_unique<opc_types_builder>());
 		builders.emplace_back(std::make_unique<simulation_types_builder>());
 		//// objects builders
 		builders.emplace_back(std::make_unique<system_objects_builder>());
@@ -588,6 +596,8 @@ rx_result root_folder_builder::do_build (configuration_data_t& config)
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_PORT_CLASSES_NAME
+			, rx_storage_ptr::null_ptr },
+		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_OPC_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_SUPPORT_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
@@ -1019,6 +1029,15 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_RX_JSON_CLIENT_TYPE_NAME
+			, RX_RX_JSON_CLIENT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TCP_RX_PORT_TYPE_NAME
 			, RX_TCP_RX_PORT_TYPE_ID
 			, RX_TCP_SERVER_PORT_TYPE_ID
@@ -1043,6 +1062,14 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		add_type_to_configuration(dir, port, false); 
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_TCP_OPCUA_PORT_TYPE_NAME
+			, RX_TCP_OPCUA_PORT_TYPE_ID
+			, RX_TCP_SERVER_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+				});
 		add_type_to_configuration(dir, port, false);
 	}
 	BUILD_LOG_INFO("system_classes_builder", 900, "System types built.");
@@ -1184,25 +1211,7 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		add_type_to_configuration(dir, port, false);
-		
-		port = create_type<port_type>(meta::object_type_creation_data{
-			RX_OPCUA_TRANSPORT_PORT_TYPE_NAME
-			, RX_OPCUA_TRANSPORT_PORT_TYPE_ID
-			, RX_TRANSPORT_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		add_type_to_configuration(dir, port, false);
-
-		port = create_type<port_type>(meta::object_type_creation_data{
-			RX_OPCUA_SEC_NONE_PORT_TYPE_NAME
-			, RX_OPCUA_SEC_NONE_PORT_TYPE_ID
-			, RX_TRANSPORT_PORT_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		add_type_to_configuration(dir, port, false);
+		add_type_to_configuration(dir, port, false);		
 
 		// special types of ports, routers, limiters, bridges....
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1556,6 +1565,15 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			});
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_QUALITY_FILTER_TYPE_NAME
+			, RX_QUALITY_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+				});
+		filter->complex_data.register_const_value_static("GoodValue", true);
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		auto what = create_type<struct_type>(meta::type_creation_data{
 			RX_DISPLAY_RESOURCE_TYPE_NAME
@@ -1737,6 +1755,66 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		what->complex_data.register_const_value_static<uint8_t>("StopBits", 0);
 		what->complex_data.register_const_value_static<uint8_t>("Parity", 0);
 		what->complex_data.register_const_value_static<bool>("Handshake", false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		// 
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_OPCUA_TRANSPORT_OPTIONS_TYPE_NAME
+			, RX_OPCUA_TRANSPORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static<bool>("Reverse", false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_OPCUA_CLIENT_TRANSPORT_OPTIONS_TYPE_NAME
+			, RX_OPCUA_CLIENT_TRANSPORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static<bool>("Reverse", false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_OPCUA_SEC_CHANNEL_OPTIONS_TYPE_NAME
+			, RX_OPCUA_SEC_CHANNEL_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_OPCUA_SEC_CHANNEL_CLIENT_OPTIONS_TYPE_NAME
+			, RX_OPCUA_SEC_CHANNEL_CLIENT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_OPCUA_SERVER_PORT_OPTIONS_TYPE_NAME
+			, RX_OPCUA_SERVER_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("AppUri", "");
+		what->complex_data.register_const_value_static("AppName", "");
+		what->complex_data.register_const_value_static("ReverseConn", false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_OPCUA_CLIENT_PORT_OPTIONS_TYPE_NAME
+			, RX_OPCUA_CLIENT_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("ReverseConn", false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -1922,13 +2000,24 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_TCP_NAME);
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
+
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUABIN_SEC_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_OPCUABIN_SEC_ID;
+		port_instance_data.meta_info.parent = RX_OPCUA_SEC_NONE_PORT_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_NAME);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
+
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXJSON_NAME;
 		port_instance_data.meta_info.id = RX_NS_SYSTEM_RXJSON_ID;
 		port_instance_data.meta_info.parent = RX_RX_JSON_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
-		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_NAME);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_SEC_NAME);
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
 		port_instance_data.meta_info.name = RX_NS_HTTP_TCP_NAME;
@@ -1950,6 +2039,47 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_HTTP_TCP_NAME);
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUA_TCP_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_OPCUA_TCP_ID;
+		port_instance_data.meta_info.parent = RX_TCP_OPCUA_PORT_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("Bind.IPPort", 0);
+		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 300000);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUA_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_OPCUA_ID;
+		port_instance_data.meta_info.parent = RX_OPCUA_TRANSPORT_PORT_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUA_TCP_NAME);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
+
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUA_SEC_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_OPCUA_SEC_ID;
+		port_instance_data.meta_info.parent = RX_OPCUA_SEC_NONE_PORT_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUA_NAME);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
+
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUA_SERVER_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_OPCUA_SERVER_ID;
+		port_instance_data.meta_info.parent = RX_OPCUA_SIMPLE_BINARY_SERVER_PORT_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUA_SEC_NAME);
+		port_instance_data.overrides.add_value_static("Options.AppUri", "Pera");
+		port_instance_data.overrides.add_value_static("Options.AppName", "Zika");
+
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
 	}
 	BUILD_LOG_INFO("system_ports_builder", 900, "System ports built.");
@@ -2282,6 +2412,222 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 
 	}
 	BUILD_LOG_INFO("basic_types_builder", 900, "Basic types built.");
+	return true;
+}
+
+
+// Class rx_internal::builders::opc_types_builder 
+
+
+rx_result opc_types_builder::do_build (configuration_data_t& config)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_OPC_CLASSES_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir_result = ns::rx_directory_cache::instance().get_directory(full_path);
+	if (dir_result)
+	{
+		auto dir = dir_result;
+
+		auto port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_TRANSPORT_PORT_TYPE_NAME
+			, RX_OPCUA_TRANSPORT_PORT_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_OPCUA_TRANSPORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_CLIENT_TRANSPORT_PORT_TYPE_NAME
+			, RX_OPCUA_CLIENT_TRANSPORT_PORT_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_OPCUA_CLIENT_TRANSPORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_BASE_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_BASE_PORT_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_OPCUA_SEC_CHANNEL_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, true);
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_NONE_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_NONE_PORT_TYPE_ID
+			, RX_OPCUA_SEC_BASE_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_SIGN_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_SIGN_PORT_TYPE_ID
+			, RX_OPCUA_SEC_BASE_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_SIGNENCR_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_SIGNENCR_PORT_TYPE_ID
+			, RX_OPCUA_SEC_BASE_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_SIGNSIGNENCR_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_SIGNSIGNENCR_PORT_TYPE_ID
+			, RX_OPCUA_SEC_BASE_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_OPCUA_SEC_CHANNEL_CLIENT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, true);
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_NONE_CLIENT_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_NONE_CLIENT_PORT_TYPE_ID
+			, RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_SIGN_CLIENT_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_SIGN_CLIENT_PORT_TYPE_ID
+			, RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_SIGNENCR_CLIENT_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_SIGNENCR_CLIENT_PORT_TYPE_ID
+			, RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SEC_SIGNSIGNENCR_CLIENT_PORT_TYPE_NAME
+			, RX_OPCUA_SEC_SIGNSIGNENCR_CLIENT_PORT_TYPE_ID
+			, RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SERVER_BASE_PORT_TYPE_NAME
+			, RX_OPCUA_SERVER_BASE_PORT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_OPCUA_SERVER_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, true);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SIMPLE_SERVER_PORT_TYPE_NAME
+			, RX_OPCUA_SIMPLE_SERVER_PORT_TYPE_ID
+			, RX_OPCUA_SERVER_BASE_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SIMPLE_BINARY_SERVER_PORT_TYPE_NAME
+			, RX_OPCUA_SIMPLE_BINARY_SERVER_PORT_TYPE_ID
+			, RX_OPCUA_SIMPLE_SERVER_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		relation_type_data def_data;
+		def_data.abstract_type = false;
+		def_data.sealed_type = false;
+		def_data.symmetrical = false;
+		def_data.hierarchical = false;
+		def_data.dynamic = false;
+		def_data.target = rx_item_reference(RX_OPCUA_SIMPLE_SERVER_PORT_TYPE_ID);
+		def_data.inverse_name = RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR;
+
+		auto relation = create_type<relation_type>(meta::object_type_creation_data{
+			RX_OPCUA_SIMPLE_SERVER_RELATION_TYPE_NAME
+			, RX_OPCUA_SIMPLE_SERVER_RELATION_TYPE_ID
+			, RX_NS_PORT_REF_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		relation->relation_data = def_data;
+		add_relation_type_to_configuration(dir, relation);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_CLIENT_BASE_PORT_TYPE_NAME
+			, RX_OPCUA_CLIENT_BASE_PORT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_OPCUA_CLIENT_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, true);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SIMPLE_CLIENT_PORT_TYPE_NAME
+			, RX_OPCUA_SIMPLE_CLIENT_PORT_TYPE_ID
+			, RX_OPCUA_CLIENT_BASE_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, true);
+
+		def_data.abstract_type = false;
+		def_data.sealed_type = false;
+		def_data.symmetrical = false;
+		def_data.hierarchical = false;
+		def_data.dynamic = false;
+		def_data.target = rx_item_reference(RX_OPCUA_SIMPLE_CLIENT_PORT_TYPE_ID);
+		def_data.inverse_name = RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR;
+
+		relation = create_type<relation_type>(meta::object_type_creation_data{
+			RX_OPCUA_SIMPLE_CLIENT_RELATION_TYPE_NAME
+			, RX_OPCUA_SIMPLE_CLIENT_RELATION_TYPE_ID
+			, RX_NS_PORT_REF_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		relation->relation_data = def_data;
+		add_relation_type_to_configuration(dir, relation);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_OPCUA_SIMPLE_BINARY_CLIENT_PORT_TYPE_NAME
+			, RX_OPCUA_SIMPLE_BINARY_CLIENT_PORT_TYPE_ID
+			, RX_OPCUA_SIMPLE_CLIENT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+	}
+	BUILD_LOG_INFO("opc_types_builder", 900, "OPC UA types built.");
 	return true;
 }
 

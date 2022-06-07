@@ -86,16 +86,22 @@ rx_result logic_holder::initialize_logic (runtime::runtime_init_context& ctx)
     for (auto& one : runtime_programs_)
     {
         ret = one.item->initialize_runtime(ctx);
-        if(ret)
-            ret = one.program_ptr->initialize_runtime(ctx);
         if (!ret)
             return ret;
+
+        ret = one.program_ptr->initialize_runtime(ctx);
+        if (!ret)
+            return ret;
+
+        one.context = one.program_ptr->create_program_context(nullptr);
     }
     for (auto& one : runtime_methods_)
     {
         ret = one.item->initialize_runtime(ctx);
-        if (ret)
-            ret = one.method_ptr->initialize_runtime(ctx);
+        if (!ret)
+            return ret;
+        
+        ret = one.method_ptr->initialize_runtime(ctx);
         if (!ret)
             return ret;
     }
@@ -448,6 +454,11 @@ rx_result program_data::get_value_ref (string_view_type path, rt_value_ref& ref)
 rx_result program_data::get_local_value (const string_type& path, rx_simple_value& val) const
 {
     return item->get_local_value(path, val);
+}
+
+void program_data::process_program (runtime::runtime_process_context& ctx)
+{
+    program_ptr->process_program(context.get(), ctx);
 }
 
 

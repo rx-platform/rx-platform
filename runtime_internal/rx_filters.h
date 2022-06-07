@@ -159,6 +159,38 @@ Implementation of limit filter for input and output.");
 };
 
 
+
+
+
+
+class quality_filter : public rx_platform::runtime::blocks::filter_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation of quality filter that provides pure bit value.");
+
+    DECLARE_REFERENCE_PTR(quality_filter);
+
+  public:
+
+      rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result filter_input (rx_value& val);
+
+      bool supports_output () const;
+
+
+
+      bool good_value_;
+
+
+};
+
+
 } // namespace filters
 } // namespace sys_runtime
 } // namespace rx_internal

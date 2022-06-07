@@ -91,6 +91,7 @@ void fill_plugin_paths(string_array& paths)
 #ifdef _DEBUG
 	paths.emplace_back("/media/sf_RX/GCC/project/bin/Debug/librx-first-plugin.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/Modbus/bin/Debug/librx-modbus.so");
+	paths.emplace_back("/media/sf_rx-release/Dev/GCC/InfoControl/bin/Debug/librx-infocontrol.so");
 #else
 	string_type search_dir("/usr/lib/rx-platform/plugins");
 	if (!search_dir.empty())

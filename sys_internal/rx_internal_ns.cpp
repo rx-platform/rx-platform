@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace rx_internal {
 
 namespace internal_ns {
 
-// Parameterized Class rx_internal::internal_ns::rx_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_item_implementation
 
 template <class TImpl>
 rx_item_implementation<TImpl>::rx_item_implementation (TImpl impl)
@@ -248,7 +248,7 @@ byte_string rx_item_implementation<TImpl>::get_definition_as_bytes () const
 }
 
 
-// Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation
 
 template <class TImpl>
 rx_meta_item_implementation<TImpl>::rx_meta_item_implementation (TImpl impl)
@@ -444,7 +444,7 @@ byte_string rx_meta_item_implementation<TImpl>::get_definition_as_bytes () const
 {
 
 	using algorithm_type = typename TImpl::pointee_type::algorithm_type;
-	
+
 	memory::std_buffer buff;
 	serialization::std_buffer_writer writer(buff);
 	algorithm_type::serialize_type(*impl_, writer, STREAMING_TYPE_MESSAGE);
@@ -453,7 +453,7 @@ byte_string rx_meta_item_implementation<TImpl>::get_definition_as_bytes () const
 }
 
 
-// Parameterized Class rx_internal::internal_ns::rx_other_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_other_implementation
 
 template <class TImpl>
 rx_other_implementation<TImpl>::rx_other_implementation (TImpl impl)
@@ -635,6 +635,185 @@ template <class TImpl>
 byte_string rx_other_implementation<TImpl>::get_definition_as_bytes () const
 {
 	return byte_string();
+}
+
+
+// Parameterized Class rx_internal::internal_ns::rx_proxy_item_implementation
+
+template <class TImpl>
+rx_proxy_item_implementation<TImpl>::rx_proxy_item_implementation (TImpl impl)
+      : impl_(impl)
+{
+}
+
+
+template <class TImpl>
+rx_proxy_item_implementation<TImpl>::~rx_proxy_item_implementation()
+{
+}
+
+
+
+template <class TImpl>
+rx_item_type rx_proxy_item_implementation<TImpl>::get_type_id () const
+{
+  return rx_invalid_type;
+}
+
+template <class TImpl>
+values::rx_value rx_proxy_item_implementation<TImpl>::get_value () const
+{
+  return values::rx_value();
+}
+
+template <class TImpl>
+string_type rx_proxy_item_implementation<TImpl>::get_name () const
+{
+  return RX_NULL_ITEM_NAME;
+}
+
+template <class TImpl>
+rx_node_id rx_proxy_item_implementation<TImpl>::get_node_id () const
+{
+  return rx_node_id::null_id;
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+const meta_data_t& rx_proxy_item_implementation<TImpl>::meta_info () const
+{
+  return meta_data_t();
+}
+
+template <class TImpl>
+void rx_proxy_item_implementation<TImpl>::fill_code_info (std::ostream& info, const string_type& name)
+{
+}
+
+template <class TImpl>
+void rx_proxy_item_implementation<TImpl>::read_value (const string_type& path, read_result_callback_t callback) const
+{
+}
+
+template <class TImpl>
+void rx_proxy_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
+{
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::do_command (rx_object_command_t command_type)
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+void rx_proxy_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback)
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+std::vector<rx_result_with<runtime_handle_t> > rx_proxy_item_implementation<TImpl>::connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+    std::vector<rx_result_with<runtime_handle_t> > result;
+    result.reserve(paths.size());
+    for (size_t idx = 0; idx < paths.size(); idx++)
+    {
+        result.emplace_back(RX_NOT_VALID_TYPE);
+    }
+    return result;
+}
+
+template <class TImpl>
+std::vector<rx_result> rx_proxy_item_implementation<TImpl>::disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+    std::vector<rx_result> result;
+    result.reserve(items.size());
+    for (size_t idx = 0; idx < items.size(); idx++)
+    {
+        result.emplace_back(RX_NOT_VALID_TYPE);
+    }
+    return result;
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+string_type rx_proxy_item_implementation<TImpl>::get_definition_as_json () const
+{
+  return string_type();
+}
+
+template <class TImpl>
+rx_platform_item::smart_ptr rx_proxy_item_implementation<TImpl>::clone () const
+{
+  return rx_platform_item::smart_ptr();
+}
+
+template <class TImpl>
+rx_thread_handle_t rx_proxy_item_implementation<TImpl>::get_executer () const
+{
+  return 0;
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::serialize_value (base_meta_writer& stream, runtime_value_type type) const
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::deserialize_value (base_meta_reader& stream, runtime_value_type type)
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::save () const
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+void rx_proxy_item_implementation<TImpl>::read_struct (string_view_type path, read_struct_data data) const
+{
+}
+
+template <class TImpl>
+void rx_proxy_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
+{
+}
+
+template <class TImpl>
+void rx_proxy_item_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
+{
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+byte_string rx_proxy_item_implementation<TImpl>::get_definition_as_bytes () const
+{
+  return byte_string();
 }
 
 

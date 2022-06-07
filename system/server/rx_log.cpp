@@ -212,6 +212,12 @@ void log_object::log_event (log_event_type event_type, const char* library, cons
 
 void log_object::sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* code, const char* message, log_callback_func_t callback, rx_time when)
 {
+
+
+	/*log_event_data one = { event_type,library,source,level,code,message,when };
+
+	one.dump_to_stream(std::cout);*/
+
 	std::vector<log_subscriber::smart_ptr> temp_array;
 	temp_array.reserve(0x10);
 	lock();

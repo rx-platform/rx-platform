@@ -42,30 +42,27 @@ namespace protocols {
 
 namespace opcua {
 
-// Class protocols::opcua::opcua_transport_endpoint 
+namespace opcua_transport {
+
+// Class protocols::opcua::opcua_transport::opcua_transport_endpoint 
 
 opcua_transport_endpoint::opcua_transport_endpoint (runtime::items::port_runtime* port)
       : port_(port)
 {
-    OPCUA_LOG_DEBUG("tcp_server_endpoint", 200, "OPC UA server endpoint created.");
+    OPCUA_LOG_DEBUG("opcua_transport_endpoint", 200, "OPC UA server endpoint created.");
     opcua_transport_protocol_type* mine_entry = this;
-    auto buff = port_->alloc_io_buffer();
-    if (buff)
+    rx_protocol_result_t res = opcua_bin_init_server_transport(mine_entry);
+    if (res == RX_PROTOCOL_OK)
     {
-        rx_protocol_result_t res = opcua_bin_init_pipe_transport(mine_entry, buff.value());
-        if (res == RX_PROTOCOL_OK)
-        {
-            mine_entry->stack_entry.received_function = &opcua_transport_endpoint::received_function;
-            mine_entry->stack_entry.send_function = &opcua_transport_endpoint::send_function;
-        }
-        port_->release_io_buffer(buff.move_value());
+        mine_entry->stack_entry.received_function = &opcua_transport_endpoint::received_function;
+        mine_entry->stack_entry.send_function = &opcua_transport_endpoint::send_function;
     }
 }
 
 
 opcua_transport_endpoint::~opcua_transport_endpoint()
 {
-    OPCUA_LOG_DEBUG("tcp_server_endpoint", 200, "OPC UA server endpoint destroyed.");
+    OPCUA_LOG_DEBUG("opcua_transport_endpoint", 200, "OPC UA server endpoint destroyed.");
 }
 
 
@@ -86,13 +83,14 @@ rx_protocol_result_t opcua_transport_endpoint::received_function (rx_protocol_st
 
 rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
-    opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference->user_data);
+    return rx_move_packet_down(reference, packet);
+    /*opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference->user_data);
     self->sent_func_((int64_t)rx_get_packet_usable_data(packet.buffer));
-    return opcua_bin_bytes_send(reference, packet);
+    return opcua_bin_bytes_send(reference, packet);*/
 }
 
 
-// Class protocols::opcua::opcua_transport_port 
+// Class protocols::opcua::opcua_transport::opcua_transport_port 
 
 std::map<rx_node_id, opcua_transport_port::smart_ptr> opcua_transport_port::runtime_instances;
 
@@ -113,6 +111,7 @@ opcua_transport_port::opcua_transport_port()
 
 
 
+} // namespace opcua_transport
 } // namespace opcua
 } // namespace protocols
 

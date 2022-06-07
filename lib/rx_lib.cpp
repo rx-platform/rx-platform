@@ -142,7 +142,9 @@ rx_bytes_wrapper::rx_bytes_wrapper(const byte_string& val)
 	int ret_val = RX_ERROR;
 	if (!val.empty())
 	{
-		ret_val = rx_init_bytes_value_struct(this, &val[0], val.size());
+		// this code bellow i personally hate
+		// it is required as this is extern "C" structure
+		ret_val = rx_init_bytes_value_struct(this, (uint8_t*)&val[0], val.size());
 	}
 	if (!ret_val)
 		rx_init_bytes_value_struct(this, NULL, 0);
@@ -186,7 +188,7 @@ rx_bytes_wrapper::~rx_bytes_wrapper()
 byte_string rx_to_std_bytes(const bytes_value_struct& str)
 {
 	size_t count = 0;
-	const uint8_t* ptr = rx_c_ptr(&str, &count);
+	const std::byte* ptr = (const std::byte*)rx_c_ptr(&str, &count);
 	if (ptr && count)
 		return byte_string(ptr, ptr + count);
 	else
@@ -768,7 +770,7 @@ rx_node_id::rx_node_id(rx_uuid_t& id, uint16_t namesp)
 
 rx_node_id::rx_node_id(const byte_string& id, uint16_t namesp)
 {
-	auto ret = rx_init_bytes_node_id(&data_, &id[0], id.size(), namesp);
+	auto ret = rx_init_bytes_node_id(&data_, (uint8_t*)&id[0], id.size(), namesp);
 	RX_ASSERT(ret==RX_OK);
 	if(ret!=RX_OK)
         rx_init_null_node_id(&data_);
@@ -868,6 +870,10 @@ rx_node_id rx_node_id::generate_new(uint16_t namesp)
 	rx_generate_new_uuid(&temp);
 	return rx_node_id(temp, namesp);
 }
+rx_node_id rx_node_id::opcua_standard_id(uint32_t id)
+{
+	return rx_node_id(id, 0);
+}
 rx_node_id rx_node_id::from_string(const char* value)
 {
 	rx_node_id ret;
@@ -949,11 +955,10 @@ bool rx_node_id::get_bytes(byte_string& id) const
 	if (data_.node_type == rx_node_id_bytes)
 	{
 		size_t len = 0;
-		const uint8_t* ptr = rx_c_ptr(&data_.value.bstring_value, &len);
+		const std::byte* ptr = (const std::byte*)rx_c_ptr(&data_.value.bstring_value, &len);
 		if (ptr && len)
 		{
-			id.assign(len, 0);
-			memcpy(&id[0], ptr, len);
+			id.assign(ptr, ptr + len);
 		}
 		else
 		{

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -200,7 +200,7 @@ class binary_writer : public base_meta_writer
 
       bool write_uint64 (const char* name, uint64_t val);
 
-      bool write_bytes (const char* name, const uint8_t* val, size_t size);
+      bool write_bytes (const char* name, const std::byte* val, size_t size);
 
       bool write_version (const char* name, uint32_t val);
 
@@ -255,7 +255,7 @@ class binary_writer : public base_meta_writer
 
 typedef binary_writer<memory::std_vector_allocator, false> std_buffer_writer;
 
-// Parameterized Class rx::serialization::binary_reader
+// Parameterized Class rx::serialization::binary_reader 
 
 template <typename allocT, bool swap_bytes>
 binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer, int version)
@@ -691,7 +691,7 @@ string_type binary_reader<allocT,swap_bytes>::get_error () const
 }
 
 
-// Parameterized Class rx::serialization::binary_writer
+// Parameterized Class rx::serialization::binary_writer 
 
 template <typename allocT, bool swap_bytes>
 binary_writer<allocT,swap_bytes>::binary_writer (buffer_type& buffer, int version)
@@ -970,7 +970,7 @@ bool binary_writer<allocT,swap_bytes>::write_uint64 (const char* name, uint64_t 
 }
 
 template <typename allocT, bool swap_bytes>
-bool binary_writer<allocT,swap_bytes>::write_bytes (const char* name, const uint8_t* val, size_t size)
+bool binary_writer<allocT,swap_bytes>::write_bytes (const char* name, const std::byte* val, size_t size)
 {
     uint32_t len = (uint32_t)size;
     if (!buffer_.push_data(len))
@@ -1131,7 +1131,7 @@ byte_string binary_writer<allocT,swap_bytes>::get_data ()
 {
     if (buffer_.empty())
         return byte_string();
-    uint8_t* buffer = buffer_.template get_buffer<uint8_t>();
+    std::byte* buffer = buffer_.template get_buffer<std::byte>();
     return byte_string(buffer, buffer + buffer_.get_size());
 }
 

@@ -138,7 +138,7 @@ rx_result rx_binary_file::open_for_read (const byte_string& data, const string_t
 	buffer_.reinit();
 	if (data.empty())
 		return "Empty data";
-	uint8_t be = data[0];
+	std::byte be = data[0];
 	size_t size = data.size();
 	buffer_.reinit();
 	buffer_.push_data(&data[1], size - 1);

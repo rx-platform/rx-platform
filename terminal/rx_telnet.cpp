@@ -270,7 +270,7 @@ bool telnet_transport::handle_telnet (const char ch, string_type& to_echo, strin
 		}
 		else
 		{
-			sub_neg_data_.emplace_back(ch);
+			sub_neg_data_.push_back(std::byte(ch));
 		}
 		break;
 	case telnet_parser_had_sb2:
@@ -304,10 +304,10 @@ void telnet_transport::parse_negotiation (string_type& line)
 {
 	if (sub_neg_data_.size() >= 5)
 	{
-		if (sub_neg_data_[0] == NAWS)
+		if (sub_neg_data_[0] == std::byte{ NAWS })
 		{
-			uint16_t width = (((uint16_t)sub_neg_data_[1]) << 8) | sub_neg_data_[2];
-			uint16_t height = (((uint16_t)sub_neg_data_[3]) << 8) | sub_neg_data_[4];
+			uint16_t width = ((std::to_integer<uint16_t>(sub_neg_data_[1])) << 8) | std::to_integer<uint16_t>(sub_neg_data_[2]);
+			uint16_t height = ((std::to_integer<uint16_t>(sub_neg_data_[3])) << 8) | std::to_integer<uint16_t>(sub_neg_data_[4]);
 			std::ostringstream ss;
 			ss	<< "\033]T "
 				<< width << " " << height

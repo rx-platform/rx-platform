@@ -69,7 +69,7 @@ rx_result local_pipe_port::receive_loop (rx_pipe_host* host)
 	auto ticks = rx_get_tick_count();
 	rx_timer_ticks_t wait_period = 2000;
 #ifdef _DEBUG
-	wait_period = 2000000;
+	wait_period = 2000;
 #endif
 	while (!active_)
 	{

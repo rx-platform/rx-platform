@@ -288,13 +288,13 @@ bool runtime_process_context::should_process_status_change ()
     return should_do_step<runtime_process_step::status_change>();
 }
 
-void runtime_process_context::program_pending (program_runtime_ptr whose)
+void runtime_process_context::program_pending (logic_blocks::program_data* whose)
 {
     locks::auto_lock_t _(&context_lock_);
     if (stopping_)
         return;
     turn_on_pending<runtime_process_step::programs>();
-    programs_.emplace_back(std::move(whose));
+    programs_.emplace_back(whose);
 }
 
 programs_type& runtime_process_context::get_programs_for_process ()
@@ -312,7 +312,7 @@ void runtime_process_context::filter_pending (structure::filter_data* whose)
     if (stopping_)
         return;
     turn_on_pending<runtime_process_step::events>();
-    filters_.emplace_back(std::move(whose));
+    filters_.emplace_back(whose);
 }
 
 filters_type& runtime_process_context::get_filters_for_process ()

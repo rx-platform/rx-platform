@@ -33,8 +33,6 @@
 
 // rx_console
 #include "terminal/rx_console.h"
-// soft_plc
-#include "soft_logic/soft_plc.h"
 
 #include "sys_internal/rx_async_functions.h"
 #include "rx_terminal_style.h"
@@ -52,8 +50,7 @@ namespace console {
 // Class rx_internal::terminal::console::console_runtime 
 
 console_runtime::console_runtime (rx_thread_handle_t executer, console_runtime_callback_t callback)
-      : program_context_(nullptr),
-        executer_(executer),
+      : executer_(executer),
         callback_(callback),
         term_width_(80),
         term_height_(24)
@@ -64,16 +61,6 @@ console_runtime::console_runtime (rx_thread_handle_t executer, console_runtime_c
 #else
 	current_directory_ = "/world";
 #endif
-	// program executer
-	program_executer_ = std::make_unique<console_runtime_program_executer>(&program_holder_, smart_this()
-		, security::active_security());
-	// create program context
-	context_ownership_ = std::make_unique<console_runtime_program_context>(nullptr
-		, &program_holder_, current_directory_
-		, rx_create_reference<memory::std_buffer_type>()
-		, rx_create_reference<memory::std_buffer_type>()
-		, smart_this());
-	program_context_ = static_cast<script::console_program_context*>(context_ownership_.get());
 }
 
 
@@ -86,7 +73,7 @@ console_runtime::~console_runtime()
 
 void console_runtime::do_command (const string_type& line, security::security_context_ptr ctx)
 {
-	if (!context_ownership_)
+	if (program_context_)
 	{
 		if (line == "\003")
 		{// this is cancel
@@ -97,41 +84,44 @@ void console_runtime::do_command (const string_type& line, security::security_co
 	else
 	{
 		// create main program
-		auto program = std::make_unique<script::console_program>();
-		program->load(line);
-		program_holder_.set_main_program(std::move(program));
+		current_program_ = rx_create_reference<script::console_program>();
+		current_program_->load(line);
+		// create context
+		program_context_ = std::make_unique<console_runtime_program_context>(nullptr
+			, current_program_, current_directory_
+			, rx_create_reference<memory::std_buffer_type>()
+			, rx_create_reference<memory::std_buffer_type>()
+			, smart_this());
 		program_context_->init_scan();
 		program_context_->set_terminal_width(term_width_);
 		program_context_->set_terminal_height(term_height_);
-		program_context_ = nullptr;
-		std::unique_ptr<sl_runtime::program_context> temp_ctx(context_ownership_.release());
-		program_holder_.start_program(program_executer_.get(), std::move(temp_ctx));
+
+		runtime::runtime_process_context* ctx = nullptr;
+		current_program_->process_program(program_context_.get(), *ctx);
+
 	}
 }
 
 void console_runtime::process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
 {
-	if (!program_context_ && callback_)
+	if (program_context_ && callback_)
 	{
-		if (done)
+		if (done && result)
 		{
-			context_ownership_ = std::move(program_holder_.stop_program());
-			RX_ASSERT(context_ownership_);
-			if (context_ownership_)
-			{
-				program_context_ = static_cast<script::console_program_context*>(context_ownership_.get());
-				if(result)
-					current_directory_ = program_context_->get_current_directory();
-			}
+			current_directory_ = program_context_->get_current_directory();
 		}
 		callback_(result, out_buffer, err_buffer, done);
+		if (done)
+		{
+			program_context_.reset();
+		}
 	}
 }
 
 bool console_runtime::cancel_command (security::security_context_ptr ctx)
 {
 	security::secured_scope _(ctx);
-	if (!program_context_)
+	if (program_context_)
 	{// we are in a command
 		// !!!CONTODO!!!
 		//current_context_->cancel_execution();
@@ -161,7 +151,6 @@ rx_result console_runtime::check_validity ()
 
 void console_runtime::reset ()
 {
-	program_executer_.reset();
 }
 
 void console_runtime::get_prompt (string_type& prompt)
@@ -176,79 +165,25 @@ void console_runtime::set_terminal_size (int width, int height)
 	term_height_ = height;
 }
 
-
-// Class rx_internal::terminal::console::console_runtime_program_executer 
-
-console_runtime_program_executer::console_runtime_program_executer (sl_runtime::sl_program_holder* program, rx_reference<console_runtime> host, security::security_context_ptr sec_context)
-      : host_(host),
-        program_context_(nullptr),
-        sec_context_(sec_context)
-	, sl_runtime::program_executer(program)
+void console_runtime::process_program (bool continue_scan)
 {
-}
-
-
-
-void console_runtime_program_executer::start_program (uint32_t rate, std::unique_ptr<sl_runtime::program_context>&& context)
-{
-	program_context_ = static_cast<script::console_program_context*>(context.get());
-	program_executer::start_program(rate, std::move(context));
-	do_scan();
-}
-
-std::unique_ptr<sl_runtime::program_context> console_runtime_program_executer::stop_program ()
-{
-	std::unique_ptr<sl_runtime::program_context>&& ret = sl_runtime::program_executer::stop_program();
-	program_context_ = nullptr;
-	return std::move(ret);
-}
-
-void console_runtime_program_executer::schedule_scan (uint32_t interval)
-{
-	if (interval)
+	if (current_program_ && program_context_)
 	{
-		rx_post_delayed_function(interval, host_,
-			[this]()
-			{
-				do_scan();
-			});
+		runtime::runtime_process_context* ctx = nullptr;
+		current_program_->process_program(program_context_.get(), *ctx);
 	}
-	else
-	{
-		rx_post_function(host_,
-			[this]()
-			{
-				do_scan();
-			});
-	}
-}
-
-void console_runtime_program_executer::do_scan ()
-{
-	security::secured_scope _(sec_context_);
-	program_scan();
 }
 
 
 // Class rx_internal::terminal::console::console_runtime_program_context 
 
-console_runtime_program_context::console_runtime_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_runtime> runtime)
-		: host_(runtime)
+console_runtime_program_context::console_runtime_program_context (program_context* parent, script::console_program_ptr runtime, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference<console_runtime> host)
+		: host_(host)
 		, out_(out)
 		, err_(err)
 		, out_std_(out_.unsafe_ptr())
 		, err_std_(err_.unsafe_ptr())
-		, console_program_context(parent, holder, current_directory)
-{
-}
-
-console_runtime_program_context::console_runtime_program_context (console_runtime_program_context&& right)
-	: host_(right.host_)
-	, out_(std::move(right.out_))
-	, err_(std::move(right.err_))
-	, out_std_(out_.unsafe_ptr())
-	, err_std_(err_.unsafe_ptr())
-	, console_program_context(right.parent_, right.get_program_holder(), right.get_current_directory())
+		, console_program_context(parent, runtime, current_directory)
 {
 }
 
@@ -279,10 +214,36 @@ api::rx_context console_runtime_program_context::create_api_context ()
 
 void console_runtime_program_context::send_results (bool result, bool done)
 {
-
 	host_->process_event(result, out_, err_, done);
-	out_->reinit();
-	err_->reinit();
+	/*out_->reinit();
+	err_->reinit();*/
+}
+
+void console_runtime_program_context::process_program (bool continue_scan)
+{
+	host_->process_program(continue_scan);
+}
+
+bool console_runtime_program_context::schedule_scan (uint32_t interval)
+{
+	RX_ASSERT(false);
+	if (interval)
+	{
+		rx_post_delayed_function(interval, host_,
+			[this]()
+			{
+			//	do_scan();
+			});
+	}
+	else
+	{
+		rx_post_function(host_,
+			[this]()
+			{
+			//	do_scan();
+			});
+	}
+	return true;
 }
 
 

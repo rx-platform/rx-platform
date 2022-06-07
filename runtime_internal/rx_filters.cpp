@@ -62,6 +62,10 @@ rx_result register_filter_constructors()
 		RX_HI_CUTOFF_FILTER_TYPE_ID, [] {
 			return rx_create_reference<cutoff_scaling>(false);
 		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
+		RX_QUALITY_FILTER_TYPE_ID, [] {
+			return rx_create_reference<quality_filter>();
+		});
 	return true;
 }
 
@@ -211,6 +215,37 @@ rx_result limit_filter::filter_output (rx_simple_value& val)
 		return "Value out of range.";
 	else
 		return true;
+}
+
+
+// Class rx_internal::sys_runtime::filters::quality_filter 
+
+
+rx_result quality_filter::initialize_filter (runtime::runtime_init_context& ctx)
+{
+	good_value_ = ctx.get_item_static(".GoodValue", true);
+	return true;
+}
+
+rx_result quality_filter::filter_input (rx_value& val)
+{
+	rx_time ts = val.get_time();
+	if (val.is_good())
+	{
+		val.assign_static(good_value_, ts);
+	}
+	else
+	{
+		val.assign_static(!good_value_, ts);
+	}
+	val.set_good_locally();
+	return true;
+}
+
+bool quality_filter::supports_output () const
+{
+  return false;
+
 }
 
 

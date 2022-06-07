@@ -249,7 +249,7 @@ bool serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_val
 		case RX_BYTES_TYPE:
 			{
 				size_t size = 0;
-				const uint8_t* data = rx_c_ptr(&who.bytes_value, &size);
+				const std::byte* data = (const std::byte*)rx_c_ptr(&who.bytes_value, &size);
 				writer.write_bytes(name, data, size);
 			}
 			break;
@@ -646,6 +646,11 @@ bool assign_value(typed_value_type& from, rx_time_struct value)
 bool assign_value(typed_value_type& from, rx_time value)
 {
 	return rx_init_time_value(&from, value);
+}
+bool assign_value(typed_value_type& from, const rx_uuid_t& value)
+{
+	return rx_init_uuid_value(&from, &value);
+
 }
 bool assign_value(typed_value_type& from, const byte_string& value)
 {

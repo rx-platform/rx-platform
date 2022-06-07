@@ -30,25 +30,31 @@
 
 #include "pch.h"
 
+#include "protocols/ansi_c/common_c/rx_packet_buffer.h"
 
 // rx_opcua_binary_ser
 #include "protocols/ansi_c/opcua_c/rx_opcua_binary_ser.h"
 
-size_t opcua_write_string(uint8_t* buffer, size_t from, const char* str)
+rx_protocol_result_t opcua_write_string(rx_packet_buffer* buffer, const char* str)
 {
-	size_t len;
+	rx_protocol_result_t result;
+
+	uint32_t len;
 	if (str)
 	{
-		len = strlen(str);
-		*((uint32_t*)&buffer[from]) = (uint32_t)len;
-		if (len)
-			memcpy(&buffer[from + sizeof(uint32_t)], str, len);
-		return from + sizeof(uint32_t) + len;
+		len = (uint32_t)strlen(str);
+		result = rx_push_to_packet(buffer, &len, sizeof(len));
+		if (result == RX_PROTOCOL_OK && len > 0)
+		{
+			result= rx_push_to_packet(buffer, str, len);
+		}
+		return result;
 	}
 	else
 	{// empty string just write -1
-		*((uint32_t*)&buffer[from]) = (uint32_t)(-1);
-		return from + sizeof(uint32_t);
+		len = (uint32_t)(-1);
+		result = rx_push_to_packet(buffer, &len, sizeof(len));
+		return result;
 	}
 }
 

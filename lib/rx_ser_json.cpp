@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -239,7 +239,7 @@ struct json_reader_data
 };
 
 
-// Class rx::serialization::json_reader 
+// Class rx::serialization::json_reader
 
 json_reader::json_reader (int version)
       : data_(std::make_unique<json_reader_data>())
@@ -522,7 +522,7 @@ bool json_reader::read_header (int& type)
 	uint32_t version = 0;
 	if (read_version("sversion", version))
 	{
-		set_version(version);
+		this->set_version(version);
 		if (data_->envelope.HasMember("object"))
 		{
 			rapidjson::Value& temp = data_->envelope["object"];
@@ -1018,7 +1018,7 @@ struct json_pretty_writer_data
 	rapidjson::StringBuffer stream;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer;
 };
-// Parameterized Class rx::serialization::json_writer_type 
+// Parameterized Class rx::serialization::json_writer_type
 
 template <class writerT>
 json_writer_type<writerT>::json_writer_type (int version)
@@ -1352,7 +1352,7 @@ bool json_writer_type<writerT>::write_uint64 (const char* name, uint64_t val)
 }
 
 template <class writerT>
-bool json_writer_type<writerT>::write_bytes (const char* name, const uint8_t* val, size_t size)
+bool json_writer_type<writerT>::write_bytes (const char* name, const std::byte* val, size_t size)
 {
 	//string_type temp = base64_encode(val, size);
 	string_type temp = urke::get_base64(val, size);
@@ -1422,7 +1422,7 @@ bool json_writer_type<writerT>::write_init_values (const char* name, const data:
 			auto& childs = std::get<std::vector<data::runtime_values_data> >(one.second);
 			if (!start_array(one.first.c_str(), childs.size()))
 				return false;
-			for (int i = 0; i < childs.size(); i++)
+			for (size_t i = 0; i < childs.size(); i++)
 			{
 				if (!write_init_values(one.first.c_str(), childs[i]))
 					return false;
@@ -1443,7 +1443,7 @@ bool json_writer_type<writerT>::write_init_values (const char* name, const data:
 			auto& vals = std::get<std::vector<rx_simple_value> >(one.second);
 			if (!start_array(one.first.c_str(), vals.size()))
 				return false;
-			for (int i = 0; i < vals.size(); i++)
+			for (size_t i = 0; i < vals.size(); i++)
 			{
 				if (!vals[i].weak_serialize(one.first.c_str(), *this))
 					return false;

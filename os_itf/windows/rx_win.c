@@ -838,6 +838,11 @@ sys_handle_t rx_current_thread()
 {
 	return (sys_handle_t)(intptr_t)GetCurrentThreadId();
 }
+int rx_thread_set_afinity(sys_handle_t what, uint64_t mask)
+{
+	DWORD_PTR ret_val = SetThreadAffinityMask(what, mask);
+	return ret_val ? RX_OK : RX_ERROR;
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // directories stuff
 

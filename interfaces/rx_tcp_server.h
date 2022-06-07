@@ -35,12 +35,12 @@
 #include "interfaces/rx_endpoints.h"
 #include "system/runtime/rx_value_templates.h"
 
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
 #include "interfaces/rx_stream_io.h"
 
@@ -269,6 +269,30 @@ class system_rx_port : public system_server_port_base
 System rx-protocol TCP Server port class.");
 
     DECLARE_REFERENCE_PTR(system_rx_port);
+
+  public:
+
+      uint16_t get_configuration_port () const;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class system_opcua_port : public system_server_port_base  
+{
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+System a OPC UA Binary TCP Server port class.");
+
+    DECLARE_REFERENCE_PTR(system_opcua_port);
 
   public:
 

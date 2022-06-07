@@ -268,6 +268,7 @@ extern "C" {
 	int rx_thread_join(sys_handle_t what);
 	int rx_thread_close(sys_handle_t what);
 	sys_handle_t rx_current_thread();
+	int rx_thread_set_afinity(sys_handle_t what, uint64_t mask);
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 

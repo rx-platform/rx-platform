@@ -33,10 +33,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+// dummy
+#include "dummy.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
@@ -55,6 +55,8 @@
 namespace protocols {
 
 namespace opcua {
+
+namespace opcua_transport {
 
 constexpr size_t opc_ua_endpoint_name_len = 0x100;
 
@@ -114,7 +116,7 @@ typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< op
 
 class opcua_transport_port : public opcua_transport_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
 OPC-UA transport port. Implementation of binary OPC-UA transport and simplified local pipe version without secure channel.");
 
     DECLARE_REFERENCE_PTR(opcua_transport_port);
@@ -134,6 +136,7 @@ OPC-UA transport port. Implementation of binary OPC-UA transport and simplified 
 };
 
 
+} // namespace opcua_transport
 } // namespace opcua
 } // namespace protocols
 

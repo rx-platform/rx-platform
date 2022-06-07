@@ -579,7 +579,7 @@ test_program_context* testing_enviroment::create_test_context (rx_internal::term
 	auto api_ctx = console_ctx->create_api_context();
 	return new test_program_context(
 			console_ctx,
-			console_ctx->get_program_holder(),
+			reference<rx_internal::terminal::console::script::console_program>(),
 			console_ctx->get_current_directory(),
 			rx_create_reference<memory::std_strbuff<memory::std_vector_allocator> >(),
 			rx_create_reference<memory::std_strbuff<memory::std_vector_allocator> >(),
@@ -590,13 +590,13 @@ test_program_context* testing_enviroment::create_test_context (rx_internal::term
 
 // Class testing::test_program_context 
 
-test_program_context::test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor)
+test_program_context::test_program_context (program_context* parent, rx_internal::terminal::console::script::console_program_ptr runtime, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor)
       : status_(RX_TEST_STATUS_UNKNOWN),
         out_std_(out.unsafe_ptr()),
         err_std_(err.unsafe_ptr()),
         out_(out),
         err_(err)
-	, console_program_context(parent, holder,  current_directory)
+	, console_program_context(parent, runtime,  current_directory)
 {
 }
 
@@ -652,6 +652,10 @@ api::rx_context test_program_context::create_api_context ()
 }
 
 void test_program_context::send_results (bool result, bool done)
+{
+}
+
+void test_program_context::process_program (bool continue_scan)
 {
 }
 

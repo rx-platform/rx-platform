@@ -399,6 +399,63 @@ class rx_platform_storage_type
 };
 
 
+
+
+
+
+class rx_empty_storage_connection : public rx_storage_connection  
+{
+
+  public:
+
+      string_type get_storage_reference () const;
+
+      string_type get_storage_info () const;
+
+
+  protected:
+
+      rx_result_with<rx_storage_ptr> get_and_init_storage (const string_type& name, hosting::rx_platform_host* host);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_empty_storage : public rx_platform_storage  
+{
+
+  public:
+
+      string_type get_storage_info ();
+
+      rx_result init_storage (const string_type& storage_reference, hosting::rx_platform_host* host);
+
+      rx_result list_storage (std::vector<rx_storage_item_ptr>& items);
+
+      bool is_valid_storage () const;
+
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data, rx_item_type type);
+
+      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type);
+
+      string_type get_storage_reference ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace storage_base
 } // namespace rx_platform
 

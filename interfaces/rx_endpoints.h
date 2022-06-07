@@ -78,7 +78,7 @@ class rx_io_manager : public rx_platform::runtime::items::object_runtime
       ~rx_io_manager();
 
 
-      rx_result initialize (hosting::rx_platform_host* host, io_manager_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
 
       void deinitialize ();
 

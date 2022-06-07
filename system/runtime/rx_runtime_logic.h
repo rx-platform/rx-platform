@@ -82,8 +82,12 @@ public:
 
       rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
 
+      void process_program (runtime::runtime_process_context& ctx);
+
 
       program_runtime_ptr program_ptr;
+
+      std::unique_ptr<logic::program_context> context;
 
 
       structure::runtime_item::smart_ptr item;

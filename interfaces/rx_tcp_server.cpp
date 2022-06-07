@@ -430,6 +430,18 @@ rx_result system_server_port_base::initialize_runtime (runtime::runtime_init_con
 }
 
 
+// Class rx_internal::interfaces::ip_endpoints::system_opcua_port 
+
+
+uint16_t system_opcua_port::get_configuration_port () const
+{
+    auto ret = rx_gate::instance().get_configuration().other.opcua_port;
+    if (ret == 0)
+        ret = 0x7ABE;
+    return ret;
+}
+
+
 } // namespace ip_endpoints
 } // namespace interfaces
 } // namespace rx_internal

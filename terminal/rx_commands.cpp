@@ -50,6 +50,8 @@
 #include "terminal/rx_vt100.h"
 #include "terminal/rx_telnet.h"
 #include "protocols/opcua/rx_opcua_mapping.h"
+#include "protocols/opcua/rx_opcua_security.h"
+#include "protocols/opcua/rx_opcua_basic.h"
 #include "protocols/http/rx_http_mapping.h"
 #include "interfaces/rx_io.h"
 
@@ -143,14 +145,33 @@ void server_command_manager::register_internal_commands ()
 		RX_RX_JSON_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::rx_protocol::rx_json_protocol_port>();
 		});
-	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport_port>(
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_transport_port>(
 		nullptr ,RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {
-			return rx_create_reference<protocols::opcua::opcua_transport_port>();
+			return rx_create_reference<protocols::opcua::opcua_transport::opcua_transport_port>();
 		});
-	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport_port>(
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_sec_none_port>(
 		nullptr, RX_OPCUA_SEC_NONE_PORT_TYPE_ID, [] {
-			return rx_create_reference<protocols::opcua::opcua_transport_port>();
+			return rx_create_reference<protocols::opcua::opcua_transport::opcua_sec_none_port>();
 		});
+	//TODO OPCUA secured channels
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_sec_none_port>(
+		nullptr, RX_OPCUA_SEC_SIGN_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_transport::opcua_sec_none_port>();
+		});
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_sec_none_port>(
+		nullptr, RX_OPCUA_SEC_SIGNENCR_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_transport::opcua_sec_none_port>();
+		});
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_sec_none_port>(
+		nullptr, RX_OPCUA_SEC_SIGNSIGNENCR_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_transport::opcua_sec_none_port>();
+		});
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_server::opcua_basic_server_port>(
+		nullptr, RX_OPCUA_SIMPLE_BINARY_SERVER_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_server::opcua_basic_server_port>();
+		});
+	//TODO OPCUA
+
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_VT00_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::terminal::term_ports::vt100_port>();

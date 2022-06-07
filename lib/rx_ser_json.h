@@ -185,7 +185,7 @@ class json_writer_type : public base_meta_writer
 
       bool write_uint64 (const char* name, uint64_t val);
 
-      bool write_bytes (const char* name, const uint8_t* val, size_t size);
+      bool write_bytes (const char* name, const std::byte* val, size_t size);
 
       string_type get_string ();
 

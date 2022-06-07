@@ -70,11 +70,32 @@ server_runtime::~server_runtime()
 rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data)
 {
 	// register protocol constructors
-	
+	char buff[0x100];
+	size_t cpu_count = 1;
+	uint32_t start_cpu = 0;
+	uint32_t end_cpu = 0;
+	uint64_t cpu_mask = 0;
+	rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]), &cpu_count);
+
+
 	if (data.io_pool_size <= 0)
 		data.io_pool_size = 1;
+
+	data.io_pool_size = std::min((int)cpu_count, data.io_pool_size);
+
+	if (cpu_count > 1)
+	{
+		cpu_mask = ~(((uint64_t)-1) << data.io_pool_size);
+	}
+
 	io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO);
 
+	if (cpu_count > data.io_pool_size)
+	{
+		start_cpu = data.io_pool_size;
+	}
+	end_cpu = (uint32_t)cpu_count - 1;
+	
 	slow_pool_ = server_dispatcher_object::smart_ptr(5, "Slow", RX_DOMAIN_SLOW);
 
 	meta_pool_ = rx_create_reference<physical_thread_object>(META_POOL_NAME, RX_DOMAIN_META);
@@ -87,7 +108,7 @@ rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_d
 	{
 		for (auto& one : workers_)
 		{
-			one = domains_pool::smart_ptr(data.workers_pool_size);
+			one = domains_pool::smart_ptr(data.workers_pool_size, start_cpu, end_cpu);
 			one->reserve();
 		}
 	}
@@ -423,9 +444,9 @@ runtime_data_t server_runtime::get_cpu_data ()
 
 // Class rx_internal::infrastructure::server_dispatcher_object 
 
-server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id)
+server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask)
       : threads_count_(count)
-	, pool_(count, name, rx_thread_id)
+	, pool_(count, name, rx_thread_id, cpu_mask)
 {
 	//register_const_value("count", count);
 }
@@ -479,8 +500,10 @@ void dispatcher_subscribers_job::process ()
 
 // Class rx_internal::infrastructure::domains_pool 
 
-domains_pool::domains_pool (uint32_t pool_size)
-      : pool_size_(pool_size)
+domains_pool::domains_pool (uint32_t pool_size, uint32_t start_cpu, uint32_t end_cpu)
+      : pool_size_(pool_size),
+        start_cpu_(pool_size),
+        end_cpu_(pool_size)
 {
 }
 

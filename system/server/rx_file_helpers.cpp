@@ -205,7 +205,7 @@ rx_result rx_source_file::read_data(byte_string& buff)
 		return rx_result::create_from_last_os_error("Unable to get file size!");
 
 	size_t size = (size_t)size64;
-	uint8_t* temp = new uint8_t[size];
+	std::byte* temp = new std::byte[size];
 
 	uint32_t readed = 0;
 	if (rx_file_read(m_handle, temp, (uint32_t)size, &readed) == RX_OK)

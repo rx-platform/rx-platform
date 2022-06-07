@@ -534,6 +534,30 @@ sys_handle_t rx_current_thread()
 {
 	return pthread_self();
 }
+int rx_thread_set_afinity(sys_handle_t what, uint64_t mask)
+{
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    uint64_t loop_mask=0x1;
+    int current_bit=0;
+    while(loop_mask)
+    {
+        if((loop_mask&mask)!=0)
+            CPU_SET(current_bit, &set);
+        loop_mask<<=1;
+        current_bit++;
+    }
+    int ret_val = sched_setaffinity(0, sizeof(cpu_set_t), &set);
+    if(ret_val==-1)
+    {
+        return RX_ERROR;
+    }
+    else
+    {
+        return RX_OK;
+    }
+
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -632,14 +656,18 @@ int rx_file_write(sys_handle_t hndl, const void* buffer, uint32_t size, uint32_t
 int rx_file_close(sys_handle_t hndl)
 {
     if(hndl<=0)
+    {
         return RX_ERROR;
+    }
 
 	if (close(hndl) == -1)
 	{
 		return RX_ERROR;
 	}
 	else
+	{
 		return RX_OK;
+    }
 }
 
 int rx_file_delete(const char* path)

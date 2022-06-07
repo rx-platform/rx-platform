@@ -35,12 +35,12 @@
 
 // rx_meta_data
 #include "system/meta/rx_meta_data.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_con_programs
 #include "terminal/rx_con_programs.h"
 // rx_commands
 #include "terminal/rx_commands.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace testing {
 class test_case;
@@ -116,7 +116,7 @@ class test_program_context : public rx_internal::terminal::console::script::cons
 	typedef test_program_context* smart_ptr;
 
   public:
-      test_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor);
+      test_program_context (program_context* parent, rx_internal::terminal::console::script::console_program_ptr runtime, const string_type& current_directory, buffer_ptr out, buffer_ptr err, rx_reference_ptr anchor);
 
       ~test_program_context();
 
@@ -176,6 +176,8 @@ class test_program_context : public rx_internal::terminal::console::script::cons
       void fill_data ();
 
       void send_results (bool result, bool done);
+
+      void process_program (bool continue_scan);
 
 
 

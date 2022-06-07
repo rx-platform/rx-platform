@@ -946,8 +946,6 @@ void subscription_write_manager::process_results (rx_subscription& subs)
 
 void subscription_write_manager::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result, rx_subscription& subs)
 {
-
-	printf("\r\n*****Write completed za handle %x, trans %x\r\n", (int)item, (int)transaction_id);
 	locks::auto_lock_t _(&subs.items_lock_);
 	auto map_it = transactions_map_.find(transaction_id);
 	if (map_it != transactions_map_.end())
@@ -960,7 +958,6 @@ void subscription_write_manager::write_complete (runtime_transaction_id_t transa
 			{
 				bool first_one = pending_write_results_.empty();
 				auto results = trans_it->second.get_results();
-				printf("\r\n*****Write for send za handle %x, trans %x\r\n", (int)trans_it->second.client_transaction_id, (int)results[0].first);
 				pending_write_results_.emplace_back(trans_it->second.client_transaction_id, std::move(results));
 				write_transactions_.erase(trans_it);
 				if (first_one)

@@ -220,6 +220,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.rx_security = row.second;
 		else if (row.first == "http.port" && config.other.http_port == 0)
 			config.other.http_port = atoi(row.second.c_str());
+		else if (row.first == "opc.port" && config.other.opcua_port == 0)
+			config.other.opcua_port = atoi(row.second.c_str());
 		else if (row.first == "rx.port" && config.other.rx_port == 0)
 			config.other.rx_port = atoi(row.second.c_str());
 		else if (row.first == "other.logs" && config.management.logs_directory.empty())
@@ -378,6 +380,7 @@ void rx_platform_host::read_config_options (const std::map<string_type, string_t
 bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* help_name, rx_platform::configuration_data_t& config)
 {
 	config.other.http_port = 0;
+	config.other.opcua_port = 0;
 	config.other.rx_port = 0;
 
 
@@ -458,6 +461,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("l,logs", "Location of the log files", cxxopts::value<string_type>(config.management.logs_directory))
 		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
 		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
+		("opc-port", "TCP/IP port for OPCUA binary server to listen to", cxxopts::value<uint16_t>(config.other.opcua_port))
 
 		("rx-port", "TCP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.other.rx_port))
 		("security", "Default security provider for {rx-platform}", cxxopts::value<string_type>(config.other.rx_security))
@@ -513,7 +517,6 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 	}
 	if (result)
 	{
-
 		if (config.storage.user_storage_reference.empty())
 			result = "No valid user storage reference!";
 		else
@@ -551,7 +554,7 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 		else
 		{
 			result.register_error("Error initializing user storage!");
-		}
+		}		
 	}
 	else
 	{
@@ -570,32 +573,46 @@ rx_result rx_platform_host::init_storage (const string_type& name, const string_
 {
 	string_type type;
 	string_type reference;
-	auto result = storage_base::split_storage_reference(full_reference, type, reference);
-	if (result)
+	if (full_reference == "empty")
 	{
-		auto temp_ptr = storages_.storage_types[type]->construct_storage_connection();
-		RX_ASSERT(temp_ptr);
-		if (temp_ptr)
+		auto storage_ptr = rx_create_reference<storage_base::rx_empty_storage_connection>();
+		storages_.registered_connections.emplace(name, std::move(storage_ptr));
+		std::ostringstream ss;
+		ss << "Initialized storage [" << name
+			<< "] as empty!";
+		HOST_LOG_WARNING("Base", 200, ss.str());
+
+		return true;
+	}
+	else
+	{
+		auto result = storage_base::split_storage_reference(full_reference, type, reference);
+		if (result)
 		{
-			result = temp_ptr->init_connection(reference, this);
-			if (result)
+			auto temp_ptr = storages_.storage_types[type]->construct_storage_connection();
+			RX_ASSERT(temp_ptr);
+			if (temp_ptr)
 			{
-				storages_.registered_connections.emplace(name, std::move(temp_ptr));
+				result = temp_ptr->init_connection(reference, this);
 				if (result)
 				{
-					std::ostringstream ss;
-					ss << "Initialized storage [" << name
-						<< "] with reference: " << full_reference;
-					HOST_LOG_INFO("Base", 999, ss.str());
+					storages_.registered_connections.emplace(name, std::move(temp_ptr));
+					if (result)
+					{
+						std::ostringstream ss;
+						ss << "Initialized storage [" << name
+							<< "] with reference: " << full_reference;
+						HOST_LOG_INFO("Base", 999, ss.str());
+					}
 				}
 			}
+			else
+			{
+				result = type + " is not valid storage type.";
+			}
 		}
-		else
-		{
-			result = type + " is not valid storage type.";
-		}
+		return result;
 	}
-	return result;
 }
 
 rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_base*>& plugins)

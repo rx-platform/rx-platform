@@ -50,7 +50,10 @@ namespace http {
 
 void http_response::set_string_content (const string_type& str)
 {
-	content.assign(str.begin(), str.end());
+	if (str.empty())
+		content = byte_string{ 0 };
+	else
+		content = byte_string((const std::byte*)str.c_str(), (const std::byte*)(str.c_str() + str.size()));
 }
 
 

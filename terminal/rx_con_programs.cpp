@@ -43,6 +43,11 @@
 #include "rx_con_commands.h"
 
 
+#include "terminal/ansi_codes.h"
+#define RX_ANSI_PROGRAM_LINE ANSI_COLOR_YELLOW ANSI_COLOR_BOLD "{"
+#define RX_ANSI_PROGRAM_LINE_END "}" ANSI_COLOR_RESET
+
+
 namespace rx_internal {
 
 namespace terminal {
@@ -64,7 +69,85 @@ console_program::~console_program()
 
 
 
-bool console_program::parse_line (const string_type& line, std::ostream& out, std::ostream& err, sl_runtime::program_context* context)
+std::unique_ptr<logic::program_context> console_program::create_program_context (logic::program_context* parent_context)
+{
+	RX_ASSERT(false);// had to place here because of current implementation, will be changed later
+	return std::unique_ptr<logic::program_context>();
+}
+
+void console_program::load (const string_type& text)
+{
+	size_t count = text.size();
+	size_t idx = 0;
+	int blocks_count = 0;
+	string_type current_line;
+	while (idx < count)
+	{
+		if (blocks_count == 0)
+		{// regular line
+			switch (text[idx])
+			{
+			case '\r':
+			case '\n':
+				if (!current_line.empty())
+				{
+					lines_.push_back(current_line);
+					current_line.clear();
+				}
+				break;
+			case '{':
+				blocks_count++;
+			default:
+				current_line += text[idx];
+			}
+			idx++;
+		}
+		else
+		{
+			switch (text[idx])
+			{
+			case '}':
+				blocks_count--;
+				current_line += text[idx];
+				break;
+			case '{':
+				blocks_count++;
+			default:
+				current_line += text[idx];
+			}
+			idx++;
+		}
+	}
+	if (!current_line.empty())
+		lines_.push_back(current_line);
+}
+
+void console_program::process_program (logic::program_context* context, runtime::runtime_process_context& rt_context)
+{
+	console_program_context* ctx = (console_program_context*)context;
+	size_t total_lines = lines_.size();
+	size_t current_line = ctx->get_current_line();
+	string_type label;
+
+	std::ostream& out(ctx->get_stdout());
+	std::ostream& err(ctx->get_stderr());
+
+	while (!ctx->waiting_ && ctx->get_current_line() < total_lines)
+	{
+		if (!parse_line(lines_[current_line], out, err, ctx))
+		{
+			ctx->raise_error();
+			break;
+		}
+		else
+		{
+			ctx->next_line();
+		}
+	}
+	ctx->send_results(ctx->get_result(), !ctx->waiting_);
+}
+
+bool console_program::parse_line (const string_type& line, std::ostream& out, std::ostream& err, console_program_context* context)
 {
 	console_program_context* ctx = static_cast<console_program_context*>(context);
 	std::istringstream in(line);
@@ -104,27 +187,18 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 	return true;
 }
 
-std::unique_ptr<sl_runtime::program_context> console_program::create_program_context (sl_runtime::program_context* parent_context, sl_runtime::sl_program_holder* holder)
-{
-	RX_ASSERT(false);// had to place here because of current implementation, will be changed later
-	return std::unique_ptr<sl_runtime::program_context>();
-}
-
-void console_program::process_program (sl_runtime::program_context* context, const rx_time& now, bool debug)
-{
-	console_program_context* ctx = (console_program_context*)context;
-	sl_runtime::sl_script::sl_script_program::process_program(context, now, debug);
-}
-
 
 // Class rx_internal::terminal::console::script::console_program_context 
 
-console_program_context::console_program_context (program_context* parent, sl_runtime::sl_program_holder* holder, const string_type& current_directory)
+console_program_context::console_program_context (program_context* parent, console_program_ptr runtime, const string_type& current_directory)
       : current_directory_(current_directory),
         canceled_(false),
         terminal_width_(80),
-        terminal_height_(24)
-    , sl_runtime::sl_script::script_program_context(parent, holder)
+        terminal_height_(24),
+        current_line_(0),
+        waiting_(false),
+        error_(false)
+    , program_context(parent, runtime)
 {
 }
 
@@ -150,6 +224,57 @@ void console_program_context::cancel_execution ()
 	canceled_ = true;
 }
 
+void console_program_context::raise_error ()
+{
+	if (!error_)
+	{
+		reset_waiting();
+		error_ = true;
+		get_stderr() << "\r\nError in line " RX_ANSI_PROGRAM_LINE << current_line_ + 1 << RX_ANSI_PROGRAM_LINE_END "\r\n";
+	}
+	else
+	{
+		// this should not be happening
+		// anyway just do the waiting stuff as code,
+		// as bad as it is, depends on it
+		RX_ASSERT(false);
+		reset_waiting();
+	}
+}
+
+bool console_program_context::get_result () const
+{
+	return !error_;
+}
+
+void console_program_context::set_waiting ()
+{
+	waiting_ = true;
+}
+
+void console_program_context::reset_waiting ()
+{
+	waiting_ = false;
+}
+
+size_t console_program_context::next_line ()
+{
+	current_line_++;
+	return current_line_;
+}
+
+void console_program_context::continue_scan ()
+{
+	waiting_ = false;
+	process_program(true);
+}
+
+void console_program_context::init_scan ()
+{
+	current_line_ = 0;
+	error_ = false;
+}
+
 
 string_type console_program_context::get_current_directory ()
 {
@@ -159,6 +284,11 @@ string_type console_program_context::get_current_directory ()
 void console_program_context::set_current_directory (string_type value)
 {
   current_directory_ = value;
+}
+
+size_t console_program_context::get_current_line () const
+{
+  return current_line_;
 }
 
 

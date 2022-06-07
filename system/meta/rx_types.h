@@ -65,6 +65,7 @@ class event_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 9, 1, "\
 implementation of event type");
 public:
+    static constexpr bool has_default_constructor = true;
 	typedef runtime::structure::event_data RDataType;
 	typedef runtime::blocks::event_runtime RType;
 	typedef runtime::event_runtime_ptr RTypePtr;
@@ -110,6 +111,7 @@ class filter_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of filter type");
 public:
+    static constexpr bool has_default_constructor = true;
 	typedef runtime::structure::filter_data RDataType;
 	typedef runtime::blocks::filter_runtime RType;
 	typedef runtime::filter_runtime_ptr RTypePtr;
@@ -153,6 +155,7 @@ class mapper_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of mapper type");
 public:
+    static constexpr bool has_default_constructor = true;
 	typedef runtime::structure::mapper_data RDataType;
 	typedef runtime::blocks::mapper_runtime RType;
 	typedef rx_reference<RType> RTypePtr;
@@ -191,6 +194,7 @@ class source_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of source type");
 public:
+    static constexpr bool has_default_constructor = true;
 	typedef runtime::structure::source_data RDataType;
 	typedef runtime::blocks::source_runtime RType;
 	typedef runtime::source_runtime_ptr RTypePtr;
@@ -236,6 +240,7 @@ class struct_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of struct type");
 public:
+    static constexpr bool has_default_constructor = true;
 	typedef runtime::structure::struct_data RDataType;
 	typedef runtime::blocks::struct_runtime RType;
 	typedef runtime::struct_runtime_ptr RTypePtr;
@@ -281,6 +286,7 @@ class variable_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of variable type");
 public:
+    static constexpr bool has_default_constructor = true;
 	typedef runtime::structure::variable_data RDataType;
 	typedef runtime::blocks::variable_runtime RType;
 	typedef runtime::variable_runtime_ptr RTypePtr;
@@ -330,6 +336,7 @@ class data_type : public rx::pointers::reference_object
     DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 rx-platform implementation of data type");
 public:
+    static constexpr bool has_default_constructor = true;
     typedef std::vector<def_blocks::const_value_def> values_type;
     typedef std::vector<def_blocks::data_attribute> children_type;
 
@@ -376,6 +383,7 @@ class method_type : public rx::pointers::reference_object
     DECLARE_CODE_INFO("rx", 0, 9, 1, "\
 implementation of method type");
 public:
+    static constexpr bool has_default_constructor = true;
     typedef runtime::logic_blocks::method_data RDataType;
     typedef logic::method_runtime RType;
     typedef method_runtime_ptr RTypePtr;
@@ -423,6 +431,7 @@ class program_type : public rx::pointers::reference_object
     DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 implementation of method type");
 public:
+    static constexpr bool has_default_constructor = false;
     typedef runtime::logic_blocks::program_data RDataType;
     typedef logic::program_runtime RType;
     typedef program_runtime_ptr RTypePtr;
@@ -466,6 +475,7 @@ class display_type : public rx::pointers::reference_object
     DECLARE_CODE_INFO("rx", 0, 0, 1, "\
 implementation of display type");
 public:
+    static constexpr bool has_default_constructor = true;
     typedef runtime::display_blocks::display_data RDataType;
     typedef displays::display_runtime RType;
     typedef display_runtime_ptr RTypePtr;

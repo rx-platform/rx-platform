@@ -309,6 +309,84 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       void write_struct (string_view_type path, write_struct_data data);
 
       void execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback);
+      
+      rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      byte_string get_definition_as_bytes () const;
+
+
+  protected:
+
+  private:
+
+
+      TImpl impl_;
+
+
+};
+
+
+
+
+
+
+template <class TImpl>
+class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item  
+{
+
+  public:
+      rx_proxy_item_implementation (TImpl impl);
+
+      ~rx_proxy_item_implementation();
+
+
+      rx_item_type get_type_id () const;
+
+      values::rx_value get_value () const;
+
+      string_type get_name () const;
+
+      rx_node_id get_node_id () const;
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      const meta_data_t& meta_info () const;
+
+      void fill_code_info (std::ostream& info, const string_type& name);
+
+      void read_value (const string_type& path, read_result_callback_t callback) const;
+
+      void write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback);
+
+      rx_result do_command (rx_object_command_t command_type);
+
+      void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
+
+      std::vector<rx_result_with<runtime_handle_t> > connect_items (const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      string_type get_definition_as_json () const;
+
+      rx_platform_item::smart_ptr clone () const;
+
+      rx_thread_handle_t get_executer () const;
+
+      rx_result serialize_value (base_meta_writer& stream, runtime_value_type type) const;
+
+      rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
+
+      rx_result save () const;
+
+      void read_struct (string_view_type path, read_struct_data data) const;
+
+      void write_struct (string_view_type path, write_struct_data data);
+
+      void execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
 

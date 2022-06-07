@@ -2,8 +2,8 @@
 
 
 #define RX_LIB_MAJOR_VERSION 2
-#define RX_LIB_MINOR_VERSION 4
-#define RX_LIB_BUILD_NUMBER 1
+#define RX_LIB_MINOR_VERSION 5
+#define RX_LIB_BUILD_NUMBER 0
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -49,5 +49,6 @@
 // version 2.2.0 added serial port support
 // version 2.2.1 added assign_defult to value storage
 // version 2.4.0 binary serialization and rx_result to common library
+// version 2.5.0 introduced std::byte
 
 

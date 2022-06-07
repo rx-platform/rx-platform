@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -47,7 +47,7 @@ namespace rx_platform {
 
 namespace storage_base {
 
-// Class rx_platform::storage_base::rx_platform_storage 
+// Class rx_platform::storage_base::rx_platform_storage
 
 rx_platform_storage::rx_platform_storage()
 {
@@ -70,7 +70,7 @@ void rx_platform_storage::deinit_storage ()
 }
 
 
-// Class rx_platform::storage_base::rx_storage_item 
+// Class rx_platform::storage_base::rx_storage_item
 
 rx_storage_item::rx_storage_item (rx_storage_item_type storage_type)
       : storage_type_(storage_type)
@@ -84,7 +84,7 @@ rx_storage_item::~rx_storage_item()
 
 
 
-// Class rx_platform::storage_base::rx_platform_storage_type 
+// Class rx_platform::storage_base::rx_platform_storage_type
 
 rx_platform_storage_type::rx_platform_storage_type()
 {
@@ -97,7 +97,7 @@ rx_platform_storage_type::~rx_platform_storage_type()
 
 
 
-// Class rx_platform::storage_base::rx_code_storage_item 
+// Class rx_platform::storage_base::rx_code_storage_item
 
 rx_code_storage_item::rx_code_storage_item()
     : rx_storage_item(rx_storage_item_type::none)
@@ -167,7 +167,7 @@ string_type rx_code_storage_item::get_item_path () const
 }
 
 
-// Class rx_platform::storage_base::rx_code_storage 
+// Class rx_platform::storage_base::rx_code_storage
 
 rx_code_storage::rx_code_storage()
 {
@@ -227,7 +227,7 @@ rx_result split_storage_reference(const string_type full_ref, string_type& type,
     }
     return true;
 }
-// Class rx_platform::storage_base::rx_storage_connection 
+// Class rx_platform::storage_base::rx_storage_connection
 
 
 rx_result_with<rx_storage_ptr> rx_storage_connection::get_storage (const string_type& name, hosting::rx_platform_host* host)
@@ -274,6 +274,65 @@ std::vector<std::pair<string_type, string_type> > rx_storage_connection::get_mou
         ret.emplace_back(one.first, one.second->get_base_path());
     }
     return ret;
+}
+
+
+// Class rx_platform::storage_base::rx_empty_storage_connection
+
+
+string_type rx_empty_storage_connection::get_storage_reference () const
+{
+    return RX_NULL_ITEM_NAME;
+}
+
+rx_result_with<rx_storage_ptr> rx_empty_storage_connection::get_and_init_storage (const string_type& name, hosting::rx_platform_host* host)
+{
+    rx_storage_ptr ret = rx_create_reference<rx_empty_storage>();
+    return ret;
+}
+
+string_type rx_empty_storage_connection::get_storage_info () const
+{
+    return RX_NULL_ITEM_NAME " storage";
+}
+
+
+// Class rx_platform::storage_base::rx_empty_storage
+
+
+string_type rx_empty_storage::get_storage_info ()
+{
+    return RX_NULL_ITEM_NAME " storage";
+}
+
+rx_result rx_empty_storage::init_storage (const string_type& storage_reference, hosting::rx_platform_host* host)
+{
+    return true;
+}
+
+rx_result rx_empty_storage::list_storage (std::vector<rx_storage_item_ptr>& items)
+{
+    return true;
+}
+
+bool rx_empty_storage::is_valid_storage () const
+{
+    return true;
+}
+
+rx_result_with<rx_storage_item_ptr> rx_empty_storage::get_item_storage (const meta::meta_data& data, rx_item_type type)
+{
+    return RX_NOT_SUPPORTED;
+}
+
+rx_result_with<rx_storage_item_ptr> rx_empty_storage::get_runtime_storage (const meta::meta_data& data, rx_item_type type)
+{
+    return RX_NOT_SUPPORTED;
+}
+
+string_type rx_empty_storage::get_storage_reference ()
+{
+    return RX_NULL_ITEM_NAME;
 }
 
 

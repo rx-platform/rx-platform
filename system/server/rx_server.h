@@ -85,6 +85,7 @@ struct general_data_t
 	string_type manuals_path;
     string_type http_path;
     uint16_t http_port;
+    uint16_t opcua_port;
     uint16_t rx_port;
     string_type rx_security;
 };

@@ -35,7 +35,18 @@
 
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+
+rx_protocol_result_t opcua_write_string(rx_packet_buffer* buffer, const char* str);
+
+
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

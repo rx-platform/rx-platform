@@ -162,7 +162,7 @@ class memory_buffer_base : public pointers::reference_object
               return false;
           if (size > 0)
           {
-              val.assign(size, '\0');
+              val = byte_string{ 0 };
               if (!read_data(&val[0], size))
                   return false;
           }

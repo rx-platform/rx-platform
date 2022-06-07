@@ -191,6 +191,20 @@ rx_result win32_service_host::install_service ()
 				, nullptr);
 			if (svc)
 			{
+				SC_ACTION action;
+				SERVICE_FAILURE_ACTIONS info;
+
+				info.dwResetPeriod = 0;
+				info.lpRebootMsg = NULL;
+				info.lpCommand = NULL;
+				info.cActions = 1;
+				info.lpsaActions = &action;
+
+				action.Delay = 1000;
+				action.Type = SC_ACTION_RESTART;
+
+				ChangeServiceConfig2(svc, SERVICE_CONFIG_FAILURE_ACTIONS, &info);
+
 				printf("Created service %s.\r\n", RX_WIN32_SERVICE_HOST);
 				CloseServiceHandle(svc);
 			}

@@ -427,6 +427,9 @@ public:
 	static rx_node_id from_string(const char* value);
 
 	static rx_node_id generate_new(uint16_t namesp = RX_USER_NAMESPACE);
+
+	static rx_node_id opcua_standard_id(uint32_t id);
+
 	bool is_null() const;
 	operator bool() const;
 	bool is_standard() const;

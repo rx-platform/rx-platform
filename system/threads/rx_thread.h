@@ -166,7 +166,7 @@ class physical_job_thread : public thread,
 	typedef std::queue<job_ptr> queue_type;
 
   public:
-      physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id);
+      physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask = 0);
 
       ~physical_job_thread();
 
@@ -198,6 +198,8 @@ class physical_job_thread : public thread,
       locks::event has_job_;
 
       locks::lockable lock_;
+
+      uint64_t cpu_mask_;
 
 
 };
@@ -240,7 +242,7 @@ class dispatcher_pool : public job_thread
 	typedef std::vector<std::unique_ptr<dispatcher_thread> > threads_type;
 
   public:
-      dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id);
+      dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask = 0);
 
       ~dispatcher_pool();
 
@@ -266,6 +268,8 @@ class dispatcher_pool : public job_thread
 
 
       string_type name_;
+
+      uint64_t cpu_mask_;
 
 
 };

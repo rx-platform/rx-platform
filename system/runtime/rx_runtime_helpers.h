@@ -243,6 +243,7 @@ class write_context;
 namespace logic_blocks
 {
 class method_data;
+class program_data;
 }
 
 

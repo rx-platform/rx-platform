@@ -232,7 +232,7 @@ rx_value add_values(const rx_value& left, const rx_value& right)
 			byte_string temp_buff;
 			if (new_size)
 			{
-				temp_buff.assign(new_size, 0);
+				temp_buff.assign(new_size, std::byte{ 0 });
 				if (size1 > 0)
 					memcpy(&temp_buff[0], ptr1, size1);
 

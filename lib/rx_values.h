@@ -112,6 +112,7 @@ bool assign_value(typed_value_type& from, const char* value);
 bool assign_value(typed_value_type& from, const complex_value_struct& value);
 bool assign_value(typed_value_type& from, rx_time_struct value);
 bool assign_value(typed_value_type& from, rx_time value);
+bool assign_value(typed_value_type& from, const rx_uuid_t& value);
 bool assign_value(typed_value_type& from, const byte_string& value);
 
 

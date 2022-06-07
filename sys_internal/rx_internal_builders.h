@@ -135,7 +135,7 @@ class basic_object_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& onfcig);
+      rx_result do_build (configuration_data_t& config);
 
 
   protected:
@@ -351,6 +351,26 @@ class basic_types_builder : public rx_platform_builder
 
       template<class T>
       void build_basic_type(rx_directory_ptr dir, rx_reference<T> what);
+
+};
+
+
+
+
+
+
+class opc_types_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (configuration_data_t& config);
+
+
+  protected:
+
+  private:
+
 
 };
 

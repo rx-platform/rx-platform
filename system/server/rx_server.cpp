@@ -134,7 +134,7 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 		result = rx_internal::infrastructure::server_runtime::instance().initialize(host, data.processor, data.io);
 		if (result)
 		{
-			result = io_manager_->initialize(host, data.io);
+			result = io_manager_->initialize(host, data);
 			if (result)
 			{
 

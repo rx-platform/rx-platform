@@ -59,7 +59,7 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\InfoControl\\x64\\Debug\\rx-ics.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Beka\\x64\\Debug\\rx-mesrnp.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\SAMTMS\\x64\\Debug\\rx-samcomm.dll");
-	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
+//	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
 #else
 	char buff[MAX_PATH];
 	DWORD size = sizeof(buff);

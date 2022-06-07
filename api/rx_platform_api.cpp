@@ -559,6 +559,7 @@ void bind_plugins_dynamic_api()
 	g_api.runtime.prxInitCtxBindItem = rxInitCtxBindItem;
 	g_api.runtime.prxInitCtxGetCurrentPath = rxInitCtxGetCurrentPath;
 	g_api.runtime.prxInitCtxGetLocalValue = rxInitCtxGetLocalValue;
+	g_api.runtime.prxInitCtxSetLocalValue = rxInitCtxSetLocalValue;
 	g_api.runtime.prxInitCtxGetMappingValues = rxInitCtxGetMappingValues;
 	g_api.runtime.prxInitCtxGetSourceValues = rxInitCtxGetSourceValues;
 

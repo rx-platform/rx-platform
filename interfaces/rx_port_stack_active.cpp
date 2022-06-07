@@ -244,6 +244,16 @@ rx_result active_builder::add_stack_endpoint (rx_port_ptr who, rx_protocol_stack
 		}
 		else
 		{
+			std::ostringstream ss;
+			ss << "Port "
+				<< who->meta_info().get_full_path()
+				<< " error binding at ["
+				<< local_addr.to_string()
+				<< ","
+				<< remote_addr.to_string()
+				<< "]";
+			rx_dump_error_result(ss, reg_result);
+			ITF_LOG_ERROR("active_builder", 500, ss.str());
 			who->get_implementation()->destroy_endpoint(what);
 			return reg_result;
 		}

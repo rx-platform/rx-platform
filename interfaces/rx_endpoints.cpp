@@ -56,6 +56,7 @@
 #include "interfaces/rx_full_duplex_packet.h"
 #include "interfaces/rx_transaction_limiter.h"
 #include "interfaces/rx_stxetx.h"
+#include "protocols/opcua/rx_opcua_resources.h"
 
 
 namespace rx_internal {
@@ -77,7 +78,7 @@ rx_io_manager::~rx_io_manager()
 
 
 
-rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager_data_t& data)
+rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
 	auto alias_result = host->read_config_files("rx-ip4network.yml");
 	for (const auto& one : alias_result)
@@ -89,7 +90,8 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 		for (const auto& alias : one)
 			serial_aliases_[alias.first] = alias.second;
 
-	rx_result result = true;
+	rx_result result = protocols::opcua::opcua_resources_repository::instance().initialize(host, data);
+	
 	if (result)
 	{
         // register port stack relation
@@ -159,6 +161,10 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, io_manager
 			RX_TCP_RX_PORT_TYPE_ID, [] {
 				return rx_create_reference<ip_endpoints::system_rx_port>();
 			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+				RX_TCP_OPCUA_PORT_TYPE_ID, [] {
+					return rx_create_reference<ip_endpoints::system_opcua_port>();
+				});
         result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
             RX_TCP_CLIENT_PORT_TYPE_ID, [] {
                 return rx_create_reference<ip_endpoints::tcp_client_port>();

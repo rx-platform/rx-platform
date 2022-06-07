@@ -48,6 +48,7 @@
 #include <utility>
 #include <type_traits>
 #include <variant>
+#include <cstddef>
 // containers
 #include <vector>
 #include <set>
@@ -88,7 +89,7 @@ template<> struct compile_time_error<true> {};
 
 typedef std::string string_type;
 typedef std::string_view string_view_type;
-typedef std::vector<uint8_t> byte_string;
+typedef std::vector<std::byte> byte_string;
 typedef std::vector<bool> bit_string;
 typedef std::vector<string_type> string_vector;
 typedef std::vector<string_type> string_array;
