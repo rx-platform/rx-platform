@@ -95,14 +95,14 @@ rx_result register_internal_constructor(library::rx_plugin_base* plugin
         }
         ret.register_f = [container, new_ptr](const rx_node_id& id)
         {
-            locks::auto_slim_lock _(rx_platform::g_runtime_lock);
+            locks::auto_lock_t _(rx_platform::g_runtime_lock);
             auto it = container->find(id);
             if (it == container->end())
                 container->emplace(id, new_ptr);
         };
         ret.unregister_f = [container](const rx_node_id& id)
         {
-            locks::auto_slim_lock _(rx_platform::g_runtime_lock);
+            locks::auto_lock_t _(rx_platform::g_runtime_lock);
             container->erase(id);
         };
         return ret;

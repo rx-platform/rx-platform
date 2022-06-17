@@ -318,7 +318,7 @@ std::vector<platform_item_ptr> runtime_cache::get_items (const string_array& pat
 {
 	std::vector<platform_item_ptr> ret;
 	ret.reserve(paths.size());
-	locks::auto_slim_lock _(&lock_);
+	locks::auto_lock_t _(&lock_);
 	for (const auto& path : paths)
 	{
 		auto it = path_cache_.find(path);
@@ -332,7 +332,7 @@ std::vector<platform_item_ptr> runtime_cache::get_items (const string_array& pat
 
 platform_item_ptr runtime_cache::get_item (const rx_node_id& id)
 {
-	locks::auto_slim_lock _(&lock_);
+	locks::auto_lock_t _(&lock_);
 	auto it = id_cache_.find(id);
 	if (it != id_cache_.end() &&  it->second.item)
 		return it->second.item->clone();
@@ -347,7 +347,7 @@ void runtime_cache::remove_from_cache (platform_item_ptr&& item)
 	string_type name = item->get_name();
 	rx_node_id id = item->meta_info().id;
 	{
-		locks::auto_slim_lock _(&lock_);
+		locks::auto_lock_t _(&lock_);
 		switch (item->get_type_id())
 		{
 		case rx_item_type::rx_application:
@@ -399,7 +399,7 @@ void runtime_cache::remove_from_cache (platform_item_ptr&& item)
 
 void runtime_cache::add_functions (const rx_node_id& id, const std::function<void(const rx_node_id&)>& register_f, const std::function<void(const rx_node_id&)>& deleter_f)
 {
-	locks::auto_slim_lock _(&lock_);
+	locks::auto_lock_t _(&lock_);
 	auto it_id = id_cache_.find(id);
 	if (it_id != id_cache_.end())
 	{
@@ -413,7 +413,7 @@ void runtime_cache::add_functions (const rx_node_id& id, const std::function<voi
 
 void runtime_cache::remove_functions (const rx_node_id& id)
 {
-	locks::auto_slim_lock _(&lock_);
+	locks::auto_lock_t _(&lock_);
 	auto it_id = id_cache_.find(id);
 	if (it_id != id_cache_.end())
 	{
@@ -439,7 +439,7 @@ void runtime_cache::unregister_subscriber (const rx_item_reference& ref, runtime
 	rx_node_id id;
 	platform_item_ptr item;
 	{
-		locks::auto_slim_lock _(&lock_);
+		locks::auto_lock_t _(&lock_);
 		if (name.empty())
 		{
 			if (ref.is_node_id())
@@ -488,7 +488,7 @@ void runtime_cache::register_subscriber (const rx_item_reference& ref, runtime::
 	rx_node_id id;
 	platform_item_ptr item;
 	{
-		locks::auto_slim_lock _(&lock_);
+		locks::auto_lock_t _(&lock_);
 		if (name.empty())
 		{
 			if (ref.is_node_id())
@@ -554,7 +554,7 @@ void runtime_cache::collect_subscribers (const rx_node_id& id, const string_type
 
 rx_object_ptr runtime_cache::get_object (const rx_node_id& id)
 {
-	locks::auto_slim_lock _(&lock_);
+	locks::auto_lock_t _(&lock_);
 	auto it = objects_cache_.find(id);
 	if (it != objects_cache_.end())
 		return it->second;
@@ -564,7 +564,7 @@ rx_object_ptr runtime_cache::get_object (const rx_node_id& id)
 
 rx_application_ptr runtime_cache::get_application (const rx_node_id& id)
 {
-	locks::auto_slim_lock _(&lock_);
+	locks::auto_lock_t _(&lock_);
 	auto it = applications_cache_.find(id);
 	if (it != applications_cache_.end())
 		return it->second;
@@ -574,7 +574,7 @@ rx_application_ptr runtime_cache::get_application (const rx_node_id& id)
 
 rx_domain_ptr runtime_cache::get_domain (const rx_node_id& id)
 {
-	locks::auto_slim_lock _(&lock_);
+	locks::auto_lock_t _(&lock_);
 	auto it = domains_cache_.find(id);
 	if (it != domains_cache_.end())
 		return it->second;
@@ -584,7 +584,7 @@ rx_domain_ptr runtime_cache::get_domain (const rx_node_id& id)
 
 rx_port_ptr runtime_cache::get_port (const rx_node_id& id)
 {
-	locks::auto_slim_lock _(&lock_);
+	locks::auto_lock_t _(&lock_);
 	auto it = ports_cache_.find(id);
 	if (it != ports_cache_.end())
 		return it->second;
@@ -596,7 +596,7 @@ void runtime_cache::add_to_cache (rx_object_ptr item)
 {
 	collected_subscribers_type subscribers;
 	{
-		locks::auto_slim_lock _(&lock_);
+		locks::auto_lock_t _(&lock_);
 		add_to_cache(item->get_item_ptr(), subscribers);
 		objects_cache_.emplace(item->meta_info().id, item);
 	}
@@ -607,7 +607,7 @@ void runtime_cache::add_to_cache (rx_domain_ptr item)
 {
 	collected_subscribers_type subscribers;
 	{
-		locks::auto_slim_lock _(&lock_);
+		locks::auto_lock_t _(&lock_);
 		add_to_cache(item->get_item_ptr(), subscribers);
 		domains_cache_.emplace(item->meta_info().id, item);
 	}
@@ -618,7 +618,7 @@ void runtime_cache::add_to_cache (rx_port_ptr item)
 {
 	collected_subscribers_type subscribers;
 	{
-		locks::auto_slim_lock _(&lock_);
+		locks::auto_lock_t _(&lock_);
 		add_to_cache(item->get_item_ptr(), subscribers);
 		ports_cache_.emplace(item->meta_info().id, item);
 	}
@@ -629,7 +629,7 @@ void runtime_cache::add_to_cache (rx_application_ptr item)
 {
 	collected_subscribers_type subscribers;
 	{
-		locks::auto_slim_lock _(&lock_);
+		locks::auto_lock_t _(&lock_);
 		add_to_cache(item->get_item_ptr(), subscribers);
 		applications_cache_.emplace(item->meta_info().id, item);
 	}
@@ -848,7 +848,7 @@ std::vector<platform_item_ptr> runtime_cache::get_items (const rx_node_ids& ids)
 {
 	std::vector<platform_item_ptr> ret;
 	ret.reserve(ids.size());
-	locks::auto_slim_lock _(&lock_);
+	locks::auto_lock_t _(&lock_);
 	for (const auto& id : ids)
 	{
 		auto it = id_cache_.find(id);

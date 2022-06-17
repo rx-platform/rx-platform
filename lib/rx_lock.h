@@ -108,47 +108,6 @@ class lockable
 
 
 
-template <class T>
-class auto_lock_t 
-{
-
-  public:
-      auto_lock_t (T* who);
-
-      ~auto_lock_t();
-
-
-  protected:
-
-  private:
-
-
-      T* p_;
-
-
-};
-
-
-
-
-
-
-
-typedef auto_lock_t< lockable  > auto_lock;
-
-
-
-
-
-
-
-typedef auto_lock_t< slim_lock  > auto_slim_lock;
-
-
-
-
-
-
 class waitable 
 {
 
@@ -235,14 +194,6 @@ class empty_slim_lock
 
 
 
-
-typedef auto_lock_t< empty_slim_lock  > auto_no_lock;
-
-
-
-
-
-
 template <class T>
 class const_auto_lock_t 
 {
@@ -268,16 +219,59 @@ class const_auto_lock_t
 
 
 
+class rw_slim_lock 
+{
 
-typedef const_auto_lock_t< empty_slim_lock  > const_auto_no_lock;
+  public:
+      rw_slim_lock();
+
+      ~rw_slim_lock();
+
+
+      void read_lock ();
+
+      void read_unlock ();
+
+      void write_lock ();
+
+      void write_unlock ();
+
+      rw_slim_lock(rw_slim_lock&&) = delete;
+      rw_slim_lock(const rw_slim_lock&) = delete;
+  protected:
+
+  private:
+
+
+      rw_slim_lock_t lock_;
+
+
+};
 
 
 
 
 
 
+template <class T>
+class auto_lock_t 
+{
 
-typedef const_auto_lock_t< slim_lock  > const_auto_slim_lock;
+  public:
+      auto_lock_t (T* who);
+
+      ~auto_lock_t();
+
+
+  protected:
+
+  private:
+
+
+      T* p_;
+
+
+};
 
 
 
@@ -292,8 +286,91 @@ typedef auto_lock_t< empty_slim_lock  > auto_empty_slim_lock;
 
 
 
+template <class lockT>
+class auto_write_lock 
+{
 
-typedef const_auto_lock_t< lockable  > const_auto_lock;
+  public:
+      auto_write_lock (lockT* who);
+
+      ~auto_write_lock();
+
+
+  protected:
+
+  private:
+
+
+      lockT* p_;
+
+
+};
+
+
+
+
+
+
+template <class lockT>
+class auto_read_lock 
+{
+
+  public:
+      auto_read_lock (lockT* who);
+
+      ~auto_read_lock();
+
+
+  protected:
+
+  private:
+
+
+      lockT* p_;
+
+
+};
+
+
+
+
+
+
+template <class lockT>
+class const_auto_read_lock 
+{
+
+  public:
+      const_auto_read_lock (const lockT* who);
+
+      ~const_auto_read_lock();
+
+
+  protected:
+
+  private:
+
+
+      lockT* p_;
+
+
+};
+
+
+// Parameterized Class rx::locks::const_auto_lock_t 
+
+template <class T>
+const_auto_lock_t<T>::const_auto_lock_t (const T* who)
+	: p_(const_cast<T*>(who))
+{
+}
+
+
+template <class T>
+const_auto_lock_t<T>::~const_auto_lock_t()
+{
+}
+
 
 
 // Parameterized Class rx::locks::auto_lock_t 
@@ -314,18 +391,53 @@ auto_lock_t<T>::~auto_lock_t()
 
 
 
-// Parameterized Class rx::locks::const_auto_lock_t 
+// Parameterized Class rx::locks::auto_write_lock 
 
-template <class T>
-const_auto_lock_t<T>::const_auto_lock_t (const T* who)
-	: p_(const_cast<T*>(who))
+template <class lockT>
+auto_write_lock<lockT>::auto_write_lock (lockT* who)
 {
 }
 
 
-template <class T>
-const_auto_lock_t<T>::~const_auto_lock_t()
+template <class lockT>
+auto_write_lock<lockT>::~auto_write_lock()
 {
+}
+
+
+
+// Parameterized Class rx::locks::auto_read_lock 
+
+template <class lockT>
+auto_read_lock<lockT>::auto_read_lock (lockT* who)
+          : p_(who)
+{
+          p_->read_lock();
+}
+
+
+template <class lockT>
+auto_read_lock<lockT>::~auto_read_lock()
+{
+          p_->read_unlock();
+}
+
+
+
+// Parameterized Class rx::locks::const_auto_read_lock 
+
+template <class lockT>
+const_auto_read_lock<lockT>::const_auto_read_lock (const lockT* who)
+    : p_(const_cast<lockT*>(who))
+{
+    p_->read_lock();
+}
+
+
+template <class lockT>
+const_auto_read_lock<lockT>::~const_auto_read_lock()
+{
+    p_->read_unlock();
 }
 
 

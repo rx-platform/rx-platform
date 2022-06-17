@@ -696,7 +696,7 @@ void rx_pipe_stdout_log_subscriber::log_event (log::log_event_type event_type, c
 	}
 	else
 	{
-		locks::auto_slim_lock _(&pending_lock_);
+		locks::auto_lock_t _(&pending_lock_);
 		pending_events_.emplace_back(std::move(one));
 	}
 }
@@ -706,7 +706,7 @@ void rx_pipe_stdout_log_subscriber::release_log (bool dump_previous)
 	if (dump_previous)
 	{
 
-		locks::auto_slim_lock _(&pending_lock_);
+		locks::auto_lock_t _(&pending_lock_);
 		for (const auto& one : pending_events_)
 		{
 			if (supports_ansi_)

@@ -54,7 +54,7 @@ rx_result port_active_map::register_endpoint (rx_protocol_stack_endpoint* what, 
 {
     int16_t count;
     {
-        locks::auto_slim_lock _(&map_lock_);
+        locks::auto_lock_t _(&map_lock_);
         endpoints_map_.emplace(what, whose);
         count = (int16_t)endpoints_map_.size();
     }
@@ -349,7 +349,7 @@ rx_result port_passive_map::unregister_passive (rx_port_ptr who, rx_port_ptr own
 
 rx_port_ptr port_passive_map::get_binded_port (const io::any_address& local_addr, const io::any_address& remote_addr)
 {
-    locks::auto_slim_lock _(&map_lock_);
+    locks::auto_lock_t _(&map_lock_);
     addr_pair_t addr(local_addr, remote_addr);
     auto it_port = passive_map_.find(addr);
     if (it_port != passive_map_.end())

@@ -75,6 +75,11 @@ std::pair<bool, typename duplex_port_adapter<addrT>::listener_key_type> duplex_p
 	return { true, { local, remote } };
 }
 template <typename addrT>
+typename duplex_port_adapter<addrT>::listener_key_type duplex_port_adapter<addrT>::get_key_from_listener(const listener_data_type<addrT>& session_data)
+{
+	return { session_data.local_addr, session_data.remote_addr };
+}
+template <typename addrT>
 void duplex_port_adapter<addrT>::fill_send_packet(send_protocol_packet& packet, const initiator_data_type<addrT>& session_data)
 {
 	packet.from_addr = &session_data.local_addr;
@@ -150,10 +155,6 @@ std::unique_ptr<listener_instance<addrT> > duplex_port_adapter<addrT>::create_li
 // Class rx_internal::interfaces::ports_lib::byte_routing_port 
 
 
-void byte_routing_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
-{
-}
-
 void byte_routing_port::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
 {
 	if (local_addr.is_null())
@@ -187,7 +188,8 @@ void byte_routing_port::extract_bind_address (const data::runtime_values_data& b
 
 template <typename addrT>
 full_duplex_addr_packet_port<addrT>::full_duplex_addr_packet_port()
-      : state_(port_state_inactive)
+      : state_(port_state_inactive),
+        session_timeout_(2000)
 {
 }
 
@@ -210,6 +212,7 @@ rx_protocol_stack_endpoint* full_duplex_addr_packet_port<addrT>::construct_liste
 	rx_protocol_stack_endpoint* stack_ep = &listener_inst->stack_endpoint;
 
 	listener_inst->my_port = this;
+	
 
 	rx_init_stack_entry(&listener_inst->stack_endpoint, listener_inst.get());
 	/*listener_inst->stack_endpoint.send_function = [](rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
@@ -222,6 +225,13 @@ rx_protocol_stack_endpoint* full_duplex_addr_packet_port<addrT>::construct_liste
 	{
 		listener_instance<addrT>* me = (listener_instance<addrT>*)reference->user_data;
 		return me->route_listeners_packet(packet);
+	};
+
+	listener_inst->stack_endpoint.closed_function = [](rx_protocol_stack_endpoint* reference, rx_protocol_result_t result)
+	{
+		listener_instance<addrT>* me = (listener_instance<addrT>*)reference->user_data;
+		me->listener_closed_received(result);
+		me->my_port->unbind_stack_endpoint(&me->stack_endpoint);
 	};
 	/*listener_inst->stack_endpoint.connected_function = [](rx_protocol_stack_endpoint* reference, rx_session* session)
 	{
@@ -254,6 +264,25 @@ rx_protocol_stack_endpoint* full_duplex_addr_packet_port<addrT>::construct_liste
 	locks::auto_lock_t _(&routing_lock_);
 	listener_endpoints_.emplace(stack_ep, std::move(listener_inst));
 	return stack_ep;
+}
+
+template <typename addrT>
+void full_duplex_addr_packet_port<addrT>::destroy_endpoint (rx_protocol_stack_endpoint* what)
+{
+	locks::auto_lock_t _(&routing_lock_);
+	auto it = listener_endpoints_.find(what);
+	if (it != listener_endpoints_.end())
+	{
+		listener_endpoints_.erase(it);
+	}
+	else
+	{
+		auto itd = listening_.find(what);
+		if (itd != listening_.end())
+		{
+			listening_.erase(itd);
+		}
+	}
 }
 
 template <typename addrT>
@@ -414,6 +443,18 @@ template <typename addrT>
 rx_result full_duplex_addr_packet_port<addrT>::stop_passive ()
 {
 	return true;
+}
+
+template <typename addrT>
+rx_result full_duplex_addr_packet_port<addrT>::initialize_runtime (runtime_init_context& ctx)
+{
+	rx_result result = status.initialize(ctx);
+
+	auto one_result = session_timeout_.bind("Options.SessionTimeout", ctx);
+	if (!one_result)
+		result.register_error("Error connecting Options.SessionTimeout:"s + one_result.errors_line());
+
+	return result;
 }
 
 template <typename addrT>
@@ -582,10 +623,6 @@ initiator_data_type<addrT>::~initiator_data_type()
 // Class rx_internal::interfaces::ports_lib::ip4_routing_port 
 
 
-void ip4_routing_port::destroy_endpoint (rx_protocol_stack_endpoint* what)
-{
-}
-
 void ip4_routing_port::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
 {
 	if (local_addr.is_null())
@@ -720,6 +757,32 @@ rx_protocol_result_t listener_instance<addrT>::listener_connected_received (rx_s
 }
 
 template <typename addrT>
+void listener_instance<addrT>::listener_closed_received (rx_protocol_result_t result)
+{
+	std::vector<listener_data_t*> listeners;
+	{
+		locks::auto_lock_t _(&routing_lock_);
+		if (!listeners_.empty())
+		{
+			listeners.reserve(listeners_.size());
+			for (auto & one : listeners_)
+			{
+				listeners.push_back(one.second);
+			}
+		}
+	}
+	if (!listeners.empty())
+	{
+		for (auto& one : listeners)
+		{
+			rx_session session = rx_create_session(&one->local_addr, &one->remote_addr, 0, 0, nullptr);
+			rx_notify_disconnected(&one->stack_endpoint, &session, result);
+			rx_close(&one->stack_endpoint, result);
+		}
+	}
+}
+
+template <typename addrT>
 rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (const listener_key_type& key, const protocol_address* local_address, const protocol_address* remote_address)
 {
 	auto it_cli = listeners_.find(key);
@@ -784,6 +847,7 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 		new_endpoint->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
 		{
 			listener_data_t* whose = reinterpret_cast<listener_data_t*>(entry->user_data);
+			whose->my_instance->remove_listener(address_adapter_type::get_key_from_listener(*whose));
 			whose->my_port->unbind_stack_endpoint(entry);
 		};
 		locks::auto_lock_t _(&routing_lock_);

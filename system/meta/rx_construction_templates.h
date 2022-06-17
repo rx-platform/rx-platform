@@ -53,7 +53,7 @@ template<typename derivedT>
 rx_result_with<typename derivedT::smart_ptr> get_runtime_instance(const rx_node_id& id)
 {
     auto* container = &derivedT::runtime_instances;
-    locks::auto_slim_lock _(g_runtime_lock);
+    locks::auto_lock_t _(g_runtime_lock);
     auto it = container->find(id);
     if (it == container->end())
     {

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace {
 http_server* g_inst = nullptr;
 }
 
-// Class rx_internal::rx_http_server::http_server 
+// Class rx_internal::rx_http_server::http_server
 
 http_server::http_server()
 {
@@ -240,7 +240,7 @@ void http_server::register_standard_filters ()
 }
 
 
-// Class rx_internal::rx_http_server::standard_request_filter 
+// Class rx_internal::rx_http_server::standard_request_filter
 
 
 rx_result standard_request_filter::handle_request_after (http_request& req, http_response& resp)
@@ -299,7 +299,7 @@ rx_result standard_request_filter::handle_request_before (http_request& req, htt
 }
 
 
-// Class rx_internal::rx_http_server::http_display_handler 
+// Class rx_internal::rx_http_server::http_display_handler
 
 
 rx_result http_display_handler::handle_request (http_request& req, http_response& resp)
@@ -317,7 +317,7 @@ rx_result http_display_handler::handle_request (http_request& req, http_response
 	auto disp_res = http_server::instance().get_displays().get_display(req.path, executer);
 	if (disp_res)
 	{
-		
+
 		disp_res.value()->req_ += 1;
 		auto ticks1 = rx_get_us_ticks();
 

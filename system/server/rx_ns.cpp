@@ -152,7 +152,7 @@ void rx_platform_directory::list_content (platform_directories_type& sub_directo
 	const char* c_pattern = pattern.empty() ? nullptr : pattern.c_str();
 	rx_directory_cache::instance().get_sub_directories(smart_this(), sub_directories, c_pattern);
 	
-	locks::const_auto_slim_lock dummy(&lock_);
+	locks::const_auto_lock_t dummy(&lock_);
 	for (const auto& one : sub_items_)
 	{
 		if (c_pattern)

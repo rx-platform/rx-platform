@@ -878,13 +878,13 @@ void startup_log_subscriber::log_event (log::log_event_type event_type, const st
 
 	log::log_event_data one = { event_type,library,source,level,code,message,when };
 
-	locks::auto_slim_lock _(&pending_lock_);
+	locks::auto_lock_t _(&pending_lock_);
 	pending_events_.emplace_back(std::move(one));
 }
 
 rx_result startup_log_subscriber::read_log (const log::log_query_type& query, log::log_events_type& result)
 {
-	locks::auto_slim_lock _(&pending_lock_);
+	locks::auto_lock_t _(&pending_lock_);
 	for (const auto& one : pending_events_)
 	{
 		if (one.is_included(query))

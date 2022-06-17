@@ -36,6 +36,10 @@ using namespace protocols::opcua::ids;
 // rx_opcua_builder
 #include "protocols/opcua/rx_opcua_builder.h"
 
+#include "rx_opcua_build_nodes2.h"
+
+using namespace rx::values;
+
 namespace protocols {
 namespace opcua {
 namespace opcua_addr_space {
@@ -90,30 +94,34 @@ std::unique_ptr<opcua_property_node> create_standard_property_node(const string_
 	return node;
 }
 
-rx_result build_standard_address_space_UANodeSet2(opcua_std_address_space& server);
-
 rx_result build_standard_address_space(opcua_std_address_space& server, const string_type& server_uri)
 {
-	auto result = build_standard_address_space_UANodeSet2(server);
+	auto result = opcua_std_address_space_builder::build_standard_address_space_UANodeSet2(server);
 	if (!result)
 		return result;
 
-	/*auto node = create_standard_property_node("ServerArray", opcid_Server_ServerArray, string_array{
+	rx_time now = rx_time::now();
+
+	rx_value val;
+	val.assign_static<string_array>(string_array{
 			server_uri
-		});
-	result = server.register_node(std::move(node));
+		}, now);
+	val.set_good_locally();
+	result = server.set_node_value(rx_node_id::opcua_standard_id(opcid_Server_ServerArray), std::move(val));
 	if (!result)
 		return result;
 
-	node = create_standard_property_node("NamespaceArray", opcid_Server_NamespaceArray, string_array{
+	val = rx_value();
+	val.assign_static<string_array>(string_array{
 			"http://opcfoundation.org/UA/",
 			"http://rx-platform.org/UA/"
-		});
-	result = server.register_node(std::move(node));
+		}, now);
+	val.set_good_locally();
+	result = server.set_node_value(rx_node_id::opcua_standard_id(opcid_Server_NamespaceArray), std::move(val));
 	if (!result)
-		return result;*/
+		return result;
 
-	return result;
+	return true;
 }
 
 

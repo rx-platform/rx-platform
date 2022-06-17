@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -97,7 +97,7 @@ char g_console_welcome_old[] = ANSI_COLOR_YELLOW "\
 
 char g_console_unauthorized[] = ANSI_COLOR_RED "You are unauthorized!" ANSI_COLOR_RESET "\r\n;";
 
-// Class rx_internal::terminal::term_ports::vt100_endpoint 
+// Class rx_internal::terminal::term_ports::vt100_endpoint
 
 vt100_endpoint::vt100_endpoint (runtime::items::port_runtime* port, bool to_echo)
       : state_(parser_normal),
@@ -292,7 +292,6 @@ bool vt100_endpoint::char_received_normal (const char ch, bool eof, string_type&
 
 
 											size_t idx = 0;
-											auto sug_size = result.value().items.size();
 											bool done = false;
 											while(!done)
 											{
@@ -883,7 +882,7 @@ void vt100_endpoint::close_endpoint ()
 }
 
 
-// Class rx_internal::terminal::term_ports::vt100_port 
+// Class rx_internal::terminal::term_ports::vt100_port
 
 vt100_port::vt100_port()
 {

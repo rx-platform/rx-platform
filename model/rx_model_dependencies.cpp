@@ -1045,7 +1045,7 @@ rx_result local_dependecy_builder::delete_simple_types(container_t<typeT>& data)
 	add_order.reserve(data.size());
 	for (const auto& one : data)
 	{
-		if (one.second.create)
+		if (one.second.remove)
 		{
 			auto it_local = data.find(one.second.item->meta_info.parent.to_string());
 			if (it_local != data.end())

@@ -32,12 +32,18 @@
 #define rx_opcua_params_h 1
 
 
+#include "lib/rx_const_size_vector.h"
 
 
 
 
 namespace protocols {
 namespace opcua {
+
+namespace opcua_addr_space
+{
+class reference_data;
+}
 
 namespace binary {
 
@@ -342,15 +348,20 @@ void assign_vunion(vunion_type& what, int32_t val);
 void assign_vunion(vunion_type& what, uint32_t val);
 void assign_vunion(vunion_type& what, int64_t val);
 void assign_vunion(vunion_type& what, uint64_t val);
+void assign_vunion(vunion_type& what, rx_time_struct val);
 void assign_vunion(vunion_type& what, float val);
 void assign_vunion(vunion_type& what, double val);
 
 void assign_vunion(vunion_type& what, const string_type& val);
 
-void assign_vunion(vunion_type& what, const string_array& val);
+template<typename T>
+void assign_vunion(vunion_type& what, const std::vector<T>& val);
 
 void assign_vunion(vunion_type& what, const qualified_name& val);
 void assign_vunion(vunion_type& what, const localized_text& val);
+
+
+const uint32_t opcid_Null = 0;
 
 class variant_type
 {
@@ -360,6 +371,7 @@ public:
 	variant_type();
 
 	variant_type(const variant_type& right);
+	variant_type(variant_type&& right) noexcept;
 	variant_type(bool val);
 	variant_type(char val);
 	variant_type(uint8_t val);
@@ -379,10 +391,15 @@ public:
 
 	variant_type(const qualified_name& val);
 	variant_type(const localized_text& val);
+	variant_type(const rx_node_id& val);
+	variant_type(const data_value& val);
+
+	variant_type(rx_time val);
 
 	~variant_type();
 
 	variant_type& operator=(const variant_type& right);
+	variant_type& operator=(variant_type&& right) noexcept;
 
 	bool is_null() const;
 
@@ -393,9 +410,9 @@ public:
 
 	void to_string(string_type& str);
 
-	void fill_variable_value(values::rx_value& value) const;
+	bool from_rx_value(const values::rx_value& value, uint8_t hint = 0, uint16_t ns = 0);
 
-	bool from_rx_value(const values::rx_value& value, uint8_t hint = 0);
+	void fill_rx_value(values::rx_value& value) const;
 
 	const uint8_t get_type() const;
 
@@ -403,21 +420,22 @@ public:
 
 	const std::vector<int>& get_dimensions() const;
 
+	void set_default(uint8_t type, int value_rank, const const_size_vector<uint32_t>& dimensions);
+
 private:
 	void copy_from(const variant_type& right);
 	void clear_union(uint8_t type, vunion_type& vu);
 	void copy_union_from(uint8_t type, vunion_type& to, const vunion_type& from);
 
 private:
-	uint8_t type_;
+	uint8_t type_{ opcid_Null };
 	vunion_type union_;
-	int array_len_;
+	int array_len_{ -1 };
 	std::vector<int> dimensions_;
 
 };
 
 
-const uint32_t opcid_Null = 0;
 
 
 
@@ -449,7 +467,10 @@ struct data_value
 
 public:
 	data_value& operator=(const data_value& right);
-	void fill_rx_value(values::rx_value& vvalue) const;
+	rx_result fill_rx_value(values::rx_value& vvalue) const;
+	rx_result from_rx_value(values::rx_value&& vvalue);
+	rx_result from_rx_value(const values::rx_value& vvalue);
+	void set_timestamp(rx_time val);
 	uint32_t status_code = 0;
 	variant_type value;
 	rx_time_struct server_ts{ 0 };
@@ -511,6 +532,67 @@ struct write_value
 	}
 };
 
+struct opcua_view_description
+{
+	rx_node_id view_id;
+	rx_time timestamp;
+	uint32_t view_version = 0;
+
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
+
+struct opcua_browse_description
+{
+	rx_node_id node_id;
+	browse_direction_type direction;
+	rx_node_id reference_type_id;
+	bool sub_types = false;
+	uint32_t node_class_mask = 0xff;
+	uint32_t result_mask = 0xff;
+
+	std::set<rx_node_id> resolved_reference_ids;
+
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
+
+
+struct reference_description
+{
+	rx_node_id reference_id;
+	bool is_forward = false;
+	rx_node_id target_id;
+	qualified_name browse_name;
+	localized_text display_name;
+	node_class_type node_class;
+	rx_node_id type_id;
+
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
+
+
+struct browse_result_internal
+{
+	rx_result result;
+	opcua_result_t status_code;
+	std::vector<reference_description> references;
+	void add_reference_data(bool forward, const opcua_addr_space::reference_data& data, const opcua_browse_description& to_browse);
+};
+
+struct opcua_browse_result
+{
+	opcua_result_t status_code;
+	byte_string continuation_point;
+	std::vector<reference_description> references;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
 
 struct user_token_policy
 {

@@ -41,8 +41,8 @@
 #include "dummy.h"
 
 namespace rx {
-class base_meta_reader;
 class base_meta_writer;
+class base_meta_reader;
 
 } // namespace rx
 
@@ -94,6 +94,9 @@ float extract_value(const typed_value_type& from, const float& default_value);
 double extract_value(const typed_value_type& from, const double& default_value);
 string_type extract_value(const typed_value_type& from, const string_type& default_value);
 byte_string extract_value(const typed_value_type& from, const byte_string& default_value);
+rx_time_struct extract_value(const typed_value_type& from, const rx_time_struct& default_value);
+rx_uuid_t extract_value(const typed_value_type& from, const rx_uuid_t& default_value);
+string_array extract_value(const typed_value_type& from, const string_array& default_value);
 
 bool assign_value(typed_value_type& from, bool value);;
 bool assign_value(typed_value_type& from, int8_t value);
@@ -114,6 +117,7 @@ bool assign_value(typed_value_type& from, rx_time_struct value);
 bool assign_value(typed_value_type& from, rx_time value);
 bool assign_value(typed_value_type& from, const rx_uuid_t& value);
 bool assign_value(typed_value_type& from, const byte_string& value);
+bool assign_value(typed_value_type& from, const string_array& value);
 
 
 

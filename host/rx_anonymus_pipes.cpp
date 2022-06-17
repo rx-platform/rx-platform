@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -46,7 +46,7 @@ namespace host {
 
 namespace pipe {
 
-// Class host::pipe::local_pipe_port 
+// Class host::pipe::local_pipe_port
 
 local_pipe_port::local_pipe_port (const pipe_client_t& pipes, rx_pipe_host* host)
       : pipe_handles_(pipes),
@@ -124,7 +124,7 @@ rx_result local_pipe_port::stop_passive ()
 }
 
 
-// Class host::pipe::anonymus_pipe_client 
+// Class host::pipe::anonymus_pipe_client
 
 anonymus_pipe_client::anonymus_pipe_client (const pipe_client_t& pipes)
       : handles_(pipes)
@@ -173,7 +173,7 @@ void anonymus_pipe_client::close_pipe ()
 }
 
 
-// Class host::pipe::anonymus_pipe_endpoint 
+// Class host::pipe::anonymus_pipe_endpoint
 
 anonymus_pipe_endpoint::anonymus_pipe_endpoint (rx_pipe_host* host, local_pipe_port* my_port)
       : host_(host),
@@ -187,7 +187,7 @@ anonymus_pipe_endpoint::anonymus_pipe_endpoint (rx_pipe_host* host, local_pipe_p
 	stack_entry_.close_function = [](rx_protocol_stack_endpoint* reference, rx_protocol_result_t reason)->rx_protocol_result_t
 		{
 			anonymus_pipe_endpoint* whose = (anonymus_pipe_endpoint*)reference->user_data;
-			
+
 			whose->close();
 
 			rx_notify_closed(reference, RX_PROTOCOL_OK);
@@ -254,7 +254,6 @@ rx_protocol_result_t anonymus_pipe_endpoint::send_function (rx_protocol_stack_en
 	if (packet.buffer && packet.buffer->buffer_ptr && packet.buffer->size > 0)
 	{
 		anonymus_pipe_endpoint* self = reinterpret_cast<anonymus_pipe_endpoint*>(reference->user_data);
-		using job_type = rx_platform::jobs::function_job<rx_packet_buffer>;
 		auto packet_id = packet.id;
 
 		rx_packet_buffer copy_buff;

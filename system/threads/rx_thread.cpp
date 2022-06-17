@@ -449,7 +449,7 @@ void physical_job_thread::append (job_ptr pjob)
 {
 	bool was_empty = false;
 	{
-		locks::auto_lock dummy(&lock_);
+		locks::auto_lock_t dummy(&lock_);
 		was_empty = queue_.empty();
 		queue_.push(pjob);
 	}
@@ -463,7 +463,7 @@ bool physical_job_thread::wait (std::vector<job_ptr>& queued, uint32_t timeout)
 	if (RX_WAIT_0 != has_job_.wait_handle(timeout))
 		return false;
 
-	locks::auto_lock dummy(&lock_);
+	locks::auto_lock_t dummy(&lock_);
 
 	RX_ASSERT(!queue_.empty());
 	while (!queue_.empty())
@@ -482,7 +482,7 @@ void physical_job_thread::stop (uint32_t timeout)
 	if (current_)
 		current_->cancel();
 	wait_handle(timeout);
-	locks::auto_lock dummy(&lock_);
+	locks::auto_lock_t dummy(&lock_);
 	while (!queue_.empty())
 	{
 		if (queue_.front())

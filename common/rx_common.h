@@ -561,6 +561,9 @@ RX_COMMON_API int rx_init_time_value(struct typed_value_type* val, const rx_time
 RX_COMMON_API int rx_init_node_id_value(struct typed_value_type* val, const rx_node_id_struct* data);
 
 
+RX_COMMON_API int rx_init_string_array_value(struct typed_value_type* val, const char** data, size_t size);
+
+
 RX_COMMON_API int rx_parse_string(struct typed_value_type* val, const char* data);
 
 

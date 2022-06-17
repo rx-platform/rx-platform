@@ -578,6 +578,87 @@ byte_string extract_value(const typed_value_type& from, const byte_string& defau
 	return default_value;*/
 }
 
+rx_time_struct extract_value(const typed_value_type& from, const rx_time_struct& default_value)
+{
+	if (from.value_type == RX_TIME_TYPE)
+	{
+		return from.value.time_value;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_TIME_TYPE))
+			return temp_val.value.time_value;
+	}
+	return default_value;
+}
+
+rx_uuid_t extract_value(const typed_value_type& from, const rx_uuid_t& default_value)
+{
+	if (from.value_type == RX_UUID_TYPE)
+	{
+#ifdef RX_VALUE_SIZE_16
+		return from.value.uuid_value;
+#else
+		return *from.value.uuid_value;
+#endif
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_UUID_TYPE))
+		{
+#ifdef RX_VALUE_SIZE_16
+			return temp_val.value.uuid_value;
+#else
+			return *temp_val.value.uuid_value;
+#endif
+		}
+	}
+	return default_value;
+}
+
+
+string_array extract_value(const typed_value_type& from, const string_array& default_value)
+{
+	if (from.value_type == RX_STRING_TYPE)
+	{
+		return string_array{ string_type(rx_c_str(&from.value.string_value)) };
+	}
+	else if (from.value_type == (RX_STRING_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		string_array ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.emplace_back(rx_c_str(&from.value.array_value.values[i].string_value));
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_STRING_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			string_array ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.emplace_back(rx_c_str(&temp_val.value.array_value.values[i].string_value));
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+
+
 
 bool assign_value(typed_value_type& from, bool value)
 {
@@ -667,6 +748,32 @@ bool assign_value(typed_value_type& from, const byte_string& value)
 			return std::move(*temp_val.value_.value.bytes_value);
 	}
 	return value;*/
+}
+
+bool assign_value(typed_value_type& from, const string_array& value)
+{
+	if (value.empty())
+	{
+		return rx_init_string_array_value(&from, nullptr, 0);
+	}
+	else
+	{
+		const char* static_vals[0x10];
+		const char** vals = static_vals;
+		size_t size = value.size();
+		if(size>sizeof(static_vals)/sizeof(static_vals[0]))
+			vals = new const char*[size];
+
+		for (size_t i = 0; i < size; i++)
+		{
+			vals[i] = value[i].empty() ? nullptr : value[i].c_str();
+		}
+		bool ret = rx_init_string_array_value(&from, vals, size);
+		if (size > sizeof(static_vals) / sizeof(static_vals[0]))
+			delete[] vals;
+
+		return ret;
+	}
 }
 
 bool set_integer_to_value(typed_value_type& to, int64_t val, rx_value_t type)

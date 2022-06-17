@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -405,7 +405,7 @@ public:
 	rx_node_id(const rx_node_id_struct* right);
 	rx_node_id(rx_node_id_struct right) noexcept;
 	rx_node_id(const rx_node_id &right);
-	rx_node_id(uint32_t id, uint16_t namesp = DEFAULT_NAMESPACE);
+	rx_node_id(uint32_t id, uint16_t namesp = DEFAULT_NAMESPACE) noexcept;
 	rx_node_id(const char* id, uint16_t namesp = DEFAULT_NAMESPACE);
 	rx_node_id(rx_uuid_t& id, uint16_t namesp = DEFAULT_NAMESPACE);
 	rx_node_id(const byte_string& id, uint16_t namesp = DEFAULT_NAMESPACE);

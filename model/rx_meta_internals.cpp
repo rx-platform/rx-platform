@@ -675,6 +675,7 @@ rx_result types_repository<typeT>::register_type (typename types_repository<type
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
+		registered_types_.emplace(what->meta_info.id, type_data_t{ what, rx_node_id::null_id });
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
 			rx_node_id parent_id;
@@ -693,10 +694,6 @@ rx_result types_repository<typeT>::register_type (typename types_repository<type
 			collect_and_add_depedencies(*what, parent_id);
 			auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
 			platform_types_manager::instance().get_dependecies_cache().add_dependency(id, parent_id);
-		}
-		else
-		{
-			registered_types_.emplace(what->meta_info.id, type_data_t{ what, rx_node_id::null_id });
 		}
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info.id, typeT::type_id, what->meta_info);
 		RX_ASSERT(type_res);
@@ -834,7 +831,17 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 	{
 		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second.target);
 		if (init_result)
+		{
 			one.second.state = runtime_state::runtime_state_running;
+		}
+		else
+		{
+			std::ostringstream ss;
+			ss << "Unable to start runtime "
+				<< one.second.target->meta_info().get_full_path()
+				<< " :" << init_result.errors_line();
+			META_LOG_ERROR("types_repository", 500, ss.str());
+		}
 
 		ns::rx_directory_resolver dirs;
 		dirs.add_paths({ one.second.target->meta_info().path });

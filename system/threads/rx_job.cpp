@@ -132,7 +132,7 @@ timer_job::~timer_job()
 
 void timer_job::set_executer (threads::job_thread* executer)
 {
-	locks::auto_lock dummy(&lock_);
+	locks::auto_lock_t dummy(&lock_);
 	executer_ = executer;
 }
 

@@ -33,16 +33,16 @@
 
 
 
-// rx_protocol_templates
-#include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
+// rx_opcua_std
+#include "protocols/opcua/rx_opcua_std.h"
 // rx_opcua_addr_space
 #include "protocols/opcua/rx_opcua_addr_space.h"
 // rx_opcua_server
 #include "protocols/opcua/rx_opcua_server.h"
-// rx_opcua_std
-#include "protocols/opcua/rx_opcua_std.h"
 
 namespace protocols {
 namespace opcua {
@@ -148,6 +148,12 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
       rx_result unregister_node (opcua_addr_space::opcua_node_base* what);
 
       void read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const;
+
+      void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const;
+
+      rx_result fill_relation_types (const rx_node_id& base_id, bool include_subtypes, std::set<rx_node_id>& buffer) const;
+
+      rx_result set_node_value (const rx_node_id& id, values::rx_value&& val);
 
 
   protected:

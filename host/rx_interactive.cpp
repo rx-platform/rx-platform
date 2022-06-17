@@ -655,7 +655,6 @@ interactive_console_endpoint::interactive_console_endpoint (interactive_console_
 	stack_entry_.send_function = &interactive_console_endpoint::send_function;
 	stack_entry_.close_function = [](rx_protocol_stack_endpoint* reference, rx_protocol_result_t reason)->rx_protocol_result_t
 		{
-			interactive_console_endpoint* whose = (interactive_console_endpoint*)reference->user_data;
 			if(!rx_gate::instance().is_shutting_down())
 				rx_platform::rx_gate::instance().shutdown("Interactive Shutdown");
 
@@ -717,7 +716,6 @@ rx_result interactive_console_endpoint::run_interactive (std::function<void(int6
 rx_protocol_result_t interactive_console_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
 	interactive_console_endpoint* self = reinterpret_cast<interactive_console_endpoint*>(reference->user_data);
-	using job_type = rx_platform::jobs::function_job<rx_reference_ptr, std::vector<uint8_t>&&>;
 	std::vector<uint8_t> captured(packet.buffer->buffer_ptr, packet.buffer->buffer_ptr + packet.buffer->size);
 	auto packet_id = packet.id;
 

@@ -316,6 +316,26 @@ RX_COMMON_API int rx_init_node_id_value(struct typed_value_type* val, const rx_n
 }
 
 
+RX_COMMON_API int rx_init_string_array_value(struct typed_value_type* val, const char** data, size_t size)
+{
+	val->value_type = RX_STRING_TYPE | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = size;
+	if (size)
+	{
+		val->value.array_value.values = malloc(sizeof(union rx_value_union) * size);
+		for (int i = 0; i < size; i++)
+		{
+			rx_init_string_value_struct(&val->value.array_value.values[i].string_value, data[i], -1);
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+
+
 void assign_value(union rx_value_union* left, const union rx_value_union* right, rx_value_t type)
 {
 	// copy memory first

@@ -37,6 +37,7 @@
 #include "rx_opcua_discovery.h"
 #include "rx_opcua_session.h"
 #include "rx_opcua_attributes.h"
+#include "rx_opcua_view.h"
 
 #include "rx_opcua_identifiers.h"
 using namespace protocols::opcua::ids;
@@ -75,6 +76,9 @@ void opcua_requests_repository::init_requests ()
 	register_request(std::move(ptr));
 	// attributes service set
 	ptr = std::make_unique<opcua_attributes::opcua_read_request>();
+	register_request(std::move(ptr));
+	// view service set
+	ptr = std::make_unique<opcua_view::opcua_browse_request>();
 	register_request(std::move(ptr));
 }
 

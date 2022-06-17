@@ -4,8 +4,8 @@
 
 #define RX_TERM_NAME "{rx-platform} Terminal"
 #define RX_TERM_MAJOR_VERSION 1
-#define RX_TERM_MINOR_VERSION 4
-#define RX_TERM_BUILD_NUMBER 1
+#define RX_TERM_MINOR_VERSION 5
+#define RX_TERM_BUILD_NUMBER 0
 
 
 // version 0.13.1 introduced read, write and pull commands

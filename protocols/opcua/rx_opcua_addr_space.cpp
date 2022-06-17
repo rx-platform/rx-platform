@@ -111,6 +111,11 @@ void opcua_base_node_type::internal_read_attribute (attribute_id id, const strin
     value.status_code = opcid_Bad_AttributeIdInvalid;
 }
 
+rx_result opcua_base_node_type::set_node_value (values::rx_value&& val)
+{
+    return RX_NOT_SUPPORTED;
+}
+
 
 // Class protocols::opcua::opcua_addr_space::opcua_variable_base_node 
 
@@ -246,18 +251,31 @@ void opcua_variable_node::internal_read_attribute (attribute_id id, const string
 {
 }
 
-
+//constexpr reference_data::reference_data(uint32_t ref_id, uint32_t targ_id)
+//    : resolved_node{ nullptr }
+//    , reference_id{ rx_node_id(ref_id, 0) }
+//    , target_id{ rx_node_id(targ_id, 0) }
+//{
+//
+//}
 // Class protocols::opcua::opcua_addr_space::reference_data 
 
 reference_data::reference_data()
-    : forward(false)
+    : resolved_node(nullptr)
 {
 }
 
-reference_data::reference_data (rx_node_id ref_id, rx_node_id targ_id, bool fwd)
-    : reference_id(std::move(ref_id))
+reference_data::reference_data (rx_node_id ref_id, rx_node_id targ_id)
+    : resolved_node(nullptr)
+    , reference_id(std::move(ref_id))
     , target_id(std::move(targ_id))
-    , forward(fwd)
+{
+}
+
+reference_data::reference_data (opcua_std_ref_t data)
+    : resolved_node{ reinterpret_cast<opcua_node_base*>((uintptr_t)data.target_idx) }
+    , reference_id{ data.ref_id, 0 }
+    , target_id{ data.target_id, 0 }
 {
 }
 
@@ -267,6 +285,9 @@ reference_data::reference_data (rx_node_id ref_id, rx_node_id targ_id, bool fwd)
 
 
 // Class protocols::opcua::opcua_addr_space::opcua_address_space_base 
+
+
+// Class protocols::opcua::opcua_addr_space::node_references 
 
 
 } // namespace opcua_addr_space

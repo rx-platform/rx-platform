@@ -2,10 +2,10 @@
 
 #include "version/rx_version.h"
 
-#define RX_SERVER_NAME "Molecule" 
+#define RX_SERVER_NAME "Molecule"
 #define RX_SERVER_MAJOR_VERSION 1
 #define RX_SERVER_MINOR_VERSION 7
-#define RX_SERVER_BUILD_NUMBER 6
+#define RX_SERVER_BUILD_NUMBER 7
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>

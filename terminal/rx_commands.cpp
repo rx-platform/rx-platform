@@ -126,7 +126,7 @@ server_command_manager::~server_command_manager()
 void server_command_manager::register_command (server_command_base_ptr cmd)
 {
 	string_type con_name = cmd->get_console_name();
-	locks::auto_lock dummy(&lock_);
+	locks::auto_lock_t dummy(&lock_);
 	registered_commands_.emplace(con_name, cmd);
 }
 
@@ -205,7 +205,7 @@ void server_command_manager::register_internal_commands ()
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)
 {
-	locks::auto_lock dummy(&lock_);
+	locks::auto_lock_t dummy(&lock_);
 	auto it = registered_commands_.find(name);
 	if (it != registered_commands_.end())
 	{
@@ -241,7 +241,7 @@ void server_command_manager::get_class_info (string_type& class_name, string_typ
 
 void server_command_manager::get_commands (std::vector<command_ptr>& sub_items) const
 {
-	locks::const_auto_lock dummy(&lock_);
+	locks::const_auto_lock_t dummy(&lock_);
 	sub_items.reserve(registered_commands_.size());
 	for (const auto& one : registered_commands_)
 		sub_items.emplace_back(one.second);

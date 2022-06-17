@@ -143,13 +143,13 @@ bool dispatcher_subscriber::disconnect_dispatcher ()
 
 void dispatcher_subscriber::register_timed ()
 {
-	locks::auto_lock dummy(&time_aware_subscribers_lock_);
+	locks::auto_lock_t dummy(&time_aware_subscribers_lock_);
 	time_aware_subscribers_.emplace(smart_this());
 }
 
 void dispatcher_subscriber::unregister_timed ()
 {
-	locks::auto_lock dummy(&time_aware_subscribers_lock_);
+	locks::auto_lock_t dummy(&time_aware_subscribers_lock_);
 	time_aware_subscribers_.erase(smart_this());
 }
 
@@ -239,7 +239,7 @@ int dispatcher_subscriber::_internal_read_from_callback (size_t count, uint32_t 
 
 void dispatcher_subscriber::deinitialize ()
 {
-	locks::auto_lock dummy(&time_aware_subscribers_lock_);
+	locks::auto_lock_t dummy(&time_aware_subscribers_lock_);
 	time_aware_subscribers_.clear();
 }
 

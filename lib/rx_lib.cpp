@@ -736,7 +736,7 @@ rx_node_id::rx_node_id(rx_node_id_struct right) noexcept
 	rx_move_node_id(&data_, &right);
 }
 
-rx_node_id::rx_node_id(const rx_node_id &right)
+rx_node_id::rx_node_id(const rx_node_id &right) 
 {
 	auto ret = rx_copy_node_id(&data_, &right.data_);
 	RX_ASSERT(ret==RX_OK);
@@ -744,7 +744,7 @@ rx_node_id::rx_node_id(const rx_node_id &right)
         rx_init_null_node_id(&data_);
 }
 
-rx_node_id::rx_node_id(uint32_t id, uint16_t namesp)
+rx_node_id::rx_node_id(uint32_t id, uint16_t namesp) noexcept
 {
 	auto ret = rx_init_int_node_id(&data_, id, namesp);
 	RX_ASSERT(ret==RX_OK);

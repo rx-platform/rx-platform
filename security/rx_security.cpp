@@ -157,7 +157,7 @@ rx_security_handle_t security_manager::context_activated (security_context::smar
 	char buff[0x100];
 	snprintf(buff, sizeof(buff), "User %s, security context created.", who->get_full_name().c_str());
 	SECURITY_LOG_INFO("manager", 900, buff);
-	locks::auto_lock dummy(&active_lock_);
+	locks::auto_lock_t dummy(&active_lock_);
 	
 	intptr_t new_id;
 	do
@@ -177,7 +177,7 @@ rx_security_handle_t security_manager::context_deactivated (security_context::sm
 	char buff[0x100];
 	snprintf(buff, sizeof(buff), "User %s, security context destroying...", who->get_full_name().c_str());
 	SECURITY_LOG_INFO("manager", 900, buff);
-	locks::auto_lock dummy(&active_lock_);
+	locks::auto_lock_t dummy(&active_lock_);
 	auto it = active_contexts_.find(who->get_handle());
 	if (it != active_contexts_.end())
 	{
@@ -195,7 +195,7 @@ rx_security_handle_t security_manager::context_deactivated (security_context::sm
 
 void security_manager::get_active_contexts (std::vector<security_context_ptr >& ctxs)
 {
-	locks::auto_lock dummy(&active_lock_);
+	locks::auto_lock_t dummy(&active_lock_);
 	ctxs.reserve(active_contexts_.size());
 	for (auto one : active_contexts_)
 	{
@@ -208,7 +208,7 @@ security_context_ptr security_manager::get_context (rx_security_handle_t handle)
 	if(handle==0)
 		return security_context_ptr::null_ptr;
 
-	locks::auto_lock dummy(&active_lock_);
+	locks::auto_lock_t dummy(&active_lock_);
 	auto it = active_contexts_.find(handle);
 	if (it != active_contexts_.end())
 	{

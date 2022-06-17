@@ -36,6 +36,8 @@
 // rx_opcua_addr_space
 #include "protocols/opcua/rx_opcua_addr_space.h"
 
+#include "lib/rx_const_size_vector.h"
+#include "lib/rx_values.h"
 
 
 namespace protocols {
@@ -43,16 +45,40 @@ namespace protocols {
 namespace opcua {
 
 namespace opcua_addr_space {
-class opcua_std_address_space;
-rx_result build_standard_address_space_UANodeSet2(opcua_std_address_space& server);
+enum class std_address_space_type
+{
+    basic_server    = 1,
+    full            = 255
+};
 
+class opcua_std_address_space;
+class opcua_std_address_space_builder;
+
+struct reference_data_argument_t
+{
+    const opcua_std_ref_t* data{ nullptr };
+    const uint32_t size{ 0 };
+};
+struct opcua_std_node_argument_t
+{
+    const char* name;
+    const node_class_type class_type;
+    const uint32_t id;
+    const reference_data_argument_t references;
+    const reference_data_argument_t inverse_references;
+    const uint32_t type_id{ 0 };
+    const uint16_t bit_options{ 0 };
+    const char* inverse_name{ nullptr };
+
+};
 
 
 
 
 class opcua_std_node : public opcua_node_base  
 {
-    typedef std::bitset<8> bit_data_type;
+protected:
+    typedef std::bitset<16> bit_data_type;
 
     // bit indexes in bit_data
     static constexpr int abstract_idx = 0;
@@ -62,15 +88,34 @@ class opcua_std_node : public opcua_node_base
     static constexpr int executable_idx = 4;
     static constexpr int user_executable_idx = 5;
 
+    static constexpr int events_subscribe_idx = 6;
+    static constexpr int events_history_read_idx = 7;
+    static constexpr int events_history_write_idx = 8;
+
+
   public:
       opcua_std_node();
 
       opcua_std_node (uint32_t id);
 
+      opcua_std_node (const opcua_std_node_argument_t& arg);
 
-      void read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value, const rx_time& config_ts) const;
+
+      void read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
+
+      void browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const;
+
+      node_class_type get_node_class () const;
 
       rx_node_id get_node_id () const;
+
+      qualified_name get_browse_name () const;
+
+      string_type get_display_name () const;
+
+      rx_node_id get_type_id () const;
+
+      rx_result set_node_value (values::rx_value&& val);
 
 
       uint32_t node_id;
@@ -82,20 +127,69 @@ class opcua_std_node : public opcua_node_base
       opcua_std_node& operator=(opcua_std_node&&) noexcept = default;
   protected:
 
-  private:
-
       node_class_type node_class;
+
+      bit_data_type bit_data;
+
+
+  private:
 
       const char* name;
 
       const char* inverse_name;
 
-      bit_data_type bit_data;
+      uint32_t type_id;
 
 
-      friend rx_result build_standard_address_space_UANodeSet2(opcua_std_address_space& server);
 
+      node_references references_;
+
+      friend class opcua_std_address_space_builder;
+      friend rx_result build_standard_address_space(opcua_std_address_space & server, const string_type & server_uri);
     friend class opcua_std_address_space;
+};
+
+
+struct opcua_std_valued_node_argument_t
+{
+    opcua_std_node_argument_t base_data;
+    uint32_t data_type_id;
+    int value_rank;
+    std::initializer_list<uint32_t> dimensions;
+};
+
+
+
+
+class opcua_std_valued_node : public opcua_std_node  
+{
+
+  public:
+      opcua_std_valued_node();
+
+      opcua_std_valued_node (opcua_std_valued_node_argument_t arg);
+
+
+      void read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
+
+      rx_result set_node_value (values::rx_value&& val);
+
+
+  protected:
+
+  private:
+
+      uint32_t data_type_id;
+
+      data_value value;
+
+      int value_rank;
+
+      const_size_vector<uint32_t> dimensions;
+
+
+      friend class opcua_std_address_space_builder;
+     // friend rx_result build_standard_address_space_UANodeSet2(opcua_std_address_space& server);
 };
 
 
@@ -107,7 +201,8 @@ class opcua_std_node : public opcua_node_base
 class opcua_std_address_space : public opcua_address_space_base  
 {
     typedef std::vector<opcua_std_node> registered_nodes_type;
-
+    typedef std::vector<opcua_std_valued_node> registered_valued_nodes_type;
+    typedef std::map<uint32_t, std::set<uint32_t> > references_tree_type;
 
   public:
       opcua_std_address_space();
@@ -121,6 +216,12 @@ class opcua_std_address_space : public opcua_address_space_base
 
       void read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const;
 
+      void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const;
+
+      rx_result fill_relation_types (const rx_node_id& base_id, bool include_subtypes, std::set<rx_node_id>& buffer) const;
+
+      rx_result set_node_value (const rx_node_id& id, values::rx_value&& val);
+
 
   protected:
 
@@ -130,16 +231,24 @@ class opcua_std_address_space : public opcua_address_space_base
 
       opcua_std_address_space::registered_nodes_type::iterator get_by_id (uint32_t id);
 
+      opcua_std_address_space::registered_valued_nodes_type::const_iterator get_valued_by_id (uint32_t id) const;
+
+      opcua_std_address_space::registered_valued_nodes_type::iterator get_valued_by_id (uint32_t id);
 
 
-      locks::slim_lock ns_lock_;
+
+      locks::rw_slim_lock ns_lock_;
 
       registered_nodes_type registered_nodes_;
 
+      registered_valued_nodes_type registered_valued_nodes_;
+
       rx_time config_ts_;
 
-      friend rx_result build_standard_address_space_UANodeSet2(opcua_std_address_space& server);
+      references_tree_type references_tree_;
 
+      friend class opcua_std_address_space_builder;
+      friend rx_result build_standard_address_space(opcua_std_address_space& server, const string_type& server_uri);
 };
 
 

@@ -549,7 +549,7 @@ ua_binary_ostream::~ua_binary_ostream()
 }
 ua_binary_ostream& ua_binary_ostream::operator << (bool val)
 {
-	uint32_t temp = val ? 1 : 0;
+	uint8_t temp = val ? 1 : 0;
 	auto result = buffer_->write_to_buffer(temp);
 	return *this;
 }
@@ -850,11 +850,11 @@ ua_binary_ostream& ua_binary_ostream::operator << (const data_value& val)
 	}
 	if (encoding & 0x8)
 	{
-		(*this) << val.source_ps;
+		(*this) << val.server_ts;
 	}
 	if (encoding & 0x10)
 	{
-		(*this) << val.server_ts;
+		(*this) << val.server_ps;
 	}
 	if (encoding & 0x20)
 	{

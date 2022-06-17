@@ -179,6 +179,42 @@ void empty_slim_lock::unlock ()
 }
 
 
+// Class rx::locks::rw_slim_lock 
+
+rw_slim_lock::rw_slim_lock()
+{
+	rx_rw_slim_lock_create(&lock_);
+}
+
+
+rw_slim_lock::~rw_slim_lock()
+{
+	rx_rw_slim_lock_destroy(&lock_);
+}
+
+
+
+void rw_slim_lock::read_lock ()
+{
+	rx_rw_slim_lock_aquire_reader(&lock_);
+}
+
+void rw_slim_lock::read_unlock ()
+{
+	rx_rw_slim_lock_release_reader(&lock_);
+}
+
+void rw_slim_lock::write_lock ()
+{
+	rx_rw_slim_lock_aquire_writter(&lock_);
+}
+
+void rw_slim_lock::write_unlock ()
+{
+	rx_rw_slim_lock_release_writter(&lock_);
+}
+
+
 } // namespace locks
 } // namespace rx
 

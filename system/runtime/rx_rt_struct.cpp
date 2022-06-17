@@ -2286,16 +2286,23 @@ void variable_data::process_runtime (runtime_process_context* ctx)
 			if (!result)
 			{
 				result.register_error("Unable to filter read value.");
+				prepared_value.set_quality(RX_BAD_QUALITY_SYNTAX_ERROR);
 			}
 		}
 	}
 	else
 	{
-
+		prepared_value = value;
+		prepared_value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
 
 	}
 	if (!value.compare(prepared_value, time_compare_type::skip))
 	{
+		if (!prepared_value.convert_to(value.get_type()))
+		{
+			prepared_value = value;
+			prepared_value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+		}
 		// value has changed
 		value = prepared_value;
 

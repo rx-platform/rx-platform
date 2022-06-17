@@ -365,7 +365,7 @@ rx_result tcp_client_port::initialize_runtime (runtime::runtime_init_context& ct
         RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
     bind_result = send_timeout_.bind("Timeouts.SendTimeout", ctx);
     if (!bind_result)
-        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
+        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.SendTimeout");
     bind_result = connect_timeout_.bind("Timeouts.ConnectTimeout", ctx);
     if (!bind_result)
         RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ConnectTimeout");

@@ -33,16 +33,18 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// dummy
+#include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 
 namespace rx_internal {
 namespace interfaces {
 namespace ports_lib {
-template <typename addrT> class full_duplex_addr_packet_port;
 template <typename addrT> class listener_instance;
+template <typename addrT> class full_duplex_addr_packet_port;
 
 } // namespace ports_lib
 } // namespace interfaces
@@ -76,6 +78,7 @@ struct duplex_port_adapter
     static std::pair<bool, key_type> get_key_from_packet_initiator(const recv_protocol_packet& packet);
     static listener_key_type get_key_from_addresses_listener(const addrT& local_address, const addrT& remote_address);
     static std::pair<bool, listener_key_type> get_key_from_packet_listener(const recv_protocol_packet& packet);
+    static listener_key_type get_key_from_listener(const listener_data_type<addrT>& session_data);
     static void fill_send_packet(send_protocol_packet& packet, const initiator_data_type<addrT>& session_data);
     static void fill_send_packet(send_protocol_packet& packet, const listener_data_type<addrT>& session_data);
 
@@ -178,6 +181,8 @@ class listener_instance
 
       rx_protocol_result_t listener_connected_received (rx_session* session);
 
+      void listener_closed_received (rx_protocol_result_t result);
+
       rx_protocol_result_t remove_listener (const listener_key_type& key);
 
 
@@ -265,7 +270,7 @@ protected:
 
       rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
-      virtual void destroy_endpoint (rx_protocol_stack_endpoint* what) = 0;
+      void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
       rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
 
@@ -277,9 +282,14 @@ protected:
 
       rx_result stop_passive ();
 
+      rx_result initialize_runtime (runtime_init_context& ctx);
+
       rx_result start_runtime (runtime_start_context& ctx);
 
       rx_result stop_runtime (runtime_stop_context& ctx);
+
+
+      rx_platform::runtime::io_types::simple_port_status status;
 
 
   protected:
@@ -309,6 +319,8 @@ protected:
 
       std::atomic<current_port_state> state_;
 
+      remote_local_value<uint32_t> session_timeout_;
+
 
 };
 
@@ -332,8 +344,6 @@ Byte address routing port implementation, for both initiators and listeners");
     DECLARE_REFERENCE_PTR(byte_routing_port);
 
   public:
-
-      void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
       void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
@@ -365,8 +375,6 @@ IP4 routing port implementation, for both initiators and listeners");
     DECLARE_REFERENCE_PTR(ip4_routing_port);
 
   public:
-
-      void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
       void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 

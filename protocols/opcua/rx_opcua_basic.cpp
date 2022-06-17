@@ -62,6 +62,7 @@ opcua_basic_server_port::opcua_basic_server_port()
 			, app_name_, app_uri_, this);
 		return construct_func_type::result_type{ &rt->stack_entry, rt };
 	};
+	address_space.set_parent(&std_address_space);
 }
 
 
@@ -220,6 +221,30 @@ rx_result opcua_simple_address_space::unregister_node (opcua_addr_space::opcua_n
 
 void opcua_simple_address_space::read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const
 {
+	if (parent_ != nullptr)
+		parent_->read_attributes(to_read, values);
+}
+
+void opcua_simple_address_space::browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const
+{
+	if (parent_ != nullptr)
+		parent_->browse(view, to_browse, results);
+}
+
+rx_result opcua_simple_address_space::fill_relation_types (const rx_node_id& base_id, bool include_subtypes, std::set<rx_node_id>& buffer) const
+{
+	if (parent_ != nullptr)
+		return parent_->fill_relation_types(base_id, include_subtypes, buffer);
+	else
+		return RX_NOT_IMPLEMENTED;
+}
+
+rx_result opcua_simple_address_space::set_node_value (const rx_node_id& id, values::rx_value&& val)
+{
+	if (parent_ != nullptr)
+		return parent_->set_node_value(id, std::move(val));
+	else
+		return RX_INVALID_PATH;
 }
 
 
