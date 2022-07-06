@@ -38,6 +38,8 @@
 #include "rx_opcua_session.h"
 #include "rx_opcua_attributes.h"
 #include "rx_opcua_view.h"
+#include "rx_monitoreditem_set.h"
+#include "rx_opcua_subs_set.h"
 
 #include "rx_opcua_identifiers.h"
 using namespace protocols::opcua::ids;
@@ -50,6 +52,54 @@ namespace protocols {
 namespace opcua {
 
 namespace requests {
+
+// Class protocols::opcua::requests::opcua_request_base 
+
+
+rx_result opcua_request_base::deserialize_binary (binary::ua_binary_istream& stream)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result opcua_request_base::deserialize_header_binary (binary::ua_binary_istream& stream)
+{
+	stream >> authentication_token;
+	stream >> timestamp;
+	stream >> request_handle;
+	stream >> diagnostics;
+	stream >> audit_entry_id;
+	stream >> timeout;
+	additional = stream.deserialize_extension<ua_extension>([](const rx_node_id& id) {
+		if (id.is_null())
+			return std::make_unique<ua_extension>();
+		else
+			return opcua_extension_ptr();
+		});
+	return true;
+}
+
+rx_result opcua_request_base::serialize_binary (binary::ua_binary_ostream& stream)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result opcua_request_base::serialize_header_binary (binary::ua_binary_ostream& stream)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+void opcua_request_base::move_header_to (opcua_request_base* where)
+{
+	where->additional = std::move(additional);
+	where->audit_entry_id = std::move(audit_entry_id);
+	where->authentication_token = std::move(authentication_token);
+	where->diagnostics = std::move(diagnostics);
+	where->request_handle = std::move(request_handle);
+	where->request_id = std::move(request_id);
+	where->timeout = std::move(timeout);
+	where->timestamp = std::move(timestamp);
+}
+
 
 // Class protocols::opcua::requests::opcua_requests_repository 
 
@@ -77,8 +127,26 @@ void opcua_requests_repository::init_requests ()
 	// attributes service set
 	ptr = std::make_unique<opcua_attributes::opcua_read_request>();
 	register_request(std::move(ptr));
+	ptr = std::make_unique<opcua_attributes::opcua_write_request>();
+	register_request(std::move(ptr));
 	// view service set
 	ptr = std::make_unique<opcua_view::opcua_browse_request>();
+	register_request(std::move(ptr));
+	ptr = std::make_unique<opcua_view::opcua_translate_request>();
+	register_request(std::move(ptr));
+	// monitored item service set
+	ptr = std::make_unique<opcua_monitoreditem::opcua_create_mon_items_request>();
+	register_request(std::move(ptr));
+	ptr = std::make_unique<opcua_monitoreditem::opcua_delete_mon_items_request>();
+	register_request(std::move(ptr));
+	// subscription service set
+	ptr = std::make_unique<opcua_subscription::opcua_create_subs_request>();
+	register_request(std::move(ptr));
+	ptr = std::make_unique<opcua_subscription::opcua_publish_request>();
+	register_request(std::move(ptr));
+	ptr = std::make_unique<opcua_subscription::opcua_republish_request>();
+	register_request(std::move(ptr));
+	ptr = std::make_unique<opcua_subscription::opcua_delete_subs_request>();
 	register_request(std::move(ptr));
 }
 
@@ -160,6 +228,49 @@ opcua_response_ptr opcua_requests_repository::get_response (const rx_node_id& id
 }
 
 
+// Class protocols::opcua::requests::opcua_response_base 
+
+opcua_response_base::opcua_response_base (const opcua_request_base& req)
+      : request_id(0),
+        request_handle(0),
+        result(0)
+{
+	timestamp = rx_time::now();
+	request_handle = req.request_handle;
+	request_id = req.request_id;
+}
+
+
+
+rx_result opcua_response_base::deserialize_binary (binary::ua_binary_istream& stream)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result opcua_response_base::deserialize_header_binary (binary::ua_binary_istream& stream)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result opcua_response_base::serialize_binary (binary::ua_binary_ostream& stream) const
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result opcua_response_base::serialize_header_binary (binary::ua_binary_ostream& stream)
+{
+	stream << timestamp;
+	stream << request_handle;
+	stream << result;
+	string_array strings;
+	diagnostics.fill_diagnostics_strings(strings, 0xffffffff);
+	stream << diagnostics;
+	stream << strings;
+	stream.serialize_extension(nullptr);
+	return true;
+}
+
+
 // Class protocols::opcua::requests::opcua_service_fault 
 
 opcua_service_fault::opcua_service_fault (const opcua_request_base& req, uint32_t result_code)
@@ -220,85 +331,6 @@ opcua_response_ptr opcua_unsupported_request::do_job (opcua_server_endpoint_ptr 
 {
 	auto ret_ptr = std::make_unique<requests::opcua_service_fault>(*this, opcid_Bad_NotSupported);
 	return ret_ptr;
-}
-
-
-// Class protocols::opcua::requests::opcua_request_base 
-
-
-rx_result opcua_request_base::deserialize_binary (binary::ua_binary_istream& stream)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-rx_result opcua_request_base::deserialize_header_binary (binary::ua_binary_istream& stream)
-{
-	stream >> authentication_token;
-	stream >> timestamp;
-	stream >> request_handle;
-	stream >> diagnostics;
-	stream >> audit_enrty_id;
-	stream >> timeout;
-	additional = stream.deserialize_extension([](const rx_node_id& id) {
-		if (id.is_null())
-			return std::make_unique<ua_extension>();
-		else
-			return opcua_extension_ptr();
-		});
-	return true;
-}
-
-rx_result opcua_request_base::serialize_binary (binary::ua_binary_ostream& stream)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-rx_result opcua_request_base::serialize_header_binary (binary::ua_binary_ostream& stream)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-
-// Class protocols::opcua::requests::opcua_response_base 
-
-opcua_response_base::opcua_response_base (const opcua_request_base& req)
-      : request_id(0),
-        request_handle(0),
-        result(0)
-{
-	timestamp = rx_time::now();
-	request_handle = req.request_handle;
-	request_id = req.request_id;
-}
-
-
-
-rx_result opcua_response_base::deserialize_binary (binary::ua_binary_istream& stream)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-rx_result opcua_response_base::deserialize_header_binary (binary::ua_binary_istream& stream)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-rx_result opcua_response_base::serialize_binary (binary::ua_binary_ostream& stream) const
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-rx_result opcua_response_base::serialize_header_binary (binary::ua_binary_ostream& stream)
-{
-	stream << timestamp;
-	stream << request_handle;
-	stream << result;
-	string_array strings;
-	diagnostics.fill_diagnostics_strings(strings, 0xffffffff);
-	stream << diagnostics;
-	stream << strings;
-	stream.serialize_extension(nullptr);
-	return true;
 }
 
 

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -62,7 +62,7 @@ typedef std::unique_ptr<opcua_response_base> opcua_response_ptr;
 
 
 
-class opcua_request_base
+class opcua_request_base 
 {
 
   public:
@@ -90,7 +90,7 @@ class opcua_request_base
 
       uint32_t diagnostics;
 
-      string_type audit_enrty_id;
+      string_type audit_entry_id;
 
       uint32_t timeout;
 
@@ -106,38 +106,10 @@ class opcua_request_base
       opcua_request_base& operator=(opcua_request_base&&) = delete;
   protected:
 
-  private:
+      void move_header_to (opcua_request_base* where);
 
-
-};
-
-
-
-
-
-
-class opcua_unsupported_request : public opcua_request_base  
-{
-
-  public:
-      opcua_unsupported_request (const rx_node_id& id);
-
-
-      rx_node_id get_binary_request_id ();
-
-      opcua_request_ptr create_empty () const;
-
-      rx_result deserialize_binary (binary::ua_binary_istream& stream);
-
-      opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
-
-
-  protected:
 
   private:
-
-
-      rx_node_id request_type_id_;
 
 
 };
@@ -151,7 +123,7 @@ typedef std::unique_ptr<opcua_response_base> opcua_response_ptr;
 
 
 
-class opcua_response_base
+class opcua_response_base 
 {
 
   public:
@@ -201,7 +173,7 @@ class opcua_response_base
 
 
 
-class opcua_requests_repository
+class opcua_requests_repository 
 {
     typedef std::map<rx_node_id, opcua_request_ptr> registered_requests_type;
     typedef std::map<rx_node_id, opcua_response_ptr> registered_responses_type;
@@ -259,6 +231,37 @@ class opcua_service_fault : public opcua_response_base
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class opcua_unsupported_request : public opcua_request_base  
+{
+
+  public:
+      opcua_unsupported_request (const rx_node_id& id);
+
+
+      rx_node_id get_binary_request_id ();
+
+      opcua_request_ptr create_empty () const;
+
+      rx_result deserialize_binary (binary::ua_binary_istream& stream);
+
+      opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
+
+
+  protected:
+
+  private:
+
+
+      rx_node_id request_type_id_;
 
 
 };

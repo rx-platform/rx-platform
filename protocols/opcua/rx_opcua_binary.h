@@ -64,7 +64,34 @@ public:
     ua_binary_istream& operator >> (localized_text& val);
     ua_binary_istream& operator >> (rx_uuid_t& val);
     ua_binary_istream& operator >> (rx_node_id& val);
-    opcua_extension_ptr deserialize_extension(std::function<opcua_extension_ptr(const rx_node_id& id)> creator_func);
+    template<typename baseType = ua_extension>
+    std::unique_ptr<baseType> deserialize_extension(std::function<std::unique_ptr<baseType>(const rx_node_id& id)> creator_func)
+    {
+        rx_node_id id;
+        (*this) >> id;
+        std::unique_ptr<baseType> val = creator_func(id);
+        uint8_t encoding;
+        (*this) >> encoding;
+        if (val != NULL)
+        {
+            if (encoding == 1)
+            {
+                int len;
+                (*this) >> len;
+                val->internal_deserialize_extension(*this);
+            }
+
+        }
+        else
+        {
+            if (encoding != 0)
+            {// do the dummy read for this stuff
+                byte_string dummy;
+                (*this) >> dummy;
+            }
+        }
+        return val;
+    }
     ua_binary_istream& operator >> (node_class_type& val);
     ua_binary_istream& operator >> (browse_direction_type& val);
     ua_binary_istream& operator >> (timestamps_return_type& val);
@@ -76,6 +103,7 @@ public:
     ua_binary_istream& operator >> (int64_t& val);
     ua_binary_istream& operator >> (uint64_t& val);
     ua_binary_istream& operator >> (change_trigger_type& val);
+    ua_binary_istream& operator >> (monitoring_mode_t& val);
 
     template<typename T>
     ua_binary_istream& operator >> (typename std::vector<T>& val)
@@ -164,6 +192,7 @@ public:
     ua_binary_ostream& operator << (int64_t val);
     ua_binary_ostream& operator << (uint64_t val);
     ua_binary_ostream& operator << (change_trigger_type val);
+    ua_binary_ostream& operator << (monitoring_mode_t val);
 
     template<typename T>
     ua_binary_ostream& operator << (const std::vector<T>& val)

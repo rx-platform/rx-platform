@@ -1495,6 +1495,8 @@ class runtime_data : public runtime_item
 	  typedef const_size_vector<index_data> items_type;
 
   public:
+      ~runtime_data();
+
 
       void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
 

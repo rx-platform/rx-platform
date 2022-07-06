@@ -94,6 +94,12 @@ runtime_variables_type g_empty_variables;
 
 // Parameterized Class rx_platform::runtime::structure::runtime_data 
 
+template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
+runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::~runtime_data()
+{
+}
+
+
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class cblocks_type, class vblocks_type, uint_fast8_t type_id>
 void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,cblocks_type,vblocks_type,type_id>::collect_data (data::runtime_values_data& data, runtime_value_type type) const

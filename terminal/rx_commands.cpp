@@ -170,6 +170,10 @@ void server_command_manager::register_internal_commands ()
 		nullptr, RX_OPCUA_SIMPLE_BINARY_SERVER_PORT_TYPE_ID, [] {
 			return rx_create_reference<protocols::opcua::opcua_server::opcua_basic_server_port>();
 		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().register_constructor(
+		RX_OPCUA_SIMPLE_MAPPER_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_server::opcua_basic_mapper>();
+		});
 	//TODO OPCUA
 
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(

@@ -498,7 +498,7 @@ runtime_handle_t runtime_connection_data::add_tag (rx_subscription_tag&& tag, ru
 		runtime_handle_t ret = (((runtime_handle_t)idx + 1) | connection_handle);
 		tag.mine_handle = ret;
 		tags_.emplace_back(std::move(tag));
-		connect_indexes.emplace_back(idx);
+		//connect_indexes.emplace_back(idx);
 		return ret;
 	}
 	else
@@ -509,7 +509,7 @@ runtime_handle_t runtime_connection_data::add_tag (rx_subscription_tag&& tag, ru
 		tag.mine_handle = ret;
 		RX_ASSERT(tags_[idx].path.empty());
 		tags_[idx] = std::move(tag);
-		connect_indexes.emplace_back(idx);
+		//connect_indexes.emplace_back(idx);
 		return ret;
 	}
 }
@@ -518,8 +518,9 @@ bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscrip
 {
 	if (!connecting && item)
 	{
-		connect_indexes.clear();
-		to_connect.clear();
+		string_array to_connect;
+		std::vector<size_t> connect_indexes;
+
 		std::vector<runtime_handle_t> to_disconnect;
 		std::vector<size_t> disconnect_indexes;
 		size_t count = tags_.size();
@@ -527,7 +528,7 @@ bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscrip
 		{
 			if (tags_[idx].path.empty())
 				continue;
-			if (tags_[idx].target_handle == 0)
+			if (tags_[idx].target_handle == 0 && tags_[idx].mine_handle != 0)
 			{
 				to_connect.emplace_back(tags_[idx].path);
 				connect_indexes.emplace_back(idx);
@@ -587,6 +588,18 @@ bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscrip
 			return all_good;
 		}
 	}
+	else
+	{// item is null
+		size_t count = tags_.size();
+		for (size_t idx = 0; idx < count; idx++)
+		{
+			if (tags_[idx].path.empty())
+				continue;
+			if (tags_[idx].target_handle != 0 && tags_[idx].mine_handle == 0)
+			{
+			}
+		}
+	}
 	return false;
 }
 
@@ -596,9 +609,20 @@ bool runtime_connection_data::connection_dead ()
 		return false;// probably already done!!!
 	connecting = false;
 	item.reset();
-	for (auto& one : tags_)
+	auto count = tags_.size();
+	for (size_t idx = 0; idx<count; idx++)
 	{
-		one.target_handle = 0;
+		if (tags_[idx].ref_count < 1)
+		{// no longer applicable 
+			tags_[idx].target_handle = 0;
+			tags_[idx].mine_handle = 0;
+			tags_[idx].path.clear();
+			empty_slots_.emplace_back(idx);
+		}
+		else
+		{// leave for reconnect
+			tags_[idx].target_handle = 0;
+		}
 	}
 	return true;
 }

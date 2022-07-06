@@ -112,6 +112,67 @@ class opcua_read_response : public opcua_response_base
 };
 
 
+
+
+
+
+class opcua_write_request : public opcua_request_base  
+{
+
+  public:
+
+      rx_node_id get_binary_request_id ();
+
+      opcua_request_ptr create_empty () const;
+
+      rx_result deserialize_binary (binary::ua_binary_istream& stream);
+
+      opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
+
+
+      std::vector<write_value> to_write;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class opcua_write_response : public opcua_response_base  
+{
+
+  public:
+      opcua_write_response (const opcua_request_base& req);
+
+
+      rx_node_id get_binary_response_id ();
+
+      opcua_response_ptr create_empty () const;
+
+      rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
+
+
+      std::vector<opcua_result_t> results;
+
+      std::vector<diagnostic_info> diagnostics_info;
+
+      opcua_write_response() = default;
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace opcua_attributes
 } // namespace requests
 } // namespace opcua

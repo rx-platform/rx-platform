@@ -37,6 +37,20 @@
 using namespace protocols::opcua::common;
 
 
+namespace protocols {
+namespace opcua {
+namespace opcua_addr_space {
+class node_references;
+} // namespace opcua_addr_space
+
+namespace opcua_subscriptions {
+class opcua_monitored_value;
+
+} // namespace opcua_subscriptions
+} // namespace opcua
+} // namespace protocols
+
+
 
 
 namespace protocols {
@@ -59,6 +73,7 @@ struct opcua_browse_context
 
 
 
+
 class opcua_node_base 
 {
 
@@ -67,6 +82,8 @@ class opcua_node_base
       virtual void read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value, const rx_time& config_ts) const = 0;
 
       virtual void browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const = 0;
+
+      virtual void translate (const relative_path& path, browse_path_result& results, opcua_browse_context* ctx) const = 0;
 
       virtual node_class_type get_node_class () const = 0;
 
@@ -79,6 +96,8 @@ class opcua_node_base
       virtual rx_node_id get_type_id () const = 0;
 
       virtual rx_result set_node_value (values::rx_value&& val) = 0;
+
+      virtual node_references& get_reference_data () = 0;
 
       virtual ~opcua_node_base() = default;
   protected:
@@ -134,49 +153,17 @@ class reference_data
 
 
 
-
-class opcua_address_space_base 
-{
-
-  public:
-
-      virtual rx_result register_node (opcua_node_base* what) = 0;
-
-      virtual rx_result unregister_node (opcua_node_base* what) = 0;
-
-      virtual void read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const = 0;
-
-      virtual void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const = 0;
-
-      virtual rx_result fill_relation_types (const rx_node_id& base_id, bool include_subtypes, std::set<rx_node_id>& buffer) const = 0;
-
-      virtual rx_result set_node_value (const rx_node_id& id, values::rx_value&& val) = 0;
-
-      opcua_address_space_base() = default;
-      virtual ~opcua_address_space_base() = default;
-      // no move and no copy!
-      opcua_address_space_base(const opcua_address_space_base&) = delete;
-      opcua_address_space_base(opcua_address_space_base&&) = delete;
-      opcua_address_space_base& operator=(const opcua_address_space_base&) = delete;
-      opcua_address_space_base& operator=(opcua_address_space_base&&) = delete;
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 class node_references 
 {
   public:
-        typedef std::vector<reference_data> references_type;
+        typedef std::list<reference_data> references_type;
 
   public:
+
+      bool connect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse);
+
+      bool disconnect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse);
+
 
       references_type references;
 
@@ -204,7 +191,21 @@ class opcua_base_node_type : public opcua_node_base
       virtual ~opcua_base_node_type();
 
 
-      void read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value);
+      void read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
+
+      void browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const;
+
+      void translate (const relative_path& path, browse_path_result& results, opcua_browse_context* ctx) const;
+
+      node_class_type get_node_class () const;
+
+      rx_node_id get_node_id () const;
+
+      qualified_name get_browse_name () const;
+
+      string_type get_display_name () const;
+
+      node_references& get_reference_data ();
 
       rx_result set_node_value (values::rx_value&& val);
 
@@ -214,11 +215,9 @@ class opcua_base_node_type : public opcua_node_base
 
       rx_node_id node_id;
 
-      node_class_type node_class;
-
       qualified_name browse_name;
 
-      localized_text display_name;
+      string_type display_name;
 
       localized_text description;
 
@@ -235,13 +234,16 @@ class opcua_base_node_type : public opcua_node_base
 
   protected:
 
-      virtual void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value);
+      virtual void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
 
 
       rx_time timestamp_;
 
 
   private:
+
+      node_class_type node_class;
+
 
 
 };
@@ -259,11 +261,14 @@ class opcua_variable_base_node : public opcua_base_node_type
       opcua_variable_base_node();
 
 
+      rx_result set_node_value (values::rx_value&& val);
+
+
       data_value value;
 
       rx_node_id data_type;
 
-      uint32_t value_rank;
+      int32_t value_rank;
 
       std::vector<uint32_t> array_dimenstions;
 
@@ -280,7 +285,7 @@ class opcua_variable_base_node : public opcua_base_node_type
 
   protected:
 
-      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value);
+      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
 
 
   private:
@@ -309,7 +314,7 @@ class opcua_reference_type : public opcua_base_node_type
 
   protected:
 
-      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value);
+      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
 
 
   private:
@@ -331,7 +336,7 @@ class opcua_property_node : public opcua_variable_base_node
 
   protected:
 
-      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value);
+      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
 
 
   private:
@@ -351,13 +356,91 @@ class opcua_variable_node : public opcua_variable_base_node
       opcua_variable_node();
 
 
+      rx_node_id get_type_id () const;
+
+
       rx_node_id type_id;
 
 
   protected:
 
-      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value);
+      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts);
 
+
+  private:
+
+
+};
+
+
+
+
+
+
+class opcua_object_node : public opcua_base_node_type  
+{
+
+  public:
+      opcua_object_node();
+
+
+      rx_node_id get_type_id () const;
+
+
+      uint8_t event_notifier;
+
+      rx_node_id type_id;
+
+
+  protected:
+
+      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class opcua_address_space_base 
+{
+
+  public:
+
+      virtual void read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const = 0;
+
+      virtual void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const = 0;
+
+      virtual void translate (const std::vector<browse_path>& browse_paths, std::vector<browse_path_result>& results, opcua_address_space_base* root) const = 0;
+
+      virtual rx_result fill_relation_types (const rx_node_id& base_id, bool include_subtypes, std::set<rx_node_id>& buffer) const = 0;
+
+      virtual rx_result set_node_value (const rx_node_id& id, values::rx_value&& val) = 0;
+
+      virtual locks::rw_slim_lock* get_lock () = 0;
+
+      virtual const locks::rw_slim_lock* get_lock () const = 0;
+
+      virtual opcua_node_base* connect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse) = 0;
+
+      virtual opcua_result_t register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val) = 0;
+
+      virtual opcua_result_t unregister_value_monitor (opcua_subscriptions::opcua_monitored_value* who) = 0;
+
+      opcua_address_space_base() = default;
+      virtual ~opcua_address_space_base() = default;
+      // no move and no copy!
+      opcua_address_space_base(const opcua_address_space_base&) = delete;
+      opcua_address_space_base(opcua_address_space_base&&) = delete;
+      opcua_address_space_base& operator=(const opcua_address_space_base&) = delete;
+      opcua_address_space_base& operator=(opcua_address_space_base&&) = delete;
+  protected:
 
   private:
 

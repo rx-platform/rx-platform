@@ -84,7 +84,7 @@ bool io_capabilities::get_output () const
 // Class rx_platform::runtime::runtime_deinit_context 
 
 runtime_deinit_context::runtime_deinit_context (const meta::meta_data& meta_data)
-      : meta(meta)
+      : meta(meta_data)
 {
 }
 
@@ -170,9 +170,9 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 		}
 		else
 		{
-			string_type ret(path_.substr(idx));
+			string_type ret(path_.substr(0, idx));
 			level--;
-			size_t off_idx = string_type::npos;
+			size_t off_idx = idx - 1;
 			while (!ret.empty() && level > 0 && off_idx > 0)
 			{
 				off_idx = path_.rfind(RX_OBJECT_DELIMETER, off_idx - 1);
@@ -180,6 +180,7 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 					return "";
 				else
 					ret.resize(off_idx);
+				off_idx--;
 			}
 			return ret;
 		}
@@ -249,7 +250,7 @@ void runtime_start_context::add_io_periodic_job (jobs::periodic_job::smart_ptr j
 
 runtime_stop_context::runtime_stop_context (const meta::meta_data& meta_data, runtime_process_context* context)
       : context(context),
-        meta(meta)
+        meta(meta_data)
 {
 }
 

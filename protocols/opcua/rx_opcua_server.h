@@ -35,8 +35,11 @@
 
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_opcua_subscriptions
+#include "protocols/opcua/rx_opcua_subscriptions.h"
 
 #include "rx_opcua_params.h"
+using namespace protocols::opcua::common;
 
 
 namespace protocols {
@@ -58,14 +61,20 @@ class opcua_server_endpoint_base : public rx::pointers::reference_object
     DECLARE_REFERENCE_PTR(opcua_server_endpoint_base);
 
   public:
-      opcua_server_endpoint_base (const string_type& endpoint_url, const string_type& app_name, const string_type& app_uri, opcua_addr_space::opcua_address_space_base* addr_space);
+      opcua_server_endpoint_base (const string_type& server_type, const application_description& app_descr, opcua_addr_space::opcua_address_space_base* addr_space, opcua_subscriptions::opcua_subscriptions_collection* subs);
 
 
-      common::endpoint_description get_endpoint_description (const string_type& ep_url);
+      common::endpoint_description get_endpoint_description (const string_type& ep_url, bool discovery);
 
       common::application_description get_application_description (const string_type& ep_url);
 
       opcua_addr_space::opcua_address_space_base* get_address_space ();
+
+      static application_description fill_application_description (const string_type& app_uri, const string_type& app_name, const string_type& app_bind, const string_type& server_type);
+
+      opcua_subscriptions::opcua_subscriptions_collection* get_subscriptions ();
+
+      virtual rx_result send_response (requests::opcua_response_ptr resp) = 0;
 
 
   protected:
@@ -73,13 +82,14 @@ class opcua_server_endpoint_base : public rx::pointers::reference_object
   private:
 
 
-      string_type app_name_;
+      opcua_subscriptions::opcua_subscriptions_collection *subscriptions_;
 
-      string_type app_uri_;
 
-      string_type endpoint_url_;
+      string_type server_type_;
 
       opcua_addr_space::opcua_address_space_base* address_space_;
+
+      application_description application_description_;
 
 
 };

@@ -558,6 +558,11 @@ method_results_type& runtime_process_context::get_method_results ()
         return g_empty_method_results;
 }
 
+void runtime_process_context::runtime_deinitialized ()
+{
+    anchor_ = rx_reference_ptr::null_ptr;
+}
+
 rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)
 {
     return ctx->set_value(handle, std::move(val));

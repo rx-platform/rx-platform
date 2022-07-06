@@ -443,6 +443,8 @@ class runtime_process_context
 
       method_results_type& get_method_results ();
 
+      void runtime_deinitialized ();
+
 
       const rx_mode_type get_mode () const
       {

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -53,7 +53,7 @@ namespace
 server_runtime* g_object = nullptr;
 }
 
-// Class rx_internal::infrastructure::server_runtime 
+// Class rx_internal::infrastructure::server_runtime
 
 server_runtime::server_runtime()
       : extern_executer_(nullptr)
@@ -90,12 +90,12 @@ rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_d
 
 	io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO);
 
-	if (cpu_count > data.io_pool_size)
+	if (cpu_count > (size_t)data.io_pool_size)
 	{
 		start_cpu = data.io_pool_size;
 	}
 	end_cpu = (uint32_t)cpu_count - 1;
-	
+
 	slow_pool_ = server_dispatcher_object::smart_ptr(5, "Slow", RX_DOMAIN_SLOW);
 
 	meta_pool_ = rx_create_reference<physical_thread_object>(META_POOL_NAME, RX_DOMAIN_META);
@@ -175,7 +175,7 @@ void server_runtime::deinitialize ()
 			one->clear();
 	}
 
-	if (general_timer_)		
+	if (general_timer_)
 		general_timer_.reset();
 	if (calculation_timer_)
 		calculation_timer_.reset();
@@ -207,7 +207,7 @@ rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_
 		io_pool_->get_pool().run(RX_PRIORITY_HIGH);
 	if (unassigned_pool_)
 		unassigned_pool_->get_pool().run(RX_PRIORITY_LOW);
-	
+
 	if(workers_[(uint8_t)rx_domain_priority::low])
 		workers_[(uint8_t)rx_domain_priority::low]->run(RX_PRIORITY_LOW);
 	if (workers_[(uint8_t)rx_domain_priority::normal])
@@ -216,7 +216,7 @@ rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_
 		workers_[(uint8_t)rx_domain_priority::high]->run(RX_PRIORITY_HIGH);
 	if (workers_[(uint8_t)rx_domain_priority::realtime])
 		workers_[(uint8_t)rx_domain_priority::realtime]->run(RX_PRIORITY_REALTIME);
-	
+
 	if (general_timer_)
 		general_timer_->start(RX_PRIORITY_REALTIME);
 	if (calculation_timer_)
@@ -234,7 +234,7 @@ rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_
 
 void server_runtime::stop ()
 {
-	
+
 	if (io_pool_)
 		io_pool_->get_pool().end();
 	if (slow_pool_)
@@ -392,7 +392,7 @@ rx_internal::sys_runtime::data_source::data_controler* server_runtime::get_data_
 	{
 		RX_ASSERT(priority < (uint8_t)rx_domain_priority::priority_count);
 		if (priority < (uint8_t)rx_domain_priority::priority_count && workers_[priority])
-			return workers_[priority]->get_data_controler(domain);			
+			return workers_[priority]->get_data_controler(domain);
 	}
 	return nullptr;
 }
@@ -442,7 +442,7 @@ runtime_data_t server_runtime::get_cpu_data ()
 }
 
 
-// Class rx_internal::infrastructure::server_dispatcher_object 
+// Class rx_internal::infrastructure::server_dispatcher_object
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask)
       : threads_count_(count)
@@ -479,7 +479,7 @@ uint16_t server_dispatcher_object::get_pool_size () const
 }
 
 
-// Class rx_internal::infrastructure::dispatcher_subscribers_job 
+// Class rx_internal::infrastructure::dispatcher_subscribers_job
 
 dispatcher_subscribers_job::dispatcher_subscribers_job()
 {
@@ -498,7 +498,7 @@ void dispatcher_subscribers_job::process ()
 }
 
 
-// Class rx_internal::infrastructure::domains_pool 
+// Class rx_internal::infrastructure::domains_pool
 
 domains_pool::domains_pool (uint32_t pool_size, uint32_t start_cpu, uint32_t end_cpu)
       : pool_size_(pool_size),
@@ -609,7 +609,7 @@ uint16_t domains_pool::get_pool_size () const
 }
 
 
-// Class rx_internal::infrastructure::physical_thread_object 
+// Class rx_internal::infrastructure::physical_thread_object
 
 physical_thread_object::physical_thread_object (const string_type& name, rx_thread_handle_t rx_thread_id)
 	: pool_(name, rx_thread_id)

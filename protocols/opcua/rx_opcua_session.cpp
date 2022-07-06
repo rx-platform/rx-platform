@@ -84,7 +84,7 @@ opcua_response_ptr opcua_create_session::do_job (opcua_server_endpoint_ptr ep)
 	ret_ptr->server_nounce.clear();
 	ret_ptr->server_certificate.clear();
 	ret_ptr->max_message_size = max_message_size;
-	ret_ptr->endpoints.push_back(ep->get_endpoint_description(endpoint_url));
+	ret_ptr->endpoints.push_back(ep->get_endpoint_description(endpoint_url, false));
 
 	return ret_ptr;
 }
@@ -147,15 +147,12 @@ rx_result opcua_activate_session::deserialize_binary (binary::ua_binary_istream&
 	stream >> certs;
 	RX_ASSERT(certs <= 0);// not used, reserved, has to be empty array
 	stream >> locale_ids;
-	identity_token = stream.deserialize_extension([](const rx_node_id& id) -> opcua_extension_ptr {
-			static rx_node_id anonymus_id 
-				= rx_node_id::opcua_standard_id(opcid_AnonymousIdentityToken_Encoding_DefaultBinary);
-			if (id.is_null())
-				return std::make_unique<ua_extension>();
-			else if (id == anonymus_id)
+	identity_token = stream.deserialize_extension<opcua_identity_token>([](const rx_node_id& id) -> identity_token_ptr {
+			static rx_node_id anonymus_id = rx_node_id::opcua_standard_id(opcid_AnonymousIdentityToken_Encoding_DefaultBinary);
+			if (id == anonymus_id)
 				return std::make_unique<opcua_anonymus_identity_token>();
 			else
-				return opcua_extension_ptr();
+				return identity_token_ptr();
 		});
 	stream >> token_signature_algorithm;
 	stream >> token_signature_data;
@@ -168,9 +165,12 @@ opcua_response_ptr opcua_activate_session::do_job (opcua_server_endpoint_ptr ep)
 	return ret;
 }
 
-
+opcua_identity_token::opcua_identity_token(rx_node_id class_id, rx_node_id binary_id, rx_node_id xml_id)
+	: common::ua_extension(class_id, binary_id, xml_id)
+{
+}
 opcua_anonymus_identity_token::opcua_anonymus_identity_token()
-	: common::ua_extension(rx_node_id::opcua_standard_id(opcid_AnonymousIdentityToken)
+	: opcua_identity_token(rx_node_id::opcua_standard_id(opcid_AnonymousIdentityToken)
 		, rx_node_id::opcua_standard_id(opcid_AnonymousIdentityToken_Encoding_DefaultBinary)
 		, rx_node_id::opcua_standard_id(opcid_AnonymousIdentityToken_Encoding_DefaultXml))
 {

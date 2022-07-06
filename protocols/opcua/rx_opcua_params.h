@@ -54,6 +54,14 @@ class ua_binary_ostream;
 
 namespace common {
 
+
+enum class monitoring_mode_t : int32_t
+{
+	disabled = 0,
+	sampling = 1,
+	reporting = 2
+};
+
 enum class change_trigger_type
 {
 	status_trigger = 0,
@@ -81,7 +89,7 @@ enum class browse_direction_type
 };
 
 
-enum class timestamps_return_type : uint32_t
+enum class timestamps_return_type : int32_t
 {
 	source = 0,
 	server = 1,
@@ -264,6 +272,10 @@ struct qualified_name
 {
 	uint16_t namesp = 0;
 	string_type name;
+	bool operator==(const qualified_name& right)
+	{
+		return namesp == right.namesp && name == right.name;
+	}
 };
 
 class ua_extension;
@@ -401,6 +413,9 @@ public:
 	variant_type& operator=(const variant_type& right);
 	variant_type& operator=(variant_type&& right) noexcept;
 
+	bool operator==(const variant_type& right);
+	bool operator!=(const variant_type& right);
+
 	bool is_null() const;
 
 	void clear();
@@ -421,6 +436,8 @@ public:
 	const std::vector<int>& get_dimensions() const;
 
 	void set_default(uint8_t type, int value_rank, const const_size_vector<uint32_t>& dimensions);
+
+	static uint32_t get_opc_type_from_rx_type(rx_value_t valType);
 
 private:
 	void copy_from(const variant_type& right);
@@ -504,8 +521,6 @@ struct read_value_id
 	void serialize(binary::ua_binary_ostream& stream) const;
 	void deserialize(binary::ua_binary_istream& stream);
 };
-
-template<class ua_istream, class ua_ostream>
 struct write_value
 {
 	write_value(attribute_id vattribute_id = attribute_id::value)
@@ -516,20 +531,9 @@ struct write_value
 	attribute_id attr_id;
 	numeric_range range;
 	data_value value;
-	void serialize(ua_ostream& stream) const
-	{
-		stream << node_id;
-		stream << attr_id;
-		stream << range;
-		stream << value;
-	}
-	void deserialize(ua_istream& stream)
-	{
-		stream >> node_id;
-		stream >> attr_id;
-		stream >> range;
-		stream >> value;
-	}
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
 };
 
 struct opcua_view_description
@@ -589,6 +593,124 @@ struct opcua_browse_result
 	opcua_result_t status_code;
 	byte_string continuation_point;
 	std::vector<reference_description> references;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
+
+class opcua_monitoring_filter : public common::ua_extension
+{
+public:
+	opcua_monitoring_filter(rx_node_id class_id, rx_node_id binary_id, rx_node_id xml_id);
+	virtual bool filter_item() = 0;
+
+	virtual std::unique_ptr< opcua_monitoring_filter> make_filter_copy() = 0;
+
+	opcua_extension_ptr make_copy()
+	{
+		return make_filter_copy();
+	}
+};
+typedef std::unique_ptr< opcua_monitoring_filter> monitoring_filter_ptr;
+
+enum class data_change_trigger_t : int
+{
+	STATUS = 0,
+	STATUS_VALUE = 1,
+	STATUS_VALUE_TIMESTAMP = 2
+};
+
+class opcua_data_change_filter : public opcua_monitoring_filter
+{
+public:
+	data_change_trigger_t data_change_trigger;
+	uint32_t deadband_type;
+	double deadband_value;
+
+	opcua_data_change_filter();
+	bool filter_item();
+	std::unique_ptr< opcua_monitoring_filter> make_filter_copy();
+private:
+	void internal_serialize_extension(binary::ua_binary_ostream& stream) const;
+	void internal_deserialize_extension(binary::ua_binary_istream& stream);
+};
+struct monitored_parameters
+{
+	uint32_t client_handle = 0;
+	double interval = -1.0;
+	monitoring_filter_ptr filter_ptr;
+	uint32_t queue_size = 1;
+	bool discard_oldest = true;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
+struct create_monitored_item_data
+{
+	read_value_id to_monitor;
+	monitoring_mode_t mode;
+	monitored_parameters parameters;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+
+};
+
+struct create_monitored_item_result
+{
+	opcua_result_t status;
+	uint32_t server_handle = 0;
+	double interval = 0;
+	uint32_t queue_size = 0;
+	monitoring_filter_ptr filter_ptr;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+
+};
+struct relative_path_element
+{
+	rx_node_id reference_id;
+	bool is_inverse = false;
+	bool sub_types = false;
+	qualified_name target_name{};
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+
+};
+struct relative_path
+{
+	std::vector<relative_path_element> elements;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
+
+struct browse_path
+{
+	rx_node_id starting_node;
+	relative_path path;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
+
+
+struct browse_path_target
+{
+	rx_node_id target_id;
+	uint32_t remaining_index = 0;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+
+};
+
+struct browse_path_result
+{
+	opcua_result_t status_code;
+	std::vector<browse_path_target> targets;
 
 	void serialize(binary::ua_binary_ostream& stream) const;
 	void deserialize(binary::ua_binary_istream& stream);

@@ -491,10 +491,41 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 #endif
 			case RX_STRING_TYPE:
 				{
-					uint_fast8_t temp = what->string_value.size > 0;
-					rx_destory_string_value_struct(&what->string_value);
-					what->bool_value = temp;
-					return RX_OK;
+					if (what->string_value.size > 0)
+					{
+						const char* str = rx_c_str(&what->string_value);
+						if (strcmp(str, "true") == 0)
+						{
+							what->bool_value = (1 == 1);
+							return RX_OK;
+						}
+						else if (strcmp(str, "false") == 0)
+						{
+							what->bool_value = (1 == 0);
+							return RX_OK;
+						}
+						if (strcmp(str, "True") == 0)
+						{
+							what->bool_value = (1 == 1);
+							return RX_OK;
+						}
+						else if (strcmp(str, "False") == 0)
+						{
+							what->bool_value = (1 == 0);
+							return RX_OK;
+						}
+						else
+						{
+							char* end_ptr = NULL;
+							double res = strtod(str, &end_ptr);
+							if (*end_ptr == '\0')
+							{
+								what->bool_value = (res != 0);
+								return RX_OK;
+							}
+						}
+					}
+					return RX_ERROR;
 				}
 			case RX_BYTES_TYPE:
 				{

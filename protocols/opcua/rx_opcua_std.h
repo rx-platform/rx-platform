@@ -105,6 +105,8 @@ protected:
 
       void browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const;
 
+      void translate (const relative_path& path, browse_path_result& results, opcua_browse_context* ctx) const;
+
       node_class_type get_node_class () const;
 
       rx_node_id get_node_id () const;
@@ -116,6 +118,8 @@ protected:
       rx_node_id get_type_id () const;
 
       rx_result set_node_value (values::rx_value&& val);
+
+      node_references& get_reference_data ();
 
 
       uint32_t node_id;
@@ -145,7 +149,7 @@ protected:
       node_references references_;
 
       friend class opcua_std_address_space_builder;
-      friend rx_result build_standard_address_space(opcua_std_address_space & server, const string_type & server_uri);
+      friend rx_result build_standard_address_space(opcua_std_address_space & server, const string_type & server_uri, const string_type & app_uri, const string_type& server_type);
     friend class opcua_std_address_space;
 };
 
@@ -210,17 +214,25 @@ class opcua_std_address_space : public opcua_address_space_base
       ~opcua_std_address_space();
 
 
-      rx_result register_node (opcua_node_base* what);
-
-      rx_result unregister_node (opcua_node_base* what);
-
       void read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const;
 
       void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const;
 
+      void translate (const std::vector<browse_path>& browse_paths, std::vector<browse_path_result>& results, opcua_address_space_base* root) const;
+
       rx_result fill_relation_types (const rx_node_id& base_id, bool include_subtypes, std::set<rx_node_id>& buffer) const;
 
       rx_result set_node_value (const rx_node_id& id, values::rx_value&& val);
+
+      locks::rw_slim_lock* get_lock ();
+
+      const locks::rw_slim_lock* get_lock () const;
+
+      opcua_node_base* connect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse);
+
+      opcua_result_t register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val);
+
+      opcua_result_t unregister_value_monitor (opcua_subscriptions::opcua_monitored_value* who);
 
 
   protected:
@@ -248,7 +260,7 @@ class opcua_std_address_space : public opcua_address_space_base
       references_tree_type references_tree_;
 
       friend class opcua_std_address_space_builder;
-      friend rx_result build_standard_address_space(opcua_std_address_space& server, const string_type& server_uri);
+      friend rx_result build_standard_address_space(opcua_std_address_space& server, const string_type& server_uri, const string_type& app_uri, const string_type& server_type);
 };
 
 

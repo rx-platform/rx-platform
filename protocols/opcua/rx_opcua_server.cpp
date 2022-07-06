@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "rx_platform_version.h"
 
 // rx_opcua_server
 #include "protocols/opcua/rx_opcua_server.h"
@@ -47,21 +48,29 @@ namespace opcua_server {
 
 // Class protocols::opcua::opcua_server::opcua_server_endpoint_base 
 
-opcua_server_endpoint_base::opcua_server_endpoint_base (const string_type& endpoint_url, const string_type& app_name, const string_type& app_uri, opcua_addr_space::opcua_address_space_base* addr_space)
-      : app_name_(app_name),
-        app_uri_(app_uri),
-        endpoint_url_(endpoint_url),
-        address_space_(addr_space)
+opcua_server_endpoint_base::opcua_server_endpoint_base (const string_type& server_type, const application_description& app_descr, opcua_addr_space::opcua_address_space_base* addr_space, opcua_subscriptions::opcua_subscriptions_collection* subs)
+      : subscriptions_(subs),
+        server_type_(server_type),
+        address_space_(addr_space),
+        application_description_(app_descr)
 {
 }
 
 
 
-common::endpoint_description opcua_server_endpoint_base::get_endpoint_description (const string_type& ep_url)
+common::endpoint_description opcua_server_endpoint_base::get_endpoint_description (const string_type& ep_url, bool discovery)
 {
 	endpoint_description ep_descr;
-	ep_descr.url = ep_url;
 	ep_descr.application = get_application_description(ep_url);
+	if (discovery)
+	{
+		ep_descr.url = ep_url;
+		ep_descr.application.discovery_urls[0] = ep_url;
+	}
+	else
+	{
+		ep_descr.url = ep_descr.application.discovery_urls[0];
+	}
 
 	ep_descr.security_mode = security_mode_t::none;
 	ep_descr.policy_uri = "http://opcfoundation.org/UA/SecurityPolicy#None";
@@ -79,12 +88,29 @@ common::endpoint_description opcua_server_endpoint_base::get_endpoint_descriptio
 
 common::application_description opcua_server_endpoint_base::get_application_description (const string_type& ep_url)
 {
-	application_description app_descr;
-	app_descr.application_uri = app_uri_;
-	app_descr.application_name.text = app_name_;
-	app_descr.product_uri = "rx-platform.org/"s + rx_gate::instance().get_rx_version();
-	app_descr.application_type = application_type_t::server_application_type;
-	app_descr.discovery_urls.push_back(ep_url);
+	application_description app_descr(application_description_);
+	if (!application_description_.discovery_urls.empty())
+	{
+		string_type resolved_ep;
+		app_descr.discovery_urls.clear();
+		auto pos = ep_url.find("://");
+		if (pos != string_type::npos)
+			pos = pos + 3;
+		else
+			pos = 0;
+		pos = ep_url.find("/", pos);
+		if (pos == string_type::npos)
+			resolved_ep = ep_url;
+		else
+			resolved_ep = ep_url.substr(0, pos);
+				
+		for (const auto& one : application_description_.discovery_urls)
+		{
+			app_descr.discovery_urls.push_back(resolved_ep + '/' + one);
+		}
+	}
+	else
+		app_descr.discovery_urls.push_back(ep_url);
 
 	return app_descr;
 }
@@ -92,6 +118,46 @@ common::application_description opcua_server_endpoint_base::get_application_desc
 opcua_addr_space::opcua_address_space_base* opcua_server_endpoint_base::get_address_space ()
 {
 	return address_space_;
+}
+
+application_description opcua_server_endpoint_base::fill_application_description (const string_type& app_uri, const string_type& app_name, const string_type& app_bind, const string_type& server_type)
+{
+	application_description app_descr;
+
+	app_descr.application_uri = "urn:"s
+		+ ":" + rx_gate::instance().get_node_name()
+		+ ":rx-platform:"
+		+ rx_gate::instance().get_instance_name()
+		+ ":" + app_uri;
+
+	app_descr.application_name.text = "rx-platform/"s
+		+ rx_gate::instance().get_instance_name()
+		+ "/" + app_name
+		+ "@" + rx_gate::instance().get_node_name();
+
+	std::ostringstream ss;
+	ss << "urn:"
+		<< "rx-platform."
+		<< RX_SERVER_NAME << "."
+		<< RX_SERVER_MAJOR_VERSION << "."
+		<< RX_SERVER_MINOR_VERSION << ":"
+		<< server_type;
+	app_descr.product_uri = ss.str();
+
+	app_descr.application_type = application_type_t::server_application_type;
+
+	string_type endpoint_path = app_bind;
+	if (!endpoint_path.empty())
+		endpoint_path += "/";
+	endpoint_path += app_name;
+	app_descr.discovery_urls.emplace_back(endpoint_path);
+
+	return app_descr;
+}
+
+opcua_subscriptions::opcua_subscriptions_collection* opcua_server_endpoint_base::get_subscriptions ()
+{
+	return subscriptions_;
 }
 
 

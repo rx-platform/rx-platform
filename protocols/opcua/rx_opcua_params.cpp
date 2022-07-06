@@ -34,6 +34,7 @@
 // rx_opcua_params
 #include "protocols/opcua/rx_opcua_params.h"
 
+//#include "rx_opcua_build_nodes2Types.h"
 #include "protocols/opcua/rx_opcua_binary.h"
 #include "protocols/opcua/rx_opcua_identifiers.h"
 #include "lib/rx_values.h"
@@ -562,6 +563,23 @@ variant_type& variant_type::operator=(variant_type&& right) noexcept
 }
 
 
+bool variant_type::operator==(const variant_type& right)
+{
+	// TODO set compare
+	return false;
+	/*if (right.type_ != type_)
+		return false;
+		.
+		.
+		.
+		.
+	return true;*/
+}
+bool variant_type::operator!=(const variant_type& right)
+{
+	return !operator==(right);
+}
+
 
 bool variant_type::is_null() const
 {
@@ -573,7 +591,86 @@ void variant_type::set_default(uint8_t type, int value_rank, const const_size_ve
 	clear();
 	if (type >= opcid_Boolean && type <= opcid_DiagnosticInfo)
 		type_ = type;
+	switch (type_)
+	{
+	case opcid_Guid:
+		union_.guid_val = new rx_uuid();
+		break;
+	case opcid_ByteString:
+		union_.bstr_val = new byte_string();
+		break;
+	case opcid_NodeId:
+		union_.node_val = new rx_node_id();
+		break;
+	case opcid_ExpandedNodeId:
+		union_.node_val = new rx_node_id();
+		break;
+	case opcid_QualifiedName:
+		union_.qname_val = new qualified_name{};
+		break;
+	case opcid_LocalizedText:
+		union_.ltext_val = new localized_text{};
+		break;
+	case opcid_BaseDataType:
+		union_.var_val = new variant_type();
+		break;
+	case opcid_DiagnosticInfo:
+		union_.di_val = new diagnostic_info();
+		break;
+	}
 }
+uint32_t variant_type::get_opc_type_from_rx_type(rx_value_t valType)
+{
+	switch (valType)
+	{
+	case RX_BOOL_TYPE:
+		return opcid_Boolean;
+	case RX_INT8_TYPE:
+		return opcid_SByte;
+	case RX_UINT8_TYPE:
+		return opcid_Byte;
+	case RX_INT16_TYPE:
+		return opcid_Int16;
+	case RX_UINT16_TYPE:
+		return opcid_UInt16;
+	case RX_INT32_TYPE:
+		return opcid_Int32;
+	case RX_UINT32_TYPE:
+		return opcid_UInt32;
+	case RX_INT64_TYPE:
+		return opcid_Int64;
+	case RX_UINT64_TYPE:
+		return opcid_UInt64;
+	case RX_FLOAT_TYPE:
+		return opcid_Float;
+	case RX_DOUBLE_TYPE:
+		return opcid_Double;
+	case RX_COMPLEX_TYPE:
+		return opcid_Double;
+	case RX_STRING_TYPE:
+		return opcid_String;
+	case RX_TIME_TYPE:
+		return opcid_DateTime;
+	case RX_UUID_TYPE:
+		return opcid_Guid;
+	case RX_BYTES_TYPE:
+		return opcid_ByteString;
+	case RX_STRUCT_TYPE:
+		RX_ASSERT(false);
+		return opcid_Null;
+	case RX_TYPE_TYPE:
+		RX_ASSERT(false);
+		return opcid_Null;
+	case RX_NODE_ID_TYPE:
+		return opcid_NodeId;
+	case RX_STRING_TYPE | RX_ARRAY_VALUE_MASK:
+		return opcid_String;
+	default:
+		return opcid_Null;
+	}
+}
+
+
 void variant_type::clear()
 {
     if (array_len_ > 0)
@@ -648,7 +745,8 @@ void variant_type::clear_union(uint8_t type, vunion_type& vu)
 	case opcid_Double:
 		break;
 	case opcid_String:
-		delete vu.str_val;
+		if(vu.str_val)
+			delete vu.str_val;
 		break;
 	case opcid_DateTime:
 		break;
@@ -659,7 +757,8 @@ void variant_type::clear_union(uint8_t type, vunion_type& vu)
 		delete vu.bstr_val;
 		break;
 	case opcid_XmlElement:
-		delete vu.str_val;
+		if (vu.str_val)
+			delete vu.str_val;
 		break;
 	case opcid_NodeId:
 		delete vu.node_val;
@@ -676,7 +775,8 @@ void variant_type::clear_union(uint8_t type, vunion_type& vu)
 		delete vu.ltext_val;
 		break;
 	case opcid_Structure:
-		delete vu.ext_val;
+		if (vu.ext_val)
+			delete vu.ext_val;
 		break;
 	case opcid_DataValue:
 		if (vu.data_val != NULL)
@@ -742,7 +842,7 @@ void variant_type::copy_union_from(uint8_t type, vunion_type& to, const vunion_t
 		to.bstr_val = new byte_string(*(from.bstr_val));
 		break;
 	case opcid_XmlElement:
-		to.str_val = new string_type(*(from.str_val));
+		to.str_val = from.str_val != nullptr ? new string_type(*(from.str_val)) : nullptr;
 		break;
 	case opcid_NodeId:
 		to.node_val = new rx_node_id(*(from.node_val));
@@ -1123,6 +1223,165 @@ void opcua_browse_result::deserialize(binary::ua_binary_istream& stream)
 	stream.deserialize_array(references);
 }
 
+opcua_monitoring_filter::opcua_monitoring_filter(rx_node_id class_id, rx_node_id binary_id, rx_node_id xml_id)
+	: common::ua_extension(class_id, binary_id, xml_id)
+{
+}
+opcua_data_change_filter::opcua_data_change_filter()
+	: opcua_monitoring_filter(rx_node_id::opcua_standard_id(opcid_DataChangeFilter)
+	, rx_node_id::opcua_standard_id(opcid_DataChangeFilter_Encoding_DefaultBinary)
+	, rx_node_id::opcua_standard_id(opcid_DataChangeFilter_Encoding_DefaultXml))
+	, data_change_trigger(data_change_trigger_t::STATUS)
+	, deadband_type(0)
+	, deadband_value(0.0)
+{
+}
+bool opcua_data_change_filter::filter_item()
+{
+	return true;
+}
+std::unique_ptr<opcua_monitoring_filter> opcua_data_change_filter::make_filter_copy()
+{
+	auto ret = std::make_unique<opcua_data_change_filter>();
+	ret->data_change_trigger = data_change_trigger;
+	ret->deadband_type = deadband_type;
+	ret->deadband_value = deadband_value;
+	return ret;
+}
+void opcua_data_change_filter::internal_serialize_extension(binary::ua_binary_ostream& stream) const
+{
+	stream << (int)data_change_trigger;
+	stream << deadband_type;
+	stream << deadband_value;
+}
+void opcua_data_change_filter::internal_deserialize_extension(binary::ua_binary_istream& stream)
+{
+	int temp;
+	stream >> temp;
+	data_change_trigger = (data_change_trigger_t)temp;
+	stream >> deadband_type;
+	stream >> deadband_value;
+}
+
+void monitored_parameters::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream << client_handle;
+	stream << interval;
+	stream.serialize_extension(filter_ptr.get());
+	stream << queue_size;
+	stream << discard_oldest;
+}
+void monitored_parameters::deserialize(binary::ua_binary_istream& stream)
+{
+	stream >> client_handle;
+	stream >> interval;
+	filter_ptr = stream.deserialize_extension<opcua_monitoring_filter>([](const rx_node_id& id) -> monitoring_filter_ptr {
+		static rx_node_id data_change_id = rx_node_id::opcua_standard_id(opcid_DataChangeFilter_Encoding_DefaultBinary);
+
+		if (id == data_change_id)
+			return std::make_unique<opcua_data_change_filter>();
+		else
+			return monitoring_filter_ptr();
+		});
+	stream >> queue_size;
+	stream >> discard_oldest;
+}
+
+
+void create_monitored_item_data::serialize(binary::ua_binary_ostream& stream) const
+{
+	to_monitor.serialize(stream);
+	stream << mode;
+	parameters.serialize(stream);
+}
+void create_monitored_item_data::deserialize(binary::ua_binary_istream& stream)
+{
+	to_monitor.deserialize(stream);
+	stream >> mode;
+	parameters.deserialize(stream);
+}
+void create_monitored_item_result::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream << status;
+	stream << server_handle;
+	stream << interval;
+	stream << queue_size;
+	stream.serialize_extension(filter_ptr.get());
+}
+void create_monitored_item_result::deserialize(binary::ua_binary_istream& stream)
+{
+	stream >> status;
+	stream >> server_handle;
+	stream >> interval;
+	stream >> queue_size;
+	filter_ptr = stream.deserialize_extension<opcua_monitoring_filter>([](const rx_node_id& id) -> monitoring_filter_ptr {
+		static rx_node_id data_change_id = rx_node_id::opcua_standard_id(opcid_DataChangeFilter_Encoding_DefaultBinary);
+
+		if (id == data_change_id)
+			return std::make_unique<opcua_data_change_filter>();
+		else
+			return monitoring_filter_ptr();
+		});
+}
+
+void relative_path_element::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream << reference_id;
+	stream << is_inverse;
+	stream << sub_types;
+	stream << target_name;
+}
+void relative_path_element::deserialize(binary::ua_binary_istream& stream)
+{
+	stream >> reference_id;
+	stream >> is_inverse;
+	stream >> sub_types;
+	stream >> target_name;
+}
+
+void relative_path::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream.serialize_array(elements);
+}
+void relative_path::deserialize(binary::ua_binary_istream& stream)
+{
+	stream.deserialize_array(elements);
+}
+
+void browse_path::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream << starting_node;
+	path.serialize(stream);
+}
+void browse_path::deserialize(binary::ua_binary_istream& stream)
+{
+	stream >> starting_node;
+	path.deserialize(stream);
+}
+
+void browse_path_target::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream << target_id;
+	stream << remaining_index;
+}
+void browse_path_target::deserialize(binary::ua_binary_istream& stream)
+{
+	stream >> target_id;
+	stream >> remaining_index;
+}
+
+void browse_path_result::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream << status_code;
+	stream.serialize_array(targets);
+}
+void browse_path_result::deserialize(binary::ua_binary_istream& stream)
+{
+	stream >> status_code;
+	stream.deserialize_array(targets);
+}
+
+
 void user_token_policy::deserialize(binary::ua_binary_istream& stream)
 {
 	stream >> policy_id;
@@ -1204,6 +1463,20 @@ void read_value_id::deserialize(binary::ua_binary_istream& stream)
 	stream >> data_encoding;
 }
 
+void write_value::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream << node_id;
+	stream << attr_id;
+	stream << range;
+	stream << value;
+}
+void write_value::deserialize(binary::ua_binary_istream& stream)
+{
+	stream >> node_id;
+	stream >> attr_id;
+	stream >> range;
+	stream >> value;
+}
 
 
 void diagnostic_info::fill_diagnostics_strings(string_array& strings, uint32_t mask) const

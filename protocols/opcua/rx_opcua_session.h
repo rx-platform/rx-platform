@@ -135,7 +135,13 @@ class opcua_create_session_response : public opcua_response_base
 };
 
 
-class opcua_anonymus_identity_token : public common::ua_extension
+class opcua_identity_token : public common::ua_extension
+{
+public:
+    opcua_identity_token(rx_node_id class_id, rx_node_id binary_id, rx_node_id xml_id);
+};
+typedef std::unique_ptr<opcua_identity_token> identity_token_ptr;
+class opcua_anonymus_identity_token : public opcua_identity_token
 {
 public:
     opcua_anonymus_identity_token();
@@ -168,7 +174,7 @@ class opcua_activate_session : public opcua_request_base
 
       string_array locale_ids;
 
-      opcua_extension_ptr identity_token;
+      identity_token_ptr identity_token;
 
       string_type token_signature_algorithm;
 

@@ -152,6 +152,8 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
 
   public:
+      ~local_dependecy_builder();
+
 
       void add_runtime (const object_runtime_data& what, bool remove, bool create, bool save);
 

@@ -417,6 +417,13 @@
 #define RX_REGISTER_VARIABLE_TYPE_ID 0xc000069
 #define RX_PLATFORM_SOURCE_TYPE_NAME "PlatformSource"
 #define RX_PLATFORM_SOURCE_TYPE_ID 0xc000049
+
+
+#define RX_OPCUA_MAPPER_BASE_TYPE_NAME "OpcMapperBase"
+#define RX_OPCUA_MAPPER_BASE_TYPE_ID 0xc0000a1
+
+#define RX_OPCUA_SIMPLE_MAPPER_TYPE_NAME "OpcSimpleMapper"
+#define RX_OPCUA_SIMPLE_MAPPER_TYPE_ID 0xc0000a0
  
 
 #define RX_LINEAR_SCALING_FILTER_TYPE_NAME "LinearScaling"
@@ -524,7 +531,7 @@
 
 
 
-// last is 0xc00009f!!!! 
+// last is 0xc0000a1!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

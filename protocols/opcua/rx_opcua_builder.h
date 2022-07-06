@@ -41,7 +41,7 @@ namespace opcua_addr_space {
 
 class server_address_space;
 
-rx_result build_standard_address_space(opcua_std_address_space& server, const string_type& server_uri);
+rx_result build_standard_address_space(opcua_std_address_space& server, const string_type& server_uri, const string_type& app_uri, const string_type& server_type);
 
 
 

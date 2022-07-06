@@ -115,6 +115,71 @@ rx_result opcua_read_response::serialize_binary (binary::ua_binary_ostream& stre
 }
 
 
+// Class protocols::opcua::requests::opcua_attributes::opcua_write_request 
+
+
+rx_node_id opcua_write_request::get_binary_request_id ()
+{
+	return rx_node_id::opcua_standard_id(opcid_WriteRequest_Encoding_DefaultBinary);
+}
+
+opcua_request_ptr opcua_write_request::create_empty () const
+{
+	return std::make_unique<opcua_write_request>();
+}
+
+rx_result opcua_write_request::deserialize_binary (binary::ua_binary_istream& stream)
+{
+	stream.deserialize_array(to_write);
+	return true;
+}
+
+opcua_response_ptr opcua_write_request::do_job (opcua_server_endpoint_ptr ep)
+{
+	if (to_write.empty())
+		return std::make_unique<requests::opcua_service_fault>(*this, opcid_Bad_NothingToDo);
+	auto addr_space = ep->get_address_space();
+	if (addr_space == nullptr)
+		return std::make_unique<requests::opcua_service_fault>(*this, opcid_Bad_InternalError);
+
+
+	return std::make_unique<requests::opcua_service_fault>(*this, opcid_Bad_NotSupported);
+
+	/*auto ret_ptr = std::make_unique<opcua_write_response>(*this);
+
+	addr_space->write_attributes(to_write, ret_ptr->results);
+
+	return ret_ptr;*/
+}
+
+
+// Class protocols::opcua::requests::opcua_attributes::opcua_write_response 
+
+opcua_write_response::opcua_write_response (const opcua_request_base& req)
+	: opcua_response_base(req)
+{
+}
+
+
+
+rx_node_id opcua_write_response::get_binary_response_id ()
+{
+	return rx_node_id::opcua_standard_id(opcid_WriteResponse_Encoding_DefaultBinary);
+}
+
+opcua_response_ptr opcua_write_response::create_empty () const
+{
+	return std::make_unique<opcua_write_response>();
+}
+
+rx_result opcua_write_response::serialize_binary (binary::ua_binary_ostream& stream) const
+{
+	stream << results;
+	stream << diagnostics_info;
+	return true;
+}
+
+
 } // namespace opcua_attributes
 } // namespace requests
 } // namespace opcua

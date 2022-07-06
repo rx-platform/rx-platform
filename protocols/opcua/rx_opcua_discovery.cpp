@@ -75,7 +75,7 @@ opcua_response_ptr opcua_get_endpoints::do_job (opcua_server_endpoint_ptr ep)
 {
 	auto ret_ptr = std::make_unique<opcua_get_endpoints_response>(*this);
 	
-	ret_ptr->endpoints.push_back(std::move(ep->get_endpoint_description(endpoint)));
+	ret_ptr->endpoints.push_back(std::move(ep->get_endpoint_description(endpoint, false)));
 
 	return ret_ptr;
 }

@@ -136,7 +136,6 @@ post_period_job::smart_ptr  rx_post_delayed_function(uint32_t period, rx_referen
 template<class funcT, class... Args>
 periodic_job::smart_ptr rx_create_periodic_function(uint32_t period, rx_reference_ptr ref, funcT what, Args... args)
 {
-	auto et = rx_internal::infrastructure::server_runtime::instance().get_executer(rx_thread_context());
 	auto job = rx_create_timer_job<funcT, Args...>()(ref, std::move(what), std::forward<Args>(args)...);
 	if (job)
 		rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, period);
@@ -158,6 +157,21 @@ periodic_job::smart_ptr rx_create_periodic_function(uint32_t period, rx_referenc
 		RX_ASSERT(false);
 	return job;
 }
+
+
+template<class funcT>
+periodic_job::smart_ptr rx_create_io_periodic_function(rx_reference_ptr ref, funcT what)
+{
+	auto job = rx_create_timer_job<funcT>()(ref, std::move(what));
+	if (job)
+	{
+		rx_internal::infrastructure::server_runtime::instance().append_timer_io_job(job);
+	}
+	else
+		RX_ASSERT(false);
+	return job;
+}
+
 
 template<typename funcT>
 struct rx_transaction_slot

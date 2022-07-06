@@ -84,7 +84,7 @@ runtime_holder<typeT>::~runtime_holder()
     else
         RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta_info_.get_full_path()));
 #ifdef _DEBUG
-    printf("Deleted %s %s\r\n", rx_item_type_name(typeT::type_id).c_str(), meta_info_.name.c_str());
+    printf("Deleted %s %s\r\n", rx_item_type_name(typeT::runtime_type_id).c_str(), meta_info_.name.c_str());
 #endif
 }
 
@@ -169,6 +169,7 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
             }
         }
     }
+    context_.runtime_deinitialized();
     my_job_ptr_ = process_runtime_job<typeT>::smart_ptr::null_ptr;
     return result;
 }

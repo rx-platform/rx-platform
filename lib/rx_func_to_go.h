@@ -75,6 +75,11 @@ struct function_to_go
     {
     }
 
+    ~function_to_go()
+    {
+
+    }
+
     function_to_go() = default;
     function_to_go(const function_to_go&) = delete;
     function_to_go(function_to_go&& right) noexcept = default;

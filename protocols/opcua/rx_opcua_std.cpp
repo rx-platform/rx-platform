@@ -69,18 +69,6 @@ opcua_std_address_space::~opcua_std_address_space()
 
 
 
-rx_result opcua_std_address_space::register_node (opcua_node_base* what)
-{
-    RX_ASSERT(false);
-    return RX_NOT_SUPPORTED;
-}
-
-rx_result opcua_std_address_space::unregister_node (opcua_node_base* what)
-{
-    RX_ASSERT(false);
-    return RX_NOT_SUPPORTED;
-}
-
 void opcua_std_address_space::read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const
 {
     for (const auto& one : to_read)
@@ -91,7 +79,7 @@ void opcua_std_address_space::read_attributes (const std::vector<read_value_id>&
         opcua_std_valued_node val_found;
         if (one.node_id.is_opc())
         {
-            locks::const_auto_read_lock _(&ns_lock_);
+            locks::const_auto_read_lock _(get_lock());
 
             auto val_it = get_valued_by_id(one.node_id.get_numeric());
             if (val_it != registered_valued_nodes_.end())
@@ -123,7 +111,7 @@ void opcua_std_address_space::browse (const opcua_view_description& view, const 
         opcua_std_valued_node val_found;
         if (one.node_id.is_opc())
         {
-            locks::const_auto_read_lock _(&ns_lock_);
+            locks::const_auto_read_lock _(get_lock());
 
             opcua_browse_context ctx(this);
 
@@ -140,6 +128,42 @@ void opcua_std_address_space::browse (const opcua_view_description& view, const 
                 {
                     found = *it;
                     found.browse(one, temp_val, &ctx);
+                }
+            }
+        }
+        results.push_back(std::move(temp_val));
+    }
+}
+
+void opcua_std_address_space::translate (const std::vector<browse_path>& browse_paths, std::vector<browse_path_result>& results, opcua_address_space_base* root) const
+{
+    for (const auto& one : browse_paths)
+    {
+        browse_path_result temp_val;
+        temp_val.status_code = opcid_Bad_NodeIdUnknown;
+        opcua_std_node found;
+        opcua_std_valued_node val_found;
+        if (one.starting_node.is_opc())
+        {
+            locks::const_auto_read_lock _(get_lock());
+
+            opcua_browse_context ctx(this);
+
+            auto val_it = get_valued_by_id(one.starting_node.get_numeric());
+            if (val_it != registered_valued_nodes_.end())
+            {
+                val_found = *val_it;
+                temp_val.status_code = opcid_OK;
+                val_found.translate(one.path, temp_val, &ctx);
+            }
+            else
+            {
+                auto it = get_by_id(one.starting_node.get_numeric());
+                if (it != registered_nodes_.end())
+                {
+                    found = *it;
+                    temp_val.status_code = opcid_OK;
+                    found.translate(one.path, temp_val, &ctx);
                 }
             }
         }
@@ -172,7 +196,7 @@ rx_result opcua_std_address_space::set_node_value (const rx_node_id& id, values:
 {
     if (!id.is_null() && id.is_opc())
     {
-        locks::auto_write_lock _(&ns_lock_);
+        locks::auto_write_lock _(get_lock());
 
         auto val_node_it = get_valued_by_id(id.get_numeric());
         if (val_node_it != registered_valued_nodes_.end())
@@ -191,9 +215,50 @@ rx_result opcua_std_address_space::set_node_value (const rx_node_id& id, values:
     return RX_INVALID_ARGUMENT;
 }
 
+locks::rw_slim_lock* opcua_std_address_space::get_lock ()
+{
+    return &ns_lock_;
+}
+
+const locks::rw_slim_lock* opcua_std_address_space::get_lock () const
+{
+    return &ns_lock_;
+}
+
+opcua_node_base* opcua_std_address_space::connect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse)
+{
+    if (ref_data.target_id.is_null() || !ref_data.target_id.is_opc())
+        return nullptr;
+    auto it = get_by_id(ref_data.target_id.get_numeric());
+    if (it != registered_nodes_.end())
+    {
+        if (!it->references_.connect_node_reference(node, ref_data, inverse))
+            return nullptr;
+        return &(*it);
+    }
+    auto it_val = get_valued_by_id(ref_data.target_id.get_numeric());
+    if (it_val != registered_valued_nodes_.end())
+    {
+        if (!it_val->references_.connect_node_reference(node, ref_data, inverse))
+            return nullptr;
+        return &(*it_val);
+    }
+    return nullptr;
+}
+
+opcua_result_t opcua_std_address_space::register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val)
+{
+    return opcid_Bad_NotSupported;
+}
+
+opcua_result_t opcua_std_address_space::unregister_value_monitor (opcua_subscriptions::opcua_monitored_value* who)
+{
+    return opcid_Bad_NotSupported;
+}
+
 opcua_std_address_space::registered_nodes_type::const_iterator opcua_std_address_space::get_by_id (uint32_t id) const
 {
-    auto it = std::lower_bound(registered_nodes_.begin(), registered_nodes_.end(), opcua_std_node{ id }, std_nodes_comparator());
+    auto it = std::lower_bound(registered_nodes_.begin(), registered_nodes_.end(), id, std_nodes_comparator());
     if (it != registered_nodes_.end() && it->node_id == id)
         return it;
     else
@@ -202,7 +267,7 @@ opcua_std_address_space::registered_nodes_type::const_iterator opcua_std_address
 
 opcua_std_address_space::registered_nodes_type::iterator opcua_std_address_space::get_by_id (uint32_t id)
 {
-    auto it = std::lower_bound(registered_nodes_.begin(), registered_nodes_.end(), opcua_std_node{ id }, std_nodes_comparator());
+    auto it = std::lower_bound(registered_nodes_.begin(), registered_nodes_.end(), id, std_nodes_comparator());
     if (it != registered_nodes_.end() && it->node_id == id)
         return it;
     else
@@ -211,7 +276,7 @@ opcua_std_address_space::registered_nodes_type::iterator opcua_std_address_space
 
 opcua_std_address_space::registered_valued_nodes_type::const_iterator opcua_std_address_space::get_valued_by_id (uint32_t id) const
 {
-    auto it = std::lower_bound(registered_valued_nodes_.begin(), registered_valued_nodes_.end(), opcua_std_node{ id }, std_nodes_comparator());
+    auto it = std::lower_bound(registered_valued_nodes_.begin(), registered_valued_nodes_.end(), id, std_nodes_comparator());
     if (it != registered_valued_nodes_.end() && it->node_id == id)
         return it;
     else
@@ -220,7 +285,7 @@ opcua_std_address_space::registered_valued_nodes_type::const_iterator opcua_std_
 
 opcua_std_address_space::registered_valued_nodes_type::iterator opcua_std_address_space::get_valued_by_id (uint32_t id)
 {
-    auto it = std::lower_bound(registered_valued_nodes_.begin(), registered_valued_nodes_.end(), opcua_std_node{ id }, std_nodes_comparator());
+    auto it = std::lower_bound(registered_valued_nodes_.begin(), registered_valued_nodes_.end(), id, std_nodes_comparator());
     if (it != registered_valued_nodes_.end() && it->node_id == id)
         return it;
     else
@@ -445,6 +510,69 @@ void opcua_std_node::browse (const opcua_browse_description& to_browse, browse_r
     }
 }
 
+void opcua_std_node::translate (const relative_path& path, browse_path_result& results, opcua_browse_context* ctx) const
+{
+    std::set<rx_node_id> refIds;
+    if (!results.targets.empty() && results.targets.rbegin()->remaining_index < path.elements.size())
+    {
+        results.targets.rbegin()->remaining_index = (uint32_t)(-1);
+        return;
+    }
+    size_t idx = 0;
+    if (!results.targets.empty())
+        idx = results.targets.rbegin()->remaining_index + 1;
+    results.targets.push_back(browse_path_target{});
+    auto target_it = results.targets.rbegin();
+    target_it->remaining_index = (uint32_t)idx;
+
+    const auto& one_path = path.elements[idx];
+
+    if (one_path.target_name.name.empty())
+    {
+        results.status_code = opcid_Bad_BrowseNameInvalid;
+        return;
+    }
+
+    if (!one_path.reference_id.is_null())
+    {
+        refIds.insert(one_path.reference_id);
+        ctx->root->fill_relation_types(one_path.reference_id, one_path.sub_types, refIds);
+    }
+    if (!one_path.is_inverse)
+    {
+        for (const auto& one : references_.references)
+        {
+            if (one.resolved_node)
+            {
+                if (!refIds.empty() && refIds.count(one.reference_id)
+                    && one.resolved_node->get_browse_name() == one_path.target_name)
+                {
+                    target_it->target_id = one.target_id;
+                    one.resolved_node->translate(path, results, ctx);
+                    return;
+                }
+            }
+        }
+    }
+    else // if (one_path.is_inverse)
+    {
+        for (const auto& one : references_.inverse_references)
+        {
+            if (one.resolved_node)
+            {
+                if (!refIds.empty() && refIds.count(one.reference_id)
+                    && one.resolved_node->get_browse_name() == one_path.target_name)
+                {
+                    target_it->target_id = one.target_id;
+                    one.resolved_node->translate(path, results, ctx);
+                    return;
+                }
+            }
+        }
+    }
+    results.status_code = opcid_Bad_NoMatch;
+}
+
 node_class_type opcua_std_node::get_node_class () const
 {
     return node_class;
@@ -473,6 +601,11 @@ rx_node_id opcua_std_node::get_type_id () const
 rx_result opcua_std_node::set_node_value (values::rx_value&& val)
 {
     return RX_NOT_SUPPORTED;
+}
+
+node_references& opcua_std_node::get_reference_data ()
+{
+    return references_;
 }
 
 

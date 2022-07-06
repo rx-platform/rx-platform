@@ -2626,6 +2626,29 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 			});
 		add_type_to_configuration(dir, port, false);
 
+		// mappers
+		auto map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_OPCUA_MAPPER_BASE_TYPE_NAME
+			, RX_OPCUA_MAPPER_BASE_TYPE_ID
+			, RX_EXTERN_MAPPER_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+		
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_OPCUA_SIMPLE_MAPPER_TYPE_NAME
+			, RX_OPCUA_SIMPLE_MAPPER_TYPE_ID
+			, RX_OPCUA_MAPPER_BASE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static("SimplePath", "");
+		map->complex_data.register_const_value_static<uint32_t>("NumericId", 0);
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		
+
 	}
 	BUILD_LOG_INFO("opc_types_builder", 900, "OPC UA types built.");
 	return true;

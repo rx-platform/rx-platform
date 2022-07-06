@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  protocols\opcua\rx_opcua_view.h
+*  protocols\opcua\rx_monitoreditem_set.h
 *
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,12 +28,10 @@
 ****************************************************************************/
 
 
-#ifndef rx_opcua_view_h
-#define rx_opcua_view_h 1
+#ifndef rx_monitoreditem_set_h
+#define rx_monitoreditem_set_h 1
 
 
-#include "protocols/opcua/rx_opcua_params.h"
-using namespace protocols::opcua::common;
 
 // rx_opcua_requests
 #include "protocols/opcua/rx_opcua_requests.h"
@@ -46,13 +44,13 @@ namespace opcua {
 
 namespace requests {
 
-namespace opcua_view {
+namespace opcua_monitoreditem {
 
 
 
 
 
-class opcua_browse_request : public opcua_request_base  
+class opcua_create_mon_items_request : public opcua_request_base  
 {
 
   public:
@@ -66,11 +64,11 @@ class opcua_browse_request : public opcua_request_base
       opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
 
 
-      opcua_view_description view;
+      uint32_t subscription_id;
 
-      uint32_t max_references;
+      timestamps_return_type timestamps_to_return;
 
-      std::vector<opcua_browse_description> to_browse;
+      std::vector<create_monitored_item_data> to_create;
 
 
   protected:
@@ -85,11 +83,11 @@ class opcua_browse_request : public opcua_request_base
 
 
 
-class opcua_browse_response : public opcua_response_base  
+class opcua_create_mon_items_response : public opcua_response_base  
 {
 
   public:
-      opcua_browse_response (const opcua_request_base& req);
+      opcua_create_mon_items_response (const opcua_request_base& req);
 
 
       rx_node_id get_binary_response_id ();
@@ -99,11 +97,11 @@ class opcua_browse_response : public opcua_response_base
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
 
 
-      std::vector<opcua_browse_result> results;
+      std::vector<create_monitored_item_result> results;
 
       std::vector<diagnostic_info> diagnostics_info;
 
-      opcua_browse_response() = default;
+      opcua_create_mon_items_response() = default;
   protected:
 
   private:
@@ -116,7 +114,7 @@ class opcua_browse_response : public opcua_response_base
 
 
 
-class opcua_translate_request : public opcua_request_base  
+class opcua_delete_mon_items_request : public opcua_request_base  
 {
 
   public:
@@ -130,7 +128,9 @@ class opcua_translate_request : public opcua_request_base
       opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
 
 
-      std::vector<browse_path> browse_paths;
+      uint32_t subscription_id;
+
+      std::vector<uint32_t> to_delete;
 
 
   protected:
@@ -145,11 +145,11 @@ class opcua_translate_request : public opcua_request_base
 
 
 
-class opcua_translate_response : public opcua_response_base  
+class opcua_delete_mon_items_response : public opcua_response_base  
 {
 
   public:
-      opcua_translate_response (const opcua_request_base& req);
+      opcua_delete_mon_items_response (const opcua_request_base& req);
 
 
       rx_node_id get_binary_response_id ();
@@ -159,11 +159,12 @@ class opcua_translate_response : public opcua_response_base
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
 
 
-      std::vector<browse_path_result> results;
+      std::vector<opcua_result_t> results;
 
       std::vector<diagnostic_info> diagnostics_info;
 
-      opcua_translate_response() = default;
+      opcua_delete_mon_items_response() = default;
+
   protected:
 
   private:
@@ -172,7 +173,7 @@ class opcua_translate_response : public opcua_response_base
 };
 
 
-} // namespace opcua_view
+} // namespace opcua_monitoreditem
 } // namespace requests
 } // namespace opcua
 } // namespace protocols

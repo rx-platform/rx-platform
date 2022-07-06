@@ -133,6 +133,11 @@ void dependency_cache::add_single_dependency (const rx_node_id& id, const rx_nod
 
 // Class rx_internal::model::transactions::local_dependecy_builder 
 
+local_dependecy_builder::~local_dependecy_builder()
+{
+}
+
+
 
 void local_dependecy_builder::add_runtime (const object_runtime_data& what, bool remove, bool create, bool save)
 {
@@ -650,6 +655,7 @@ void local_dependecy_builder::process (rx_result&& result)
 		[[fallthrough]];
 	case builder_phase::done:
 		callback_(std::move(res));
+		objects_.clear();
 		break;
 	};
 	if (!res)

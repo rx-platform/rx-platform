@@ -124,6 +124,69 @@ rx_result opcua_browse_response::serialize_binary (binary::ua_binary_ostream& st
 }
 
 
+// Class protocols::opcua::requests::opcua_view::opcua_translate_request 
+
+
+rx_node_id opcua_translate_request::get_binary_request_id ()
+{
+	return rx_node_id::opcua_standard_id(opcid_TranslateBrowsePathsToNodeIdsRequest_Encoding_DefaultBinary);
+}
+
+opcua_request_ptr opcua_translate_request::create_empty () const
+{
+	return std::make_unique<opcua_translate_request>();
+}
+
+rx_result opcua_translate_request::deserialize_binary (binary::ua_binary_istream& stream)
+{
+	stream.deserialize_array(browse_paths);
+	return true;
+}
+
+opcua_response_ptr opcua_translate_request::do_job (opcua_server_endpoint_ptr ep)
+{
+	if (browse_paths.empty())
+		return std::make_unique<requests::opcua_service_fault>(*this, opcid_Bad_NothingToDo);
+
+	auto addr_space = ep->get_address_space();
+	if (addr_space == nullptr)
+		return std::make_unique<requests::opcua_service_fault>(*this, opcid_Bad_InternalError);
+
+	std::unique_ptr<opcua_translate_response> ret_msg = std::make_unique<opcua_translate_response>(*this);
+
+	ret_msg->results.reserve(browse_paths.size());
+	addr_space->translate(browse_paths, ret_msg->results, addr_space);
+	return ret_msg;
+}
+
+
+// Class protocols::opcua::requests::opcua_view::opcua_translate_response 
+
+opcua_translate_response::opcua_translate_response (const opcua_request_base& req)
+	: opcua_response_base(req)
+{
+}
+
+
+
+rx_node_id opcua_translate_response::get_binary_response_id ()
+{
+	return rx_node_id::opcua_standard_id(opcid_TranslateBrowsePathsToNodeIdsResponse_Encoding_DefaultBinary);
+}
+
+opcua_response_ptr opcua_translate_response::create_empty () const
+{
+	return std::make_unique<opcua_translate_response>();
+}
+
+rx_result opcua_translate_response::serialize_binary (binary::ua_binary_ostream& stream) const
+{
+	stream.serialize_array(results);
+	stream << diagnostics_info;
+	return true;
+}
+
+
 } // namespace opcua_view
 } // namespace requests
 } // namespace opcua

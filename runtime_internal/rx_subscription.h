@@ -33,10 +33,10 @@
 
 
 
-// rx_job
-#include "system/threads/rx_job.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
+// rx_job
+#include "system/threads/rx_job.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -82,8 +82,6 @@ class rx_subscription_tag
       int ref_count;
 
       runtime_handle_t target_handle;
-
-      size_t connection_idx;
 
       runtime_handle_t mine_handle;
 
@@ -162,9 +160,9 @@ class runtime_connection_data
 
       std::vector<size_t> empty_slots_;
 
-      string_array to_connect;
+      string_array to_connect_;
 
-      std::vector<size_t> connect_indexes;
+      std::vector<size_t> connect_indexes_;
 
 
 };

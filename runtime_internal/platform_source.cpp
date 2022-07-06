@@ -55,6 +55,11 @@ platform_source::platform_source()
 }
 
 
+platform_source::~platform_source()
+{
+}
+
+
 
 rx_result platform_source::initialize_source (runtime::runtime_init_context& ctx)
 {

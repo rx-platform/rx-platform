@@ -98,6 +98,8 @@ Platform Source. Source implementation for platform connection, may include diff
   public:
       platform_source();
 
+      ~platform_source();
+
 
       rx_result initialize_source (runtime::runtime_init_context& ctx);
 

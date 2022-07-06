@@ -214,34 +214,34 @@ ua_binary_istream& ua_binary_istream::operator>> (rx_uuid_t& val)
 	auto result = buffer_->read_from_buffer(val);
 	return *this;
 }
-
-std::unique_ptr<ua_extension> ua_binary_istream::deserialize_extension(std::function<std::unique_ptr<ua_extension>(const rx_node_id& id)> creator_func)
-{
-	rx_node_id id;
-	(*this) >> id;
-	std::unique_ptr<ua_extension> val = creator_func(id);
-	uint8_t encoding;
-	(*this) >> encoding;
-	if (val != NULL)
-	{
-		if (encoding == 1)
-		{
-			int len;
-			(*this) >> len;
-			val->internal_deserialize_extension(*this);
-		}
-
-	}
-	else
-	{
-		if (encoding != 0)
-		{// do the dummy read for this stuff
-			byte_string dummy;
-			(*this) >> dummy;
-		}
-	}
-	return val;
-}
+//
+//std::unique_ptr<ua_extension> ua_binary_istream::deserialize_extension(std::function<std::unique_ptr<ua_extension>(const rx_node_id& id)> creator_func)
+//{
+//	rx_node_id id;
+//	(*this) >> id;
+//	std::unique_ptr<ua_extension> val = creator_func(id);
+//	uint8_t encoding;
+//	(*this) >> encoding;
+//	if (val != NULL)
+//	{
+//		if (encoding == 1)
+//		{
+//			int len;
+//			(*this) >> len;
+//			val->internal_deserialize_extension(*this);
+//		}
+//
+//	}
+//	else
+//	{
+//		if (encoding != 0)
+//		{// do the dummy read for this stuff
+//			byte_string dummy;
+//			(*this) >> dummy;
+//		}
+//	}
+//	return val;
+//}
 ua_binary_istream& ua_binary_istream::operator>> (node_class_type& val)
 {
 	int temp;
@@ -363,6 +363,14 @@ ua_binary_istream& ua_binary_istream::operator>> (change_trigger_type& val)
 	val = (change_trigger_type)temp;
 	return *this;
 }
+ua_binary_istream& ua_binary_istream::operator>> (monitoring_mode_t& val)
+{
+	int temp;
+	(*this) >> temp;
+	val = (monitoring_mode_t)temp;
+	return *this;
+}
+
 void ua_binary_istream::deserialize_vunion(uint8_t type, vunion_type& vu)
 {
 	switch (type)
@@ -440,7 +448,7 @@ void ua_binary_istream::deserialize_vunion(uint8_t type, vunion_type& vu)
 		break;
 	case opcid_Structure:
 		{
-			auto ret_ptr = deserialize_extension([](const rx_node_id& id) {
+			auto ret_ptr = deserialize_extension<ua_extension>([](const rx_node_id& id) {
 				if (id.is_null())
 					return std::make_unique<ua_extension>();
 				else
@@ -755,7 +763,12 @@ void ua_binary_ostream::serialize_extension(const ua_extension* val)
 		(*this) << val->binary_id;
 		uint8_t encoding = 1;
 		(*this) << encoding;
+		auto pos = buffer_->size;
+		(*this) << (uint32_t)0;
 		val->internal_serialize_extension(*this);
+		auto pos_after = buffer_->size;
+		uint32_t ext_size = (uint32_t)(pos_after - pos - 4);
+		*((uint32_t*)&buffer_->buffer_ptr[pos]) = ext_size;
 	}
 }
 ua_binary_ostream& ua_binary_ostream::operator << (const node_class_type val)
@@ -888,6 +901,12 @@ ua_binary_ostream& ua_binary_ostream::operator << (change_trigger_type val)
 	(*this) << (int)val;
 	return *this;
 }
+
+ua_binary_ostream& ua_binary_ostream::operator << (monitoring_mode_t val)
+{
+	(*this) << (int)val;
+	return *this;
+}
 void ua_binary_ostream::serialize_vunion(uint8_t type, const vunion_type& vu)
 {
 	switch (type)
@@ -926,7 +945,10 @@ void ua_binary_ostream::serialize_vunion(uint8_t type, const vunion_type& vu)
 		(*this) << vu.d_val;
 		break;
 	case opcid_String:
-		(*this) << (*vu.str_val);
+		if(vu.str_val)
+			(*this) << (*vu.str_val);
+		else
+			(*this) << -1;
 		break;
 	case opcid_DateTime:
 		(*this) << vu.ft_val;
@@ -935,16 +957,29 @@ void ua_binary_ostream::serialize_vunion(uint8_t type, const vunion_type& vu)
 		(*this) << (*vu.guid_val);
 		break;
 	case opcid_ByteString:
-		(*this) << (*vu.bstr_val);
+		if (vu.bstr_val)
+			(*this) << (*vu.bstr_val);
+		else
+			(*this) << -1;
 		break;
 	case opcid_XmlElement:
-		(*this) << (*vu.str_val);
+		if (vu.str_val)
+			(*this) << (*vu.str_val);
+		else
+			(*this) << -1;
+		break;
 		break;
 	case opcid_NodeId:
-		(*this) << (*vu.node_val);
+		if (vu.node_val)
+			(*this) << (*vu.node_val);
+		else
+			(*this) << rx_node_id::opcua_standard_id(opcid_Null);
 		break;
 	case opcid_ExpandedNodeId:
-		(*this) << (*vu.node_val);
+		if (vu.node_val)
+			(*this) << (*vu.node_val);
+		else
+			(*this) << rx_node_id::opcua_standard_id(opcid_Null);
 		break;
 	case opcid_StatusCode:
 		(*this) << vu.dw_val;
