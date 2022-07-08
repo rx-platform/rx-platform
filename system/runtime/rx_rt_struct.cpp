@@ -2930,7 +2930,7 @@ void source_data::process_write (write_data&& data)
 		{
 			for (auto& filter : filters)
 			{
-				if (filter.is_input())
+				if (filter.is_output())
 				{
 					result = filter.filter_output(data.value);
 					if (!result)

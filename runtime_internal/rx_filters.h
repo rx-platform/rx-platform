@@ -191,6 +191,39 @@ Implementation of quality filter that provides pure bit value.");
 };
 
 
+
+
+
+
+class ascii_filter : public rx_platform::runtime::blocks::filter_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation of UTF8 to ASCII conversion.\r\n\
+Conversion is always UTF8 to ASCII for both input and output");
+
+    DECLARE_REFERENCE_PTR(ascii_filter);
+
+  public:
+
+      rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result filter_input (rx_value& val);
+
+      rx_result filter_output (rx_simple_value& val);
+
+
+
+      char invalid_char_;
+
+
+};
+
+
 } // namespace filters
 } // namespace sys_runtime
 } // namespace rx_internal

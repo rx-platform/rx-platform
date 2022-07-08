@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 2
 #define RX_LIB_MINOR_VERSION 5
-#define RX_LIB_BUILD_NUMBER 2
+#define RX_LIB_BUILD_NUMBER 3
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -51,5 +51,6 @@
 // version 2.4.0 binary serialization and rx_result to common library
 // version 2.5.0 introduced std::byte
 // version 2.5.2 added read/write slim lock
+// version 2.5.3 added utf8_to_ascii
 
 

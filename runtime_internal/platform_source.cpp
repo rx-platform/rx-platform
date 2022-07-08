@@ -98,7 +98,8 @@ void platform_source::disconnect ()
 
 rx_result platform_source::source_write (write_data&& data, runtime_process_context* ctx)
 {
-    return RX_NOT_IMPLEMENTED;
+    point_.write(data.value, data.transaction_id);
+    return true;
 }
 
 void platform_source::value_changed (rx_value&& val)

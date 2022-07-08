@@ -309,25 +309,16 @@ void runtime_scan_algorithms<typeT>::process_status_change (typename typeT::RTyp
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_source_inputs (typename typeT::RType& whose, runtime_process_context& ctx)
 {
-    // order here is very important
-    source_results_type* source_results = &ctx.get_source_results();
-    source_updates_type* source_updates = &ctx.get_source_updates();
-    while (!source_updates->empty() || !source_results->empty())
+    auto to_process = ctx.get_source_inputs();
+    while (!to_process.first->empty() || !to_process.second->empty())
     {
+        for (auto& one : *to_process.first)
+            one.whose->process_result(one.transaction_id, std::move(one.result));
 
-        if constexpr (C_has_source_results)
-        {
-            for (auto& one : *source_results)
-                one.whose->process_result(one.transaction_id, std::move(one.result));
-        }
-        source_results = &ctx.get_source_results();
+        for (auto& one : *to_process.second)
+            one.whose->process_update(std::move(one.value));
 
-        if constexpr (C_has_source_updates)
-        {
-            for (auto& one : *source_updates)
-                one.whose->process_update(std::move(one.value));
-        }
-        source_updates = &ctx.get_source_updates();
+        to_process = ctx.get_source_inputs();
     }
 }
 
@@ -353,7 +344,6 @@ void runtime_scan_algorithms<typeT>::process_subscription_inputs (typename typeT
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_variables (typename typeT::RType& whose, runtime_process_context& ctx)
 {
-    // order here is very important
     auto to_process = ctx.get_variables_for_process();
     while (!to_process.first->empty() || !to_process.second->empty())
     {
@@ -362,6 +352,7 @@ void runtime_scan_algorithms<typeT>::process_variables (typename typeT::RType& w
 
         for (auto& one : *to_process.second)
             one->process_runtime(&ctx);
+
         to_process = ctx.get_variables_for_process();
     }
 }
@@ -369,18 +360,16 @@ void runtime_scan_algorithms<typeT>::process_variables (typename typeT::RType& w
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_programs (typename typeT::RType& whose, runtime_process_context& ctx)
 {
-    // order here is very important
-    auto method_results = &ctx.get_method_results();
-    auto programs = &ctx.get_programs_for_process();
-    while (!programs->empty() || !method_results->empty())
+    auto to_process = ctx.get_logic_for_process();
+    while (!to_process.first->empty() || !to_process.second->empty())
     {
-        for (auto& one : *method_results)
+        for (auto& one : *to_process.first)
             one.whose->process_execute_result(one.transaction_id, std::move(one.result), std::move(one.data));
-        method_results = &ctx.get_method_results();
 
-        for (auto& one : *programs)
+        for (auto& one : *to_process.second)
             one->process_program(ctx);
-        programs = &ctx.get_programs_for_process();
+
+        to_process = ctx.get_logic_for_process();
     }
 }
 

@@ -1099,12 +1099,21 @@ void value_point_impl::level5 (rx_value& result, char*& prog, char*& token, char
 		op = *token;
 		get_token(prog, token, tok_type, expres);
 	}
-	if (isunary(*token))
-		level5(result, prog, token, tok_type, expres);
+	if (tok_type != STRING)
+	{
+		if (isunary(*token))
+			level5(result, prog, token, tok_type, expres);
+		else
+			level6(result, prog, token, tok_type, expres);
+		if (op)
+			unary(op, result, prog, token, tok_type, expres);
+	}
 	else
+	{
 		level6(result, prog, token, tok_type, expres);
-	if (op)
-		unary(op, result, prog, token, tok_type, expres);
+		if (op)
+			unary(op, result, prog, token, tok_type, expres);
+	}
 }
 
 void value_point_impl::level6 (rx_value& result, char*& prog, char*& token, char& tok_type, char*& expres)

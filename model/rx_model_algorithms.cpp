@@ -1243,7 +1243,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 			if (!init_result)
 			{
 				init_result.register_error("Unable to initialize "s + result.value().ptr->meta_info().get_full_path());
-				return result.errors();
+				return init_result.errors();
 			}
 			META_LOG_INFO("runtime_model_algorithm", 100, "Created "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + result.value().ptr->meta_info().get_full_path());
 		}

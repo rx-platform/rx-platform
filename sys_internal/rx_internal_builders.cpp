@@ -1574,6 +1574,16 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 				});
 		filter->complex_data.register_const_value_static("GoodValue", true);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+				
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_ASCII_FILTER_TYPE_NAME
+			, RX_ASCII_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+				});
+		filter->complex_data.register_const_value_static<uint8_t>("InvalidChar", '?');
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		auto what = create_type<struct_type>(meta::type_creation_data{
 			RX_DISPLAY_RESOURCE_TYPE_NAME

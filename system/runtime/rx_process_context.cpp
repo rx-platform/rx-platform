@@ -109,26 +109,6 @@ runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binde
 
 
 
-bool runtime_process_context::should_repeat ()
-{
-    locks::auto_lock_t _(&context_lock_);
-    RX_ASSERT(current_step_ == runtime_process_step::beyond_last);
-    bool ret =  pending_steps_.to_ulong() != 0;
-    if (ret)
-        return init_context();
-    else
-        current_step_ = runtime_process_step::idle;
-    return ret;
-}
-
-void runtime_process_context::tag_updates_pending ()
-{
-    locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
-        return;
-    turn_on_pending<runtime_process_step::tag_outputs>();
-}
-
 rx_result runtime_process_context::init_context ()
 {
     now = rx_time::now();
@@ -136,23 +116,21 @@ rx_result runtime_process_context::init_context ()
     return true;
 }
 
-void runtime_process_context::tag_writes_pending ()
+void runtime_process_context::init_state (fire_callback_func_t fire_callback)
 {
-    if (stopping_)
-        return;
-    turn_on_pending<runtime_process_step::tag_inputs>();
+    fire_callback_ = fire_callback;
+    mode_.turn_on();
 }
 
-bool runtime_process_context::should_process_tag_updates ()
+void runtime_process_context::runtime_stopped ()
 {
     locks::auto_lock_t _(&context_lock_);
-    return should_do_step<runtime_process_step::tag_outputs>();
+    stopping_ = true;
 }
 
-bool runtime_process_context::should_process_tag_writes ()
+void runtime_process_context::runtime_deinitialized ()
 {
-    locks::auto_lock_t _(&context_lock_);
-    return should_do_step<runtime_process_step::tag_inputs>();
+    anchor_ = rx_reference_ptr::null_ptr;
 }
 
 rx_result runtime_process_context::get_value (runtime_handle_t handle, values::rx_simple_value& val) const
@@ -170,28 +148,25 @@ rx_result runtime_process_context::set_item (const string_type& path, values::rx
     return binded_.set_item(path, std::move(what), ctx);
 }
 
-void runtime_process_context::init_state (fire_callback_func_t fire_callback)
+bool runtime_process_context::should_repeat ()
 {
-    fire_callback_ = fire_callback;
-    mode_.turn_on();
+    locks::auto_lock_t _(&context_lock_);
+    RX_ASSERT(current_step_ == runtime_process_step::beyond_last);
+    bool ret =  pending_steps_.to_ulong() != 0;
+    if (ret)
+        return init_context();
+    else
+        current_step_ = runtime_process_step::idle;
+    return ret;
 }
 
-void runtime_process_context::mapper_write_pending (write_data_struct<structure::mapper_data> data)
+void runtime_process_context::from_remote_pending (remotes_data data)
 {
     locks::auto_lock_t _(&context_lock_);
     if (stopping_)
         return;
-    turn_on_pending<runtime_process_step::mapper_inputs>();
-    mapper_inputs_.emplace_back(std::move(data));
-}
-
-mapper_writes_type& runtime_process_context::get_mapper_writes ()
-{
-    locks::auto_lock_t _(&context_lock_);
-    if (should_do_step<runtime_process_step::mapper_inputs>())
-        return mapper_inputs_.get_and_swap();
-    else
-        return g_empty_mapper_writes;
+    turn_on_pending<runtime_process_step::remote_updates>();
+    from_remote_.emplace_back(std::move(data));
 }
 
 void runtime_process_context::status_change_pending ()
@@ -202,39 +177,13 @@ void runtime_process_context::status_change_pending ()
     turn_on_pending<runtime_process_step::status_change>();
 }
 
-void runtime_process_context::mapper_update_pending (update_data_struct<structure::mapper_data> data)
+void runtime_process_context::source_result_pending (write_result_struct<structure::source_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
     if (stopping_)
         return;
-    turn_on_pending<runtime_process_step::mapper_outputs>();
-    mapper_outputs_.emplace_back(std::move(data));
-}
-
-mapper_updates_type& runtime_process_context::get_mapper_updates ()
-{
-    if (should_do_step<runtime_process_step::mapper_outputs>())
-        return mapper_outputs_.get_and_swap();
-    else
-        return g_empty_mapper_updates;
-}
-
-void runtime_process_context::source_write_pending (write_data_struct<structure::source_data> data)
-{
-    locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
-        return;
-    turn_on_pending<runtime_process_step::source_outputs>();
-    source_outputs_.emplace_back(std::move(data));
-}
-
-source_writes_type& runtime_process_context::get_source_writes ()
-{
-    locks::auto_lock_t _(&context_lock_);
-    if (should_do_step<runtime_process_step::source_outputs>())
-        return source_outputs_.get_and_swap();
-    else
-        return g_empty_source_writes;
+    turn_on_pending<runtime_process_step::source_inputs>();
+    source_results_.emplace_back(std::move(data));
 }
 
 void runtime_process_context::source_update_pending (update_data_struct<structure::source_data> data)
@@ -246,13 +195,20 @@ void runtime_process_context::source_update_pending (update_data_struct<structur
     source_inputs_.emplace_back(std::move(data));
 }
 
-source_updates_type& runtime_process_context::get_source_updates ()
+void runtime_process_context::mapper_write_pending (write_data_struct<structure::mapper_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (should_do_step<runtime_process_step::source_inputs>())
-        return source_inputs_.get_and_swap();
-    else
-        return g_empty_source_updates;
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::mapper_inputs>();
+    mapper_inputs_.emplace_back(std::move(data));
+}
+
+void runtime_process_context::tag_writes_pending ()
+{
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::tag_inputs>();
 }
 
 void runtime_process_context::variable_pending (structure::variable_data* whose)
@@ -273,6 +229,106 @@ void runtime_process_context::variable_result_pending (write_result_struct<struc
     variable_results_.emplace_back(std::move(data));
 }
 
+void runtime_process_context::method_result_pending (method_execute_result_data data)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::programs>();
+    method_results_.emplace_back(std::move(data));
+}
+
+void runtime_process_context::program_pending (logic_blocks::program_data* whose)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::programs>();
+    programs_.emplace_back(whose);
+}
+
+void runtime_process_context::filter_pending (structure::filter_data* whose)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::filters>();
+    filters_.emplace_back(whose);
+}
+
+void runtime_process_context::own_pending (job_ptr what)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::own>();
+    owns_.emplace_back(std::move(what));
+}
+
+void runtime_process_context::tag_updates_pending ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::tag_outputs>();
+}
+
+void runtime_process_context::mapper_update_pending (update_data_struct<structure::mapper_data> data)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::mapper_outputs>();
+    mapper_outputs_.emplace_back(std::move(data));
+}
+
+void runtime_process_context::source_write_pending (write_data_struct<structure::source_data> data)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::source_outputs>();
+    source_outputs_.emplace_back(std::move(data));
+}
+
+bool runtime_process_context::should_process_tag_updates ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    return should_do_step<runtime_process_step::tag_outputs>();
+}
+
+bool runtime_process_context::should_process_tag_writes ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    return should_do_step<runtime_process_step::tag_inputs>();
+}
+
+mapper_writes_type& runtime_process_context::get_mapper_writes ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (should_do_step<runtime_process_step::mapper_inputs>())
+        return mapper_inputs_.get_and_swap();
+    else
+        return g_empty_mapper_writes;
+}
+
+mapper_updates_type& runtime_process_context::get_mapper_updates ()
+{
+    if (should_do_step<runtime_process_step::mapper_outputs>())
+        return mapper_outputs_.get_and_swap();
+    else
+        return g_empty_mapper_updates;
+}
+
+source_writes_type& runtime_process_context::get_source_writes ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (should_do_step<runtime_process_step::source_outputs>())
+        return source_outputs_.get_and_swap();
+    else
+        return g_empty_source_writes;
+}
+
 std::pair<variable_results_type*, variables_type*> runtime_process_context::get_variables_for_process ()
 {
     locks::auto_lock_t _(&context_lock_);
@@ -288,31 +344,13 @@ bool runtime_process_context::should_process_status_change ()
     return should_do_step<runtime_process_step::status_change>();
 }
 
-void runtime_process_context::program_pending (logic_blocks::program_data* whose)
-{
-    locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
-        return;
-    turn_on_pending<runtime_process_step::programs>();
-    programs_.emplace_back(whose);
-}
-
-programs_type& runtime_process_context::get_programs_for_process ()
+std::pair<method_results_type*, programs_type*> runtime_process_context::get_logic_for_process ()
 {
     locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::programs>())
-        return programs_.get_and_swap();
+        return { &method_results_.get_and_swap() , &programs_.get_and_swap() };
     else
-        return g_empty_programs;
-}
-
-void runtime_process_context::filter_pending (structure::filter_data* whose)
-{
-    locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
-        return;
-    turn_on_pending<runtime_process_step::events>();
-    filters_.emplace_back(whose);
+        return { &g_empty_method_results, &g_empty_programs };
 }
 
 filters_type& runtime_process_context::get_filters_for_process ()
@@ -447,15 +485,6 @@ rx_result runtime_process_context::do_command (rx_object_command_t command_type)
     return "Error executing command!";
 }
 
-void runtime_process_context::own_pending (job_ptr what)
-{
-    locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
-        return;
-    turn_on_pending<runtime_process_step::own>();
-    owns_.emplace_back(std::move(what));
-}
-
 owner_jobs_type& runtime_process_context::get_for_own_process ()
 {
     locks::auto_lock_t _(&context_lock_);
@@ -480,23 +509,13 @@ runtime_handle_t runtime_process_context::connect (const string_type& path, uint
     }
 }
 
-void runtime_process_context::source_result_pending (write_result_struct<structure::source_data> data)
+std::pair<source_results_type*, source_updates_type*> runtime_process_context::get_source_inputs ()
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
-        return;
-    turn_on_pending<runtime_process_step::source_inputs>();
-    source_results_.emplace_back(std::move(data));
-}
-
-source_results_type& runtime_process_context::get_source_results ()
-{
-    locks::auto_lock_t _(&context_lock_);
-    RX_ASSERT(current_step_ == runtime_process_step::source_inputs);
-    if (current_step_ == runtime_process_step::source_inputs)
-        return source_results_.get_and_swap();
+    if (should_do_step<runtime_process_step::source_inputs>())
+        return { &source_results_.get_and_swap() , &source_inputs_.get_and_swap() };
     else
-        return g_empty_source_results;
+        return { &g_empty_source_results, &g_empty_source_updates };
 }
 
 void runtime_process_context::runtime_dirty ()
@@ -509,15 +528,6 @@ bool runtime_process_context::should_save ()
     return serialize_value_.exchange(false);
 }
 
-void runtime_process_context::from_remote_pending (remotes_data data)
-{
-    locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
-        return;
-    turn_on_pending<runtime_process_step::remote_updates>();
-    from_remote_.emplace_back(std::move(data));
-}
-
 remotes_data_type& runtime_process_context::get_from_remote ()
 {
     locks::auto_lock_t _(&context_lock_);
@@ -528,39 +538,9 @@ remotes_data_type& runtime_process_context::get_from_remote ()
         return g_empty_remotes;
 }
 
-void runtime_process_context::runtime_stopped ()
-{
-    locks::auto_lock_t _(&context_lock_);
-    stopping_ = true;
-}
-
 void runtime_process_context::full_value_changed (structure::full_value_data* whose)
 {
     binded_.full_value_changed(whose, whose->get_value(this), tags_);
-}
-
-void runtime_process_context::method_result_pending (method_execute_result_data data)
-{
-    locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
-        return;
-    turn_on_pending<runtime_process_step::programs>();
-    method_results_.emplace_back(std::move(data));
-}
-
-method_results_type& runtime_process_context::get_method_results ()
-{
-    locks::auto_lock_t _(&context_lock_);
-    RX_ASSERT(current_step_ == runtime_process_step::programs);
-    if (current_step_ == runtime_process_step::programs)
-        return method_results_.get_and_swap();
-    else
-        return g_empty_method_results;
-}
-
-void runtime_process_context::runtime_deinitialized ()
-{
-    anchor_ = rx_reference_ptr::null_ptr;
 }
 
 rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)

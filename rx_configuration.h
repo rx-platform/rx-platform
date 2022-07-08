@@ -439,6 +439,9 @@
 #define RX_QUALITY_FILTER_TYPE_NAME "QualityFilter"
 #define RX_QUALITY_FILTER_TYPE_ID 0xc00007c
 
+#define RX_ASCII_FILTER_TYPE_NAME "ASCIIFilter"
+#define RX_ASCII_FILTER_TYPE_ID 0xc0000a2
+
 #define RX_SIMULATION_SOURCE_TYPE_NAME "SimulationSource"
 #define RX_SIMULATION_SOURCE_TYPE_ID 0xc000040
 #define RX_RAMP_SIMULATION_SOURCE_TYPE_NAME "RampSource"
@@ -531,7 +534,7 @@
 
 
 
-// last is 0xc0000a1!!!! 
+// last is 0xc0000a2!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

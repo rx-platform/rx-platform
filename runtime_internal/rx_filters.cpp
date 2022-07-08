@@ -33,6 +33,7 @@
 #include "system/runtime/rx_runtime_helpers.h"
 #include "model/rx_meta_internals.h"
 #include "system/runtime/rx_value_templates.h"
+#include "lib/rx_string_encoding.h"
 
 // rx_filters
 #include "runtime_internal/rx_filters.h"
@@ -65,6 +66,10 @@ rx_result register_filter_constructors()
 	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
 		RX_QUALITY_FILTER_TYPE_ID, [] {
 			return rx_create_reference<quality_filter>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
+		RX_ASCII_FILTER_TYPE_ID, [] {
+			return rx_create_reference<ascii_filter>();
 		});
 	return true;
 }
@@ -246,6 +251,44 @@ bool quality_filter::supports_output () const
 {
   return false;
 
+}
+
+
+// Class rx_internal::sys_runtime::filters::ascii_filter 
+
+
+rx_result ascii_filter::initialize_filter (runtime::runtime_init_context& ctx)
+{
+	invalid_char_ = ctx.get_item_static(".GoodValue", '?');
+	return true;
+}
+
+rx_result ascii_filter::filter_input (rx_value& val)
+{
+	if (val.is_string())
+	{// do the conversion
+		string_type str_val = val.extract_static<string_type>("");
+		val.assign_static(utf8_to_ascii(str_val, invalid_char_));
+	}
+	else
+	{
+		val.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+	}
+	return true;
+}
+
+rx_result ascii_filter::filter_output (rx_simple_value& val)
+{
+	if (val.is_string())
+	{// do the conversion
+		string_type str_val = val.extract_static<string_type>("");
+		val.assign_static(utf8_to_ascii(str_val, invalid_char_));
+		return true;
+	}
+	else
+	{
+		return RX_INVALID_CONVERSION;
+	}
 }
 
 

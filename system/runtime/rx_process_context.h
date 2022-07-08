@@ -345,17 +345,13 @@ class runtime_process_context
       runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor);
 
 
-      bool should_repeat ();
-
-      void tag_updates_pending ();
-
       rx_result init_context ();
 
-      void tag_writes_pending ();
+      void init_state (fire_callback_func_t fire_callback);
 
-      bool should_process_tag_updates ();
+      void runtime_stopped ();
 
-      bool should_process_tag_writes ();
+      void runtime_deinitialized ();
 
       rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
 
@@ -363,39 +359,53 @@ class runtime_process_context
 
       rx_result set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx);
 
-      void init_state (fire_callback_func_t fire_callback);
+      bool should_repeat ();
 
-      void mapper_write_pending (write_data_struct<structure::mapper_data> data);
-
-      mapper_writes_type& get_mapper_writes ();
+      void from_remote_pending (remotes_data data);
 
       void status_change_pending ();
 
-      void mapper_update_pending (update_data_struct<structure::mapper_data> data);
-
-      mapper_updates_type& get_mapper_updates ();
-
-      void source_write_pending (write_data_struct<structure::source_data> data);
-
-      source_writes_type& get_source_writes ();
+      void source_result_pending (write_result_struct<structure::source_data> data);
 
       void source_update_pending (update_data_struct<structure::source_data> data);
 
-      source_updates_type& get_source_updates ();
+      void mapper_write_pending (write_data_struct<structure::mapper_data> data);
+
+      void tag_writes_pending ();
 
       void variable_pending (structure::variable_data* whose);
 
       void variable_result_pending (write_result_struct<structure::variable_data> data);
 
+      void method_result_pending (method_execute_result_data data);
+
+      void program_pending (logic_blocks::program_data* whose);
+
+      void filter_pending (structure::filter_data* whose);
+
+      void own_pending (job_ptr what);
+
+      void tag_updates_pending ();
+
+      void mapper_update_pending (update_data_struct<structure::mapper_data> data);
+
+      void source_write_pending (write_data_struct<structure::source_data> data);
+
+      bool should_process_tag_updates ();
+
+      bool should_process_tag_writes ();
+
+      mapper_writes_type& get_mapper_writes ();
+
+      mapper_updates_type& get_mapper_updates ();
+
+      source_writes_type& get_source_writes ();
+
       std::pair<variable_results_type*, variables_type*> get_variables_for_process ();
 
       bool should_process_status_change ();
 
-      void program_pending (logic_blocks::program_data* whose);
-
-      programs_type& get_programs_for_process ();
-
-      void filter_pending (structure::filter_data* whose);
+      std::pair<method_results_type*, programs_type*> get_logic_for_process ();
 
       filters_type& get_filters_for_process ();
 
@@ -417,33 +427,19 @@ class runtime_process_context
 
       rx_result do_command (rx_object_command_t command_type);
 
-      void own_pending (job_ptr what);
-
       owner_jobs_type& get_for_own_process ();
 
       runtime_handle_t connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, runtime_start_context& ctx);
 
-      void source_result_pending (write_result_struct<structure::source_data> data);
-
-      source_results_type& get_source_results ();
+      std::pair<source_results_type*, source_updates_type*> get_source_inputs ();
 
       void runtime_dirty ();
 
       bool should_save ();
 
-      void from_remote_pending (remotes_data data);
-
       remotes_data_type& get_from_remote ();
 
-      void runtime_stopped ();
-
       void full_value_changed (structure::full_value_data* whose);
-
-      void method_result_pending (method_execute_result_data data);
-
-      method_results_type& get_method_results ();
-
-      void runtime_deinitialized ();
 
 
       const rx_mode_type get_mode () const
