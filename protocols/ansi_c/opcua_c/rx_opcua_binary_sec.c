@@ -668,7 +668,10 @@ rx_protocol_result_t opcua_bin_sec_none_bytes_received(struct rx_protocol_stack_
 						if (result == RX_PROTOCOL_OK)
 						{
 							transport->current_state = opcua_transport_active;
-							// Opened!!!
+							if (transport->transport_connected)
+								result = transport->transport_connected(reference, NULL, NULL);
+							else
+								result = RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 						}
 					}
 					else

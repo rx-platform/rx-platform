@@ -36,7 +36,7 @@
 #include "protocols/opcua/rx_opcua_server.h"
 
 #include "system/server/rx_server.h"
-
+#include "runtime_internal/rx_runtime_internal.h"
 using namespace protocols::opcua::common;
 
 
@@ -44,9 +44,7 @@ namespace protocols {
 
 namespace opcua {
 
-namespace opcua_server {
-
-// Class protocols::opcua::opcua_server::opcua_server_endpoint_base 
+// Class protocols::opcua::opcua_server_endpoint_base 
 
 opcua_server_endpoint_base::opcua_server_endpoint_base (const string_type& server_type, const application_description& app_descr, opcua_addr_space::opcua_address_space_base* addr_space, opcua_subscriptions::opcua_subscriptions_collection* subs)
       : subscriptions_(subs),
@@ -160,8 +158,103 @@ opcua_subscriptions::opcua_subscriptions_collection* opcua_server_endpoint_base:
 	return subscriptions_;
 }
 
+void opcua_server_endpoint_base::queue_write_request (opcua_write_request_ptr req)
+{
+	write_request_data data;
+	size_t count = req->to_write.size();
+	data.pending_count = count;
+	data.results.assign(count, { 0, opcid_RxPending });
 
-} // namespace opcua_server
+	write_request_data* active_data;
+	
+	locks::auto_lock_t _(&transactions_lock_);
+
+	auto it = write_requests_.begin();
+	size_t trans_idx = 0;
+	while (it != write_requests_.end() && it->request_ptr)
+	{
+		it++;
+		trans_idx++;
+	}
+	if (it == write_requests_.end())
+	{
+		active_data = &write_requests_.emplace_back(std::move(data));
+	}
+	else
+	{
+		*it = std::move(data);
+		active_data = &(*it);
+	}
+	active_data->request_ptr = std::move(req);
+	smart_ptr ep = smart_this();
+	for (size_t i = 0; i < count; i++)
+	{
+		auto& write_ref = active_data->request_ptr->to_write[i];
+		auto res = address_space_->write_attribute(write_ref.node_id, write_ref.attr_id, write_ref.range, write_ref.value, ep);
+		if (!res.second)
+		{
+			active_data->results[i] = res;
+			active_data->pending_count--;
+		}
+		else
+		{
+			active_data->results[i].first = res.second;
+			write_cache_.emplace(res.second, trans_idx);
+		}
+	}
+	if (active_data->pending_count == 0)
+	{// everything done
+		auto resp_ptr = std::make_unique<requests::opcua_attributes::opcua_write_response>(*active_data->request_ptr);
+		active_data->request_ptr.reset();
+		for (size_t i = 0; i < count; i++)
+		{
+			resp_ptr->results.push_back(active_data->results[i].second);
+		}
+		send_response(std::move(resp_ptr));
+	}
+}
+
+void opcua_server_endpoint_base::write_response (opcua_result_t status, runtime_transaction_id_t trans_id)
+{
+	locks::auto_lock_t _(&transactions_lock_);
+	auto it = write_cache_.find(trans_id);
+	if (it != write_cache_.end())
+	{
+		size_t idx = it->second;
+		write_cache_.erase(it);
+		if (idx < write_requests_.size())
+		{
+			write_request_data& data = write_requests_[idx];
+			if (data.request_ptr)
+			{
+				size_t count = data.request_ptr->to_write.size();
+				for (size_t i = 0; i < count; i++)
+				{
+					if (data.results[i].first == trans_id)
+					{
+						if (data.results[i].second == opcid_RxPending)
+						{
+							data.results[i].second = status;
+							data.pending_count--;
+							if (data.pending_count == 0)
+							{// everything done
+								auto resp_ptr = std::make_unique<requests::opcua_attributes::opcua_write_response>(*data.request_ptr);
+								data.request_ptr.reset();
+								for (size_t i = 0; i < count; i++)
+								{
+									resp_ptr->results.push_back(data.results[i].second);
+								}
+								send_response(std::move(resp_ptr));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
 } // namespace opcua
 } // namespace protocols
 

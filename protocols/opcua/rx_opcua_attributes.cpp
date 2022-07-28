@@ -143,13 +143,12 @@ opcua_response_ptr opcua_write_request::do_job (opcua_server_endpoint_ptr ep)
 		return std::make_unique<requests::opcua_service_fault>(*this, opcid_Bad_InternalError);
 
 
-	return std::make_unique<requests::opcua_service_fault>(*this, opcid_Bad_NotSupported);
+	auto req = std::make_unique<opcua_write_request>();
+	move_header_to(req.get());
+	req->to_write = std::move(to_write);
+	ep->queue_write_request(std::move(req));
 
-	/*auto ret_ptr = std::make_unique<opcua_write_response>(*this);
-
-	addr_space->write_attributes(to_write, ret_ptr->results);
-
-	return ret_ptr;*/
+	return opcua_response_ptr();
 }
 
 

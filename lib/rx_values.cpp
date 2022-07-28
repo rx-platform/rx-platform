@@ -178,6 +178,16 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 					return false;
 				return rx_init_time_value(&val, temp) == RX_OK;
 			}
+		case RX_BYTES_TYPE:
+			{
+				byte_string temp;
+				reader.read_bytes(name, temp);
+				if(temp.empty())
+					return rx_init_bytes_value(&val, nullptr, 0);
+				else
+					return rx_init_bytes_value(&val, (uint8_t*)&temp[0], temp.size());
+			}
+			break;
 		default:
 			RX_ASSERT(false);
 			// shouldn't happened
@@ -735,19 +745,10 @@ bool assign_value(typed_value_type& from, const rx_uuid_t& value)
 }
 bool assign_value(typed_value_type& from, const byte_string& value)
 {
-	RX_ASSERT(false);
-	return false;
-	/*if (from.get_value_type() == RX_BYTES_TYPE)
-	{
-		return *from.value_.value.bytes_value;
-	}
+	if (value.empty())
+		return rx_init_bytes_value(&from, NULL, 0);
 	else
-	{
-		rx_value_storage temp_val(from);
-		if (temp_val.convert_to(RX_BYTES_TYPE))
-			return std::move(*temp_val.value_.value.bytes_value);
-	}
-	return value;*/
+		return rx_init_bytes_value(&from, reinterpret_cast<const uint8_t*>(&value[0]), value.size());
 }
 
 bool assign_value(typed_value_type& from, const string_array& value)
@@ -1099,7 +1100,7 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	}
 }
 
-rx_simple_value rx_value::to_simple () const
+rx::values::rx_simple_value rx_value::to_simple () const
 {
     return rx_simple_value(&data_.value);
 }
@@ -1159,6 +1160,24 @@ void rx_value::set_quality (uint32_t val)
 {
   data_.quality = val;
 
+}
+
+bool rx_value::is_byte_string () const
+{
+	return rx_is_bytes_value(&data_.value);
+}
+
+byte_string rx_value::get_byte_string (size_t idx) const
+{
+	rx_bytes_wrapper str;
+	if (rx_get_bytes_value(&data_.value, idx, &str))
+	{
+		return str.to_bytes();
+	}
+	else
+	{
+		return byte_string();
+	}
 }
 
 
@@ -1518,6 +1537,24 @@ bool rx_simple_value::weak_deserialize (const char* name, base_meta_reader& read
 	return true;
 }
 
+bool rx_simple_value::is_byte_string () const
+{
+	return rx_is_bytes_value(&data_);
+}
+
+byte_string rx_simple_value::get_byte_string (size_t idx) const
+{
+	rx_bytes_wrapper str;
+	if (rx_get_bytes_value(&data_, idx, &str))
+	{
+		return str.to_bytes();
+	}
+	else
+	{
+		return byte_string();
+	}
+}
+
 rx_simple_value::rx_simple_value()
 {
 	rx_init_null_value(&data_);
@@ -1839,9 +1876,27 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx_simple_value rx_timed_value::to_simple () const
+rx::values::rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(&data_.value);
+}
+
+bool rx_timed_value::is_byte_string () const
+{
+	return rx_is_bytes_value(&data_.value);
+}
+
+byte_string rx_timed_value::get_byte_string (size_t idx) const
+{
+	rx_bytes_wrapper str;
+	if (rx_get_bytes_value(&data_.value, idx, &str))
+	{
+		return str.to_bytes();
+	}
+	else
+	{
+		return byte_string();
+	}
 }
 
 

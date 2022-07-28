@@ -104,7 +104,8 @@ rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (const string
 			dir->meta_.path = path;
 			dir->meta_.created_time = rx_time::now();
 			dir->meta_.modified_time = dir->meta_.created_time;
-			locks::auto_lock_t _(&it->second->lock_);
+
+			valid_scope valid(it->second->valid_);
 			it->second->meta_.modified_time = dir->meta_.created_time;
 			if (storage)
 				storage->set_base_path(dir_path);
@@ -188,9 +189,9 @@ rx_result rx_directory_cache::remove_directory (const string_type& dir_path)
 	}
 	if (result)
 	{
-		
-		locks::auto_lock_t _(&parent_dir->lock_);
-		parent_dir->meta_.modified_time = rx_time::now();
+		valid_scope valid(parent_dir->valid_);
+		if(valid)
+			parent_dir->meta_.modified_time = rx_time::now();
 	}
 	return result;
 }

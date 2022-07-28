@@ -41,12 +41,14 @@ namespace ids {
 
 //Error Results
 
-const uint32_t opcid_OK = 0x00000000;
+const uint32_t opcid_OK				= 0x0000'0000;
 const uint32_t opcid_QualityMask	= 0xc000'0000;
 const uint32_t opcid_Good			= 0x0000'0000;
 const uint32_t opcid_Uncertain		= 0x4000'0000;
 const uint32_t opcid_Bad			= 0x8000'0000;
 const uint32_t opcid_Error			= 0xc000'0000;
+
+const uint32_t opcid_RxPending		= 0xffff'ffff;
 
 const uint32_t opcid_Bad_UnexpectedError = 0x80010000;
 const uint32_t opcid_Bad_InternalError = 0x80020000;

@@ -77,9 +77,11 @@ size_t g_page_size = 0;
 
 extern HCRYPTPROV hcrypt;
 
+int g_is_debug_instance = 0;
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 {
+	g_is_debug_instance = init_data->is_debug;
 	if (g_init_count == 0)
 	{
 		rx_hd_timer = init_data->rx_hd_timer;
@@ -118,7 +120,10 @@ RX_COMMON_API void rx_deinit_common_library()
 	if (hcrypt)
 		CryptReleaseContext(hcrypt, 0);
 }
-
+RX_COMMON_API int rx_is_debug_instance()
+{
+	return g_is_debug_instance;
+}
 
 uint32_t rx_border_rand(uint32_t min, uint32_t max)
 {

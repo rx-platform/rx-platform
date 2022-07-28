@@ -232,7 +232,25 @@ bool mapper_runtime::can_write () const
 void mapper_runtime::mapper_write_pending (write_data&& data)
 {
     if (container_)
+    {
+        if (rx_is_debug_instance())
+        {
+            static string_type message;
+            static char* message_buffer = nullptr;
+            if (message.empty())
+            {
+                std::ostringstream ss;
+                ss << "Mapper "
+                    << container_->full_path
+                    << " started write with id:%08X";
+                message = ss.str();
+                message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/];
+            }
+            sprintf(message_buffer, message.c_str(), data.transaction_id);
+            RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
+        }
         container_->mapper_write_pending(std::move(data));
+    }
 }
 
 void mapper_runtime::map_current_value () const
@@ -345,7 +363,36 @@ rx_result source_runtime::source_value_changed (rx_value&& val)
 void source_runtime::source_result_received (rx_result&& result, runtime_transaction_id_t id)
 {
     if (container_)
+    {
+        if (rx_is_debug_instance())
+        {
+            static string_type message;
+            static char* message_buffer = nullptr;
+            if (message.empty())
+            {
+                std::ostringstream ss;
+                ss << "Source "
+                    << container_->full_path
+                    << " received write result id:%08X - ";
+                message = ss.str();
+                message_buffer = new char[message.size() + 0x20/*This will hold digits and just a bit reserve*/];
+            }
+            if (result)
+            {
+                sprintf(message_buffer, (message + "OK").c_str(), id);
+                RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
+            }
+            else
+            {
+                string_type error = result.errors_line();
+                char* error_message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
+                sprintf(error_message_buffer, (message + "%s").c_str(), id, error.c_str());
+                RUNTIME_LOG_DEBUG("mapper_runtime", 500, error_message_buffer);
+                delete[] error_message_buffer;
+            }
+        }
         container_->source_result_pending(std::move(result), id);
+    }
 }
 
 rx_result source_runtime::source_write (write_data&& data, runtime_process_context* ctx)

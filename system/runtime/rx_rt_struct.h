@@ -542,6 +542,8 @@ class write_task
 
       virtual void process_result (rx_result&& result) = 0;
 
+      virtual runtime_transaction_id_t get_id () const = 0;
+
 
   protected:
 
@@ -680,6 +682,8 @@ class variable_data
 
       std::bitset<32> value_opt;
 
+      string_type full_path;
+
 
   protected:
 
@@ -772,6 +776,8 @@ public:
       mapper_runtime_ptr mapper_ptr;
 
       rx_node_id mapper_id;
+
+      string_type full_path;
 
 	  typedef std::unique_ptr<mapper_data> smart_ptr;
   protected:
@@ -874,6 +880,8 @@ class source_data
 
       rx_node_id source_id;
 
+      string_type full_path;
+
 	  typedef std::unique_ptr<source_data> smart_ptr;
   protected:
 
@@ -908,6 +916,8 @@ class mapper_write_task : public write_task
 
 
       void process_result (rx_result&& result);
+
+      runtime_transaction_id_t get_id () const;
 
 
   protected:

@@ -258,6 +258,58 @@ int parse_complex(const char* str, complex_value_struct* val)
 		val->imag = 0;
 	return ret;
 }
+
+int parse_bytes(const char* str, bytes_value_struct* val)
+{
+	char static_buff[0x40];
+	char* pbuffer = static_buff;
+
+	if (str == NULL || *str == '\0')
+		return rx_init_bytes_value_struct(val, NULL, 0);
+	size_t len = strlen(str);
+
+	if ((len & 0x1) != 0)
+		return RX_ERROR;// have to be event characters
+
+	size_t array_size = len / 2;;
+
+	if (array_size > sizeof(static_buff) / sizeof(static_buff[0]))
+	{
+		pbuffer = malloc(array_size);
+		if (pbuffer == NULL)
+			return RX_ERROR;
+	}
+
+	for (size_t i = 0; i < len; i += 2)
+	{
+		uint8_t temp = 0x00;
+
+		if (str[i] >= '0' && str[i] <= '9')
+			temp = temp + str[i] - '0';
+		else if (str[i] >= 'A' || str[i] <= 'F')
+			temp = temp + str[i] - 'A' + 0xa;
+		else if (str[i] >= 'a' || str[i] <= 'f')
+			temp = temp + str[i] - 'A' + 0xa;
+		else
+			return RX_ERROR;
+		temp <<= 4;
+
+		if (str[i + 1] >= '0' && str[i + 1] <= '9')
+			temp = temp + str[i + 1] - '0';
+		else if (str[i + 1] >= 'A' || str[i + 1] <= 'F')
+			temp = temp + str[i + 1] - 'A' + 0xa;
+		else if (str[i + 1] >= 'a' || str[i + 1] <= 'f')
+			temp = temp + str[i + 1] - 'A' + 0xa;
+		else
+			return RX_ERROR;
+
+		pbuffer[len / 2] = temp;
+	}
+	int ret = rx_init_bytes_value_struct(val, pbuffer, array_size);
+	if (array_size > sizeof(static_buff) / sizeof(static_buff[0]))
+		free(pbuffer);
+	return ret;
+}
 int parse_time_from_ISO8601(const char* str, rx_time_struct* val)
 {
 	const char* ptr = str;
@@ -393,6 +445,30 @@ int complex_to_str(complex_value_struct* val, string_value_struct* str)
 	char buff[0x200];
 	sprintf(buff, "%g+%gi", val->real, val->imag);
 	return rx_init_string_value_struct(str, buff, -1);
+}
+
+int bytes_to_str(const bytes_value_struct* val, string_value_struct* str)
+{
+	if (val->size == 0)
+		return rx_init_string_value_struct(str, NULL, 0);
+	char hex_buff[0x40];
+	char* pbuffer = hex_buff;
+	size_t temp_size;
+	const uint8_t* pbytes = rx_c_ptr(val, &temp_size);
+	if (val->size * 2 + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
+	{
+		pbuffer = malloc(val->size * 2 + 1);
+		if (pbuffer == NULL)
+			return RX_ERROR;
+	}
+	for (size_t i = 0; i < val->size; i++)
+	{
+		sprintf(&pbuffer[i*2], "%02X", pbytes[i]);
+	}
+	int ret = rx_init_string_value_struct(str, pbuffer, -1);
+	if (val->size * 2 + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
+		free(pbuffer);
+	return ret;
 }
 int time_to_ISO8601(rx_time_struct val, string_value_struct* str)
 {
@@ -1789,9 +1865,10 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 				return RX_OK;
 			case RX_BYTES_TYPE:
 				{
-					// TODO bytes to string
-					RX_ASSERT(0);
-					return RX_ERROR;
+					bytes_value_struct temp = what->bytes_value;
+					int ret = bytes_to_str(&temp, &what->string_value);
+					rx_destory_bytes_value_struct(&temp);
+					return ret;
 				}
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;

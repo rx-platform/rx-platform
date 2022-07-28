@@ -54,6 +54,8 @@ extern "C" {
 typedef struct rx_platform_init_data_t
 {
 	int rx_hd_timer; // use high definition timer
+	int is_debug; // is this a debug instance, pure informatively, 
+				  // this is a best place to keep this information i think
 
 } rx_platform_init_data;
 
@@ -68,6 +70,7 @@ typedef intptr_t rx_security_handle_t;
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data);
 RX_COMMON_API void rx_deinit_common_library();
 
+RX_COMMON_API int rx_is_debug_instance();
 
 RX_COMMON_API uint32_t rx_border_rand(uint32_t min, uint32_t max);
 
@@ -584,6 +587,7 @@ RX_COMMON_API int rx_is_integer_value(const struct typed_value_type* val);
 RX_COMMON_API int rx_is_unassigned_value(const struct typed_value_type* val);
 RX_COMMON_API int rx_is_bool_value(const struct typed_value_type* val);
 RX_COMMON_API int rx_is_string_value(const struct typed_value_type* val);
+RX_COMMON_API int rx_is_bytes_value(const struct typed_value_type* val);
 RX_COMMON_API int rx_is_array_value(const struct typed_value_type* val);
 RX_COMMON_API int rx_get_array_size(const struct typed_value_type* val, size_t* size);
 
@@ -593,6 +597,7 @@ RX_COMMON_API int rx_get_integer_value(const struct typed_value_type* val, size_
 RX_COMMON_API int rx_get_unassigned_value(const struct typed_value_type* val, size_t idx, uint64_t* value, rx_value_t* type);
 RX_COMMON_API int rx_get_bool_value(const struct typed_value_type* val, size_t idx, int* value);
 RX_COMMON_API int rx_get_string_value(const struct typed_value_type* val, size_t idx, string_value_struct* value);
+RX_COMMON_API int rx_get_bytes_value(const struct typed_value_type* val, size_t idx, bytes_value_struct* value);
 
 
 typedef struct values_array_struct_t

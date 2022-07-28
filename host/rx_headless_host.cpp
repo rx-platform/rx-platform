@@ -118,7 +118,7 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 			std::cout << "OK\r\n";
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config_.processor.real_time, !config_.processor.no_hd_timer, tls);
+			rx_initialize_os(config_.processor.real_time, !config_.processor.no_hd_timer, tls, config_.management.debug);
 			std::cout << "OK\r\n";
 			std::cout << "\r\n"
 				<< "{rx-platform} "

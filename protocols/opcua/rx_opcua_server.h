@@ -37,6 +37,8 @@
 #include "lib/rx_ptr.h"
 // rx_opcua_subscriptions
 #include "protocols/opcua/rx_opcua_subscriptions.h"
+// rx_opcua_attributes
+#include "protocols/opcua/rx_opcua_attributes.h"
 
 #include "rx_opcua_params.h"
 using namespace protocols::opcua::common;
@@ -49,8 +51,7 @@ namespace opcua_addr_space
 {
 class opcua_address_space_base;
 }
-
-namespace opcua_server {
+typedef std::unique_ptr<requests::opcua_attributes::opcua_write_request> opcua_write_request_ptr;
 
 
 
@@ -59,6 +60,14 @@ namespace opcua_server {
 class opcua_server_endpoint_base : public rx::pointers::reference_object  
 {
     DECLARE_REFERENCE_PTR(opcua_server_endpoint_base);
+    struct write_request_data
+    {
+        std::vector<std::pair<runtime_transaction_id_t, opcua_result_t> > results;
+        opcua_write_request_ptr request_ptr;
+        size_t pending_count;
+    };
+    typedef std::vector<write_request_data> write_requests_type;
+    typedef std::map<runtime_transaction_id_t, size_t> write_cache_type;
 
   public:
       opcua_server_endpoint_base (const string_type& server_type, const application_description& app_descr, opcua_addr_space::opcua_address_space_base* addr_space, opcua_subscriptions::opcua_subscriptions_collection* subs);
@@ -76,6 +85,10 @@ class opcua_server_endpoint_base : public rx::pointers::reference_object
 
       virtual rx_result send_response (requests::opcua_response_ptr resp) = 0;
 
+      void queue_write_request (opcua_write_request_ptr req);
+
+      void write_response (opcua_result_t status, runtime_transaction_id_t trans_id);
+
 
   protected:
 
@@ -84,6 +97,8 @@ class opcua_server_endpoint_base : public rx::pointers::reference_object
 
       opcua_subscriptions::opcua_subscriptions_collection *subscriptions_;
 
+      write_requests_type write_requests_;
+
 
       string_type server_type_;
 
@@ -91,11 +106,14 @@ class opcua_server_endpoint_base : public rx::pointers::reference_object
 
       application_description application_description_;
 
+      locks::slim_lock transactions_lock_;
+
+      write_cache_type write_cache_;
+
 
 };
 
 
-} // namespace opcua_server
 } // namespace opcua
 } // namespace protocols
 

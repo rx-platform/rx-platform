@@ -41,17 +41,25 @@
 #include "protocols/opcua/rx_opcua_identifiers.h"
 #include "protocols/opcua/rx_opcua_requests.h"
 #include "protocols/opcua/rx_opcua_builder.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 using namespace protocols::opcua::ids;
+
+namespace rx_platform
+{
+rx_security_handle_t rx_security_context();
+bool rx_push_security_context(rx_security_handle_t obj);
+bool rx_pop_security_context();
+}
 
 
 namespace protocols {
 
 namespace opcua {
 
-namespace opcua_server {
+namespace opcua_basic_server {
 
-// Class protocols::opcua::opcua_server::opcua_basic_server_port 
+// Class protocols::opcua::opcua_basic_server::opcua_basic_server_port 
 
 std::map<rx_node_id, opcua_basic_server_port::smart_ptr> opcua_basic_server_port::runtime_instances;
 
@@ -119,7 +127,7 @@ rx_result opcua_basic_server_port::unregister_node (opcua_basic_node* node)
 }
 
 
-// Class protocols::opcua::opcua_server::opcua_basic_server_endpoint 
+// Class protocols::opcua::opcua_basic_server::opcua_basic_server_endpoint 
 
 opcua_basic_server_endpoint::opcua_basic_server_endpoint (const string_type& endpoint_url, const application_description& app_descr, opcua_basic_server_port* port)
       : executer_(-1),
@@ -135,7 +143,7 @@ opcua_basic_server_endpoint::opcua_basic_server_endpoint (const string_type& end
 
 opcua_basic_server_endpoint::~opcua_basic_server_endpoint()
 {
-	OPCUA_LOG_DEBUG("opcua_basic_server_endpoint", 200, "Basic OPC UA Server endpoint destoryed.");
+	OPCUA_LOG_DEBUG("opcua_basic_server_endpoint", 200, "Basic OPC UA Server endpoint destroyed.");
 }
 
 
@@ -222,7 +230,7 @@ rx_result opcua_basic_server_endpoint::send_response (requests::opcua_response_p
 }
 
 
-// Class protocols::opcua::opcua_server::opcua_simple_address_space 
+// Class protocols::opcua::opcua_basic_server::opcua_simple_address_space 
 
 opcua_simple_address_space::opcua_simple_address_space()
       : parent_(nullptr),
@@ -272,11 +280,11 @@ rx_result opcua_simple_address_space::unregister_node (opcua_basic_node* what)
 {
 	locks::auto_write_lock _(get_lock());
 	auto current_it = variable_nodes_.find(what->get_node_id());
-	if (current_it != variable_nodes_.end())
+	if (current_it == variable_nodes_.end())
 	{
-		return "Duplicated node id";
+		return "Unknown node id";
 	}
-	variable_nodes_.emplace(what->get_node_id(), what);
+	variable_nodes_.erase(current_it);
 	return true;
 }
 
@@ -317,6 +325,33 @@ void opcua_simple_address_space::read_attributes (const std::vector<read_value_i
 			}
 		}
 	}
+}
+
+std::pair<opcua_result_t, runtime_transaction_id_t> opcua_simple_address_space::write_attribute (const rx_node_id& node_id, attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep)
+{
+	std::pair<opcua_result_t, runtime_transaction_id_t> ret = { opcid_Bad_NodeIdUnknown, 0 };
+	if (parent_ != nullptr)
+	{
+		ret = parent_->write_attribute(node_id, id, range, value, ep);
+	}
+	if (ret.first == opcid_Bad_NodeIdUnknown)
+	{
+		locks::const_auto_read_lock _(get_lock());
+		auto it_var = variable_nodes_.find(node_id);
+		if (it_var != variable_nodes_.end())
+		{
+			ret = it_var->second->write_attribute(id, range, value, ep);
+		}
+		else
+		{
+			auto it_folder = folder_nodes_.find(node_id);
+			if (it_folder != folder_nodes_.end())
+			{
+				ret = { opcid_Bad_NotSupported, 0 };
+			}
+		}
+	}
+	return ret;
 }
 
 void opcua_simple_address_space::browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const
@@ -574,10 +609,12 @@ rx_node_id opcua_simple_address_space::get_folder_node (const string_type& folde
 }
 
 
-// Class protocols::opcua::opcua_server::opcua_basic_mapper 
+// Class protocols::opcua::opcua_basic_server::opcua_basic_mapper 
 
 opcua_basic_mapper::opcua_basic_mapper()
 {
+	size_t sz = sizeof(opcua_basic_mapper);
+	node_.mapper_ = this;
 }
 
 
@@ -646,13 +683,54 @@ void opcua_basic_mapper::mapped_value_changed (rx_value&& val, runtime::runtime_
 
 void opcua_basic_mapper::mapper_result_received (rx_result&& result, runtime_transaction_id_t id, runtime::runtime_process_context* ctx)
 {
+	locks::auto_lock_t _(&transactions_lock_);
+	auto it = write_transactions_.find(id);
+	if (it != write_transactions_.end())
+	{
+		it->second->write_response(result ? opcid_OK : opcid_Bad_NoCommunication, id);
+		write_transactions_.erase(it);
+	}
+}
+
+std::pair<opcua_result_t, runtime_transaction_id_t> opcua_basic_mapper::write_value (const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep)
+{
+	if(!range.empty())
+		return { opcid_Bad_IndexRangeInvalid, 0 };
+	auto trans_id = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
+	rx_value val;
+	auto result = value.fill_rx_value(val);
+	if (result)
+	{
+		if (val.convert_to(get_value_type()))
+		{
+			{
+				locks::auto_lock_t _(&transactions_lock_);
+				write_transactions_.emplace(trans_id, ep);
+			}
+			write_data data;
+			data.internal = false;
+			data.test = false;
+			data.identity = rx_security_context();
+			data.transaction_id = trans_id;
+			data.value = val.to_simple();
+			mapper_write_pending(std::move(data));
+
+			return { opcid_RxPending, trans_id };
+		}
+	}
+	return { opcid_Bad_TypeMismatch, 0 };
 }
 
 
-// Class protocols::opcua::opcua_server::opcua_basic_node 
+// Class protocols::opcua::opcua_basic_server::opcua_basic_node 
 
 opcua_basic_node::opcua_basic_node()
+      : mapper_(nullptr)
 {
+	size_t sz1 = sizeof(data_value);
+	size_t sz2 = sizeof(variant_type);
+	size_t sz3 = sizeof(*this);
+	size_t sz4 = sizeof(opcua_basic_mapper);
 }
 
 
@@ -662,7 +740,20 @@ opcua_basic_node::~opcua_basic_node()
 
 
 
-// Class protocols::opcua::opcua_server::opcua_basic_folder_node 
+std::pair<opcua_result_t, runtime_transaction_id_t> opcua_basic_node::write_attribute (attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep)
+{
+	if (id == attribute_id::value)
+	{
+		return mapper_->write_value(range, value, ep);
+	}
+	else
+	{
+		return { opcid_Bad_NotWritable, 0 };
+	}
+}
+
+
+// Class protocols::opcua::opcua_basic_server::opcua_basic_folder_node 
 
 opcua_basic_folder_node::opcua_basic_folder_node()
 {
@@ -676,7 +767,7 @@ opcua_basic_folder_node::~opcua_basic_folder_node()
 
 
 
-} // namespace opcua_server
+} // namespace opcua_basic_server
 } // namespace opcua
 } // namespace protocols
 

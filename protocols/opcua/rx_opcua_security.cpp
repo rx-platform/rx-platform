@@ -56,6 +56,7 @@ opcua_sec_none_endpoint::opcua_sec_none_endpoint (opcua_sec_none_port* port)
     {
         mine_entry->stack_entry.received_function = &opcua_sec_none_endpoint::received_function;
         mine_entry->stack_entry.send_function = &opcua_sec_none_endpoint::send_function;
+        mine_entry->transport_connected = &opcua_sec_none_endpoint::transport_connected;
     }
 }
 
@@ -75,6 +76,21 @@ rx_protocol_result_t opcua_sec_none_endpoint::received_function (rx_protocol_sta
 rx_protocol_result_t opcua_sec_none_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
     return opcua_bin_sec_none_bytes_send(reference, packet);
+}
+
+rx_protocol_result_t opcua_sec_none_endpoint::transport_connected (rx_protocol_stack_endpoint* reference, const protocol_address* local_address, const protocol_address* remote_address)
+{
+    opcua_sec_none_endpoint* me = reinterpret_cast<opcua_sec_none_endpoint*>(reference->user_data);
+    auto result = me->port_->stack_endpoint_connected(reference, local_address, remote_address);
+    if (!result)
+    {
+        std::ostringstream ss;
+        ss << "Error binding connected endpoint ";
+        ss << result.errors_line();
+        OPCUA_LOG_ERROR("opcua_sec_none_endpoint", 200, ss.str().c_str());
+        return RX_PROTOCOL_STACK_STRUCTURE_ERROR;
+    }
+    return RX_PROTOCOL_OK;
 }
 
 

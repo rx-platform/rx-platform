@@ -453,6 +453,14 @@ extern "C" {
 		return ret;
 	}
 
+	RX_PLATFORM_API void rxInitCtxGetItemMeta(init_ctx_ptr ctx, const rx_node_id_struct** id, const char** path, const char** name)
+	{
+		runtime::runtime_init_context* self = (runtime::runtime_init_context*)ctx;
+		*id = self->meta.id.c_ptr();
+		*path = self->meta.path.c_str();
+		*path = self->meta.name.c_str();
+	}
+
 	RX_PLATFORM_API rx_result_struct rxCtxGetValue(runtime_ctx_ptr ctx, runtime_handle_t handle, typed_value_type* val)
 	{
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
@@ -562,6 +570,7 @@ void bind_plugins_dynamic_api()
 	g_api.runtime.prxInitCtxSetLocalValue = rxInitCtxSetLocalValue;
 	g_api.runtime.prxInitCtxGetMappingValues = rxInitCtxGetMappingValues;
 	g_api.runtime.prxInitCtxGetSourceValues = rxInitCtxGetSourceValues;
+	g_api.runtime.prxInitCtxGetItemMeta = rxInitCtxGetItemMeta;
 
 
 	g_api.runtime.prxStartCtxGetCurrentPath = rxStartCtxGetCurrentPath;

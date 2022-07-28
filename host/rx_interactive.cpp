@@ -254,7 +254,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 				config.meta_configuration.instance_name = "develop";
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls);
+			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls, config.management.debug);
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			std::cout << "\r\n";

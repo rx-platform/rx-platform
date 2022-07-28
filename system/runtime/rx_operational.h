@@ -43,14 +43,14 @@
 namespace rx_platform {
 namespace runtime {
 class runtime_process_context;
-namespace tag_blocks {
-class binded_tags;
-} // namespace tag_blocks
-
 namespace logic_blocks {
 class method_data;
-
 } // namespace logic_blocks
+
+namespace tag_blocks {
+class binded_tags;
+
+} // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -327,6 +327,8 @@ class connected_write_task : public structure::write_task
 
 
       void process_result (rx_result&& result);
+
+      runtime_transaction_id_t get_id () const;
 
 
   protected:

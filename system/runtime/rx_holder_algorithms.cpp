@@ -154,9 +154,13 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
                     if (result)
                         result = item_result.value()->commit_write();
                     if (result)
+                    {
                         RUNTIME_LOG_DEBUG("runtime_model_algorithm", 100, "Saved "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+                    }
                     else
+                    {
                         RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+                    }
                 }
             }
             else

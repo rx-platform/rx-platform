@@ -42,15 +42,11 @@ namespace protocols {
 namespace opcua {
 typedef std::vector<common::endpoint_description> opcua_endpoints_type;
 typedef std::vector<common::application_description> application_descriptions_type;
-namespace opcua_server
-{
-class opcua_server_endpoint_base;
-}
+
 namespace opcua_addr_space
 {
 class server_address_space;
 }
-typedef rx_reference<opcua_server::opcua_server_endpoint_base> opcua_server_endpoint_ptr;
 
 namespace requests {
 class opcua_request_base;

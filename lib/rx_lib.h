@@ -61,6 +61,7 @@ string_type _implemented_func(const char* fname);
 #define RX_INVALID_PATH "Invalid path."
 #define RX_INVALID_STATE "Invalid state."
 #define RX_NOT_VALID_TYPE "Not valid for this type!"
+#define RX_NOT_VALID_DIRECTORY "Not valid namespace item!"
 
 namespace rx
 {

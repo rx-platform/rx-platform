@@ -156,15 +156,6 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 						result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
 						if (!result)
 							result.register_error("Error initializing platform types manager!");
-						else
-						{
-							result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
-							if (!result)
-							{
-								result.register_error("Error initializing http server!");
-								rx_internal::rx_http_server::http_server::instance().deinitialize();
-							}
-						}
 					}
 					else
 					{
@@ -368,4 +359,6 @@ template rx_result rx_gate::register_constructor<port_type>(const rx_node_id& id
 template rx_result rx_gate::register_constructor<domain_type>(const rx_node_id& id, std::function<domain_type::RImplPtr()> f);
 template rx_result rx_gate::register_constructor<application_type>(const rx_node_id& id, std::function<application_type::RImplPtr()> f);
 } // namespace rx_platform
+
+
 

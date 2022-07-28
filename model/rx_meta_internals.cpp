@@ -1328,6 +1328,7 @@ rx_result simple_types_repository<typeT>::register_type (typename simple_types_r
 template <class typeT>
 rx_result simple_types_repository<typeT>::register_constructor (const rx_node_id& id, std::function<RTypePtr()> f)
 {
+//	RX_ASSERT(constructors_.find(id) == constructors_.end());
 	constructors_.emplace(id, f);
 	return true;
 }

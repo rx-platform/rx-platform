@@ -190,7 +190,7 @@ typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl<
 
 class vt100_port : public vt100_port_base  
 {
-	DECLARE_CODE_INFO("rx", 2, 0, 0, "\
+	DECLARE_CODE_INFO("rx", 2, 0, 1, "\
 VT100 terminal, implementation of VT100 terminal server that\r\n\
 executes input based script program.");
 

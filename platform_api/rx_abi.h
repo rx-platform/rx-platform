@@ -171,6 +171,9 @@ extern "C" {
 	RX_PLATFORM_API rx_result_struct rxInitCtxGetSourceValues(init_ctx_ptr ctx, const rx_node_id_struct* id, const char* path, values_array_struct* vals);
 	typedef rx_result_struct(*rxInitCtxGetSourceValues_t)(init_ctx_ptr ctx, const rx_node_id_struct* id, const char* path, values_array_struct* vals);
 
+	RX_PLATFORM_API void rxInitCtxGetItemMeta(init_ctx_ptr ctx, const rx_node_id_struct** id, const char** path, const char** name);
+	typedef void(*rxInitCtxGetItemMeta_t)(init_ctx_ptr ctx, const rx_node_id_struct** id, const char** path, const char** name);
+
 
 	typedef void* start_ctx_ptr;
 
@@ -236,6 +239,7 @@ extern "C" {
 		rxInitCtxSetLocalValue_t prxInitCtxSetLocalValue;
 		rxInitCtxGetMappingValues_t prxInitCtxGetMappingValues;
 		rxInitCtxGetSourceValues_t prxInitCtxGetSourceValues;
+		rxInitCtxGetItemMeta_t prxInitCtxGetItemMeta;
 
 		rxStartCtxGetCurrentPath_t prxStartCtxGetCurrentPath;
 		rxStartCtxCreateTimer_t prxStartCtxCreateTimer;
@@ -326,10 +330,11 @@ extern "C" {
 
 	typedef struct host_source_def_struct_t
 	{
+		host_runtime_def_struct runtime;
+
 		rx_update_source_t update_source;
 		rx_result_update_source_t result_update_source;
 		
-		host_runtime_def_struct runtime;
 
 	} host_source_def_struct;
 
@@ -374,10 +379,11 @@ extern "C" {
 
 	typedef struct host_mapper_def_struct_t
 	{
+		host_runtime_def_struct runtime;
+
 		rx_mapper_write_pending_t mapper_write_pending;
 		rx_mapper_map_current_t map_current_value;
 
-		host_runtime_def_struct runtime;
 
 	} host_mapper_def_struct;
 
@@ -419,9 +425,9 @@ extern "C" {
 
 	typedef struct host_filter_def_struct_t
 	{
-		rx_filter_changed_t filter_changed;
-
 		host_runtime_def_struct runtime;
+
+		rx_filter_changed_t filter_changed;
 
 	} host_filter_def_struct;
 
@@ -587,8 +593,12 @@ extern "C" {
 	typedef rx_result_struct(*rx_unbind_stack_endpoint_t)(void* whose, struct rx_protocol_stack_endpoint* what);
 	typedef rx_result_struct(*rx_disconnect_stack_endpoint_t)(void* whose, struct rx_protocol_stack_endpoint* what);
 
+	typedef rx_result_struct(*rx_bind_listener_endpoint_t)(void* whose, struct rx_protocol_stack_endpoint* what, const struct protocol_address_def* local_address, const struct protocol_address_def* remote_address);
+
 	typedef struct host_port_def_struct_t
 	{
+		host_runtime_def_struct runtime;
+
 		rx_alloc_io_buffer_t alloc_buffer;
 		rx_release_io_buffer_t release_buffer;
 
@@ -597,8 +607,8 @@ extern "C" {
 
 		rx_unbind_stack_endpoint_t unbind_stack_endpoint;
 		rx_disconnect_stack_endpoint_t disconnect_stack_endpoint;
+		rx_bind_listener_endpoint_t bind_listener_endpoint;
 
-		host_runtime_def_struct runtime;
 
 	} host_port_def_struct;
 

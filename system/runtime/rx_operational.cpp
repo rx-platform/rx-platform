@@ -994,6 +994,11 @@ void connected_write_task::process_result (rx_result&& result)
 	parent_->write_result_arrived(callback_, write_result_data{ id_, item_, std::move(result) });
 }
 
+runtime_transaction_id_t connected_write_task::get_id () const
+{
+	return id_;
+}
+
 
 // Class rx_platform::runtime::tag_blocks::rx_tags_callback 
 

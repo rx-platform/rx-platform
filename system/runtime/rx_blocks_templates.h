@@ -62,7 +62,7 @@ class extern_mapper_impl : public mapper_runtime
     class mapper_resolver_user : public relation_subscriber
     {
     public:
-        extern_mapper_impl<portT>::smart_ptr my_mapper;
+        extern_mapper_impl<portT>* my_mapper;
         void relation_connected(const string_type& name, const platform_item_ptr& item)
         {
             my_mapper->internal_port_connected(item);
@@ -177,7 +177,7 @@ extern_mapper_impl<portT>::extern_mapper_impl()
       : my_executer_(0),
         his_executer_(0)
 {
-    resolver_user_.my_mapper = smart_this();
+    resolver_user_.my_mapper = this;
 }
 
 

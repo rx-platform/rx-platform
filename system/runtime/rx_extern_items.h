@@ -136,6 +136,8 @@ class extern_port_runtime : public port_runtime
 
       void post_own_job (plugin_job_struct* what);
 
+      rx_result bind_listener_endpoint (rx_protocol_stack_endpoint* what, const protocol_address_def* local_addr, const protocol_address_def* remote_addr);
+
 
   protected:
 

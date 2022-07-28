@@ -22,6 +22,11 @@ public:
 		out << "\r\n"
 			" " ANSI_COLOR_BOLD ANSI_COLOR_RED "H" ANSI_COLOR_RESET "alt and " ANSI_COLOR_BOLD ANSI_COLOR_RED "C" ANSI_COLOR_RESET "atch " ANSI_COLOR_BOLD ANSI_COLOR_RED "F" ANSI_COLOR_RESET "ire\r\n"
 			" ===================\r\n";
+		out << "Computer machine code instruction that causes the computer's\r\n"
+			<< "central processing unit (CPU) to cease meaningful operation.\r\n"
+			<< ANSI_COLOR_BOLD ANSI_COLOR_GREEN
+			<< "MC68000 0x9D 0xDD\r\n"
+			<< "I80286  0x0F 0x04" ANSI_COLOR_RESET;
 		out << "\r\n\r\n" ANSI_COLOR_MAGENTA " Well this is just for fun...\r\n " ANSI_COLOR_RESET;
 		out << ANSI_COLOR_BOLD ANSI_COLOR_RED "/" ANSI_COLOR_YELLOW "/" ANSI_COLOR_GREEN "/" ANSI_COLOR_CYAN "/" ANSI_COLOR_RESET
 			<< "  sinclair ZX Spectrum!!!\r\n";

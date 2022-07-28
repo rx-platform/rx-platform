@@ -50,7 +50,7 @@
 
 #else
 #define LOG_CODE_INFO RELEASE_CODE_INFO
-#define LOG_CODE_PREFIX
+#define LOG_CODE_PREFIX 
 #define LOG_CODE_POSTFIX
 #endif
 
@@ -76,9 +76,11 @@
  rx_platform::log::log_object::instance().log_event_fast(rx_platform::log::log_event_type::critical, lib, src, lvl,LOG_CODE_INFO,nullptr,(msg))\
  LOG_CODE_POSTFIX
 #define RX_LOG_DEBUG(lib,src,lvl,msg)\
+ if(rx_is_debug_instance()) {\
  LOG_CODE_PREFIX\
  rx_platform::log::log_object::instance().log_event_fast(rx_platform::log::log_event_type::debug, lib, src, lvl,LOG_CODE_INFO,nullptr, (msg)\
-) LOG_CODE_POSTFIX
+) LOG_CODE_POSTFIX;\
+}
 #define RX_TRACE(lib,src,lvl,msg)\
  LOG_CODE_PREFIX\
  rx_platform::log::log_object::instance().log_event_fast(rx_platform::log::log_event_type::trace, lib, src, lvl,LOG_CODE_INFO,nullptr,(msg))\

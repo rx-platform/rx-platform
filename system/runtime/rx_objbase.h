@@ -126,14 +126,6 @@ struct constructed_data_t
 
 
 namespace runtime {
-namespace io_types
-{
-namespace ports_templates
-{
-template <typename translatorT, typename addrT>
-class routing_endpoint;
-}
-}
 
 namespace items {
 // instance data forwards
@@ -440,8 +432,6 @@ system port class. basic implementation of a port");
 
     friend class algorithms::runtime_holder<meta::object_types::port_type>;
     friend class rx_internal::sys_runtime::runtime_core::runtime_data::port_instance_data;
-    template <typename translatorT, typename addrT>
-    friend class io_types::ports_templates::routing_endpoint;
 
   public:
       port_runtime();

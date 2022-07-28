@@ -1026,6 +1026,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		port->complex_data.register_struct("Bind", RX_OPCUA_ENDPOINT_DATA_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1177,6 +1178,7 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 		port->complex_data.register_struct("Timeouts", RX_CLIENT_TIMEOUTS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 		// transport ports
+		//
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_TRANSPORT_PORT_TYPE_NAME
 			, RX_TRANSPORT_PORT_TYPE_ID
@@ -1185,6 +1187,19 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		meta::object_types::relation_attribute rel_attr;
+		rel_attr.name = "StackTop";
+		rel_attr.relation_type = RX_NS_PORT_STACK_ID;
+		rel_attr.target = RX_CLASS_PORT_BASE_ID;
+		port->object_data.register_relation(rel_attr, port->complex_data);
+		add_type_to_configuration(dir, port, true);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_CONN_TRANSPORT_PORT_TYPE_NAME
+			, RX_CONN_TRANSPORT_PORT_TYPE_ID
+			, RX_CLASS_PORT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
 		rel_attr.name = "StackTop";
 		rel_attr.relation_type = RX_NS_PORT_STACK_ID;
 		rel_attr.target = RX_CLASS_PORT_BASE_ID;
@@ -1768,6 +1783,15 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		// 
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_OPCUA_ENDPOINT_DATA_NAME
+			, RX_OPCUA_ENDPOINT_DATA_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static<string_type>("Endpoint", "");
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
 			RX_OPCUA_TRANSPORT_OPTIONS_TYPE_NAME
@@ -2461,7 +2485,7 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_OPCUA_SEC_BASE_PORT_TYPE_NAME
 			, RX_OPCUA_SEC_BASE_PORT_TYPE_ID
-			, RX_TRANSPORT_PORT_TYPE_ID
+			, RX_CONN_TRANSPORT_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2504,7 +2528,7 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_NAME
 			, RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_ID
-			, RX_TRANSPORT_PORT_TYPE_ID
+			, RX_CONN_TRANSPORT_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2551,6 +2575,7 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		port->complex_data.register_struct("Options", RX_OPCUA_SERVER_PORT_OPTIONS_TYPE_ID);
+		port->complex_data.register_struct("Bind", RX_OPCUA_ENDPOINT_DATA_ID);
 		add_type_to_configuration(dir, port, true);
 
 		port = create_type<port_type>(meta::object_type_creation_data{

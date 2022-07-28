@@ -145,6 +145,21 @@ class rx_io_buffer : public rx_packet_buffer
 		  else
 			  return rx_protocol_error_message(result);
 	  }
+
+      template<typename T>
+      T* alloc_from_buffer()
+      {
+          static_assert(std::is_trivial<T>::value);
+
+          rx_protocol_result_t result;
+
+          T* ptr = (T*)rx_alloc_from_packet(this, sizeof(T), &result);
+
+          if (result == RX_PROTOCOL_OK)
+              return ptr;
+          else
+              return nullptr;
+      }
   protected:
 
   private:

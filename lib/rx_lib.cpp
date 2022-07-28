@@ -363,9 +363,12 @@ string_type rx_result::errors_line(char delim) const
 	if (errs.empty())
 		return "No specific errors!";
 	std::ostringstream ss;
+	bool first = true;
 	for (const auto& one : errs)
 	{
-		if (!ss.eof())// using this as a bool!
+		if (first)
+			first = false;
+		else
 			ss << delim;
 		ss << one;
 	}

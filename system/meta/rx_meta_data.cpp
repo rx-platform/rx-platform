@@ -185,6 +185,8 @@ string_type rx_runtime_attribute_type_name(rx_attribute_type type)
 			return RX_CPP_PROGRAM_TYPE_NAME;
 		case data_attribute_type:
 			return RX_CPP_DATA_TYPE_NAME;
+		case display_attribute_type:
+			return RX_CPP_DISPLAY_TYPE_NAME;
 		default:
 			return "Unknown attribute type!!!";
 	}

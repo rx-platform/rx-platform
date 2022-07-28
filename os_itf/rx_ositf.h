@@ -122,7 +122,7 @@ extern "C" {
 	extern rx_pid_t rx_pid;
 	const char* rx_get_node_name();
 	void rx_init_hal_version();
-	void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls);
+	void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug);
 	void rx_deinitialize_os();
 
 

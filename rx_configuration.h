@@ -221,6 +221,8 @@
 #define RX_TRANSPORT_PORT_TYPE_ID 0xc00000d
 #define RX_ROUTED_TRANSPORT_PORT_TYPE_NAME "RoutedTransportPort"
 #define RX_ROUTED_TRANSPORT_PORT_TYPE_ID 0xc000038
+#define RX_CONN_TRANSPORT_PORT_TYPE_NAME "ConnectionTransportPort"
+#define RX_CONN_TRANSPORT_PORT_TYPE_ID 0xc0000a4
 
 #define RX_APPLICATION_PORT_TYPE_NAME "ApplicationPort"
 #define RX_APPLICATION_PORT_TYPE_ID 0xc00000e
@@ -335,6 +337,9 @@
 #define RX_OPCUA_CLIENT_TRANSPORT_OPTIONS_TYPE_NAME "OpcClientBinTransportOptions"
 #define RX_OPCUA_CLIENT_TRANSPORT_OPTIONS_TYPE_ID 0xc00009b
 
+
+#define RX_OPCUA_ENDPOINT_DATA_NAME "OpcEndpointBindData"
+#define RX_OPCUA_ENDPOINT_DATA_ID 0xc0000a3
 
 #define RX_OPCUA_SEC_BASE_PORT_TYPE_NAME "OpcSecBase"
 #define RX_OPCUA_SEC_BASE_PORT_TYPE_ID 0xc000080
@@ -534,7 +539,7 @@
 
 
 
-// last is 0xc0000a2!!!! 
+// last is 0xc0000a4!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

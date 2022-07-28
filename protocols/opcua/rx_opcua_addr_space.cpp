@@ -38,6 +38,7 @@ using namespace protocols::opcua::ids;
 // rx_opcua_subscriptions
 #include "protocols/opcua/rx_opcua_subscriptions.h"
 
+#include "rx_opcua_server.h"
 
 
 namespace protocols {
@@ -106,6 +107,11 @@ void opcua_base_node_type::read_attribute (attribute_id id, const string_type& r
     default:
         internal_read_attribute(id, range, encoding, value_storage, config_ts);
     }
+}
+
+std::pair<opcua_result_t, runtime_transaction_id_t> opcua_base_node_type::write_attribute (attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep)
+{
+    return { opcid_Bad_NotWritable, 0 };
 }
 
 void opcua_base_node_type::internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const
@@ -425,6 +431,9 @@ reference_data::reference_data (opcua_std_ref_t data)
 // Class protocols::opcua::opcua_addr_space::opcua_node_base 
 
 
+// Class protocols::opcua::opcua_addr_space::opcua_address_space_base 
+
+
 // Class protocols::opcua::opcua_addr_space::node_references 
 
 
@@ -523,9 +532,6 @@ rx_node_id opcua_object_node::get_type_id () const
 {
     return type_id;
 }
-
-
-// Class protocols::opcua::opcua_addr_space::opcua_address_space_base 
 
 
 } // namespace opcua_addr_space

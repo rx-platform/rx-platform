@@ -205,6 +205,14 @@ class rx_init_context
 
       std::vector<rx_simple_value> get_source_values (const rx_node_id& id, const string_type& path);
 
+      rx_node_id get_node_id ();
+
+      string_type get_path ();
+
+      string_type get_name ();
+
+      string_type get_full_path ();
+
       template<typename T>
       T get_local_value_as(const string_type& path, const T& default_value)
       {

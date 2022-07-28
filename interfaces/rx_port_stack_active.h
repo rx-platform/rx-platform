@@ -177,6 +177,30 @@ class extern_behavior : public port_active_behavior
 };
 
 
+
+
+
+
+class connection_transport_behavior : public port_active_behavior  
+{
+
+  public:
+
+      bool is_extern ();
+
+      bool is_endpoit_binder ();
+
+      bool is_endpoint_user ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace stack_active
 } // namespace port_stack
 } // namespace interfaces

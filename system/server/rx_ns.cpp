@@ -143,8 +143,15 @@ void rx_platform_directory::fill_dir_code_info (std::ostream& info)
 
 meta_data_t rx_platform_directory::meta_info () const
 {
-	locks::const_auto_lock_t _(&lock_);
-	return meta_;
+	valid_scope valid(valid_);
+	if (valid)
+	{
+		return meta_;
+	}
+	else
+	{
+		return meta_data_t();
+	}
 }
 
 void rx_platform_directory::list_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const
@@ -152,36 +159,46 @@ void rx_platform_directory::list_content (platform_directories_type& sub_directo
 	const char* c_pattern = pattern.empty() ? nullptr : pattern.c_str();
 	rx_directory_cache::instance().get_sub_directories(smart_this(), sub_directories, c_pattern);
 	
-	locks::const_auto_lock_t dummy(&lock_);
-	for (const auto& one : sub_items_)
+	valid_scope valid(valid_);
+	if (valid)
 	{
-		if (c_pattern)
+		for (const auto& one : sub_items_)
 		{
-			if (!rx_match_pattern(one.first.c_str(), c_pattern, 0))
-				continue;
+			if (c_pattern)
+			{
+				if (!rx_match_pattern(one.first.c_str(), c_pattern, 0))
+					continue;
+			}
+			sub_items.emplace_back(one.second);
 		}
-		sub_items.emplace_back(one.second);
 	}
 }
 
 rx_result rx_platform_directory::add_item (rx_namespace_item item)
 {
 	auto name = item.get_meta().name;
-	rx_result ret;	
+	rx_result ret;
 	{
-		locks::auto_lock_t _(&lock_);
-		auto it = sub_items_.find(name);
-		if (it == sub_items_.end())
+		valid_scope valid(valid_);
+		if (valid)
 		{
-			// check if name is reserved
-			auto it = reserved_.find(name);
-			if (it != reserved_.end())
-				reserved_.erase(it);
-			sub_items_.emplace(name, item);
+			auto it = sub_items_.find(name);
+			if (it == sub_items_.end())
+			{
+				// check if name is reserved
+				auto it = reserved_.find(name);
+				if (it != reserved_.end())
+					reserved_.erase(it);
+				sub_items_.emplace(name, item);
+			}
+			else
+			{
+				ret.register_error("Item " + name + " already exists");
+			}
 		}
 		else
 		{
-			ret.register_error("Item " + name + " already exists");
+			ret = RX_NOT_VALID_DIRECTORY;
 		}
 	}
 	if (ret && rx_names_cache::should_cache(item))
@@ -214,66 +231,86 @@ rx_result rx_platform_directory::add_item (rx_namespace_item item)
 			NAMESPACE_LOG_TRACE("root", 500, stream.str().c_str());
 		}
 	}
-
 	return ret;
 }
 
 rx_result rx_platform_directory::reserve_name (const string_type& name)
 {
 	rx_result ret;
-	locks::auto_lock_t _(&lock_);
-	auto it = sub_items_.find(name);
-	if (it == sub_items_.end())
+	valid_scope valid(valid_);
+	if (valid)
 	{
-		auto it2 = reserved_.find(name);
-		if (it2 == reserved_.end())
+		auto it = sub_items_.find(name);
+		if (it == sub_items_.end())
 		{
-			reserved_.insert(name);
-			ret = true;;
+			auto it2 = reserved_.find(name);
+			if (it2 == reserved_.end())
+			{
+				reserved_.insert(name);
+				ret = true;;
+			}
+			else
+			{
+				ret.register_error("Item " + name + " already reserved");
+			}
 		}
 		else
-		{
-			ret.register_error("Item " + name + " already reserved");
-		}
+			ret.register_error("Item " + name + " already exists");
 	}
 	else
-		ret.register_error("Item " + name + " already exists");
+	{
+		ret = RX_NOT_VALID_DIRECTORY;
+	}
 	return ret;
 }
 
 rx_result rx_platform_directory::cancel_reserve (const string_type& name)
 {
-	locks::auto_lock_t _(&lock_);
-	reserved_.erase(name);
-	return true;
-}
-
-rx_namespace_item rx_platform_directory::get_item (const string_type& name) const
-{
-	locks::const_auto_lock_t _(&lock_);
-	auto it = sub_items_.find(name);
-	if (it != sub_items_.end())
+	valid_scope valid(valid_);
+	if (valid)
 	{
-		return it->second;
-	}
-	else
-	{
-		return rx_namespace_item();
-	}
-}
-
-rx_result rx_platform_directory::delete_item (const string_type& name)
-{
-	locks::const_auto_lock_t _(&lock_);
-	auto it = sub_items_.find(name);
-	if (it != sub_items_.end())
-	{
-		sub_items_.erase(it);
+		reserved_.erase(name);
 		return true;
 	}
 	else
 	{
-		return "Item " + name + " not exists";
+		return RX_NOT_VALID_DIRECTORY;
+	}
+}
+
+rx_namespace_item rx_platform_directory::get_item (const string_type& name) const
+{
+	valid_scope valid(valid_);
+	if (valid)
+	{
+		auto it = sub_items_.find(name);
+		if (it != sub_items_.end())
+		{
+			return it->second;
+		}
+	}
+	return rx_namespace_item();
+}
+
+rx_result rx_platform_directory::delete_item (const string_type& name)
+{
+	valid_scope valid(valid_);
+	if (valid)
+	{
+		auto it = sub_items_.find(name);
+		if (it != sub_items_.end())
+		{
+			sub_items_.erase(it);
+			return true;
+		}
+		else
+		{
+			return "Item " + name + " not exists";
+		}
+	}
+	else
+	{
+		return RX_NOT_VALID_DIRECTORY;
 	}
 }
 
@@ -329,6 +366,64 @@ const meta::meta_data& rx_namespace_item::get_meta () const
 rx_item_type rx_namespace_item::get_type () const
 {
   return type_;
+}
+
+
+// Class rx_platform::ns::validity_lock 
+
+validity_lock::validity_lock()
+      : valid_(true),
+        locked_(false)
+{
+}
+
+
+validity_lock::~validity_lock()
+{
+	if (locked_)
+		lock_.unlock();
+}
+
+
+
+// Class rx_platform::ns::valid_scope 
+
+valid_scope::valid_scope (const validity_lock& lock)
+      : lock_(lock)
+{
+}
+
+
+valid_scope::~valid_scope()
+{
+	if (lock_.locked_)
+	{
+		locks::auto_lock_t _(&const_cast<validity_lock&>(lock_).lock_);
+		const_cast<validity_lock&>(lock_).locked_ = false;
+	}
+}
+
+
+
+valid_scope::operator bool () const
+{
+	if (lock_.valid_)
+	{
+		locks::auto_lock_t _(&const_cast<validity_lock&>(lock_).lock_);
+		const_cast<validity_lock&>(lock_).locked_ = true;
+		if (lock_.valid_)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
 }
 
 

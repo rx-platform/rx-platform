@@ -135,7 +135,7 @@ bool vt100_endpoint::move_cursor_left ()
 		current_idx_ = current_line_.size() - 1;
 		return true;
 	}
-	if (current_idx_ > 0)
+	if (current_idx_ < 0x1000000 )
 	{
 		current_idx_--;
 		return true;

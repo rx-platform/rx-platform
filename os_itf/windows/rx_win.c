@@ -280,10 +280,11 @@ struct WSAData wsaData;
 int init_common_result = RX_ERROR;
 
 
-void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls)
+void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug)
 {
 	rx_platform_init_data common_data;
 	common_data.rx_hd_timer = hdt;
+	common_data.is_debug = is_debug;
 
 	init_common_result = rx_init_common_library(&common_data);
 	

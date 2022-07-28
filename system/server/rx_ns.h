@@ -145,6 +145,36 @@ typedef std::vector<rx_namespace_item> platform_items_type;
 
 
 
+class validity_lock 
+{
+    typedef std::atomic<bool> atomic_type_t;
+
+  public:
+      validity_lock();
+
+      ~validity_lock();
+
+
+  protected:
+
+  private:
+
+
+      locks::slim_lock lock_;
+
+      atomic_type_t valid_;
+
+      atomic_type_t locked_;
+
+
+    friend class valid_scope;
+};
+
+
+
+
+
+
 class rx_platform_directory : public rx::pointers::reference_object  
 {
 	DECLARE_REFERENCE_PTR(rx_platform_directory);
@@ -196,14 +226,42 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       rx_reference<storage_base::rx_platform_storage> storage_;
 
+      validity_lock valid_;
+
 
       reserved_type reserved_;
-
-      locks::slim_lock lock_;
 
 
     friend class rx_directory_cache;
     friend class rx_internal::internal_ns::namespace_algorithms;
+};
+
+
+
+
+
+
+
+class valid_scope 
+{
+
+  public:
+      valid_scope (const validity_lock& lock);
+
+      ~valid_scope();
+
+
+      operator bool () const;
+
+
+  protected:
+
+  private:
+
+
+      const validity_lock& lock_;
+
+
 };
 
 

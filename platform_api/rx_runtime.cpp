@@ -49,6 +49,7 @@ rxInitCtxGetLocalValue_t api_init_get_local_value;
 rxInitCtxSetLocalValue_t api_init_set_local_value;
 rxInitCtxGetMappingValues_t api_get_mapping_values;
 rxInitCtxGetSourceValues_t api_get_source_values;
+rxInitCtxGetItemMeta_t api_item_meta;
 
 rxStartCtxGetCurrentPath_t api_start_get_current_path;
 rxStartCtxCreateTimer_t api_start_ctx_create_timer;
@@ -204,6 +205,54 @@ std::vector<rx_simple_value> rx_init_context::get_source_values (const rx_node_i
     {
         return std::vector<rx_simple_value>();
     }
+}
+
+rx_node_id rx_init_context::get_node_id ()
+{
+    const rx_node_id_struct* id = NULL;
+    const char* path = NULL;
+    const char* name = NULL;
+    api_item_meta(impl_, &id, &path, &name);
+    if (id)
+        return rx_node_id(id);
+    else
+        return rx_node_id::null_id;
+}
+
+string_type rx_init_context::get_path ()
+{
+    const rx_node_id_struct* id = NULL;
+    const char* path = NULL;
+    const char* name = NULL;
+    api_item_meta(impl_, &id, &path, &name);
+    if (path)
+        return path;
+    else
+        return string_type();
+}
+
+string_type rx_init_context::get_name ()
+{
+    const rx_node_id_struct* id = NULL;
+    const char* path = NULL;
+    const char* name = NULL;
+    api_item_meta(impl_, &id, &path, &name);
+    if (name)
+        return name;
+    else
+        return string_type();
+}
+
+string_type rx_init_context::get_full_path ()
+{
+    const rx_node_id_struct* id = NULL;
+    const char* path = NULL;
+    const char* name = NULL;
+    api_item_meta(impl_, &id, &path, &name);
+    if (path && name)
+        return string_type(path) + "/" + name;
+    else
+        return string_type();
 }
 
 

@@ -65,17 +65,16 @@ extern "C"
     }
 
     host_source_def_struct _g_source_def_
-    {
-        c_update_source
-        , c_result_update_source
-
-        ,{
+    { 
+        {
             nullptr
             , nullptr
             , c_source_start_timer
             , c_source_suspend_timer
             , c_source_destroy_timer
         }
+        , c_update_source
+        , c_result_update_source
     };
 
 
@@ -108,16 +107,15 @@ extern "C"
 
     host_mapper_def_struct _g_mapper_def_
     {
-        c_mapper_write_pending
-        , c_mapper_map_current
-
-        ,{
+        {
             nullptr
             , nullptr
             , c_mapper_start_timer
             , c_mapper_suspend_timer
             , c_mapper_destroy_timer
         }
+        , c_mapper_write_pending
+        , c_mapper_map_current
     };
 
     rx_result_struct c_filter_changed(void* whose)
@@ -142,16 +140,15 @@ extern "C"
     }
 
     host_filter_def_struct _g_filter_def_
-    {
-        c_filter_changed
-
-        ,{
+    { 
+        {
             nullptr
             , nullptr
             , c_filter_start_timer
             , c_filter_suspend_timer
             , c_filter_destroy_timer
         }
+        , c_filter_changed
     };
 }
 

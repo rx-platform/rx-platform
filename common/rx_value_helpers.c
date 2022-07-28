@@ -49,6 +49,7 @@ int time_to_ISO8601(rx_time_struct val, string_value_struct* str);
 int float_to_str(float val, string_value_struct* str);
 int double_to_str(double val, string_value_struct* str);
 int complex_to_str(complex_value_struct* val, string_value_struct* str);
+int bytes_to_str(const bytes_value_struct* val, string_value_struct* str);
 
 double complex_amplitude_helper(const complex_value_struct* val)
 {
@@ -122,6 +123,10 @@ RX_COMMON_API int rx_is_bool_value(const struct typed_value_type* val)
 RX_COMMON_API int rx_is_string_value(const struct typed_value_type* val)
 {
 	return (val->value_type & RX_SIMPLE_VALUE_MASK) == RX_STRING_TYPE;
+}
+RX_COMMON_API int rx_is_bytes_value(const struct typed_value_type* val)
+{
+	return (val->value_type & RX_SIMPLE_VALUE_MASK) == RX_BYTES_TYPE;
 }
 RX_COMMON_API int rx_is_array_value(const struct typed_value_type* val)
 {
@@ -950,8 +955,7 @@ int get_string_value(const union rx_value_union* val, rx_value_t type, size_t id
 					RX_ASSERT(0);
 					return RX_ERROR;
 				case RX_BYTES_TYPE:
-					RX_ASSERT(0);
-					ret = rx_init_string_value_struct(value, NULL, -1);
+					ret = bytes_to_str(&val->bytes_value, value);
 					return RX_OK;
 				case RX_UUID_TYPE:
 					RX_ASSERT(0);// this should be done !!!
@@ -1002,7 +1006,15 @@ RX_COMMON_API int rx_get_string_value(const struct typed_value_type* val, size_t
 	int ret = get_string_value(&val->value, val->value_type, idx, value);
 	return ret;
 }
-
+RX_COMMON_API int rx_get_bytes_value(const struct typed_value_type* val, size_t idx, bytes_value_struct* value)
+{
+	if (value == NULL && val->value_type != RX_BYTES_TYPE)
+	{
+		RX_ASSERT(0);
+		return RX_ERROR;
+	}
+	return rx_copy_bytes_value(value, &val->value.bytes_value);
+}
 
 
 

@@ -60,9 +60,9 @@ rx_result port_active_map::register_endpoint (rx_protocol_stack_endpoint* what, 
     }
     active_endpoints = count;
     if(whose)
-        RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " registered endpoint for " + whose->meta_info().get_full_path());
+        RUNTIME_LOG_TRACE("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " registered endpoint for " + whose->meta_info().get_full_path());
     else
-        RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " registered endpoint");
+        RUNTIME_LOG_TRACE("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " registered endpoint");
     //dump_active_map(owner->meta_info().get_full_path());
     return true;
 }
@@ -80,9 +80,9 @@ rx_result port_active_map::unregister_endpoint (rx_protocol_stack_endpoint* what
         map_lock_.unlock();
         active_endpoints = count;
         if(whose)
-            RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " removed endpoint for " + whose->meta_info().get_full_path());
+            RUNTIME_LOG_TRACE("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " removed endpoint for " + whose->meta_info().get_full_path());
         else
-            RUNTIME_LOG_DEBUG("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " removed endpoint");
+            RUNTIME_LOG_TRACE("port_passive_map", 500, "Port " + owner->meta_info().get_full_path() + " removed endpoint");
         return true;
     }
     else

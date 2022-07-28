@@ -63,6 +63,7 @@ extern rxInitCtxGetLocalValue_t api_init_get_local_value;
 extern rxInitCtxSetLocalValue_t api_init_set_local_value;
 extern rxInitCtxGetMappingValues_t api_get_mapping_values;
 extern rxInitCtxGetSourceValues_t api_get_source_values;
+extern rxInitCtxGetItemMeta_t api_item_meta;
 
 
 extern rxStartCtxGetCurrentPath_t api_start_get_current_path;
@@ -137,6 +138,7 @@ rx_result_struct rx_bind_plugin(const platform_api* api, uint32_t host_stream_ve
 	api_init_set_local_value = api->runtime.prxInitCtxSetLocalValue;
 	api_get_mapping_values = api->runtime.prxInitCtxGetMappingValues;
 	api_get_source_values = api->runtime.prxInitCtxGetSourceValues;
+	api_item_meta = api->runtime.prxInitCtxGetItemMeta;
 
 	api_start_get_current_path = api->runtime.prxStartCtxGetCurrentPath;
 	api_start_ctx_create_timer = api->runtime.prxStartCtxCreateTimer;

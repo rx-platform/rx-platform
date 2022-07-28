@@ -41,8 +41,8 @@
 #include "dummy.h"
 
 namespace rx {
-class base_meta_writer;
 class base_meta_reader;
+class base_meta_writer;
 
 } // namespace rx
 
@@ -225,6 +225,10 @@ class rx_simple_value
 
       bool weak_deserialize (const char* name, base_meta_reader& reader);
 
+      bool is_byte_string () const;
+
+      byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
+
 
   protected:
 
@@ -354,7 +358,7 @@ public:
 
       bool compare (const rx_value& right, time_compare_type time_compare) const;
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       void set_substituted ();
 
@@ -371,6 +375,10 @@ public:
       uint32_t get_quality () const;
 
       void set_quality (uint32_t val);
+
+      bool is_byte_string () const;
+
+      byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
 
 
   protected:
@@ -500,7 +508,11 @@ public:
 
       bool compare (const rx_timed_value& right, time_compare_type time_compare) const;
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
+
+      bool is_byte_string () const;
+
+      byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
 
 
   protected:

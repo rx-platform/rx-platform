@@ -95,7 +95,7 @@ rx_result http_server::handle_request (http_request req)
 {
 	if (req.path.empty() || req.path == "/")
 		req.path = "/sys/runtime/system/System.index.disp";
-	HTTP_LOG_TRACE("http_server", 100, "HTTP request received for "s + req.path);
+	HTTP_LOG_DEBUG("http_server", 100, "HTTP request received for "s + req.path);
 	http_response response;
 	response.cache_me = false;
 #ifndef _DEBUG
@@ -110,7 +110,7 @@ rx_result http_server::handle_request (http_request req)
 	}
 	if (response.cache_me)
 	{
-		HTTP_LOG_TRACE("http_server", 100, "Cache sending HTTP response "s + response.result_string + " for "s + req.path);
+		HTTP_LOG_DEBUG("http_server", 100, "Cache sending HTTP response "s + response.result_string + " for "s + req.path);
 		req.whose->send_response(std::move(response));
 		return true;// done with the cache
 	}
@@ -153,7 +153,7 @@ void http_server::send_response (http_request& request, http_response response)
 		locks::auto_lock_t _(&cache_lock_);
 		cached_items_.emplace(request.path, response);
 	}
-	HTTP_LOG_TRACE("http_server", 100, "Sending HTTP response "s + response.result_string + " for "s + request.path);
+	HTTP_LOG_DEBUG("http_server", 100, "Sending HTTP response "s + response.result_string + " for "s + request.path);
 	request.whose->send_response(std::move(response));
 }
 

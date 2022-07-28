@@ -215,6 +215,11 @@ extern "C"
         rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
         return self->disconnect_stack_endpoint(what).move();
     }
+    rx_result_struct c_bind_listener_endpoint(void* whose, struct rx_protocol_stack_endpoint* what, const struct protocol_address_def* local_address, const struct protocol_address_def* remote_address)
+    {
+        rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
+        return self->bind_listener_endpoint(what, local_address, remote_address).move();
+    }
 
     void c_release_buffer(void* whose, rx_packet_buffer buffer)
     {
@@ -276,7 +281,14 @@ extern "C"
 
     host_port_def_struct _g_port_def_
     {
-        c_alloc_buffer
+        {
+            c_port_post_job
+            , c_port_create_timer
+            , c_port_start_timer
+            , c_port_suspend_timer
+            , c_port_destroy_timer
+        }
+        ,c_alloc_buffer
         ,c_release_buffer
 
         ,c_listen
@@ -284,14 +296,7 @@ extern "C"
 
         ,c_unbind_stack_endpoint
         ,c_disconnect_stack_endpoint
-
-        ,{
-            c_port_post_job
-            , c_port_create_timer
-            , c_port_start_timer
-            , c_port_suspend_timer
-            , c_port_destroy_timer
-        }
+        ,c_bind_listener_endpoint
     };
 
 }
@@ -477,6 +482,11 @@ void extern_port_runtime::post_own_job (plugin_job_struct* what)
 {
     auto job = rx_create_reference<extern_job>(what);
     get_context()->own_pending(job);
+}
+
+rx_result extern_port_runtime::bind_listener_endpoint (rx_protocol_stack_endpoint* what, const protocol_address_def* local_addr, const protocol_address_def* remote_addr)
+{
+    return add_stack_endpoint(what, local_addr, remote_addr);
 }
 
 

@@ -34,10 +34,10 @@
 
 #include "protocols/ansi_c/opcua_c/rx_opcua_binary_sec.h"
 
-// rx_transport_templates
-#include "system/runtime/rx_transport_templates.h"
 // dummy
 #include "dummy.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
 
 namespace protocols {
 namespace opcua {
@@ -86,6 +86,8 @@ class opcua_sec_none_endpoint : public opcua_sec_none_protocol_type
 
       static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
+      static rx_protocol_result_t transport_connected (rx_protocol_stack_endpoint* reference, const protocol_address* local_address, const protocol_address* remote_address);
+
 
 
       opcua_sec_none_port* port_;
@@ -99,7 +101,7 @@ class opcua_sec_none_endpoint : public opcua_sec_none_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_sec_none_endpoint  > opcua_sec_none_base;
+typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< protocols::opcua::opcua_transport::opcua_sec_none_endpoint  > opcua_sec_none_base;
 
 
 

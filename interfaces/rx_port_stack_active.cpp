@@ -433,6 +433,25 @@ bool extern_behavior::is_endpoint_user ()
 }
 
 
+// Class rx_internal::interfaces::port_stack::stack_active::connection_transport_behavior 
+
+
+bool connection_transport_behavior::is_extern ()
+{
+	return false;
+}
+
+bool connection_transport_behavior::is_endpoit_binder ()
+{
+	return false;
+}
+
+bool connection_transport_behavior::is_endpoint_user ()
+{
+	return true;
+}
+
+
 } // namespace stack_active
 } // namespace port_stack
 } // namespace interfaces

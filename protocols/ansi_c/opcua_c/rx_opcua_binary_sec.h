@@ -58,6 +58,12 @@ typedef struct opcua_sequence_header_def
 } opcua_sequence_header;
 
 
+typedef rx_protocol_result_t(*rx_opcua_transport_connected_t)(
+	struct rx_protocol_stack_endpoint* stack, const protocol_address* local_address, const protocol_address* remote_address);
+
+
+
+
 #pragma pack(pop)
 
 // definition of transport struct
@@ -82,6 +88,8 @@ typedef struct opcua_sec_none_protocol_def
 	struct packed_decoder_type packet_decoder;
 	uint8_t header_buffer[sizeof(opcua_transport_header)];
 	rx_packet_buffer transport_receive_buffer;
+
+	rx_opcua_transport_connected_t transport_connected;
 
 } opcua_sec_none_protocol_type;
 // initialize and deinitialize of transport

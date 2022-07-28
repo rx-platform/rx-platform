@@ -268,6 +268,11 @@ rx_result rx_port::disconnect_stack_endpoint (rx_protocol_stack_endpoint* what)
     return impl_.host_def->disconnect_stack_endpoint(impl_.host, what);
 }
 
+rx_result rx_port::add_stack_endpoint (rx_protocol_stack_endpoint* what, const protocol_address* local_addr, const protocol_address* remote_addr)
+{
+    return impl_.host_def->bind_listener_endpoint(impl_.host, what, local_addr, remote_addr);
+}
+
 
 } // namespace rx_platform_api
 

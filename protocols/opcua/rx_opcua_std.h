@@ -103,6 +103,8 @@ protected:
 
       void read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
 
+      std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep);
+
       void browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const;
 
       void translate (const relative_path& path, browse_path_result& results, opcua_browse_context* ctx) const;
@@ -215,6 +217,8 @@ class opcua_std_address_space : public opcua_address_space_base
 
 
       void read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const;
+
+      std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (const rx_node_id& node_id, attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep);
 
       void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const;
 

@@ -195,6 +195,112 @@ class any_address : public protocol_address
 };
 
 
+
+
+
+
+class string_address : public protocol_address  
+{
+
+  public:
+      string_address();
+
+      string_address(const string_address &right);
+
+      string_address (const string_type& val);
+
+      ~string_address();
+
+      bool operator==(const string_address &right) const;
+
+      bool operator!=(const string_address &right) const;
+
+      bool operator<(const string_address &right) const;
+
+      bool operator>(const string_address &right) const;
+
+      bool operator<=(const string_address &right) const;
+
+      bool operator>=(const string_address &right) const;
+
+
+      rx_result parse (const protocol_address* ep);
+
+      string_type get_address () const;
+
+      bool is_null () const;
+
+      bool is_valid () const;
+
+      string_type to_string () const;
+
+      rx_result parse (const string_type& what);
+
+      string_address(string_address&& right) noexcept;
+      string_address& operator=(const string_address& right);
+      string_address& operator=(string_address&& right) noexcept;
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class bytes_address : public protocol_address  
+{
+
+  public:
+      bytes_address();
+
+      bytes_address(const bytes_address &right);
+
+      bytes_address (const byte_string& val);
+
+      bytes_address (const void* pdata, size_t count);
+
+      ~bytes_address();
+
+      bool operator==(const bytes_address &right) const;
+
+      bool operator!=(const bytes_address &right) const;
+
+      bool operator<(const bytes_address &right) const;
+
+      bool operator>(const bytes_address &right) const;
+
+      bool operator<=(const bytes_address &right) const;
+
+      bool operator>=(const bytes_address &right) const;
+
+
+      rx_result parse (const protocol_address* ep);
+
+      byte_string get_address () const;
+
+      bool is_null () const;
+
+      bool is_valid () const;
+
+      string_type to_string () const;
+
+      rx_result parse (const string_type& what);
+
+      bytes_address(bytes_address&& right) noexcept;
+      bytes_address& operator=(const bytes_address& right);
+      bytes_address& operator=(bytes_address&& right) noexcept;
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace io
 } // namespace rx
 

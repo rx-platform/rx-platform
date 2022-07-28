@@ -612,7 +612,7 @@ defT numeric_address<defT>::get_address () const
 template <typename defT>
 bool numeric_address<defT>::is_null () const
 {
-    return this->type == protocol_address_none;
+    return rx_is_null_address(this) != 0 ? true : false;
 }
 
 template <typename defT>
@@ -718,7 +718,7 @@ any_address::~any_address()
 
 bool any_address::is_null () const
 {
-    return this->type == protocol_address_none;
+    return rx_is_null_address(this) != 0 ? true : false;
 }
 
 string_type any_address::to_string () const
@@ -762,9 +762,17 @@ string_type any_address::to_string () const
     case protocol_address_ip6:
         return "nemaip6";
     case protocol_address_string:
-        return this->value.string_address;
+        {
+            string_address temp;
+            temp.parse(this);
+            return temp.to_string();
+        }
     case protocol_address_bytes:
-        return "nemabytes";
+        {
+            bytes_address temp;
+            temp.parse(this);
+            return temp.to_string();
+        }
     default:
         RX_ASSERT(false);
         return "err";
@@ -857,6 +865,348 @@ bool any_address::operator<(const any_address& right) const
     {
         return type < right.type;
     }
+}
+// Class rx::io::string_address 
+
+string_address::string_address()
+{
+    rx_create_null_address(this);
+}
+
+string_address::string_address(const string_address &right)
+{
+    rx_create_null_address(this);
+    rx_copy_address(this, &right);
+}
+
+string_address::string_address (const string_type& val)
+{
+    if (val.empty())
+        rx_create_string_address(this, NULL);
+    else
+        rx_create_string_address(this, val.c_str());
+}
+
+
+string_address::~string_address()
+{
+    rx_free_address(this);
+    static_assert(sizeof(string_address) == sizeof(protocol_address), "Memory size has to be the same, no virtual functions or members");
+}
+
+
+bool string_address::operator==(const string_address &right) const
+{
+    return get_address() == right.get_address();
+}
+
+bool string_address::operator!=(const string_address &right) const
+{
+    return !operator==(right);
+}
+
+
+bool string_address::operator<(const string_address &right) const
+{
+    return get_address() < right.get_address();
+}
+
+bool string_address::operator>(const string_address &right) const
+{
+    return get_address() > right.get_address();
+}
+
+bool string_address::operator<=(const string_address &right) const
+{
+    return get_address() <= right.get_address();
+}
+
+bool string_address::operator>=(const string_address &right) const
+{
+    return get_address() >= right.get_address();
+}
+
+
+
+rx_result string_address::parse (const protocol_address* ep)
+{
+    rx_free_address(this);
+    if (rx_is_null_address(ep))
+        return true;// null address is always valid
+
+    if (ep->type == protocol_address_string)
+    {
+        rx_copy_address(this, ep);
+        return true;
+    }
+    else
+    {
+        return "Invalid address expected IP4 format.";
+    }
+}
+
+string_type string_address::get_address () const
+{
+    if (is_null())
+        return string_type();
+    const char* data = NULL;
+    auto res = rx_extract_string_address(this, &data);
+    if (res == RX_PROTOCOL_OK && data != NULL)
+        return string_type(data);
+    else
+        return string_type();
+}
+
+bool string_address::is_null () const
+{
+    return rx_is_null_address(this) != 0 ? true : false;
+}
+
+bool string_address::is_valid () const
+{
+  // numeric addr is always valid
+  return true;
+
+}
+
+string_type string_address::to_string () const
+{
+    return get_address();
+}
+
+rx_result string_address::parse (const string_type& what)
+{
+    rx_free_address(this);
+    rx_create_string_address(this, what.c_str());
+    return true;
+}
+
+string_address::string_address(string_address&& right) noexcept
+{
+    rx_create_null_address(this);
+    rx_move_address(this, &right);
+}
+string_address& string_address::operator=(const string_address& right)
+{
+    rx_free_address(this);
+    rx_copy_address(this, &right);
+    return *this;
+}
+string_address& string_address::operator=(string_address&& right) noexcept
+{
+    rx_free_address(this);
+    rx_move_address(this, &right);
+    return *this;
+}
+
+// Class rx::io::bytes_address 
+
+bytes_address::bytes_address()
+{
+    rx_create_null_address(this);
+}
+
+bytes_address::bytes_address(const bytes_address &right)
+{
+    rx_create_null_address(this);
+    rx_copy_address(this, &right);
+}
+
+bytes_address::bytes_address (const byte_string& val)
+{
+    if (val.empty())
+        rx_create_bytes_address(this, NULL, 0);
+    else
+        rx_create_bytes_address(this, (const uint8_t*)&val[0], val.size());
+}
+
+bytes_address::bytes_address (const void* pdata, size_t count)
+{
+    if(pdata==NULL || count==0)
+        rx_create_bytes_address(this, NULL, 0);
+    else
+        rx_create_bytes_address(this, (const uint8_t*)pdata, count);
+}
+
+
+bytes_address::~bytes_address()
+{
+    rx_free_address(this);
+    static_assert(sizeof(bytes_address) == sizeof(protocol_address), "Memory size has to be the same, no virtual functions or members");
+}
+
+
+bool bytes_address::operator==(const bytes_address &right) const
+{
+    return get_address() == right.get_address();
+}
+
+bool bytes_address::operator!=(const bytes_address &right) const
+{
+    return !operator==(right);
+}
+
+
+bool bytes_address::operator<(const bytes_address &right) const
+{
+    return get_address() < right.get_address();
+}
+
+bool bytes_address::operator>(const bytes_address &right) const
+{
+    return get_address() > right.get_address();
+}
+
+bool bytes_address::operator<=(const bytes_address &right) const
+{
+    return get_address() <= right.get_address();
+}
+
+bool bytes_address::operator>=(const bytes_address &right) const
+{
+    return get_address() >= right.get_address();
+}
+
+
+
+rx_result bytes_address::parse (const protocol_address* ep)
+{
+    rx_free_address(this);
+    if (rx_is_null_address(ep))
+        return true;// null address is always valid
+
+    if (ep->type == protocol_address_bytes)
+    {
+        rx_copy_address(this, ep);
+        return true;
+    }
+    else
+    {
+        return "Invalid address expected IP4 format.";
+    }
+}
+
+byte_string bytes_address::get_address () const
+{
+    if (is_null())
+        return byte_string();
+    const uint8_t* data = NULL;
+    size_t size = 0;
+    auto res = rx_extract_bytes_address(this, &data, &size);
+    if (res == RX_PROTOCOL_OK && data != NULL && size > 0)
+        return byte_string((std::byte*)data, (std::byte*)data + size);
+    else
+        return byte_string();
+}
+
+bool bytes_address::is_null () const
+{
+    return rx_is_null_address(this) != 0 ? true : false;
+}
+
+bool bytes_address::is_valid () const
+{
+  // numeric addr is always valid
+  return true;
+
+}
+
+string_type bytes_address::to_string () const
+{
+    if (is_null())
+        return string_type();
+    char hex_buff[0x40];
+    char* pbuffer = hex_buff;
+    size_t temp_size = this->value.bytes_address.size;
+    const uint8_t* pbytes = this->value.bytes_address.address;
+    if (temp_size == 0 || pbytes == NULL)
+        return string_type();
+    if (temp_size * 2 + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
+    {
+        pbuffer = new char[temp_size * 2 + 1];
+        if (pbuffer == NULL)
+            return RX_ERROR;
+    }
+    for (size_t i = 0; i < temp_size; i++)
+    {
+        sprintf(&pbuffer[i * 2], "%02X", pbytes[i]);
+    }
+    string_type ret(pbuffer);
+    if (temp_size * 2 + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
+        delete[] pbuffer;
+    return ret;
+}
+
+rx_result bytes_address::parse (const string_type& what)
+{
+    uint8_t static_buff[0x40];
+    uint8_t* pbuffer = static_buff;
+
+    if (what.empty())
+    {
+        rx_free_address(this);
+        rx_create_bytes_address(this, NULL, 0);
+    }
+    size_t len = what.size();
+
+    if ((len & 0x1) != 0)
+        return "Error converting from HEX array:have to be event characters";
+
+    size_t array_size = len / 2;;
+
+    if (array_size > sizeof(static_buff) / sizeof(static_buff[0]))
+    {
+        pbuffer = new uint8_t[array_size];
+    }
+
+    for (size_t i = 0; i < len; i += 2)
+    {
+        uint8_t temp = 0x00;
+
+        if (what[i] >= '0' && what[i] <= '9')
+            temp = temp + what[i] - '0';
+        else if (what[i] >= 'A' || what[i] <= 'F')
+            temp = temp + what[i] - 'A' + 0xa;
+        else if (what[i] >= 'a' || what[i] <= 'f')
+            temp = temp + what[i] - 'A' + 0xa;
+        else
+            return "Error converting from HEX array:invalid character";
+        temp <<= 4;
+
+        if (what[i + 1] >= '0' && what[i + 1] <= '9')
+            temp = temp + what[i + 1] - '0';
+        else if (what[i + 1] >= 'A' || what[i + 1] <= 'F')
+            temp = temp + what[i + 1] - 'A' + 0xa;
+        else if (what[i + 1] >= 'a' || what[i + 1] <= 'f')
+            temp = temp + what[i + 1] - 'A' + 0xa;
+        else
+            return "Error converting from HEX array:invalid character";
+
+        pbuffer[len / 2] = temp;
+    }
+    rx_free_address(this);
+    rx_create_bytes_address(this, pbuffer, array_size);
+    if (array_size > sizeof(static_buff) / sizeof(static_buff[0]))
+        delete[] pbuffer;
+    return true;
+}
+
+bytes_address::bytes_address(bytes_address&& right) noexcept
+{
+    rx_create_null_address(this);
+    rx_move_address(this, &right);
+}
+bytes_address& bytes_address::operator=(const bytes_address& right)
+{
+    rx_free_address(this);
+    rx_copy_address(this, &right);
+    return *this;
+}
+bytes_address& bytes_address::operator=(bytes_address&& right) noexcept
+{
+    rx_free_address(this);
+    rx_move_address(this, &right);
+    return *this;
 }
 } // namespace io
 } // namespace rx

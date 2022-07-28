@@ -159,7 +159,7 @@ rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::run
 {
     auto result = rx_internal::interfaces::port_stack::stack_build::stack_builder::disconnect_stack(what);
     if (result)
-        RUNTIME_LOG_DEBUG("port_stack_relation", 900, what->meta_info().get_full_path() + " disconnected from stack");
+        RUNTIME_LOG_TRACE("port_stack_relation", 900, what->meta_info().get_full_path() + " disconnected from stack");
     else
         RUNTIME_LOG_ERROR("port_stack_relation", 900, what->meta_info().get_full_path() + " error disconnecting stack:" + result.errors_line());
 

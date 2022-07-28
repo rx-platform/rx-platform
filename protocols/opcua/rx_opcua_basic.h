@@ -39,21 +39,22 @@
 #include "system/runtime/rx_protocol_templates.h"
 // rx_blocks_templates
 #include "system/runtime/rx_blocks_templates.h"
+// rx_opcua_server
+#include "protocols/opcua/rx_opcua_server.h"
 // rx_opcua_subscriptions
 #include "protocols/opcua/rx_opcua_subscriptions.h"
 // rx_opcua_std
 #include "protocols/opcua/rx_opcua_std.h"
 // rx_opcua_addr_space
 #include "protocols/opcua/rx_opcua_addr_space.h"
-// rx_opcua_server
-#include "protocols/opcua/rx_opcua_server.h"
 
 namespace protocols {
 namespace opcua {
-namespace opcua_server {
+namespace opcua_basic_server {
+class opcua_basic_mapper;
 class opcua_basic_server_port;
 
-} // namespace opcua_server
+} // namespace opcua_basic_server
 } // namespace opcua
 } // namespace protocols
 
@@ -65,7 +66,7 @@ namespace protocols {
 
 namespace opcua {
 
-namespace opcua_server {
+namespace opcua_basic_server {
 constexpr const uint16_t default_basic_namespace = 3;
 
 
@@ -148,6 +149,9 @@ class opcua_basic_node : public opcua_addr_space::opcua_variable_node
       ~opcua_basic_node();
 
 
+      std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep);
+
+
       const string_type& get_path () const
       {
         return path_;
@@ -158,6 +162,9 @@ class opcua_basic_node : public opcua_addr_space::opcua_variable_node
   protected:
 
   private:
+
+
+      opcua_basic_mapper *mapper_;
 
 
       string_type path_;
@@ -209,6 +216,8 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
       rx_result unregister_node (opcua_basic_node* what);
 
       void read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const;
+
+      std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (const rx_node_id& node_id, attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep);
 
       void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const;
 
@@ -307,6 +316,7 @@ Basic OPC UA protocol port class. Basic implementation OPC UA binary protocol co
 typedef rx_platform::runtime::blocks::blocks_templates::extern_mapper_impl< opcua_basic_server_port  > opcua_basic_mapper_base;
 
 
+//typedef rx_platform::runtime::blocks::mapper_runtime opcua_basic_mapper_base;
 
 
 
@@ -318,6 +328,10 @@ class opcua_basic_mapper : public opcua_basic_mapper_base
 Implementation of OPC UA Basic Mapper");
 
     DECLARE_REFERENCE_PTR(opcua_basic_mapper);
+
+   // typedef reference<opcua_basic_server_port> port_ptr_t;
+
+    typedef std::map<runtime_transaction_id_t, opcua_server_endpoint_ptr> write_transactions_type;
 
   public:
       opcua_basic_mapper();
@@ -331,6 +345,8 @@ Implementation of OPC UA Basic Mapper");
 
       void port_disconnected (port_ptr_t port);
 
+      std::pair<opcua_result_t, runtime_transaction_id_t> write_value (const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep);
+
 
   protected:
 
@@ -342,13 +358,18 @@ Implementation of OPC UA Basic Mapper");
 
 
 
-      opcua_basic_node node_;
+      //opcua_basic_node node_;
 
+
+      locks::slim_lock transactions_lock_;
+
+      write_transactions_type write_transactions_;
+      opcua_basic_node node_;
 
 };
 
 
-} // namespace opcua_server
+} // namespace opcua_basic_server
 } // namespace opcua
 } // namespace protocols
 

@@ -124,6 +124,14 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configurat
 				return ret;
 			});
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
+			RX_CONN_TRANSPORT_PORT_TYPE_ID, [] {
+				rx_internal::sys_runtime::runtime_core::runtime_data::port_behaviors ret;
+				ret.build_behavior = std::make_unique<rx_internal::interfaces::port_stack::stack_build::assemble_ignorant>();
+				ret.passive_behavior = std::make_unique<rx_internal::interfaces::port_stack::stack_passive::passive_ignorant>();
+				ret.active_behavior = std::make_unique<rx_internal::interfaces::port_stack::stack_active::connection_transport_behavior>();
+				return ret;
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_behavior(
 			RX_ROUTED_TRANSPORT_PORT_TYPE_ID, [] {
 				rx_internal::sys_runtime::runtime_core::runtime_data::port_behaviors ret;
 				ret.build_behavior = std::make_unique<rx_internal::interfaces::port_stack::stack_build::assemble_sender_subscriber>();
