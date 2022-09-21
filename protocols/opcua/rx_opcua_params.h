@@ -46,6 +46,9 @@ namespace opcua {
 class opcua_server_endpoint_base;
 typedef rx_reference<opcua_server_endpoint_base> opcua_server_endpoint_ptr;
 
+class opcua_client_endpoint_base;
+typedef rx_reference<opcua_client_endpoint_base> opcua_client_endpoint_ptr;
+
 namespace opcua_addr_space
 {
 class reference_data;

@@ -76,6 +76,25 @@ uint32_t rx_quality_to_status_code(uint32_t quality)
 }
 
 
+uint32_t status_code_to_rx_quality(uint32_t status)
+{
+	switch (status & opcid_QualityMask)
+	{
+	case opcid_Good:
+		return RX_GOOD_QUALITY;
+		break;
+	case opcid_Uncertain:
+		return RX_UNCERTAIN_QUALITY;
+		break;
+	case opcid_Bad:
+		return RX_UNCERTAIN_QUALITY;
+		break;
+	default:
+		return RX_BAD_QUALITY_QUALITY_INVALID;
+	}
+}
+
+
 
 
 const uint8_t variant_type::get_type() const
@@ -1144,6 +1163,14 @@ rx_result data_value::fill_rx_value(values::rx_value& vvalue) const
 	auto result = value.fill_rx_value(vvalue);
 	if (result)
 	{
+		if (source_ts.t_value)
+			vvalue.set_time(source_ts);
+		else if (server_ts.t_value)
+			vvalue.set_time(server_ts);
+		else
+			vvalue.set_time(rx_time::now());
+		vvalue.set_quality(status_code_to_rx_quality(status_code));
+
 		return true;
 	}
 	return RX_INVALID_CONVERSION;

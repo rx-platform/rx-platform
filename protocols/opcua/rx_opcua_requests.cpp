@@ -45,6 +45,7 @@
 using namespace protocols::opcua::ids;
 
 #include "rx_opcua_server.h"
+#include "rx_opcua_client.h"
 
 
 namespace protocols {
@@ -54,6 +55,27 @@ namespace opcua {
 namespace requests {
 
 // Class protocols::opcua::requests::opcua_request_base 
+
+opcua_request_base::opcua_request_base()
+      : request_id(0),
+        request_handle(0),
+        diagnostics(0),
+        timeout(3600000)
+{
+	timestamp = rx_time::now();
+}
+
+opcua_request_base::opcua_request_base (uint32_t req_id, uint32_t req_handle)
+      : request_id(0),
+        request_handle(0),
+        diagnostics(0),
+        timeout(3600000)
+{
+	request_id = req_id;
+	request_handle = req_handle;
+	timestamp = rx_time::now();
+}
+
 
 
 rx_result opcua_request_base::deserialize_binary (binary::ua_binary_istream& stream)
@@ -85,7 +107,14 @@ rx_result opcua_request_base::serialize_binary (binary::ua_binary_ostream& strea
 
 rx_result opcua_request_base::serialize_header_binary (binary::ua_binary_ostream& stream)
 {
-	return RX_NOT_IMPLEMENTED;
+	stream << authentication_token;
+	stream << timestamp;
+	stream << request_handle;
+	stream << diagnostics;
+	stream << audit_entry_id;
+	stream << timeout;
+	stream.serialize_extension(nullptr);
+	return true;
 }
 
 void opcua_request_base::move_header_to (opcua_request_base* where)
@@ -196,6 +225,27 @@ void opcua_requests_repository::init_responses ()
 	// attributes service set
 	ptr = std::make_unique<opcua_attributes::opcua_read_response>();
 	register_response(std::move(ptr));
+	ptr = std::make_unique<opcua_attributes::opcua_write_response>();
+	register_response(std::move(ptr));
+	// view service set
+	ptr = std::make_unique<opcua_view::opcua_browse_response>();
+	register_response(std::move(ptr));
+	ptr = std::make_unique<opcua_view::opcua_translate_response>();
+	register_response(std::move(ptr));
+	// monitored item service set
+	ptr = std::make_unique<opcua_monitoreditem::opcua_create_mon_items_response>();
+	register_response(std::move(ptr));
+	ptr = std::make_unique<opcua_monitoreditem::opcua_delete_mon_items_response>();
+	register_response(std::move(ptr));
+	// subscription service set
+	ptr = std::make_unique<opcua_subscription::opcua_create_subs_response>();
+	register_response(std::move(ptr));
+	ptr = std::make_unique<opcua_subscription::opcua_publish_response>();
+	register_response(std::move(ptr));
+	ptr = std::make_unique<opcua_subscription::opcua_republish_response>();
+	register_response(std::move(ptr));
+	ptr = std::make_unique<opcua_subscription::opcua_delete_subs_response>();
+	register_response(std::move(ptr));
 }
 
 rx_result opcua_requests_repository::register_response (opcua_response_ptr resp)
@@ -249,7 +299,19 @@ rx_result opcua_response_base::deserialize_binary (binary::ua_binary_istream& st
 
 rx_result opcua_response_base::deserialize_header_binary (binary::ua_binary_istream& stream)
 {
-	return RX_NOT_IMPLEMENTED;
+	stream >> timestamp;
+	stream >> request_handle;
+	stream >> result;
+	string_array strings;
+	stream >> diagnostics;
+	stream >> strings; 
+	additional = stream.deserialize_extension<ua_extension>([](const rx_node_id& id) {
+		if (id.is_null())
+			return std::make_unique<ua_extension>();
+		else
+			return opcua_extension_ptr();
+		});
+	return true;
 }
 
 rx_result opcua_response_base::serialize_binary (binary::ua_binary_ostream& stream) const
@@ -268,6 +330,11 @@ rx_result opcua_response_base::serialize_header_binary (binary::ua_binary_ostrea
 	stream << strings;
 	stream.serialize_extension(nullptr);
 	return true;
+}
+
+rx_result opcua_response_base::process_response (opcua_client_endpoint_ptr ep)
+{
+	return RX_NOT_IMPLEMENTED;
 }
 
 

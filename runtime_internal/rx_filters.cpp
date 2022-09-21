@@ -71,6 +71,14 @@ rx_result register_filter_constructors()
 		RX_ASCII_FILTER_TYPE_ID, [] {
 			return rx_create_reference<ascii_filter>();
 		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
+		RX_LATCH_FILTER_TYPE_ID, [] {
+			return rx_create_reference<latch_filter>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
+		RX_HEX2DEC_FILTER_TYPE_ID, [] {
+			return rx_create_reference<hex2decimal>();
+		});
 	return true;
 }
 
@@ -260,6 +268,8 @@ bool quality_filter::supports_output () const
 rx_result ascii_filter::initialize_filter (runtime::runtime_init_context& ctx)
 {
 	invalid_char_ = ctx.get_item_static(".GoodValue", '?');
+	columns_ = ctx.get_item_static(".Columns", 0);
+	max_len_ = ctx.get_item_static(".MaxLen", 0);
 	return true;
 }
 
@@ -268,7 +278,19 @@ rx_result ascii_filter::filter_input (rx_value& val)
 	if (val.is_string())
 	{// do the conversion
 		string_type str_val = val.extract_static<string_type>("");
-		val.assign_static(utf8_to_ascii(str_val, invalid_char_));
+		if (!str_val.empty())
+		{
+			str_val = utf8_to_ascii(str_val, invalid_char_);
+			if (columns_ > 0)
+			{
+				str_val = wrap(str_val);
+			}
+			if (max_len_ > 0 && str_val.size()>max_len_)
+			{
+				str_val.resize(max_len_);
+			}
+			val.assign_static(str_val);
+		}
 	}
 	else
 	{
@@ -282,13 +304,180 @@ rx_result ascii_filter::filter_output (rx_simple_value& val)
 	if (val.is_string())
 	{// do the conversion
 		string_type str_val = val.extract_static<string_type>("");
-		val.assign_static(utf8_to_ascii(str_val, invalid_char_));
+		str_val = utf8_to_ascii(str_val, invalid_char_);
+		if (columns_ > 0)
+		{
+			str_val = wrap(str_val);
+		}
+		if (max_len_ > 0 && str_val.size() > max_len_)
+		{
+			str_val.resize(max_len_);
+		}
+		val.assign_static(str_val);
 		return true;
 	}
 	else
 	{
 		return RX_INVALID_CONVERSION;
 	}
+}
+
+string_type ascii_filter::wrap (const string_type& what)
+{
+	std::istringstream words(what);
+	std::ostringstream wrapped;
+	std::string word;
+
+	if (words >> word) 
+	{
+		wrapped << word;
+		size_t space_left = columns_ - word.length();
+		while (words >> word) 
+		{
+			if (space_left < word.length() + 1) 
+			{
+				for (size_t i = 0; i < space_left; i++)
+					wrapped << ' ';
+				wrapped << word;
+				space_left = columns_ - word.length();
+			}
+			else 
+			{
+				wrapped << ' ' << word;
+				space_left -= word.length() + 1;
+			}
+		}
+	}
+	return wrapped.str();
+}
+
+
+// Class rx_internal::sys_runtime::filters::hex2decimal 
+
+
+rx_result hex2decimal::initialize_filter (runtime::runtime_init_context& ctx)
+{
+	empty_is_zero_ = ctx.get_item_static(".EmptyIsZero", false);
+
+	return true;
+}
+
+rx_result hex2decimal::filter_input (rx_value& val)
+{
+	if (val.is_string() && val.is_good())
+	{
+		auto quality = val.get_quality();
+		auto time = val.get_time();
+		int64_t temp_val;
+		auto str = val.get_string();
+		if (str.empty() && empty_is_zero_)
+		{
+			val.assign_static("0", time);
+			val.set_quality(quality);
+		}
+		else if (std::from_chars(str.c_str(), str.c_str() + str.size(), temp_val, 16).ec == std::errc{})
+		{
+			char buff[0x40];
+			auto [ptr, ec] = std::to_chars(buff, buff + (sizeof(buff) / sizeof(buff[0])), temp_val);
+			if (ec == std::errc{})
+			{
+				*ptr = '\0';
+				val.assign_static(buff, time);
+				val.set_quality(quality);
+			}
+			else
+			{
+				val.set_quality(RX_BAD_QUALITY);
+			}
+		}
+		else
+		{
+			val.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+		}
+	}
+	else
+	{
+		val.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+	}
+	return true;
+}
+
+rx_result hex2decimal::filter_output (rx_simple_value& val)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+
+// Class rx_internal::sys_runtime::filters::latch_filter 
+
+
+rx_result latch_filter::initialize_filter (runtime::runtime_init_context& ctx)
+{
+	unlatch_.bind(".Unlatch", ctx, [this](const bool& val)
+		{
+			if (val)
+			{
+				if (!latched_.is_null())
+				{
+					auto type = latched_.get_type();
+					latched_.set_float(0.0, type);
+					filter_changed();
+				}
+				unlatch_ = false;
+			}
+		});
+	timeout_.bind(".Timeout", ctx);
+	return true;
+}
+
+rx_result latch_filter::start_filter (runtime::runtime_start_context& ctx)
+{
+	timer_ = ctx.create_timer_function(smart_this(), [this]()
+		{
+			timer_->suspend();
+			if (!latched_.is_null())
+			{
+				auto type = latched_.get_type();
+				latched_.set_float(0.0, type);
+				filter_changed();
+			}
+		});
+	return true;
+}
+
+rx_result latch_filter::stop_filter (runtime::runtime_stop_context& ctx)
+{
+	if (timer_)
+	{
+		timer_->cancel();
+		timer_ = rx_timer_ptr::null_ptr;
+	}
+	return true;
+}
+
+rx_result latch_filter::filter_input (rx_value& val)
+{
+	if (val.is_numeric() && val.is_good())
+	{
+		if (val.get_float() == 0.0)
+		{
+			if (!latched_.is_null())
+				val = latched_;
+		}
+		else
+		{
+			if (timeout_ > 0)
+			{
+				timer_->start(timeout_);
+			}
+			latched_ = val;
+		}
+	}
+	else
+	{
+		val.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+	}
+	return true;
 }
 
 

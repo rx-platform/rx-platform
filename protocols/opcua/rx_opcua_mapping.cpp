@@ -111,6 +111,82 @@ opcua_transport_port::opcua_transport_port()
 
 
 
+// Class protocols::opcua::opcua_transport::opcua_client_transport_endpoint 
+
+opcua_client_transport_endpoint::opcua_client_transport_endpoint (runtime::items::port_runtime* port)
+      : port_(port)
+{
+    OPCUA_LOG_DEBUG("opcua_client_transport_endpoint", 200, "OPC UA client endpoint created.");
+    opcua_transport_protocol_type* mine_entry = this;
+    rx_protocol_result_t res = opcua_bin_init_client_transport(mine_entry);
+    if (res == RX_PROTOCOL_OK)
+    {
+        mine_entry->stack_entry.received_function = &opcua_client_transport_endpoint::received_function;
+        mine_entry->stack_entry.send_function = &opcua_client_transport_endpoint::send_function;
+        mine_entry->stack_entry.connected_function = &opcua_client_transport_endpoint::connected_function;
+        mine_entry->stack_entry.disconnected_function = &opcua_client_transport_endpoint::disconnected_function;
+    }
+}
+
+
+opcua_client_transport_endpoint::~opcua_client_transport_endpoint()
+{
+    OPCUA_LOG_DEBUG("opcua_client_transport_endpoint", 200, "OPC UA client endpoint destroyed.");
+}
+
+
+
+rx_protocol_stack_endpoint* opcua_client_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+{
+    sent_func_ = sent_func;
+    received_func_ = received_func;
+    return &stack_entry;
+}
+
+rx_protocol_result_t opcua_client_transport_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+{
+    opcua_client_transport_endpoint* self = reinterpret_cast<opcua_client_transport_endpoint*>(reference->user_data);
+    self->received_func_((int64_t)rx_get_packet_available_data(packet.buffer));
+    return opcua_bin_bytes_received(reference, packet);
+}
+
+rx_protocol_result_t opcua_client_transport_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
+{
+    return rx_move_packet_down(reference, packet);
+}
+
+rx_protocol_result_t opcua_client_transport_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
+{
+    return opcua_bin_client_connected(reference, session);
+}
+
+rx_protocol_result_t opcua_client_transport_endpoint::disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason)
+{
+    return RX_PROTOCOL_OK;
+}
+
+
+// Class protocols::opcua::opcua_transport::opcua_client_transport_port 
+
+std::map<rx_node_id, opcua_client_transport_port::smart_ptr> opcua_client_transport_port::runtime_instances;
+
+opcua_client_transport_port::opcua_client_transport_port()
+{
+    construct_func = [this]()
+    {
+        auto rt = std::make_unique<opcua_client_transport_endpoint>(this);
+        auto entry = rt->bind([this](int64_t count)
+            {
+            },
+            [this](int64_t count)
+            {
+            });
+        return construct_func_type::result_type{ entry, std::move(rt) };
+    };
+}
+
+
+
 } // namespace opcua_transport
 } // namespace opcua
 } // namespace protocols

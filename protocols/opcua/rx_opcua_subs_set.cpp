@@ -38,6 +38,7 @@
 using namespace protocols::opcua::ids;
 
 #include "rx_opcua_server.h"
+#include "rx_opcua_client.h"
 
 
 namespace protocols {
@@ -49,6 +50,18 @@ namespace requests {
 namespace opcua_subscription {
 
 // Class protocols::opcua::requests::opcua_subscription::opcua_create_subs_request 
+
+opcua_create_subs_request::opcua_create_subs_request (uint32_t req_id, uint32_t req_handle)
+      : publish_interval(0),
+        lifetime_count(0),
+        keep_alive_count(0),
+        max_notifications(0),
+        enabled(false),
+        priority(0)
+    , opcua_request_base(req_id, req_handle)
+{
+}
+
 
 
 rx_node_id opcua_create_subs_request::get_binary_request_id ()
@@ -100,6 +113,17 @@ opcua_response_ptr opcua_create_subs_request::do_job (opcua_server_endpoint_ptr 
     }
 }
 
+rx_result opcua_create_subs_request::serialize_binary (binary::ua_binary_ostream& stream)
+{
+    stream << publish_interval;
+    stream << lifetime_count;
+    stream << keep_alive_count;
+    stream << max_notifications;
+    stream << enabled;
+    stream << priority;
+    return true;
+}
+
 
 // Class protocols::opcua::requests::opcua_subscription::opcua_create_subs_response 
 
@@ -131,6 +155,53 @@ rx_result opcua_create_subs_response::serialize_binary (binary::ua_binary_ostrea
     stream << lifetime_count;
     stream << keep_alive_count;
     return true;
+}
+
+rx_result opcua_create_subs_response::deserialize_binary (binary::ua_binary_istream& stream)
+{
+    stream >> subscription_id;
+    stream >> publish_interval;
+    stream >> lifetime_count;
+    stream >> keep_alive_count;
+    return true;
+}
+
+rx_result opcua_create_subs_response::process_response (opcua_client_endpoint_ptr ep)
+{
+    ep->transactions_lock.lock();
+    auto it = ep->subscriptions.pending.find(request_handle);
+    if (it != ep->subscriptions.pending.end())
+    {
+        ep->subscriptions.pending.erase(it);
+
+        active_client_subscription_data data;
+        data.interval = (uint32_t)publish_interval;
+        ep->subscriptions.active.emplace(subscription_id, std::move(data));
+
+        ep->transactions_lock.unlock();
+
+        uint32_t req_id = ep->current_request_id++;
+        auto req = std::make_unique<opcua_publish_request>(req_id, req_id);
+
+
+        auto result = ep->send_request(std::move(req));
+        if (!result)
+        {
+            std::ostringstream ss;
+            ss << "Error sending Publish Request";
+            ss << result.errors_line();
+            return ss.str();
+        }
+        else
+        {
+            return ep->subscription_created(subscription_id);
+        }
+    }
+    else
+    {
+        ep->transactions_lock.unlock();
+        return "Unknown response to Create Subscription Request!";
+    }
 }
 
 
@@ -198,6 +269,12 @@ rx_result opcua_delete_subs_response::serialize_binary (binary::ua_binary_ostrea
 
 // Class protocols::opcua::requests::opcua_subscription::opcua_publish_request 
 
+opcua_publish_request::opcua_publish_request (uint32_t req_id, uint32_t req_handle)
+    : opcua_request_base(req_id, req_handle)
+{
+}
+
+
 
 rx_node_id opcua_publish_request::get_binary_request_id ()
 {
@@ -228,16 +305,22 @@ opcua_response_ptr opcua_publish_request::do_job (opcua_server_endpoint_ptr ep)
     return opcua_response_ptr();
 }
 
+rx_result opcua_publish_request::serialize_binary (binary::ua_binary_ostream& stream)
+{
+    stream.serialize_array(subscription_acks);
+    return true;
+}
+
 
 void subscription_ack::serialize(binary::ua_binary_ostream& stream) const
 {
     stream << subscription_id;
-    stream << secquence_number;
+    stream << sequence_number;
 }
 void subscription_ack::deserialize(binary::ua_binary_istream& stream)
 {
     stream >> subscription_id;
-    stream >> secquence_number;
+    stream >> sequence_number;
 }
 // Class protocols::opcua::requests::opcua_subscription::opcua_publish_response 
 
@@ -277,6 +360,83 @@ rx_result opcua_publish_response::serialize_binary (binary::ua_binary_ostream& s
     stream << results;
     stream << diagnostics_info;
     return true;
+}
+
+rx_result opcua_publish_response::deserialize_binary (binary::ua_binary_istream& stream)
+{
+    stream >> subscription_id;
+    stream >> sequence_numbers;
+    stream >> more_notifications;
+    stream >> sequence_number;
+    stream >> publish_time;
+    int32_t count = 0;
+    stream >> count;
+    if (count>0)
+    {
+        RX_ASSERT(count == 1);
+
+        notification = stream.deserialize_extension<opcua_notification_data>([](const rx_node_id& id) -> notification_data_ptr {
+            static rx_node_id data_id = rx_node_id::opcua_standard_id(opcid_DataChangeNotification_Encoding_DefaultBinary);
+            if (id == data_id)
+                return std::make_unique<opcua_data_change_notification>();
+            else
+                return notification_data_ptr();
+            });
+    }
+    stream >> results;
+    stream >> diagnostics_info;
+    return true;
+}
+
+rx_result opcua_publish_response::process_response (opcua_client_endpoint_ptr ep)
+{
+    std::vector<subscription_ack> acks;
+    {
+        locks::auto_lock_t _(&ep->transactions_lock);
+        for (auto& one : ep->subscriptions.active)
+        {
+            if (one.first == subscription_id)
+            {
+                one.second.sequence_number = sequence_number;
+                opcua_data_change_notification* data_changes = nullptr;
+                if (notification)
+                {
+
+                    if (one.second.sequence_number)
+                    {
+                        subscription_ack ack;
+                        ack.subscription_id = one.first;
+                        ack.sequence_number = one.second.sequence_number;
+                        acks.push_back(std::move(ack));
+                    }
+
+                    if (notification->binary_id == rx_node_id::opcua_standard_id(opcid_DataChangeNotification_Encoding_DefaultBinary))
+                    {
+                        // o.k. this reinterpret cast is, well have to do it this way, id is already checked
+                        data_changes = reinterpret_cast<opcua_data_change_notification*>(notification.get());
+                    }
+                }
+                ep->subscription_notification(data_changes);
+            }
+            
+        }
+    }
+    uint32_t req_id = ep->current_request_id++;
+    auto req = std::make_unique<opcua_publish_request>(req_id, req_id);
+    req->subscription_acks = std::move(acks);
+
+    auto result = ep->send_request(std::move(req));
+    if (!result)
+    {
+        std::ostringstream ss;
+        ss << "Error sending Publish Request";
+        ss << result.errors_line();
+        return ss.str();
+    }
+    else
+    {
+        return true;
+    }
 }
 
 

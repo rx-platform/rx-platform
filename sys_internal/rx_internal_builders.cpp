@@ -1598,6 +1598,29 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			, full_path
 				});
 		filter->complex_data.register_const_value_static<uint8_t>("InvalidChar", '?');
+		filter->complex_data.register_const_value_static<uint8_t>("Columns", 0);
+		filter->complex_data.register_const_value_static<uint8_t>("MaxLen", 0);
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_HEX2DEC_FILTER_TYPE_NAME
+			, RX_HEX2DEC_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		filter->complex_data.register_const_value_static("EmptyIsZero", true);
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_LATCH_FILTER_TYPE_NAME
+			, RX_LATCH_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		filter->complex_data.register_simple_value_static("Unlatch", false, false, false);
+		filter->complex_data.register_simple_value_static("Timeout", (uint32_t)0, false, true);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		auto what = create_type<struct_type>(meta::type_creation_data{
@@ -1849,6 +1872,10 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		what->complex_data.register_const_value_static("ReverseConn", false);
+		what->complex_data.register_const_value_static("AppUri", "");
+		what->complex_data.register_const_value_static("AppName", "");
+		what->complex_data.register_const_value_static("ServerUri", "");
+		what->complex_data.register_const_value_static("PublishInterval", (uint32_t)200);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -2528,7 +2555,7 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_NAME
 			, RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_ID
-			, RX_CONN_TRANSPORT_PORT_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2623,6 +2650,7 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		port->complex_data.register_struct("Options", RX_OPCUA_CLIENT_PORT_OPTIONS_TYPE_ID);
+		port->complex_data.register_struct("Connect", RX_OPCUA_ENDPOINT_DATA_ID);
 		add_type_to_configuration(dir, port, true);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -2681,6 +2709,30 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 		map->complex_data.register_const_value_static("SimplePath", "");
 		map->complex_data.register_const_value_static<uint32_t>("NumericId", 0);
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+
+		// sources
+		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_OPCUA_SOURCE_BASE_TYPE_NAME
+			, RX_OPCUA_SOURCE_BASE_TYPE_ID
+			, RX_EXTERN_SOURCE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_OPCUA_SIMPLE_SOURCE_TYPE_NAME
+			, RX_OPCUA_SIMPLE_SOURCE_TYPE_ID
+			, RX_OPCUA_SOURCE_BASE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static("Namespace", 2);
+		src->complex_data.register_const_value_static("SimplePath", "");
+		src->complex_data.register_const_value_static<uint32_t>("NumericId", 0);
+		src->complex_data.register_const_value_static<uint8_t>("AttrId", 0xd);
+		add_simple_type_to_configuration<source_type>(dir, src, true);
 
 		
 

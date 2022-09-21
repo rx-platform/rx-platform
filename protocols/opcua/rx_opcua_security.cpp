@@ -109,6 +109,56 @@ opcua_sec_none_port::opcua_sec_none_port()
 
 
 
+// Class protocols::opcua::opcua_transport::opcua_sec_none_client_port 
+
+std::map<rx_node_id, opcua_sec_none_client_port::smart_ptr> opcua_sec_none_client_port::runtime_instances;
+
+opcua_sec_none_client_port::opcua_sec_none_client_port()
+{
+    construct_func = [this]()
+    {
+        auto rt = std::make_unique<opcua_sec_none_client_endpoint>(this);
+        return construct_func_type::result_type{ &rt->stack_entry, std::move(rt) };
+    };
+}
+
+
+
+// Class protocols::opcua::opcua_transport::opcua_sec_none_client_endpoint 
+
+opcua_sec_none_client_endpoint::opcua_sec_none_client_endpoint (opcua_sec_none_client_port* port)
+      : port_(port)
+{
+    OPCUA_LOG_DEBUG("opcua_sec_none_client_endpoint", 200, "OPC UA server Security None client endpoint created.");
+    opcua_sec_none_protocol_type* mine_entry = this;
+
+    rx_protocol_result_t res = opcua_bin_init_sec_none_client_transport(mine_entry);
+    if (res == RX_PROTOCOL_OK)
+    {
+        mine_entry->stack_entry.received_function = &opcua_sec_none_client_endpoint::received_function;
+        mine_entry->stack_entry.send_function = &opcua_sec_none_client_endpoint::send_function;
+    }
+}
+
+
+opcua_sec_none_client_endpoint::~opcua_sec_none_client_endpoint()
+{
+    OPCUA_LOG_DEBUG("opcua_sec_none_client_endpoint", 200, "OPC UA server Security None client endpoint destroyed.");
+}
+
+
+
+rx_protocol_result_t opcua_sec_none_client_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+{
+    return opcua_bin_sec_none_bytes_received(reference, packet);
+}
+
+rx_protocol_result_t opcua_sec_none_client_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
+{
+    return opcua_bin_sec_none_bytes_send(reference, packet);
+}
+
+
 } // namespace opcua_transport
 } // namespace opcua
 } // namespace protocols

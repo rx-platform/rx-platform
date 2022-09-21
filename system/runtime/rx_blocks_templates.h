@@ -135,6 +135,7 @@ class extern_source_impl : public source_runtime
     };
     source_resolver_user resolver_user_;
     friend class extern_source_impl::source_resolver_user;
+public:
     typedef typename portT::smart_ptr port_ptr_t;
 protected:
     port_ptr_t my_port_;

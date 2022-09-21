@@ -78,6 +78,11 @@ typedef struct opcua_transport_protocol_def
 	struct rx_protocol_stack_endpoint stack_entry;
 	// settings
 	int server_side;
+	// receive collector
+	rx_packet_buffer transport_receive_buffer;
+
+	struct packed_decoder_type packet_decoder;
+	uint8_t header_buffer[sizeof(opcua_transport_header)];
 	// state
 	enum opcua_transport_state current_state;
 	opcua_acknowledge_message connection_data;
@@ -87,6 +92,9 @@ typedef struct opcua_transport_protocol_def
 rx_protocol_result_t opcua_bin_init_client_transport(opcua_transport_protocol_type* transport);
 rx_protocol_result_t opcua_bin_init_server_transport(opcua_transport_protocol_type* transport);
 rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport);
+
+
+rx_protocol_result_t opcua_bin_client_connected(struct rx_protocol_stack_endpoint* reference, rx_session* session);
 
 rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
 

@@ -33,10 +33,10 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+// dummy
+#include "dummy.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
@@ -116,8 +116,8 @@ typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< pr
 
 class opcua_transport_port : public opcua_transport_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-OPC-UA transport port. Implementation of binary OPC-UA transport and simplified local pipe version without secure channel.");
+    DECLARE_CODE_INFO("rx", 0, 9, 0, "\
+OPC-UA transport port. Implementation of binary OPC-UA transport.");
 
     DECLARE_REFERENCE_PTR(opcua_transport_port);
 
@@ -126,6 +126,87 @@ OPC-UA transport port. Implementation of binary OPC-UA transport and simplified 
 
 
       static std::map<rx_node_id, opcua_transport_port::smart_ptr> runtime_instances;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class opcua_client_transport_endpoint : public opcua_transport_protocol_type  
+{
+
+  public:
+      opcua_client_transport_endpoint (runtime::items::port_runtime* port);
+
+      ~opcua_client_transport_endpoint();
+
+
+      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+
+
+      runtime::items::port_runtime* get_port ()
+      {
+        return port_;
+      }
+
+
+
+  protected:
+
+  private:
+
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+
+      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
+
+      static rx_protocol_result_t disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason);
+
+
+
+      std::function<void(int64_t)> sent_func_;
+
+      std::function<void(int64_t)> received_func_;
+
+      runtime::items::port_runtime* port_;
+
+
+};
+
+
+
+
+
+
+
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::opcua::opcua_transport::opcua_client_transport_endpoint  > opcua_client_transport_base;
+
+
+
+
+
+
+class opcua_client_transport_port : public opcua_client_transport_base  
+{
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+OPC-UA client transport port. Implementation of binary OPC-UA client transport.");
+
+    DECLARE_REFERENCE_PTR(opcua_client_transport_port);
+
+  public:
+      opcua_client_transport_port();
+
+
+      static std::map<rx_node_id, opcua_client_transport_port::smart_ptr> runtime_instances;
 
 
   protected:

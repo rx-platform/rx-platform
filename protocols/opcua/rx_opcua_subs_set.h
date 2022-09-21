@@ -54,6 +54,8 @@ class opcua_create_subs_request : public opcua_request_base
 {
 
   public:
+      opcua_create_subs_request (uint32_t req_id, uint32_t req_handle);
+
 
       rx_node_id get_binary_request_id ();
 
@@ -62,6 +64,8 @@ class opcua_create_subs_request : public opcua_request_base
       rx_result deserialize_binary (binary::ua_binary_istream& stream);
 
       opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
+
+      rx_result serialize_binary (binary::ua_binary_ostream& stream);
 
 
       double publish_interval;
@@ -76,7 +80,7 @@ class opcua_create_subs_request : public opcua_request_base
 
       uint8_t priority;
 
-
+      opcua_create_subs_request() = default;
   protected:
 
   private:
@@ -101,6 +105,10 @@ class opcua_create_subs_response : public opcua_response_base
       opcua_response_ptr create_empty () const;
 
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
+
+      rx_result deserialize_binary (binary::ua_binary_istream& stream);
+
+      rx_result process_response (opcua_client_endpoint_ptr ep);
 
 
       uint32_t subscription_id;
@@ -183,7 +191,7 @@ class opcua_delete_subs_response : public opcua_response_base
 struct subscription_ack
 {
     uint32_t subscription_id;
-    uint32_t secquence_number;
+    uint32_t sequence_number;
 
     void serialize(binary::ua_binary_ostream& stream) const;
     void deserialize(binary::ua_binary_istream& stream);
@@ -196,6 +204,8 @@ class opcua_publish_request : public opcua_request_base
 {
 
   public:
+      opcua_publish_request (uint32_t req_id, uint32_t req_handle);
+
 
       rx_node_id get_binary_request_id ();
 
@@ -205,12 +215,14 @@ class opcua_publish_request : public opcua_request_base
 
       opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
 
+      rx_result serialize_binary (binary::ua_binary_ostream& stream);
+
 
       std::vector<subscription_ack> subscription_acks;
 
       opcua_server_endpoint_ptr endpoint;
 
-
+      opcua_publish_request() = default;
   protected:
 
   private:
@@ -263,6 +275,10 @@ class opcua_publish_response : public opcua_response_base
       opcua_response_ptr create_empty () const;
 
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
+
+      rx_result deserialize_binary (binary::ua_binary_istream& stream);
+
+      rx_result process_response (opcua_client_endpoint_ptr ep);
 
 
       uint32_t subscription_id;
@@ -346,7 +362,6 @@ class opcua_republish_response : public opcua_response_base
       notification_data_ptr notification;
 
       opcua_republish_response() = default;
-
   protected:
 
   private:

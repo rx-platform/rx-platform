@@ -431,6 +431,12 @@
 #define RX_OPCUA_SIMPLE_MAPPER_TYPE_ID 0xc0000a0
  
 
+#define RX_OPCUA_SOURCE_BASE_TYPE_NAME "OpcSourceBase"
+#define RX_OPCUA_SOURCE_BASE_TYPE_ID 0xc0000a5
+
+#define RX_OPCUA_SIMPLE_SOURCE_TYPE_NAME "OpcSimpleSource"
+#define RX_OPCUA_SIMPLE_SOURCE_TYPE_ID 0xc0000a6
+
 #define RX_LINEAR_SCALING_FILTER_TYPE_NAME "LinearScaling"
 #define RX_LINEAR_SCALING_FILTER_TYPE_ID 0xc000039
 #define RX_LIMIT_FILTER_TYPE_NAME "LimitFilter"
@@ -444,6 +450,11 @@
 #define RX_QUALITY_FILTER_TYPE_NAME "QualityFilter"
 #define RX_QUALITY_FILTER_TYPE_ID 0xc00007c
 
+#define RX_LATCH_FILTER_TYPE_NAME "LatchFilter"
+#define RX_LATCH_FILTER_TYPE_ID 0xc0000a7
+
+#define RX_HEX2DEC_FILTER_TYPE_NAME "Hex2DecFilter"
+#define RX_HEX2DEC_FILTER_TYPE_ID 0xc0000a8
 #define RX_ASCII_FILTER_TYPE_NAME "ASCIIFilter"
 #define RX_ASCII_FILTER_TYPE_ID 0xc0000a2
 
@@ -536,10 +547,11 @@
 #define RX_SIMPLE_HTTP_DISPLAY_TYPE_ID 0xc00007a
 #define RX_SIMPLE_HTTP_DISPLAY_TYPE_NAME "SimpleHttpDisplay"
 
+// python stuff
+#define RX_UPYTHON_METHOD_TYPE_NAME "uPtyMethod"
+#define RX_UPYTHON_METHOD_TYPE_ID 0xc0000a9
 
-
-
-// last is 0xc0000a4!!!! 
+// last is 0xc0000a9!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

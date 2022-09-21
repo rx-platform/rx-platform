@@ -305,7 +305,7 @@ int parse_bytes(const char* str, bytes_value_struct* val)
 
 		pbuffer[len / 2] = temp;
 	}
-	int ret = rx_init_bytes_value_struct(val, pbuffer, array_size);
+	int ret = rx_init_bytes_value_struct(val, (uint8_t*)pbuffer, array_size);
 	if (array_size > sizeof(static_buff) / sizeof(static_buff[0]))
 		free(pbuffer);
 	return ret;

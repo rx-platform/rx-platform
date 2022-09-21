@@ -197,7 +197,7 @@ Implementation of quality filter that provides pure bit value.");
 
 class ascii_filter : public rx_platform::runtime::blocks::filter_runtime  
 {
-    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+    DECLARE_CODE_INFO("rx", 1, 1, 0, "\
 Implementation of UTF8 to ASCII conversion.\r\n\
 Conversion is always UTF8 to ASCII for both input and output");
 
@@ -216,9 +216,89 @@ Conversion is always UTF8 to ASCII for both input and output");
 
       rx_result filter_output (rx_simple_value& val);
 
+      string_type wrap (const string_type& what);
+
 
 
       char invalid_char_;
+
+      uint8_t columns_;
+
+      uint8_t max_len_;
+
+
+};
+
+
+
+
+
+
+class hex2decimal : public rx_platform::runtime::blocks::filter_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation of hex to decimal string filter.\r\n\
+Can treat empty string as 0.");
+
+    DECLARE_REFERENCE_PTR(hex2decimal);
+
+  public:
+
+      rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result filter_input (rx_value& val);
+
+      rx_result filter_output (rx_simple_value& val);
+
+
+
+      bool empty_is_zero_;
+
+
+};
+
+
+
+
+
+
+class latch_filter : public rx_platform::runtime::blocks::filter_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation latch filter.\r\n\
+Supports both string and numeric values");
+
+    DECLARE_REFERENCE_PTR(latch_filter);
+
+  public:
+
+      rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+      rx_result start_filter (runtime::runtime_start_context& ctx);
+
+      rx_result stop_filter (runtime::runtime_stop_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result filter_input (rx_value& val);
+
+
+
+      runtime::local_value<bool> unlatch_;
+
+      values::rx_value latched_;
+
+      runtime::local_value<uint32_t> timeout_;
+
+      rx_timer_ptr timer_;
 
 
 };

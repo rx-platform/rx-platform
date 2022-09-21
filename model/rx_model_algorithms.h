@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -145,7 +145,45 @@ rx_result do_with_item(
         }, std::move(id), std::move(remote));
 	return true;
 }
+/*
+template<class funcT>
+rx_result do_with_item_storage(
+    const rx_node_id& id
+    , funcT what
+    , rx_result_callback callback
+    , rx_platform::api::rx_context ctx)
+{
 
+    rx_platform::rx_post_function_to(RX_DOMAIN_META, anchor
+        , [](rx_node_id id, funcT what, rx_result_callback callback)
+        {
+            auto result = get_platform_item_sync(id);
+            if (result)
+            {
+                auto storage_result = result.value()->meta_info().resolve_storage();
+                if (storage_result)
+                {
+                    rx_platform::rx_post_function_to(RX_DOMAIN_SLOW, anchor
+                        , [](rx_storage_ptr item, funcT what, rx_result_callback callback)
+                        {
+                            auto result = what(std::move(item));
+                            callback(std::move(result));
+
+                        }, result.move_value(), std::move(func), std::move(remote));
+                }
+                else
+                {
+                    callback(storage_result.errors());
+                }
+            }
+            else
+            {
+                callback(result.errors());
+            }
+        }, std::move(id), std::move(func), std::move(remote));
+    return true;
+}
+*/
 template<class callbackT, class funcT>
 rx_result do_with_runtime_item(
     const rx_node_id& id
@@ -234,7 +272,7 @@ rx_result do_with_items(
 
 
 template <class typeT>
-class types_model_algorithm 
+class types_model_algorithm
 {
 
   public:
@@ -274,7 +312,7 @@ class types_model_algorithm
 
 
 template <class typeT>
-class simple_types_model_algorithm 
+class simple_types_model_algorithm
 {
 
   public:
@@ -314,7 +352,7 @@ class simple_types_model_algorithm
 
 
 template <class typeT>
-class runtime_model_algorithm 
+class runtime_model_algorithm
 {
   public:
       using instanceT = typename typeT::instance_data_t;
@@ -359,7 +397,7 @@ class runtime_model_algorithm
 
 
 
-class relation_types_algorithm 
+class relation_types_algorithm
 {
 
   public:
@@ -398,7 +436,7 @@ class relation_types_algorithm
 
 
 
-class data_types_model_algorithm 
+class data_types_model_algorithm
 {
 
   public:
@@ -437,7 +475,7 @@ class data_types_model_algorithm
 
 
 
-class transaction_algorithm 
+class transaction_algorithm
 {
 
   public:

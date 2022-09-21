@@ -85,10 +85,6 @@ typedef struct opcua_sec_none_protocol_def
 	// receive collector
 	rx_packet_buffer receive_buffer;
 
-	struct packed_decoder_type packet_decoder;
-	uint8_t header_buffer[sizeof(opcua_transport_header)];
-	rx_packet_buffer transport_receive_buffer;
-
 	rx_opcua_transport_connected_t transport_connected;
 
 } opcua_sec_none_protocol_type;
@@ -96,6 +92,8 @@ typedef struct opcua_sec_none_protocol_def
 rx_protocol_result_t opcua_bin_init_sec_none_client_transport(opcua_sec_none_protocol_type* transport);
 rx_protocol_result_t opcua_bin_init_sec_none_server_transport(opcua_sec_none_protocol_type* transport);
 rx_protocol_result_t opcua_bin_deinit_sec_none_transport(opcua_sec_none_protocol_type* transport);
+
+rx_protocol_result_t opcua_bin_sec_none_client_connected(struct rx_protocol_stack_endpoint* reference, rx_session* session);
 
 rx_protocol_result_t opcua_bin_sec_none_bytes_send(struct rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 rx_protocol_result_t opcua_bin_sec_none_bytes_received(struct rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);

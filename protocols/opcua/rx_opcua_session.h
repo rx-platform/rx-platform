@@ -55,6 +55,8 @@ class opcua_create_session : public opcua_request_base
     typedef std::vector<common::endpoint_description> endpoints_type;
 
   public:
+      opcua_create_session (uint32_t req_id, uint32_t req_handle);
+
 
       rx_node_id get_binary_request_id ();
 
@@ -63,6 +65,8 @@ class opcua_create_session : public opcua_request_base
       rx_result deserialize_binary (binary::ua_binary_istream& stream);
 
       opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
+
+      rx_result serialize_binary (binary::ua_binary_ostream& stream);
 
 
       application_description client_description;
@@ -81,7 +85,7 @@ class opcua_create_session : public opcua_request_base
 
       uint32_t max_message_size;
 
-
+      opcua_create_session() = default;
   protected:
 
   private:
@@ -106,6 +110,10 @@ class opcua_create_session_response : public opcua_response_base
       opcua_response_ptr create_empty () const;
 
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
+
+      rx_result deserialize_binary (binary::ua_binary_istream& stream);
+
+      rx_result process_response (opcua_client_endpoint_ptr ep);
 
 
       rx_node_id session_id;
@@ -158,6 +166,8 @@ class opcua_activate_session : public opcua_request_base
 {
 
   public:
+      opcua_activate_session (uint32_t req_id, uint32_t req_handle);
+
 
       rx_node_id get_binary_request_id ();
 
@@ -166,6 +176,8 @@ class opcua_activate_session : public opcua_request_base
       rx_result deserialize_binary (binary::ua_binary_istream& stream);
 
       opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
+
+      rx_result serialize_binary (binary::ua_binary_ostream& stream);
 
 
       string_type signature_algorithm;
@@ -180,7 +192,7 @@ class opcua_activate_session : public opcua_request_base
 
       byte_string token_signature_data;
 
-
+      opcua_activate_session() = default;
   protected:
 
   private:
@@ -232,8 +244,12 @@ class opcua_activate_session_response : public opcua_response_base
       rx_node_id get_binary_response_id ();
 
       opcua_response_ptr create_empty () const;
-
+      
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
+
+      rx_result deserialize_binary (binary::ua_binary_istream& stream);
+
+      rx_result process_response (opcua_client_endpoint_ptr ep);
 
 
       byte_string server_nounce;
@@ -263,6 +279,10 @@ class opcua_close_session_response : public opcua_response_base
       opcua_response_ptr create_empty () const;
 
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
+
+      rx_result deserialize_binary (binary::ua_binary_istream& stream);
+
+      rx_result process_response (opcua_client_endpoint_ptr ep);
 
       opcua_close_session_response() = default;
   protected:

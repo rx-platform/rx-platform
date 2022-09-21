@@ -62,6 +62,10 @@ class opcua_request_base
 {
 
   public:
+      opcua_request_base();
+
+      opcua_request_base (uint32_t req_id, uint32_t req_handle);
+
 
       virtual rx_node_id get_binary_request_id () = 0;
 
@@ -94,8 +98,7 @@ class opcua_request_base
 
       rx_node_id authentication_token;
 
-      opcua_request_base() = default;
-      virtual ~opcua_request_base() = default;
+      virtual ~opcua_request_base() {}
       opcua_request_base(const opcua_request_base&) = delete;
       opcua_request_base(opcua_request_base&&) = delete;
       opcua_request_base& operator=(const opcua_request_base&) = delete;
@@ -138,6 +141,8 @@ class opcua_response_base
 
       rx_result serialize_header_binary (binary::ua_binary_ostream& stream);
 
+      virtual rx_result process_response (opcua_client_endpoint_ptr ep);
+
 
       uint32_t request_id;
 
@@ -152,7 +157,7 @@ class opcua_response_base
       opcua_extension_ptr additional;
 
       opcua_response_base() = default;
-      virtual ~opcua_response_base() = default;
+      virtual ~opcua_response_base() {}
       opcua_response_base(const opcua_response_base&) = delete;
       opcua_response_base(opcua_response_base&&) = delete;
       opcua_response_base& operator=(const opcua_response_base&) = delete;

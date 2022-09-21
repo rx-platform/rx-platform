@@ -54,6 +54,8 @@ class opcua_create_mon_items_request : public opcua_request_base
 {
 
   public:
+      opcua_create_mon_items_request (uint32_t req_id, uint32_t req_handle);
+
 
       rx_node_id get_binary_request_id ();
 
@@ -63,6 +65,8 @@ class opcua_create_mon_items_request : public opcua_request_base
 
       opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
 
+      rx_result serialize_binary (binary::ua_binary_ostream& stream);
+
 
       uint32_t subscription_id;
 
@@ -70,7 +74,7 @@ class opcua_create_mon_items_request : public opcua_request_base
 
       std::vector<create_monitored_item_data> to_create;
 
-
+      opcua_create_mon_items_request() = default;
   protected:
 
   private:
@@ -96,6 +100,10 @@ class opcua_create_mon_items_response : public opcua_response_base
 
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
 
+      rx_result deserialize_binary (binary::ua_binary_istream& stream);
+
+      rx_result process_response (opcua_client_endpoint_ptr ep);
+
 
       std::vector<create_monitored_item_result> results;
 
@@ -118,6 +126,8 @@ class opcua_delete_mon_items_request : public opcua_request_base
 {
 
   public:
+      opcua_delete_mon_items_request (uint32_t req_id, uint32_t req_handle);
+
 
       rx_node_id get_binary_request_id ();
 
@@ -127,12 +137,14 @@ class opcua_delete_mon_items_request : public opcua_request_base
 
       opcua_response_ptr do_job (opcua_server_endpoint_ptr ep);
 
+      rx_result serialize_binary (binary::ua_binary_ostream& stream);
+
 
       uint32_t subscription_id;
 
       std::vector<uint32_t> to_delete;
 
-
+      opcua_delete_mon_items_request() = default;
   protected:
 
   private:
@@ -158,13 +170,16 @@ class opcua_delete_mon_items_response : public opcua_response_base
 
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
 
+      rx_result deserialize_binary (binary::ua_binary_istream& stream);
+
+      rx_result process_response (opcua_client_endpoint_ptr ep);
+
 
       std::vector<opcua_result_t> results;
 
       std::vector<diagnostic_info> diagnostics_info;
 
       opcua_delete_mon_items_response() = default;
-
   protected:
 
   private:

@@ -329,7 +329,6 @@ Implementation of OPC UA Basic Mapper");
 
     DECLARE_REFERENCE_PTR(opcua_basic_mapper);
 
-   // typedef reference<opcua_basic_server_port> port_ptr_t;
 
     typedef std::map<runtime_transaction_id_t, opcua_server_endpoint_ptr> write_transactions_type;
 

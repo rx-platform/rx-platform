@@ -52,6 +52,7 @@
 #include "protocols/opcua/rx_opcua_mapping.h"
 #include "protocols/opcua/rx_opcua_security.h"
 #include "protocols/opcua/rx_opcua_basic.h"
+#include "protocols/opcua/rx_opcua_basic_client.h"
 #include "protocols/http/rx_http_mapping.h"
 #include "interfaces/rx_io.h"
 
@@ -149,9 +150,17 @@ void server_command_manager::register_internal_commands ()
 		nullptr ,RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {
 			return rx_create_reference<protocols::opcua::opcua_transport::opcua_transport_port>();
 		});
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_client_transport_port>(
+		nullptr, RX_OPCUA_CLIENT_TRANSPORT_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_transport::opcua_client_transport_port>();
+		});
 	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_sec_none_port>(
 		nullptr, RX_OPCUA_SEC_NONE_PORT_TYPE_ID, [] {
 			return rx_create_reference<protocols::opcua::opcua_transport::opcua_sec_none_port>();
+		});
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_sec_none_client_port>(
+		nullptr, RX_OPCUA_SEC_NONE_CLIENT_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_transport::opcua_sec_none_client_port>();
 		});
 	//TODO OPCUA secured channels
 	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_sec_none_port>(
@@ -166,6 +175,8 @@ void server_command_manager::register_internal_commands ()
 		nullptr, RX_OPCUA_SEC_SIGNSIGNENCR_PORT_TYPE_ID, [] {
 			return rx_create_reference<protocols::opcua::opcua_transport::opcua_sec_none_port>();
 		});
+
+	// basic opc server
 	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_basic_server::opcua_basic_server_port>(
 		nullptr, RX_OPCUA_SIMPLE_BINARY_SERVER_PORT_TYPE_ID, [] {
 			return rx_create_reference<protocols::opcua::opcua_basic_server::opcua_basic_server_port>();
@@ -174,6 +185,17 @@ void server_command_manager::register_internal_commands ()
 		RX_OPCUA_SIMPLE_MAPPER_TYPE_ID, [] {
 			return rx_create_reference<protocols::opcua::opcua_basic_server::opcua_basic_mapper>();
 		});
+
+	// opc client
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_basic_client::opcua_basic_client_port>(
+		nullptr, RX_OPCUA_SIMPLE_BINARY_CLIENT_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_basic_client::opcua_basic_client_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
+		RX_OPCUA_SIMPLE_SOURCE_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_basic_client::opcua_basic_source>();
+		});
+
 	//TODO OPCUA
 
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(

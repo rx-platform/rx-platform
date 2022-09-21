@@ -42,6 +42,7 @@
 #include "sys_internal/rx_internal_ns.h"
 #include "system/meta/rx_meta_algorithm.h"
 #include "system/runtime/rx_holder_algorithms.h"
+#include "model/rx_model_algorithms.h"
 #include "lib/rx_ser_bin.h"
 
 
@@ -205,6 +206,7 @@ rx_result rx_item_implementation<TImpl>::deserialize_value (base_meta_reader& st
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::save () const
 {
+	
 	return rx_save_platform_item(*this);
 }
 

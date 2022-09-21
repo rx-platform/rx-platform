@@ -40,6 +40,7 @@ using namespace protocols::opcua::ids;
 using namespace protocols::opcua::common;
 
 #include "rx_opcua_server.h"
+#include "rx_opcua_client.h"
 
 
 namespace protocols {
@@ -51,6 +52,13 @@ namespace requests {
 namespace opcua_monitoreditem {
 
 // Class protocols::opcua::requests::opcua_monitoreditem::opcua_create_mon_items_request 
+
+opcua_create_mon_items_request::opcua_create_mon_items_request (uint32_t req_id, uint32_t req_handle)
+      : subscription_id(0)
+	, opcua_request_base(req_id, req_handle)
+{
+}
+
 
 
 rx_node_id opcua_create_mon_items_request::get_binary_request_id ()
@@ -87,6 +95,14 @@ opcua_response_ptr opcua_create_mon_items_request::do_job (opcua_server_endpoint
 	return ret_ptr;
 }
 
+rx_result opcua_create_mon_items_request::serialize_binary (binary::ua_binary_ostream& stream)
+{
+	stream << subscription_id;
+	stream << timestamps_to_return;
+	stream.serialize_array(to_create);
+	return true;
+}
+
 
 // Class protocols::opcua::requests::opcua_monitoreditem::opcua_create_mon_items_response 
 
@@ -114,8 +130,27 @@ rx_result opcua_create_mon_items_response::serialize_binary (binary::ua_binary_o
 	return true;
 }
 
+rx_result opcua_create_mon_items_response::deserialize_binary (binary::ua_binary_istream& stream)
+{
+	stream.deserialize_array(results);
+	stream >> diagnostics_info;
+	return true;
+}
+
+rx_result opcua_create_mon_items_response::process_response (opcua_client_endpoint_ptr ep)
+{
+	return ep->create_items_response(results);
+}
+
 
 // Class protocols::opcua::requests::opcua_monitoreditem::opcua_delete_mon_items_request 
+
+opcua_delete_mon_items_request::opcua_delete_mon_items_request (uint32_t req_id, uint32_t req_handle)
+      : subscription_id(0)
+	, opcua_request_base(req_id, req_handle)
+{
+}
+
 
 
 rx_node_id opcua_delete_mon_items_request::get_binary_request_id ()
@@ -151,6 +186,13 @@ opcua_response_ptr opcua_delete_mon_items_request::do_job (opcua_server_endpoint
 	return ret_ptr;
 }
 
+rx_result opcua_delete_mon_items_request::serialize_binary (binary::ua_binary_ostream& stream)
+{
+	stream << subscription_id;
+	stream << to_delete;
+	return true;
+}
+
 
 // Class protocols::opcua::requests::opcua_monitoreditem::opcua_delete_mon_items_response 
 
@@ -176,6 +218,18 @@ rx_result opcua_delete_mon_items_response::serialize_binary (binary::ua_binary_o
 	stream << results;
 	stream << diagnostics_info;
 	return true;
+}
+
+rx_result opcua_delete_mon_items_response::deserialize_binary (binary::ua_binary_istream& stream)
+{
+	stream >> results;
+	stream >> diagnostics_info;
+	return true;
+}
+
+rx_result opcua_delete_mon_items_response::process_response (opcua_client_endpoint_ptr ep)
+{
+	return RX_NOT_IMPLEMENTED;
 }
 
 

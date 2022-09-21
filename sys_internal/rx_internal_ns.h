@@ -52,6 +52,7 @@ namespace internal_ns {
 template<class itemT>
 rx_result rx_save_platform_item(itemT& item)
 {
+    //rx_internal::model::algorithms::do_with_item_storage()
     const auto& meta = item.meta_info();
     auto storage_result = meta.resolve_storage();
     if (storage_result)

@@ -34,14 +34,15 @@
 
 #include "protocols/ansi_c/opcua_c/rx_opcua_binary_sec.h"
 
-// dummy
-#include "dummy.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+// dummy
+#include "dummy.h"
 
 namespace protocols {
 namespace opcua {
 namespace opcua_transport {
+class opcua_sec_none_client_port;
 class opcua_sec_none_port;
 
 } // namespace opcua_transport
@@ -101,7 +102,7 @@ class opcua_sec_none_endpoint : public opcua_sec_none_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< protocols::opcua::opcua_transport::opcua_sec_none_endpoint  > opcua_sec_none_base;
+typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< opcua_sec_none_endpoint  > opcua_sec_none_base;
 
 
 
@@ -110,8 +111,8 @@ typedef rx_platform::runtime::io_types::ports_templates::connection_transport_po
 
 class opcua_sec_none_port : public opcua_sec_none_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-OPC-UA Security None port. Implementation of binary OPC-UA Security None transport channel.");
+    DECLARE_CODE_INFO("rx", 0, 9, 0, "\
+OPC-UA Security None port. Implementation of binary OPC-UA Security None server transport channel.");
 
     DECLARE_REFERENCE_PTR(opcua_sec_none_port);
 
@@ -120,6 +121,77 @@ OPC-UA Security None port. Implementation of binary OPC-UA Security None transpo
 
 
       static std::map<rx_node_id, opcua_sec_none_port::smart_ptr> runtime_instances;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class opcua_sec_none_client_endpoint : public opcua_sec_none_protocol_type  
+{
+
+  public:
+      opcua_sec_none_client_endpoint (opcua_sec_none_client_port* port);
+
+      ~opcua_sec_none_client_endpoint();
+
+
+      opcua_sec_none_client_port* get_port ()
+      {
+        return port_;
+      }
+
+
+
+  protected:
+
+  private:
+
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+
+
+
+      opcua_sec_none_client_port* port_;
+
+
+};
+
+
+
+
+
+
+
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::opcua::opcua_transport::opcua_sec_none_client_endpoint  > opcua_sec_none_client_base;
+
+
+
+
+
+
+class opcua_sec_none_client_port : public opcua_sec_none_client_base  
+{
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+OPC-UA Security None port. Implementation of binary OPC-UA Security None client transport channel.");
+
+    DECLARE_REFERENCE_PTR(opcua_sec_none_client_port);
+
+  public:
+      opcua_sec_none_client_port();
+
+
+      static std::map<rx_node_id, opcua_sec_none_client_port::smart_ptr> runtime_instances;
 
 
   protected:

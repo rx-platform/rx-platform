@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Molecule"
 #define RX_SERVER_MAJOR_VERSION 1
 #define RX_SERVER_MINOR_VERSION 8
-#define RX_SERVER_BUILD_NUMBER 3
+#define RX_SERVER_BUILD_NUMBER 4
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -41,4 +41,5 @@
 // version 1.7.0 exporting functions for dynamic plugins
 // version 1.8.0 added basic opc ua server
 // version 1.8.3 finished basic opc ua server
+// version 1.8.3 added basic opc ua client
 
