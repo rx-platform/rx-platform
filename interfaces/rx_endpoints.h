@@ -44,10 +44,10 @@
 #define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
 #define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
 
-// dummy
-#include "dummy.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// dummy
+#include "dummy.h"
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
@@ -90,6 +90,8 @@ class rx_io_manager : public rx_platform::runtime::items::object_runtime
 
       string_type resolve_serial_alias (const string_type& what) const;
 
+      string_type resolve_ethernet_alias (const string_type& what) const;
+
 
   protected:
 
@@ -104,6 +106,8 @@ class rx_io_manager : public rx_platform::runtime::items::object_runtime
       std::map<string_type, string_type> ip4_aliases_;
 
       std::map<string_type, string_type> serial_aliases_;
+
+      std::map<string_type, string_type> ethernet_aliases_;
 
 
 };

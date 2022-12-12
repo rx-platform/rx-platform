@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -216,6 +216,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.manuals_path = row.second;
 		else if (row.first == "http.resources" && config.other.http_path.empty())
 			config.other.http_path = row.second;
+		else if (row.first == "py.resources" && config.other.py_path.empty())
+			config.other.py_path = row.second;
 		else if (row.first == "rx.security" && config.other.rx_security.empty())
 			config.other.rx_security = row.second;
 		else if (row.first == "http.port" && config.other.http_port == 0)
@@ -236,7 +238,7 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 }
 }
 
-// Class rx_platform::hosting::rx_platform_host 
+// Class rx_platform::hosting::rx_platform_host
 
 rx_platform_host::rx_platform_host(const rx_platform_host &right)
       : parent_(nullptr)
@@ -310,7 +312,7 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 		if (config_path.empty() || !rx_file_exsist(config_path.c_str()))
 			continue;
 
-		HOST_LOG_TRACE("rx_host", 500, "Reading configuration file "s + config_path);
+	//	HOST_LOG_TRACE("rx_host", 500, "Reading configuration file "s + config_path);
 
 		string_type settings_buff;
 		rx_source_file file;
@@ -461,6 +463,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("l,logs", "Location of the log files", cxxopts::value<string_type>(config.management.logs_directory))
 		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
 		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
+		("py-path", "Location of the micropython files", cxxopts::value<string_type>(config.other.py_path))
 		("opc-port", "TCP/IP port for OPCUA binary server to listen to", cxxopts::value<uint16_t>(config.other.opcua_port))
 
 		("rx-port", "TCP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.other.rx_port))
@@ -554,7 +557,7 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 		else
 		{
 			result.register_error("Error initializing user storage!");
-		}		
+		}
 	}
 	else
 	{
@@ -862,13 +865,13 @@ void rx_platform_host::fill_plugin_libs (string_array& paths)
 }
 
 
-// Class rx_platform::hosting::configuration_reader 
+// Class rx_platform::hosting::configuration_reader
 
 
-// Class rx_platform::hosting::host_platform_builder 
+// Class rx_platform::hosting::host_platform_builder
 
 
-// Class rx_platform::hosting::startup_log_subscriber 
+// Class rx_platform::hosting::startup_log_subscriber
 
 
 void startup_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)

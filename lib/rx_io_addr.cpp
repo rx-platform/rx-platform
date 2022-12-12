@@ -283,12 +283,12 @@ bool ip4_address::operator>(const ip4_address &right) const
 
 bool ip4_address::operator<=(const ip4_address &right) const
 {
-    return operator==(right) && operator<(right);
+    return operator==(right) || operator<(right);
 }
 
 bool ip4_address::operator>=(const ip4_address &right) const
 {
-    return operator==(right) && operator>(right);
+    return operator==(right) || operator>(right);
 }
 
 
@@ -561,13 +561,13 @@ bool numeric_address<defT>::operator>(const numeric_address<defT> &right) const
 template <typename defT>
 bool numeric_address<defT>::operator<=(const numeric_address<defT> &right) const
 {
-    return operator==(right) && operator<(right);
+    return operator==(right) || operator<(right);
 }
 
 template <typename defT>
 bool numeric_address<defT>::operator>=(const numeric_address<defT> &right) const
 {
-    return operator==(right) && operator>(right);
+    return operator==(right) || operator>(right);
 }
 
 
@@ -618,8 +618,7 @@ bool numeric_address<defT>::is_null () const
 template <typename defT>
 bool numeric_address<defT>::is_valid () const
 {
-  // numeric addr is always valid
-  return true;
+  return !is_null();
 
 }
 
@@ -964,8 +963,7 @@ bool string_address::is_null () const
 
 bool string_address::is_valid () const
 {
-  // numeric addr is always valid
-  return true;
+  return !is_null();
 
 }
 
@@ -1106,8 +1104,7 @@ bool bytes_address::is_null () const
 
 bool bytes_address::is_valid () const
 {
-  // numeric addr is always valid
-  return true;
+  return !is_null();
 
 }
 
@@ -1208,6 +1205,284 @@ bytes_address& bytes_address::operator=(bytes_address&& right) noexcept
     rx_move_address(this, &right);
     return *this;
 }
+// Class rx::io::mac_address 
+
+mac_address::mac_address()
+{
+    rx_create_null_address(this);
+}
+
+mac_address::mac_address(const mac_address &right)
+{
+    rx_create_null_address(this);
+    rx_copy_address(this, &right);
+}
+
+mac_address::mac_address (const byte_string& val)
+{
+    RX_ASSERT(val.size() == MAC_ADDR_SIZE);
+    if(val.size()< MAC_ADDR_SIZE)
+        rx_create_null_address(this);
+    else
+       rx_create_mac_address(this, (uint8_t*)&val[0]);
+}
+
+mac_address::mac_address (const uint8_t* pdata, size_t count)
+{
+    rx_create_mac_address(this, pdata);
+}
+
+
+mac_address::~mac_address()
+{
+    static_assert(sizeof(ip4_address) == sizeof(protocol_address), "Memory size has to be the same, no virtual functions or members");
+}
+
+
+bool mac_address::operator==(const mac_address &right) const
+{
+    if (is_null() && right.is_null())
+    {
+        return true;
+    }
+    else if (!is_null() && !right.is_null())
+    {
+        const uint8_t* me = 0;
+        const uint8_t* other = 0;
+
+        auto result = rx_extract_mac_address(this, &me);
+        if (result != RX_PROTOCOL_OK)
+        {
+            RX_ASSERT(false);
+            return false;
+        }
+        result = rx_extract_mac_address(&right, &other);
+        if (result != RX_PROTOCOL_OK)
+        {
+            RX_ASSERT(false);
+            return false;
+        }
+        return memcmp(me, other, MAC_ADDR_SIZE) == 0;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool mac_address::operator!=(const mac_address &right) const
+{
+    return !operator==(right);
+}
+
+
+bool mac_address::operator<(const mac_address &right) const
+{
+    if (is_null() && !right.is_null())
+    {
+        return true;
+    }
+    else if (!is_null() && !right.is_null())
+    {
+        const uint8_t* me = 0;
+        const uint8_t* other = 0;
+
+        auto result = rx_extract_mac_address(this, &me);
+        if (result != RX_PROTOCOL_OK)
+        {
+            RX_ASSERT(false);
+            return false;
+        }
+        result = rx_extract_mac_address(&right, &other);
+        if (result != RX_PROTOCOL_OK)
+        {
+            RX_ASSERT(false);
+            return false;
+        }
+        return memcmp(me, other, MAC_ADDR_SIZE) < 0;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool mac_address::operator>(const mac_address &right) const
+{
+    if (!is_null() && right.is_null())
+    {
+        return true;
+    }
+    else if (!is_null() && !right.is_null())
+    {
+        const uint8_t* me = 0;
+        const uint8_t* other = 0;
+
+        auto result = rx_extract_mac_address(this, &me);
+        if (result != RX_PROTOCOL_OK)
+        {
+            RX_ASSERT(false);
+            return false;
+        }
+        result = rx_extract_mac_address(&right, &other);
+        if (result != RX_PROTOCOL_OK)
+        {
+            RX_ASSERT(false);
+            return false;
+        }
+        return memcmp(me, other, MAC_ADDR_SIZE) > 0;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool mac_address::operator<=(const mac_address &right) const
+{
+    return operator==(right) || operator<(right);
+}
+
+bool mac_address::operator>=(const mac_address &right) const
+{
+    return operator==(right) || operator>(right);
+}
+
+
+
+rx_result mac_address::parse (const protocol_address* ep)
+{
+    rx_free_address(this);
+    if (rx_is_null_address(ep))
+        return true;// null address is always valid
+    const uint8_t* addr;
+    auto result = rx_extract_mac_address(ep, &addr);
+    if (result != RX_PROTOCOL_OK)
+    {
+        rx_create_null_address(this);
+        return rx_protocol_error_message(result);
+    }
+    else
+    {
+        rx_create_mac_address(this, addr);
+        return true;
+    }
+}
+
+byte_string mac_address::get_address () const
+{
+    if (is_null())
+        return byte_string();
+    const uint8_t* addr;
+    auto result = rx_extract_mac_address(this, &addr);
+    if (result != RX_PROTOCOL_OK)
+    {
+        return byte_string();
+    }
+    else
+    {
+        byte_string ret(MAC_ADDR_SIZE);
+        memcpy(&ret[0], addr, MAC_ADDR_SIZE);
+        return ret;
+    }
+}
+
+bool mac_address::is_null () const
+{
+    return rx_is_null_address(this) != 0 ? true : false;
+}
+
+bool mac_address::is_valid () const
+{
+  return !is_null();
+
+}
+
+string_type mac_address::to_string () const
+{
+    const uint8_t* addr = 0;
+    if (is_null() || rx_extract_mac_address(this, &addr) != RX_PROTOCOL_OK)
+        return "<null>";
+
+    char buff[20];
+    sprintf(buff, "%02x-%02x-%02x-%02x-%02x-%02x",
+        (int)addr[0], (int)addr[1], (int)addr[2], (int)addr[3], (int)addr[4], (int)addr[5]);
+    return buff;
+}
+
+rx_result mac_address::parse (const string_type& what)
+{
+    rx_free_address(this);
+    if (what.empty())
+    {
+        return "Null argument";
+    }
+    else
+    {
+        uint8_t data[MAC_ADDR_SIZE];
+        if (what.size() == 12)
+        {// pure bytes
+            for (size_t pos = 0; pos < 2 * MAC_ADDR_SIZE; pos+=2)
+            {
+                uint8_t addr;
+                auto res = std::from_chars(what.data() + pos, what.data() + pos + 2, addr, 16);
+                if (res.ec == std::errc())
+                {
+                    data[pos / 2] = addr;
+                    return true;
+                }
+                else if (res.ec == std::errc::invalid_argument)
+                {
+                    return "Invalid argument.";
+                }
+                else if (res.ec == std::errc::result_out_of_range)
+                {
+                    return "Out of range.";
+                }
+                else
+                {
+                    return "Undefined error.";
+                }
+            }
+
+        }
+        else if (what.size() == 17)
+        {// with dash or ':'
+            for (size_t pos = 0; pos < 3 * (MAC_ADDR_SIZE - 1) + 2; pos += 3)
+            {
+                uint8_t addr;
+                auto res = std::from_chars(what.data() + pos, what.data() + pos + 2, addr, 16);
+                if (res.ec == std::errc())
+                {
+                    data[pos / 3] = addr;
+                    return true;
+                }
+                else if (res.ec == std::errc::invalid_argument)
+                {
+                    return "Invalid argument.";
+                }
+                else if (res.ec == std::errc::result_out_of_range)
+                {
+                    return "Out of range.";
+                }
+                else
+                {
+                    return "Undefined error.";
+                }
+            }
+        }
+        else
+        {
+            return "Invalid Argument";
+        }
+
+        rx_create_mac_address(this, data);
+        return true;
+        
+    }
+}
+
+
 } // namespace io
 } // namespace rx
 

@@ -81,7 +81,10 @@ rx_result rx_http_static_display::initialize_display (runtime::runtime_init_cont
 		"</script>";
 	auto result = parse_display_data(ctx, disp_path, html_data_, content);
 	if (!result)
-		html_data_ = "E jebi ga";
+	{
+		html_data_ = "Error while parsing display data:\r\n";
+		html_data_ += result.errors_line();
+	}
 	return true;
 }
 

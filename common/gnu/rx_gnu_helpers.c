@@ -330,7 +330,8 @@ RX_COMMON_API int rx_string_to_uuid(const char* str, rx_uuid_t* u)
 
 RX_COMMON_API void rx_slim_lock_create(pslim_lock_t plock)
 {
-    pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
+    uint64_t addr_offset=((uint64_t)plock)&0x7;
+    pthread_mutex_t* mtx = (pthread_mutex_t*)&plock->data[8 - addr_offset];
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
@@ -338,17 +339,20 @@ RX_COMMON_API void rx_slim_lock_create(pslim_lock_t plock)
 }
 RX_COMMON_API void rx_slim_lock_destroy(pslim_lock_t plock)
 {
-    pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
+    uint64_t addr_offset=((uint64_t)plock)&0x7;
+    pthread_mutex_t* mtx = (pthread_mutex_t*)&plock->data[8 - addr_offset];
     pthread_mutex_destroy(mtx);
 }
 RX_COMMON_API void rx_slim_lock_aquire(pslim_lock_t plock)
 {
-    pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
+    uint64_t addr_offset=((uint64_t)plock)&0x7;
+    pthread_mutex_t* mtx = (pthread_mutex_t*)&plock->data[8 - addr_offset];
     pthread_mutex_lock(mtx);
 }
 RX_COMMON_API void rx_slim_lock_release(pslim_lock_t plock)
 {
-    pthread_mutex_t* mtx = (pthread_mutex_t*)plock;
+    uint64_t addr_offset=((uint64_t)plock)&0x7;
+    pthread_mutex_t* mtx = (pthread_mutex_t*)&plock->data[8 - addr_offset];
     pthread_mutex_unlock(mtx);
 }
 

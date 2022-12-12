@@ -351,7 +351,6 @@ uint32_t serial_port::get_reconnect_timeout () const
 
 rx_result serial_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
-    auto session_timeout = recv_timeout_;
     endpoint_ = std::make_unique<serial_endpoint>();
     auto sec_result = create_security_context();
     if (!sec_result)
@@ -381,7 +380,6 @@ rx_result serial_port::start_listen (const protocol_address* local_address, cons
 
 rx_result_with<port_connect_result> serial_port::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
 {
-    auto session_timeout = recv_timeout_;
     endpoint_ = std::make_unique<serial_endpoint>();
     auto sec_result = create_security_context();
     if (!sec_result)

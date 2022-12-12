@@ -97,6 +97,8 @@ rx_result logic_holder::initialize_logic (runtime::runtime_init_context& ctx)
     }
     for (auto& one : runtime_methods_)
     {
+        ctx.structure.push_item(*one.item);
+
         ret = one.item->initialize_runtime(ctx);
         if (!ret)
             return ret;
@@ -104,6 +106,8 @@ rx_result logic_holder::initialize_logic (runtime::runtime_init_context& ctx)
         ret = one.method_ptr->initialize_runtime(ctx);
         if (!ret)
             return ret;
+
+        ctx.structure.pop_item();
     }
     return ret;
 }
@@ -264,16 +268,21 @@ rx_result logic_holder::browse (const string_type& prefix, const string_type& pa
             new_prefix = prefix + RX_OBJECT_DELIMETER + mine;
         for (auto& one : runtime_programs_)
         {
-            ret = one.browse_items(new_prefix, bellow, filter, items, ctx);
-            if (!ret)
-                break;
+            if (one.name == mine)
+            {
+                ret = one.browse_items(new_prefix, bellow, filter, items, ctx);
+                return ret;
+            }
         }
         for (auto& one : runtime_methods_)
         {
-            ret = one.browse_items(new_prefix, bellow, filter, items, ctx);
-            if (!ret)
-                break;
+            if (one.name == mine)
+            {
+                ret = one.browse_items(new_prefix, bellow, filter, items, ctx);
+                return ret;
+            }
         }
+        ret = RX_INVALID_PATH;
     }
     return ret;
 }

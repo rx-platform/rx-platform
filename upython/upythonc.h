@@ -33,11 +33,33 @@
 
 
 
+
+#include <windows.h>
+
+#include "py/obj.h"
+#include "py/runtime.h"
+#include "py/builtin.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 	
-void register_module();
+typedef int (*pget_modules)(int timeout, size_t* count, mp_obj_t** objs);
+typedef void (*pmodule_done)(mp_obj_t result);
+typedef mp_obj_t(*pmodule_read_tag)(const char* path);
+typedef mp_obj_t(*pmodule_write_tag)(const char* path, mp_obj_t what);
+
+typedef struct host_data_str
+{
+	HANDLE hevent;
+	pget_modules modules_callback;
+	pmodule_done module_done;
+	pmodule_read_tag module_read;
+	pmodule_write_tag module_write;
+
+} host_data;
+	
+void register_host(host_data* data);
 
 #ifdef __cplusplus
 }

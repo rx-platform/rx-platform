@@ -90,28 +90,27 @@ struct oper_struct
 	uint8_t code;
 	const char* name;
 	size_t len;
-	size_t mem_len;
 };
 
 oper_struct operations[] = {
-	{ ABS_CODE,"abs",3,6},
-	{ GE_CODE,">=",2,4},
-	{ LE_CODE,"<=",2,4},
-	{ NE_CODE,"!=",2,4},
-	{ DIV_CODE,"div",3,6},
-	{ BIT_CODE,"bit",3,6},
-	{ AND_CODE,"&&",2,4},
-	{ OR_CODE,"||",2,4},
-	{ SQRT_CODE,"sqrt",4,8},
-	{ SIN_CODE,"sin",3,6},
-	{ COS_CODE,"cos",3,6},
-	{ TAN_CODE,"tan",3,6},
-	{ LOG_CODE,"log",3,6},
-	{ LN_CODE,"ln",2,4},
-	{ EXP_CODE,"exp",3,6},
-	{ ASIN_CODE,"asin",4,8},
-	{ ACOS_CODE,"acos",4,8},
-	{ ATAN_CODE,"atan",4,8}
+	{ ABS_CODE,"abs",3},
+	{ GE_CODE,">=",2},
+	{ LE_CODE,"<=",2},
+	{ NE_CODE,"!=",2},
+	{ DIV_CODE,"div",3},
+	{ BIT_CODE,"bit",3},
+	{ AND_CODE,"&&",2},
+	{ OR_CODE,"||",2},
+	{ SQRT_CODE,"sqrt",4},
+	{ SIN_CODE,"sin",3},
+	{ COS_CODE,"cos",3},
+	{ TAN_CODE,"tan",3},
+	{ LOG_CODE,"log",3},
+	{ LN_CODE,"ln",2},
+	{ EXP_CODE,"exp",3},
+	{ ASIN_CODE,"asin",4},
+	{ ACOS_CODE,"acos",4},
+	{ ATAN_CODE,"atan",4}
 };
 
 
@@ -754,7 +753,7 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 			size_t my_size = write_to - temp_ptr;
 			for (size_t idx = 0; idx < count; idx++)
 			{
-				if (my_size == operations[idx].len && memcmp(temp_ptr, operations[idx].name, operations[idx].mem_len) == 0)
+				if (my_size == operations[idx].len && memcmp(temp_ptr, operations[idx].name, operations[idx].len) == 0)
 				{
 					found = true;
 					*temp_ptr = operations[idx].code;

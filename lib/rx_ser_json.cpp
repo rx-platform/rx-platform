@@ -209,10 +209,18 @@ struct json_reader_data
 			{
 				values.add_value_static(name, temp.GetInt());
 			}
-			/*else if (temp.isInt64())
+			else if (temp.IsUint())
 			{
-				values.add_value_static(one, temp.asInt64());
-			}*/
+				values.add_value_static(name, temp.GetUint());
+			}
+			else if (temp.IsInt64())
+			{
+				values.add_value_static(name, temp.GetInt64());
+			}
+			else if (temp.IsUint64())
+			{
+				values.add_value_static(name, temp.GetUint64());
+			}
 			else if (temp.IsDouble())
 			{
 				values.add_value_static(name, temp.GetDouble());
@@ -220,6 +228,88 @@ struct json_reader_data
 			else if (temp.IsString())
 			{
 				values.add_value_static(name, temp.GetString());
+			}
+			else if (temp.IsArray())
+			{
+				auto len = temp.Size();
+				if (len > 0)
+				{
+					auto& elem = temp[0];
+					if (elem.IsBool())
+					{
+						std::vector<bool> arr;
+						arr.reserve(len);
+						for (decltype(len) i = 0; i < len; i++)
+						{
+							arr.push_back(temp[i].GetBool());
+						}
+						values.add_value_static(name, arr);
+					}
+					else if (elem.IsInt())
+					{
+						std::vector<int> arr;
+						arr.reserve(len);
+						for (decltype(len) i = 0; i < len; i++)
+						{
+							arr.push_back(temp[i].GetInt());
+						}
+						values.add_value_static(name, arr);
+					}
+					else if (elem.IsUint())
+					{
+						std::vector<unsigned int> arr;
+						arr.reserve(len);
+						for (decltype(len) i = 0; i < len; i++)
+						{
+							arr.push_back(temp[i].GetUint());
+						}
+						values.add_value_static(name, arr);
+					}
+					else if (elem.IsInt64())
+					{
+						std::vector<int64_t> arr;
+						arr.reserve(len);
+						for (decltype(len) i = 0; i < len; i++)
+						{
+							arr.push_back(temp[i].GetInt64());
+						}
+						values.add_value_static(name, arr);
+					}
+					else if (elem.IsUint64())
+					{
+						std::vector<uint64_t> arr;
+						arr.reserve(len);
+						for (decltype(len) i = 0; i < len; i++)
+						{
+							arr.push_back(temp[i].GetUint64());
+						}
+						values.add_value_static(name, arr);
+					}
+					else if (elem.IsDouble())
+					{
+						std::vector<double> arr;
+						arr.reserve(len);
+						for (decltype(len) i = 0; i < len; i++)
+						{
+							arr.push_back(temp[i].GetDouble());
+						}
+						values.add_value_static(name, arr);
+					}
+					else if (elem.IsString())
+					{
+						std::vector<string_type> arr;
+						arr.reserve(len);
+						for (decltype(len) i = 0; i < len; i++)
+						{
+							arr.emplace_back(temp[i].GetString());
+						}
+						values.add_value_static(name, arr);
+					}
+				}
+				else
+				{
+					values.add_value(name, rx_simple_value());// add empty value to clear array
+				}
 			}
 			else if (temp.IsObject())
 			{

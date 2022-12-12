@@ -80,29 +80,45 @@ rx_result tcp_client_endpoint::close ()
         timer_->cancel();
         timer_ = rx_timer_ptr::null_ptr;
     }
-    if (tcp_socket_)
+    socket_holder_t::smart_ptr temp_socket;
     {
-        tcp_socket_->disconnect();
-        tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+        locks::auto_lock_t _(&state_lock_);
+        temp_socket = tcp_socket_;
+        if (tcp_socket_)
+        {
+            tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+        }
+        current_state_ = tcp_state::stopped;
     }
-    current_state_ = tcp_state::stopped;
+    if (temp_socket)
+    {
+        temp_socket->disconnect();
+    }
     return true;
 }
 
 void tcp_client_endpoint::disconnected (rx_security_handle_t identity)
 {
-    if (tcp_socket_)
+    tcp_state temp_state;
+    socket_holder_t::smart_ptr temp_socket;
     {
-        tcp_socket_->disconnect();
+        locks::auto_lock_t _(&state_lock_);
+        temp_socket = tcp_socket_;
+        temp_state = current_state_;
         tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+    }
+    if (temp_socket)
+    {
+        temp_socket->disconnect();
 
-        if (current_state_ == tcp_state::connected)
+        if (temp_state == tcp_state::connected)
         {
             auto session = rx_create_session(&local_addr_, &remote_addr_, 0, 0, nullptr);
             auto proto_result = rx_notify_disconnected(&stack_endpoint_, &session, RX_PROTOCOL_OK);
         }
 
     }
+    locks::auto_lock_t _(&state_lock_);
     if (current_state_ == tcp_state::connected || current_state_ == tcp_state::connecting)
     {
         suspend_timer();
@@ -144,11 +160,16 @@ bool tcp_client_endpoint::readed (const void* data, size_t count, rx_security_ha
 rx_protocol_result_t tcp_client_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
     tcp_client_endpoint* self = reinterpret_cast<tcp_client_endpoint*>(reference->user_data);
-    if (self->my_port_ && self->tcp_socket_)
+    socket_holder_t::smart_ptr temp_socket;
+    {
+        locks::auto_lock_t _(&self->state_lock_);
+        temp_socket = self->tcp_socket_;
+    }
+    if (self->my_port_ && temp_socket)
     {
         auto io_buffer = self->my_port_->get_buffer();
         io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
-        bool ret = self->tcp_socket_->write(io_buffer);
+        bool ret = temp_socket->write(io_buffer);
         if (!ret)
             self->my_port_->release_buffer(io_buffer);
         if (ret)
@@ -165,11 +186,14 @@ rx_protocol_result_t tcp_client_endpoint::send_function (rx_protocol_stack_endpo
 
 bool tcp_client_endpoint::connected (sockaddr_in* addr, sockaddr_in* local_addr)
 {
-    if (current_state_ != tcp_state::connecting)
     {
-        return false;
+        locks::auto_lock_t _(&state_lock_);
+        if (current_state_ != tcp_state::connecting)
+        {
+            return false;
+        }
+        current_state_ = tcp_state::connected;
     }
-    current_state_ = tcp_state::connected;
 
     std::ostringstream ss;
     ss << "IP4 client binded to:"
@@ -188,25 +212,36 @@ bool tcp_client_endpoint::connected (sockaddr_in* addr, sockaddr_in* local_addr)
 
 bool tcp_client_endpoint::tick ()
 {
-    switch (current_state_)
+    tcp_state temp_state;
+    {
+        locks::auto_lock_t _(&state_lock_);
+        temp_state = current_state_;
+    }
+    switch (temp_state)
     {
     case tcp_state::not_active:
     case tcp_state::not_connected:
         {
-            RX_ASSERT(!tcp_socket_ && my_port_ != nullptr);
+            socket_holder_t::smart_ptr temp_socket;
+            {
+                locks::auto_lock_t _(&state_lock_);
+                RX_ASSERT(!tcp_socket_ && my_port_ != nullptr);
+                current_state_ = tcp_state::connecting;
+                temp_socket = tcp_socket_;
+            }
             rx_result result;
-            tcp_socket_ = rx_create_reference<socket_holder_t>(this);
-            tcp_socket_->set_identity(stack_endpoint_.identity);
+            temp_socket = rx_create_reference<socket_holder_t>(this);
+            temp_socket->set_identity(stack_endpoint_.identity);
             if(local_addr_.is_empty_ip4())
-                result = tcp_socket_->bind_socket_tcpip_4(nullptr);
+                result = temp_socket->bind_socket_tcpip_4(nullptr);
             else
-                result = tcp_socket_->bind_socket_tcpip_4(local_addr_.get_ip4_address());
+                result = temp_socket->bind_socket_tcpip_4(local_addr_.get_ip4_address());
             if (result)
             {
                 current_state_ = tcp_state::connecting;
                 const sockaddr* remote_addr = remote_addr_.get_address();
                 if (remote_addr)
-                    result = tcp_socket_->connect_to(
+                    result = temp_socket->connect_to(
                         remote_addr, sizeof(sockaddr_in)
                         , infrastructure::server_runtime::instance().get_io_pool()->get_pool());
                 else
@@ -215,17 +250,19 @@ bool tcp_client_endpoint::tick ()
             }
             if (!result)
             {
-                if(tcp_socket_)
+                if(temp_socket)
                 {
                     ITF_LOG_WARNING("tcp_client_endpoint", 100, result.errors_line());
-                    tcp_socket_->disconnect();
-                    tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+                    temp_socket->disconnect();
                 }
+                locks::auto_lock_t _(&state_lock_);
                 current_state_ = tcp_state::not_connected;
                 return true;
             }
             else
             {
+                locks::auto_lock_t _(&state_lock_);
+                tcp_socket_ = temp_socket;
                 return false;
             }
         }

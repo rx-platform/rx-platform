@@ -39,6 +39,8 @@
 #include "security/rx_security.h"
 using rx_platform::jobs::job;
 
+#include "system/server/rx_server.h"
+
 class rx_thread_data_object
 {
 	typedef typename std::unique_ptr<std::stack<intptr_t, std::vector<intptr_t> > > stack_ptr_t;
@@ -572,7 +574,8 @@ timer::timer (const string_type& name, rx_thread_handle_t rx_thread_id)
       : wake_up_(false),
         should_exit_(false),
         soft_random_index_(0),
-        medium_random_index_(0)
+        medium_random_index_(0),
+        real_time_(false)
 	, thread(name, rx_thread_id)
 {
 	init_random_sequences();
@@ -653,7 +656,10 @@ void timer::append_job (timer_job_ptr job, job_thread* executer)
 	switch (job->get_criticalness())
 	{
 	case rx_criticalness::medium:
-		job->period_error_ = rx_medium_time_offset;
+		if (real_time_)
+			job->period_error_ = 0;
+		else
+			job->period_error_ = rx_medium_time_offset;
 		break;
 	case rx_criticalness::soft:
 		job->period_error_ = rx_soft_time_offset;
@@ -683,6 +689,7 @@ void timer::init_random_sequences ()
 		medium_randoms_[i] = (rx_timer_ticks_t)rx_border_rand(0, rx_medium_time_offset);
 		soft_randoms_[i] = (rx_timer_ticks_t)rx_border_rand(0, rx_soft_time_offset);
 	}
+	real_time_ = rx_gate::instance().get_configuration().processor.real_time;
 }
 
 rx_timer_ticks_t timer::get_random_time_offset (job& whose)
@@ -692,10 +699,17 @@ rx_timer_ticks_t timer::get_random_time_offset (job& whose)
 	case rx_criticalness::hard:
 		return 0;
 	case rx_criticalness::medium:
-		medium_random_index_++;
-		if (medium_random_index_ >= RX_OFFSET_TIMES_SIZE)
-			medium_random_index_ = 0;
-		return medium_randoms_[medium_random_index_];
+		if (real_time_)
+		{
+			return 0;
+		}
+		else
+		{
+			medium_random_index_++;
+			if (medium_random_index_ >= RX_OFFSET_TIMES_SIZE)
+				medium_random_index_ = 0;
+			return medium_randoms_[medium_random_index_];
+		}
 	case rx_criticalness::soft:
 		soft_random_index_++;
 		if (soft_random_index_ >= RX_OFFSET_TIMES_SIZE)

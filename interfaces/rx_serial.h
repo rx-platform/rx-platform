@@ -170,7 +170,7 @@ typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_i
 
 class serial_port : public serial_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+    DECLARE_CODE_INFO("rx", 0, 5, 0, "\
 Serial port class. implementation of an serial (COM or TTY) port");
 
     typedef std::stack< buffer_ptr, std::vector<buffer_ptr> > free_buffers_type;

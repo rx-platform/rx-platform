@@ -241,8 +241,10 @@ void tcp_server_endpoint::socket_holder_t::on_shutdown(rx_security_handle_t iden
 {
     if (whose)
     {
+        auto saved = whose;
+        whose = nullptr;
         security::secured_scope _(identity);
-        whose->disconnected(identity);
+        saved->disconnected(identity);
     }
 }
 tcp_server_endpoint::socket_holder_t::socket_holder_t(tcp_server_endpoint* whose, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr)

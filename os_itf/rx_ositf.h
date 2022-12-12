@@ -282,6 +282,17 @@ extern "C" {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Ethernet sockets
+
+
+	typedef void* peth_socket;
+
+	uint32_t rx_create_ethernet_socket(const char* adapter_name, peth_socket* psock);
+	uint32_t rx_send_ethernet_packet(peth_socket psock, const void* buffer, size_t size);
+	uint32_t rx_recive_ethernet_packet(peth_socket psock, uint8_t** buffer, size_t* recv_size, int* has_more, struct timeval* tv);
+	uint32_t rx_close_ethernet_socket(peth_socket psock);
+
 #ifdef __cplusplus
 }
 #endif

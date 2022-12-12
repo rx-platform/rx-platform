@@ -55,4 +55,21 @@ int rx_is_valid_ip_address(uint32_t addr, uint32_t mask)
 	return RX_ERROR;
 }
 
+uint32_t rx_create_ethernet_socket(const char* adapter_name, peth_socket* psock)
+{
+	return RX_ERROR;
+}
+uint32_t rx_send_ethernet_packet(peth_socket psock, const void* buffer, size_t size)
+{
+	return RX_ERROR;
+}
+uint32_t rx_recive_ethernet_packet(peth_socket psock, uint8_t** buffer, size_t* recv_size, int* has_more, struct timeval* tv)
+{
+	return RX_ERROR;
+}
+uint32_t rx_close_ethernet_socket(peth_socket psock)
+{
+	return RX_ERROR;
+}
+
 

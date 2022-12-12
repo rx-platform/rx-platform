@@ -3,7 +3,7 @@
 
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 1
-#define RX_HAL_MINOR_VERSION 3
+#define RX_HAL_MINOR_VERSION 4
 #define RX_HAL_BUILD_NUMBER 0
 
 /*********************************************************************************
@@ -43,5 +43,6 @@
 1.2.0 added Ethernet support
 1.2.1 node name handling done
 1.3.0 added rx_thread_set_afinity
+1.4.0 first functional ethernet version
 
 *********************************************************************************/

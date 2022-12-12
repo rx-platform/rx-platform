@@ -555,6 +555,22 @@ RX_COMMON_API int rx_init_float_value(struct typed_value_type* val, float data);
 RX_COMMON_API int rx_init_double_value(struct typed_value_type* val, double data);
 RX_COMMON_API int rx_init_complex_value(struct typed_value_type* val, complex_value_struct data);
 
+
+RX_COMMON_API int rx_init_bool_array_value(struct typed_value_type* val, const uint_fast8_t* data, size_t count);
+
+RX_COMMON_API int rx_init_int8_array_value(struct typed_value_type* val, const int8_t* data, size_t count);
+RX_COMMON_API int rx_init_uint8_array_value(struct typed_value_type* val, const uint8_t* data, size_t count);
+RX_COMMON_API int rx_init_int16_array_value(struct typed_value_type* val, const int16_t* data, size_t count);
+RX_COMMON_API int rx_init_uint16_array_value(struct typed_value_type* val, const uint16_t* data, size_t count);
+RX_COMMON_API int rx_init_int32_array_value(struct typed_value_type* val, const int32_t* data, size_t count);
+RX_COMMON_API int rx_init_uint32_array_value(struct typed_value_type* val, const uint32_t* data, size_t count);
+RX_COMMON_API int rx_init_int64_array_value(struct typed_value_type* val, const int64_t* data, size_t count);
+RX_COMMON_API int rx_init_uint64_array_value(struct typed_value_type* val, const uint64_t* data, size_t count);
+
+RX_COMMON_API int rx_init_float_array_value(struct typed_value_type* val, const float* data, size_t count);
+RX_COMMON_API int rx_init_double_array_value(struct typed_value_type* val, const double* data, size_t count);
+RX_COMMON_API int rx_init_complex_array_value(struct typed_value_type* val, const complex_value_struct* data, size_t count);
+
 RX_COMMON_API int rx_init_string_value(struct typed_value_type* val, const char* data, int count);
 RX_COMMON_API int rx_init_bytes_value(struct typed_value_type* val, const uint8_t* data, size_t count);
 

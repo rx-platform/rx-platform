@@ -42,6 +42,7 @@
 #include "rx_tcp_server.h"
 #include "rx_udp.h"
 #include "rx_serial.h"
+#include "rx_ethernet.h"
 #include "rx_inverter_ports.h"
 #include "rx_tcp_client.h"
 #include "sys_internal/rx_async_functions.h"
@@ -90,8 +91,13 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configurat
 		for (const auto& alias : one)
 			serial_aliases_[alias.first] = alias.second;
 
+	alias_result = host->read_config_files("rx-ethernet.yml");
+	for (const auto& one : alias_result)
+		for (const auto& alias : one)
+			ethernet_aliases_[alias.first] = alias.second;
+
 	rx_result result = protocols::opcua::opcua_resources_repository::instance().initialize(host, data);
-	
+
 	if (result)
 	{
         // register port stack relation
@@ -156,6 +162,10 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configurat
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 			RX_SERIAL_PORT_TYPE_ID, [] {
 				return rx_create_reference<serial::serial_port>();
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_ETHERNET_PORT_TYPE_ID, [] {
+				return rx_create_reference<ethernet::ethernet_port>();
 			});
         result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
             RX_TCP_SERVER_PORT_TYPE_ID, [] {
@@ -234,6 +244,15 @@ string_type rx_io_manager::resolve_serial_alias (const string_type& what) const
 {
 	auto it = serial_aliases_.find(what);
 	if (it != serial_aliases_.end())
+		return it->second;
+	else
+		return what;
+}
+
+string_type rx_io_manager::resolve_ethernet_alias (const string_type& what) const
+{
+	auto it = ethernet_aliases_.find(what);
+	if (it != ethernet_aliases_.end())
 		return it->second;
 	else
 		return what;

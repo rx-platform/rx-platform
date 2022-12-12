@@ -36,6 +36,7 @@
 #include "lib/rx_values.h"
 #include "first_ports.h"
 #include "rx_configuration.h"
+#include "ether_test.h"
 
 // first_plugin
 #include "first_plugin/first_plugin.h"
@@ -107,6 +108,12 @@ static const uint8_t c_def_mojaRel[] = {
 	0x79, 0x73, 0x2f, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x73, 0x2f, 0x66, 0x69, 0x72, 0x73, 0x74,
 	0x2f, 0x73, 0x75, 0x62, 0x4f, 0x62, 0x6a, 0x65, 0x6b, 0x74, 0x69, 0x2f, 0x6d, 0x6f, 0x6a, 0x53,
 	0x65, 0x72, 0x76, 0x65, 0x72, 0x50, 0x6f, 0x72, 0x74, 0x00, 0x00, 0x00, 0x00
+};
+
+static const uint8_t c_def_ethSubs1[] = {
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 
@@ -274,6 +281,9 @@ rx_result first_plugin::init_plugin ()
 	result = rx_platform_api::register_port_runtime<first_client_port>(rx_node_id(25, 8));
 	if (!result)
 		return result;
+	result = rx_platform_api::register_port_runtime<ether::ether_subscriber1_port>(rx_node_id(27, 8));
+	if (!result)
+		return result;
 
 	return result;
 }
@@ -323,8 +333,12 @@ rx_result first_plugin::build_plugin ()
 	result = rx_platform_api::register_item_binary_with_code<first_client_port>("mojClientPort", "subObjekti"
 		, rx_node_id(25, 8), RX_APPLICATION_PORT_TYPE_ID, c_def_mojClientPort, sizeof(c_def_mojClientPort), 0x10006);
 	if (!result)
-		return result;
+		return result; 
 
+	result = rx_platform_api::register_item_binary_with_code<first_client_port>("ethSubs1", "ethTest"
+			, rx_node_id(27, 8), RX_APPLICATION_PORT_TYPE_ID, c_def_ethSubs1, sizeof(c_def_ethSubs1), 0x10006);
+	if (!result)
+		return result;
 
 	result = rx_platform_api::register_item_binary(rx_item_type::rx_relation_type, "mojaRel", "subObjekti"
 		, rx_node_id(26, 8), RX_NS_PORT_REF_ID, c_def_mojaRel, sizeof(c_def_mojaRel), 0x10006);

@@ -53,6 +53,7 @@
 #include "http_server/rx_http_server.h"
 #include "system/server/rx_directory_cache.h"
 #include "http_server/rx_http_server.h"
+#include "upython/upython.h"
 
 
 namespace rx_platform {
@@ -79,7 +80,7 @@ rx_gate::rx_gate()
 		rx_version_ = buff;
 	}
 	node_name_ = rx_get_node_name();
-	
+
 	lib_version_ = g_lib_version;
 	rx_init_hal_version();
 	hal_version_ = g_ositf_version;
@@ -223,6 +224,10 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 	auto result = rx_internal::infrastructure::server_runtime::instance().start(host, data.processor, data.io);
 	if (result)
 	{
+
+#ifdef UPYTHON_SUPPORT
+		result = python::upython::start_script(host, data);
+#endif
 		result = rx_internal::model::platform_types_manager::instance().start(host, data.meta_configuration);
 		if (result)
 		{
@@ -248,6 +253,9 @@ rx_result rx_gate::stop ()
 	platform_status_ = rx_platform_status::stopping;
 	rx_internal::sys_runtime::platform_runtime_manager::instance().stop_all();
 	rx_internal::model::platform_types_manager::instance().stop();
+#ifdef UPYTHON_SUPPORT
+	python::upython::stop_script();
+#endif
 	rx_internal::infrastructure::server_runtime::instance().stop();
 	platform_status_ = rx_platform_status::deinitializing;
 	return true;
@@ -336,6 +344,11 @@ string_type rx_gate::resolve_serial_alias (const string_type& what) const
 	return io_manager_->resolve_serial_alias(what);
 }
 
+string_type rx_gate::resolve_ethernet_alias (const string_type& what) const
+{
+	return io_manager_->resolve_ethernet_alias(what);
+}
+
 template <class typeT>
 rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
 {
@@ -359,6 +372,4 @@ template rx_result rx_gate::register_constructor<port_type>(const rx_node_id& id
 template rx_result rx_gate::register_constructor<domain_type>(const rx_node_id& id, std::function<domain_type::RImplPtr()> f);
 template rx_result rx_gate::register_constructor<application_type>(const rx_node_id& id, std::function<application_type::RImplPtr()> f);
 } // namespace rx_platform
-
-
 

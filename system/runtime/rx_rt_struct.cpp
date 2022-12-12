@@ -4071,7 +4071,7 @@ rx_result block_data::create_safe_runtime_data (const data::runtime_values_data&
 				if (!values[(one.index >> rt_type_shift)].is_array())
 				{
 					auto val = in.get_value(one.name);
-					if (!val.is_null())
+					if (val.is_null())
 					{
 						return "Missing argument "s + one.name;
 					}

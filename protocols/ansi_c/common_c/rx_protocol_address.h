@@ -85,7 +85,7 @@ RX_COMMON_API void rx_create_uint8_address(struct protocol_address_def* def, uin
 RX_COMMON_API void rx_create_uint16_address(struct protocol_address_def* def, uint16_t addr);
 RX_COMMON_API void rx_create_uint32_address(struct protocol_address_def* def, uint32_t addr);
 RX_COMMON_API void rx_create_uint64_address(struct protocol_address_def* def, uint64_t addr);
-RX_COMMON_API void rx_create_mac_address(struct protocol_address_def* def, uint8_t* addr);
+RX_COMMON_API void rx_create_mac_address(struct protocol_address_def* def, const uint8_t* addr);
 RX_COMMON_API void rx_create_ip4_address(struct protocol_address_def* def, const struct sockaddr_in* addr);
 RX_COMMON_API void rx_create_ip6_address(struct protocol_address_def* def, const struct sockaddr_in6* addr);
 RX_COMMON_API void rx_create_string_address(struct protocol_address_def* def, const char* addr);

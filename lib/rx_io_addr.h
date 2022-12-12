@@ -301,6 +301,58 @@ class bytes_address : public protocol_address
 };
 
 
+
+
+
+
+class mac_address : public protocol_address  
+{
+
+  public:
+      mac_address();
+
+      mac_address(const mac_address &right);
+
+      mac_address (const byte_string& val);
+
+      mac_address (const uint8_t* pdata, size_t count);
+
+      ~mac_address();
+
+      bool operator==(const mac_address &right) const;
+
+      bool operator!=(const mac_address &right) const;
+
+      bool operator<(const mac_address &right) const;
+
+      bool operator>(const mac_address &right) const;
+
+      bool operator<=(const mac_address &right) const;
+
+      bool operator>=(const mac_address &right) const;
+
+
+      rx_result parse (const protocol_address* ep);
+
+      byte_string get_address () const;
+
+      bool is_null () const;
+
+      bool is_valid () const;
+
+      string_type to_string () const;
+
+      rx_result parse (const string_type& what);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace io
 } // namespace rx
 

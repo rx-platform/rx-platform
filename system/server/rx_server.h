@@ -33,6 +33,7 @@
 
 
 
+#define RX_DOMAIN_PYTHON 0xfffa
 #define RX_DOMAIN_EXTERN 0xfffb
 #define RX_DOMAIN_META 0xfffc
 #define RX_DOMAIN_SLOW 0xfffd
@@ -88,6 +89,7 @@ struct general_data_t
     uint16_t opcua_port;
     uint16_t rx_port;
     string_type rx_security;
+    string_type py_path;
 };
 struct runtime_data_t
 {
@@ -187,6 +189,8 @@ class rx_gate
       string_type resolve_ip6_alias (const string_type& what) const;
 
       string_type resolve_serial_alias (const string_type& what) const;
+
+      string_type resolve_ethernet_alias (const string_type& what) const;
 
 
       hosting::rx_platform_host * get_host ()

@@ -327,6 +327,8 @@ class timer : public thread
 
       int medium_random_index_;
 
+      bool real_time_;
+
 
     friend class jobs::timer_job;
 };

@@ -236,7 +236,7 @@
 #define RX_TCP_CLIENT_PORT_TYPE_NAME "TCPClientPort"
 #define RX_TCP_CLIENT_PORT_TYPE_ID 0xc000015
 #define RX_ETHERNET_PORT_TYPE_NAME "EthernetPort"
-#define RX_ETHENERT_PORT_TYPE_ID 0xc000016
+#define RX_ETHERNET_PORT_TYPE_ID 0xc000016
 
 
 #define RX_IP4_ROUTER_TYPE_NAME "IP4RouterPort"
@@ -307,6 +307,10 @@
 
 #define RX_SERIAL_PORT_OPTIONS_TYPE_NAME "SerialPortOptions"
 #define RX_SERIAL_PORT_OPTIONS_TYPE_ID 0xc00006b
+
+
+#define RX_ETHERNET_PORT_OPTIONS_TYPE_NAME "EthernetPortOptions"
+#define RX_ETHERNET_PORT_OPTIONS_TYPE_ID 0xc0000aa
 
 // runtime support structures
 #define RX_POOL_DATA_TYPE_NAME "PoolData"
@@ -551,7 +555,7 @@
 #define RX_UPYTHON_METHOD_TYPE_NAME "uPtyMethod"
 #define RX_UPYTHON_METHOD_TYPE_ID 0xc0000a9
 
-// last is 0xc0000a9!!!! 
+// last is 0xc0000aa!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

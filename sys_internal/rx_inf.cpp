@@ -43,6 +43,7 @@
 #include "api/rx_meta_api.h"
 #include "model/rx_meta_internals.h"
 #include "runtime_internal/rx_runtime_internal.h"
+#include "upython/upy_internal.h"
 
 
 namespace rx_internal {
@@ -319,6 +320,10 @@ threads::job_thread* server_runtime::get_executer (rx_thread_handle_t domain)
 				return extern_executer_;
 			else
 				return &meta_pool_->get_pool();
+		case RX_DOMAIN_PYTHON:
+#ifdef UPYTHON_SUPPORT
+			return &rx_platform::python::upy_thread::instance();
+#endif
 		default:
 			if (unassigned_pool_)
 				return &unassigned_pool_->get_pool();

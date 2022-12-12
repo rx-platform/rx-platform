@@ -50,8 +50,280 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 
 	if (RX_ARRAY_VALUE_MASK & type)
 	{
-		RX_ASSERT(false);
-		return false;// not supported yet
+		switch (type & RX_SIMPLE_VALUE_MASK)
+		{
+		case RX_NULL_TYPE:
+			RX_ASSERT(false);
+			return false;
+		case RX_BOOL_TYPE:
+			{
+				bool ret;
+				std::vector<uint_fast8_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					bool temp;
+					if (!reader.read_bool(name, temp))
+						return false;
+					arr.emplace_back(temp ? 1 : 0);
+				}
+				if(arr.empty())
+					ret = rx_init_bool_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_bool_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_INT8_TYPE:
+			{
+				bool ret;
+				std::vector<int8_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					uint8_t temp;
+					if (!reader.read_byte(name, temp))
+						return false;
+					arr.emplace_back((int8_t)temp);
+				}
+				if (arr.empty())
+					ret = rx_init_int8_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_int8_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_UINT8_TYPE:
+			{
+				bool ret;
+				std::vector<uint8_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					uint8_t temp;
+					if (!reader.read_byte(name, temp))
+						return false;
+					arr.emplace_back(temp);
+				}
+				if (arr.empty())
+					ret = rx_init_uint8_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_uint8_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_INT16_TYPE:
+			{
+				bool ret;
+				std::vector<int16_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					int32_t temp;
+					if (!reader.read_int(name, temp))
+						return false;
+					arr.emplace_back((int16_t)temp);
+				}
+				if (arr.empty())
+					ret = rx_init_int16_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_int16_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_UINT16_TYPE:
+			{
+				bool ret;
+				std::vector<uint16_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					uint32_t temp;
+					if (!reader.read_uint(name, temp))
+						return false;
+					arr.emplace_back((uint16_t)temp);
+				}
+				if (arr.empty())
+					ret = rx_init_uint16_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_uint16_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_INT32_TYPE:
+			{
+				bool ret;
+				std::vector<int32_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					int32_t temp;
+					if (!reader.read_int(name, temp))
+						return false;
+					arr.emplace_back(temp);
+				}
+				if (arr.empty())
+					ret = rx_init_int32_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_int32_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_UINT32_TYPE:
+			{
+				bool ret;
+				std::vector<uint32_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					uint32_t temp;
+					if (!reader.read_uint(name, temp))
+						return false;
+					arr.emplace_back(temp);
+				}
+				if (arr.empty())
+					ret = rx_init_uint32_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_uint32_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_INT64_TYPE:
+			{
+				bool ret;
+				std::vector<int64_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					int64_t temp;
+					if (!reader.read_int64(name, temp))
+						return false;
+					arr.emplace_back(temp);
+				}
+				if (arr.empty())
+					ret = rx_init_int64_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_int64_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_UINT64_TYPE:
+			{
+				bool ret;
+				std::vector<uint64_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					uint64_t temp;
+					if (!reader.read_uint64(name, temp))
+						return false;
+					arr.emplace_back(temp);
+				}
+				if (arr.empty())
+					ret = rx_init_uint64_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_uint64_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_FLOAT_TYPE:
+			{
+				bool ret;
+				std::vector<float> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					double temp;
+					if (!reader.read_double(name, temp))
+						return false;
+					arr.emplace_back((float)temp);
+				}
+				if (arr.empty())
+					ret = rx_init_float_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_float_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_DOUBLE_TYPE:
+			{
+				bool ret;
+				std::vector<double> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					double temp;
+					if (!reader.read_double(name, temp))
+						return false;
+					arr.emplace_back(temp);
+				}
+				if (arr.empty())
+					ret = rx_init_double_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_double_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+		case RX_NODE_ID_TYPE:
+			RX_ASSERT(false);//not implemented
+			return false;
+			/*{
+				rx_node_id temp;
+				if (!reader.read_id(name, temp))
+					return false;
+				return rx_init_node_id_value(&val, temp.c_ptr()) == RX_OK;
+			}*/
+		case RX_STRING_TYPE:
+			{
+				bool ret;
+				string_array arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					string_type temp;
+					if (!reader.read_string(name, temp))
+						return false;
+					arr.push_back(std::move(temp));
+				}
+				if (arr.empty())
+				{
+					ret = rx_init_string_array_value(&val, nullptr, 0) == RX_OK;
+				}
+				else
+				{
+					std::vector<const char*> helper;
+					helper.reserve(arr.size());
+					for (const auto& one : arr)
+						helper.push_back(one.c_str());
+					ret = rx_init_string_array_value(&val, &helper[0], arr.size()) == RX_OK;
+				}
+				return ret;
+			}
+		case RX_TIME_TYPE:
+			RX_ASSERT(false);//not implemented
+			return false;
+			/*{
+				rx_time temp;
+				if (!reader.read_time(name, temp))
+					return false;
+				return rx_init_time_value(&val, temp) == RX_OK;
+			}*/
+		case RX_BYTES_TYPE:
+			RX_ASSERT(false);//not implemented
+			return false;
+			/*{
+				byte_string temp;
+				reader.read_bytes(name, temp);
+				if (temp.empty())
+					return rx_init_bytes_value(&val, nullptr, 0);
+				else
+					return rx_init_bytes_value(&val, (uint8_t*)&temp[0], temp.size());
+			}*/
+		default:
+			RX_ASSERT(false);
+			// shouldn't happened
+		}
 		//std::vector<rx_value_union> temp_array;
 		//if (!reader.start_array(name))
 		//	return false;
@@ -202,9 +474,7 @@ bool serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_val
 		writer.start_array(name, who.array_value.size);
 		for (size_t i = 0; i < who.array_value.size; i++)
 		{
-			writer.start_object("item");
 			serialize_value(writer, who.array_value.values[i], type & RX_STRIP_ARRAY_MASK, "val");
-			writer.end_object();
 		}
 		writer.end_array();
 	}
@@ -668,6 +938,514 @@ string_array extract_value(const typed_value_type& from, const string_array& def
 	return default_value;
 }
 
+std::vector<bool> extract_value(const typed_value_type& from, const std::vector<bool>& default_value)
+{
+	if (from.value_type == RX_BOOL_TYPE)
+	{
+		return std::vector<bool>{ from.value.bool_value != 0 ? true : false };
+	}
+	else if (from.value_type == (RX_BOOL_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<bool> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].bool_value != 0 ? true : false);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_BOOL_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<bool> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].bool_value != 0 ? true : false);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<int8_t> extract_value(const typed_value_type& from, const std::vector<int8_t>& default_value)
+{
+	if (from.value_type == RX_INT8_TYPE)
+	{
+		return std::vector<int8_t>{ from.value.int8_value };
+	}
+	else if (from.value_type == (RX_INT8_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<int8_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].int8_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_INT8_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<int8_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].int8_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<uint8_t> extract_value(const typed_value_type& from, const std::vector<uint8_t>& default_value)
+{
+	if (from.value_type == RX_UINT8_TYPE)
+	{
+		return std::vector<uint8_t>{ from.value.uint8_value };
+	}
+	else if (from.value_type == (RX_UINT8_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<uint8_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].uint8_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_UINT8_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<uint8_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].uint8_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+
+std::vector<int16_t> extract_value(const typed_value_type& from, const std::vector<int16_t>& default_value)
+{
+	if (from.value_type == RX_INT16_TYPE)
+	{
+		return std::vector<int16_t>{ from.value.int16_value };
+	}
+	else if (from.value_type == (RX_INT16_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<int16_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].int16_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_INT16_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<int16_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].int16_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<uint16_t> extract_value(const typed_value_type& from, const std::vector<uint16_t>& default_value)
+{
+	if (from.value_type == RX_UINT16_TYPE)
+	{
+		return std::vector<uint16_t>{ from.value.uint16_value };
+	}
+	else if (from.value_type == (RX_UINT16_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<uint16_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].uint16_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_UINT16_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<uint16_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].uint16_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+
+std::vector<int32_t> extract_value(const typed_value_type& from, const std::vector<int32_t>& default_value)
+{
+	if (from.value_type == RX_INT32_TYPE)
+	{
+		return std::vector<int32_t>{ from.value.int32_value };
+	}
+	else if (from.value_type == (RX_INT32_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<int32_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].int32_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_INT32_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<int32_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].int32_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<uint32_t> extract_value(const typed_value_type& from, const std::vector<uint32_t>& default_value)
+{
+	if (from.value_type == RX_UINT32_TYPE)
+	{
+		return std::vector<uint32_t>{ from.value.uint32_value };
+	}
+	else if (from.value_type == (RX_UINT32_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<uint32_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].uint32_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_UINT32_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<uint32_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].uint32_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+
+std::vector<int64_t> extract_value(const typed_value_type& from, const std::vector<int64_t>& default_value)
+{
+	if (from.value_type == RX_INT64_TYPE)
+	{
+		return std::vector<int64_t>{ from.value.int64_value };
+	}
+	else if (from.value_type == (RX_INT64_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<int64_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].int64_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_INT64_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<int64_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].int64_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<uint64_t> extract_value(const typed_value_type& from, const std::vector<uint64_t>& default_value)
+{
+	if (from.value_type == RX_UINT64_TYPE)
+	{
+		return std::vector<uint64_t>{ from.value.uint64_value };
+	}
+	else if (from.value_type == (RX_UINT64_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<uint64_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].uint64_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_UINT64_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<uint64_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].uint64_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<float> extract_value(const typed_value_type& from, const std::vector<float>& default_value)
+{
+	if (from.value_type == RX_FLOAT_TYPE)
+	{
+		return std::vector<float_t>{ from.value.float_value };
+	}
+	else if (from.value_type == (RX_FLOAT_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<float_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].float_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_FLOAT_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<float_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].float_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<double> extract_value(const typed_value_type& from, const std::vector<double>& default_value)
+{
+	if (from.value_type == RX_DOUBLE_TYPE)
+	{
+		return std::vector<double_t>{ from.value.double_value };
+	}
+	else if (from.value_type == (RX_DOUBLE_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<double_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].double_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_DOUBLE_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<double_t> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].double_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<byte_string> extract_value(const typed_value_type& from, const std::vector<byte_string>& default_value)
+{
+	RX_ASSERT(false);
+	return default_value;
+}
+std::vector<rx_time_struct> extract_value(const typed_value_type& from, const std::vector<rx_time_struct>& default_value)
+{
+	if (from.value_type == RX_TIME_TYPE)
+	{
+		return std::vector<rx_time_struct>{ from.value.time_value };
+	}
+	else if (from.value_type == (RX_TIME_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<rx_time_struct> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].time_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_TIME_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<rx_time_struct> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].time_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<rx_time> extract_value(const typed_value_type& from, const std::vector<rx_time>& default_value)
+{
+	if (from.value_type == RX_TIME_TYPE)
+	{
+		return std::vector<rx_time>{ from.value.time_value };
+	}
+	else if (from.value_type == (RX_TIME_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<rx_time> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.push_back(from.value.array_value.values[i].time_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_TIME_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			std::vector<rx_time> ret;
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.push_back(temp_val.value.array_value.values[i].time_value);
+				}
+			}
+			return ret;
+		}
+	}
+	return default_value;
+}
+std::vector<rx_uuid_t> extract_value(const typed_value_type& from, const std::vector<rx_uuid_t>& default_value)
+{
+	RX_ASSERT(false);
+	return default_value;
+}
+
 
 
 bool assign_value(typed_value_type& from, bool value)
@@ -749,6 +1527,93 @@ bool assign_value(typed_value_type& from, const byte_string& value)
 		return rx_init_bytes_value(&from, NULL, 0);
 	else
 		return rx_init_bytes_value(&from, reinterpret_cast<const uint8_t*>(&value[0]), value.size());
+}
+
+
+bool assign_value(typed_value_type& from, const std::vector<bool>& value)
+{
+	if (value.empty())
+	{
+		return rx_init_bool_array_value(&from, NULL, 0);
+	}
+	else
+	{
+		std::vector<uint_fast8_t> temp;
+		temp.reserve(value.size());
+		for (auto one : value)
+			temp.emplace_back(one ? 1 : 0);
+		return rx_init_bool_array_value(&from, &temp[0], value.size());
+	}
+}
+bool assign_value(typed_value_type& from, const std::vector<uint8_t>& value)
+{
+	if (value.empty())
+		return rx_init_uint8_array_value(&from, NULL, 0);
+	else
+		return rx_init_uint8_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<uint16_t>& value)
+{
+	if (value.empty())
+		return rx_init_uint16_array_value(&from, NULL, 0);
+	else
+		return rx_init_uint16_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<uint32_t>& value)
+{
+	if (value.empty())
+		return rx_init_uint32_array_value(&from, NULL, 0);
+	else
+		return rx_init_uint32_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<uint64_t>& value)
+{
+	if (value.empty())
+		return rx_init_uint64_array_value(&from, NULL, 0);
+	else
+		return rx_init_uint64_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<int8_t>& value)
+{
+	if (value.empty())
+		return rx_init_int8_array_value(&from, NULL, 0);
+	else
+		return rx_init_int8_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<int16_t>& value)
+{
+	if (value.empty())
+		return rx_init_int16_array_value(&from, NULL, 0);
+	else
+		return rx_init_int16_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<int32_t>& value)
+{
+	if (value.empty())
+		return rx_init_int32_array_value(&from, NULL, 0);
+	else
+		return rx_init_int32_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<int64_t>& value)
+{
+	if (value.empty())
+		return rx_init_int64_array_value(&from, NULL, 0);
+	else
+		return rx_init_int64_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<float>& value)
+{
+	if (value.empty())
+		return rx_init_float_array_value(&from, NULL, 0);
+	else
+		return rx_init_float_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<double>& value)
+{
+	if (value.empty())
+		return rx_init_double_array_value(&from, NULL, 0);
+	else
+		return rx_init_double_array_value(&from, &value[0], value.size());
 }
 
 bool assign_value(typed_value_type& from, const string_array& value)
