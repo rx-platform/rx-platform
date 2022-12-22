@@ -56,8 +56,6 @@ RX_COMMON_API void rx_release_lock_reference(lock_reference_struct* data)
 		if (ret <= 0 && data->def->destroy_reference)
 		{
 			data->def->destroy_reference(data->target);
-			data->target = NULL;
-			data->def = NULL;
 		}
 	}
 }

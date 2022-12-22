@@ -609,11 +609,11 @@ public:
 };
 
 
-struct time_stamp
+struct rx_time_stamp
 {
-	rx_time_struct rx_time;
+	rx_time_struct time;
 	uint32_t quality;
-	static time_stamp now();
+	static rx_time_stamp now();
 };
 
 void rx_dump_ticks_to_stream(std::ostream& out, rx_timer_ticks_t ticks);

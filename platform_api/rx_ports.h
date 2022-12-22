@@ -348,6 +348,8 @@ public:
     construct_func_type construct_func;
 
   public:
+      rx_server_slave_port();
+
 
       rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
@@ -741,6 +743,14 @@ void rx_client_master_port<endpointT>::status_sent_packet ()
 
 
 // Parameterized Class rx_platform_api::rx_server_slave_port 
+
+template <typename endpointT>
+rx_server_slave_port<endpointT>::rx_server_slave_port()
+      : received_(0),
+        sent_(0)
+{
+}
+
 
 
 template <typename endpointT>

@@ -215,15 +215,11 @@ rx_protocol_stack_endpoint* full_duplex_addr_packet_port<addrT>::construct_liste
 	
 
 	rx_init_stack_entry(&listener_inst->stack_endpoint, listener_inst.get());
-	/*listener_inst->stack_endpoint.send_function = [](rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
-		{
-			listener_instance<addrT>* me = (listener_instance<addrT>*)reference->user_data;
-			address_adapter_type::fill_send_packet(packet, *me);
-			return rx_move_packet_down(&me->my_port->initiator_endpoint_, packet);
-		};*/
+	
 	listener_inst->stack_endpoint.received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 	{
 		listener_instance<addrT>* me = (listener_instance<addrT>*)reference->user_data;
+		me->my_port->received_packet();
 		return me->route_listeners_packet(packet);
 	};
 
@@ -295,56 +291,6 @@ rx_result full_duplex_addr_packet_port<addrT>::start_listen (const protocol_addr
 		return "Unable to parse address:";
 
 	return true;
-	/*
-		rx_init_stack_entry(stack_ep, it->second.get());
-
-		///////////////////////////////////////////////////////////////
-		// here is the code for filling in the client session stuff
-		stack_ep->send_function = [](rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
-		{
-			listener_data_type<addrT>* me = (listener_data_type<addrT>*)reference->user_data;
-			const listener_data_type<addrT>& session_data = *me;
-			address_adapter_type::fill_send_packet(packet, session_data);
-			return rx_move_packet_down(&me->stack_endpoint, packet);
-		};
-		stack_ep->close_function = [](struct rx_protocol_stack_endpoint* reference, rx_protocol_result_t result) -> rx_protocol_result_t
-		{
-			rx_notify_closed(reference, RX_PROTOCOL_OK);
-			rx_protocol_result_t ret = RX_PROTOCOL_OK;
-			listener_data_t* me = (listener_data_t*)reference->user_data;
-			if (me->my_port)
-			{
-				key_type key = address_adapter_type::get_key_from_addresses(me->local_addr, me->remote_addr);
-				ret = me->remove_listener(key);
-			}
-			return ret;
-		};
-		stack_ep->allocate_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
-		{
-			listener_data_t* whose = (listener_data_t*)entry->user_data;
-			auto result = whose->my_port->alloc_io_buffer();
-			if (result)
-			{
-				result.value().detach(buffer);
-				return RX_PROTOCOL_OK;
-			}
-			else
-			{
-				return RX_PROTOCOL_OUT_OF_MEMORY;
-			}
-		};
-		stack_ep->release_packet = [](rx_protocol_stack_endpoint* entry, rx_packet_buffer* buffer)->rx_protocol_result_t
-		{
-			listener_data_t* whose = (listener_data_t*)entry->user_data;
-			rx_io_buffer temp;
-			temp.attach(buffer);
-			whose->my_port->release_io_buffer(std::move(temp));
-
-			return RX_PROTOCOL_OK;
-		};
-
-		return port_connect_result(stack_ep, state_ == current_port_state::port_state_connected);
-		*/
 }
 
 template <typename addrT>
@@ -366,6 +312,7 @@ rx_result_with<port_connect_result> full_duplex_addr_packet_port<addrT>::start_c
 		{
 			initiator_data_t* me = (initiator_data_t*)reference->user_data;
 			address_adapter_type::fill_send_packet(packet, *me);
+			me->my_port->sent_packet();
 			return rx_move_packet_down(&me->my_port->initiator_endpoint_, packet);
 		};
 	stack_ep->close_function = [] (struct rx_protocol_stack_endpoint* reference, rx_protocol_result_t result) -> rx_protocol_result_t
@@ -464,14 +411,11 @@ rx_result full_duplex_addr_packet_port<addrT>::start_runtime (runtime_start_cont
 		return "Wrong port state!!!";
 	current_port_state new_state = port_state_inactive;
 	rx_init_stack_entry(&initiator_endpoint_, this);
-	/*initiators_endpoint_.send_function = [](rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
-		{
-			full_duplex_addr_packet_port<addrT>* me = (full_duplex_addr_packet_port<addrT>*)reference->user_data;
-			return me->send_packet(packet);
-		};*/
+	
 	initiator_endpoint_.received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 		{
 			full_duplex_addr_packet_port<addrT>* me = (full_duplex_addr_packet_port<addrT>*)reference->user_data;
+			me->received_packet();
 			return me->route_initiator_packet(packet);
 		};
 	initiator_endpoint_.connected_function = [](rx_protocol_stack_endpoint* reference, rx_session* session)
@@ -526,9 +470,13 @@ rx_protocol_result_t full_duplex_addr_packet_port<addrT>::route_initiator_packet
 	locks::auto_lock_t _(&routing_lock_);
 	endpoint = find_initiators_endpoint(key.second);
 	if (endpoint)
+	{
 		return rx_move_packet_up(endpoint, packet);
+	}
 	else
+	{
 		return RX_PROTOCOL_INVALID_ADDR;
+	}
 }
 
 template <typename addrT>
@@ -602,6 +550,18 @@ rx_protocol_result_t full_duplex_addr_packet_port<addrT>::remove_initiator (cons
 	}
 }
 
+template <typename addrT>
+void full_duplex_addr_packet_port<addrT>::received_packet ()
+{
+	status.received_packet();
+}
+
+template <typename addrT>
+void full_duplex_addr_packet_port<addrT>::sent_packet ()
+{
+	status.sent_packet();
+}
+
 
 // Parameterized Class rx_internal::interfaces::ports_lib::initiator_data_type 
 
@@ -672,7 +632,8 @@ void ip4_routing_port::extract_bind_address (const data::runtime_values_data& bi
 
 template <typename addrT>
 listener_data_type<addrT>::listener_data_type()
-      : my_instance(nullptr)
+      : my_instance(nullptr),
+        binded(false)
 {
 	ITF_LOG_DEBUG("listener_data_type", 200, "Routing listener endpoint created.");
 }
@@ -713,9 +674,13 @@ rx_protocol_result_t listener_instance<addrT>::route_listeners_packet (recv_prot
 	locks::auto_lock_t _(&routing_lock_);
 	endpoint = find_listener_endpoint(key.second, packet.to_addr, packet.from_addr);
 	if (endpoint)
+	{
 		return rx_move_packet_up(endpoint, packet);
+	}
 	else
+	{
 		return RX_PROTOCOL_INVALID_ADDR;
+	}
 }
 
 template <typename addrT>
@@ -733,10 +698,13 @@ rx_protocol_result_t listener_instance<addrT>::listener_connected_received (rx_s
 		locks::auto_lock_t _(&routing_lock_);
 		for (auto& one : listeners_)
 		{
-			rx_session one_session = rx_create_session(&one.second->local_addr, &one.second->remote_addr, session->local_ref, session->remote_ref, session);
-			proto_result = rx_notify_connected(&one.second->stack_endpoint, &one_session);
-			if (proto_result != RX_PROTOCOL_OK)
-				break;
+			if (one.second->binded)
+			{
+				rx_session one_session = rx_create_session(&one.second->local_addr, &one.second->remote_addr, session->local_ref, session->remote_ref, session);
+				proto_result = rx_notify_connected(&one.second->stack_endpoint, &one_session);
+				if (proto_result != RX_PROTOCOL_OK)
+					break;
+			}
 		}
 		return proto_result;
 	}
@@ -767,7 +735,8 @@ void listener_instance<addrT>::listener_closed_received (rx_protocol_result_t re
 			listeners.reserve(listeners_.size());
 			for (auto & one : listeners_)
 			{
-				listeners.push_back(one.second);
+				if(one.second->binded)
+					listeners.push_back(one.second);
 			}
 		}
 	}
@@ -788,7 +757,24 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 	auto it_cli = listeners_.find(key);
 	if (it_cli != listeners_.end())
 	{
-		return &it_cli->second->stack_endpoint;
+		if (!it_cli->second->binded)
+		{
+			auto result = my_port->add_stack_endpoint(&it_cli->second->stack_endpoint, local_address, remote_address);
+			if (!result)
+			{
+				return nullptr;
+			}
+			else
+			{
+				ITF_LOG_DEBUG("listener_instance", 200, "Routing listener endpoint binded.");
+				it_cli->second->binded = true;
+				return &it_cli->second->stack_endpoint;
+			}
+		}
+		else
+		{
+			return &it_cli->second->stack_endpoint;
+		}
 	}
 	else
 	{
@@ -809,13 +795,9 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 		{
 			listener_data_t* me = (listener_data_t*)reference->user_data;
 			address_adapter_type::fill_send_packet(packet, *me);
+			me->my_port->sent_packet();
 			return rx_move_packet_down(&me->my_instance->stack_endpoint, packet);
 		};
-		/*new_endpoint->received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
-		{
-			listener_data_t* me = (listener_data_t*)reference->user_data;
-			return me->my_instance->route_listeners_packet(packet);
-		};*/
 		new_endpoint->connected_function = [](rx_protocol_stack_endpoint* reference, rx_session* session)
 		{
 			listener_data_t* me = (listener_data_t*)reference->user_data;
@@ -850,8 +832,9 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 			whose->my_instance->remove_listener(address_adapter_type::get_key_from_listener(*whose));
 			whose->my_port->unbind_stack_endpoint(entry);
 		};
-		locks::auto_lock_t _(&routing_lock_);
-		listeners_.emplace(key, new_listener.get());
+		auto listener_raw = new_listener.get();
+		//locks::auto_lock_t _(&routing_lock_); !!already locked in route_listeners_packet or listener_connected_received
+		listeners_.emplace(key, listener_raw);
 		auto emplace_result = my_port->listening_.emplace(new_endpoint, std::move(new_listener));
 		if (!emplace_result.second)
 		{
@@ -859,12 +842,16 @@ rx_protocol_stack_endpoint* listener_instance<addrT>::find_listener_endpoint (co
 		}
 		else
 		{
+			listener_raw->binded = true;
 			auto result = my_port->add_stack_endpoint(new_endpoint, local_address, remote_address);
 			if (!result)
 			{
-				listeners_.erase(key);
-				my_port->listening_.erase(new_endpoint);
+				listener_raw->binded = false;
 				new_endpoint = nullptr;
+			}
+			else
+			{
+				ITF_LOG_DEBUG("listener_instance", 200, "Routing listener endpoint binded.");
 			}
 
 		}
@@ -891,9 +878,75 @@ rx_protocol_result_t listener_instance<addrT>::remove_listener (const listener_k
 }
 
 
+// Class rx_internal::interfaces::ports_lib::mac_routing_port 
+
+
+void mac_routing_port::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
+{
+	if (local_addr.is_null())
+	{
+		auto addr = binder_data.get_value("Bind.Address");
+		byte_string addr_val;
+		if (addr.is_byte_string())
+			addr_val = addr.extract_static(byte_string{});
+		if (addr_val.size()==MAC_ADDR_SIZE)
+		{
+			io::mac_address mac_addr(addr_val);
+			local_addr = &mac_addr;
+		}
+	}
+	if (remote_addr.is_null())
+	{
+		auto addr = binder_data.get_value("Connect.Address");
+		byte_string addr_val;
+		if (addr.is_byte_string())
+			addr_val = addr.extract_static(byte_string{});
+		if (addr_val.size() == MAC_ADDR_SIZE)
+		{
+			io::mac_address mac_addr(addr_val);
+			remote_addr = &mac_addr;
+		}
+	}
+}
+
+
+// Class rx_internal::interfaces::ports_lib::word_routing_port 
+
+
+void word_routing_port::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
+{
+	if (local_addr.is_null())
+	{
+		auto addr = binder_data.get_value("Bind.Address");
+		uint16_t addr_val = 0;
+		if (addr.is_unassigned())
+			addr_val = addr.extract_static(0);
+		if (addr_val != 0)
+		{
+			io::numeric_address<uint16_t> num_addr(addr_val);
+			local_addr = &num_addr;
+		}
+	}
+	if (remote_addr.is_null())
+	{
+		auto addr = binder_data.get_value("Connect.Address");
+		uint16_t addr_val = 0;
+		if (addr.is_unassigned())
+			addr_val = addr.extract_static(addr_val);
+		if (addr_val != 0)
+		{
+			io::numeric_address<uint16_t> num_addr(addr_val);
+			remote_addr = &num_addr;
+		}
+	}
+}
+
+
 } // namespace ports_lib
 } // namespace interfaces
 } // namespace rx_internal
 
 template class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port<rx::io::ip4_address>;
 template class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port<rx::io::numeric_address<uint8_t> >;
+template class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port<rx::io::numeric_address<uint16_t> >;
+template class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port<rx::io::mac_address >;

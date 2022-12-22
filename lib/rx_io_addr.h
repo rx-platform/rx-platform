@@ -315,7 +315,7 @@ class mac_address : public protocol_address
 
       mac_address (const byte_string& val);
 
-      mac_address (const uint8_t* pdata, size_t count);
+      mac_address (const uint8_t* pdata);
 
       ~mac_address();
 

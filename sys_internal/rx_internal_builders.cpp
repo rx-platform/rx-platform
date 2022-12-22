@@ -1263,6 +1263,26 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_WORD_ROUTER_TYPE_NAME
+			, RX_WORD_ROUTER_TYPE_ID
+			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_ROUTER_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_MAC_ROUTER_TYPE_NAME
+			, RX_MAC_ROUTER_TYPE_ID
+			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_ROUTER_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_INITIATOR_TO_LISTENER_PORT_TYPE_NAME
 			, RX_INITIATOR_TO_LISTENER_PORT_TYPE_ID
 			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
@@ -1706,6 +1726,16 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			});
 		what->complex_data.register_const_value_static("IPAddress", "");
 		what->complex_data.register_const_value_static<uint16_t>("IPPort", 0);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_MAC_BIND_TYPE_NAME
+			, RX_MAC_BIND_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("Address", byte_string(6));
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{

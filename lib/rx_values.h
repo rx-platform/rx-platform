@@ -386,7 +386,7 @@ public:
 
       bool compare (const rx_value& right, time_compare_type time_compare) const;
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       void set_substituted ();
 
@@ -407,6 +407,8 @@ public:
       bool is_byte_string () const;
 
       byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
+
+      void set_origin (uint32_t val);
 
 
   protected:
@@ -536,7 +538,7 @@ public:
 
       bool compare (const rx_timed_value& right, time_compare_type time_compare) const;
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       bool is_byte_string () const;
 

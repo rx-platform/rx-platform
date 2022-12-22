@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2022 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -843,6 +843,26 @@ string_type extract_value(const typed_value_type& from, const string_type& defau
 }
 byte_string extract_value(const typed_value_type& from, const byte_string& default_value)
 {
+	if (from.value_type == RX_BYTES_TYPE)
+	{
+		if (from.value.bytes_value.size > 0)
+		{
+			size_t count = 0;
+			auto data = (std::byte*)rx_c_ptr(&from.value.bytes_value, &count);
+			return byte_string(data, data + count);
+		}
+		else
+		{
+			return byte_string();
+		}
+	}
+	else
+	{
+		typed_value_type temp_val(from);
+		if (rx_convert_value(&temp_val, RX_STRING_TYPE))
+			return extract_value(temp_val, default_value);
+	}
+	return default_value;
 	RX_ASSERT(false);
 	return byte_string();
 	/*if (from.get_value_type() == RX_BYTES_TYPE)
@@ -1287,11 +1307,11 @@ std::vector<float> extract_value(const typed_value_type& from, const std::vector
 {
 	if (from.value_type == RX_FLOAT_TYPE)
 	{
-		return std::vector<float_t>{ from.value.float_value };
+		return std::vector<float>{ from.value.float_value };
 	}
 	else if (from.value_type == (RX_FLOAT_TYPE | RX_ARRAY_VALUE_MASK))
 	{
-		std::vector<float_t> ret;
+		std::vector<float> ret;
 		if (from.value.array_value.size > 0)
 		{
 			ret.reserve(from.value.array_value.size);
@@ -1307,7 +1327,7 @@ std::vector<float> extract_value(const typed_value_type& from, const std::vector
 		typed_value_type temp_val(from);
 		if (rx_convert_value(&temp_val, RX_FLOAT_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<float_t> ret;
+			std::vector<float> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1325,11 +1345,11 @@ std::vector<double> extract_value(const typed_value_type& from, const std::vecto
 {
 	if (from.value_type == RX_DOUBLE_TYPE)
 	{
-		return std::vector<double_t>{ from.value.double_value };
+		return std::vector<double>{ from.value.double_value };
 	}
 	else if (from.value_type == (RX_DOUBLE_TYPE | RX_ARRAY_VALUE_MASK))
 	{
-		std::vector<double_t> ret;
+		std::vector<double> ret;
 		if (from.value.array_value.size > 0)
 		{
 			ret.reserve(from.value.array_value.size);
@@ -1345,7 +1365,7 @@ std::vector<double> extract_value(const typed_value_type& from, const std::vecto
 		typed_value_type temp_val(from);
 		if (rx_convert_value(&temp_val, RX_DOUBLE_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<double_t> ret;
+			std::vector<double> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1664,7 +1684,7 @@ bool set_float_to_value(typed_value_type& to, double val, rx_value_t type)
 }
 
 
-// Class rx::values::rx_value 
+// Class rx::values::rx_value
 
 rx_value::rx_value (const full_value_type* storage)
 {
@@ -1750,7 +1770,7 @@ bool rx_value::deserialize (const string_type& name, base_meta_reader& stream)
 		return false;
 	// first destroy eventual values already inside
 	rx_destroy_value(&data_.value);
-	
+
 	if (!deserialize_value(stream, data_.value, "val"))
 		return false;
 	if (!stream.read_time("ts", data_.time))
@@ -1965,21 +1985,19 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	}
 }
 
-rx::values::rx_simple_value rx_value::to_simple () const
+rx_simple_value rx_value::to_simple () const
 {
     return rx_simple_value(&data_.value);
 }
 
 void rx_value::set_substituted ()
 {
-	uint32_t dummy = data_.origin&RX_ORIGIN_MASK & RX_FORCED_ORIGIN;
-	data_.origin = dummy | (data_.origin^RX_ORIGIN_MASK);
+	data_.origin = data_.origin | RX_FORCED_ORIGIN;
 }
 
 void rx_value::set_test ()
 {
-	uint32_t dummy = data_.origin&RX_ORIGIN_MASK & RX_FORCED_ORIGIN;
-	data_.origin = dummy | (data_.origin^ RX_TEST_ORIGIN);
+	data_.origin = data_.origin | RX_TEST_ORIGIN;
 }
 
 bool rx_value::is_dead () const
@@ -2043,6 +2061,11 @@ byte_string rx_value::get_byte_string (size_t idx) const
 	{
 		return byte_string();
 	}
+}
+
+void rx_value::set_origin (uint32_t val)
+{
+	data_.origin = (data_.origin & ~RX_ORIGIN_MASK) | (val & RX_ORIGIN_MASK);
 }
 
 
@@ -2135,7 +2158,7 @@ bool rx_value::operator!=(const rx_value& right) const
 	return !operator==(right);
 }
 
-full_value_type rx_value::move() noexcept 
+full_value_type rx_value::move() noexcept
 {
 	full_value_type ret;
 	rx_move_value(&ret.value, &data_.value);
@@ -2148,7 +2171,7 @@ const full_value_type* rx_value::c_ptr() const noexcept
 {
 	return &data_;
 }
-// Class rx::values::rx_simple_value 
+// Class rx::values::rx_simple_value
 
 rx_simple_value::rx_simple_value (const typed_value_type* storage)
 {
@@ -2460,7 +2483,7 @@ const typed_value_type* rx_simple_value::c_ptr() const noexcept
 {
 	return &data_;
 }
-// Class rx::values::rx_timed_value 
+// Class rx::values::rx_timed_value
 
 rx_timed_value::rx_timed_value (const timed_value_type* storage)
 {
@@ -2741,7 +2764,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx::values::rx_simple_value rx_timed_value::to_simple () const
+rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(&data_.value);
 }
@@ -2830,7 +2853,7 @@ const timed_value_type* rx_timed_value::c_ptr() const noexcept
 	return &data_;
 }
 
-// Parameterized Class rx::values::rx_value_holder 
+// Parameterized Class rx::values::rx_value_holder
 
 
 } // namespace values

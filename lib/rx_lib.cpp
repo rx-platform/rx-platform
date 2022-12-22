@@ -1730,10 +1730,10 @@ uint32_t rx_time::get_as_span() const
 	return ((uint32_t)(temp / ((uint64_t)10000 * (uint64_t)1000 * (uint64_t)3600 * (uint64_t)24)));
 
 }
-time_stamp time_stamp::now()
+rx_time_stamp rx_time_stamp::now()
 {
-	time_stamp ret;
-	ret.rx_time = rx_time::now();
+	rx_time_stamp ret;
+	ret.time = rx_time::now();
 	ret.quality = rx_time::current_time_quality();
 	return ret;
 }

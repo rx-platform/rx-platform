@@ -750,8 +750,12 @@ string_type any_address::to_string () const
             temp.parse(this);
             return temp.to_string();
         }
-    case protocol_address_mac:
-        return "nemamac";
+    case protocol_address_mac: 
+        {
+            mac_address temp;
+            temp.parse(this);
+            return temp.to_string();
+        }
     case protocol_address_ip4:
         {
             ip4_address temp;
@@ -1227,7 +1231,7 @@ mac_address::mac_address (const byte_string& val)
        rx_create_mac_address(this, (uint8_t*)&val[0]);
 }
 
-mac_address::mac_address (const uint8_t* pdata, size_t count)
+mac_address::mac_address (const uint8_t* pdata)
 {
     rx_create_mac_address(this, pdata);
 }

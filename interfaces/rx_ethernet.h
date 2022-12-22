@@ -98,6 +98,8 @@ class ethernet_endpoint : public rx_platform::threads::thread
 
       static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
+      void process_packet (const uint8_t* buffer, size_t size);
+
 
 
       rx_protocol_stack_endpoint stack_endpoint_;

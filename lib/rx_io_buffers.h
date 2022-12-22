@@ -48,51 +48,6 @@ namespace io {
 
 
 
-class rx_const_io_buffer 
-{
-
-  public:
-      rx_const_io_buffer (rx_const_packet_buffer* buffer);
-
-      rx_const_io_buffer (rx_packet_buffer* buffer);
-
-
-      rx_result read_string (string_type& val);
-
-      rx_result read_chars (string_type& val);
-
-      static rx_const_packet_buffer create_from_chars (const string_type& str);
-
-      rx_const_packet_buffer* c_buffer ();
-
-	  template<typename T>
-	  rx_result read_from_buffer(T& val)
-	  {
-          static_assert(std::is_trivial<T>::value);
-
-          rx_protocol_result_t result;
-		  val = *((T*)rx_get_from_packet(buffer_, sizeof(T), &result));
-
-		  if (result == RX_PROTOCOL_OK)
-			  return true;
-		  else
-			  return rx_protocol_error_message(result);
-	  }
-  protected:
-
-  private:
-
-
-      rx_const_packet_buffer* buffer_;
-
-
-};
-
-
-
-
-
-
 class rx_io_buffer : public rx_packet_buffer  
 {
 
@@ -166,6 +121,57 @@ class rx_io_buffer : public rx_packet_buffer
 
       void zero_memory ();
 
+
+
+};
+
+
+
+
+
+
+class rx_const_io_buffer 
+{
+
+  public:
+      rx_const_io_buffer (rx_const_packet_buffer* buffer);
+
+
+      rx_result read_string (string_type& val);
+
+      rx_result read_chars (string_type& val);
+
+      static rx_const_packet_buffer create_from_chars (const string_type& str);
+
+      rx_const_packet_buffer* c_buffer ();
+
+      size_t get_possition ();
+
+      rx_result read_data (void* data, size_t count);
+
+      void skip (size_t count);
+
+      bool eof () const;
+
+	  template<typename T>
+	  rx_result read_from_buffer(T& val)
+	  {
+          static_assert(std::is_trivial<T>::value);
+
+          rx_protocol_result_t result;
+		  val = *((T*)rx_get_from_packet(buffer_, sizeof(T), &result));
+
+		  if (result == RX_PROTOCOL_OK)
+			  return true;
+		  else
+			  return rx_protocol_error_message(result);
+	  }
+  protected:
+
+  private:
+
+
+      rx_const_packet_buffer* buffer_;
 
 
 };

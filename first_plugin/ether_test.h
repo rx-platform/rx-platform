@@ -93,7 +93,7 @@ class ether_subscriber1_endpoint : public rx::pointers::reference_object
 
 
 
-typedef rx_platform_api::rx_client_master_port< ether_subscriber1_endpoint  > ether_subscriber1_base;
+typedef rx_platform_api::rx_server_slave_port< ether_subscriber1_endpoint  > ether_subscriber1_base;
 
 
 

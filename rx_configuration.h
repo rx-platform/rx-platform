@@ -243,6 +243,10 @@
 #define RX_IP4_ROUTER_TYPE_ID 0xc00005a
 #define RX_BYTE_ROUTER_TYPE_NAME "ByteRouterPort"
 #define RX_BYTE_ROUTER_TYPE_ID 0xc00005b
+#define RX_WORD_ROUTER_TYPE_NAME "WordRouterPort"
+#define RX_WORD_ROUTER_TYPE_ID 0xc0000ab
+#define RX_MAC_ROUTER_TYPE_NAME "MACRouterPort"
+#define RX_MAC_ROUTER_TYPE_ID 0xc0000ac
 
 #define RX_TRANS_LIMITER_TYPE_NAME "TransactionLimiterPort"
 #define RX_TRANS_LIMITER_TYPE_ID 0xc00005c
@@ -273,6 +277,9 @@
 
 #define RX_IP_BIND_TYPE_NAME "IPBindData"
 #define RX_IP_BIND_TYPE_ID 0xc000021
+
+#define RX_MAC_BIND_TYPE_NAME "MACBindData"
+#define RX_MAC_BIND_TYPE_ID 0xc0000ad
 
 
 #define RX_RX_JSON_TYPE_NAME "RxJsonProtocol"
@@ -555,7 +562,7 @@
 #define RX_UPYTHON_METHOD_TYPE_NAME "uPtyMethod"
 #define RX_UPYTHON_METHOD_TYPE_ID 0xc0000a9
 
-// last is 0xc0000aa!!!! 
+// last is 0xc0000ad!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

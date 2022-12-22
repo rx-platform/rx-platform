@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 2
 #define RX_LIB_MINOR_VERSION 6
-#define RX_LIB_BUILD_NUMBER 1
+#define RX_LIB_BUILD_NUMBER 2
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -54,6 +54,7 @@
 // version 2.5.3 added utf8_to_ascii
 // version 2.5.4 added deserialization of bytes value
 // version 2.6.0 added bytes value support, string and bytes address
-// version 2.6.1 added numeric array values support
+// version 2.6.1 added numeric, string and bytes array values support
+// version 2.6.1 added ASN library
 
 

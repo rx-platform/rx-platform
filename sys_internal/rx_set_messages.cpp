@@ -1274,6 +1274,11 @@ rx_result protocol_runtime_creator<itemT>::deserialize (base_meta_reader& stream
 
 // Class rx_internal::rx_protocol::messages::set_messages::protocol_runtime_creator_base 
 
+protocol_runtime_creator_base::~protocol_runtime_creator_base()
+{
+}
+
+
 
 // Class rx_internal::rx_protocol::messages::set_messages::set_runtime_request 
 

@@ -146,6 +146,8 @@ class listener_data_type
 
       addrT remote_addr;
 
+      bool binded;
+
       listener_data_type(const listener_data_type&) = delete;
       listener_data_type(listener_data_type&&) noexcept = default;
       listener_data_type& operator=(const listener_data_type&) = delete;
@@ -288,6 +290,10 @@ protected:
 
       rx_result stop_runtime (runtime_stop_context& ctx);
 
+      void received_packet ();
+
+      void sent_packet ();
+
 
       rx_platform::runtime::io_types::simple_port_status status;
 
@@ -338,7 +344,7 @@ typedef full_duplex_addr_packet_port< io::numeric_address<uint8_t>  > byte_routi
 
 class byte_routing_port : public byte_routing_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 1, "\
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 Byte address routing port implementation, for both initiators and listeners");
 
     DECLARE_REFERENCE_PTR(byte_routing_port);
@@ -369,10 +375,72 @@ typedef full_duplex_addr_packet_port< io::ip4_address  > ip4_routing_port_base;
 
 class ip4_routing_port : public ip4_routing_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 1, "\
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 IP4 routing port implementation, for both initiators and listeners");
 
     DECLARE_REFERENCE_PTR(ip4_routing_port);
+
+  public:
+
+      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+typedef full_duplex_addr_packet_port< io::mac_address  > ether_routing_port_base;
+
+
+
+
+
+
+class mac_routing_port : public ether_routing_port_base  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+MAC address routing port implementation, for both publishers and subscribers");
+
+    DECLARE_REFERENCE_PTR(mac_routing_port);
+
+  public:
+
+      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+typedef full_duplex_addr_packet_port< io::numeric_address<uint16_t>  > word_routing_port_base;
+
+
+
+
+
+
+class word_routing_port : public word_routing_port_base  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Word address routing port implementation, for both initiators and listeners");
+
+    DECLARE_REFERENCE_PTR(word_routing_port);
 
   public:
 

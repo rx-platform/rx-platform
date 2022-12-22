@@ -138,8 +138,10 @@ rx_protocol_result_t limiter_endpoint::send_packet (send_protocol_packet packet)
                 trans->transaction_sent();
                 place_pending(std::move(trans), (size_t)options.limit);// notify up about the conversion
                 while (handle_timer())
+                {
                     send_next();
-                port_->status.sent_packet();
+                    port_->status.sent_packet();
+                }
             }
             return result;
         }

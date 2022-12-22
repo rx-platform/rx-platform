@@ -57,9 +57,13 @@ namespace urke
 			size += 1;
 		}
 
+		/*std::vector<std::byte> data(size);
+		memcpy(&data[0], data1, size - bonus);*/
+
+
 		result.reserve(size * 8 / 6);
 
-		for (size_t i = 0; i < size; i++)
+		for (size_t i = 0; i < size - bonus; i++)
 		{
 			std::byte between;
 
@@ -71,26 +75,41 @@ namespace urke
 			std::byte second = data[i] & std::byte{ 0x03 };
 			second = second << 4;
 			i++;
-			between = data[i] & std::byte{ 0xf0 };
-			between = between >> 4;
-			if (bonus == 2 && i >= size - 2) between = std::byte{ 0 };
+			if (bonus == 2 && i >= size - 2)
+			{
+				between = std::byte{ 0 };
+			}
+			else
+			{
+				RX_ASSERT(i < size - bonus);
+				between = data[i] & std::byte{ 0xf0 };
+				between = between >> 4;
+			}
+			
 			second = second | between;
 
 			//////////////////////////////////////////////////
 
-			std::byte third = data[i] & std::byte{ 0x0f };
-			third = third << 2;
-			if ((bonus == 1 || bonus == 2) && i >= size - 1) third = std::byte{ 0 };
-			i++;
-			between = data[i] & std::byte{ 0xc0 };
-			between = between >> 6;
-			if ((bonus == 1 || bonus == 2) && i >= size - 1) between = std::byte{ 0 };
-			third = third | between;
+			std::byte third = std::byte{ 0 };
+			std::byte fourth = std::byte{ 0 };
+			if (i < size - bonus)
+			{
+				third = data[i] & std::byte{ 0x0f };
+				third = third << 2;
+
+				i++;
+				if (i < size - bonus)
+				{
+					RX_ASSERT(i < size - bonus);
+					between = data[i] & std::byte{ 0xc0 };
+					between = between >> 6;
+					third = third | between;
+					fourth = data[i] & std::byte{ 0x3f };
+				}
+			}
 
 			//////////////////////////////////////////////////
 
-			std::byte fourth = data[i] & std::byte{ 0x3f };
-			if ((bonus == 1 || bonus == 2) && i >= size - 1) fourth = std::byte{ 0 };
 
 			result += tabel_base64[std::to_integer<unsigned char>(first)];
 			result += tabel_base64[std::to_integer<unsigned char>(second)];

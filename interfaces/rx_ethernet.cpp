@@ -35,6 +35,7 @@
 #include "interfaces/rx_ethernet.h"
 
 #include "rx_endpoints.h"
+#include "rx_ether_defs.h"
 
 
 namespace rx_internal {
@@ -95,7 +96,8 @@ runtime::items::port_runtime* ethernet_endpoint::get_port ()
 
 rx_protocol_result_t ethernet_endpoint::send_packet (send_protocol_packet packet)
 {
-    return RX_PROTOCOL_NOT_IMPLEMENTED;
+    my_port_->status.sent_packet(packet.buffer->size);
+    return RX_PROTOCOL_OK;
 }
 
 void ethernet_endpoint::release_buffer (buffer_ptr what)
@@ -107,6 +109,7 @@ rx_result ethernet_endpoint::open (const string_type& port_name, security::secur
 {
     RX_ASSERT(handle_ == 0);
     my_port_ = port;
+    ether_types_ = ether_types;
     if (!rx_create_ethernet_socket(port_name.c_str(), &handle_))
     {
         char buff[0x100];
@@ -152,6 +155,7 @@ uint32_t ethernet_endpoint::handler ()
     int more;
     timeval ts;
 
+
     while (!stop_)
     {
         do
@@ -159,6 +163,7 @@ uint32_t ethernet_endpoint::handler ()
             ret = rx_recive_ethernet_packet(handle_, &buffer, &psize, &more, &ts);
             if (ret && psize)
             {
+                process_packet(buffer, psize);
             }
 
         } while (more);
@@ -168,6 +173,58 @@ uint32_t ethernet_endpoint::handler ()
 
     ITF_LOG_INFO("ethernet_endpoint", 800, info_head + " stopped.");
     return 0;
+}
+
+void ethernet_endpoint::process_packet (const uint8_t* buffer, size_t size)
+{
+    static const uint16_t vlan_eth_type = ntohs(ETH_TYPE_VLAN);
+    const uint8_t* packet_rest;
+    size_t rest_count = 0;
+    uint16_t vlan = 0;
+    uint16_t priority = 0;
+    bool dei = false;
+    uint16_t ether_type = 0;
+
+    if (size > sizeof(eth_vlan_header))
+    {
+        // QinQ not supported for now!!!
+        eth_vlan_header* eth_head = (eth_vlan_header*)buffer;
+        if (eth_head->vlan_type == vlan_eth_type)
+        {// we have VLAN tag
+            vlan = eth_head->vlan & 0x3fff;
+            priority = eth_head->vlan & 0xe000;
+            dei = eth_head->vlan & 0x1000;
+            packet_rest = &buffer[sizeof(eth_vlan_header) - sizeof(uint16_t)];
+            rest_count = size - (sizeof(eth_vlan_header) - sizeof(uint16_t));
+            ether_type = ntohs(eth_head->eth_type);
+        }
+        else
+        {// no VLAN tag
+            packet_rest = &buffer[sizeof(eth_header) - sizeof(uint16_t)];
+            rest_count = size - (sizeof(eth_header) - sizeof(uint16_t));
+            ether_type = ntohs(eth_head->vlan_type);
+        }
+        for (auto one : ether_types_)
+        {
+            if (one == ether_type)
+            {// found matching ethernet type
+
+                io::mac_address from(eth_head->source_mac);
+                io::mac_address to(eth_head->destination_mac);
+
+                rx_const_packet_buffer packet_buffer{};
+                rx_init_const_packet_buffer(&packet_buffer, packet_rest, rest_count);
+
+                auto packet = rx_create_recv_packet(0, &packet_buffer, 0, 0);
+                packet.from_addr = &from;
+                packet.to_addr = &to;
+
+                my_port_->status.received_packet(size);
+
+                auto stack_result = rx_move_packet_up(&stack_endpoint_, packet);
+            }
+        }
+    }
 }
 
 
@@ -202,7 +259,9 @@ rx_result ethernet_port::start_listen (const protocol_address* local_address, co
     endpoint_->get_stack_endpoint()->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
     {
         ethernet_endpoint* whose = reinterpret_cast<ethernet_endpoint*>(entry->user_data);
-        whose->get_port()->disconnect_stack_endpoint(entry);
+        auto port = whose->get_port();
+        if(port)
+            port->disconnect_stack_endpoint(entry);
     };
     auto result = endpoint_->open(port_name_, sec_result.value(), this, ether_types_);
     if (!result)

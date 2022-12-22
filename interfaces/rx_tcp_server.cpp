@@ -69,7 +69,10 @@ tcp_server_endpoint::tcp_server_endpoint()
     mine_entry->close_function = [] (rx_protocol_stack_endpoint* ref, rx_protocol_result_t reason) ->rx_protocol_result_t
     {
         tcp_server_endpoint* me = reinterpret_cast<tcp_server_endpoint*>(ref->user_data);
-        me->close();
+        if (me->tcp_socket_)
+        {
+            me->close();
+        }
         rx_notify_closed(&me->stack_endpoint_, 0);
         return RX_PROTOCOL_OK;
 
@@ -90,6 +93,8 @@ tcp_server_endpoint::tcp_server_endpoint()
 
 tcp_server_endpoint::~tcp_server_endpoint()
 {
+    if (tcp_socket_)
+        tcp_socket_->disconnect();
     if(identity_)
         identity_->logout();
     ITF_LOG_DEBUG("tcp_server_endpoint", 200, "TCP server endpoint destroyed.");
@@ -122,8 +127,9 @@ rx_result tcp_server_endpoint::close ()
 {
     if (tcp_socket_)
     {
-        tcp_socket_->disconnect();
+        auto temp_ptr = tcp_socket_;
         tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+        temp_ptr->disconnect();
     }
     return true;
 }
@@ -139,6 +145,7 @@ void tcp_server_endpoint::disconnected (rx_security_handle_t identity)
     ITF_LOG_TRACE("tcp_server_port", 500, ss.str());
     if (tcp_socket_)
     {
+        tcp_socket_ = socket_ptr::null_ptr;
         rx_session session = rx_create_session(&remote_address_, &local_address_, 0, 0, nullptr);
         rx_notify_disconnected(&stack_endpoint_, &session, 0);
         rx_close(&stack_endpoint_, 0);

@@ -33,10 +33,10 @@
 
 
 
-// rx_query_messages
-#include "sys_internal/rx_query_messages.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
+// rx_query_messages
+#include "sys_internal/rx_query_messages.h"
 
 namespace rx_internal {
 namespace rx_protocol {
@@ -479,6 +479,8 @@ class protocol_runtime_creator_base
 {
 
   public:
+      virtual ~protocol_runtime_creator_base();
+
 
       //	create_type values:
       //	0 - prototype runtime

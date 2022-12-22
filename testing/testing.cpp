@@ -33,7 +33,7 @@ namespace obsolite
 		}
 		void process()
 		{
-			printf("Timer fired at %s\r\n", rx::rx_time(rx::time_stamp::now().rx_time).get_string().c_str());
+			printf("Timer fired at %s\r\n", rx::rx_time(rx::rx_time_stamp::now().time).get_string().c_str());
 		}
 	};
 
