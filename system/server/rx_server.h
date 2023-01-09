@@ -4,7 +4,7 @@
 *
 *  system\server\rx_server.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -118,6 +118,7 @@ struct meta_configuration_data_t
 {
     bool build_system_from_code = false;
     string_type instance_name;
+    string_type plugin;
 };
 
 

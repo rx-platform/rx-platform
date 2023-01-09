@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_holder_algorithms.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -120,6 +120,14 @@ class runtime_relation_algorithms
       static void notify_relation_disconnected (const string_type& name, runtime_process_context* ctx);
 
       static void relation_value_change (relations::relation_value_data* whose, const rx_value& val, runtime_process_context* ctx);
+
+      static void read_value (const string_type& path, read_result_callback_t callback, const relations::relation_data& whose);
+
+      static void write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, relations::relation_data& whose);
+
+      static void read_struct (string_view_type path, read_struct_data data, const relations::relation_data& whose);
+
+      static void write_struct (string_view_type path, write_struct_data data, relations::relation_data& whose);
 
 
   protected:

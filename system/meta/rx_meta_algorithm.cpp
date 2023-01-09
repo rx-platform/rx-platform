@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_algorithm.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -45,6 +45,7 @@
 #include "model/rx_model_algorithms.h"
 #include "runtime_internal/rx_runtime_algorithms.h"
 #include "rx_meta_attr_algorithm.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace rx_platform {
@@ -1412,13 +1413,14 @@ rx_result relation_blocks_algorithm::construct_relation_attribute (const object_
 		rx_timed_value str_val;
 		str_val.assign_static("", ctx.now);
 		data.value.value = str_val;
-		data.implementation_ = ret_val.value();
+		data.implementation_ = ret_val.value().ptr;
 		// this is something i still don't know about
 		// it will have to wait
 		//!!!!!
 		/*rx_timed_value val;
 		val.assign_static<string_type>("", ctx.now);
 		ctx.runtime_data.add_value(whose.name, val);*/
+		rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().add_functions(data.meta_info().id, ret_val.value().register_f, ret_val.value().unregister_f);
 		return true;
 	}
 	else

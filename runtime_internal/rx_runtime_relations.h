@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_relations.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -59,9 +59,9 @@ class domain_relation : public rx_platform::runtime::relations::relation_runtime
 
       rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
-      rx_result start_relation (runtime::runtime_start_context& ctx);
+      rx_result start_relation (runtime::runtime_start_context& ctx, bool is_target);
 
-      rx_result stop_relation (runtime::runtime_stop_context& ctx);
+      rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
       rx_item_reference get_implicit_reference (const meta::meta_data& info);
 
@@ -100,9 +100,9 @@ class application_relation : public rx_platform::runtime::relations::relation_ru
 
       rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
-      rx_result start_relation (runtime::runtime_start_context& ctx);
+      rx_result start_relation (runtime::runtime_start_context& ctx, bool is_target);
 
-      rx_result stop_relation (runtime::runtime_stop_context& ctx);
+      rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
       rx_item_reference get_implicit_reference (const meta::meta_data& info);
 
@@ -141,9 +141,9 @@ class port_app_relation : public rx_platform::runtime::relations::relation_runti
 
       rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
-      rx_result start_relation (runtime::runtime_start_context& ctx);
+      rx_result start_relation (runtime::runtime_start_context& ctx, bool is_target);
 
-      rx_result stop_relation (runtime::runtime_stop_context& ctx);
+      rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
       rx_item_reference get_implicit_reference (const meta::meta_data& info);
 

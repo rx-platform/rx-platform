@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_var_types.cpp
+*  D:\RX\Native\Source\platform_api\rx_var_types.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,7 +32,7 @@
 
 
 // rx_var_types
-#include "platform_api/rx_var_types.h"
+#include "rx_var_types.h"
 
 #include "platform_api/rx_abi.h"
 #include "lib/rx_values.h"
@@ -220,8 +220,6 @@ namespace rx_platform_api {
 
 // Class rx_platform_api::rx_filter 
 
-rx_item_type rx_filter::type_id = rx_item_type::rx_filter_type;
-
 rx_filter::rx_filter (bool input, bool output)
 {
     impl_.io_data = 0;
@@ -270,10 +268,13 @@ rx_result rx_filter::filter_output (rx_simple_value& val)
     return RX_NOT_SUPPORTED;
 }
 
+rx_result rx_filter::filter_changed ()
+{
+    return impl_.host_def->filter_changed(impl_.host);
+}
+
 
 // Class rx_platform_api::rx_mapper 
-
-rx_item_type rx_mapper::type_id = rx_item_type::rx_mapper_type;
 
 rx_mapper::rx_mapper (bool read, bool write)
       : value_type_(RX_NULL_TYPE)
@@ -340,8 +341,6 @@ rx_value_t rx_mapper::get_value_type () const
 
 
 // Class rx_platform_api::rx_source 
-
-rx_item_type rx_source::type_id = rx_item_type::rx_source_type;
 
 rx_source::rx_source (bool input, bool output)
       : value_type_(RX_NULL_TYPE)

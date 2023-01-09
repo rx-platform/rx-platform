@@ -4,27 +4,27 @@
 *
 *  system\server\rx_log.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -146,7 +146,7 @@ bool log_event_data::is_included(log_query_type query) const
 
 #define LOG_SELF_INFO(msg) RX_LOG_INFO(RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, msg);
 
-// Class rx_platform::log::log_object
+// Class rx_platform::log::log_object 
 
 log_object *log_object::g_object = nullptr;
 
@@ -349,7 +349,7 @@ bool log_object::read_log (const string_type& log, const log_query_type& query, 
 }
 
 
-// Class rx_platform::log::log_subscriber
+// Class rx_platform::log::log_subscriber 
 
 log_subscriber::log_subscriber()
 {
@@ -368,7 +368,7 @@ rx_result log_subscriber::read_log (const log_query_type& query, log_events_type
 }
 
 
-// Class rx_platform::log::log_event_job
+// Class rx_platform::log::log_event_job 
 
 log_event_job::log_event_job (log_event_type event_type, const char* library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, log_callback_func_t callback, rx_time when)
       : event_type_(event_type),
@@ -395,7 +395,7 @@ void log_event_job::process ()
 }
 
 
-// Class rx_platform::log::stream_log_subscriber
+// Class rx_platform::log::stream_log_subscriber 
 
 stream_log_subscriber::stream_log_subscriber (std::ostream* stream)
       : stream_(*stream)
@@ -428,7 +428,7 @@ rx_result stream_log_subscriber::read_log (const log_query_type& query, log_even
 }
 
 
-// Class rx_platform::log::cache_log_subscriber
+// Class rx_platform::log::cache_log_subscriber 
 
 cache_log_subscriber::cache_log_subscriber (size_t max_size)
       : max_size_(max_size),

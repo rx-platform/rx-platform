@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_general.cpp
+*  D:\RX\Native\Source\platform_api\rx_general.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,7 +32,7 @@
 
 
 // rx_general
-#include "platform_api/rx_general.h"
+#include "rx_general.h"
 
 #include "rx_configuration.h"
 

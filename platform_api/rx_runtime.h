@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_runtime.h
+*  D:\RX\Native\Source\platform_api\rx_runtime.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -50,11 +50,22 @@ class rx_source;
 class rx_mapper;
 class rx_filter;
 
+class rx_struct;
+class rx_variable;
+class rx_event;
+
 class rx_object;
 class rx_domain;
 class rx_application;
 
 class rx_port;
+
+class rx_method;
+class rx_program;
+class rx_display;
+
+class rx_relation;
+
 }
 
 extern "C"
@@ -67,6 +78,14 @@ extern "C"
     rx_result_struct c_start_mapper(rx_platform_api::rx_mapper* self, start_ctx_ptr ctx);
     rx_result_struct c_start_filter(rx_platform_api::rx_filter* self, start_ctx_ptr ctx);
 
+
+    rx_result_struct c_init_struct(rx_platform_api::rx_struct* self, init_ctx_ptr ctx);
+    rx_result_struct c_init_variable(rx_platform_api::rx_variable* self, init_ctx_ptr ctx);
+    rx_result_struct c_init_event(rx_platform_api::rx_event* self, init_ctx_ptr ctx);
+    rx_result_struct c_start_struct(rx_platform_api::rx_struct* self, start_ctx_ptr ctx);
+    rx_result_struct c_start_variable(rx_platform_api::rx_variable* self, start_ctx_ptr ctx);
+    rx_result_struct c_start_event(rx_platform_api::rx_event* self, start_ctx_ptr ctx);
+
     rx_result_struct c_init_object(rx_platform_api::rx_object* self, init_ctx_ptr ctx);
     rx_result_struct c_init_domain(rx_platform_api::rx_domain* self, init_ctx_ptr ctx);
     rx_result_struct c_init_application(rx_platform_api::rx_application* self, init_ctx_ptr ctx);
@@ -76,10 +95,61 @@ extern "C"
 
     rx_result_struct c_init_port(rx_platform_api::rx_port* self, init_ctx_ptr ctx);
     rx_result_struct c_start_port(rx_platform_api::rx_port* self, start_ctx_ptr ctx);
+
+
+    rx_result_struct c_init_relation(rx_platform_api::rx_relation* self, init_ctx_ptr ctx);
+    rx_result_struct c_start_relation(rx_platform_api::rx_relation* self, start_ctx_ptr ctx, int is_target);
+
+
+    rx_result_struct c_init_method(rx_platform_api::rx_method* self, init_ctx_ptr ctx);
+    rx_result_struct c_init_program(rx_platform_api::rx_program* self, init_ctx_ptr ctx);
+    rx_result_struct c_start_method(rx_platform_api::rx_method* self, start_ctx_ptr ctx);
+    rx_result_struct c_start_program(rx_platform_api::rx_program* self, start_ctx_ptr ctx);
+    rx_result_struct c_init_display(rx_platform_api::rx_display* self, init_ctx_ptr ctx);
+    rx_result_struct c_start_display(rx_platform_api::rx_display* self, start_ctx_ptr ctx);
+
+    rx_result_struct c_make_target_relation(rx_platform_api::rx_relation* self, struct plugin_relation_runtime_struct_t** target);
+    rx_result_struct c_relation_connected(rx_platform_api::rx_relation* self, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
+    rx_result_struct c_relation_disconnected(rx_platform_api::rx_relation* self, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
 }
 
 
 namespace rx_platform_api {
+
+rx_result register_relation_runtime(const rx_node_id& id, rx_relation_constructor_t construct_func, rx_runtime_register_func_t reg_function, rx_runtime_unregister_func_t unreg_function);
+template<class T>
+rx_result register_relation_runtime(const rx_node_id& id)
+{
+    auto constr_lambda = []() -> plugin_relation_runtime_struct_t*
+    {
+        T* temp = new T;
+        return &temp->impl_;
+    };
+    return register_relation_runtime(id, constr_lambda, rx_runtime_register_func_t(), rx_runtime_unregister_func_t());
+}
+template<class T>
+rx_result register_monitored_relation_runtime(const rx_node_id& id)
+{
+    auto constr_lambda = []() -> plugin_relation_runtime_struct_t*
+    {
+        T* temp = new T;
+        return &temp->impl_;
+    };
+    rx_runtime_register_func_t reg_func = [](const rx_node_id_struct* id, lock_reference_struct* what)
+    {
+        using ptr_t = typename T::smart_ptr;
+        rx_node_id reg_id(id);
+        ptr_t ptr = ptr_t::create_from_pointer(reinterpret_cast<T*>(what->target));
+        rx_runtime_manager_lock _;
+        T::runtime_instances.emplace(reg_id, ptr);
+    };
+    rx_runtime_unregister_func_t unreg_func = [](const rx_node_id_struct* id)
+    {
+        rx_runtime_manager_lock _;
+        T::runtime_instances.erase(rx_node_id(id));
+    };
+    return register_relation_runtime(id, constr_lambda, reg_func, unreg_func);
+}
 
 template<typename T>
 rx_result_with<typename T::smart_ptr> get_runtime_instance(const rx_node_id& id)
@@ -96,27 +166,6 @@ rx_result_with<typename T::smart_ptr> get_runtime_instance(const rx_node_id& id)
     }
     return it->second;
 }
-
-
-
-
-
-
-class rx_relation 
-{
-
-  public:
-      rx_relation();
-
-      ~rx_relation();
-
-
-  protected:
-
-  private:
-
-
-};
 
 
 
@@ -362,11 +411,21 @@ class rx_init_context
       friend rx_result_struct(::c_init_filter)(rx_platform_api::rx_filter* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_mapper)(rx_platform_api::rx_mapper* self, init_ctx_ptr ctx, uint8_t value_type);
 
+      friend rx_result_struct(::c_init_struct)(rx_platform_api::rx_struct* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_init_variable)(rx_platform_api::rx_variable* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_init_event)(rx_platform_api::rx_event* self, init_ctx_ptr ctx);
+
       friend rx_result_struct(::c_init_object)(rx_platform_api::rx_object* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_domain)(rx_platform_api::rx_domain* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_application)(rx_platform_api::rx_application* self, init_ctx_ptr ctx);
 
       friend rx_result_struct(::c_init_port)(rx_platform_api::rx_port* self, init_ctx_ptr ctx);
+
+      friend rx_result_struct(::c_init_relation)(rx_platform_api::rx_relation* self, init_ctx_ptr ctx);
+
+      friend rx_result_struct(::c_init_method)(rx_platform_api::rx_method* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_init_program)(rx_platform_api::rx_program* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_init_display)(rx_platform_api::rx_display* self, init_ctx_ptr ctx);
 };
 
 
@@ -451,11 +510,21 @@ class rx_start_context
       friend rx_result_struct(::c_start_filter)(rx_platform_api::rx_filter* self, start_ctx_ptr ctx);
       friend rx_result_struct(::c_start_mapper)(rx_platform_api::rx_mapper* self, start_ctx_ptr ctx);
 
+      friend rx_result_struct(::c_start_struct)(rx_platform_api::rx_struct* self, start_ctx_ptr ctx);
+      friend rx_result_struct(::c_start_variable)(rx_platform_api::rx_variable* self, start_ctx_ptr ctx);
+      friend rx_result_struct(::c_start_event)(rx_platform_api::rx_event* self, start_ctx_ptr ctx);
+
       friend rx_result_struct(::c_start_application)(rx_platform_api::rx_application* self, start_ctx_ptr ctx);
       friend rx_result_struct(::c_start_domain)(rx_platform_api::rx_domain* self, start_ctx_ptr ctx);
       friend rx_result_struct(::c_start_object)(rx_platform_api::rx_object* self, start_ctx_ptr ctx);
 
       friend rx_result_struct(::c_start_port)(rx_platform_api::rx_port* self, start_ctx_ptr ctx);
+
+      friend rx_result_struct(::c_start_relation)(rx_platform_api::rx_relation* self, start_ctx_ptr ctx, int is_target);
+
+      friend rx_result_struct(::c_start_method)(rx_platform_api::rx_method* self, start_ctx_ptr ctx);
+      friend rx_result_struct(::c_start_program)(rx_platform_api::rx_program* self, start_ctx_ptr ctx);
+      friend rx_result_struct(::c_start_display)(rx_platform_api::rx_display* self, start_ctx_ptr ctx);
 };
 
 
@@ -498,11 +567,76 @@ class rx_runtime : public rx::pointers::reference_object
       friend rx_result_struct(::c_init_filter)(rx_platform_api::rx_filter* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_mapper)(rx_platform_api::rx_mapper* self, init_ctx_ptr ctx, uint8_t value_type);
 
+      friend rx_result_struct(::c_init_struct)(rx_platform_api::rx_struct* self, init_ctx_ptr ctx); 
+      friend rx_result_struct(::c_init_variable)(rx_platform_api::rx_variable* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_init_event)(rx_platform_api::rx_event* self, init_ctx_ptr ctx);
+
+
       friend rx_result_struct(::c_init_object)(rx_platform_api::rx_object* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_domain)(rx_platform_api::rx_domain* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_application)(rx_platform_api::rx_application* self, init_ctx_ptr ctx);
 
       friend rx_result_struct(::c_init_port)(rx_platform_api::rx_port* self, init_ctx_ptr ctx);
+
+      friend rx_result_struct(::c_init_relation)(rx_platform_api::rx_relation* self, init_ctx_ptr ctx);
+
+      friend rx_result_struct(::c_init_method)(rx_platform_api::rx_method* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_init_program)(rx_platform_api::rx_program* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_init_display)(rx_platform_api::rx_display* self, init_ctx_ptr ctx);
+
+      friend rx_result_struct(::c_make_target_relation)(rx_platform_api::rx_relation* self, struct plugin_relation_runtime_struct_t** target);
+
+};
+
+
+
+
+
+
+class rx_relation : public rx_runtime  
+{
+    DECLARE_REFERENCE_PTR(rx_relation);
+
+  public:
+      rx_relation();
+
+      ~rx_relation();
+
+
+      virtual rx_result initialize_relation (rx_init_context& ctx);
+
+      virtual rx_result deinitialize_relation ();
+
+      virtual rx_result start_relation (rx_start_context& ctx, bool is_target);
+
+      virtual rx_result stop_relation (bool is_target);
+
+      virtual rx_relation::smart_ptr make_target_relation ();
+
+
+      static rx_item_type runtime_type_id;
+
+      template<class T>
+      friend rx_result register_relation_runtime(const rx_node_id& id);
+      friend rx_result_struct(::c_init_relation)(rx_platform_api::rx_relation* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_start_relation)(rx_platform_api::rx_relation* self, start_ctx_ptr ctx, int is_target);
+
+      friend rx_result_struct (::c_make_target_relation)(rx_platform_api::rx_relation* self, struct plugin_relation_runtime_struct_t** target);
+      friend rx_result_struct(::c_relation_connected)(rx_platform_api::rx_relation* self, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
+      friend rx_result_struct(::c_relation_disconnected)(rx_platform_api::rx_relation* self, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
+  protected:
+
+  private:
+
+      virtual void relation_connected (rx_node_id from, rx_node_id to);
+
+      virtual void relation_disconnected (rx_node_id from, rx_node_id to);
+
+
+
+      plugin_relation_runtime_struct impl_;
+
+
 };
 
 

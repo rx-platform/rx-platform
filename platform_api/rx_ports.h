@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_ports.h
+*  D:\RX\Native\Source\platform_api\rx_ports.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,12 +34,14 @@
 
 
 // rx_runtime
-#include "platform_api/rx_runtime.h"
+#include "rx_runtime.h"
 
 #include "lib/rx_rt_data.h"
 #include "lib/rx_io_addr.h"
 
 #include "lib/rx_io_buffers.h"
+#include "lib/member_check.h"
+using namespace member_check;
 using namespace rx;
 
 
@@ -90,9 +92,9 @@ class rx_port : public rx_runtime
       rx_result disconnect_stack_endpoint (rx_protocol_stack_endpoint* what);
 
 
-      static const rx_item_type type_id;
-
       static rx_item_type runtime_type_id;
+
+      static constexpr rx_item_type type_id = rx_item_type::rx_port_type;
 
       template<typename funcT>
       runtime_handle_t post_job(funcT func, uint32_t period = 0)
@@ -212,6 +214,22 @@ rx_result register_monitored_port_runtime(const rx_node_id& id)
 template <typename endpointT>
 class rx_transport_port : public rx_port  
 {
+    using T = endpointT;
+
+    //Func signature MUST have T as template variable here... simpler this way :
+    CREATE_MEMBER_FUNC_SIG_CHECK(send, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, send_protocol_packet), send);
+    static constexpr bool has_func_sig_send_func = has_member_func_send<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(received, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, recv_protocol_packet), received);
+    static constexpr bool has_func_sig_received_func = has_member_func_received<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(connected, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, rx_session_def*), connected);
+    static constexpr bool has_func_sig_connected_func = has_member_func_connected<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(disconnected, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, rx_session_def*, rx_protocol_result_t), disconnected);
+    static constexpr bool has_func_sig_disconnected_func = has_member_func_disconnected<endpointT>::value;
+
+
 
     DECLARE_REFERENCE_PTR(rx_transport_port);
 
@@ -263,6 +281,20 @@ public:
 template <typename endpointT>
 class rx_client_master_port : public rx_port  
 {
+
+    using T = endpointT;
+
+    //Func signature MUST have T as template variable here... simpler this way :
+    CREATE_MEMBER_FUNC_SIG_CHECK(received, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, recv_protocol_packet), received);
+    static constexpr bool has_func_sig_received_func = has_member_func_received<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(connected, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, rx_session_def*), connected);
+    static constexpr bool has_func_sig_connected_func = has_member_func_connected<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(disconnected, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, rx_session_def*, rx_protocol_result_t), disconnected);
+    static constexpr bool has_func_sig_disconnected_func = has_member_func_disconnected<endpointT>::value;
+
+
     DECLARE_REFERENCE_PTR(rx_client_master_port);
 public:
     typedef std::function<std::pair<rx_protocol_stack_endpoint*, rx_reference<endpointT> >()> construct_func_type;
@@ -341,6 +373,20 @@ public:
 template <typename endpointT>
 class rx_server_slave_port : public rx_port  
 {
+    using T = endpointT;
+
+    //Func signature MUST have T as template variable here... simpler this way :
+    CREATE_MEMBER_FUNC_SIG_CHECK(received, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, recv_protocol_packet), received);
+    static constexpr bool has_func_sig_received_func = has_member_func_received<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(connected, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, rx_session_def*), connected);
+    static constexpr bool has_func_sig_connected_func = has_member_func_connected<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(disconnected, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, rx_session_def*, rx_protocol_result_t), disconnected);
+    static constexpr bool has_func_sig_disconnected_func = has_member_func_disconnected<endpointT>::value;
+
+
+
     DECLARE_REFERENCE_PTR(rx_server_slave_port);
     typedef std::map<rx_protocol_stack_endpoint*, rx_reference<endpointT> > active_endpoints_type;
 public:
@@ -392,6 +438,22 @@ public:
 template <typename endpointT>
 class rx_connection_transport_port_impl : public rx_port  
 {
+    using T = endpointT;
+
+    //Func signature MUST have T as template variable here... simpler this way :
+    CREATE_MEMBER_FUNC_SIG_CHECK(send, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, send_protocol_packet), send);
+    static constexpr bool has_func_sig_send_func = has_member_func_send<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(received, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, recv_protocol_packet), received);
+    static constexpr bool has_func_sig_received_func = has_member_func_received<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(connected, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, rx_session_def*), connected);
+    static constexpr bool has_func_sig_connected_func = has_member_func_connected<endpointT>::value;
+
+    CREATE_MEMBER_FUNC_SIG_CHECK(disconnected, rx_protocol_result_t(T::*)(rx_protocol_stack_endpoint*, rx_session_def*, rx_protocol_result_t), disconnected);
+    static constexpr bool has_func_sig_disconnected_func = has_member_func_disconnected<endpointT>::value;
+
+
 
     DECLARE_REFERENCE_PTR(rx_connection_transport_port_impl);
 
@@ -474,6 +536,50 @@ rx_protocol_stack_endpoint* rx_transport_port<endpointT>::construct_endpoint_int
     if (!stack)
         return nullptr;
 
+    if constexpr (has_func_sig_send_func)
+    {
+        if (stack->send_function == nullptr)
+        {
+            stack->send_function = [](rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->send(reference, packet);
+            };
+        }
+    }
+    if constexpr (has_func_sig_received_func)
+    {
+        if (stack->received_function == nullptr)
+        {
+            stack->received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->received(reference, packet);
+            };
+        }
+    }
+    if constexpr (has_func_sig_connected_func)
+    {
+        if (stack->connected_function == nullptr)
+        {
+            stack->connected_function = [](rx_protocol_stack_endpoint* reference, rx_session_def* session)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->connected(reference, session);
+            };
+        }
+    }
+    if constexpr (has_func_sig_disconnected_func)
+    {
+        if (stack->disconnected_function == nullptr)
+        {
+            stack->disconnected_function = [](rx_protocol_stack_endpoint* reference, rx_session_def* session, rx_protocol_result_t reason)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->disconnected(reference, session, reason);
+            };
+        }
+    }
     if (stack->closed_function == nullptr)
     {
         stack->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
@@ -571,6 +677,39 @@ rx_protocol_stack_endpoint* rx_client_master_port<endpointT>::construct_initiato
     auto ep = this->construct_endpoint();
     auto stack = ep->get_endpoint();
 
+    if constexpr (has_func_sig_received_func)
+    {
+        if (stack->received_function == nullptr)
+        {
+            stack->received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->received(reference, packet);
+            };
+        }
+    }
+    if constexpr (has_func_sig_connected_func)
+    {
+        if (stack->connected_function == nullptr)
+        {
+            stack->connected_function = [](rx_protocol_stack_endpoint* reference, rx_session_def* session)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->connected(reference, session);
+            };
+        }
+    }
+    if constexpr (has_func_sig_disconnected_func)
+    {
+        if (stack->disconnected_function == nullptr)
+        {
+            stack->disconnected_function = [](rx_protocol_stack_endpoint* reference, rx_session_def* session, rx_protocol_result_t reason)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->disconnected(reference, session, reason);
+            };
+        }
+    }
     if (stack->closed_function == nullptr)
     {
         stack->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
@@ -759,6 +898,39 @@ rx_protocol_stack_endpoint* rx_server_slave_port<endpointT>::construct_listener_
     auto ep = this->construct_endpoint();
     auto stack = ep->get_endpoint();
 
+    if constexpr (has_func_sig_received_func)
+    {
+        if (stack->received_function == nullptr)
+        {
+            stack->received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->received(reference, packet);
+            };
+        }
+    }
+    if constexpr (has_func_sig_connected_func)
+    {
+        if (stack->connected_function == nullptr)
+        {
+            stack->connected_function = [](rx_protocol_stack_endpoint* reference, rx_session_def* session)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->connected(reference, session);
+            };
+        }
+    }
+    if constexpr (has_func_sig_disconnected_func)
+    {
+        if (stack->disconnected_function == nullptr)
+        {
+            stack->disconnected_function = [](rx_protocol_stack_endpoint* reference, rx_session_def* session, rx_protocol_result_t reason)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->disconnected(reference, session, reason);
+            };
+        }
+    }
     if (stack->closed_function == nullptr)
     {
         stack->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
@@ -891,6 +1063,50 @@ rx_protocol_stack_endpoint* rx_connection_transport_port_impl<endpointT>::constr
     if (!stack)
         return nullptr;
 
+    if constexpr (has_func_sig_send_func)
+    {
+        if (stack->send_function == nullptr)
+        {
+            stack->send_function = [](rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->send(reference, packet);
+            };
+        }
+    }
+    if constexpr (has_func_sig_received_func)
+    {
+        if (stack->received_function == nullptr)
+        {
+            stack->received_function = [](rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->received(reference, packet);
+            };
+        }
+    }
+    if constexpr (has_func_sig_connected_func)
+    {
+        if (stack->connected_function == nullptr)
+        {
+            stack->connected_function = [](rx_protocol_stack_endpoint* reference, rx_session_def* session)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->connected(reference, session);
+            };
+        }
+    }
+    if constexpr (has_func_sig_disconnected_func)
+    {
+        if (stack->disconnected_function == nullptr)
+        {
+            stack->disconnected_function = [](rx_protocol_stack_endpoint* reference, rx_session_def* session, rx_protocol_result_t reason)
+            {
+                endpointT* whose = reinterpret_cast<endpointT*>(reference->user_data);
+                return whose->disconnected(reference, session, reason);
+            };
+        }
+    }
     if (stack->closed_function == nullptr)
     {
         stack->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)

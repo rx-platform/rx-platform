@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_mapping.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -107,7 +107,7 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::opcua::opcua_transport::opcua_transport_endpoint  > opcua_transport_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_transport_endpoint  > opcua_transport_base;
 
 
 
@@ -188,7 +188,7 @@ class opcua_client_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::opcua::opcua_transport::opcua_client_transport_endpoint  > opcua_client_transport_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_client_transport_endpoint  > opcua_client_transport_base;
 
 
 

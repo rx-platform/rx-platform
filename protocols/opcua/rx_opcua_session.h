@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_session.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -244,7 +244,7 @@ class opcua_activate_session_response : public opcua_response_base
       rx_node_id get_binary_response_id ();
 
       opcua_response_ptr create_empty () const;
-      
+
       rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
 
       rx_result deserialize_binary (binary::ua_binary_istream& stream);

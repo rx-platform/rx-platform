@@ -4,7 +4,7 @@
 *
 *  lib\rx_ptr.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -127,7 +127,7 @@ size_t reference_object::get_objects_count ()
 	return (size_t)g_objects_count.load();
 }
 
-void reference_object::fill_code_info (std::ostream& info, const string_type& name)
+void reference_object::fill_code_info (std::ostream& info, const string_type& name) const
 {
 }
 

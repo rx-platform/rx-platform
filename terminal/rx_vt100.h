@@ -4,7 +4,7 @@
 *
 *  terminal\rx_vt100.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,14 +33,14 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
+// dummy
+#include "dummy.h"
 // rx_console
 #include "terminal/rx_console.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 

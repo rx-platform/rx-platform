@@ -4,7 +4,7 @@
 *
 *  first_plugin\first_ports.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
+// rx_ports
+#include "rx_ports.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_ports
-#include "platform_api/rx_ports.h"
 
 class first_client_port;
 class first_server_port;
@@ -63,7 +63,7 @@ class first_transport_port_endpoint
 
       rx_protocol_stack_endpoint* get_endpoint ();
 
-      rx_protocol_result_t received (recv_protocol_packet packet);
+      rx_protocol_result_t received (rx_protocol_stack_endpoint* stack, recv_protocol_packet packet);
 
 
       first_transport_port * get_port ();
@@ -149,7 +149,7 @@ class first_server_endpoint : public rx::pointers::reference_object
 
       rx_protocol_stack_endpoint* get_endpoint ();
 
-      rx_protocol_result_t received (recv_protocol_packet packet);
+      rx_protocol_result_t received (rx_protocol_stack_endpoint* stack, recv_protocol_packet packet);
 
 
       first_server_port * get_port ();
@@ -237,7 +237,7 @@ class first_client_endpoint : public rx::pointers::reference_object
 
       void close_endpoint ();
 
-      rx_protocol_result_t received (recv_protocol_packet packet);
+      rx_protocol_result_t received (rx_protocol_stack_endpoint* stack, recv_protocol_packet packet);
 
       void send_command (const string_type& val);
 

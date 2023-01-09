@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_io_relations.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -62,9 +62,9 @@ class port_stack_relation : public rx_platform::runtime::relations::relation_run
 
       rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
-      rx_result start_relation (runtime::runtime_start_context& ctx);
+      rx_result start_relation (runtime::runtime_start_context& ctx, bool is_target);
 
-      rx_result stop_relation (runtime::runtime_stop_context& ctx);
+      rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
 
   protected:
@@ -103,9 +103,9 @@ class port_reference_relation : public rx_platform::runtime::relations::relation
 
       rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
-      rx_result start_relation (runtime::runtime_start_context& ctx);
+      rx_result start_relation (runtime::runtime_start_context& ctx, bool is_target);
 
-      rx_result stop_relation (runtime::runtime_stop_context& ctx);
+      rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
 
   protected:

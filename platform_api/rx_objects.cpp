@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_objects.cpp
+*  D:\RX\Native\Source\platform_api\rx_objects.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,7 +32,7 @@
 
 
 // rx_objects
-#include "platform_api/rx_objects.h"
+#include "rx_objects.h"
 
 
 typedef rx_platform_api::rx_application _rx_application_holder_stub;
@@ -161,28 +161,38 @@ extern "C"
 
 namespace rx_platform_api {
 
-rx_result register_object_runtime(const rx_node_id& id, rx_object_constructor_t construct_func)
+rx_result register_object_runtime(const rx_node_id& id, rx_object_constructor_t construct_func, rx_runtime_register_func_t reg_function, rx_runtime_unregister_func_t unreg_function)
 {
     RX_ASSERT(api_reg_object_func != nullptr);
-    auto ret = api_reg_object_func(g_plugin, id.c_ptr(), construct_func);
+    plugin_object_register_data data;
+    data.constructor = construct_func;
+    data.register_func = reg_function;
+    data.unregister_func = unreg_function;
+    auto ret = api_reg_object_func(g_plugin, id.c_ptr(), data);
     return ret;
 }
-rx_result register_domain_runtime(const rx_node_id& id, rx_domain_constructor_t construct_func)
+rx_result register_domain_runtime(const rx_node_id& id, rx_domain_constructor_t construct_func, rx_runtime_register_func_t reg_function, rx_runtime_unregister_func_t unreg_function)
 {
     RX_ASSERT(api_reg_domain_func != nullptr);
-    auto ret = api_reg_domain_func(g_plugin, id.c_ptr(), construct_func);
+    plugin_domain_register_data data;
+    data.constructor = construct_func;
+    data.register_func = reg_function;
+    data.unregister_func = unreg_function;
+    auto ret = api_reg_domain_func(g_plugin, id.c_ptr(), data);
     return ret;
 }
-rx_result register_application_runtime(const rx_node_id& id, rx_application_constructor_t construct_func)
+rx_result register_application_runtime(const rx_node_id& id, rx_application_constructor_t construct_func, rx_runtime_register_func_t reg_function, rx_runtime_unregister_func_t unreg_function)
 {
     RX_ASSERT(api_reg_application_func != nullptr);
-    auto ret = api_reg_application_func(g_plugin, id.c_ptr(), construct_func);
+    plugin_application_register_data data;
+    data.constructor = construct_func;
+    data.register_func = reg_function;
+    data.unregister_func = unreg_function;
+    auto ret = api_reg_application_func(g_plugin, id.c_ptr(), data);
     return ret;
 }
 
 // Class rx_platform_api::rx_object 
-
-rx_item_type rx_object::type_id = rx_item_type::rx_object_type;
 
 rx_item_type rx_object::runtime_type_id = rx_item_type::rx_object;
 
@@ -222,8 +232,6 @@ rx_result rx_object::deinitialize_object ()
 
 // Class rx_platform_api::rx_application 
 
-rx_item_type rx_application::type_id = rx_item_type::rx_application_type;
-
 rx_item_type rx_application::runtime_type_id = rx_item_type::rx_application;
 
 rx_application::rx_application()
@@ -261,8 +269,6 @@ rx_result rx_application::deinitialize_application ()
 
 
 // Class rx_platform_api::rx_domain 
-
-rx_item_type rx_domain::type_id = rx_item_type::rx_domain_type;
 
 rx_item_type rx_domain::runtime_type_id = rx_item_type::rx_domain;
 

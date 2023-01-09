@@ -4,27 +4,27 @@
 *
 *  lib\rx_values.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -820,7 +820,7 @@ double extract_value(const typed_value_type& from, const double& default_value)
 	{
 		typed_value_type temp_val(from);
 		if (rx_convert_value(&temp_val, RX_DOUBLE_TYPE))
-			return temp_val.value.float_value;
+			return temp_val.value.double_value;
 	}
 	return default_value;
 }
@@ -1684,7 +1684,7 @@ bool set_float_to_value(typed_value_type& to, double val, rx_value_t type)
 }
 
 
-// Class rx::values::rx_value
+// Class rx::values::rx_value 
 
 rx_value::rx_value (const full_value_type* storage)
 {
@@ -2171,7 +2171,7 @@ const full_value_type* rx_value::c_ptr() const noexcept
 {
 	return &data_;
 }
-// Class rx::values::rx_simple_value
+// Class rx::values::rx_simple_value 
 
 rx_simple_value::rx_simple_value (const typed_value_type* storage)
 {
@@ -2483,7 +2483,7 @@ const typed_value_type* rx_simple_value::c_ptr() const noexcept
 {
 	return &data_;
 }
-// Class rx::values::rx_timed_value
+// Class rx::values::rx_timed_value 
 
 rx_timed_value::rx_timed_value (const timed_value_type* storage)
 {
@@ -2853,7 +2853,7 @@ const timed_value_type* rx_timed_value::c_ptr() const noexcept
 	return &data_;
 }
 
-// Parameterized Class rx::values::rx_value_holder
+// Parameterized Class rx::values::rx_value_holder 
 
 
 } // namespace values

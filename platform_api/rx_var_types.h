@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_var_types.h
+*  D:\RX\Native\Source\platform_api\rx_var_types.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,7 +34,7 @@
 
 
 // rx_runtime
-#include "platform_api/rx_runtime.h"
+#include "rx_runtime.h"
 
 
 
@@ -66,18 +66,11 @@ class rx_filter : public rx_runtime
 
       virtual rx_result filter_output (rx_simple_value& val);
 
-
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
-
-
-      static rx_item_type type_id;
-
-
+      static constexpr rx_item_type type_id = rx_item_type::rx_filter_type;
   protected:
+
+      rx_result filter_changed ();
+
 
   private:
 
@@ -101,6 +94,7 @@ rx_result register_filter_runtime(const rx_node_id& id)
     };
     return register_filter_runtime(id, constr_lambda);
 }
+
 
 
 
@@ -131,10 +125,7 @@ class rx_mapper : public rx_runtime
 
       rx_value_t get_value_type () const;
 
-
-      static rx_item_type type_id;
-
-
+      static constexpr rx_item_type type_id = rx_item_type::rx_mapper_type;
   protected:
 
       void mapper_write_pending (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val);
@@ -194,16 +185,7 @@ class rx_source : public rx_runtime
 
       rx_value_t get_value_type () const;
 
-      static rx_item_type get_type_id ()
-      {
-        return type_id;
-      }
-
-
-
-      static rx_item_type type_id;
-
-
+      static constexpr rx_item_type type_id = rx_item_type::rx_source_type;
   protected:
 
       rx_result source_value_changed (rx_value&& val);
@@ -373,6 +355,67 @@ protected:
 };
 
 
+
+
+
+
+template <typename valT>
+class rx_numeric_filter : public rx_filter  
+{
+
+  public:
+      rx_numeric_filter (bool input, bool output);
+
+      ~rx_numeric_filter();
+
+
+      rx_result filter_input (rx_value& val);
+
+      rx_result filter_output (rx_simple_value& val);
+
+      virtual rx_result filter_input (valT& val);
+
+      virtual rx_result filter_output (valT& val);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+template <typename valT>
+class rx_numeric_source : public rx_source  
+{
+
+  public:
+      rx_numeric_source (bool input, bool output);
+
+      ~rx_numeric_source();
+
+
+      rx_result source_write (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val, rx_process_context& ctx);
+
+      virtual rx_result source_write (valT val);
+
+
+  protected:
+
+      rx_result source_value_changed (valT val);
+
+
+  private:
+
+
+};
+
+
 // Parameterized Class rx_platform_api::rx_extern_mapper 
 
 template <class portT>
@@ -462,6 +505,97 @@ void rx_extern_source<portT>::internal_port_disconnected ()
         this->port_disconnected(my_port_);
         this->my_port_ = portT::smart_ptr::null_ptr;
     }
+}
+
+
+// Parameterized Class rx_platform_api::rx_numeric_filter 
+
+template <typename valT>
+rx_numeric_filter<valT>::rx_numeric_filter (bool input, bool output)
+    : rx_filter(input, output)
+{
+}
+
+
+template <typename valT>
+rx_numeric_filter<valT>::~rx_numeric_filter()
+{
+}
+
+
+
+template <typename valT>
+rx_result rx_numeric_filter<valT>::filter_input (rx_value& val)
+{
+    valT ext = val.extract_static<valT>(0);
+    auto result = filter_input(ext);
+    if (result)
+        val.assign_static<valT>(std::move(ext), rx_time::now());
+    return result;
+}
+
+template <typename valT>
+rx_result rx_numeric_filter<valT>::filter_output (rx_simple_value& val)
+{
+    valT ext = val.extract_static<valT>(0);
+    auto result = filter_output(ext);
+    if (result)
+        val.assign_static<valT>(std::move(ext), rx_time::now());
+    return result;
+}
+
+template <typename valT>
+rx_result rx_numeric_filter<valT>::filter_input (valT& val)
+{
+    return true;
+}
+
+template <typename valT>
+rx_result rx_numeric_filter<valT>::filter_output (valT& val)
+{
+    return true;
+}
+
+
+// Parameterized Class rx_platform_api::rx_numeric_source 
+
+template <typename valT>
+rx_numeric_source<valT>::rx_numeric_source (bool input, bool output)
+    : rx_source(input, output)
+{
+}
+
+
+template <typename valT>
+rx_numeric_source<valT>::~rx_numeric_source()
+{
+}
+
+
+
+template <typename valT>
+rx_result rx_numeric_source<valT>::source_write (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val, rx_process_context& ctx)
+{
+    valT ext = val.extract_static<valT>(0);
+    auto result = source_write(ext);
+    if (result)
+        rx_source::source_result_received(true, id);
+    return result;
+}
+
+template <typename valT>
+rx_result rx_numeric_source<valT>::source_write (valT val)
+{
+    return RX_NOT_SUPPORTED;
+}
+
+template <typename valT>
+rx_result rx_numeric_source<valT>::source_value_changed (valT val)
+{
+    rx_value rx_val;
+    rx_val.assign_static<valT>(std::move(val), rx_time::now());
+    rx_val.set_good_locally();
+    return rx_source::source_value_changed(std::move(rx_val));
 }
 
 

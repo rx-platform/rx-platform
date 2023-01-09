@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -56,11 +56,15 @@ class rx_directory_resolver;
 
 namespace runtime {
 namespace structure {
-class variable_data;
-class runtime_item;
 class source_data;
 class mapper_data;
+class variable_data;
+class runtime_item;
 } // namespace structure
+
+namespace relations {
+class relations_holder;
+} // namespace relations
 
 namespace algorithms {
 template <class typeT> class runtime_holder;
@@ -68,10 +72,6 @@ template <class typeT> class runtime_holder;
 
 class relation_subscriber;
 class runtime_process_context;
-namespace relations {
-class relations_holder;
-} // namespace relations
-
 namespace tag_blocks {
 class binded_tags;
 
@@ -137,6 +137,7 @@ struct runtime_init_context;
 namespace relations
 {
 class relation_runtime;
+class relation_data;
 }
 namespace items {
 class port_runtime;
@@ -160,12 +161,13 @@ typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::dom
 typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::port_type> > rx_port_ptr;
 typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::object_type> > rx_object_ptr;
 typedef rx_reference<runtime::algorithms::runtime_holder<meta::object_types::application_type> > rx_application_ptr;
-typedef rx_reference<runtime::relations::relation_runtime> rx_relation_ptr;
+typedef rx_reference<runtime::relations::relation_data> rx_relation_ptr;
 
 typedef rx_reference<runtime::items::object_runtime> rx_object_impl_ptr;
 typedef rx_reference<runtime::items::port_runtime> rx_port_impl_ptr;
 typedef rx_reference<runtime::items::application_runtime> rx_application_impl_ptr;
 typedef rx_reference<runtime::items::domain_runtime> rx_domain_impl_ptr;
+typedef rx_reference<runtime::relations::relation_runtime> rx_relation_impl_ptr;
 
 
 enum subscription_trigger_type

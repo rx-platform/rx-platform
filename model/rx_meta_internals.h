@@ -4,7 +4,7 @@
 *
 *  model\rx_meta_internals.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -473,7 +473,7 @@ public:
 	typedef rx_result_with<Tptr> TdefRes;
 
 	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
-	typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
+    typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
       simple_types_repository();
@@ -625,6 +625,7 @@ public:
 	typedef relation_type HType;
 	typedef typename relation_type::RType RType;
 	typedef typename relation_type::RTypePtr RTypePtr;
+    typedef typename relation_type::RImplPtr RImplPtr;
 	typedef typename relation_type::smart_ptr Tptr;
 	typedef rx_result_with<Tptr> TdefRes;
 
@@ -645,7 +646,8 @@ public:
 
 	typedef typename std::map<rx_node_id, runtime_data_t> registered_objects_type;
 	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
-    typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
+    //typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
+    typedef typename std::map<rx_node_id, std::function<constructed_data_t<rx_relation_impl_ptr>(const rx_node_id&)> > constructors_type;
 
   public:
       relations_type_repository();
@@ -655,7 +657,7 @@ public:
 
       rx_result register_type (relations_type_repository::Tptr what);
 
-      rx_result_with<relations_type_repository::RTypePtr> create_runtime (const rx_node_id& type_id, const string_type& rt_name, runtime::relations::relation_data& data, const rx_directory_resolver& dirs);
+      rx_result_with<create_runtime_result<relation_type> > create_runtime (const rx_node_id& type_id, const string_type& rt_name, runtime::relations::relation_data& data, const rx_directory_resolver& dirs);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -673,12 +675,14 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
+      rx_result register_constructor (const rx_node_id& id, std::function<constructed_data_t<RTypePtr>(const rx_node_id&)> f);
+
 
   protected:
 
   private:
 
-      rx_result_with<relations_type_repository::RTypePtr> create_relation_runtime (relations_type_repository::Tptr form_what);
+      rx_result_with<create_runtime_result<relation_type> > create_relation_runtime (relations_type_repository::Tptr form_what, runtime::relations::relation_data& data, const rx_directory_resolver& dirs);
 
       void collect_and_add_depedencies (const relations_type_repository::Tptr& what, const rx_node_id& parent_id);
 

@@ -4,7 +4,7 @@
 *
 *  host\rx_anonymus_pipes.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,20 +34,20 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
-// dummy
-#include "dummy.h"
-// rx_thread
-#include "system/threads/rx_thread.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// dummy
+#include "dummy.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 
 namespace host {
 namespace pipe {
-class rx_pipe_host;
 class anonymus_pipe_client;
 class local_pipe_port;
+class rx_pipe_host;
 
 } // namespace pipe
 } // namespace host

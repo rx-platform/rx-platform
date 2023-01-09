@@ -2,29 +2,29 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_api.cpp
+*  D:\RX\Native\Source\platform_api\rx_api.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -32,7 +32,7 @@
 
 
 // rx_api
-#include "platform_api/rx_api.h"
+#include "rx_api.h"
 
 #include "version/rx_version.h"
 #include "rx_platform_version.h"
@@ -51,11 +51,20 @@ extern rxRegisterSourceRuntime_t api_reg_source_func;
 extern rxRegisterMapperRuntime_t api_reg_mapper_func;
 extern rxRegisterFilterRuntime_t api_reg_filter_func;
 
+extern rxRegisterStructRuntime_t api_reg_struct_func;
+extern rxRegisterVariableRuntime_t api_reg_variable_func;
+
+extern rxRegisterMethodRuntime_t api_reg_method_func;
+extern rxRegisterProgramRuntime_t api_reg_program_func;
+extern rxRegisterDisplayRuntime_t api_reg_display_func;
+
 extern rxRegisterApplicationRuntime_t api_reg_application_func;
 extern rxRegisterDomainRuntime_t api_reg_domain_func;
 extern rxRegisterObjectRuntime_t api_reg_object_func;
 
 extern rxRegisterPortRuntime_t api_reg_port_func;
+
+extern rxRegisterRelationRuntime_t api_reg_relation_func;
 
 extern rxInitCtxBindItem_t api_bind_item_func;
 extern rxInitCtxGetCurrentPath_t api_init_get_current_path;
@@ -126,7 +135,16 @@ rx_result_struct rx_bind_plugin(const platform_api* api, uint32_t host_stream_ve
 	api_reg_mapper_func = api->runtime.prxRegisterMapperRuntime;
 	api_reg_filter_func = api->runtime.prxRegisterFilterRuntime;
 
+	api_reg_struct_func = api->runtime.prxRegisterStructRuntime;
+	api_reg_variable_func = api->runtime.prxRegisterVariableRuntime;
+
+	api_reg_method_func = api->runtime.prxRegisterMethodRuntime;
+	api_reg_program_func = api->runtime.prxRegisterProgramRuntime;
+	api_reg_display_func = api->runtime.prxRegisterDisplayRuntime;
+
 	api_reg_port_func = api->runtime.prxRegisterPortRuntime;
+
+	api_reg_relation_func=api->runtime.prxRegisterRelationRuntime;
 
 	api_reg_object_func = api->runtime.prxRegisterObjectRuntime;
 	api_reg_domain_func = api->runtime.prxRegisterDomainRuntime;
@@ -185,10 +203,10 @@ rx_result_struct rx_build_plugin(rx_platform_plugin* plugin, const char* root)
 	return ret;
 }
 
-// Class rx_platform_api::rx_platform_plugin
+// Class rx_platform_api::rx_platform_plugin 
 
 
-// Class rx_platform_api::rx_shared_reference
+// Class rx_platform_api::rx_shared_reference 
 
 
 } // namespace rx_platform_api

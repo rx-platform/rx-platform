@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_internal.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -109,6 +109,10 @@ class runtime_cache
     typedef std::map<rx_node_id, rx_application_ptr> applications_cache_type;
     typedef std::map<rx_node_id, runtime_id_data> id_cahce_type;
 
+
+    typedef std::map<rx_node_id, rx_relation_ptr> relations_cache_type;
+    
+
     typedef std::map<rx_thread_handle_t, subs_list_t> collected_subscribers_type;
 
     template<typename typeT>
@@ -158,11 +162,17 @@ class runtime_cache
 
       void cleanup_cache ();
 
+      rx_relation_ptr get_relation (const rx_node_id& id);
+
+      void add_to_cache (rx_relation_ptr item);
+
       template<typename typeT>
       typename typeT::RTypePtr get_runtime(const rx_node_id& id)
       {
           return get_runtime_impl<typeT>(this, id);
       }
+      runtime_cache(const runtime_cache&) = delete;
+      runtime_cache(runtime_cache&&) = delete;
   protected:
 
   private:
@@ -192,6 +202,8 @@ class runtime_cache
       domains_cache_type domains_cache_;
 
       ports_cache_type ports_cache_;
+
+      relations_cache_type relations_cache_;
 
 
 };
@@ -258,6 +270,8 @@ class platform_runtime_manager
   protected:
 
   private:
+      platform_runtime_manager();
+
 
       rx_thread_handle_t resolve_processor_auto ();
 

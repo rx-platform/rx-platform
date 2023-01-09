@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_runtime.cpp
+*  D:\RX\Native\Source\platform_api\rx_runtime.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,7 +32,7 @@
 
 
 // rx_runtime
-#include "platform_api/rx_runtime.h"
+#include "rx_runtime.h"
 
 #include "platform_api/rx_abi.h"
 #include "lib/rx_values.h"
@@ -42,6 +42,14 @@
 rxRegisterSourceRuntime_t api_reg_source_func;
 rxRegisterMapperRuntime_t api_reg_mapper_func;
 rxRegisterFilterRuntime_t api_reg_filter_func;
+
+rxRegisterVariableRuntime_t api_reg_variable_func;
+rxRegisterStructRuntime_t api_reg_struct_func;
+rxRegisterMethodRuntime_t api_reg_method_func;
+rxRegisterProgramRuntime_t api_reg_program_func;
+rxRegisterDisplayRuntime_t api_reg_display_func;
+
+rxRegisterRelationRuntime_t api_reg_relation_func;
 
 rxInitCtxBindItem_t api_bind_item_func;
 rxInitCtxGetCurrentPath_t api_init_get_current_path;
@@ -74,6 +82,74 @@ extern "C"
             temp_str = "No information available for "s + name + "!";
         rx_init_string_value_struct(info, temp_str.c_str(), -1);
     }
+
+
+    rx_result_struct c_init_relation_stub(void* self, init_ctx_ptr ctx);
+    rx_result_struct c_start_relation_stub(void* self, start_ctx_ptr ctx, int is_target);
+    rx_result_struct c_stop_relation_stub(void* self, int is_target);
+    rx_result_struct c_deinit_relation_stub(void* self);
+
+    rx_result_struct c_make_target_relation_stub(void* whose, struct plugin_relation_runtime_struct_t** target);
+    rx_result_struct c_relation_connected_stub(void* whose, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
+    rx_result_struct c_relation_disconnected_stub(void* whose, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
+
+    plugin_relation_def_struct _g_relation_def_
+    {
+        c_get_code_info
+        ,c_init_relation_stub
+        ,c_start_relation_stub
+        ,c_stop_relation_stub
+        ,c_deinit_relation_stub
+
+        ,c_make_target_relation_stub
+        ,c_relation_connected_stub
+        ,c_relation_disconnected_stub
+    };
+
+
+
+    rx_result_struct c_init_relation(rx_platform_api::rx_relation* self, init_ctx_ptr ctx)
+    {
+        self->bind_runtime(&self->impl_.host_def->runtime, self->impl_.host);
+        rx_platform_api::rx_init_context ctx_obj(ctx);
+        return self->initialize_relation(ctx_obj).move();
+    }
+    rx_result_struct c_start_relation(rx_platform_api::rx_relation* self, start_ctx_ptr ctx, int is_target)
+    {
+        rx_platform_api::rx_start_context ctx_obj(ctx, self->smart_this());
+        return self->start_relation(ctx_obj, is_target).move();
+    }
+    rx_result_struct c_stop_relation(rx_platform_api::rx_relation* self, int is_target)
+    {
+        return self->stop_relation(is_target).move();
+    }
+    rx_result_struct c_deinit_relation(rx_platform_api::rx_relation* self)
+    {
+        return self->deinitialize_relation().move();
+    }
+    rx_result_struct c_make_target_relation(rx_platform_api::rx_relation* self, struct plugin_relation_runtime_struct_t** target)
+    {
+        auto ptr = self->make_target_relation();
+        if (ptr)
+        {
+            ptr->bind_runtime(&ptr->impl_.host_def->runtime, self->impl_.host);
+            // acquire a lock to object!!!
+            rx_aquire_lock_reference(&ptr->impl_.anchor);
+            *target = &ptr->impl_;
+        }
+        return rx_result(true).move();
+    }
+    rx_result_struct c_relation_connected(rx_platform_api::rx_relation* self, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to)
+    {
+        self->relation_connected(from, to);
+        return rx_result(true).move();
+    }
+    rx_result_struct c_relation_disconnected(rx_platform_api::rx_relation* self, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to)
+    {
+        self->relation_disconnected(from, to);
+        return rx_result(true).move();
+    }
+
 }
 
 
@@ -103,11 +179,55 @@ rx_result register_filter_runtime(const rx_node_id& id, rx_filter_constructor_t 
     auto ret = api_reg_filter_func(g_plugin, id.c_ptr(), construct_func);
     return ret;
 }
+rx_result register_struct_runtime(const rx_node_id& id, rx_struct_constructor_t construct_func)
+{
+    RX_ASSERT(api_reg_struct_func != nullptr);
+    auto ret = api_reg_struct_func(g_plugin, id.c_ptr(), construct_func);
+    return ret;
+}
+rx_result register_variable_runtime(const rx_node_id& id, rx_variable_constructor_t construct_func)
+{
+    RX_ASSERT(api_reg_variable_func != nullptr);
+    auto ret = api_reg_variable_func(g_plugin, id.c_ptr(), construct_func);
+    return ret;
+}
+rx_result register_method_runtime(const rx_node_id& id, rx_method_constructor_t construct_func)
+{
+    RX_ASSERT(api_reg_method_func != nullptr);
+    auto ret = api_reg_method_func(g_plugin, id.c_ptr(), construct_func);
+    return ret;
+}
+rx_result register_program_runtime(const rx_node_id& id, rx_program_constructor_t construct_func)
+{
+    RX_ASSERT(api_reg_program_func != nullptr);
+    auto ret = api_reg_program_func(g_plugin, id.c_ptr(), construct_func);
+    return ret;
+}
+rx_result register_display_runtime(const rx_node_id& id, rx_display_constructor_t construct_func)
+{
+    RX_ASSERT(api_reg_display_func != nullptr);
+    auto ret = api_reg_display_func(g_plugin, id.c_ptr(), construct_func);
+    return ret;
+}
+rx_result register_relation_runtime(const rx_node_id& id, rx_relation_constructor_t construct_func, rx_runtime_register_func_t reg_function, rx_runtime_unregister_func_t unreg_function)
+{
+    RX_ASSERT(api_reg_relation_func != nullptr);
+    plugin_relation_register_data data;
+    data.constructor = construct_func;
+    data.register_func = reg_function;
+    data.unregister_func = unreg_function;
+    auto ret = api_reg_relation_func(g_plugin, id.c_ptr(), data);
+    return ret;
+}
 
 // Class rx_platform_api::rx_relation 
 
+rx_item_type rx_relation::runtime_type_id = rx_item_type::rx_relation;
+
 rx_relation::rx_relation()
 {
+    impl_.def = &_g_relation_def_;
+    bind_as_shared(&impl_.anchor);
 }
 
 
@@ -115,6 +235,40 @@ rx_relation::~rx_relation()
 {
 }
 
+
+
+rx_result rx_relation::initialize_relation (rx_init_context& ctx)
+{
+    return true;
+}
+
+rx_result rx_relation::deinitialize_relation ()
+{
+    return true;
+}
+
+rx_result rx_relation::start_relation (rx_start_context& ctx, bool is_target)
+{
+    return true;
+}
+
+rx_result rx_relation::stop_relation (bool is_target)
+{
+    return true;
+}
+
+void rx_relation::relation_connected (rx_node_id from, rx_node_id to)
+{
+}
+
+void rx_relation::relation_disconnected (rx_node_id from, rx_node_id to)
+{
+}
+
+rx_relation::smart_ptr rx_relation::make_target_relation ()
+{
+    return smart_ptr::null_ptr;
+}
 
 
 // Class rx_platform_api::rx_init_context 

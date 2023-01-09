@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_relation_impl.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -69,9 +69,9 @@ class relation_runtime : public rx::pointers::reference_object
 
       virtual rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
 
-      virtual rx_result start_relation (runtime::runtime_start_context& ctx);
+      virtual rx_result start_relation (runtime::runtime_start_context& ctx, bool is_target);
 
-      virtual rx_result stop_relation (runtime::runtime_stop_context& ctx);
+      virtual rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
       virtual rx_item_reference get_implicit_reference (const meta::meta_data& info);
 
@@ -88,6 +88,65 @@ class relation_runtime : public rx::pointers::reference_object
 
       virtual void relation_disconnected ();
 
+
+
+};
+
+
+
+
+
+
+class extern_relation_runtime : public relation_runtime  
+{
+
+  public:
+      extern_relation_runtime (plugin_relation_runtime_struct* impl);
+
+      ~extern_relation_runtime();
+
+
+      rx_result initialize_relation (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_relation (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_relation (runtime::runtime_start_context& ctx, bool is_target);
+
+      rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
+
+      rx_item_reference get_implicit_reference (const meta::meta_data& info);
+
+      relation_runtime::smart_ptr make_target_relation ();
+
+      void start_timer (runtime_handle_t handle, uint32_t period);
+
+      void suspend_timer (runtime_handle_t handle);
+
+      void destroy_timer (runtime_handle_t handle);
+
+
+      const rx_node_id& get_from () const;
+
+      const rx_node_id& get_to () const;
+
+
+  protected:
+
+  private:
+
+      rx_result_with<platform_item_ptr> resolve_runtime_sync (const rx_node_id& id);
+
+      void relation_connected ();
+
+      void relation_disconnected ();
+
+
+
+      plugin_relation_runtime_struct* impl_;
+
+      rx_node_id from_;
+
+      rx_node_id to_;
 
 
 };

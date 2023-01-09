@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_relations.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -84,12 +84,12 @@ rx_result domain_relation::deinitialize_relation (runtime::runtime_deinit_contex
     return true;
 }
 
-rx_result domain_relation::start_relation (runtime::runtime_start_context& ctx)
+rx_result domain_relation::start_relation (runtime::runtime_start_context& ctx, bool is_target)
 {
     return true;
 }
 
-rx_result domain_relation::stop_relation (runtime::runtime_stop_context& ctx)
+rx_result domain_relation::stop_relation (runtime::runtime_stop_context& ctx, bool is_target)
 {
     return true;
 }
@@ -150,12 +150,12 @@ rx_result application_relation::deinitialize_relation (runtime::runtime_deinit_c
     return true;
 }
 
-rx_result application_relation::start_relation (runtime::runtime_start_context& ctx)
+rx_result application_relation::start_relation (runtime::runtime_start_context& ctx, bool is_target)
 {
     return true;
 }
 
-rx_result application_relation::stop_relation (runtime::runtime_stop_context& ctx)
+rx_result application_relation::stop_relation (runtime::runtime_stop_context& ctx, bool is_target)
 {
     return true;
 }
@@ -216,12 +216,12 @@ rx_result port_app_relation::deinitialize_relation (runtime::runtime_deinit_cont
     return true;
 }
 
-rx_result port_app_relation::start_relation (runtime::runtime_start_context& ctx)
+rx_result port_app_relation::start_relation (runtime::runtime_start_context& ctx, bool is_target)
 {
     return true;
 }
 
-rx_result port_app_relation::stop_relation (runtime::runtime_stop_context& ctx)
+rx_result port_app_relation::stop_relation (runtime::runtime_stop_context& ctx, bool is_target)
 {
     return true;
 }

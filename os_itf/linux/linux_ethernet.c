@@ -4,27 +4,27 @@
 *
 *  os_itf\linux\linux_ethernet.c
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -918,8 +918,9 @@ uint32_t rx_send_ethernet_packet(peth_socket psock, const void* buffer, size_t s
 uint32_t rx_recive_ethernet_packet(peth_socket psock, uint8_t** buffer, size_t* recv_size, int* has_more, struct timeval* tv)
 {
 	struct eth_socket* temp = (struct eth_socket*)psock;
-	ether_size_t sz=0;
+	ether_size_t sz = 0;
 	ether_result_t res;
+	*has_more = 0;
 
     res=ether_get_vlan_within_interval(&temp->gep,temp->buffer,ETHER_DEFAULT_PACKET_SIZE,&sz);
     //res = ether_get_within_interval(&temp->gep, temp->buffer, ETHER_DEFAULT_PACKET_SIZE, &sz);

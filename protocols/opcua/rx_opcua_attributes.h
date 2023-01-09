@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_attributes.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -164,7 +164,6 @@ class opcua_write_response : public opcua_response_base
       std::vector<diagnostic_info> diagnostics_info;
 
       opcua_write_response() = default;
-
   protected:
 
   private:

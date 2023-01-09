@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_service.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -417,5 +417,4 @@ string_type win32_service_host::get_default_user_storage () const
 
 
 } // namespace win32
-
 

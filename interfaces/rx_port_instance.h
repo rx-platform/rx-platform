@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_port_instance.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_identity
-#include "system/server/rx_identity.h"
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
+// rx_identity
+#include "system/server/rx_identity.h"
 // rx_port_stack_data
 #include "interfaces/rx_port_stack_data.h"
 

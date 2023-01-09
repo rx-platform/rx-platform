@@ -4,27 +4,27 @@
 *
 *  sys_internal\rx_inf.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -54,7 +54,7 @@ namespace
 server_runtime* g_object = nullptr;
 }
 
-// Class rx_internal::infrastructure::server_runtime
+// Class rx_internal::infrastructure::server_runtime 
 
 server_runtime::server_runtime()
       : extern_executer_(nullptr)
@@ -447,7 +447,7 @@ runtime_data_t server_runtime::get_cpu_data ()
 }
 
 
-// Class rx_internal::infrastructure::server_dispatcher_object
+// Class rx_internal::infrastructure::server_dispatcher_object 
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask)
       : threads_count_(count)
@@ -484,7 +484,7 @@ uint16_t server_dispatcher_object::get_pool_size () const
 }
 
 
-// Class rx_internal::infrastructure::dispatcher_subscribers_job
+// Class rx_internal::infrastructure::dispatcher_subscribers_job 
 
 dispatcher_subscribers_job::dispatcher_subscribers_job()
 {
@@ -503,7 +503,7 @@ void dispatcher_subscribers_job::process ()
 }
 
 
-// Class rx_internal::infrastructure::domains_pool
+// Class rx_internal::infrastructure::domains_pool 
 
 domains_pool::domains_pool (uint32_t pool_size, uint32_t start_cpu, uint32_t end_cpu)
       : pool_size_(pool_size),
@@ -614,7 +614,7 @@ uint16_t domains_pool::get_pool_size () const
 }
 
 
-// Class rx_internal::infrastructure::physical_thread_object
+// Class rx_internal::infrastructure::physical_thread_object 
 
 physical_thread_object::physical_thread_object (const string_type& name, rx_thread_handle_t rx_thread_id)
 	: pool_(name, rx_thread_id)

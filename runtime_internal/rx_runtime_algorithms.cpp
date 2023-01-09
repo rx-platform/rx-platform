@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_algorithms.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -115,11 +115,6 @@ rx_result init_runtime<meta::object_types::domain_type>(rx_domain_ptr what, runt
 {
 	return domain_algorithms::init_runtime(what, ctx);
 }
-template<>
-rx_result init_runtime<meta::object_types::relation_type>(rx_relation_ptr what, runtime::runtime_init_context& ctx)
-{
-	return relations_algorithms::init_runtime(what, ctx);
-}
 //////////////////////////////////////////////////////////////////////////////////////
 // deinit_runtime
 template<>
@@ -145,12 +140,6 @@ rx_result deinit_runtime<meta::object_types::domain_type>(rx_domain_ptr what
 	, rx_result_callback&& callback)
 {
 	return domain_algorithms::deinit_runtime(what, std::move(callback));
-}
-template<>
-rx_result deinit_runtime<meta::object_types::relation_type>(rx_relation_ptr what
-	, rx_result_callback&& callback)
-{
-	return relations_algorithms::deinit_runtime(what, std::move(callback));
 }
 
 // Class rx_internal::sys_runtime::algorithms::object_algorithms 
@@ -849,7 +838,12 @@ rx_result relations_algorithms::init_runtime (rx_relation_ptr what, runtime::run
 
 rx_result relations_algorithms::start_runtime (rx_relation_ptr what, runtime::runtime_start_context& ctx)
 {
-	return RX_NOT_IMPLEMENTED;
+	auto ret = what->start_relation(ctx);
+	if (ret)
+	{
+		platform_runtime_manager::instance().get_cache().add_to_cache(what);
+	}
+	return ret;
 }
 
 rx_result relations_algorithms::deinit_runtime (rx_relation_ptr what, rx_result_callback&& callback)

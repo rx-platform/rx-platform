@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_ethernet.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -113,7 +113,8 @@ rx_result ethernet_endpoint::open (const string_type& port_name, security::secur
     if (!rx_create_ethernet_socket(port_name.c_str(), &handle_))
     {
         char buff[0x100];
-        auto code = rx_last_os_error("Error opening port", buff, sizeof(buff));
+        auto code = rx_last_os_error(("Error opening port "s + port_name+".").c_str(), buff, sizeof(buff));
+        ITF_LOG_ERROR("ethernet_endpoint", 900, "Error opening ethernet card:"s + buff);
         my_port_ = nullptr;
         return buff;
     }

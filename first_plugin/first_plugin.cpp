@@ -4,27 +4,27 @@
 *
 *  first_plugin\first_plugin.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -102,13 +102,22 @@ static const uint8_t c_def_mojServerPort[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
-
 static const uint8_t c_def_mojaRel[] = {
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2b, 0x00, 0x00, 0x00, 0x2f, 0x73,
-	0x79, 0x73, 0x2f, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x73, 0x2f, 0x66, 0x69, 0x72, 0x73, 0x74,
-	0x2f, 0x73, 0x75, 0x62, 0x4f, 0x62, 0x6a, 0x65, 0x6b, 0x74, 0x69, 0x2f, 0x6d, 0x6f, 0x6a, 0x53,
-	0x65, 0x72, 0x76, 0x65, 0x72, 0x50, 0x6f, 0x72, 0x74, 0x00, 0x00, 0x00, 0x00
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x23, 0x00, 0x00, 0x00, 0x2e, 0x2e,
+	0x2f, 0x2e, 0x2e, 0x2f, 0x2e, 0x2e, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2f, 0x62, 0x61, 0x73,
+	0x65, 0x2f, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x61, 0x73,
+	0x65, 0x00, 0x00, 0x00, 0x00
 };
+
+
+static const uint8_t c_def_mojaStruct[] = {
+	0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x07, 0x00, 0x00, 0x00, 0x54, 0x65, 0x68, 0x48, 0x6f,
+	0x6c, 0x64, 0xff, 0xff, 0xff, 0xff, 0x01, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x04, 0x00,
+	0x00, 0x00, 0x48, 0x6f, 0x6c, 0x64, 0x00, 0xff, 0xff, 0xff, 0xff, 0x01, 0x00, 0xff, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
 
 static const uint8_t c_def_ethSubs1[] = {
 	0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x04, 0x00, 0x00, 0x00, 0x42, 0x69, 0x6e, 0x64, 0x00,
@@ -121,7 +130,7 @@ static const uint8_t c_def_ethSubs1[] = {
 
 
 
-// Class first_filter
+// Class first_filter 
 
 first_filter::first_filter()
       : timer_(0)
@@ -194,7 +203,7 @@ void first_filter::timer_tick ()
 }
 
 
-// Class first_mapper
+// Class first_mapper 
 
 first_mapper::first_mapper()
       : timer_(0)
@@ -250,7 +259,7 @@ void first_mapper::timer_tick ()
 }
 
 
-// Class first_plugin
+// Class first_plugin 
 
 
 rx_result first_plugin::init_plugin ()
@@ -272,6 +281,9 @@ rx_result first_plugin::init_plugin ()
 	result = rx_platform_api::register_domain_runtime<first_domain>(rx_node_id(21, 8));
 	if (!result)
 		return result;
+	result = rx_platform_api::register_struct_runtime<first_struct>(rx_node_id(30, 8));
+	if (!result)
+		return result;
 	result = rx_platform_api::register_application_runtime<first_application>(rx_node_id(22, 8));
 	if (!result)
 		return result;
@@ -285,6 +297,11 @@ rx_result first_plugin::init_plugin ()
 	if (!result)
 		return result;
 	result = rx_platform_api::register_port_runtime<ether::ether_subscriber1_port>(rx_node_id(27, 8));
+	if (!result)
+		return result;
+
+
+	result = rx_platform_api::register_relation_runtime<first_relation>(rx_node_id(26, 8));
 	if (!result)
 		return result;
 
@@ -320,6 +337,10 @@ rx_result first_plugin::build_plugin ()
 		, rx_node_id(21, 8), RX_USER_DOMAIN_TYPE_ID, c_def_mojDomen, sizeof(c_def_mojDomen), 0x10006);
 	if (!result)
 		return result;
+	result = rx_platform_api::register_item_binary_with_code<first_struct>("mojaStruct", "subObjekti"
+		, rx_node_id(30, 8), RX_CLASS_STRUCT_BASE_ID, c_def_mojaStruct, sizeof(c_def_mojaStruct), 0x10007);
+	if (!result)
+		return result;
 	result = rx_platform_api::register_item_binary_with_code<first_application>("mojaApp", "subObjekti"
 		, rx_node_id(22, 8), RX_USER_APP_TYPE_ID, c_def_mojaApp, sizeof(c_def_mojaApp), 0x10006);
 	if (!result)
@@ -343,8 +364,8 @@ rx_result first_plugin::build_plugin ()
 	if (!result)
 		return result;
 
-	result = rx_platform_api::register_item_binary(rx_item_type::rx_relation_type, "mojaRel", "subObjekti"
-		, rx_node_id(26, 8), RX_NS_PORT_REF_ID, c_def_mojaRel, sizeof(c_def_mojaRel), 0x10006);
+	result = rx_platform_api::register_item_binary_with_code<first_relation>("mojaRel", "subObjekti"
+		, rx_node_id(26, 8), RX_NS_RELATION_BASE_ID, c_def_mojaRel, sizeof(c_def_mojaRel), 0x10007);
 	if (!result)
 		return result;
 
@@ -352,7 +373,7 @@ rx_result first_plugin::build_plugin ()
 }
 
 
-// Class first_source
+// Class first_source 
 
 first_source::first_source()
       : timer_(0),
@@ -446,7 +467,7 @@ void first_source::timer_tick ()
 }
 
 
-// Class first_object
+// Class first_object 
 
 first_object::first_object()
       : timer_(0)
@@ -495,7 +516,7 @@ void first_object::timer_tick ()
 }
 
 
-// Class first_domain
+// Class first_domain 
 
 first_domain::first_domain()
       : timer_(0)
@@ -544,7 +565,7 @@ void first_domain::timer_tick ()
 }
 
 
-// Class first_application
+// Class first_application 
 
 first_application::first_application()
       : timer_(0)
@@ -590,6 +611,109 @@ void first_application::timer_tick ()
 	RX_PLUGIN_LOG_DEBUG("first_application", 100, _rx_func_);
 	destroy_timer(timer_);
 	timer_ = 0;
+}
+
+
+// Class first_struct 
+
+first_struct::first_struct()
+      : timer_(0)
+{
+}
+
+
+first_struct::~first_struct()
+{
+}
+
+
+
+rx_result first_struct::initialize_struct (rx_platform_api::rx_init_context& ctx)
+{
+	RX_PLUGIN_LOG_DEBUG("first_struct", 100, _rx_func_);
+	return true;
+}
+
+rx_result first_struct::start_struct (rx_platform_api::rx_start_context& ctx)
+{
+	RX_PLUGIN_LOG_DEBUG("first_struct", 100, _rx_func_);
+	timer_ = ctx.create_calc_timer([this]() {timer_tick(); }, 1000);
+	return true;
+}
+
+rx_result first_struct::stop_struct ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_struct", 100, _rx_func_);
+	if (timer_)
+		destroy_timer(timer_);
+	return true;
+}
+
+rx_result first_struct::deinitialize_struct ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_struct", 100, _rx_func_);
+	return true;
+}
+
+void first_struct::timer_tick ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_struct", 100, _rx_func_);
+	destroy_timer(timer_);
+	timer_ = 0;
+}
+
+
+// Class first_relation 
+
+first_relation::first_relation()
+{
+}
+
+
+first_relation::~first_relation()
+{
+}
+
+
+
+rx_result first_relation::initialize_relation (rx_platform_api::rx_init_context& ctx)
+{
+	RX_PLUGIN_LOG_DEBUG("first_relation", 100, _rx_func_);
+	return true;
+}
+
+rx_result first_relation::start_relation (rx_platform_api::rx_start_context& ctx, bool is_target)
+{
+	RX_PLUGIN_LOG_DEBUG("first_relation", 100, _rx_func_);
+	return true;
+}
+
+rx_result first_relation::stop_relation (bool is_target)
+{
+	RX_PLUGIN_LOG_DEBUG("first_relation", 100, _rx_func_);
+	return true;
+}
+
+rx_result first_relation::deinitialize_relation ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_relation", 100, _rx_func_);
+	return true;
+}
+
+void first_relation::relation_connected (rx_node_id from, rx_node_id to)
+{
+	RX_PLUGIN_LOG_DEBUG("first_relation", 100, _rx_func_);
+}
+
+void first_relation::relation_disconnected (rx_node_id from, rx_node_id to)
+{
+	RX_PLUGIN_LOG_DEBUG("first_relation", 100, _rx_func_);
+}
+
+rx_relation::smart_ptr first_relation::make_target_relation ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_relation", 100, _rx_func_);
+	return rx_create_reference<first_relation>();
 }
 
 

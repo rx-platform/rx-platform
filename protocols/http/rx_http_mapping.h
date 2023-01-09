@@ -4,7 +4,7 @@
 *
 *  protocols\http\rx_http_mapping.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,16 +33,16 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
+// dummy
+#include "dummy.h"
+// rx_http_server
+#include "http_server/rx_http_server.h"
 // rx_io_buffers
 #include "lib/rx_io_buffers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_http_server
-#include "http_server/rx_http_server.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/http_c/rx_http_c_impl.h"

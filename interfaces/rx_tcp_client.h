@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_tcp_client.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,20 +34,20 @@
 
 #include "system/runtime/rx_value_templates.h"
 
-// dummy
-#include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
 // rx_stream_io
 #include "interfaces/rx_stream_io.h"
 
 namespace rx_internal {
 namespace interfaces {
 namespace ip_endpoints {
-class tcp_client_endpoint;
 class tcp_client_port;
+class tcp_client_endpoint;
 
 } // namespace ip_endpoints
 } // namespace interfaces

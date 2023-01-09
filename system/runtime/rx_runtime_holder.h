@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_holder.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,8 +36,6 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_value_templates.h"
 
-// rx_ns_resolver
-#include "system/server/rx_ns_resolver.h"
 // rx_tag_blocks
 #include "system/runtime/rx_tag_blocks.h"
 // rx_display_blocks
@@ -52,12 +50,14 @@
 #include "system/runtime/rx_operational.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_ns_resolver
+#include "system/server/rx_ns_resolver.h"
+// rx_job
+#include "system/threads/rx_job.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_job
-#include "system/threads/rx_job.h"
 
 #include "system/meta/rx_obj_types.h"
 #include "runtime_internal/rx_runtime_instance.h"

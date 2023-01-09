@@ -5,7 +5,7 @@
 *
 *  dummy.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -208,6 +208,31 @@ class full_value_type
       virtual ~full_value_type();
 
       full_value_type & operator=(const full_value_type &right);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class opcua_sec_none_protocol_type 
+{
+
+  public:
+      opcua_sec_none_protocol_type();
+
+      opcua_sec_none_protocol_type(const opcua_sec_none_protocol_type &right);
+
+      virtual ~opcua_sec_none_protocol_type();
+
+      opcua_sec_none_protocol_type & operator=(const opcua_sec_none_protocol_type &right);
 
 
   protected:

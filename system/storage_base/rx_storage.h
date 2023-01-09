@@ -4,7 +4,7 @@
 *
 *  system\storage_base\rx_storage.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -81,8 +81,9 @@ enum rx_item_type : uint8_t
     rx_method_type = 17,
     rx_data_type = 18,
     rx_display_type = 19,
+    rx_relation = 20,
 
-    rx_first_invalid = 20,
+    rx_first_invalid = 21,
 
     rx_test_case_type = 0xfe,
     rx_invalid_type = 0xff
@@ -403,31 +404,6 @@ class rx_platform_storage_type
 
 
 
-class rx_empty_storage_connection : public rx_storage_connection  
-{
-
-  public:
-
-      string_type get_storage_reference () const;
-
-      string_type get_storage_info () const;
-
-
-  protected:
-
-      rx_result_with<rx_storage_ptr> get_and_init_storage (const string_type& name, hosting::rx_platform_host* host);
-
-
-  private:
-
-
-};
-
-
-
-
-
-
 class rx_empty_storage : public rx_platform_storage  
 {
 
@@ -449,6 +425,31 @@ class rx_empty_storage : public rx_platform_storage
 
 
   protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_empty_storage_connection : public rx_storage_connection  
+{
+
+  public:
+
+      string_type get_storage_reference () const;
+
+      string_type get_storage_info () const;
+
+
+  protected:
+
+      rx_result_with<rx_storage_ptr> get_and_init_storage (const string_type& name, hosting::rx_platform_host* host);
+
 
   private:
 

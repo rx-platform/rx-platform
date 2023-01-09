@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_rt_struct.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -44,8 +44,8 @@
 namespace rx_platform {
 namespace runtime {
 namespace structure {
-class filter_data;
 class source_data;
+class filter_data;
 
 } // namespace structure
 } // namespace runtime
@@ -510,6 +510,428 @@ class execute_task
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+
+class variable_data 
+{
+  public:
+      ~variable_data() = default;
+	  variable_data(const variable_data&) = delete;
+	  variable_data(variable_data&&) noexcept = default;
+	  variable_data& operator=(const variable_data&) = delete;
+	  variable_data& operator=(variable_data&&) noexcept = default;
+	  operator bool() const
+	  {
+		  return (bool)variable_ptr;
+	  }
+      friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::variable_attribute>;
+      friend class meta::basic_types::variable_type;
+      typedef std::unique_ptr<std::map<runtime_transaction_id_t, write_task*> > pending_tasks_type;
+      typedef std::unique_ptr<std::map<runtime_transaction_id_t, execute_task*> > pending_execution_taks_type;
+
+  public:
+      variable_data();
+
+      variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var, const variable_data& prototype);
+
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_value get_value (runtime_process_context* ctx) const;
+
+      void set_value (rx_simple_value&& val);
+
+      rx_result write_value (write_data&& data, write_task* task, runtime_process_context* ctx);
+
+      rx_result execute (execute_data&& data, execute_task* task, runtime_process_context* ctx);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      void process_runtime (runtime_process_context* ctx);
+
+      void process_result (runtime_transaction_id_t id, rx_result&& result);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      const runtime_item* get_child_item (string_view_type path) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      void variable_result_pending (runtime_process_context* ctx, rx_result&& result, runtime_transaction_id_t id);
+
+      void object_state_changed (runtime_process_context* ctx);
+
+      rx_simple_value simple_get_value () const;
+
+
+      rx::values::rx_value value;
+
+
+      runtime_item::smart_ptr item;
+
+      static string_type type_name;
+
+      variable_runtime_ptr variable_ptr;
+
+      std::bitset<32> value_opt;
+
+      string_type full_path;
+
+
+  protected:
+
+  private:
+
+
+      pending_tasks_type pending_tasks_;
+
+      pending_execution_taks_type pending_execution_taks_;
+
+
+};
+
+
+
+
+
+
+
+class mapper_data 
+{
+public:
+	~mapper_data() = default;
+	mapper_data(const mapper_data&) = delete;
+	mapper_data(mapper_data&&) noexcept = default;
+	mapper_data& operator=(const mapper_data&) = delete;
+	mapper_data& operator=(mapper_data&&) noexcept = default;
+	operator bool() const
+	{
+		return mapper_ptr;
+	}
+    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::mapper_attribute>;
+    friend class meta::def_blocks::complex_data_type;
+    friend class meta::basic_types::mapper_type;
+
+  public:
+      mapper_data();
+
+      mapper_data (runtime_item::smart_ptr&& rt, mapper_runtime_ptr&& var, const mapper_data& prototype);
+
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      void process_update (values::rx_value&& value);
+
+      void process_write (write_data&& data);
+
+      void mapper_write_pending (write_data&& data);
+
+      rx_value get_mapped_value () const;
+
+      rx_result value_changed (rx_value&& val);
+
+      bool can_read () const;
+
+      bool can_write () const;
+
+      void process_write_result (rx_result&& result, runtime_transaction_id_t id);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      rx_value get_value (runtime_process_context* ctx) const;
+
+      void object_state_changed (runtime_process_context* ctx);
+
+
+      full_value_data mapped_value;
+
+
+      runtime_item::smart_ptr item;
+
+      static string_type type_name;
+
+      mapper_runtime_ptr mapper_ptr;
+
+      rx_node_id mapper_id;
+
+      string_type full_path;
+
+	  typedef std::unique_ptr<mapper_data> smart_ptr;
+  protected:
+
+      const runtime_item* get_child_item (string_view_type path) const;
+
+
+  private:
+
+
+      variable_data *my_variable_;
+
+
+      runtime_process_context* context_;
+
+      io_capabilities io_;
+
+
+};
+
+
+
+
+
+
+
+class source_data 
+{
+  public:
+	~source_data() = default;
+	source_data(const source_data&) = delete;
+	source_data(source_data&&) noexcept = default;
+	source_data& operator=(const source_data&) = delete;
+	source_data& operator=(source_data&&) noexcept = default;
+	operator bool() const
+	{
+		return source_ptr;
+	}
+    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::source_attribute>;
+    friend class meta::def_blocks::complex_data_type;
+    friend class meta::basic_types::source_type;
+
+  public:
+      source_data();
+
+      source_data (runtime_item::smart_ptr&& rt, source_runtime_ptr&& var, const source_data& prototype);
+
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      rx_result write_value (write_data&& data);
+
+      void process_update (values::rx_value&& value);
+
+      void process_write (write_data&& data);
+
+      void source_update_pending (values::rx_value&& value);
+
+      bool is_input () const;
+
+      bool is_output () const;
+
+      const rx_value& get_current_value () const;
+
+      void source_result_pending (rx_result&& result, runtime_transaction_id_t id);
+
+      void process_result (runtime_transaction_id_t id, rx_result&& result);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      rx_value get_value (runtime_process_context* ctx) const;
+
+      void object_state_changed (runtime_process_context* ctx);
+
+
+      full_value_data input_value;
+
+
+      runtime_item::smart_ptr item;
+
+      static string_type type_name;
+
+      source_runtime_ptr source_ptr;
+
+      rx_node_id source_id;
+
+      string_type full_path;
+
+	  typedef std::unique_ptr<source_data> smart_ptr;
+  protected:
+
+      const runtime_item* get_child_item (string_view_type path) const;
+
+
+  private:
+
+
+      variable_data *my_variable_;
+
+
+      runtime_process_context* context_;
+
+      rx_value current_value_;
+
+      io_capabilities io_;
+
+
+};
+
+
+
+
+
+
+
+class filter_data 
+{
+public:
+	~filter_data() = default;
+	filter_data(const filter_data&) = delete;
+	filter_data(filter_data&&) noexcept = default;
+	filter_data& operator=(const filter_data&) = delete;
+	filter_data& operator=(filter_data&&) noexcept = default;
+	operator bool() const
+	{
+		return filter_ptr;
+	}
+    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::filter_attribute>;
+
+  public:
+      filter_data();
+
+      filter_data (runtime_item::smart_ptr&& rt, filter_runtime_ptr&& var, const filter_data& prototype);
+
+
+      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+
+      void fill_data (const data::runtime_values_data& data);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      void process_runtime (runtime_process_context* ctx);
+
+      rx_result filter_output (rx_simple_value& val);
+
+      rx_result filter_input (rx_value& val);
+
+      bool is_input () const;
+
+      bool is_output () const;
+
+      rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
+
+      rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
+
+      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
+
+      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
+
+      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
+
+      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
+
+      rx_result filter_changed ();
+
+      void object_state_changed (runtime_process_context* ctx);
+
+
+      runtime_item::smart_ptr item;
+
+      static string_type type_name;
+
+      filter_runtime_ptr filter_ptr;
+
+	  typedef std::unique_ptr<filter_data> smart_ptr;
+  protected:
+
+      const runtime_item* get_child_item (string_view_type path) const;
+
+
+  private:
+
+
+      variable_data *my_variable_;
+
+
+      io_capabilities io_;
+
+      runtime_process_context* context_;
+
+
+};
+
+
+
+
+
+
+class mapper_write_task : public write_task  
+{
+
+  public:
+      mapper_write_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id);
+
+
+      void process_result (rx_result&& result);
+
+      runtime_transaction_id_t get_id () const;
+
+
+  protected:
+
+  private:
+
+
+      mapper_data *my_mapper_;
+
+
+      runtime_transaction_id_t transaction_id_;
 
 
 };
@@ -1035,398 +1457,6 @@ class value_block_data
 
 
   private:
-
-
-};
-
-
-
-
-
-
-
-class variable_data 
-{
-  public:
-      ~variable_data() = default;
-	  variable_data(const variable_data&) = delete;
-	  variable_data(variable_data&&) noexcept = default;
-	  variable_data& operator=(const variable_data&) = delete;
-	  variable_data& operator=(variable_data&&) noexcept = default;
-	  operator bool() const
-	  {
-		  return (bool)variable_ptr;
-	  }
-      friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::variable_attribute>;
-      friend class meta::basic_types::variable_type;
-      typedef std::unique_ptr<std::map<runtime_transaction_id_t, write_task*> > pending_tasks_type;
-      typedef std::unique_ptr<std::map<runtime_transaction_id_t, execute_task*> > pending_execution_taks_type;
-
-  public:
-      variable_data();
-
-      variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var, const variable_data& prototype);
-
-
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
-
-      void fill_data (const data::runtime_values_data& data);
-
-      rx_value get_value (runtime_process_context* ctx) const;
-
-      void set_value (rx_simple_value&& val);
-
-      rx_result write_value (write_data&& data, write_task* task, runtime_process_context* ctx);
-
-      rx_result execute (execute_data&& data, execute_task* task, runtime_process_context* ctx);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void process_runtime (runtime_process_context* ctx);
-
-      void process_result (runtime_transaction_id_t id, rx_result&& result);
-
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
-
-      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
-
-      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
-
-      const runtime_item* get_child_item (string_view_type path) const;
-
-      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
-
-      void variable_result_pending (runtime_process_context* ctx, rx_result&& result, runtime_transaction_id_t id);
-
-      void object_state_changed (runtime_process_context* ctx);
-
-      rx_simple_value simple_get_value () const;
-
-
-      rx::values::rx_value value;
-
-
-      runtime_item::smart_ptr item;
-
-      static string_type type_name;
-
-      variable_runtime_ptr variable_ptr;
-
-      std::bitset<32> value_opt;
-
-      string_type full_path;
-
-
-  protected:
-
-  private:
-
-
-      pending_tasks_type pending_tasks_;
-
-      pending_execution_taks_type pending_execution_taks_;
-
-
-};
-
-
-
-
-
-
-
-class mapper_data 
-{
-public:
-	~mapper_data() = default;
-	mapper_data(const mapper_data&) = delete;
-	mapper_data(mapper_data&&) noexcept = default;
-	mapper_data& operator=(const mapper_data&) = delete;
-	mapper_data& operator=(mapper_data&&) noexcept = default;
-	operator bool() const
-	{
-		return mapper_ptr;
-	}
-    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::mapper_attribute>;
-    friend class meta::def_blocks::complex_data_type;
-    friend class meta::basic_types::mapper_type;
-
-  public:
-      mapper_data();
-
-      mapper_data (runtime_item::smart_ptr&& rt, mapper_runtime_ptr&& var, const mapper_data& prototype);
-
-
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
-
-      void fill_data (const data::runtime_values_data& data);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void process_update (values::rx_value&& value);
-
-      void process_write (write_data&& data);
-
-      void mapper_write_pending (write_data&& data);
-
-      rx_value get_mapped_value () const;
-
-      rx_result value_changed (rx_value&& val);
-
-      bool can_read () const;
-
-      bool can_write () const;
-
-      void process_write_result (rx_result&& result, runtime_transaction_id_t id);
-
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
-
-      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
-
-      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
-
-      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
-
-      rx_value get_value (runtime_process_context* ctx) const;
-
-      void object_state_changed (runtime_process_context* ctx);
-
-
-      full_value_data mapped_value;
-
-
-      runtime_item::smart_ptr item;
-
-      static string_type type_name;
-
-      mapper_runtime_ptr mapper_ptr;
-
-      rx_node_id mapper_id;
-
-      string_type full_path;
-
-	  typedef std::unique_ptr<mapper_data> smart_ptr;
-  protected:
-
-      const runtime_item* get_child_item (string_view_type path) const;
-
-
-  private:
-
-
-      variable_data *my_variable_;
-
-
-      runtime_process_context* context_;
-
-      io_capabilities io_;
-
-
-};
-
-
-
-
-
-
-
-class source_data 
-{
-  public:
-	~source_data() = default;
-	source_data(const source_data&) = delete;
-	source_data(source_data&&) noexcept = default;
-	source_data& operator=(const source_data&) = delete;
-	source_data& operator=(source_data&&) noexcept = default;
-	operator bool() const
-	{
-		return source_ptr;
-	}
-    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::source_attribute>;
-    friend class meta::def_blocks::complex_data_type;
-    friend class meta::basic_types::source_type;
-
-  public:
-      source_data();
-
-      source_data (runtime_item::smart_ptr&& rt, source_runtime_ptr&& var, const source_data& prototype);
-
-
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
-
-      void fill_data (const data::runtime_values_data& data);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      rx_result write_value (write_data&& data);
-
-      void process_update (values::rx_value&& value);
-
-      void process_write (write_data&& data);
-
-      void source_update_pending (values::rx_value&& value);
-
-      bool is_input () const;
-
-      bool is_output () const;
-
-      const rx_value& get_current_value () const;
-
-      void source_result_pending (rx_result&& result, runtime_transaction_id_t id);
-
-      void process_result (runtime_transaction_id_t id, rx_result&& result);
-
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
-
-      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
-
-      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
-
-      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
-
-      rx_value get_value (runtime_process_context* ctx) const;
-
-      void object_state_changed (runtime_process_context* ctx);
-
-
-      full_value_data input_value;
-
-
-      runtime_item::smart_ptr item;
-
-      static string_type type_name;
-
-      source_runtime_ptr source_ptr;
-
-      rx_node_id source_id;
-
-      string_type full_path;
-
-	  typedef std::unique_ptr<source_data> smart_ptr;
-  protected:
-
-      const runtime_item* get_child_item (string_view_type path) const;
-
-
-  private:
-
-
-      variable_data *my_variable_;
-
-
-      runtime_process_context* context_;
-
-      rx_value current_value_;
-
-      io_capabilities io_;
-
-
-};
-
-
-
-
-
-
-
-class filter_data 
-{
-public:
-	~filter_data() = default;
-	filter_data(const filter_data&) = delete;
-	filter_data(filter_data&&) noexcept = default;
-	filter_data& operator=(const filter_data&) = delete;
-	filter_data& operator=(filter_data&&) noexcept = default;
-	operator bool() const
-	{
-		return filter_ptr;
-	}
-    friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::filter_attribute>;
-
-  public:
-      filter_data();
-
-      filter_data (runtime_item::smart_ptr&& rt, filter_runtime_ptr&& var, const filter_data& prototype);
-
-
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
-
-      void fill_data (const data::runtime_values_data& data);
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      rx_result start_runtime (runtime::runtime_start_context& ctx);
-
-      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
-
-      void process_runtime (runtime_process_context* ctx);
-
-      rx_result filter_output (rx_simple_value& val);
-
-      rx_result filter_input (rx_value& val);
-
-      bool is_input () const;
-
-      bool is_output () const;
-
-      rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
-
-      rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
-
-      rx_result get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const;
-
-      rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
-
-      rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx) const;
-
-      rx_result get_local_value (const string_type& path, rx_simple_value& val) const;
-
-      rx_result filter_changed ();
-
-      void object_state_changed (runtime_process_context* ctx);
-
-
-      runtime_item::smart_ptr item;
-
-      static string_type type_name;
-
-      filter_runtime_ptr filter_ptr;
-
-	  typedef std::unique_ptr<filter_data> smart_ptr;
-  protected:
-
-      const runtime_item* get_child_item (string_view_type path) const;
-
-
-  private:
-
-
-      variable_data *my_variable_;
-
-
-      io_capabilities io_;
-
-      runtime_process_context* context_;
 
 
 };
@@ -2288,36 +2318,6 @@ typedef runtime_data<
 
 // ugly function for creating data holder depending on runtime type
 runtime_item::smart_ptr create_runtime_data(uint_fast8_t type_id);
-
-
-
-
-
-
-class mapper_write_task : public write_task  
-{
-
-  public:
-      mapper_write_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id);
-
-
-      void process_result (rx_result&& result);
-
-      runtime_transaction_id_t get_id () const;
-
-
-  protected:
-
-  private:
-
-
-      mapper_data *my_mapper_;
-
-
-      runtime_transaction_id_t transaction_id_;
-
-
-};
 
 
 } // namespace structure

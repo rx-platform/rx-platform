@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_addr_space.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -39,14 +39,14 @@ using namespace protocols::opcua::common;
 
 namespace protocols {
 namespace opcua {
-namespace opcua_addr_space {
-class node_references;
-} // namespace opcua_addr_space
-
 namespace opcua_subscriptions {
 class opcua_monitored_value;
-
 } // namespace opcua_subscriptions
+
+namespace opcua_addr_space {
+class node_references;
+
+} // namespace opcua_addr_space
 } // namespace opcua
 } // namespace protocols
 

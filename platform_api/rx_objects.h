@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_objects.h
+*  D:\RX\Native\Source\platform_api\rx_objects.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,7 +34,7 @@
 
 
 // rx_runtime
-#include "platform_api/rx_runtime.h"
+#include "rx_runtime.h"
 
 
 
@@ -63,9 +63,9 @@ class rx_object : public rx_runtime
       virtual rx_result deinitialize_object ();
 
 
-      static rx_item_type type_id;
-
       static rx_item_type runtime_type_id;
+
+      static constexpr rx_item_type type_id = rx_item_type::rx_object_type;
 
       template<typename funcT>
       runtime_handle_t post_job(funcT func, uint32_t period = 0)
@@ -106,11 +106,13 @@ class rx_object : public rx_runtime
 
       template<class T>
       friend rx_result register_object_runtime(const rx_node_id& id);
+      template<class T>
+      friend rx_result register_monitored_object_runtime(const rx_node_id& id);
       friend rx_result_struct(::c_init_object)(rx_platform_api::rx_object* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_start_object)(rx_platform_api::rx_object* self, start_ctx_ptr ctx);
 };
 
-rx_result register_object_runtime(const rx_node_id& id, rx_object_constructor_t construct_func);
+rx_result register_object_runtime(const rx_node_id& id, rx_object_constructor_t construct_func, rx_runtime_register_func_t reg_function, rx_runtime_unregister_func_t unreg_function);
 template<class T>
 rx_result register_object_runtime(const rx_node_id& id)
 {
@@ -119,7 +121,31 @@ rx_result register_object_runtime(const rx_node_id& id)
         T* temp = new T;
         return &temp->impl_;
     };
-    return register_object_runtime(id, constr_lambda);
+    return register_object_runtime(id, constr_lambda, rx_runtime_register_func_t(), rx_runtime_unregister_func_t());
+}
+
+template<class T>
+rx_result register_monitored_object_runtime(const rx_node_id& id)
+{
+    auto constr_lambda = []() -> plugin_object_runtime_struct_t*
+    {
+        T* temp = new T;
+        return &temp->impl_;
+    };
+    rx_runtime_register_func_t reg_func = [](const rx_node_id_struct* id, lock_reference_struct* what)
+    {
+        using ptr_t = typename T::smart_ptr;
+        rx_node_id reg_id(id);
+        ptr_t ptr = ptr_t::create_from_pointer(reinterpret_cast<T*>(what->target));
+        rx_runtime_manager_lock _;
+        T::runtime_instances.emplace(reg_id, ptr);
+    };
+    rx_runtime_unregister_func_t unreg_func = [](const rx_node_id_struct* id)
+    {
+        rx_runtime_manager_lock _;
+        T::runtime_instances.erase(rx_node_id(id));
+    };
+    return register_object_runtime(id, constr_lambda, reg_func, unreg_func);
 }
 
 
@@ -145,9 +171,9 @@ class rx_application : public rx_runtime
       virtual rx_result deinitialize_application ();
 
 
-      static rx_item_type type_id;
-
       static rx_item_type runtime_type_id;
+
+      static constexpr rx_item_type type_id = rx_item_type::rx_application_type;
 
       template<typename funcT>
       runtime_handle_t post_job(funcT func, uint32_t period = 0)
@@ -188,11 +214,13 @@ class rx_application : public rx_runtime
 
       template<class T>
       friend rx_result register_application_runtime(const rx_node_id& id);
+      template<class T>
+      friend rx_result register_monitored_application_runtime(const rx_node_id& id);
       friend rx_result_struct(::c_init_application)(rx_platform_api::rx_application* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_start_application)(rx_platform_api::rx_application* self, start_ctx_ptr ctx);
 };
 
-rx_result register_application_runtime(const rx_node_id& id, rx_application_constructor_t construct_func);
+rx_result register_application_runtime(const rx_node_id& id, rx_application_constructor_t construct_func, rx_runtime_register_func_t reg_function, rx_runtime_unregister_func_t unreg_function);
 template<class T>
 rx_result register_application_runtime(const rx_node_id& id)
 {
@@ -201,7 +229,30 @@ rx_result register_application_runtime(const rx_node_id& id)
         T* temp = new T;
         return &temp->impl_;
     };
-    return register_application_runtime(id, constr_lambda);
+    return register_application_runtime(id, constr_lambda, rx_runtime_register_func_t(), rx_runtime_unregister_func_t());
+}
+template<class T>
+rx_result register_monitored_application_runtime(const rx_node_id& id)
+{
+    auto constr_lambda = []() -> plugin_application_runtime_struct_t*
+    {
+        T* temp = new T;
+        return &temp->impl_;
+    };
+    rx_runtime_register_func_t reg_func = [](const rx_node_id_struct* id, lock_reference_struct* what)
+    {
+        using ptr_t = typename T::smart_ptr;
+        rx_node_id reg_id(id);
+        ptr_t ptr = ptr_t::create_from_pointer(reinterpret_cast<T*>(what->target));
+        rx_runtime_manager_lock _;
+        T::runtime_instances.emplace(reg_id, ptr);
+    };
+    rx_runtime_unregister_func_t unreg_func = [](const rx_node_id_struct* id)
+    {
+        rx_runtime_manager_lock _;
+        T::runtime_instances.erase(rx_node_id(id));
+    };
+    return register_application_runtime(id, constr_lambda, reg_func, unreg_func);
 }
 
 
@@ -227,9 +278,10 @@ class rx_domain : public rx_runtime
       virtual rx_result deinitialize_domain ();
 
 
-      static rx_item_type type_id;
-
       static rx_item_type runtime_type_id;
+
+
+      static constexpr rx_item_type type_id = rx_item_type::rx_domain_type;
 
       template<typename funcT>
       runtime_handle_t post_job(funcT func, uint32_t period = 0)
@@ -270,11 +322,13 @@ class rx_domain : public rx_runtime
 
       template<class T>
       friend rx_result register_domain_runtime(const rx_node_id& id);
+      template<class T>
+      friend rx_result register_monitored_domain_runtime(const rx_node_id& id);
       friend rx_result_struct(::c_init_domain)(rx_platform_api::rx_domain* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_start_domain)(rx_platform_api::rx_domain* self, start_ctx_ptr ctx);
 };
 
-rx_result register_domain_runtime(const rx_node_id& id, rx_domain_constructor_t construct_func);
+rx_result register_domain_runtime(const rx_node_id& id, rx_domain_constructor_t construct_func, rx_runtime_register_func_t reg_function, rx_runtime_unregister_func_t unreg_function);
 template<class T>
 rx_result register_domain_runtime(const rx_node_id& id)
 {
@@ -283,7 +337,30 @@ rx_result register_domain_runtime(const rx_node_id& id)
         T* temp = new T;
         return &temp->impl_;
     };
-    return register_domain_runtime(id, constr_lambda);
+    return register_domain_runtime(id, constr_lambda, rx_runtime_register_func_t(), rx_runtime_unregister_func_t());
+}
+template<class T>
+rx_result register_monitored_domain_runtime(const rx_node_id& id)
+{
+    auto constr_lambda = []() -> plugin_domain_runtime_struct_t*
+    {
+        T* temp = new T;
+        return &temp->impl_;
+    };
+    rx_runtime_register_func_t reg_func = [](const rx_node_id_struct* id, lock_reference_struct* what)
+    {
+        using ptr_t = typename T::smart_ptr;
+        rx_node_id reg_id(id);
+        ptr_t ptr = ptr_t::create_from_pointer(reinterpret_cast<T*>(what->target));
+        rx_runtime_manager_lock _;
+        T::runtime_instances.emplace(reg_id, ptr);
+    };
+    rx_runtime_unregister_func_t unreg_func = [](const rx_node_id_struct* id)
+    {
+        rx_runtime_manager_lock _;
+        T::runtime_instances.erase(rx_node_id(id));
+    };
+    return register_domain_runtime(id, constr_lambda, reg_func, unreg_func);
 }
 
 } // namespace rx_platform_api

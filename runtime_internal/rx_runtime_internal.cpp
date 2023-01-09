@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_internal.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -82,6 +82,13 @@ platform_runtime_manager* g_instance = nullptr;
 }
 
 // Class rx_internal::sys_runtime::platform_runtime_manager 
+
+platform_runtime_manager::platform_runtime_manager()
+      : first_cpu_(0),
+        last_cpu_(0)
+{
+}
+
 
 
 platform_runtime_manager& platform_runtime_manager::instance ()
@@ -361,6 +368,9 @@ void runtime_cache::remove_from_cache (platform_item_ptr&& item)
 			break;
 		case rx_item_type::rx_object:
 			objects_cache_.erase(id);
+			break;
+		case rx_item_type::rx_relation:
+			relations_cache_.erase(id);
 			break;
 		default:
 			RX_ASSERT(false);
@@ -872,6 +882,27 @@ void runtime_cache::cleanup_cache ()
 
 	id_subscribers_.clear();
 	path_subscribers_.clear();
+}
+
+rx_relation_ptr runtime_cache::get_relation (const rx_node_id& id)
+{
+	locks::auto_lock_t _(&lock_);
+	auto it = relations_cache_.find(id);
+	if (it != relations_cache_.end())
+		return it->second;
+	else
+		return rx_relation_ptr::null_ptr;
+}
+
+void runtime_cache::add_to_cache (rx_relation_ptr item)
+{
+	collected_subscribers_type subscribers;
+	{
+		locks::auto_lock_t _(&lock_);
+		add_to_cache(item->get_item_ptr(), subscribers);
+		relations_cache_.emplace(item->meta_info().id, item);
+	}
+	post_appeared(subscribers);
 }
 
 

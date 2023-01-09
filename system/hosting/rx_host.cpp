@@ -4,27 +4,27 @@
 *
 *  system\hosting\rx_host.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -238,7 +238,7 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 }
 }
 
-// Class rx_platform::hosting::rx_platform_host
+// Class rx_platform::hosting::rx_platform_host 
 
 rx_platform_host::rx_platform_host(const rx_platform_host &right)
       : parent_(nullptr)
@@ -459,6 +459,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("test", "Test storage reference", cxxopts::value<string_type>(config.storage.test_storage_reference))
 		("system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
 		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
+		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.meta_configuration.plugin))
 		("log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
 		("l,logs", "Location of the log files", cxxopts::value<string_type>(config.management.logs_directory))
 		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
@@ -865,13 +866,13 @@ void rx_platform_host::fill_plugin_libs (string_array& paths)
 }
 
 
-// Class rx_platform::hosting::configuration_reader
+// Class rx_platform::hosting::configuration_reader 
 
 
-// Class rx_platform::hosting::host_platform_builder
+// Class rx_platform::hosting::host_platform_builder 
 
 
-// Class rx_platform::hosting::startup_log_subscriber
+// Class rx_platform::hosting::startup_log_subscriber 
 
 
 void startup_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)

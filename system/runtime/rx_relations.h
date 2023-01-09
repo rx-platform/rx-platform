@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_relations.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -52,16 +52,13 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace relations {
-class relation_connector;
-} // namespace relations
-
 namespace algorithms {
 template <class typeT> class runtime_holder_algorithms;
 } // namespace algorithms
 
 namespace relations {
 class relation_connections;
+class relation_connector;
 
 } // namespace relations
 } // namespace runtime
@@ -293,6 +290,34 @@ class relation_data : public rx::pointers::reference_object
 
       rx_result write_value (write_data&& data, runtime_process_context* ctx);
 
+      platform_item_ptr get_item_ptr () const;
+
+      rx_item_type get_type_id () const;
+
+      values::rx_value get_value () const;
+
+      const string_type& get_name () const;
+
+
+      const rx_reference<relation_runtime> get_implementation () const
+      {
+        return implementation_;
+      }
+
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+
+      const meta::meta_data& meta_info () const
+      {
+        return meta_info_;
+      }
+
+
 
       relation_connections connections;
 
@@ -345,6 +370,8 @@ class relation_data : public rx::pointers::reference_object
       runtime_process_context* context_;
 
       bool is_target_;
+
+      meta::meta_data meta_info_;
 
 
 };

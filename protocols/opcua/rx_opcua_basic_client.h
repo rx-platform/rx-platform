@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_basic_client.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,20 +33,20 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_blocks_templates
 #include "system/runtime/rx_blocks_templates.h"
+// dummy
+#include "dummy.h"
 // rx_opcua_client
 #include "protocols/opcua/rx_opcua_client.h"
 
 namespace protocols {
 namespace opcua {
 namespace opcua_basic_client {
-class opcua_basic_source;
 class opcua_basic_client_port;
+class opcua_basic_source;
 
 } // namespace opcua_basic_client
 } // namespace opcua
@@ -280,7 +280,7 @@ OPC UA client protocol port class. Basic implementation OPC UA binary protocol b
 
 
 
-typedef rx_platform::runtime::blocks::blocks_templates::extern_source_impl< protocols::opcua::opcua_basic_client::opcua_basic_client_port  > opcua_basic_source_base;
+typedef rx_platform::runtime::blocks::blocks_templates::extern_source_impl< opcua_basic_client_port  > opcua_basic_source_base;
 
 
 

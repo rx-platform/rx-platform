@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_stream_io.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_mem
-#include "lib/rx_mem.h"
 // rx_io
 #include "interfaces/rx_io.h"
+// rx_mem
+#include "lib/rx_mem.h"
 
 
 

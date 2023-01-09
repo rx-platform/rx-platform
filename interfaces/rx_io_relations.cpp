@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_io_relations.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -80,12 +80,12 @@ rx_result port_stack_relation::deinitialize_relation (runtime::runtime_deinit_co
     return true;
 }
 
-rx_result port_stack_relation::start_relation (runtime::runtime_start_context& ctx)
+rx_result port_stack_relation::start_relation (runtime::runtime_start_context& ctx, bool is_target)
 {
     return true;
 }
 
-rx_result port_stack_relation::stop_relation (runtime::runtime_stop_context& ctx)
+rx_result port_stack_relation::stop_relation (runtime::runtime_stop_context& ctx, bool is_target)
 {
     return true;
 }
@@ -155,12 +155,12 @@ rx_result port_reference_relation::deinitialize_relation (runtime::runtime_deini
     return true;
 }
 
-rx_result port_reference_relation::start_relation (runtime::runtime_start_context& ctx)
+rx_result port_reference_relation::start_relation (runtime::runtime_start_context& ctx, bool is_target)
 {
     return true;
 }
 
-rx_result port_reference_relation::stop_relation (runtime::runtime_stop_context& ctx)
+rx_result port_reference_relation::stop_relation (runtime::runtime_stop_context& ctx, bool is_target)
 {
     return true;
 }

@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_holder_algorithms.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -546,6 +546,42 @@ void runtime_relation_algorithms::relation_value_change (relations::relation_val
     {
         ctx->tags_.relation_value_change(whose, val);
     }
+}
+
+void runtime_relation_algorithms::read_value (const string_type& path, read_result_callback_t callback, const relations::relation_data& whose)
+{
+    rx_result result;
+    if (path.empty())
+    {// our value
+        rx_value value = whose.get_value();
+        callback(std::move(result), std::move(value));
+    }
+    else
+    {
+        values::rx_value value;
+        result = path + " not found!";
+        callback(std::move(result), std::move(value));
+    }
+}
+
+void runtime_relation_algorithms::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, relations::relation_data& whose)
+{
+    if (path.empty())
+    {// our value
+    }
+    else
+    {
+        rx_result result(path + " not found!");
+        callback(std::move(result));
+    }
+}
+
+void runtime_relation_algorithms::read_struct (string_view_type path, read_struct_data data, const relations::relation_data& whose)
+{
+}
+
+void runtime_relation_algorithms::write_struct (string_view_type path, write_struct_data data, relations::relation_data& whose)
+{
 }
 
 

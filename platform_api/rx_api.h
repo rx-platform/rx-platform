@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_api.h
+*  D:\RX\Native\Source\platform_api\rx_api.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,8 +33,6 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 
 #include "version/rx_version.h"
@@ -119,8 +117,9 @@ enum class rx_item_type : uint8_t
     rx_method_type = 17,
     rx_data_type = 18,
     rx_display_type = 19,
+    rx_relation = 20,
 
-    rx_first_invalid = 20,
+    rx_first_invalid = 21,
 
     rx_test_case_type = 0xfe,
     rx_invalid_type = 0xff
@@ -164,7 +163,7 @@ rx_result_struct rx_build_plugin(rx_platform_plugin* plugin, const char* root);
 
 
 
-class rx_shared_reference : public rx::pointers::reference_object  
+class rx_shared_reference 
 {
 
   public:

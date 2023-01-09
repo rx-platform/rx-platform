@@ -4,7 +4,7 @@
 *
 *  first_plugin\ether_test.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
+// rx_ports
+#include "rx_ports.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_ports
-#include "platform_api/rx_ports.h"
 
 namespace ether {
 class ether_subscriber1_port;

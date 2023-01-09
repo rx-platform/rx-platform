@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_transaction_limiter.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,16 +34,16 @@
 
 #include "lib/rx_const_size_vector.h"
 
-// rx_io_buffers
-#include "lib/rx_io_buffers.h"
-// rx_io_addr
-#include "lib/rx_io_addr.h"
-// dummy
-#include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+// dummy
+#include "dummy.h"
+// rx_io_buffers
+#include "lib/rx_io_buffers.h"
+// rx_io_addr
+#include "lib/rx_io_addr.h"
 
 namespace rx_internal {
 namespace interfaces {

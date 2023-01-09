@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_extern_blocks.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -200,6 +200,123 @@ class extern_filter_runtime : public filter_runtime
 
 
       plugin_filter_runtime_struct* impl_;
+
+
+};
+
+
+
+
+
+
+class extern_struct_runtime : public struct_runtime  
+{
+
+  public:
+      extern_struct_runtime (plugin_struct_runtime_struct* impl);
+
+      ~extern_struct_runtime();
+
+
+      rx_result initialize_struct (runtime::runtime_init_context& ctx);
+
+      rx_result start_struct (runtime::runtime_start_context& ctx);
+
+      rx_result stop_struct (runtime::runtime_stop_context& ctx);
+
+      rx_result deinitialize_struct (runtime::runtime_deinit_context& ctx);
+
+      void start_timer (runtime_handle_t handle, uint32_t period);
+
+      void suspend_timer (runtime_handle_t handle);
+
+      void destroy_timer (runtime_handle_t handle);
+
+
+  protected:
+
+  private:
+
+
+      plugin_struct_runtime_struct* impl_;
+
+
+};
+
+
+
+
+
+
+class extern_event_runtime : public event_runtime  
+{
+
+  public:
+      extern_event_runtime (plugin_event_runtime_struct* impl);
+
+      ~extern_event_runtime();
+
+
+      rx_result initialize_event (runtime::runtime_init_context& ctx);
+
+      rx_result start_event (runtime::runtime_start_context& ctx);
+
+      rx_result stop_event (runtime::runtime_stop_context& ctx);
+
+      rx_result deinitialize_event (runtime::runtime_deinit_context& ctx);
+
+      void start_timer (runtime_handle_t handle, uint32_t period);
+
+      void suspend_timer (runtime_handle_t handle);
+
+      void destroy_timer (runtime_handle_t handle);
+
+
+  protected:
+
+  private:
+
+
+      plugin_event_runtime_struct* impl_;
+
+
+};
+
+
+
+
+
+
+class extern_variable_runtime : public variable_runtime  
+{
+
+  public:
+      extern_variable_runtime (plugin_variable_runtime_struct* impl);
+
+      ~extern_variable_runtime();
+
+
+      rx_result initialize_variable (runtime::runtime_init_context& ctx);
+
+      rx_result start_variable (runtime::runtime_start_context& ctx);
+
+      rx_result stop_variable (runtime::runtime_stop_context& ctx);
+
+      rx_result deinitialize_variable (runtime::runtime_deinit_context& ctx);
+
+      void start_timer (runtime_handle_t handle, uint32_t period);
+
+      void suspend_timer (runtime_handle_t handle);
+
+      void destroy_timer (runtime_handle_t handle);
+
+
+  protected:
+
+  private:
+
+
+      plugin_variable_runtime_struct* impl_;
 
 
 };

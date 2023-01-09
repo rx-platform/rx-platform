@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_common.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -63,6 +63,8 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Beka\\x64\\Debug\\rx-mesrnp.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\SAMTMS\\x64\\Debug\\rx-samcomm.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\iec61850\\x64\\Debug\\iec61850.dll");
+	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\rx-linntms.dll");
+	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\rx-linnmes.dll");
 //	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
 #else
 	char buff[MAX_PATH];

@@ -4,7 +4,7 @@
 *
 *  lib\rx_ptr.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -394,7 +394,7 @@ class reference_object
 
       }
 
-      virtual void fill_code_info (std::ostream& info, const string_type& name);
+      virtual void fill_code_info (std::ostream& info, const string_type& name) const;
 
       lock_reference_struct* get_extern_ref ();
 

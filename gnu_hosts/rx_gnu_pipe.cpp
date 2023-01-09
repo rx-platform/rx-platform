@@ -4,7 +4,7 @@
 *
 *  gnu_hosts\rx_gnu_pipe.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -54,12 +54,6 @@ gnu_pipe_host::~gnu_pipe_host()
 
 
 
-void gnu_pipe_host::get_host_info (string_array& hosts)
-{
-	hosts.emplace_back(get_gnu_pipe_info());
-	host::pipe::rx_pipe_host::get_host_info(hosts);
-}
-
 string_type gnu_pipe_host::get_gnu_pipe_info ()
 {
 	static char ret[0x60] = { 0 };
@@ -70,11 +64,6 @@ string_type gnu_pipe_host::get_gnu_pipe_info ()
 	return ret;
 }
 
-rx_result gnu_pipe_host::fill_host_directories (hosting::rx_host_directories& data)
-{
-	return build_directories(data);
-}
-
 void gnu_pipe_host::get_stdio_handles (sys_handle_t& in, sys_handle_t& out, sys_handle_t& err)
 {
   in = 0;
@@ -82,15 +71,26 @@ void gnu_pipe_host::get_stdio_handles (sys_handle_t& in, sys_handle_t& out, sys_
   err = 2;
 }
 
-string_type gnu_pipe_host::get_full_path (const string_type& path)
+void gnu_pipe_host::get_host_info (string_array& hosts)
 {
-    return get_full_path_from_relative(path);
+	hosts.emplace_back(get_gnu_pipe_info());
+	host::pipe::rx_pipe_host::get_host_info(hosts);
 }
 
 bool gnu_pipe_host::supports_ansi () const
 {
   return true;
 
+}
+
+rx_result gnu_pipe_host::fill_host_directories (hosting::rx_host_directories& data)
+{
+	return build_directories(data);
+}
+
+string_type gnu_pipe_host::get_full_path (const string_type& path)
+{
+    return get_full_path_from_relative(path);
 }
 
 void gnu_pipe_host::fill_plugin_libs (string_array& paths)

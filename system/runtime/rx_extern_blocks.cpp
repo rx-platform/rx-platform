@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_extern_blocks.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -149,6 +149,35 @@ extern "C"
             , c_filter_destroy_timer
         }
         , c_filter_changed
+    };
+
+
+
+    void c_struct_start_timer(void* whose, runtime_handle_t timer, uint32_t period)
+    {
+        rx_platform::runtime::blocks::extern_struct_runtime* self = (rx_platform::runtime::blocks::extern_struct_runtime*)whose;
+        self->start_timer(timer, period);
+    }
+    void c_struct_suspend_timer(void* whose, runtime_handle_t timer)
+    {
+        rx_platform::runtime::blocks::extern_struct_runtime* self = (rx_platform::runtime::blocks::extern_struct_runtime*)whose;
+        self->suspend_timer(timer);
+    }
+    void c_struct_destroy_timer(void* whose, runtime_handle_t timer)
+    {
+        rx_platform::runtime::blocks::extern_struct_runtime* self = (rx_platform::runtime::blocks::extern_struct_runtime*)whose;
+        self->destroy_timer(timer);
+    }
+
+    host_struct_def_struct _g_struct_def_
+    {
+        {
+            nullptr
+            , nullptr
+            , c_struct_start_timer
+            , c_struct_suspend_timer
+            , c_struct_destroy_timer
+        }
     };
 }
 
@@ -409,6 +438,158 @@ void extern_filter_runtime::destroy_timer (runtime_handle_t handle)
 rx_result extern_filter_runtime::extern_filter_changed ()
 {
     return filter_changed();
+}
+
+
+// Class rx_platform::runtime::blocks::extern_struct_runtime 
+
+extern_struct_runtime::extern_struct_runtime (plugin_struct_runtime_struct* impl)
+      : impl_(impl)
+{
+    impl_->host = this;
+    impl_->host_def = &_g_struct_def_;
+}
+
+
+extern_struct_runtime::~extern_struct_runtime()
+{
+}
+
+
+
+rx_result extern_struct_runtime::initialize_struct (runtime::runtime_init_context& ctx)
+{
+    return impl_->def->init_struct(impl_->anchor.target, &ctx);
+}
+
+rx_result extern_struct_runtime::start_struct (runtime::runtime_start_context& ctx)
+{
+    return impl_->def->start_struct(impl_->anchor.target, &ctx);
+}
+
+rx_result extern_struct_runtime::stop_struct (runtime::runtime_stop_context& ctx)
+{
+    return impl_->def->stop_struct(impl_->anchor.target);
+}
+
+rx_result extern_struct_runtime::deinitialize_struct (runtime::runtime_deinit_context& ctx)
+{
+    return impl_->def->deinit_struct(impl_->anchor.target);
+}
+
+void extern_struct_runtime::start_timer (runtime_handle_t handle, uint32_t period)
+{
+    rx_platform::extern_timers::instance().start_timer(handle, period);
+}
+
+void extern_struct_runtime::suspend_timer (runtime_handle_t handle)
+{
+    rx_platform::extern_timers::instance().suspend_timer(handle);
+}
+
+void extern_struct_runtime::destroy_timer (runtime_handle_t handle)
+{
+    rx_platform::extern_timers::instance().destroy_timer(handle);
+}
+
+
+// Class rx_platform::runtime::blocks::extern_event_runtime 
+
+extern_event_runtime::extern_event_runtime (plugin_event_runtime_struct* impl)
+      : impl_(impl)
+{
+}
+
+
+extern_event_runtime::~extern_event_runtime()
+{
+}
+
+
+
+rx_result extern_event_runtime::initialize_event (runtime::runtime_init_context& ctx)
+{
+    return impl_->def->init_event(impl_->anchor.target, &ctx);
+}
+
+rx_result extern_event_runtime::start_event (runtime::runtime_start_context& ctx)
+{
+    return impl_->def->start_event(impl_->anchor.target, &ctx);
+}
+
+rx_result extern_event_runtime::stop_event (runtime::runtime_stop_context& ctx)
+{
+    return impl_->def->stop_event(impl_->anchor.target);
+}
+
+rx_result extern_event_runtime::deinitialize_event (runtime::runtime_deinit_context& ctx)
+{
+    return impl_->def->deinit_event(impl_->anchor.target);
+}
+
+void extern_event_runtime::start_timer (runtime_handle_t handle, uint32_t period)
+{
+    rx_platform::extern_timers::instance().start_timer(handle, period);
+}
+
+void extern_event_runtime::suspend_timer (runtime_handle_t handle)
+{
+    rx_platform::extern_timers::instance().suspend_timer(handle);
+}
+
+void extern_event_runtime::destroy_timer (runtime_handle_t handle)
+{
+    rx_platform::extern_timers::instance().destroy_timer(handle);
+}
+
+
+// Class rx_platform::runtime::blocks::extern_variable_runtime 
+
+extern_variable_runtime::extern_variable_runtime (plugin_variable_runtime_struct* impl)
+      : impl_(impl)
+{
+}
+
+
+extern_variable_runtime::~extern_variable_runtime()
+{
+}
+
+
+
+rx_result extern_variable_runtime::initialize_variable (runtime::runtime_init_context& ctx)
+{
+    return impl_->def->init_variable(impl_->anchor.target, &ctx);
+}
+
+rx_result extern_variable_runtime::start_variable (runtime::runtime_start_context& ctx)
+{
+    return impl_->def->start_variable(impl_->anchor.target, &ctx);
+}
+
+rx_result extern_variable_runtime::stop_variable (runtime::runtime_stop_context& ctx)
+{
+    return impl_->def->stop_variable(impl_->anchor.target);
+}
+
+rx_result extern_variable_runtime::deinitialize_variable (runtime::runtime_deinit_context& ctx)
+{
+    return impl_->def->deinit_variable(impl_->anchor.target);
+}
+
+void extern_variable_runtime::start_timer (runtime_handle_t handle, uint32_t period)
+{
+    rx_platform::extern_timers::instance().start_timer(handle, period);
+}
+
+void extern_variable_runtime::suspend_timer (runtime_handle_t handle)
+{
+    rx_platform::extern_timers::instance().suspend_timer(handle);
+}
+
+void extern_variable_runtime::destroy_timer (runtime_handle_t handle)
+{
+    rx_platform::extern_timers::instance().destroy_timer(handle);
 }
 
 

@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\common_c\rx_protocol_handlers.c
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -271,9 +271,16 @@ RX_COMMON_API rx_protocol_result_t rx_notify_disconnected(struct rx_protocol_sta
 RX_COMMON_API void rx_notify_closed(struct rx_protocol_stack_endpoint* stack, rx_protocol_result_t reason)
 {
 	struct rx_protocol_stack_endpoint* temp_stack;
+	temp_stack = stack;
 	while (stack != NULL)
 	{
-		temp_stack = stack->upward;
+		temp_stack = stack;
+		stack = stack->upward;
+	}
+	stack = temp_stack;
+	while (stack != NULL)
+	{
+		temp_stack = stack->downward;
 		rx_pop_stack(stack);
 		if (stack->closed_function)
 		{

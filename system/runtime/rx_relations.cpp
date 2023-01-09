@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_relations.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -113,7 +113,7 @@ rx_result relation_data::deinitialize_relation (runtime::runtime_deinit_context&
 {
 	auto result = implementation_->deinitialize_relation(ctx);
 	resolver_user_.my_relation = smart_ptr::null_ptr;
-	implementation_ = rx_relation_ptr::null_ptr;
+	implementation_ = rx_relation_impl_ptr::null_ptr;
 	return result;
 }
 
@@ -137,9 +137,10 @@ rx_result relation_data::start_relation (runtime::runtime_start_context& ctx)
 		}
 	}
 	executer_ = rx_thread_context();
-	auto result = implementation_->start_relation(ctx);
+	auto result = implementation_->start_relation(ctx, false);
 	if (result)
 	{
+		rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().add_to_cache(smart_this());
 		resolve_inverse_name();
 
 		rx_item_reference ref;
@@ -156,8 +157,11 @@ rx_result relation_data::start_relation (runtime::runtime_start_context& ctx)
 rx_result relation_data::stop_relation (runtime::runtime_stop_context& ctx)
 {
 	my_state_ = relation_state::stopping;
-	auto result = implementation_->stop_relation(ctx);
 	resolver_.stop_resolver();
+	auto result = implementation_->stop_relation(ctx, false);
+
+	rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().remove_from_cache(get_item_ptr());
+
 	return result;
 }
 
@@ -199,7 +203,7 @@ void relation_data::try_resolve ()
 		auto resolve_result = rx_internal::model::algorithms::resolve_reference(parent_path, dirs);
 		if (!resolve_result)
 		{
-			RUNTIME_LOG_ERROR("relation_runtime", 100, "Unable to resolve relation reference to "s + parent_path);
+			RUNTIME_LOG_WARNING("relation_runtime", 100, "Unable to resolve relation reference to "s + parent_path);
 			return;
 		}
 		target_id = resolve_result.move_value();
@@ -278,9 +282,11 @@ rx_result relation_data::start_target_relation (runtime::runtime_start_context& 
 	val.assign_static(target_path.c_str());
 	value.set_value(std::move(val), ctx.now);
 
-	auto result = implementation_->start_relation(ctx);
+	auto result = implementation_->start_relation(ctx, true);
 	if (result)
 	{
+		rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().add_to_cache(smart_this());
+
 		my_state_ = relation_state::querying;
 		try_resolve();
 		/*rx_item_reference ref;
@@ -296,9 +302,13 @@ rx_result relation_data::start_target_relation (runtime::runtime_start_context& 
 rx_result relation_data::stop_target_relation (runtime::runtime_stop_context& ctx)
 {
 	my_state_ = relation_state::stopping;
-	auto result = implementation_->stop_relation(ctx);
+	implementation_->relation_disconnected();
+	auto result = implementation_->stop_relation(ctx, true);
 	resolver_user_.my_relation = smart_ptr::null_ptr;
-	implementation_ = rx_relation_ptr::null_ptr;
+	implementation_ = rx_relation_impl_ptr::null_ptr;
+
+	rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().remove_from_cache(get_item_ptr());
+
 	return result;
 }
 
@@ -394,6 +404,26 @@ rx_result relation_data::write_value (write_data&& data, runtime_process_context
 		}
 	}
 	return result;
+}
+
+platform_item_ptr relation_data::get_item_ptr () const
+{
+	return std::make_unique <rx_internal::internal_ns::rx_relation_item_implementation<rx_relation_ptr> >(smart_this());
+}
+
+rx_item_type relation_data::get_type_id () const
+{
+	return rx_item_type::rx_relation;
+}
+
+values::rx_value relation_data::get_value () const
+{
+	return rx_value(value.value);
+}
+
+const string_type& relation_data::get_name () const
+{
+	return name;
 }
 
 

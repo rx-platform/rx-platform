@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\api_runtime_c.c
+*  D:\RX\Native\Source\platform_api\api_runtime_c.c
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -38,11 +38,17 @@ struct _rx_source_holder_stub;
 struct _rx_mapper_holder_stub;
 struct _rx_filter_holder_stub;
 
+struct _rx_struct_holder_stub;
+struct _rx_variable_holder_stub;
+struct _rx_event_holder_stub;
+
 struct _rx_object_holder_stub;
 struct _rx_application_holder_stub;
 struct _rx_domain_holder_stub;
 
 struct _rx_port_holder_stub;
+
+struct _rx_relation_holder_stub;
 
 
 rx_result_struct c_init_source(struct _rx_source_holder_stub* self, init_ctx_ptr ctx, uint8_t value_type);
@@ -207,6 +213,157 @@ struct rx_protocol_stack_endpoint* c_construct_initiator_endpoint_stub(void* who
 }
 
 
+
+
+rx_result_struct c_init_struct(struct _rx_struct_holder_stub* self, init_ctx_ptr ctx);
+rx_result_struct c_start_struct(struct _rx_struct_holder_stub* self, start_ctx_ptr ctx);
+rx_result_struct c_stop_struct(struct _rx_struct_holder_stub* self);
+rx_result_struct c_deinit_struct(struct _rx_struct_holder_stub* self);
+
+rx_result_struct c_init_struct_stub(void* self, init_ctx_ptr ctx)
+{
+    return c_init_struct(self, ctx);
+}
+
+rx_result_struct c_start_struct_stub(void* self, start_ctx_ptr ctx)
+{
+    return c_start_struct(self, ctx);
+}
+rx_result_struct c_stop_struct_stub(void* self)
+{
+    return c_stop_struct(self);
+}
+rx_result_struct c_deinit_struct_stub(void* self)
+{
+    return c_deinit_struct(self);
+}
+
+
+
+rx_result_struct c_init_variable(struct _rx_variable_holder_stub* self, init_ctx_ptr ctx);
+rx_result_struct c_start_variable(struct _rx_variable_holder_stub* self, start_ctx_ptr ctx);
+rx_result_struct c_stop_variable(struct _rx_variable_holder_stub* self);
+rx_result_struct c_deinit_variable(struct _rx_variable_holder_stub* self);
+
+rx_result_struct c_init_variable_stub(void* self, init_ctx_ptr ctx)
+{
+    return c_init_variable(self, ctx);
+}
+
+rx_result_struct c_start_variable_stub(void* self, start_ctx_ptr ctx)
+{
+    return c_start_variable(self, ctx);
+}
+rx_result_struct c_stop_variable_stub(void* self)
+{
+    return c_stop_variable(self);
+}
+rx_result_struct c_deinit_variable_stub(void* self)
+{
+    return c_deinit_variable(self);
+}
+
+
+rx_result_struct c_init_event(struct _rx_event_holder_stub* self, init_ctx_ptr ctx);
+rx_result_struct c_start_event(struct _rx_event_holder_stub* self, start_ctx_ptr ctx);
+rx_result_struct c_stop_event(struct _rx_event_holder_stub* self);
+rx_result_struct c_deinit_event(struct _rx_event_holder_stub* self);
+
+rx_result_struct c_init_event_stub(void* self, init_ctx_ptr ctx)
+{
+    return c_init_event(self, ctx);
+}
+
+rx_result_struct c_start_event_stub(void* self, start_ctx_ptr ctx)
+{
+    return c_start_event(self, ctx);
+}
+rx_result_struct c_stop_event_stub(void* self)
+{
+    return c_stop_event(self);
+}
+rx_result_struct c_deinit_event_stub(void* self)
+{
+    return c_deinit_event(self);
+}
+
+
+
+rx_result_struct c_init_method(struct _rx_method_holder_stub* self, init_ctx_ptr ctx);
+rx_result_struct c_start_method(struct _rx_method_holder_stub* self, start_ctx_ptr ctx);
+rx_result_struct c_stop_method(struct _rx_method_holder_stub* self);
+rx_result_struct c_deinit_method(struct _rx_method_holder_stub* self);
+
+rx_result_struct c_init_method_stub(void* self, init_ctx_ptr ctx)
+{
+    return c_init_method(self, ctx);
+}
+
+rx_result_struct c_start_method_stub(void* self, start_ctx_ptr ctx)
+{
+    return c_start_method(self, ctx);
+}
+rx_result_struct c_stop_method_stub(void* self)
+{
+    return c_stop_method(self);
+}
+rx_result_struct c_deinit_method_stub(void* self)
+{
+    return c_deinit_method(self);
+}
+
+
+
+rx_result_struct c_init_program(struct _rx_program_holder_stub* self, init_ctx_ptr ctx);
+rx_result_struct c_start_program(struct _rx_program_holder_stub* self, start_ctx_ptr ctx);
+rx_result_struct c_stop_program(struct _rx_program_holder_stub* self);
+rx_result_struct c_deinit_program(struct _rx_program_holder_stub* self);
+
+rx_result_struct c_init_program_stub(void* self, init_ctx_ptr ctx)
+{
+    return c_init_program(self, ctx);
+}
+
+rx_result_struct c_start_program_stub(void* self, start_ctx_ptr ctx)
+{
+    return c_start_program(self, ctx);
+}
+rx_result_struct c_stop_program_stub(void* self)
+{
+    return c_stop_program(self);
+}
+rx_result_struct c_deinit_program_stub(void* self)
+{
+    return c_deinit_program(self);
+}
+
+
+
+rx_result_struct c_init_display(struct _rx_display_holder_stub* self, init_ctx_ptr ctx);
+rx_result_struct c_start_display(struct _rx_display_holder_stub* self, start_ctx_ptr ctx);
+rx_result_struct c_stop_display(struct _rx_display_holder_stub* self);
+rx_result_struct c_deinit_display(struct _rx_display_holder_stub* self);
+
+rx_result_struct c_init_display_stub(void* self, init_ctx_ptr ctx)
+{
+    return c_init_display(self, ctx);
+}
+
+rx_result_struct c_start_display_stub(void* self, start_ctx_ptr ctx)
+{
+    return c_start_display(self, ctx);
+}
+rx_result_struct c_stop_display_stub(void* self)
+{
+    return c_stop_display(self);
+}
+rx_result_struct c_deinit_display_stub(void* self)
+{
+    return c_deinit_display(self);
+}
+
+
+
 rx_result_struct c_init_object(struct _rx_object_holder_stub* self, init_ctx_ptr ctx);
 rx_result_struct c_start_object(struct _rx_object_holder_stub* self, start_ctx_ptr ctx);
 rx_result_struct c_stop_object(struct _rx_object_holder_stub* self);
@@ -278,5 +435,52 @@ rx_result_struct c_deinit_application_stub(void* self)
 {
     return c_deinit_application(self);
 }
+
+
+
+
+rx_result_struct c_init_relation(struct _rx_relation_holder_stub* self, init_ctx_ptr ctx);
+rx_result_struct c_start_relation(struct _rx_relation_holder_stub* self, start_ctx_ptr ctx, int is_target);
+rx_result_struct c_stop_relation(struct _rx_relation_holder_stub* self, int is_target);
+rx_result_struct c_deinit_relation(struct _rx_relation_holder_stub* self);
+
+rx_result_struct c_make_target_relation(struct _rx_relation_holder_stub* self, struct plugin_relation_runtime_struct_t** target);
+rx_result_struct c_relation_connected(struct _rx_relation_holder_stub* self, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
+rx_result_struct c_relation_disconnected(struct _rx_relation_holder_stub* self, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
+
+
+rx_result_struct c_init_relation_stub(void* self, init_ctx_ptr ctx)
+{
+    return c_init_relation(self, ctx);
+}
+
+rx_result_struct c_start_relation_stub(void* self, start_ctx_ptr ctx, int is_target)
+{
+    return c_start_relation(self, ctx, is_target);
+}
+rx_result_struct c_stop_relation_stub(void* self, int is_target)
+{
+    return c_stop_relation(self, is_target);
+}
+rx_result_struct c_deinit_relation_stub(void* self)
+{
+    return c_deinit_relation(self);
+}
+
+rx_result_struct c_make_target_relation_stub(void* whose, struct plugin_relation_runtime_struct_t** target)
+{
+    return c_make_target_relation(whose, target);
+}
+rx_result_struct c_relation_connected_stub(void* whose, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to)
+{
+    return c_relation_connected(whose, from, to);
+}
+rx_result_struct c_relation_disconnected_stub(void* whose, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to)
+{
+    return c_relation_disconnected(whose, from, to);
+}
+
+
+
 
 

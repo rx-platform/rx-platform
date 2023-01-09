@@ -4,7 +4,7 @@
 *
 *  lib\rx_values.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -41,8 +41,8 @@
 #include "dummy.h"
 
 namespace rx {
-class base_meta_reader;
 class base_meta_writer;
+class base_meta_reader;
 
 } // namespace rx
 

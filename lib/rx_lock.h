@@ -4,7 +4,7 @@
 *
 *  lib\rx_lock.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -99,6 +99,31 @@ class lockable
 
 
       slim_lock_t slim_lock_;
+
+
+};
+
+
+
+
+
+
+template <class T>
+class auto_lock_t 
+{
+
+  public:
+      auto_lock_t (T* who);
+
+      ~auto_lock_t();
+
+
+  protected:
+
+  private:
+
+
+      T* p_;
 
 
 };
@@ -219,6 +244,14 @@ class const_auto_lock_t
 
 
 
+
+typedef auto_lock_t< empty_slim_lock  > auto_empty_slim_lock;
+
+
+
+
+
+
 class rw_slim_lock 
 {
 
@@ -253,47 +286,14 @@ class rw_slim_lock
 
 
 
-template <class T>
-class auto_lock_t 
-{
-
-  public:
-      auto_lock_t (T* who);
-
-      ~auto_lock_t();
-
-
-  protected:
-
-  private:
-
-
-      T* p_;
-
-
-};
-
-
-
-
-
-
-
-typedef auto_lock_t< empty_slim_lock  > auto_empty_slim_lock;
-
-
-
-
-
-
 template <class lockT>
-class auto_write_lock 
+class auto_read_lock 
 {
 
   public:
-      auto_write_lock (lockT* who);
+      auto_read_lock (lockT* who);
 
-      ~auto_write_lock();
+      ~auto_read_lock();
 
 
   protected:
@@ -312,13 +312,13 @@ class auto_write_lock
 
 
 template <class lockT>
-class auto_read_lock 
+class auto_write_lock 
 {
 
   public:
-      auto_read_lock (lockT* who);
+      auto_write_lock (lockT* who);
 
-      ~auto_read_lock();
+      ~auto_write_lock();
 
 
   protected:
@@ -357,22 +357,6 @@ class const_auto_read_lock
 };
 
 
-// Parameterized Class rx::locks::const_auto_lock_t 
-
-template <class T>
-const_auto_lock_t<T>::const_auto_lock_t (const T* who)
-	: p_(const_cast<T*>(who))
-{
-}
-
-
-template <class T>
-const_auto_lock_t<T>::~const_auto_lock_t()
-{
-}
-
-
-
 // Parameterized Class rx::locks::auto_lock_t 
 
 template <class T>
@@ -391,16 +375,17 @@ auto_lock_t<T>::~auto_lock_t()
 
 
 
-// Parameterized Class rx::locks::auto_write_lock 
+// Parameterized Class rx::locks::const_auto_lock_t 
 
-template <class lockT>
-auto_write_lock<lockT>::auto_write_lock (lockT* who)
+template <class T>
+const_auto_lock_t<T>::const_auto_lock_t (const T* who)
+	: p_(const_cast<T*>(who))
 {
 }
 
 
-template <class lockT>
-auto_write_lock<lockT>::~auto_write_lock()
+template <class T>
+const_auto_lock_t<T>::~const_auto_lock_t()
 {
 }
 
@@ -420,6 +405,21 @@ template <class lockT>
 auto_read_lock<lockT>::~auto_read_lock()
 {
           p_->read_unlock();
+}
+
+
+
+// Parameterized Class rx::locks::auto_write_lock 
+
+template <class lockT>
+auto_write_lock<lockT>::auto_write_lock (lockT* who)
+{
+}
+
+
+template <class lockT>
+auto_write_lock<lockT>::~auto_write_lock()
+{
 }
 
 

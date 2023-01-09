@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_logic_types.h
+*  D:\RX\Native\Source\platform_api\rx_logic_types.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,7 +34,7 @@
 
 
 // rx_runtime
-#include "platform_api/rx_runtime.h"
+#include "rx_runtime.h"
 
 
 
@@ -46,6 +46,7 @@ namespace rx_platform_api {
 
 class rx_method : public rx_runtime  
 {
+    DECLARE_REFERENCE_PTR(rx_method);
 
   public:
       rx_method();
@@ -53,15 +54,15 @@ class rx_method : public rx_runtime
       ~rx_method();
 
 
-      virtual rx_result initialize_port (rx_init_context& ctx);
+      virtual rx_result initialize_method (rx_init_context& ctx);
 
-      virtual rx_result start_port (rx_start_context& ctx);
+      virtual rx_result start_method (rx_start_context& ctx);
 
-      virtual rx_result stop_port ();
+      virtual rx_result stop_method ();
 
-      virtual rx_result deinitialize_port ();
+      virtual rx_result deinitialize_method ();
 
-
+      static constexpr rx_item_type type_id = rx_item_type::rx_method_type;
   protected:
 
   private:
@@ -69,8 +70,23 @@ class rx_method : public rx_runtime
 
       plugin_method_runtime_struct impl_;
 
-
+      template<class T>
+      friend rx_result register_method_runtime(const rx_node_id& id);
+      friend rx_result_struct(::c_init_method)(rx_platform_api::rx_method* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_start_method)(rx_platform_api::rx_method* self, start_ctx_ptr ctx);
 };
+
+rx_result register_method_runtime(const rx_node_id& id, rx_method_constructor_t construct_func);
+template<class T>
+rx_result register_method_runtime(const rx_node_id& id)
+{
+    auto constr_lambda = []() -> plugin_method_runtime_struct_t*
+    {
+        T* temp = new T;
+        return &temp->impl_;
+    };
+    return register_method_runtime(id, constr_lambda);
+}
 
 
 
@@ -79,6 +95,7 @@ class rx_method : public rx_runtime
 
 class rx_program : public rx_runtime  
 {
+    DECLARE_REFERENCE_PTR(rx_program);
 
   public:
       rx_program();
@@ -86,15 +103,15 @@ class rx_program : public rx_runtime
       ~rx_program();
 
 
-      virtual rx_result initialize_port (rx_init_context& ctx);
+      virtual rx_result initialize_program (rx_init_context& ctx);
 
-      virtual rx_result start_port (rx_start_context& ctx);
+      virtual rx_result start_program (rx_start_context& ctx);
 
-      virtual rx_result stop_port ();
+      virtual rx_result stop_program ();
 
-      virtual rx_result deinitialize_port ();
+      virtual rx_result deinitialize_program ();
 
-
+      static constexpr rx_item_type type_id = rx_item_type::rx_program_type;
   protected:
 
   private:
@@ -102,8 +119,72 @@ class rx_program : public rx_runtime
 
       plugin_program_runtime_struct impl_;
 
-
+      template<class T>
+      friend rx_result register_program_runtime(const rx_node_id& id);
+      friend rx_result_struct(::c_init_program)(rx_platform_api::rx_program* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_start_program)(rx_platform_api::rx_program* self, start_ctx_ptr ctx);
 };
+
+rx_result register_program_runtime(const rx_node_id& id, rx_program_constructor_t construct_func);
+template<class T>
+rx_result register_program_runtime(const rx_node_id& id)
+{
+    auto constr_lambda = []() -> plugin_program_runtime_struct_t*
+    {
+        T* temp = new T;
+        return &temp->impl_;
+    };
+    return register_program_runtime(id, constr_lambda);
+}
+
+
+
+
+
+
+class rx_display : public rx_runtime  
+{
+    DECLARE_REFERENCE_PTR(rx_display);
+
+  public:
+      rx_display();
+
+      ~rx_display();
+
+
+      virtual rx_result initialize_display (rx_init_context& ctx);
+
+      virtual rx_result start_display (rx_start_context& ctx);
+
+      virtual rx_result stop_display ();
+
+      virtual rx_result deinitialize_display ();
+
+      static constexpr rx_item_type type_id = rx_item_type::rx_display_type;
+  protected:
+
+  private:
+
+
+      plugin_display_runtime_struct impl_;
+
+      template<class T>
+      friend rx_result register_display_runtime(const rx_node_id& id);
+      friend rx_result_struct(::c_init_display)(rx_platform_api::rx_display* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_start_display)(rx_platform_api::rx_display* self, start_ctx_ptr ctx);
+};
+
+rx_result register_display_runtime(const rx_node_id& id, rx_display_constructor_t construct_func);
+template<class T>
+rx_result register_display_runtime(const rx_node_id& id)
+{
+    auto constr_lambda = []() -> plugin_display_runtime_struct_t*
+    {
+        T* temp = new T;
+        return &temp->impl_;
+    };
+    return register_display_runtime(id, constr_lambda);
+}
 
 
 } // namespace rx_platform_api

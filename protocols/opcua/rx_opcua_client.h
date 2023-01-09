@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_client.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_opcua_requests
 #include "protocols/opcua/rx_opcua_requests.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "protocols/opcua/rx_opcua_binary.h"
 #include "protocols/opcua/rx_opcua_identifiers.h"

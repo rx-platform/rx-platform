@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_ports.cpp
+*  D:\RX\Native\Source\platform_api\rx_ports.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,7 +32,7 @@
 
 
 // rx_ports
-#include "platform_api/rx_ports.h"
+#include "rx_ports.h"
 
 #include "lib/rx_mem.h"
 #include "lib/rx_ser_bin.h"
@@ -147,8 +147,6 @@ rx_result register_port_runtime(const rx_node_id& id, rx_port_constructor_t cons
 }
 
 // Class rx_platform_api::rx_port 
-
-const rx_item_type rx_port::type_id = rx_item_type::rx_port_type;
 
 rx_item_type rx_port::runtime_type_id = rx_item_type::rx_port;
 

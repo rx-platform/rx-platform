@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_basic.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,20 +33,20 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_blocks_templates
 #include "system/runtime/rx_blocks_templates.h"
-// rx_opcua_server
-#include "protocols/opcua/rx_opcua_server.h"
+// dummy
+#include "dummy.h"
 // rx_opcua_subscriptions
 #include "protocols/opcua/rx_opcua_subscriptions.h"
 // rx_opcua_std
 #include "protocols/opcua/rx_opcua_std.h"
 // rx_opcua_addr_space
 #include "protocols/opcua/rx_opcua_addr_space.h"
+// rx_opcua_server
+#include "protocols/opcua/rx_opcua_server.h"
 
 namespace protocols {
 namespace opcua {
@@ -357,13 +357,13 @@ Implementation of OPC UA Basic Mapper");
 
 
 
-      //opcua_basic_node node_;
+      opcua_basic_node node_;
 
 
       locks::slim_lock transactions_lock_;
 
       write_transactions_type write_transactions_;
-      opcua_basic_node node_;
+
 
 };
 

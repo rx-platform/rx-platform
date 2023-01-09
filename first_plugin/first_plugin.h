@@ -4,7 +4,7 @@
 *
 *  first_plugin\first_plugin.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,16 @@
 
 
 
+// rx_basic_types
+#include "rx_basic_types.h"
 // rx_var_types
-#include "platform_api/rx_var_types.h"
+#include "rx_var_types.h"
 // rx_objects
-#include "platform_api/rx_objects.h"
+#include "rx_objects.h"
+// rx_runtime
+#include "rx_runtime.h"
 // rx_api
-#include "platform_api/rx_api.h"
+#include "rx_api.h"
 
 using namespace rx_platform_api;
 
@@ -318,6 +322,88 @@ First Application. Application implementation in test plugin.");
 
 
       runtime_handle_t timer_;
+
+
+};
+
+
+
+
+
+
+class first_struct : public rx_platform_api::rx_struct  
+{
+    DECLARE_PLUGIN_CODE_INFO(1, 0, 0, "\
+First Struct. Struct implementation in test plugin.");
+
+    DECLARE_REFERENCE_PTR(first_struct);
+
+  public:
+      first_struct();
+
+      ~first_struct();
+
+
+      rx_result initialize_struct (rx_platform_api::rx_init_context& ctx);
+
+      rx_result start_struct (rx_platform_api::rx_start_context& ctx);
+
+      rx_result stop_struct ();
+
+      rx_result deinitialize_struct ();
+
+
+  protected:
+
+  private:
+
+      void timer_tick ();
+
+
+
+      runtime_handle_t timer_;
+
+
+};
+
+
+
+
+
+
+class first_relation : public rx_platform_api::rx_relation  
+{
+    DECLARE_PLUGIN_CODE_INFO(0, 1, 0, "\
+First Relation. Relation implementation in test plugin.");
+
+    DECLARE_REFERENCE_PTR(first_relation);
+
+  public:
+      first_relation();
+
+      ~first_relation();
+
+
+      rx_result initialize_relation (rx_platform_api::rx_init_context& ctx);
+
+      rx_result start_relation (rx_platform_api::rx_start_context& ctx, bool is_target);
+
+      rx_result stop_relation (bool is_target);
+
+      rx_result deinitialize_relation ();
+
+      rx_relation::smart_ptr make_target_relation ();
+
+      static constexpr rx_item_type type_id = rx_item_type::rx_relation_type;
+
+  protected:
+
+  private:
+
+      void relation_connected (rx_node_id from, rx_node_id to);
+
+      void relation_disconnected (rx_node_id from, rx_node_id to);
+
 
 
 };

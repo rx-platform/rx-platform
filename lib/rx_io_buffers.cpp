@@ -4,7 +4,7 @@
 *
 *  lib\rx_io_buffers.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -39,6 +39,97 @@
 namespace rx {
 
 namespace io {
+
+// Class rx::io::rx_const_io_buffer 
+
+rx_const_io_buffer::rx_const_io_buffer (rx_const_packet_buffer* buffer)
+	: buffer_(buffer)
+{
+}
+
+
+
+rx_result rx_const_io_buffer::read_string (string_type& val)
+{
+	uint32_t length = 0;
+	auto result = read_from_buffer(length);
+	if (result)
+	{
+		rx_protocol_result_t ret;
+		char* temp = (char*)rx_get_from_packet(buffer_, length, &ret);
+		if (temp)
+		{
+			val.assign(temp, length);
+		}
+		else
+			result = rx_protocol_error_message(ret);
+	}
+	return result;
+}
+
+rx_result rx_const_io_buffer::read_chars (string_type& val)
+{
+	auto available = rx_get_packet_available_data(buffer_);
+	if (available > 0)
+	{
+		rx_protocol_result_t ret;
+		char* temp = (char*)rx_get_from_packet(buffer_, available, &ret);
+		if (temp)
+		{
+			val.assign(temp, available);
+			return true;
+		}
+		else
+			return rx_protocol_error_message(ret);
+	}
+	return "Buffer empty!";
+}
+
+rx_const_packet_buffer rx_const_io_buffer::create_from_chars (const string_type& str)
+{
+	rx_const_packet_buffer ret{ (const uint8_t*)str.c_str(), 0, str.size() };
+	return ret;
+}
+
+rx_const_packet_buffer* rx_const_io_buffer::c_buffer ()
+{
+	return buffer_;
+}
+
+size_t rx_const_io_buffer::get_possition ()
+{
+	return buffer_->next_read;
+}
+
+rx_result rx_const_io_buffer::read_data (void* data, size_t count)
+{
+	auto available = rx_get_packet_available_data(buffer_);
+	if (available > 0)
+	{
+		rx_protocol_result_t ret;
+		const void* temp = (char*)rx_get_from_packet(buffer_, count, &ret);
+		if (temp)
+		{
+			memcpy(data, temp, count);
+			return true;
+		}
+		else
+			return rx_protocol_error_message(ret);
+	}
+	return "Buffer empty!";
+}
+
+void rx_const_io_buffer::skip (size_t count)
+{
+	rx_protocol_result_t ret;
+	rx_get_from_packet(buffer_, count, &ret);
+}
+
+bool rx_const_io_buffer::eof () const
+{
+	return rx_buffer_eof(buffer_) != 0;
+}
+
 
 // Class rx::io::rx_io_buffer 
 
@@ -170,97 +261,6 @@ rx_io_buffer& rx_io_buffer::operator=(rx_io_buffer&& right) noexcept
 
 	return *this;
 }
-// Class rx::io::rx_const_io_buffer 
-
-rx_const_io_buffer::rx_const_io_buffer (rx_const_packet_buffer* buffer)
-	: buffer_(buffer)
-{
-}
-
-
-
-rx_result rx_const_io_buffer::read_string (string_type& val)
-{
-	uint32_t length = 0;
-	auto result = read_from_buffer(length);
-	if (result)
-	{
-		rx_protocol_result_t ret;
-		char* temp = (char*)rx_get_from_packet(buffer_, length, &ret);
-		if (temp)
-		{
-			val.assign(temp, length);
-		}
-		else
-			result = rx_protocol_error_message(ret);
-	}
-	return result;
-}
-
-rx_result rx_const_io_buffer::read_chars (string_type& val)
-{
-	auto available = rx_get_packet_available_data(buffer_);
-	if (available > 0)
-	{
-		rx_protocol_result_t ret;
-		char* temp = (char*)rx_get_from_packet(buffer_, available, &ret);
-		if (temp)
-		{
-			val.assign(temp, available);
-			return true;
-		}
-		else
-			return rx_protocol_error_message(ret);
-	}
-	return "Buffer empty!";
-}
-
-rx_const_packet_buffer rx_const_io_buffer::create_from_chars (const string_type& str)
-{
-	rx_const_packet_buffer ret{ (const uint8_t*)str.c_str(), 0, str.size() };
-	return ret;
-}
-
-rx_const_packet_buffer* rx_const_io_buffer::c_buffer ()
-{
-	return buffer_;
-}
-
-size_t rx_const_io_buffer::get_possition ()
-{
-	return buffer_->next_read;
-}
-
-rx_result rx_const_io_buffer::read_data (void* data, size_t count)
-{
-	auto available = rx_get_packet_available_data(buffer_);
-	if (available > 0)
-	{
-		rx_protocol_result_t ret;
-		const void* temp = (char*)rx_get_from_packet(buffer_, count, &ret);
-		if (temp)
-		{
-			memcpy(data, temp, count);
-			return true;
-		}
-		else
-			return rx_protocol_error_message(ret);
-	}
-	return "Buffer empty!";
-}
-
-void rx_const_io_buffer::skip (size_t count)
-{
-	rx_protocol_result_t ret;
-	rx_get_from_packet(buffer_, count, &ret);
-}
-
-bool rx_const_io_buffer::eof () const
-{
-	return rx_buffer_eof(buffer_) != 0;
-}
-
-
 } // namespace io
 } // namespace rx
 

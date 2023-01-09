@@ -2,9 +2,9 @@
 
 /****************************************************************************
 *
-*  platform_api\rx_abi.h
+*  D:\RX\Native\Source\platform_api\rx_abi.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -104,7 +104,7 @@ extern "C" {
 
 	} plugin_source_register_data;
 	RX_PLATFORM_API rx_result_struct rxRegisterSourceRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_source_register_data construct_data);
-	typedef rx_result_struct(*rxRegisterSourceRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, plugin_source_register_data construct_func);
+	typedef rx_result_struct(*rxRegisterSourceRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, plugin_source_register_data construct_data);
 
 	struct plugin_mapper_runtime_struct_t;
 	typedef struct plugin_mapper_runtime_struct_t* (*rx_mapper_constructor_t)();
@@ -116,21 +116,57 @@ extern "C" {
 	RX_PLATFORM_API rx_result_struct rxRegisterFilterRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_filter_constructor_t construct_func);
 	typedef rx_result_struct(*rxRegisterFilterRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_filter_constructor_t construct_func);
 
+	struct plugin_struct_runtime_struct_t;
+	typedef struct plugin_struct_runtime_struct_t* (*rx_struct_constructor_t)();
+	RX_PLATFORM_API rx_result_struct rxRegisterStructRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_struct_constructor_t construct_func);
+	typedef rx_result_struct(*rxRegisterStructRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_struct_constructor_t construct_func);
+
+	struct plugin_variable_runtime_struct_t;
+	typedef struct plugin_variable_runtime_struct_t* (*rx_variable_constructor_t)();
+	RX_PLATFORM_API rx_result_struct rxRegisterVariableRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_variable_constructor_t construct_func);
+	typedef rx_result_struct(*rxRegisterVariableRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_variable_constructor_t construct_func);
+
+	struct plugin_event_runtime_struct_t;
+	typedef struct plugin_event_runtime_struct_t* (*rx_event_constructor_t)();
+	RX_PLATFORM_API rx_result_struct rxRegisterEventRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_event_constructor_t construct_func);
+	typedef rx_result_struct(*rxRegisterEventRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_event_constructor_t construct_func);
+
 
 	struct plugin_object_runtime_struct_t;
 	typedef struct plugin_object_runtime_struct_t* (*rx_object_constructor_t)();
-	RX_PLATFORM_API rx_result_struct rxRegisterObjectRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_object_constructor_t construct_func);
-	typedef rx_result_struct(*rxRegisterObjectRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_object_constructor_t construct_func);
+	typedef struct plugin_object_register_data_t
+	{
+		rx_object_constructor_t constructor;
+		rx_runtime_register_func_t register_func;
+		rx_runtime_unregister_func_t unregister_func;
+
+	} plugin_object_register_data;
+	RX_PLATFORM_API rx_result_struct rxRegisterObjectRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_object_register_data construct_data);
+	typedef rx_result_struct(*rxRegisterObjectRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, plugin_object_register_data construct_data);
 
 	struct plugin_application_runtime_struct_t;
 	typedef struct plugin_application_runtime_struct_t* (*rx_application_constructor_t)();
-	RX_PLATFORM_API rx_result_struct rxRegisterApplicationRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_application_constructor_t construct_func);
-	typedef rx_result_struct(*rxRegisterApplicationRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_application_constructor_t construct_func);
+	typedef struct plugin_application_register_data_t
+	{
+		rx_application_constructor_t constructor;
+		rx_runtime_register_func_t register_func;
+		rx_runtime_unregister_func_t unregister_func;
+
+	} plugin_application_register_data;
+	RX_PLATFORM_API rx_result_struct rxRegisterApplicationRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_application_register_data construct_data);
+	typedef rx_result_struct(*rxRegisterApplicationRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, plugin_application_register_data construct_data);
 
 	struct plugin_domain_runtime_struct_t;
 	typedef struct plugin_domain_runtime_struct_t* (*rx_domain_constructor_t)();
-	RX_PLATFORM_API rx_result_struct rxRegisterDomainRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_domain_constructor_t construct_func);
-	typedef rx_result_struct(*rxRegisterDomainRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_domain_constructor_t construct_func);
+	typedef struct plugin_domain_register_data_t
+	{
+		rx_domain_constructor_t constructor;
+		rx_runtime_register_func_t register_func;
+		rx_runtime_unregister_func_t unregister_func;
+
+	} plugin_domain_register_data;
+	RX_PLATFORM_API rx_result_struct rxRegisterDomainRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_domain_register_data construct_data);
+	typedef rx_result_struct(*rxRegisterDomainRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, plugin_domain_register_data construct_data);
 
 	struct plugin_port_runtime_struct_t;
 	typedef struct plugin_port_runtime_struct_t* (*rx_port_constructor_t)();
@@ -143,6 +179,36 @@ extern "C" {
 	} plugin_port_register_data;
 	RX_PLATFORM_API rx_result_struct rxRegisterPortRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_port_register_data construct_data);
 	typedef rx_result_struct(*rxRegisterPortRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, plugin_port_register_data construct_data);
+
+	struct plugin_relation_runtime_struct_t;
+	typedef struct plugin_relation_runtime_struct_t* (*rx_relation_constructor_t)();
+	typedef struct plugin_relation_register_data_t
+	{
+		rx_relation_constructor_t constructor;
+		rx_runtime_register_func_t register_func;
+		rx_runtime_unregister_func_t unregister_func;
+
+	} plugin_relation_register_data;
+	RX_PLATFORM_API rx_result_struct rxRegisterRelationRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_relation_register_data construct_data);
+	typedef rx_result_struct(*rxRegisterRelationRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, plugin_relation_register_data construct_data);
+
+
+
+	struct plugin_method_runtime_struct_t;
+	typedef struct plugin_method_runtime_struct_t* (*rx_method_constructor_t)();
+	RX_PLATFORM_API rx_result_struct rxRegisterMethodRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_method_constructor_t construct_func);
+	typedef rx_result_struct(*rxRegisterMethodRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_method_constructor_t construct_func);
+
+	struct plugin_program_runtime_struct_t;
+	typedef struct plugin_program_runtime_struct_t* (*rx_program_constructor_t)();
+	RX_PLATFORM_API rx_result_struct rxRegisterProgramRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_program_constructor_t construct_func);
+	typedef rx_result_struct(*rxRegisterProgramRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_program_constructor_t construct_func);
+
+	struct plugin_display_runtime_struct_t;
+	typedef struct plugin_display_runtime_struct_t* (*rx_display_constructor_t)();
+	RX_PLATFORM_API rx_result_struct rxRegisterDisplayRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_display_constructor_t construct_func);
+	typedef rx_result_struct(*rxRegisterDisplayRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_display_constructor_t construct_func);
+
 
 	typedef void* init_ctx_ptr;
 	typedef void(*bind_callback_t)(void* target, const struct full_value_type* val);
@@ -227,11 +293,20 @@ extern "C" {
 		rxRegisterSourceRuntime_t prxRegisterSourceRuntime;
 		rxRegisterMapperRuntime_t prxRegisterMapperRuntime;
 		rxRegisterFilterRuntime_t prxRegisterFilterRuntime;
+		rxRegisterStructRuntime_t prxRegisterStructRuntime;
+		rxRegisterVariableRuntime_t prxRegisterVariableRuntime;
+		rxRegisterEventRuntime_t prxRegisterEventRuntime;
+
+		rxRegisterMethodRuntime_t prxRegisterMethodRuntime;
+		rxRegisterProgramRuntime_t prxRegisterProgramRuntime;
+		rxRegisterDisplayRuntime_t prxRegisterDisplayRuntime;
 
 		rxRegisterObjectRuntime_t prxRegisterObjectRuntime;
 		rxRegisterApplicationRuntime_t prxRegisterApplicationRuntime;
 		rxRegisterDomainRuntime_t prxRegisterDomainRuntime;
 		rxRegisterPortRuntime_t prxRegisterPortRuntime;
+
+		rxRegisterRelationRuntime_t prxRegisterRelationRuntime;
 
 		rxInitCtxBindItem_t prxInitCtxBindItem;
 		rxInitCtxGetCurrentPath_t prxInitCtxGetCurrentPath;
@@ -441,6 +516,241 @@ extern "C" {
 
 	} plugin_filter_runtime_struct;
 
+	// Struct ABI interface
+	typedef rx_result_struct(*rx_init_struct_t)(void* whose, init_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_start_struct_t)(void* whose, start_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_stop_struct_t)(void* whose);
+	typedef rx_result_struct(*rx_deinit_struct_t)(void* whose);
+
+
+	typedef struct plugin_struct_def_struct_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_struct_t init_struct;
+		rx_start_struct_t start_struct;
+		rx_stop_struct_t stop_struct;
+		rx_deinit_struct_t deinit_struct;
+
+
+	} plugin_struct_def_struct;
+
+
+	typedef struct host_struct_def_struct_t
+	{
+		host_runtime_def_struct runtime;
+
+	} host_struct_def_struct;
+
+	typedef struct plugin_struct_runtime_struct_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_struct_def_struct* def;
+		host_struct_def_struct* host_def;
+		uint32_t io_data;
+
+	} plugin_struct_runtime_struct;
+
+	// Variable ABI interface
+	typedef rx_result_struct(*rx_init_variable_t)(void* whose, init_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_start_variable_t)(void* whose, start_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_stop_variable_t)(void* whose);
+	typedef rx_result_struct(*rx_deinit_variable_t)(void* whose);
+
+
+	typedef struct plugin_variable_def_struct_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_variable_t init_variable;
+		rx_start_variable_t start_variable;
+		rx_stop_variable_t stop_variable;
+		rx_deinit_variable_t deinit_variable;
+
+	} plugin_variable_def_struct;
+
+
+
+	typedef struct host_variable_def_struct_t
+	{
+		host_runtime_def_struct runtime;
+
+	} host_variable_def_struct;
+
+	typedef struct plugin_variable_runtime_struct_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_variable_def_struct* def;
+		host_variable_def_struct* host_def;
+		uint32_t io_data;
+
+	} plugin_variable_runtime_struct;
+
+	// Event ABI interface
+	typedef rx_result_struct(*rx_init_event_t)(void* whose, init_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_start_event_t)(void* whose, start_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_stop_event_t)(void* whose);
+	typedef rx_result_struct(*rx_deinit_event_t)(void* whose);
+
+
+	typedef struct plugin_event_def_struct_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_event_t init_event;
+		rx_start_event_t start_event;
+		rx_stop_event_t stop_event;
+		rx_deinit_event_t deinit_event;
+
+
+	} plugin_event_def_struct;
+
+
+	//typedef rx_result_struct(*rx_event_changed_t)(void* whose);
+
+	typedef struct host_event_def_struct_t
+	{
+		host_runtime_def_struct runtime;
+
+	//	rx_event_changed_t event_changed;
+
+	} host_event_def_struct;
+
+	typedef struct plugin_event_runtime_struct_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_event_def_struct* def;
+		host_event_def_struct* host_def;
+		uint32_t io_data;
+
+	} plugin_event_runtime_struct;
+
+
+	// Method ABI interface
+	typedef rx_result_struct(*rx_init_method_t)(void* whose, init_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_start_method_t)(void* whose, start_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_stop_method_t)(void* whose);
+	typedef rx_result_struct(*rx_deinit_method_t)(void* whose);
+
+
+	typedef struct plugin_method_def_struct_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_method_t init_method;
+		rx_start_method_t start_method;
+		rx_stop_method_t stop_method;
+		rx_deinit_method_t deinit_method;
+
+
+	} plugin_method_def_struct;
+
+
+	//typedef rx_result_struct(*rx_method_changed_t)(void* whose);
+
+	typedef struct host_method_def_struct_t
+	{
+		host_runtime_def_struct runtime;
+
+		//	rx_method_changed_t method_changed;
+
+	} host_method_def_struct;
+
+	typedef struct plugin_method_runtime_struct_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_method_def_struct* def;
+		host_method_def_struct* host_def;
+		uint32_t io_data;
+
+	} plugin_method_runtime_struct;
+
+
+	// Program ABI interface
+	typedef rx_result_struct(*rx_init_program_t)(void* whose, init_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_start_program_t)(void* whose, start_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_stop_program_t)(void* whose);
+	typedef rx_result_struct(*rx_deinit_program_t)(void* whose);
+
+
+	typedef struct plugin_program_def_struct_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_program_t init_program;
+		rx_start_program_t start_program;
+		rx_stop_program_t stop_program;
+		rx_deinit_program_t deinit_program;
+
+
+	} plugin_program_def_struct;
+
+
+	//typedef rx_result_struct(*rx_program_changed_t)(void* whose);
+
+	typedef struct host_program_def_struct_t
+	{
+		host_runtime_def_struct runtime;
+
+		//	rx_program_changed_t program_changed;
+
+	} host_program_def_struct;
+
+	typedef struct plugin_program_runtime_struct_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_program_def_struct* def;
+		host_program_def_struct* host_def;
+		uint32_t io_data;
+
+	} plugin_program_runtime_struct;
+
+
+	// Program ABI interface
+	typedef rx_result_struct(*rx_init_display_t)(void* whose, init_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_start_display_t)(void* whose, start_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_stop_display_t)(void* whose);
+	typedef rx_result_struct(*rx_deinit_display_t)(void* whose);
+
+
+	typedef struct plugin_display_def_struct_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_display_t init_display;
+		rx_start_display_t start_display;
+		rx_stop_display_t stop_display;
+		rx_deinit_display_t deinit_display;
+
+
+	} plugin_display_def_struct;
+
+
+	//typedef rx_result_struct(*rx_display_changed_t)(void* whose);
+
+	typedef struct host_display_def_struct_t
+	{
+		host_runtime_def_struct runtime;
+
+		//	rx_display_changed_t display_changed;
+
+	} host_display_def_struct;
+
+	typedef struct plugin_display_runtime_struct_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_display_def_struct* def;
+		host_display_def_struct* host_def;
+		uint32_t io_data;
+
+	} plugin_display_runtime_struct;
+
 	// Object ABI interface
 	typedef rx_result_struct(*rx_init_object_t)(void* whose, init_ctx_ptr ctx);
 	typedef rx_result_struct(*rx_start_object_t)(void* whose, start_ctx_ptr ctx);
@@ -622,6 +932,52 @@ extern "C" {
 
 	} plugin_port_runtime_struct;
 
+	// Relation ABI interface
+	typedef rx_result_struct(*rx_init_relation_t)(void* whose, init_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_start_relation_t)(void* whose, start_ctx_ptr ctx, int target);
+	typedef rx_result_struct(*rx_stop_relation_t)(void* whose, int target);
+	typedef rx_result_struct(*rx_deinit_relation_t)(void* whose);
+
+	struct plugin_relation_runtime_struct_t;
+	typedef rx_result_struct(*rx_make_target_relation_t)(void* whose, struct plugin_relation_runtime_struct_t** target);
+	typedef rx_result_struct(*rx_relation_connected_t)(void* whose, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
+	typedef rx_result_struct(*rx_relation_disconnected_t)(void* whose, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to);
+
+	typedef struct plugin_relation_def_struct_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_relation_t init_relation;
+		rx_start_relation_t start_relation;
+		rx_stop_relation_t stop_relation;
+		rx_deinit_relation_t deinit_relation;
+
+		rx_make_target_relation_t make_target_relation;
+		rx_relation_connected_t relation_connected;
+		rx_relation_disconnected_t relation_disconnected;
+
+	} plugin_relation_def_struct;
+
+
+	typedef rx_result_struct(*rx_relation_changed_t)(void* whose);
+
+	typedef struct host_relation_def_struct_t
+	{
+		host_runtime_def_struct runtime;
+
+	//	rx_relation_changed_t relation_changed;
+
+	} host_relation_def_struct;
+
+	typedef struct plugin_relation_runtime_struct_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_relation_def_struct* def;
+		host_relation_def_struct* host_def;
+		uint32_t io_data;
+
+	} plugin_relation_runtime_struct;
 
 
 #ifdef __cplusplus

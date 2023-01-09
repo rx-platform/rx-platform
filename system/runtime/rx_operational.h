@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_operational.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -43,14 +43,14 @@
 namespace rx_platform {
 namespace runtime {
 class runtime_process_context;
-namespace logic_blocks {
-class method_data;
-} // namespace logic_blocks
-
 namespace tag_blocks {
 class binded_tags;
-
 } // namespace tag_blocks
+
+namespace logic_blocks {
+class method_data;
+
+} // namespace logic_blocks
 } // namespace runtime
 } // namespace rx_platform
 

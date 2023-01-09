@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_subscriptions.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,12 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_opcua_subs_set
 #include "protocols/opcua/rx_opcua_subs_set.h"
 // rx_opcua_addr_space
 #include "protocols/opcua/rx_opcua_addr_space.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace protocols {
 namespace opcua {

@@ -4,7 +4,7 @@
 *
 *  first_plugin\first_ports.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -104,11 +104,6 @@ first_transport_port_endpoint::first_transport_port_endpoint (first_transport_po
 {
 	RX_PLUGIN_LOG_DEBUG("first_transport_port", 100, _rx_func_);
 	rx_init_stack_entry(&stack_, this);
-	stack_.received_function = [](rx_protocol_stack_endpoint* entry, recv_protocol_packet packet)->rx_protocol_result_t
-		{
-			first_transport_port_endpoint* whose = reinterpret_cast<first_transport_port_endpoint*>(entry->user_data);
-			return whose->received(packet);
-		};
 }
 
 
@@ -124,7 +119,7 @@ rx_protocol_stack_endpoint* first_transport_port_endpoint::get_endpoint ()
 	return &stack_;
 }
 
-rx_protocol_result_t first_transport_port_endpoint::received (recv_protocol_packet packet)
+rx_protocol_result_t first_transport_port_endpoint::received (rx_protocol_stack_endpoint* stack, recv_protocol_packet packet)
 {
 	auto buffer = port_->alloc_io_buffer();
 	if (buffer)
@@ -302,11 +297,6 @@ first_server_endpoint::first_server_endpoint (first_server_port* port)
 {
 	RX_PLUGIN_LOG_DEBUG("first_server_endpoint", 100, _rx_func_);
 	rx_init_stack_entry(&stack_, this);
-	stack_.received_function = [](rx_protocol_stack_endpoint* entry, recv_protocol_packet packet)->rx_protocol_result_t
-	{
-		first_server_endpoint* whose = reinterpret_cast<first_server_endpoint*>(entry->user_data);
-		return whose->received(packet);
-	};
 }
 
 
@@ -322,7 +312,7 @@ rx_protocol_stack_endpoint* first_server_endpoint::get_endpoint ()
 	return &stack_;
 }
 
-rx_protocol_result_t first_server_endpoint::received (recv_protocol_packet packet)
+rx_protocol_result_t first_server_endpoint::received (rx_protocol_stack_endpoint* stack, recv_protocol_packet packet)
 {
 	string_type line;
 	if (packet.buffer)
@@ -378,11 +368,6 @@ first_client_endpoint::first_client_endpoint (first_client_port* port)
 {
 	RX_PLUGIN_LOG_DEBUG("first_client_endpoint", 100, _rx_func_);
 	rx_init_stack_entry(&stack_, this);
-	stack_.received_function = [](rx_protocol_stack_endpoint* entry, recv_protocol_packet packet)->rx_protocol_result_t
-	{
-		first_client_endpoint* whose = reinterpret_cast<first_client_endpoint*>(entry->user_data);
-		return whose->received(packet);
-	};
 }
 
 
@@ -402,7 +387,7 @@ void first_client_endpoint::close_endpoint ()
 {
 }
 
-rx_protocol_result_t first_client_endpoint::received (recv_protocol_packet packet)
+rx_protocol_result_t first_client_endpoint::received (rx_protocol_stack_endpoint* stack, recv_protocol_packet packet)
 {
 	string_type line;
 	if (packet.buffer)

@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_set_messages.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_protocol_messages
-#include "sys_internal/rx_protocol_messages.h"
 // rx_query_messages
 #include "sys_internal/rx_query_messages.h"
+// rx_protocol_messages
+#include "sys_internal/rx_protocol_messages.h"
 
 namespace rx_internal {
 namespace rx_protocol {

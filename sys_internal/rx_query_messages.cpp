@@ -4,27 +4,27 @@
 *
 *  sys_internal\rx_query_messages.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -67,7 +67,7 @@ string_result_wrapper rx_create_string_result(const string_type& value)
 	return ret;
 }
 
-// Class rx_internal::rx_protocol::messages::query_messages::browse_request_message
+// Class rx_internal::rx_protocol::messages::query_messages::browse_request_message 
 
 string_type browse_request_message::type_name = "brwReq";
 
@@ -131,7 +131,7 @@ rx_message_type_t browse_request_message::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::query_messages::browse_response_message
+// Class rx_internal::rx_protocol::messages::query_messages::browse_response_message 
 
 string_type browse_response_message::type_name = "brwResp";
 
@@ -190,7 +190,7 @@ rx_message_type_t browse_response_message::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::query_messages::get_type_request
+// Class rx_internal::rx_protocol::messages::query_messages::get_type_request 
 
 string_type get_type_request::type_name = "getTypeReq";
 
@@ -447,7 +447,7 @@ message_ptr get_type_request::do_data_job(api::rx_context ctx, rx_protocol_conne
 		return message_ptr();
 	}
 }
-// Parameterized Class rx_internal::rx_protocol::messages::query_messages::get_type_response
+// Parameterized Class rx_internal::rx_protocol::messages::query_messages::get_type_response 
 
 template <class itemT>
 string_type get_type_response<itemT>::type_name = "getTypeResp";
@@ -471,7 +471,7 @@ rx_message_type_t get_type_response<itemT>::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::query_messages::query_request_message
+// Class rx_internal::rx_protocol::messages::query_messages::query_request_message 
 
 string_type query_request_message::type_name = "queryReq";
 
@@ -569,7 +569,7 @@ rx_message_type_t query_request_message::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::query_messages::query_response_message
+// Class rx_internal::rx_protocol::messages::query_messages::query_response_message 
 
 string_type query_response_message::type_name = "queryResp";
 
@@ -629,7 +629,7 @@ rx_message_type_t query_response_message::get_type_id ()
 }
 
 
-// Parameterized Class rx_internal::rx_protocol::messages::query_messages::type_response_message
+// Parameterized Class rx_internal::rx_protocol::messages::query_messages::type_response_message 
 
 
 template <class itemT>
@@ -669,7 +669,7 @@ rx_result type_response_message<itemT>::deserialize (base_meta_reader& stream)
 }
 
 
-// Class rx_internal::rx_protocol::messages::query_messages::get_runtime_request
+// Class rx_internal::rx_protocol::messages::query_messages::get_runtime_request 
 
 string_type get_runtime_request::type_name = "getRuntimeReq";
 
@@ -792,7 +792,7 @@ message_ptr get_runtime_request::do_job(api::rx_context ctx, rx_protocol_connect
 		return message_ptr();
 	}
 }
-// Parameterized Class rx_internal::rx_protocol::messages::query_messages::runtime_response_message
+// Parameterized Class rx_internal::rx_protocol::messages::query_messages::runtime_response_message 
 
 
 template <class itemT>
@@ -828,7 +828,7 @@ rx_result runtime_response_message<itemT>::deserialize (base_meta_reader& stream
 }
 
 
-// Parameterized Class rx_internal::rx_protocol::messages::query_messages::get_runtime_response
+// Parameterized Class rx_internal::rx_protocol::messages::query_messages::get_runtime_response 
 
 template <class itemT>
 string_type get_runtime_response<itemT>::type_name = "getRuntimeResp";
@@ -852,7 +852,7 @@ rx_message_type_t get_runtime_response<itemT>::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::query_messages::browse_runtime_request
+// Class rx_internal::rx_protocol::messages::query_messages::browse_runtime_request 
 
 string_type browse_runtime_request::type_name = "brwRuntimeReq";
 
@@ -975,7 +975,7 @@ message_ptr browse_runtime_request::do_concrete_job(api::rx_context ctx, rx_prot
 		return message_ptr();
 	}
 }
-// Class rx_internal::rx_protocol::messages::query_messages::browse_runtime_response_message
+// Class rx_internal::rx_protocol::messages::query_messages::browse_runtime_response_message 
 
 string_type browse_runtime_response_message::type_name = "brwRuntimeResp";
 
@@ -1049,7 +1049,7 @@ rx_message_type_t browse_runtime_response_message::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::query_messages::get_code_info_request
+// Class rx_internal::rx_protocol::messages::query_messages::get_code_info_request 
 
 string_type get_code_info_request::type_name = "codeReq";
 
@@ -1165,7 +1165,7 @@ rx_message_type_t get_code_info_request::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::query_messages::get_code_info_response_message
+// Class rx_internal::rx_protocol::messages::query_messages::get_code_info_response_message 
 
 string_type get_code_info_response_message::type_name = "codeResp";
 

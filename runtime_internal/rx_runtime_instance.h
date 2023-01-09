@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_instance.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,10 +35,10 @@
 #include "system/runtime/rx_runtime_helpers.h"
 #include "lib/rx_io_addr.h"
 
-// rx_identity
-#include "system/server/rx_identity.h"
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
+// rx_identity
+#include "system/server/rx_identity.h"
 // rx_port_instance
 #include "interfaces/rx_port_instance.h"
 // rx_security

@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_ethernet.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,14 +33,14 @@
 
 
 
-// dummy
-#include "dummy.h"
-// rx_thread
-#include "system/threads/rx_thread.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
+// dummy
+#include "dummy.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -126,7 +126,7 @@ class ethernet_endpoint : public rx_platform::threads::thread
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::ethernet::ethernet_endpoint  > ethernet_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< ethernet_endpoint  > ethernet_port_base;
 
 
 

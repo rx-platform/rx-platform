@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_io.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,12 +34,12 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
+// rx_commands
+#include "terminal/rx_commands.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_commands
-#include "terminal/rx_commands.h"
 
 namespace rx_internal {
 namespace interfaces {

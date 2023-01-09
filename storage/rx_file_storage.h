@@ -4,7 +4,7 @@
 *
 *  storage\rx_file_storage.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -38,10 +38,10 @@
 
 namespace storage {
 namespace files {
-class rx_json_file;
 class rx_simple_file;
 class rx_runtime_file;
 class rx_binary_file;
+class rx_json_file;
 
 } // namespace files
 } // namespace storage

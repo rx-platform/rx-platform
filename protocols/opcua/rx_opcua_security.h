@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_security.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -173,7 +173,7 @@ class opcua_sec_none_client_endpoint : public opcua_sec_none_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::opcua::opcua_transport::opcua_sec_none_client_endpoint  > opcua_sec_none_client_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_sec_none_client_endpoint  > opcua_sec_none_client_base;
 
 
 

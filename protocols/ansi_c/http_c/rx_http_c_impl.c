@@ -4,7 +4,7 @@
 *
 *  protocols\ansi_c\http_c\rx_http_c_impl.c
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  

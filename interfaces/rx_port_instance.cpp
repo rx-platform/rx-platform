@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_port_instance.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -198,29 +198,6 @@ rx_application_ptr port_instance_data::get_my_application ()
 // Class rx_internal::sys_runtime::runtime_core::runtime_data::port_behaviors 
 
 
-} // namespace runtime_data
-} // namespace runtime_core
-} // namespace sys_runtime
-
-namespace interfaces {
-
-namespace port_stack {
-
-// Class rx_internal::interfaces::port_stack::port_active_behavior 
-
-
-// Class rx_internal::interfaces::port_stack::port_build_behavior 
-
-
-// Class rx_internal::interfaces::port_stack::port_passive_behavior 
-
-
-} // namespace port_stack
-} // namespace interfaces
-
-namespace sys_runtime {
-namespace runtime_core {
-namespace runtime_data {
 // Class rx_internal::sys_runtime::runtime_core::runtime_data::ports_auto_lock 
 
 ports_auto_lock::ports_auto_lock (runtime_core::runtime_data::port_instance_data* data)
@@ -242,5 +219,21 @@ ports_auto_lock::~ports_auto_lock()
 } // namespace runtime_data
 } // namespace runtime_core
 } // namespace sys_runtime
+
+namespace interfaces {
+
+namespace port_stack {
+
+// Class rx_internal::interfaces::port_stack::port_active_behavior 
+
+
+// Class rx_internal::interfaces::port_stack::port_build_behavior 
+
+
+// Class rx_internal::interfaces::port_stack::port_passive_behavior 
+
+
+} // namespace port_stack
+} // namespace interfaces
 } // namespace rx_internal
 

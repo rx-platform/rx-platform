@@ -4,27 +4,27 @@
 *
 *  sys_internal\rx_internal_builders.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -199,7 +199,7 @@ rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance
 }
 
 
-// Class rx_internal::builders::rx_platform_builder
+// Class rx_internal::builders::rx_platform_builder 
 
 rx_platform_builder::rx_platform_builder()
 {
@@ -282,30 +282,40 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Host items built.");
 
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
-		for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
+		auto it_plugin = rx_internal::plugins::plugins_manager::instance().get_plugins().begin();
+		while (it_plugin != rx_internal::plugins::plugins_manager::instance().get_plugins().end())
 		{
-			auto info = one->get_plugin_info();
-			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + info.plugin_version + "]..."s));
+			auto info = (*it_plugin)->get_plugin_info();
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + (*it_plugin)->get_plugin_name() + " [" + info.plugin_version + "]..."s));
 			string_type root_path(RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_PLUGINS_NAME RX_DIR_DELIMETER_STR);
-			root_path += one->get_plugin_name();
+			if (!config.meta_configuration.plugin.empty())
+			{
+				if ((*it_plugin)->get_plugin_name() != config.meta_configuration.plugin)
+				{
+					it_plugin = rx_internal::plugins::plugins_manager::instance().get_plugins().erase(it_plugin);
+					continue;
+				}
+			}
+			root_path += (*it_plugin)->get_plugin_name();
 			auto dir_ptr = ns::rx_directory_cache::instance().get_directory(root_path);
 			if (dir_ptr)
 			{
 				library::plugin_builder builder;
 				builder.plugin_root = dir_ptr->meta_info().get_full_path();;
-				errors = one->build_plugin(builder);
+				errors = (*it_plugin)->build_plugin(builder);
 				if (!errors)
 				{
-					errors.register_error("Unable to build plugin "s + one->get_plugin_name());
+					errors.register_error("Unable to build plugin "s + (*it_plugin)->get_plugin_name());
 					return errors;
 				}
 			}
 			else
 			{
-				errors.register_error("Unable to build plugin "s + one->get_plugin_name() + "Invalid directory!");
+				errors.register_error("Unable to build plugin "s + (*it_plugin)->get_plugin_name() + "Invalid directory!");
 				return errors;
 			}
-			BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + one->get_plugin_name() + " built."s));
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + (*it_plugin)->get_plugin_name() + " built."s));
+			it_plugin++;
 		}
 		BUILD_LOG_INFO("rx_platform_builder", 900, "All plugins built.");
 	}
@@ -327,22 +337,33 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Host items built.");
 
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Building plugins...");
-		for (auto one : rx_internal::plugins::plugins_manager::instance().get_plugins())
+		auto it_plugin = rx_internal::plugins::plugins_manager::instance().get_plugins().begin();
+		while (it_plugin != rx_internal::plugins::plugins_manager::instance().get_plugins().end())
 		{
-			auto info = one->get_plugin_info();
-			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + one->get_plugin_name() + " [" + info.plugin_version + "]..."s));
-			auto storage_ptr = host->get_system_storage(one->get_plugin_name());
+			auto info = (*it_plugin)->get_plugin_info();
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + (*it_plugin)->get_plugin_name() + " [" + info.plugin_version + "]..."s));
+			if (!config.meta_configuration.plugin.empty())
+			{
+				if ((*it_plugin)->get_plugin_name() != config.meta_configuration.plugin)
+				{
+					BUILD_LOG_INFO("rx_platform_builder", 900, ("Skipping plugin "s + (*it_plugin)->get_plugin_name() + " [" + info.plugin_version + "]..."s));
+					it_plugin = rx_internal::plugins::plugins_manager::instance().get_plugins().erase(it_plugin);
+					continue;
+				}
+			}
+			auto storage_ptr = host->get_system_storage((*it_plugin)->get_plugin_name());
 			if (storage_ptr)
 			{
 				storage::configuration_storage_builder builder(storage_ptr.value());
 				errors = builder.do_build(config);
 				if (!errors)
 				{
-					errors.register_error("Unable to build plugin "s + one->get_plugin_name());
+					errors.register_error("Unable to build plugin "s + (*it_plugin)->get_plugin_name());
 					return errors;
 				}
 			}
-			BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + one->get_plugin_name() + " built."s));
+			BUILD_LOG_INFO("rx_platform_builder", 900, ("Plugin "s + (*it_plugin)->get_plugin_name() + " built."s));
+			it_plugin++;
 		}
 		BUILD_LOG_INFO("rx_platform_builder", 900, "All plugins built.");
 
@@ -578,7 +599,7 @@ void rx_platform_builder::recursive_destory_fs (rx_directory_ptr dir)
 }
 
 
-// Class rx_internal::builders::root_folder_builder
+// Class rx_internal::builders::root_folder_builder 
 
 
 rx_result root_folder_builder::do_build (configuration_data_t& config)
@@ -654,7 +675,7 @@ rx_result root_folder_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::basic_object_types_builder
+// Class rx_internal::builders::basic_object_types_builder 
 
 
 rx_result basic_object_types_builder::do_build (configuration_data_t& config)
@@ -838,7 +859,7 @@ void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<rx
 	model::platform_types_manager::instance().get_data_types_repository().register_type(what);
 	dir->add_item(what->get_item_ptr());
 }
-// Class rx_internal::builders::system_types_builder
+// Class rx_internal::builders::system_types_builder 
 
 
 rx_result system_types_builder::do_build (configuration_data_t& config)
@@ -1116,7 +1137,7 @@ void system_types_builder::build_host_info_struct_type(rx_directory_ptr dir, str
 	what->complex_data.register_simple_value_static<uint64_t>("MemoryFree", 0ull, true, false);
 	what->complex_data.register_const_value_static<uint32_t>("PageSize", 0u);
 }
-// Class rx_internal::builders::port_types_builder
+// Class rx_internal::builders::port_types_builder 
 
 
 rx_result port_types_builder::do_build (configuration_data_t& config)
@@ -1345,7 +1366,7 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::system_objects_builder
+// Class rx_internal::builders::system_objects_builder 
 
 
 rx_result system_objects_builder::do_build (configuration_data_t& config)
@@ -1431,7 +1452,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::support_types_builder
+// Class rx_internal::builders::support_types_builder 
 
 
 rx_result support_types_builder::do_build (configuration_data_t& config)
@@ -1981,7 +2002,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::relation_types_builder
+// Class rx_internal::builders::relation_types_builder 
 
 
 rx_result relation_types_builder::do_build (configuration_data_t& config)
@@ -2057,7 +2078,7 @@ rx_result relation_types_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::simulation_types_builder
+// Class rx_internal::builders::simulation_types_builder 
 
 
 rx_result simulation_types_builder::do_build (configuration_data_t& config)
@@ -2095,7 +2116,7 @@ rx_result simulation_types_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::system_ports_builder
+// Class rx_internal::builders::system_ports_builder 
 
 
 rx_result system_ports_builder::do_build (configuration_data_t& config)
@@ -2213,7 +2234,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::terminal_commands_builder
+// Class rx_internal::builders::terminal_commands_builder 
 
 
 rx_result terminal_commands_builder::do_build (configuration_data_t& config)
@@ -2300,7 +2321,7 @@ rx_result terminal_commands_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::http_builder
+// Class rx_internal::builders::http_builder 
 
 
 rx_result http_builder::do_build (configuration_data_t& config)
@@ -2395,7 +2416,7 @@ rx_result http_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::basic_types_builder
+// Class rx_internal::builders::basic_types_builder 
 
 
 rx_result basic_types_builder::do_build (configuration_data_t& config)
@@ -2542,7 +2563,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 }
 
 
-// Class rx_internal::builders::opc_types_builder
+// Class rx_internal::builders::opc_types_builder 
 
 
 rx_result opc_types_builder::do_build (configuration_data_t& config)

@@ -4,7 +4,7 @@
 *
 *  gnu_hosts\rx_gnu_pipe.h
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -56,13 +56,13 @@ class gnu_pipe_host : public host::pipe::rx_pipe_host
       ~gnu_pipe_host();
 
 
-      void get_host_info (string_array& hosts);
-
       static string_type get_gnu_pipe_info ();
 
-      string_type get_full_path (const string_type& path);
+      void get_host_info (string_array& hosts);
 
       bool supports_ansi () const;
+
+      string_type get_full_path (const string_type& path);
 
       void fill_plugin_libs (string_array& paths);
 

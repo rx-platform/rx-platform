@@ -4,27 +4,27 @@
 *
 *  model\rx_meta_internals.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -52,7 +52,7 @@ namespace
 std::unique_ptr<platform_types_manager> g_platform_types_instance;
 }
 
-// Class rx_internal::model::platform_types_manager
+// Class rx_internal::model::platform_types_manager 
 
 platform_types_manager::platform_types_manager()
 {
@@ -165,7 +165,7 @@ transactions::dependency_cache& platform_types_manager::get_dependecies_cache ()
 }
 
 
-// Class rx_internal::model::relations_hash_data
+// Class rx_internal::model::relations_hash_data 
 
 relations_hash_data::relations_hash_data()
 {
@@ -343,7 +343,7 @@ void relations_hash_data::deinitialize ()
 }
 
 
-// Parameterized Class rx_internal::model::types_repository
+// Parameterized Class rx_internal::model::types_repository 
 
 template <class typeT>
 types_repository<typeT>::types_repository()
@@ -990,7 +990,7 @@ void types_repository<typeT>::collect_and_add_depedencies (const typeT& what, co
 }
 
 
-// Class rx_internal::model::inheritance_hash
+// Class rx_internal::model::inheritance_hash 
 
 inheritance_hash::inheritance_hash()
 {
@@ -1182,7 +1182,7 @@ bool inheritance_hash::is_derived_from (rx_node_id id, rx_node_id base_id) const
 }
 
 
-// Class rx_internal::model::instance_hash
+// Class rx_internal::model::instance_hash 
 
 instance_hash::instance_hash()
 {
@@ -1253,7 +1253,7 @@ void instance_hash::deinitialize ()
 }
 
 
-// Parameterized Class rx_internal::model::simple_types_repository
+// Parameterized Class rx_internal::model::simple_types_repository 
 
 template <class typeT>
 simple_types_repository<typeT>::simple_types_repository()
@@ -1613,7 +1613,7 @@ void simple_types_repository<typeT>::collect_and_add_depedencies (const typeT& w
 }
 
 
-// Class rx_internal::model::types_resolver
+// Class rx_internal::model::types_resolver 
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)
@@ -1704,7 +1704,7 @@ void types_resolver::deinitialize ()
 }
 
 
-// Class rx_internal::model::relations_type_repository
+// Class rx_internal::model::relations_type_repository 
 
 relations_type_repository::relations_type_repository()
 {
@@ -1768,14 +1768,14 @@ rx_result relations_type_repository::register_type (relations_type_repository::T
 	}
 }
 
-rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::create_runtime (const rx_node_id& type_id, const string_type& rt_name, runtime::relations::relation_data& data, const rx_directory_resolver& dirs)
+rx_result_with<create_runtime_result<relation_type> > relations_type_repository::create_runtime (const rx_node_id& type_id, const string_type& rt_name, runtime::relations::relation_data& data, const rx_directory_resolver& dirs)
 {
 	auto type_result = get_type_definition(type_id);
 	if (!type_result)
 		return type_result.errors();
 
 	relation_type::smart_ptr relation_type_ptr = type_result.move_value();
-	auto ret = create_relation_runtime(relation_type_ptr);
+	auto ret = create_relation_runtime(relation_type_ptr, data, dirs);
 	if (!ret)
 		return ret;
 
@@ -1792,12 +1792,15 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 
 	data.value.value_opt[runtime::structure::value_opt_readonly] = !relation_type_ptr->relation_data.dynamic;
 
-	data.implementation_ = ret.value();
+	data.meta_info_.path += "."s + rt_name;
+
+	data.implementation_ = ret.value().ptr;
 	if (!relation_type_ptr->relation_data.symmetrical)
 	{
 		data.target_relation_name =
 			relation_type_ptr->relation_data.inverse_name.empty() ? rt_name : relation_type_ptr->relation_data.inverse_name;
 	}
+
 	return ret;
 }
 
@@ -1901,9 +1904,11 @@ rx_result relations_type_repository::update_type (relations_type_repository::Tpt
 	}
 }
 
-rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::create_relation_runtime (relations_type_repository::Tptr form_what)
+rx_result_with<create_runtime_result<relation_type> > relations_type_repository::create_relation_runtime (relations_type_repository::Tptr form_what, runtime::relations::relation_data& data, const rx_directory_resolver& dirs)
 {
-	RTypePtr ret;
+	RTypePtr implementation_ptr;
+	create_runtime_result<relation_type> ret;
+	rx_node_id id = rx_node_id::generate_new();
 	rx_node_ids base;
 	auto type_id = form_what->meta_info.id;
 	base.emplace_back(type_id);
@@ -1956,12 +1961,20 @@ rx_result_with<relations_type_repository::RTypePtr> relations_type_repository::c
 		auto it = constructors_.find(one);
 		if (it != constructors_.end())
 		{
-			ret = (it->second)();
+			auto construct_data = (it->second)(id);
+			implementation_ptr = construct_data.ptr;
+			ret.register_f = construct_data.register_f;
+			ret.unregister_f = construct_data.unregister_f;
+
 			break;
 		}
 	}
-	if (!ret)
-		ret = default_constructor_();
+	if (!implementation_ptr)
+		implementation_ptr = default_constructor_();
+
+	ret.ptr = implementation_ptr;
+	data.meta_info_.id = std::move(id);
+
 	return ret;
 }
 
@@ -1985,6 +1998,17 @@ rx_result relations_type_repository::type_exists (rx_node_id id) const
 
 rx_result relations_type_repository::register_constructor (const rx_node_id& id, std::function<RTypePtr()> f)
 {
+	constructors_.emplace(id, [f](const rx_node_id&)
+		{
+			constructed_data_t<RTypePtr> ret;
+			ret.ptr = f();
+			return ret;
+		});
+	return true;
+}
+
+rx_result relations_type_repository::register_constructor (const rx_node_id& id, std::function<constructed_data_t<RTypePtr>(const rx_node_id&)> f)
+{
 	constructors_.emplace(id, f);
 	return true;
 }
@@ -1994,7 +2018,7 @@ void relations_type_repository::collect_and_add_depedencies (const relations_typ
 }
 
 
-// Class rx_internal::model::data_type_repository
+// Class rx_internal::model::data_type_repository 
 
 data_type_repository::data_type_repository()
 {

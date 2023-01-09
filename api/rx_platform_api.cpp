@@ -4,7 +4,7 @@
 *
 *  api\rx_platform_api.cpp
 *
-*  Copyright (c) 2020-2022 ENSACO Solutions doo
+*  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -282,6 +282,7 @@ extern "C" {
 				return rx_create_reference<runtime::blocks::extern_source_runtime>(construct_data.constructor());
 			});
 		return result.move();
+		
 	}
 	RX_PLATFORM_API rx_result_struct rxRegisterMapperRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_mapper_constructor_t construct_func)
 	{
@@ -299,29 +300,178 @@ extern "C" {
 			});
 		return result.move();
 	}
-	RX_PLATFORM_API rx_result_struct rxRegisterObjectRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_object_constructor_t construct_func)
+
+	RX_PLATFORM_API rx_result_struct rxRegisterStructRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_struct_constructor_t construct_func)
 	{
-		auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+		auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<struct_type>().register_constructor(
 			id, [construct_func] {
-			return rx_create_reference<runtime::items::extern_object_runtime>(construct_func());
-		});
+				return rx_create_reference<runtime::blocks::extern_struct_runtime>(construct_func());
+			});
 		return result.move();
 	}
 
-	RX_PLATFORM_API rx_result_struct rxRegisterApplicationRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_application_constructor_t construct_func)
+	RX_PLATFORM_API rx_result_struct rxRegisterVariableRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_variable_constructor_t construct_func)
 	{
-		auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
+		auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<variable_type>().register_constructor(
 			id, [construct_func] {
-				return rx_create_reference<runtime::items::extern_application_runtime>(construct_func());
+				return rx_create_reference<runtime::blocks::extern_variable_runtime>(construct_func());
 			});
 		return result.move();
 	}
-	RX_PLATFORM_API rx_result_struct rxRegisterDomainRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_domain_constructor_t construct_func)
+
+	RX_PLATFORM_API rx_result_struct rxRegisterEventRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_event_constructor_t construct_func)
 	{
-		auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
+		auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<event_type>().register_constructor(
 			id, [construct_func] {
-				return rx_create_reference<runtime::items::extern_domain_runtime>(construct_func());
+				return rx_create_reference<runtime::blocks::extern_event_runtime>(construct_func());
 			});
+		return result.move();
+	}
+
+	RX_PLATFORM_API rx_result_struct rxRegisterMethodRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_method_constructor_t construct_func)
+	{
+		return rx_result(RX_NOT_IMPLEMENTED).move();
+		/*auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<method_type>().register_constructor(
+			id, [construct_func] {
+				return rx_create_reference<runtime::blocks::extern_method_runtime>(construct_func());
+			});
+		return result.move();*/
+	}
+	RX_PLATFORM_API rx_result_struct rxRegisterProgramRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_program_constructor_t construct_func)
+	{
+		return rx_result(RX_NOT_IMPLEMENTED).move();
+		/*auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<program_type>().register_constructor(
+			id, [construct_func] {
+				return rx_create_reference<runtime::blocks::extern_program_runtime>(construct_func());
+			});
+		return result.move();*/
+	}
+	RX_PLATFORM_API rx_result_struct rxRegisterDisplayRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_display_constructor_t construct_func)
+	{
+		return rx_result(RX_NOT_IMPLEMENTED).move();
+		/*auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
+			id, [construct_func] {
+				return rx_create_reference<runtime::blocks::extern_display_runtime>(construct_func());
+			});
+		return result.move();*/
+	}
+
+	RX_PLATFORM_API rx_result_struct rxRegisterObjectRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_object_register_data construct_data)
+	{
+		std::function<constructed_data_t<typename object_type::RImplPtr>(const rx_node_id&)> func =
+			[construct_data](const rx_node_id& new_id) // full constructor function
+		{
+			constructed_data_t<typename object_type::RImplPtr> ret;
+			auto new_ptr = rx_create_reference<runtime::items::extern_object_runtime>(construct_data.constructor());
+			if (!new_ptr)
+			{
+				std::ostringstream ss;
+				ss << "Instance " << new_id.to_string()
+					<< " could not be created for class";
+				return ret;
+			}
+			else
+			{
+				ret.ptr = new_ptr;
+			}
+			if (construct_data.register_func)
+			{
+				lock_reference_struct* extern_data = new_ptr->get_extern_ref();
+				ret.register_f = [construct_data, extern_data](const rx_node_id& id)
+				{
+					construct_data.register_func(id.c_ptr(), extern_data);
+				};
+			}
+			if (construct_data.unregister_func)
+			{
+				ret.unregister_f = [construct_data](const rx_node_id& id)
+				{
+					construct_data.unregister_func(id.c_ptr());
+				};
+			}
+			return ret;
+		};
+		auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+			id, func);
+		return result.move();
+	}
+
+	RX_PLATFORM_API rx_result_struct rxRegisterApplicationRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_application_register_data construct_data)
+	{
+		std::function<constructed_data_t<typename application_type::RImplPtr>(const rx_node_id&)> func =
+			[construct_data](const rx_node_id& new_id) // full constructor function
+		{
+			constructed_data_t<typename application_type::RImplPtr> ret;
+			auto new_ptr = rx_create_reference<runtime::items::extern_application_runtime>(construct_data.constructor());
+			if (!new_ptr)
+			{
+				std::ostringstream ss;
+				ss << "Instance " << new_id.to_string()
+					<< " could not be created for class";
+				return ret;
+			}
+			else
+			{
+				ret.ptr = new_ptr;
+			}
+			if (construct_data.register_func)
+			{
+				lock_reference_struct* extern_data = new_ptr->get_extern_ref();
+				ret.register_f = [construct_data, extern_data](const rx_node_id& id)
+				{
+					construct_data.register_func(id.c_ptr(), extern_data);
+				};
+			}
+			if (construct_data.unregister_func)
+			{
+				ret.unregister_f = [construct_data](const rx_node_id& id)
+				{
+					construct_data.unregister_func(id.c_ptr());
+				};
+			}
+			return ret;
+		};
+		auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
+			id, func);
+		return result.move();
+	}
+	RX_PLATFORM_API rx_result_struct rxRegisterDomainRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_domain_register_data construct_data)
+	{
+		std::function<constructed_data_t<typename domain_type::RImplPtr>(const rx_node_id&)> func =
+			[construct_data](const rx_node_id& new_id) // full constructor function
+		{
+			constructed_data_t<typename domain_type::RImplPtr> ret;
+			auto new_ptr = rx_create_reference<runtime::items::extern_domain_runtime>(construct_data.constructor());
+			if (!new_ptr)
+			{
+				std::ostringstream ss;
+				ss << "Instance " << new_id.to_string()
+					<< " could not be created for class";
+				return ret;
+			}
+			else
+			{
+				ret.ptr = new_ptr;
+			}
+			if (construct_data.register_func)
+			{
+				lock_reference_struct* extern_data = new_ptr->get_extern_ref();
+				ret.register_f = [construct_data, extern_data](const rx_node_id& id)
+				{
+					construct_data.register_func(id.c_ptr(), extern_data);
+				};
+			}
+			if (construct_data.unregister_func)
+			{
+				ret.unregister_f = [construct_data](const rx_node_id& id)
+				{
+					construct_data.unregister_func(id.c_ptr());
+				};
+			}
+			return ret;
+		};
+		auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
+			id, func);
 		return result.move();
 	}
 	RX_PLATFORM_API rx_result_struct rxRegisterPortRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_port_register_data construct_data)
@@ -360,6 +510,46 @@ extern "C" {
 			return ret;
 		};
 		auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			id, func);
+		return result.move();
+	}
+
+	RX_PLATFORM_API rx_result_struct rxRegisterRelationRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_relation_register_data construct_data)
+	{
+		std::function<constructed_data_t<typename relation_type::RImplPtr>(const rx_node_id&)> func =
+			[construct_data](const rx_node_id& new_id) // full constructor function
+		{
+			constructed_data_t<typename relation_type::RImplPtr> ret;
+			auto new_ptr = rx_create_reference<runtime::relations::extern_relation_runtime>(construct_data.constructor());
+			if (!new_ptr)
+			{
+				std::ostringstream ss;
+				ss << "Instance " << new_id.to_string()
+					<< " could not be created for class";
+				return ret;
+			}
+			else
+			{
+				ret.ptr = new_ptr;
+			}
+			if (construct_data.register_func)
+			{
+				lock_reference_struct* extern_data = new_ptr->get_extern_ref();
+				ret.register_f = [construct_data, extern_data](const rx_node_id& id)
+				{
+					construct_data.register_func(id.c_ptr(), extern_data);
+				};
+			}
+			if (construct_data.unregister_func)
+			{
+				ret.unregister_f = [construct_data](const rx_node_id& id)
+				{
+					construct_data.unregister_func(id.c_ptr());
+				};
+			}
+			return ret;
+		};
+		auto result = rx_internal::model::platform_types_manager::instance().get_relations_repository().register_constructor(
 			id, func);
 		return result.move();
 	}
@@ -558,11 +748,20 @@ void bind_plugins_dynamic_api()
 	g_api.runtime.prxRegisterSourceRuntime = rxRegisterSourceRuntime;
 	g_api.runtime.prxRegisterMapperRuntime = rxRegisterMapperRuntime;
 	g_api.runtime.prxRegisterFilterRuntime = rxRegisterFilterRuntime;
+	g_api.runtime.prxRegisterStructRuntime = rxRegisterStructRuntime;
+	g_api.runtime.prxRegisterVariableRuntime = rxRegisterVariableRuntime;
+	g_api.runtime.prxRegisterEventRuntime = rxRegisterEventRuntime;
+
+	g_api.runtime.prxRegisterMethodRuntime = rxRegisterMethodRuntime;
+	g_api.runtime.prxRegisterDisplayRuntime = rxRegisterDisplayRuntime;
+	g_api.runtime.prxRegisterProgramRuntime = rxRegisterProgramRuntime;
 
 	g_api.runtime.prxRegisterObjectRuntime = rxRegisterObjectRuntime;
 	g_api.runtime.prxRegisterDomainRuntime = rxRegisterDomainRuntime;
 	g_api.runtime.prxRegisterApplicationRuntime = rxRegisterApplicationRuntime;
 	g_api.runtime.prxRegisterPortRuntime = rxRegisterPortRuntime;
+
+	g_api.runtime.prxRegisterRelationRuntime = rxRegisterRelationRuntime;
 
 	g_api.runtime.prxInitCtxBindItem = rxInitCtxBindItem;
 	g_api.runtime.prxInitCtxGetCurrentPath = rxInitCtxGetCurrentPath;
