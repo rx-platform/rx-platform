@@ -322,7 +322,7 @@ void telnet_transport::parse_negotiation (string_type& line)
 
 telnet_transport_port::telnet_transport_port()
 {
-	construct_func = [this]()
+	construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
 	{
 		auto rt = std::make_unique<telnet_transport_endpoint>(this);
 		auto entry = rt->bind([this](int64_t count)

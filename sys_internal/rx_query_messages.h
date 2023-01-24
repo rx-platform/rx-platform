@@ -50,50 +50,14 @@ namespace messages {
 
 namespace query_messages {
 
+typedef std::vector<std::pair<rx_item_type, meta::meta_data> > browse_result_items_type;
+typedef std::vector<std::pair<rx_item_type, meta::meta_data> > query_result_items_type;
 
 
 
 
-class browse_request_message : public rx_request_message  
+class browse_response_message : public rx_response_message  
 {
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      string_type path;
-
-      string_type filter;
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class browse_response_message : public rx_message_base  
-{
-	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > browse_result_items_type;
 
   public:
 
@@ -114,6 +78,52 @@ class browse_response_message : public rx_message_base
       static rx_message_type_t type_id;
 
 
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class browse_request_message : public rx_request_message  
+{
+    typedef std::unique_ptr<browse_response_message> response_ptr_t;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+      browse_request_message::response_ptr_t create_response_message ();
+
+      virtual rx_result process (response_ptr_t response_ptr);
+
+      virtual rx_result process (error_message_ptr error_ptr);
+
+
+      string_type path;
+
+      string_type filter;
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+      typedef browse_response_message response_type;
   protected:
 
   private:
@@ -169,48 +179,8 @@ class get_type_request : public rx_request_message
 
 
 
-class query_request_message : public rx_request_message  
+class query_response_message : public rx_response_message  
 {
-	typedef std::vector<meta::query_ptr> queries_type;
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      queries_type queries;
-
-
-      static string_type type_name;
-
-      bool intersection;
-
-      static rx_message_type_t type_id;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class query_response_message : public rx_message_base  
-{
-	typedef std::vector<std::pair<rx_item_type, meta::meta_data> > query_result_items_type;
 
   public:
 
@@ -244,7 +214,7 @@ class query_response_message : public rx_message_base
 
 
 template <class itemT>
-class type_response_message : public rx_message_base  
+class type_response_message : public rx_response_message  
 {
 
   public:
@@ -337,7 +307,7 @@ class get_runtime_request : public rx_request_message
 
 
 template <class itemT>
-class runtime_response_message : public rx_message_base  
+class runtime_response_message : public rx_response_message  
 {
 
   public:
@@ -432,7 +402,7 @@ class browse_runtime_request : public rx_request_message
 
 
 
-class browse_runtime_response_message : public rx_message_base  
+class browse_runtime_response_message : public rx_response_message  
 {
 
   public:
@@ -502,7 +472,7 @@ class get_code_info_request : public rx_request_message
 
 
 
-class get_code_info_response_message : public rx_message_base  
+class get_code_info_response_message : public rx_response_message  
 {
 
   public:
@@ -523,6 +493,53 @@ class get_code_info_response_message : public rx_message_base
       string_type code_info;
 
 
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class query_request_message : public rx_request_message  
+{
+	typedef std::vector<meta::query_ptr> queries_type;
+    typedef std::unique_ptr<query_response_message> response_ptr_t;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+      query_request_message::response_ptr_t create_response_message ();
+
+      virtual rx_result process (response_ptr_t response_ptr);
+
+      virtual rx_result process (error_message_ptr error_ptr);
+
+
+      queries_type queries;
+
+
+      static string_type type_name;
+
+      bool intersection;
+
+      static rx_message_type_t type_id;
+
+      typedef query_response_message response_type;
   protected:
 
   private:

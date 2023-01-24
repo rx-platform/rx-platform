@@ -324,6 +324,7 @@ struct application_description
 	application_type_t application_type;
 	string_type gateway_uri;
 	string_type discovery_profile_uri;
+	string_type ep_bind;
 	string_array discovery_urls;
 	void deserialize(binary::ua_binary_istream& stream);
 	void serialize(binary::ua_binary_ostream& stream) const;

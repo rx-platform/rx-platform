@@ -46,6 +46,7 @@
 
 namespace rx_internal {
 namespace rx_protocol {
+class rx_json_protocol_client_port;
 class rx_protocol_connection;
 
 } // namespace rx_protocol
@@ -145,7 +146,7 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
       void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
-      void write_completed (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results);
+      void write_completed (runtime_transaction_id_t transaction_id, std::vector<write_result_item> results);
 
       void destroy ();
 
@@ -196,6 +197,8 @@ class rx_protocol_connection : public rx::pointers::reference_object
       void data_processed (message_ptr result);
 
       void request_received (request_message_ptr&& request);
+
+      void response_received (response_message_ptr&& response);
 
       rx_result set_current_directory (const string_type& path);
 
@@ -259,7 +262,7 @@ class rx_server_connection : public rx_protocol_connection
       ~rx_server_connection();
 
 
-      rx_protocol_stack_endpoint* bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+      rx_protocol_stack_endpoint* bind_endpoint ();
 
       void close_endpoint ();
 
@@ -356,14 +359,193 @@ System protocol port class. Implementation of a rx-platform JSON protocol");
 
 
 
-class rx_client_connection : public rx_protocol_connection  
+class rx_local_subscription 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_protocol_client_connection : public rx::pointers::reference_object  
+{
+    typedef std::map<messages::rx_request_id_t, messages::rx_transaction_ptr> pending_transactions_type;
+    typedef std::vector<messages::rx_transaction_ptr> queued_transactions_type;
+
+  public:
+      rx_protocol_client_connection();
+
+      ~rx_protocol_client_connection();
+
+
+      void transaction_received (messages::rx_transaction_ptr response);
+
+      void set_context (api::rx_context ctx, const messages::rx_connection_context_response& req);
+
+      rx_result send_request (messages::rx_transaction_ptr trans, uint32_t timeout);
+
+      virtual void timer_tick ();
+
+
+  protected:
+
+      void register_transaction (messages::rx_request_id_t id, messages::rx_transaction_ptr trans);
+
+      messages::rx_transaction_ptr get_transaction (messages::rx_request_id_t id);
+
+      virtual void notify_connected () = 0;
+
+      virtual void notify_disconnected () = 0;
+
+      virtual void notify_item_change (const rx_node_id& id, const string_type& path) = 0;
+
+
+      static std::atomic<messages::rx_request_id_t> g_next_request_id;
+
+
+  private:
+
+      virtual void send_message (messages::rx_message_base& msg) = 0;
+
+
+
+      pending_transactions_type pending_transactions_;
+
+
+      locks::slim_lock transactions_lock_;
+
+
+};
+
+
+
+
+
+
+
+class rx_client_connection : public rx_protocol_client_connection  
 {
     DECLARE_REFERENCE_PTR(rx_client_connection);
 
+    enum class rx_client_connection_state
+    {
+        rx_client_connection_idle,
+        rx_client_connection_connecting,
+        rx_client_connection_active,
+        rx_client_connection_disconnected
+    };
+
   public:
-      rx_client_connection();
+      rx_client_connection (rx_json_protocol_client_port* port);
 
       ~rx_client_connection();
+
+
+      void close_endpoint ();
+
+      rx_protocol_stack_endpoint* get_endpoint ();
+
+      rx_protocol_stack_endpoint* bind_endpoint ();
+
+      void timer_tick ();
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+      void set_executer (rx_thread_handle_t value)
+      {
+        executer_ = value;
+      }
+
+
+      rx_json_protocol_client_port* get_port ()
+      {
+        return port_;
+      }
+
+
+      uint32_t get_stream_version () const
+      {
+        return stream_version_;
+      }
+
+
+
+  protected:
+
+      void notify_connected ();
+
+      void notify_disconnected ();
+
+      void notify_item_change (const rx_node_id& id, const string_type& path);
+
+
+  private:
+
+      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
+
+      static rx_protocol_result_t disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason);
+
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      void send_message (messages::rx_message_base& msg);
+
+      rx_protocol_result_t received (recv_protocol_packet packet);
+
+
+
+      rx_protocol_stack_endpoint stack_entry_;
+
+
+      rx_thread_handle_t executer_;
+
+      rx_json_protocol_client_port* port_;
+
+      uint32_t stream_version_;
+
+      locks::slim_lock state_lock_;
+
+      rx_timer_ticks_t last_sent_;
+
+
+};
+
+
+
+
+
+
+
+typedef rx_platform::runtime::io_types::ports_templates::master_client_port_impl< rx_internal::rx_protocol::rx_client_connection  > rx_json_client_protocol_port_base;
+
+
+
+
+
+
+class rx_protocol_client_user : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(rx_protocol_client_user);
+
+  public:
+
+      virtual void client_connected () = 0;
+
+      virtual void client_disconnected () = 0;
+
+      virtual void item_changed (const rx_node_id& id, const string_type& path) = 0;
 
 
   protected:
@@ -378,14 +560,53 @@ class rx_client_connection : public rx_protocol_connection
 
 
 
-class rx_local_subscription 
+class rx_json_protocol_client_port : public rx_json_client_protocol_port_base  
 {
+    DECLARE_CODE_INFO("rx", 0, 2, 0, "\
+System protocol client port class. Implementation of a rx-platform JSON client protocol");
+
+    DECLARE_REFERENCE_PTR(rx_json_protocol_client_port);
+
 
   public:
+      rx_json_protocol_client_port();
+
+
+      void stack_assembled ();
+
+      rx_result send_request (messages::rx_transaction_ptr trans, uint32_t timeout);
+
+      void register_user (rx_protocol_client_user::smart_ptr user);
+
+      void unregister_user (rx_protocol_client_user::smart_ptr user);
+
+      void notify_connected ();
+
+      void notify_disconnected ();
+
+      void notify_item_change (const rx_node_id& id, const string_type& path);
+
+      rx_result start_runtime (runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime_stop_context& ctx);
+
+      void message_sent ();
+
+      void message_received ();
+
+
+      static std::map<rx_node_id,rx_json_protocol_client_port::smart_ptr> runtime_instances;
+
 
   protected:
 
   private:
+
+
+      rx_reference<rx_protocol_client_user> user_;
+
+
+      rx_timer_ptr timer_;
 
 
 };

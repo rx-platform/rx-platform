@@ -70,12 +70,10 @@ class opcua_server_endpoint_base : public rx::pointers::reference_object
     typedef std::map<runtime_transaction_id_t, size_t> write_cache_type;
 
   public:
-      opcua_server_endpoint_base (const string_type& server_type, const application_description& app_descr, opcua_addr_space::opcua_address_space_base* addr_space, opcua_subscriptions::opcua_subscriptions_collection* subs);
+      opcua_server_endpoint_base (const string_type& server_type, const application_description& app_description, const string_type& ep_path, opcua_addr_space::opcua_address_space_base* addr_space, opcua_subscriptions::opcua_subscriptions_collection* subs, const string_type& port_path);
 
 
       common::endpoint_description get_endpoint_description (const string_type& ep_url, bool discovery);
-
-      common::application_description get_application_description (const string_type& ep_url);
 
       opcua_addr_space::opcua_address_space_base* get_address_space ();
 
@@ -90,7 +88,23 @@ class opcua_server_endpoint_base : public rx::pointers::reference_object
       void write_response (opcua_result_t status, runtime_transaction_id_t trans_id);
 
 
+      const string_type& get_ep_path () const
+      {
+        return ep_path_;
+      }
+
+
+      const string_type& get_port_path () const
+      {
+        return port_path_;
+      }
+
+
+
   protected:
+
+      rx_protocol_result_t connected_function (rx_session* session);
+
 
   private:
 
@@ -104,11 +118,39 @@ class opcua_server_endpoint_base : public rx::pointers::reference_object
 
       opcua_addr_space::opcua_address_space_base* address_space_;
 
-      application_description application_description_;
+      string_type ep_path_;
 
       locks::slim_lock transactions_lock_;
 
       write_cache_type write_cache_;
+
+      string_type port_path_;
+
+      application_description app_description_;
+
+
+};
+
+
+
+
+
+
+class opcua_server_endpoint_data 
+{
+
+  public:
+      opcua_server_endpoint_data();
+
+      ~opcua_server_endpoint_data();
+
+
+      application_description description;
+
+
+  protected:
+
+  private:
 
 
 };

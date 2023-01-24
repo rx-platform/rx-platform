@@ -619,7 +619,9 @@ rx_result root_folder_builder::do_build (configuration_data_t& config)
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME
 			, rx_storage_ptr::null_ptr }, // /sys/runtime
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_SYSTEM_OBJ_NAME
-			, rx_storage_ptr::null_ptr },
+			, rx_storage_ptr::null_ptr },// /sys/peers
+		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_PEER_OBJ_NAME
+			, rx_storage_ptr::null_ptr },// /sys/ports
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_OBJ_NAME RX_DIR_DELIMETER_STR RX_NS_PORT_OBJ_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME
@@ -1052,6 +1054,41 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			});
 		add_type_to_configuration(dir, obj, false);
 
+		relation_type_data def_data;
+		def_data.abstract_type = false;
+		def_data.sealed_type = false;
+		def_data.symmetrical = false;
+		def_data.hierarchical = false;
+		def_data.dynamic = false;
+		def_data.target = rx_item_reference(RX_RX_JSON_CLIENT_TYPE_ID);
+		def_data.inverse_name = RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR;
+
+		auto relation = create_type<relation_type>(meta::object_type_creation_data{
+			RX_RX_JSON_RELATION_TYPE_NAME
+			, RX_RX_JSON_RELATION_TYPE_ID
+			, RX_NS_PORT_REF_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		relation->relation_data = def_data;
+		add_relation_type_to_configuration(dir, relation);
+
+		obj = create_type<object_type>(meta::object_type_creation_data{
+			RX_PEER_CONNECTION_TYPE_NAME
+			, RX_PEER_CONNECTION_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		obj->complex_data.register_struct("Endpoint", RX_PEER_ENDPOINT_TYPE_ID);
+		obj->complex_data.register_struct("Status", RX_PEER_STATUS_TYPE_ID);
+		meta::object_types::relation_attribute rel_attr;
+		rel_attr.name = "Conn";
+		rel_attr.relation_type = RX_RX_JSON_RELATION_TYPE_ID;
+		rel_attr.target = RX_RX_JSON_CLIENT_TYPE_ID;
+		obj->object_data.register_relation(rel_attr, obj->complex_data);
+		add_type_to_configuration(dir, obj, false);
+
 		auto port = create_type<port_type>(meta::object_type_creation_data{
 			RX_RX_JSON_TYPE_NAME
 			, RX_RX_JSON_TYPE_ID
@@ -1062,6 +1099,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 		port->complex_data.register_struct("Bind", RX_OPCUA_ENDPOINT_DATA_ID);
 		add_type_to_configuration(dir, port, false);
 
+
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_RX_JSON_CLIENT_TYPE_NAME
 			, RX_RX_JSON_CLIENT_TYPE_ID
@@ -1069,6 +1107,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		port->complex_data.register_struct("Connect", RX_OPCUA_ENDPOINT_DATA_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1892,6 +1931,28 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
+			RX_PEER_ENDPOINT_TYPE_NAME
+			, RX_PEER_ENDPOINT_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static<string_type>("Url", "");
+		what->complex_data.register_const_value_static<string_type>("Name", "");
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_PEER_STATUS_TYPE_NAME
+			, RX_PEER_STATUS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static<bool>("Online", false, true, false);
+		what->complex_data.register_simple_value_static<string_type>("Version", "", true, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_OPCUA_TRANSPORT_OPTIONS_TYPE_NAME
 			, RX_OPCUA_TRANSPORT_OPTIONS_TYPE_ID
 			, RX_PORT_OPTIONS_TYPE_ID
@@ -2165,6 +2226,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_SEC_NAME);
+		port_instance_data.overrides.add_value_static("Bind.Endpoint", "rx-platform/*");
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
 		port_instance_data.meta_info.name = RX_NS_HTTP_TCP_NAME;
@@ -2223,8 +2285,9 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUA_SEC_NAME);
-		port_instance_data.overrides.add_value_static("Options.AppUri", "Pera");
-		port_instance_data.overrides.add_value_static("Options.AppName", "Zika");
+		port_instance_data.overrides.add_value_static("Options.AppUri", "sys");
+		port_instance_data.overrides.add_value_static("Options.AppName", "System");
+		port_instance_data.overrides.add_value_static("Bind.Endpoint", "sys");
 
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
@@ -2641,7 +2704,7 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_NAME
 			, RX_OPCUA_SEC_BASE_CLIENT_PORT_TYPE_ID
-			, RX_TRANSPORT_PORT_TYPE_ID
+			, RX_CONN_TRANSPORT_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});

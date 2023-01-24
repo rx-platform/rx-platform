@@ -40,9 +40,13 @@ namespace rx_internal {
 namespace model {
 namespace transactions {
 class dependency_cache;
-
 } // namespace transactions
 } // namespace model
+
+namespace discovery {
+class peer_item;
+
+} // namespace discovery
 } // namespace rx_internal
 
 
@@ -333,6 +337,7 @@ struct create_runtime_result
 
 
 
+
 template <class typeT>
 class types_repository 
 {
@@ -379,6 +384,7 @@ public:
         Tptr type_ptr;
         rx_node_id super_type;
     };
+    typedef typename std::map<rx_node_id, rx_reference<discovery::peer_item> > registered_peer_types_type;
 	typedef typename std::map<rx_node_id, runtime_data_t> registered_objects_type;
 	typedef typename std::map<rx_node_id, type_data_t> registered_types_type;
 	typedef typename std::map<rx_node_id, std::function<constructed_data_t<RImplPtr>(const rx_node_id&)> > constructors_type;
@@ -447,6 +453,8 @@ public:
       constructors_type constructors_;
 
       behaviors_type behaviors_;
+
+      registered_peer_types_type registered_peer_types_;
 
 	  std::function<RImplPtr()> default_constructor_;
 };

@@ -52,6 +52,13 @@ string_type derived_types_query::query_name = "derived";
 
 rx_result derived_types_query::serialize (base_meta_writer& stream) const
 {
+	if (!stream.start_object("query"))
+		return stream.get_error();
+
+	if (!stream.write_string("queryType", query_name.c_str()))
+		return stream.get_error();
+
+
 	if (!stream.write_string("typeName", type_name.c_str()))
 		return stream.get_error();
 	if (!stream.write_string("baseType", base_type.c_str()))
@@ -59,6 +66,9 @@ rx_result derived_types_query::serialize (base_meta_writer& stream) const
 	if(!stream.write_bool("subTypes", include_subtypes))
 		return stream.get_error();
 	if (!stream.write_string("subfolder", subfolder.c_str()))
+		return stream.get_error();
+
+	if (!stream.end_object())
 		return stream.get_error();
 
 	return true;
@@ -285,6 +295,12 @@ string_type runtime_objects_query::query_name = "runtime";
 
 rx_result runtime_objects_query::serialize (base_meta_writer& stream) const
 {
+	if (!stream.start_object("query"))
+		return stream.get_error();
+
+	if (!stream.write_string("queryType", query_name.c_str()))
+		return stream.get_error();
+
 	if (!stream.write_string("typeName", type_name.c_str()))
 		return stream.get_error();
 	if (!stream.write_string("instanceName", instance_name.c_str()))
@@ -292,6 +308,9 @@ rx_result runtime_objects_query::serialize (base_meta_writer& stream) const
 	if (!stream.write_id("instance", instance))
 		return stream.get_error();
 	if (!stream.write_string("subfolder", subfolder.c_str()))
+		return stream.get_error();
+
+	if (!stream.end_object())
 		return stream.get_error();
 
 	return true;
@@ -407,16 +426,26 @@ string_type translate_query::query_name = "translate";
 
 rx_result translate_query::serialize (base_meta_writer& stream) const
 {
+	if (!stream.start_object("query"))
+		return stream.get_error();
+
+	if (!stream.write_string("queryType", query_name.c_str()))
+		return stream.get_error();
+
 	if (!stream.start_array("items", items.size()))
 		return stream.get_error();
-	for(const auto& one : items)
-	{
+	for(const auto& one : items)	{
 
 		if (!stream.write_item_reference("ref", one))
 			return stream.get_error();
 	}
+
 	if (!stream.end_array())
 		return stream.get_error();
+
+	if (!stream.end_object())
+		return stream.get_error();
+
 	return true;
 }
 
@@ -477,6 +506,12 @@ string_type port_stack_query::query_name = "io";
 
 rx_result port_stack_query::serialize (base_meta_writer& stream) const
 {
+	if (!stream.start_object("query"))
+		return stream.get_error();
+
+	if (!stream.write_string("queryType", query_name.c_str()))
+		return stream.get_error();
+
 	if (!stream.write_string("typeName", type_name.c_str()))
 		return stream.get_error();
 	if (!stream.write_string("instanceName", instance_name.c_str()))
@@ -484,6 +519,9 @@ rx_result port_stack_query::serialize (base_meta_writer& stream) const
 	if (!stream.write_id("instance", instance))
 		return stream.get_error();
 	if (!stream.write_string("subfolder", subfolder.c_str()))
+		return stream.get_error();
+
+	if (!stream.end_object())
 		return stream.get_error();
 
 	return true;
@@ -553,9 +591,19 @@ string_type dependents_query::query_name = "dependents";
 
 rx_result dependents_query::serialize (base_meta_writer& stream) const
 {
+	if (!stream.start_object("query"))
+		return stream.get_error();
+
+	if (!stream.write_string("queryType", query_name.c_str()))
+		return stream.get_error();
+
+
 	if (!stream.write_item_reference("item", item))
 		return stream.get_error();
 	if (!stream.write_string("subfolder", subfolder.c_str()))
+		return stream.get_error();
+
+	if (!stream.end_object())
 		return stream.get_error();
 
 	return true;

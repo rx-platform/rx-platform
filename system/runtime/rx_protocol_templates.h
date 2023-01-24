@@ -131,7 +131,7 @@ public:
 
   public:
 
-      rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
@@ -227,7 +227,7 @@ rx_reference<endpointT> slave_server_port_impl<endpointT>::get_endpoint (rx_prot
 
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* master_client_port_impl<endpointT>::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* master_client_port_impl<endpointT>::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
     if (!construct_func)
         return nullptr;

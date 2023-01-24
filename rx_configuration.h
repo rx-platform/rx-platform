@@ -29,6 +29,7 @@
 #define RX_NS_OBJ_NAME "runtime"
 #define RX_NS_SYSTEM_OBJ_NAME "system"
 #define RX_NS_PORT_OBJ_NAME "ports"
+#define RX_NS_PEER_OBJ_NAME "peers"
 #define RX_NS_RELATIONS_NAME "relations"
 #define RX_NS_CLASSES_NAME "types"
 #define RX_NS_BASE_CLASSES_NAME "base"
@@ -287,6 +288,8 @@
 
 #define RX_RX_JSON_CLIENT_TYPE_NAME "RxJsonClientProtocol"
 #define RX_RX_JSON_CLIENT_TYPE_ID 0xc000089
+#define RX_RX_JSON_RELATION_TYPE_NAME "RxJsonProtocolClient"
+#define RX_RX_JSON_RELATION_TYPE_ID 0xc0000b1
 
 #define RX_TIMEOUTS_TYPE_NAME "TimeoutsData"
 #define RX_TIMEOUTS_TYPE_ID 0xc000024
@@ -562,7 +565,17 @@
 #define RX_UPYTHON_METHOD_TYPE_NAME "uPtyMethod"
 #define RX_UPYTHON_METHOD_TYPE_ID 0xc0000a9
 
-// last is 0xc0000ad!!!! 
+// discovery stuff
+#define RX_PEER_CONNECTION_TYPE_NAME "PeerConnection"
+#define RX_PEER_CONNECTION_TYPE_ID 0xc0000ae
+
+
+#define RX_PEER_ENDPOINT_TYPE_NAME "PeerEndpoint"
+#define RX_PEER_ENDPOINT_TYPE_ID 0xc0000af
+#define RX_PEER_STATUS_TYPE_NAME "PeerStatus"
+#define RX_PEER_STATUS_TYPE_ID 0xc0000b0
+
+// last is 0xc0000b1!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

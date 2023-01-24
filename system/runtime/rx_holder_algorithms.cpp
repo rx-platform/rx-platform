@@ -383,7 +383,7 @@ void runtime_holder_algorithms<typeT>::write_value (const string_type& path, rx_
     if (!connect_result)
     {
         connect_result.register_error("Error writing to item "s + path);
-        callback(connect_result.errors());
+        callback(0, connect_result.errors());
         return;
     }
     auto transaction_ptr = rx_create_reference<write_item_transaction>(std::move(callback));
@@ -391,7 +391,7 @@ void runtime_holder_algorithms<typeT>::write_value (const string_type& path, rx_
     if (!result)
     {
         whose.tags_.connected_tags_.disconnect_tag(connect_result.value());
-        (*transaction_ptr)(std::move(result));
+        (*transaction_ptr)(0, std::move(result));
         return;
     }
 }
@@ -468,7 +468,7 @@ void runtime_holder_algorithms<typeT>::execute_method (const string_type& path, 
     if (!connect_result)
     {
         connect_result.register_error("Error executing method "s + path);
-        callback(connect_result.errors(), data::runtime_values_data());
+        callback(0, connect_result.errors(), data::runtime_values_data());
         return;
     }
     auto transaction_ptr = rx_create_reference<execute_method_transaction>(std::move(callback));
@@ -476,7 +476,7 @@ void runtime_holder_algorithms<typeT>::execute_method (const string_type& path, 
     if (!result)
     {
         whose.tags_.connected_tags_.disconnect_tag(connect_result.value());
-        (*transaction_ptr)(std::move(result), data::runtime_values_data());
+        (*transaction_ptr)(0, std::move(result), data::runtime_values_data());
         return;
     }
 }
@@ -572,7 +572,7 @@ void runtime_relation_algorithms::write_value (const string_type& path, rx_simpl
     else
     {
         rx_result result(path + " not found!");
-        callback(std::move(result));
+        callback(0, std::move(result));
     }
 }
 

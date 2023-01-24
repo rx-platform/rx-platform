@@ -33,6 +33,8 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_internal {
 namespace rx_protocol {
@@ -53,10 +55,14 @@ typedef rx_reference<rx_protocol_connection> rx_protocol_connection_ptr;
 namespace messages
 {
 class rx_request_message;
+class rx_response_message;
 class rx_message_base;
+class error_message;
 }
 typedef std::unique_ptr<messages::rx_request_message> request_message_ptr;
+typedef std::unique_ptr<messages::rx_response_message> response_message_ptr;
 typedef std::unique_ptr<messages::rx_message_base> message_ptr;
+typedef std::unique_ptr<messages::error_message> error_message_ptr;
 
 namespace messages {
 
@@ -211,75 +217,6 @@ class rx_message_base
 
 
 
-class error_message : public rx_message_base  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-
-      uint32_t error_code;
-
-      string_type error_text;
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-	  error_message(const string_type& message, uint32_t code, rx_request_id_t request_id)
-	  {
-		  error_text = message;
-		  error_code = code;
-		  this->request_id = request_id;
-	  }
-	  error_message(const rx_result& result, uint32_t code, rx_request_id_t request_id)
-	  {
-		  bool first = true;
-		  for (const auto& one : result.errors())
-		  {
-			  if (first)
-				  first = false;
-			  else
-				  error_text += ", ";
-			  error_text += one;
-		  }
-		  error_code = code;
-		  this->request_id = request_id;
-	  }
-	  template<typename resT>
-	  error_message(const rx_result_with<resT>& result, uint32_t code, rx_request_id_t request_id)
-	  {
-		  bool first = true;
-		  for (const auto& one : result.errors())
-		  {
-			  if (first)
-				  first = false;
-			  else
-				  error_text += ", ";
-			  error_text += one;
-		  }
-		  error_code = code;
-		  this->request_id = request_id;
-	  }
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 
 class rx_request_message : public rx_message_base  
 {
@@ -360,7 +297,169 @@ class rx_connection_context_request : public rx_request_message
 
 
 
-class rx_connection_context_response : public rx_message_base  
+class rx_keep_alive_message : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_transaction_base : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(rx_transaction_base);
+
+  public:
+
+      virtual rx_result deserialize (base_meta_reader& stream, const string_type& msgType) = 0;
+
+      virtual rx_result process () = 0;
+
+      virtual rx_message_base& get_request () = 0;
+
+
+  protected:
+
+  private:
+
+
+};
+
+typedef rx_reference<rx_transaction_base> rx_transaction_ptr;
+
+
+
+
+
+
+class rx_response_message : public rx_message_base  
+{
+    typedef std::map<rx_message_type_t, std::function<rx_transaction_ptr()> > registered_messages_type;
+    typedef std::map<string_type, std::function<rx_transaction_ptr()> > registered_string_messages_type;
+
+  public:
+
+      virtual rx_result process_response (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      static rx_result init_response_messages ();
+
+      static void deinit_response_messages ();
+
+      static rx_transaction_ptr create_transaction_from_request (request_message_ptr req);
+
+
+  protected:
+
+  private:
+
+
+      static rx_response_message::registered_string_messages_type registered_string_messages_;
+
+      static rx_response_message::registered_messages_type registered_messages_;
+
+
+};
+
+
+
+
+
+
+class error_message : public rx_response_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      uint32_t error_code;
+
+      string_type error_text;
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+	  error_message(const string_type& message, uint32_t code, rx_request_id_t request_id)
+	  {
+		  error_text = message;
+		  error_code = code;
+		  this->request_id = request_id;
+	  }
+	  error_message(const rx_result& result, uint32_t code, rx_request_id_t request_id)
+	  {
+		  bool first = true;
+		  for (const auto& one : result.errors())
+		  {
+			  if (first)
+				  first = false;
+			  else
+				  error_text += ", ";
+			  error_text += one;
+		  }
+		  error_code = code;
+		  this->request_id = request_id;
+	  }
+	  template<typename resT>
+	  error_message(const rx_result_with<resT>& result, uint32_t code, rx_request_id_t request_id)
+	  {
+		  bool first = true;
+		  for (const auto& one : result.errors())
+		  {
+			  if (first)
+				  first = false;
+			  else
+				  error_text += ", ";
+			  error_text += one;
+		  }
+		  error_code = code;
+		  this->request_id = request_id;
+	  }
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_connection_context_response : public rx_response_message  
 {
 
   public:
@@ -403,40 +502,7 @@ class rx_connection_context_response : public rx_message_base
 
 
 
-class rx_keep_alive_message : public rx_request_message  
-{
-
-  public:
-
-      rx_result serialize (base_meta_writer& stream) const;
-
-      rx_result deserialize (base_meta_reader& stream);
-
-      const string_type& get_type_name ();
-
-      rx_message_type_t get_type_id ();
-
-      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
-
-
-      static string_type type_name;
-
-      static rx_message_type_t type_id;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rx_connection_notify_message : public rx_message_base  
+class rx_connection_notify_message : public rx_response_message  
 {
 
   public:
@@ -465,6 +531,115 @@ class rx_connection_notify_message : public rx_message_base
 
 
 };
+
+
+
+
+
+
+template <class reqT, class respT>
+class rx_transaction_data : public rx_transaction_base  
+{
+    DECLARE_REFERENCE_PTR(rx_transaction_data);
+    typedef std::unique_ptr<reqT> request_ptr_t;
+    typedef std::unique_ptr<respT> response_ptr_t;
+
+  public:
+      rx_transaction_data (request_ptr_t req);
+
+      ~rx_transaction_data();
+
+
+      rx_result deserialize (base_meta_reader& stream, const string_type& msgType);
+
+      rx_result process ();
+
+      void set_request (request_message_ptr req);
+
+      rx_message_base& get_request ();
+
+
+  protected:
+
+  private:
+
+
+      request_ptr_t request_ptr_;
+
+      response_ptr_t response_ptr_;
+
+      error_message_ptr error_ptr_;
+
+
+};
+
+
+// Parameterized Class rx_internal::rx_protocol::messages::rx_transaction_data 
+
+template <class reqT, class respT>
+rx_transaction_data<reqT,respT>::rx_transaction_data (request_ptr_t req)
+      : request_ptr_(std::move(req))
+{
+}
+
+
+template <class reqT, class respT>
+rx_transaction_data<reqT,respT>::~rx_transaction_data()
+{
+}
+
+
+
+template <class reqT, class respT>
+rx_result rx_transaction_data<reqT,respT>::deserialize (base_meta_reader& stream, const string_type& msgType)
+{
+    auto resp_ptr = request_ptr_->create_response_message();
+    if (!resp_ptr)
+        return RX_NOT_SUPPORTED;
+
+    if (!stream.start_object("body"))
+        return stream.get_error();
+
+    auto ser_result = resp_ptr->deserialize(stream);
+    if (!ser_result)
+        return ser_result.errors();
+
+    if (!stream.end_object())
+        return stream.get_error();
+
+    response_ptr_ = std::move(resp_ptr);
+
+    return true;
+}
+
+template <class reqT, class respT>
+rx_result rx_transaction_data<reqT,respT>::process ()
+{
+    if (request_ptr_)
+    {
+        if (error_ptr_)
+        {
+            return request_ptr_->process(std::move(error_ptr_));
+        }
+        else
+        {
+            return request_ptr_->process(std::move(response_ptr_));
+        }
+    }
+    return RX_INTERNAL_ERROR;
+}
+
+template <class reqT, class respT>
+void rx_transaction_data<reqT,respT>::set_request (request_message_ptr req)
+{
+    request_ptr_ = std::move(req);
+}
+
+template <class reqT, class respT>
+rx_message_base& rx_transaction_data<reqT,respT>::get_request ()
+{
+    return *request_ptr_;
+}
 
 
 } // namespace messages

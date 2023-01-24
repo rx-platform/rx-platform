@@ -321,7 +321,7 @@ void rx_meta_item_implementation<TImpl>::read_value (const string_type& path, re
 template <class TImpl>
 void rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
 {
-	callback(RX_NOT_IMPLEMENTED);
+	callback(0, RX_NOT_IMPLEMENTED);
 }
 
 template <class TImpl>
@@ -426,13 +426,13 @@ void rx_meta_item_implementation<TImpl>::read_struct (string_view_type path, rea
 template <class TImpl>
 void rx_meta_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
 {
-	data.callback(RX_NOT_VALID_TYPE, std::vector<rx_result>());
+	data.callback(0, RX_NOT_VALID_TYPE, std::vector<rx_result>());
 }
 
 template <class TImpl>
 void rx_meta_item_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
 {
-	callback(RX_NOT_VALID_TYPE, data::runtime_values_data());
+	callback(0, RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
@@ -522,7 +522,7 @@ void rx_other_implementation<TImpl>::read_value (const string_type& path, read_r
 template <class TImpl>
 void rx_other_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
 {
-	callback(RX_NOT_IMPLEMENTED);
+	callback(0, RX_NOT_IMPLEMENTED);
 }
 
 template <class TImpl>
@@ -618,13 +618,13 @@ void rx_other_implementation<TImpl>::read_struct (string_view_type path, read_st
 template <class TImpl>
 void rx_other_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
 {
-	data.callback(RX_NOT_VALID_TYPE, std::vector<rx_result>());
+	data.callback(0, RX_NOT_VALID_TYPE, std::vector<rx_result>());
 }
 
 template <class TImpl>
 void rx_other_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
 {
-	callback(RX_NOT_VALID_TYPE, data::runtime_values_data());
+	callback(0, RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
@@ -984,13 +984,13 @@ void rx_relation_item_implementation<TImpl>::read_struct (string_view_type path,
 template <class TImpl>
 void rx_relation_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
 {
-	data.callback(RX_NOT_VALID_TYPE, std::vector<rx_result>());
+	data.callback(0, RX_NOT_VALID_TYPE, std::vector<rx_result>());
 }
 
 template <class TImpl>
 void rx_relation_item_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
 {
-	callback(RX_NOT_VALID_TYPE, data::runtime_values_data());
+	callback(0, RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>

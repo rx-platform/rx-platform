@@ -55,6 +55,7 @@
 #include "protocols/opcua/rx_opcua_basic_client.h"
 #include "protocols/http/rx_http_mapping.h"
 #include "interfaces/rx_io.h"
+#include "discovery/rx_discovery_main.h"
 
 
 namespace rx_internal {
@@ -142,9 +143,17 @@ void server_command_manager::register_internal_commands ()
 	// handle rx_protocol stuff!
 	result = rx_internal::rx_protocol::messages::rx_message_base::init_messages();
 	// register protocol constructors
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+		RX_PEER_CONNECTION_TYPE_ID, [] {
+			return rx_create_reference<rx_internal::discovery::peer_object>();
+		});
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_RX_JSON_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::rx_protocol::rx_json_protocol_port>();
+		});
+	result = rx_internal::model::register_internal_constructor<port_type, rx_internal::rx_protocol::rx_json_protocol_client_port>(
+		nullptr, RX_RX_JSON_CLIENT_TYPE_ID, [] {
+			return rx_create_reference<rx_internal::rx_protocol::rx_json_protocol_client_port>();
 		});
 	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_transport::opcua_transport_port>(
 		nullptr ,RX_OPCUA_TRANSPORT_PORT_TYPE_ID, [] {

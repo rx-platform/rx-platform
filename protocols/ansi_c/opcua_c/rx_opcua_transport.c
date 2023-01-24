@@ -69,8 +69,11 @@ rx_protocol_result_t opcua_bin_init_transport(opcua_transport_protocol_type* tra
 
 	// fill protocol stack header
 	transport->stack_entry.received_function = opcua_bin_bytes_received;
-	if(!server_side)
+	if (!server_side)
+	{
 		transport->stack_entry.connected_function = opcua_bin_client_connected;
+		transport->stack_entry.connect_function = opcua_bin_client_connect;
+	}
 	//transport->stack_entry.send_function = opcua_bin_bytes_send;
 	//transport->stack_entry.closed_function = opcua_bin_closed;
 	//transport->stack_entry.close_function = opcua_bin_close;
@@ -101,10 +104,10 @@ rx_protocol_result_t opcua_bin_init_server_transport(opcua_transport_protocol_ty
 	return opcua_bin_init_transport(transport, 1);
 }
 
-
 rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport)
 {
-
+	if (transport->endpoint_url)
+		free((char*)transport->endpoint_url);
 	return RX_PROTOCOL_OK;
 }
 
@@ -127,12 +130,31 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 		return RX_PROTOCOL_PARSING_ERROR;
 
 	// check hello message
-	message = (opcua_hello_message*)rx_get_from_packet(buffer, sizeof(opcua_transport_header), &result);
+	message = (opcua_hello_message*)rx_get_from_packet(buffer, sizeof(opcua_hello_message), &result);
 	if (!message)
 		return result;
 
+	uint32_t ep_size = message->endpoint_url_size;
+	char* url = NULL;
+	if (ep_size)
+	{
+		url = malloc(sizeof(char) * ep_size + 1);
+		url[ep_size] = '\0';
+		result = rx_pop_from_packet(buffer, url, ep_size);
+		if (result != RX_PROTOCOL_OK)
+		{
+			free(url);
+			return result;
+		}
+		transport->endpoint_url = url;
+	}
+
 	if (message->receive_buffer_size < RX_OPCUA_MIN_BUFFER || message->send_buffer_size < RX_OPCUA_MIN_BUFFER)
+	{
+		if (transport->endpoint_url)
+			free((char*)transport->endpoint_url);
 		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	}
 
 	// now fill-out the rest of this
 	transport->connection_data.protocol_version = min(transport->connection_data.protocol_version, message->protocol_version);
@@ -144,11 +166,19 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	// allocate the response
 	result = stack->allocate_packet(stack, &response);
 	if (result != RX_PROTOCOL_OK)
+	{
+		if (transport->endpoint_url)
+			free((char*)transport->endpoint_url);
 		return result;
+	}
 	// fill the response header
 	response_header = (opcua_transport_header*)rx_alloc_from_packet(&response, sizeof(opcua_transport_header), &result);
 	if (!header)
+	{
+		if (transport->endpoint_url)
+			free((char*)transport->endpoint_url);
 		return result;
+	}
 
 	response_header->message_type[0] = 'A';
 	response_header->message_type[1] = 'C';
@@ -157,7 +187,11 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	// fill the message
 	ack_message = (opcua_acknowledge_message*)rx_alloc_from_packet(&response, sizeof(opcua_acknowledge_message), &result);
 	if (!ack_message)
+	{
+		if (transport->endpoint_url)
+			free((char*)transport->endpoint_url);
 		return result;
+	}
 	ack_message->protocol_version = transport->connection_data.protocol_version;
 	ack_message->receive_buffer_size = transport->connection_data.receive_buffer_size;
 	ack_message->send_buffer_size = transport->connection_data.send_buffer_size;
@@ -173,7 +207,10 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	rx_const_packet_buffer to_channel;
 	rx_init_const_from_packet_buffer(&to_channel, &response);
 
+	protocol_address ep_addr;
+	rx_create_string_address(&ep_addr, transport->endpoint_url);
 	recv_protocol_packet up_packet = rx_create_recv_packet(id, &to_channel, 0, 0);
+	up_packet.to_addr = &ep_addr;
 
 	result = rx_move_packet_down(stack, pack);
 	if (result == RX_PROTOCOL_OK)
@@ -186,6 +223,10 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 		}
 	}
 	stack->release_packet(stack, &response);
+
+	if (transport->endpoint_url)
+		free((char*)transport->endpoint_url);
+
 	return result;
 }
 rx_protocol_result_t opcua_parse_reverse_hello_message(struct rx_protocol_stack_endpoint* stack, opcua_transport_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
@@ -209,7 +250,7 @@ rx_protocol_result_t opcua_parse_ack_message(struct rx_protocol_stack_endpoint* 
 		return RX_PROTOCOL_PARSING_ERROR;
 
 	// check hello message
-	message = (opcua_hello_message*)rx_get_from_packet(buffer, sizeof(opcua_transport_header), &result);
+	message = (opcua_hello_message*)rx_get_from_packet(buffer, sizeof(opcua_hello_message), &result);
 	if (!message)
 		return result;
 
@@ -275,6 +316,12 @@ rx_protocol_result_t opcua_parse_error_message(struct rx_protocol_stack_endpoint
 {
 	return RX_PROTOCOL_NOT_IMPLEMENTED;
 }
+
+rx_protocol_result_t opcua_bin_client_connect(struct rx_protocol_stack_endpoint* reference, struct rx_session_def* session)
+{
+	return RX_PROTOCOL_NOT_IMPLEMENTED;
+}
+
 rx_protocol_result_t opcua_bin_client_connected(struct rx_protocol_stack_endpoint* reference, rx_session* session)
 {
 	rx_protocol_result_t result;
@@ -309,7 +356,7 @@ rx_protocol_result_t opcua_bin_client_connected(struct rx_protocol_stack_endpoin
 	message->send_buffer_size = transport->connection_data.send_buffer_size;
 	message->max_message_size = 0x1000000;
 	message->max_chunk_count = 5000;
-	const char* url = "opc.tcp://127.0.0.1:49320";
+	const char* url = transport->endpoint_url;
 	message->endpoint_url_size = (uint32_t)strlen(url);
 
 	rx_push_to_packet(&request, url, message->endpoint_url_size);

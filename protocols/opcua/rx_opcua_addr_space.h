@@ -128,10 +128,8 @@ class reference_data
 
       reference_data (rx_node_id ref_id, rx_node_id targ_id);
 
-      reference_data (opcua_std_ref_t data);
 
-
-      opcua_node_base *resolved_node;
+      std::weak_ptr<opcua_node_base> resolved_node;
 
 
       rx_node_id reference_id;
@@ -177,7 +175,7 @@ class opcua_address_space_base
 
       virtual const locks::rw_slim_lock* get_lock () const = 0;
 
-      virtual opcua_node_base* connect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse) = 0;
+      virtual std::shared_ptr<opcua_node_base> connect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse) = 0;
 
       virtual opcua_result_t register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val) = 0;
 
@@ -209,9 +207,9 @@ class node_references
 
   public:
 
-      bool connect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse);
+      bool connect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse);
 
-      bool disconnect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse);
+      bool disconnect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse);
 
 
       references_type references;

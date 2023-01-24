@@ -87,6 +87,8 @@ typedef struct opcua_sec_none_protocol_def
 
 	rx_opcua_transport_connected_t transport_connected;
 
+	protocol_address ep_address;
+
 } opcua_sec_none_protocol_type;
 // initialize and deinitialize of transport
 rx_protocol_result_t opcua_bin_init_sec_none_client_transport(opcua_sec_none_protocol_type* transport);
@@ -97,6 +99,8 @@ rx_protocol_result_t opcua_bin_sec_none_client_connected(struct rx_protocol_stac
 
 rx_protocol_result_t opcua_bin_sec_none_bytes_send(struct rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 rx_protocol_result_t opcua_bin_sec_none_bytes_received(struct rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+rx_protocol_result_t opcua_sec_none_client_disconnected(struct rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason);
 
 
 

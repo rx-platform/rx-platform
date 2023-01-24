@@ -654,7 +654,7 @@ bool connected_tags::process_runtime ()
 		{
 			auto monitor = one.first;
 			for (auto& item : one.second)
-				monitor->write_complete(item.transaction_id, item.item, std::move(item.result));
+				monitor->write_complete(item.transaction_id, item.item, item.signal_level, std::move(item.result));
 		}
 		write_results_.clear();
 	}
@@ -664,7 +664,7 @@ bool connected_tags::process_runtime ()
 		{
 			auto monitor = one.first;
 			for (auto& item : one.second)
-				monitor->execute_complete(item.transaction_id, item.item, std::move(item.result), std::move(item.data));
+				monitor->execute_complete(item.transaction_id, item.item, item.signal_level, std::move(item.result), std::move(item.data));
 		}
 		execute_results_.clear();
 	}
@@ -935,7 +935,7 @@ rx_result_with<runtime_handle_t> connected_tags::register_new_tag_ref (const str
 		break;
 	case rt_value_ref_type::rt_full_value:
 		full_values_.emplace(ref.ref_value_ptr.full_value, handle);
-		next_send_[monitor].insert_or_assign(handle, ref.ref_value_ptr.value->get_value(context_));
+		next_send_[monitor].insert_or_assign(handle, ref.ref_value_ptr.full_value->get_value(context_));
 		break;
 	case rt_value_ref_type::rt_method:
 		methods_.emplace(ref.ref_value_ptr.method, handle);

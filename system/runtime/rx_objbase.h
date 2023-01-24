@@ -42,10 +42,10 @@
 #include "system/meta/rx_meta_data.h"
 // dummy
 #include "dummy.h"
-// rx_io_buffers
-#include "lib/rx_io_buffers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_io_buffers
+#include "lib/rx_io_buffers.h"
 
 namespace rx_platform {
 namespace security {
@@ -461,7 +461,7 @@ system port class. basic implementation of a port");
 
       virtual rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
-      virtual rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      virtual rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       rx_result register_routing_endpoint (rx_protocol_stack_endpoint* what);
 

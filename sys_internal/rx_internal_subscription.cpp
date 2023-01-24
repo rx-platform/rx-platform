@@ -95,7 +95,7 @@ message_ptr create_subscription_request::do_job (api::rx_context ctx, rx_protoco
 	auto result = conn->connect_subscription(data);
 	if (result)
 	{
-		auto response = std::make_unique<create_subscriptions_response>();
+		auto response = std::make_unique<create_subscription_response>();
 		response->request_id = request_id;
 		response->subscription_id = data.subscription_id;
 		response->revised_keep_alive_period = data.keep_alive_period;
@@ -122,14 +122,14 @@ rx_message_type_t create_subscription_request::get_type_id ()
 }
 
 
-// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscriptions_response 
+// Class rx_internal::rx_protocol::messages::subscription_messages::create_subscription_response 
 
-string_type create_subscriptions_response::type_name = "createSubsResp";
+string_type create_subscription_response::type_name = "createSubsResp";
 
-rx_message_type_t create_subscriptions_response::type_id = rx_create_subscription_response_id;
+rx_message_type_t create_subscription_response::type_id = rx_create_subscription_response_id;
 
 
-rx_result create_subscriptions_response::serialize (base_meta_writer& stream) const
+rx_result create_subscription_response::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id))
 		return stream.get_error();
@@ -140,7 +140,7 @@ rx_result create_subscriptions_response::serialize (base_meta_writer& stream) co
 	return true;
 }
 
-rx_result create_subscriptions_response::deserialize (base_meta_reader& stream)
+rx_result create_subscription_response::deserialize (base_meta_reader& stream)
 {
 	rx_uuid_t temp;
 	if (!stream.read_uuid("id", temp))
@@ -153,13 +153,13 @@ rx_result create_subscriptions_response::deserialize (base_meta_reader& stream)
 	return true;
 }
 
-const string_type& create_subscriptions_response::get_type_name ()
+const string_type& create_subscription_response::get_type_name ()
 {
   return type_name;
 
 }
 
-rx_message_type_t create_subscriptions_response::get_type_id ()
+rx_message_type_t create_subscription_response::get_type_id ()
 {
   return type_id;
 
@@ -454,6 +454,12 @@ rx_result subscription_write_done::serialize (base_meta_writer& stream) const
 		if (!stream.write_string("errMsg", std::get<2>(one).c_str()))
 			return stream.get_error();
 
+		if (stream.get_version() >= RX_SIGNAL_LEVEL_VERSION)
+		{
+			if (!stream.write_uint("sigLevel", std::get<3>(one)))
+				return stream.get_error();
+		}
+
 		if (!stream.end_object())
 			return stream.get_error();
 	}
@@ -487,6 +493,12 @@ rx_result subscription_write_done::deserialize (base_meta_reader& stream)
 		if (!stream.read_string("errMsg", std::get<2>(one)))
 			return stream.get_error();
 
+		if (stream.get_version() >= RX_SIGNAL_LEVEL_VERSION)
+		{
+			if (!stream.read_uint("sigLevel", std::get<3>(one)))
+				return stream.get_error();
+		}
+
 		if (!stream.end_object())
 			return stream.get_error();
 		results.emplace_back(one);
@@ -506,11 +518,11 @@ rx_message_type_t subscription_write_done::get_type_id ()
 
 }
 
-void subscription_write_done::add_result (runtime_handle_t handle, rx_result&& result)
+void subscription_write_done::add_result (write_result_item res)
 {
 	uint32_t error_code = 0;
 	string_type error_text;
-	if (result)
+	if (res.result)
 	{
 		error_code = 0;
 	}
@@ -518,7 +530,7 @@ void subscription_write_done::add_result (runtime_handle_t handle, rx_result&& r
 	{
 		error_code = 98;
 		bool first = true;
-		for (const auto& one : result.errors())
+		for (const auto& one : res.result.errors())
 		{
 			if (first)
 				first = false;
@@ -527,7 +539,7 @@ void subscription_write_done::add_result (runtime_handle_t handle, rx_result&& r
 			error_text += one;
 		}
 	}
-	results.emplace_back(result_type{ handle, error_code, error_text });
+	results.emplace_back(result_type{ res.handle, error_code, error_text, res.signal_level });
 }
 
 

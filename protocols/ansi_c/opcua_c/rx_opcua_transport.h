@@ -87,6 +87,8 @@ typedef struct opcua_transport_protocol_def
 	enum opcua_transport_state current_state;
 	opcua_acknowledge_message connection_data;
 
+	const char* endpoint_url;
+
 } opcua_transport_protocol_type;
 // initialize and deinitialize of transport
 rx_protocol_result_t opcua_bin_init_client_transport(opcua_transport_protocol_type* transport);
@@ -95,6 +97,7 @@ rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* t
 
 
 rx_protocol_result_t opcua_bin_client_connected(struct rx_protocol_stack_endpoint* reference, rx_session* session);
+rx_protocol_result_t opcua_bin_client_connect(struct rx_protocol_stack_endpoint* reference, rx_session* session);
 
 rx_protocol_result_t opcua_bin_bytes_received(struct rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
 

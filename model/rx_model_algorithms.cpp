@@ -619,7 +619,7 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_res
 	return true;
 }
 template<class typeCache>
-rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_runtime(typeCache& cache, typename typeCache::HType::instance_data_t instance_data, data::runtime_values_data runtime_data, rx_transaction_type& transaction)
+rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_runtime(typeCache& cache, typename typeCache::HType::instance_data_t instance_data, data::runtime_values_data runtime_data, rx_transaction_type& transaction, bool temp)
 {
 	string_type path = instance_data.meta_info.path;
 	string_type runtime_name = instance_data.meta_info.name;
@@ -655,7 +655,7 @@ rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_ru
 			auto remove_result = dir->delete_item(runtime_name);
 		});
 
-	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	if (!temp || rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 
 		// we have to do save, we are running
@@ -1157,7 +1157,7 @@ void runtime_model_algorithm<typeT>::get_runtime (const rx_item_reference& item_
 template <class typeT>
 void runtime_model_algorithm<typeT>::create_runtime (instanceT&& instance_data, data::runtime_values_data&& runtime_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
 {
-	rx_do_with_callback(RX_DOMAIN_META, runtime_model_algorithm<typeT>::create_runtime_sync, std::move(callback), std::move(instance_data), std::move(runtime_data));
+	rx_do_with_callback(RX_DOMAIN_META, runtime_model_algorithm<typeT>::create_runtime_sync, std::move(callback), std::move(instance_data), std::move(runtime_data), false);
 }
 
 template <class typeT>
@@ -1171,7 +1171,7 @@ template <class typeT>
 void runtime_model_algorithm<typeT>::update_runtime (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
 {
 	rx_post_function_to(RX_DOMAIN_META, callback.get_anchor(), &runtime_model_algorithm<typeT>::update_runtime_with_depends_sync
-		, std::move(instance_data), std::move(update_data), std::move(callback), rx_thread_context());
+		, std::move(instance_data), std::move(update_data), std::move(callback), rx_thread_context(), false);
 
 }
 
@@ -1223,11 +1223,11 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::get_run
 }
 
 template <class typeT>
-rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_sync (instanceT&& instance_data, data::runtime_values_data&& runtime_data)
+rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_runtime_sync (instanceT&& instance_data, data::runtime_values_data&& runtime_data, bool temp)
 {
 	rx_transaction_type transaction;
 	auto result = create_some_runtime<types_repository<typeT> >(platform_types_manager::instance().get_type_repository<typeT>()
-		, std::move(instance_data), std::move(runtime_data), transaction);
+		, std::move(instance_data), std::move(runtime_data), transaction, temp);
 	if (result)
 	{
 		rx_node_id item_id = result.value().ptr->meta_info().id;
@@ -1267,7 +1267,7 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target)
+void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target, bool temp)
 {
 	using ret_type = rx_result_with<typename typeT::RTypePtr>;
 	auto id = instance_data.meta_info.id;
@@ -1363,7 +1363,7 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 	///////////////////////////////////////////////////////////////////////////
 	// now prepare runtime for creations
 	auto create_result = create_some_runtime(platform_types_manager::instance().get_type_repository<typeT>()
-		, std::move(instance_data), std::move(runtime_data), transaction);
+		, std::move(instance_data), std::move(runtime_data), transaction, temp);
 
 	if (!create_result)
 	{
@@ -1435,7 +1435,7 @@ rx_result runtime_model_algorithm<typeT>::delete_runtime_sync (const rx_item_ref
 }
 
 template <class typeT>
-void runtime_model_algorithm<typeT>::update_runtime_with_depends_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target)
+void runtime_model_algorithm<typeT>::update_runtime_with_depends_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target, bool temp)
 {
 	auto result = transaction_algorithm::get_dependents(instance_data.meta_info.id, instance_data.meta_info.path);
 	if (result)

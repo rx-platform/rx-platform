@@ -133,9 +133,10 @@ void opcua_base_node_type::browse (const opcua_browse_description& to_browse, br
     {
         for (const auto& one : references.references)
         {
-            if (one.resolved_node
+            auto node_ptr = one.resolved_node.lock();
+            if (node_ptr
                 && (to_browse.node_class_mask == 0
-                    || ((uint32_t)one.resolved_node->get_node_class() & to_browse.node_class_mask) != 0))
+                    || ((uint32_t)node_ptr->get_node_class() & to_browse.node_class_mask) != 0))
             {
                 if (!refIds.empty() && refIds.count(one.reference_id))
                     result.add_reference_data(true, one, to_browse);
@@ -147,9 +148,10 @@ void opcua_base_node_type::browse (const opcua_browse_description& to_browse, br
     {
         for (const auto& one : references.inverse_references)
         {
-            if (one.resolved_node
+            auto node_ptr = one.resolved_node.lock();
+            if (node_ptr
                 && (to_browse.node_class_mask == 0
-                    || ((uint32_t)one.resolved_node->get_node_class() & to_browse.node_class_mask) != 0))
+                    || ((uint32_t)node_ptr->get_node_class() & to_browse.node_class_mask) != 0))
             {
                 if (!refIds.empty() && refIds.count(one.reference_id))
                     result.add_reference_data(false, one, to_browse);
@@ -187,13 +189,14 @@ void opcua_base_node_type::translate (const relative_path& path, browse_path_res
     {
         for (const auto& one : references.references)
         {
-            if (one.resolved_node)
+            auto node_ptr = one.resolved_node.lock();
+            if (node_ptr)
             {
                 if (!refIds.empty() && refIds.count(one.reference_id)
-                    && one.resolved_node->get_browse_name() == one_path.target_name)
+                    && node_ptr->get_browse_name() == one_path.target_name)
                 {
                     target_it->target_id = one.target_id;
-                    one.resolved_node->translate(path, results, ctx);
+                    node_ptr->translate(path, results, ctx);
                     return;
                 }
             }
@@ -203,13 +206,14 @@ void opcua_base_node_type::translate (const relative_path& path, browse_path_res
     {
         for (const auto& one : references.inverse_references)
         {
-            if (one.resolved_node)
+            auto node_ptr = one.resolved_node.lock();
+            if (node_ptr)
             {
                 if (!refIds.empty() && refIds.count(one.reference_id)
-                    && one.resolved_node->get_browse_name() == one_path.target_name)
+                    && node_ptr->get_browse_name() == one_path.target_name)
                 {
                     target_it->target_id = one.target_id;
-                    one.resolved_node->translate(path, results, ctx);
+                    node_ptr->translate(path, results, ctx);
                     return;
                 }
             }
@@ -408,21 +412,12 @@ rx_node_id opcua_variable_node::get_type_id () const
 // Class protocols::opcua::opcua_addr_space::reference_data 
 
 reference_data::reference_data()
-    : resolved_node(nullptr)
 {
 }
 
 reference_data::reference_data (rx_node_id ref_id, rx_node_id targ_id)
-    : resolved_node(nullptr)
-    , reference_id(std::move(ref_id))
+    : reference_id(std::move(ref_id))
     , target_id(std::move(targ_id))
-{
-}
-
-reference_data::reference_data (opcua_std_ref_t data)
-    : resolved_node{ reinterpret_cast<opcua_node_base*>((uintptr_t)data.target_idx) }
-    , reference_id{ data.ref_id, 0 }
-    , target_id{ data.target_id, 0 }
 {
 }
 
@@ -437,7 +432,7 @@ reference_data::reference_data (opcua_std_ref_t data)
 // Class protocols::opcua::opcua_addr_space::node_references 
 
 
-bool node_references::connect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse)
+bool node_references::connect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse)
 {
     if (inverse)
     {
@@ -471,7 +466,7 @@ bool node_references::connect_node_reference (opcua_node_base* node, const refer
     }
 }
 
-bool node_references::disconnect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse)
+bool node_references::disconnect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse)
 {
     if (inverse)
     {
@@ -480,7 +475,7 @@ bool node_references::disconnect_node_reference (opcua_node_base* node, const re
         {
             if (it->reference_id == ref_data.reference_id && it->target_id == node->get_node_id())
             {
-                RX_ASSERT(node == it->resolved_node);
+                RX_ASSERT(node == it->resolved_node.lock());
                 references.erase(it);
                 return true;
             }
@@ -494,7 +489,7 @@ bool node_references::disconnect_node_reference (opcua_node_base* node, const re
         {
             if (it->reference_id == ref_data.reference_id && it->target_id == node->get_node_id())
             {
-                RX_ASSERT(node == it->resolved_node);
+                RX_ASSERT(node == it->resolved_node.lock());
                 inverse_references.erase(it);
                 return true;
             }
@@ -538,3 +533,12 @@ rx_node_id opcua_object_node::get_type_id () const
 } // namespace opcua
 } // namespace protocols
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+    : reference_id{ data.ref_id, 0 }
+    , target_id{ data.target_id, 0 }
+
+#endif

@@ -329,7 +329,7 @@ rx_protocol_stack_endpoint* port_runtime::construct_listener_endpoint (const pro
 	return nullptr;
 }
 
-rx_protocol_stack_endpoint* port_runtime::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* port_runtime::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
 	RX_ASSERT(false);
 	return nullptr;

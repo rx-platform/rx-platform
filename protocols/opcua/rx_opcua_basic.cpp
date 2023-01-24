@@ -42,6 +42,8 @@
 #include "protocols/opcua/rx_opcua_requests.h"
 #include "protocols/opcua/rx_opcua_builder.h"
 #include "runtime_internal/rx_runtime_internal.h"
+#include "rx_opcua_resources.h"
+using namespace protocols::opcua::opcua_addr_space;
 
 using namespace protocols::opcua::ids;
 
@@ -68,24 +70,15 @@ opcua_basic_server_port::opcua_basic_server_port()
 {
 	construct_func = [this]()
 	{
-		string_type endpoint_url = "opc.tcp://"s + rx_gate::instance().get_node_name();
+		string_type endpoint_url = application_description_.ep_bind;
 
-		/*string_type app_name = "rx-platform/"s
-			+ rx_gate::instance().get_instance_name()
-			+ "/" + app_name_
-			+ "@" + rx_gate::instance().get_node_name();
-		string_type app_uri = "urn:rx-platform:"s
-			+ rx_gate::instance().get_instance_name()
-			+ "/" + app_name_
-			+ "@" + rx_gate::instance().get_node_name();
-			*/
 		auto rt = rx_create_reference<opcua_basic_server_endpoint>(
-			endpoint_url
-			, application_description_, this);
+			application_description_, endpoint_url, port_path_, this);
 
 		return construct_func_type::result_type{ &rt->stack_entry, rt };
 	};
 	address_space.set_parent(&std_address_space);
+	resolver_user_.my_port = this;
 }
 
 
@@ -101,11 +94,13 @@ rx_result opcua_basic_server_port::initialize_runtime (runtime::runtime_init_con
 	string_type app_name = ctx.get_item_static("Options.AppName", ""s);
 	string_type app_bind = ctx.get_item_static("Bind.Endpoint", ""s);
 
-	if (app_name.empty())
-		app_name = app_bind.c_str();
 
 	if (app_uri.empty())
-		app_uri = app_name;
+		app_uri = app_bind.c_str();;
+
+	if (app_name.empty())
+		app_name = app_uri;
+
 
 	application_description_ = opcua_server_endpoint_base::fill_application_description(app_uri, app_name, app_bind, "BasicServer");
 
@@ -116,27 +111,60 @@ rx_result opcua_basic_server_port::initialize_runtime (runtime::runtime_init_con
 	return result;
 }
 
-rx_result opcua_basic_server_port::register_node (opcua_basic_node* node)
+rx_result opcua_basic_server_port::register_node (std::shared_ptr<opcua_basic_node> node)
 {
 	return address_space.register_node(node);
 }
 
-rx_result opcua_basic_server_port::unregister_node (opcua_basic_node* node)
+rx_result opcua_basic_server_port::unregister_node (std::shared_ptr<opcua_basic_node> node)
 {
 	return address_space.unregister_node(node);
+}
+
+bool opcua_basic_server_port::internal_port_connected (const platform_item_ptr& item)
+{
+	port_path_ = item->meta_info().get_full_path();
+	opcua_resources_repository::instance().register_server(port_path_, application_description_);
+	return true;
+}
+
+void opcua_basic_server_port::internal_port_disconnected ()
+{
+	opcua_resources_repository::instance().unregister_server(port_path_, application_description_.ep_bind);
+}
+
+rx_result opcua_basic_server_port::start_runtime (runtime::runtime_start_context& ctx)
+{
+	auto ret = ctx.register_relation_subscriber("StackTop", &resolver_user_);
+	if (!ret)
+	{
+		RUNTIME_LOG_WARNING("opcua_basic_server_port", 900, "Error starting port registration "
+			+ ctx.context->meta_info.get_full_path() + "." + ctx.path.get_current_path() + " " + ret.errors_line());
+	}
+	return true;
+}
+
+rx_result opcua_basic_server_port::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return true;
 }
 
 
 // Class protocols::opcua::opcua_basic_server::opcua_basic_server_endpoint 
 
-opcua_basic_server_endpoint::opcua_basic_server_endpoint (const string_type& endpoint_url, const application_description& app_descr, opcua_basic_server_port* port)
+opcua_basic_server_endpoint::opcua_basic_server_endpoint (const application_description& app_description, const string_type& endpoint_url, const string_type& port_path, opcua_basic_server_port* port)
       : executer_(-1),
         port_(port)
-		, opcua_server_endpoint_base(endpoint_url, app_descr, &port->address_space, &port->subscriptions)
+		, opcua_server_endpoint_base(endpoint_url, app_description, endpoint_url, &port->address_space, &port->subscriptions, port_path)
 {
     OPCUA_LOG_DEBUG("opcua_basic_server_endpoint", 200, "Basic OPC UA Server endpoint created.");
     rx_init_stack_entry(&stack_entry, this);
     stack_entry.received_function = &opcua_basic_server_endpoint::received_function;
+	stack_entry.connected_function = [](rx_protocol_stack_endpoint* reference, rx_session* session)
+	{
+		opcua_basic_server_endpoint* me = (opcua_basic_server_endpoint*)reference->user_data;
+		return me->connected_function(session);
+	};
 
 }
 
@@ -246,7 +274,7 @@ void opcua_simple_address_space::set_parent (opcua_addr_space::opcua_address_spa
 	parent_ = parent;
 }
 
-rx_result opcua_simple_address_space::register_node (opcua_basic_node* what)
+rx_result opcua_simple_address_space::register_node (std::shared_ptr<opcua_basic_node> what)
 {
 	locks::auto_write_lock _(get_lock());
 	auto current_it = variable_nodes_.find(what->get_node_id());
@@ -276,7 +304,7 @@ rx_result opcua_simple_address_space::register_node (opcua_basic_node* what)
 	return true;
 }
 
-rx_result opcua_simple_address_space::unregister_node (opcua_basic_node* what)
+rx_result opcua_simple_address_space::unregister_node (std::shared_ptr<opcua_basic_node> what)
 {
 	locks::auto_write_lock _(get_lock());
 	auto current_it = variable_nodes_.find(what->get_node_id());
@@ -486,12 +514,12 @@ const locks::rw_slim_lock* opcua_simple_address_space::get_lock () const
 	return parent_->get_lock();
 }
 
-opcua_addr_space::opcua_node_base* opcua_simple_address_space::connect_node_reference (opcua_addr_space::opcua_node_base* node, const opcua_addr_space::reference_data& ref_data, bool inverse)
+std::shared_ptr<opcua_node_base> opcua_simple_address_space::connect_node_reference (std::shared_ptr<opcua_node_base> node, const opcua_addr_space::reference_data& ref_data, bool inverse)
 {
 	if (ref_data.target_id.is_null())
 		return nullptr;
 
-	opcua_addr_space::opcua_node_base* target_ptr = parent_->connect_node_reference(node, ref_data, inverse);
+	auto target_ptr = parent_->connect_node_reference(node, ref_data, inverse);
 	if (target_ptr)
 		return target_ptr;
 
@@ -499,7 +527,7 @@ opcua_addr_space::opcua_node_base* opcua_simple_address_space::connect_node_refe
 	if (fold_it != folder_nodes_.end())
 	{
 		if (fold_it->second->references.connect_node_reference(node, ref_data, inverse))
-			return fold_it->second.get();
+			return fold_it->second;
 		else
 			return nullptr;
 	}
@@ -578,7 +606,7 @@ rx_node_id opcua_simple_address_space::get_folder_node (const string_type& folde
 			rest_path = "";
 		}
 		rx_node_id new_id = get_folder_node(rest_path, parent_id);
-		std::unique_ptr<opcua_basic_folder_node> node = std::make_unique<opcua_basic_folder_node>();
+		std::shared_ptr<opcua_basic_folder_node> node = std::make_shared<opcua_basic_folder_node>();
 		node->node_id = rx_node_id(path.c_str(), default_basic_namespace);
 		node->browse_name = qualified_name{ default_basic_namespace, folder_name };
 		node->display_name = folder_name;
@@ -589,13 +617,13 @@ rx_node_id opcua_simple_address_space::get_folder_node (const string_type& folde
 
 		for (auto& one : node->references.references)
 		{
-			auto target_ptr = connect_node_reference(node.get(), one, false);
+			auto target_ptr = connect_node_reference(node, one, false);
 			if (target_ptr)
 				one.resolved_node = target_ptr;
 		}
 		for (auto& one : node->references.inverse_references)
 		{
-			auto target_ptr = connect_node_reference(node.get(), one, true);
+			auto target_ptr = connect_node_reference(node, one, true);
 			if (target_ptr)
 				one.resolved_node = target_ptr;
 		}
@@ -614,7 +642,8 @@ rx_node_id opcua_simple_address_space::get_folder_node (const string_type& folde
 opcua_basic_mapper::opcua_basic_mapper()
 {
 	size_t sz = sizeof(opcua_basic_mapper);
-	node_.mapper_ = this;
+	node_ = std::make_shared<opcua_basic_node>();
+	node_->mapper_ = smart_this();
 }
 
 
@@ -646,15 +675,15 @@ rx_result opcua_basic_mapper::initialize_mapper (runtime::runtime_init_context& 
 	}
 
 	if (numeric_id)
-		node_.node_id = rx_node_id(numeric_id, default_basic_namespace);
+		node_->node_id = rx_node_id(numeric_id, default_basic_namespace);
 	else
-		node_.node_id = rx_node_id(full_path.c_str(), default_basic_namespace);
-	node_.browse_name = qualified_name{ default_basic_namespace, name };
-	node_.display_name = name;
-	node_.path_ = path;
-	node_.type_id = rx_node_id::opcua_standard_id(opcid_BaseDataVariableType);
-	node_.data_type = rx_node_id::opcua_standard_id(variant_type::get_opc_type_from_rx_type(get_value_type()));
-	node_.references.references.emplace_back(rx_node_id::opcua_standard_id(opcid_HasTypeDefinition), node_.type_id);
+		node_->node_id = rx_node_id(full_path.c_str(), default_basic_namespace);
+	node_->browse_name = qualified_name{ default_basic_namespace, name };
+	node_->display_name = name;
+	node_->path_ = path;
+	node_->type_id = rx_node_id::opcua_standard_id(opcid_BaseDataVariableType);
+	node_->data_type = rx_node_id::opcua_standard_id(variant_type::get_opc_type_from_rx_type(get_value_type()));
+	node_->references.references.emplace_back(rx_node_id::opcua_standard_id(opcid_HasTypeDefinition), node_->type_id);
 
 	return true;
 }
@@ -663,7 +692,7 @@ void opcua_basic_mapper::port_connected (port_ptr_t port)
 {
 	if (port)
 	{
-		auto result = port->register_node(&node_);
+		auto result = port->register_node(node_);
 	}
 }
 
@@ -671,14 +700,14 @@ void opcua_basic_mapper::port_disconnected (port_ptr_t port)
 {
 	if (port)
 	{
-		auto result = port->unregister_node(&node_);
+		auto result = port->unregister_node(node_);
 	}
 }
 
 void opcua_basic_mapper::mapped_value_changed (rx_value&& val, runtime::runtime_process_context* ctx)
 {
-	if (this->my_port_ && this->node_.node_id)
-		this->my_port_->address_space.set_node_value(this->node_.node_id, std::move(val));
+	if (this->my_port_ && node_->node_id)
+		this->my_port_->address_space.set_node_value(node_->node_id, std::move(val));
 }
 
 void opcua_basic_mapper::mapper_result_received (rx_result&& result, runtime_transaction_id_t id, runtime::runtime_process_context* ctx)
@@ -725,7 +754,6 @@ std::pair<opcua_result_t, runtime_transaction_id_t> opcua_basic_mapper::write_va
 // Class protocols::opcua::opcua_basic_server::opcua_basic_node 
 
 opcua_basic_node::opcua_basic_node()
-      : mapper_(nullptr)
 {
 	size_t sz1 = sizeof(data_value);
 	size_t sz2 = sizeof(variant_type);

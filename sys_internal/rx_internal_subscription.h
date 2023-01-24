@@ -98,7 +98,7 @@ class create_subscription_request : public rx_request_message
 
 
 
-class create_subscriptions_response : public rx_message_base  
+class create_subscription_response : public rx_message_base  
 {
 
   public:
@@ -320,7 +320,7 @@ class subscription_items_change : public rx_message_base
 
 class subscription_write_done : public rx_message_base  
 {
-    typedef std::tuple<runtime_handle_t, uint32_t, string_type> result_type;
+    typedef std::tuple<runtime_handle_t, uint32_t, string_type, uint32_t> result_type;
     typedef std::vector<result_type> results_type;
 
   public:
@@ -333,7 +333,7 @@ class subscription_write_done : public rx_message_base
 
       rx_message_type_t get_type_id ();
 
-      void add_result (runtime_handle_t handle, rx_result&& result);
+      void add_result (write_result_item res);
 
 
       results_type results;
@@ -386,6 +386,8 @@ class subscription_execute_done : public rx_message_base
       result_type result;
 
       data::runtime_values_data data;
+
+      uint32_t signal_level;
 
 
   protected:

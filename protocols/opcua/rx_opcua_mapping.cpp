@@ -41,6 +41,25 @@
 namespace protocols {
 
 namespace opcua {
+void opcua_split_url(const string_type& url, string_type& addr, string_type& path)
+{
+    size_t idx = url.find("://");
+    if (idx != string_type::npos)
+        idx += 3;
+    else
+        idx = 0;
+    idx = url.find('/', idx);
+    if (idx == string_type::npos)
+    {
+        addr = url;
+        path = "";
+    }
+    else
+    {
+        addr = url.substr(0, idx);
+        path = url.substr(idx + 1);
+    }
+}
 
 namespace opcua_transport {
 
@@ -96,7 +115,7 @@ std::map<rx_node_id, opcua_transport_port::smart_ptr> opcua_transport_port::runt
 
 opcua_transport_port::opcua_transport_port()
 {
-    construct_func = [this]()
+    construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
     {
         auto rt = std::make_unique<opcua_transport_endpoint>(this);
         auto entry = rt->bind([this](int64_t count)
@@ -124,7 +143,7 @@ opcua_client_transport_endpoint::opcua_client_transport_endpoint (runtime::items
         mine_entry->stack_entry.received_function = &opcua_client_transport_endpoint::received_function;
         mine_entry->stack_entry.send_function = &opcua_client_transport_endpoint::send_function;
         mine_entry->stack_entry.connected_function = &opcua_client_transport_endpoint::connected_function;
-        mine_entry->stack_entry.disconnected_function = &opcua_client_transport_endpoint::disconnected_function;
+        //mine_entry->stack_entry.disconnected_function = &opcua_client_transport_endpoint::disconnected_function;
     }
 }
 
@@ -172,9 +191,21 @@ std::map<rx_node_id, opcua_client_transport_port::smart_ptr> opcua_client_transp
 
 opcua_client_transport_port::opcua_client_transport_port()
 {
-    construct_func = [this]()
+    construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
     {
         auto rt = std::make_unique<opcua_client_transport_endpoint>(this);
+        
+        io::string_address temp;
+        if (temp.parse(remote_address))
+        {
+            string_type temp_str = temp.get_address();
+            if (!temp_str.empty())
+            {
+                char* temp_char = (char*)malloc(temp_str.size() + 1);
+                strcpy(temp_char, temp_str.c_str());
+                rt->endpoint_url = (const char*)temp_char;
+            }
+        }
         auto entry = rt->bind([this](int64_t count)
             {
             },

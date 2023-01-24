@@ -124,7 +124,7 @@ class extern_port_runtime : public port_runtime
 
       rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
-      rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       void destroy_endpoint (rx_protocol_stack_endpoint* what);
 

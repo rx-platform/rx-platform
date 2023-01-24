@@ -77,6 +77,10 @@ rx_result rx_message_base::init_messages ()
 	if (!result)
 		return result;
 
+	result = rx_response_message::init_response_messages();
+	if (!result)
+		return result;
+
 	return result;
 }
 
@@ -442,6 +446,113 @@ rx_result rx_connection_notify_message::deserialize (base_meta_reader& stream)
 		return stream.get_error();
 	return true;
 }
+
+
+// Class rx_internal::rx_protocol::messages::rx_response_message 
+
+rx_response_message::registered_string_messages_type rx_response_message::registered_string_messages_;
+
+rx_response_message::registered_messages_type rx_response_message::registered_messages_;
+
+
+rx_result rx_response_message::process_response (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	return RX_NOT_SUPPORTED;
+}
+
+rx_result rx_response_message::init_response_messages ()
+{
+	//registered_messages_.emplace(general_messages::rx_system_info_response::type_id, [] { return std::make_unique<general_messages::rx_system_info_response>(); });
+	//registered_messages_.emplace(query_messages::get_code_info_response_message::type_id, [] { return std::make_unique<query_messages::get_code_info_response_message>(); });
+	//registered_messages_.emplace(query_messages::browse_request_message::type_id, [] { return rx_create_reference<rx_transaction_data<query_messages::browse_request_message, query_messages::browse_response_message> >(); });
+	//registered_messages_.emplace(query_messages::browse_runtime_response_message::type_id, [] { return std::make_unique<query_messages::browse_runtime_response_message>(); });
+	//registered_messages_.emplace(query_messages::query_response_message::type_id, [] { return std::make_unique<query_messages::query_response_message>(); });
+	//registered_messages_.emplace(query_messages::get_type_response::type_id, [] { return std::make_unique<query_messages::get_type_response>(); });
+	//registered_messages_.emplace(query_messages::get_runtime_response::type_id, [] { return std::make_unique<query_messages::get_runtime_response>(); });
+	//registered_messages_.emplace(rx_connection_context_response::type_id, [] { return std::make_unique<rx_connection_context_response>(); });
+	//registered_messages_.emplace(set_messages::delete_type_response::type_id, [] { return std::make_unique<set_messages::delete_type_response>(); });
+	//registered_messages_.emplace(set_messages::set_type_response::type_id, [] { return std::make_unique<set_messages::set_type_response>(); });
+	//registered_messages_.emplace(set_messages::update_type_response::type_id, [] { return std::make_unique<set_messages::update_type_response>(); });
+	//registered_messages_.emplace(set_messages::delete_runtime_response::type_id, [] { return std::make_unique<set_messages::delete_runtime_response>(); });
+	//registered_messages_.emplace(set_messages::set_runtime_response::type_id, [] { return std::make_unique<set_messages::set_runtime_response>(); });
+	//registered_messages_.emplace(set_messages::update_runtime_response::type_id, [] { return std::make_unique<set_messages::update_runtime_response>(); });
+	//registered_messages_.emplace(set_messages::prototype_runtime_response::type_id, [] { return std::make_unique<set_messages::prototype_runtime_response>(); });
+	//registered_messages_.emplace(set_messages::read_runtime_response::type_id, [] { return std::make_unique<set_messages::read_runtime_response>(); });
+	//registered_messages_.emplace(set_messages::rx_update_directory_response_message::type_id, [] { return std::make_unique<set_messages::rx_update_directory_response_message>(); });
+	// directory messages
+	//registered_messages_.emplace(directory_messages::rx_make_directory_response::type_id, [] { return std::make_unique<directory_messages::rx_make_directory_response>(); });
+	//registered_messages_.emplace(directory_messages::rx_remove_directory_response::type_id, [] { return std::make_unique<directory_messages::rx_remove_directory_response>(); });
+	//// subscription messages
+	//registered_messages_.emplace(subscription_messages::create_subscription_response::type_id, [] { return std::make_unique<subscription_messages::create_subscription_response>(); });
+	//registered_messages_.emplace(subscription_messages::update_subscription_response::type_id, [] { return std::make_unique<subscription_messages::update_subscription_response>(); });
+	//registered_messages_.emplace(subscription_messages::delete_subscription_response::type_id, [] { return std::make_unique<subscription_messages::delete_subscription_response>(); });
+	//// subscription items messages
+	//registered_messages_.emplace(items_messages::add_items_response::type_id, [] { return std::make_unique<items_messages::add_items_response>(); });
+	//registered_messages_.emplace(items_messages::modify_items_response::type_id, [] { return std::make_unique<items_messages::modify_items_response>(); });
+	//registered_messages_.emplace(items_messages::remove_items_response::type_id, [] { return std::make_unique<items_messages::remove_items_response>(); });
+	//registered_messages_.emplace(items_messages::read_items_response::type_id, [] { return std::make_unique<items_messages::read_items_response>(); });
+	//registered_messages_.emplace(items_messages::write_items_response::type_id, [] { return std::make_unique<items_messages::write_items_response>(); });
+	//registered_messages_.emplace(items_messages::execute_item_response::type_id, [] { return std::make_unique<items_messages::execute_item_response>(); });
+	//// special messages
+	//registered_messages_.emplace(rx_keep_alive_message::type_id, [] { return std::make_unique<rx_keep_alive_message>(); });
+
+	//registered_string_messages_.emplace(general_messages::rx_system_info_response::type_name, [] { return std::make_unique<general_messages::rx_system_info_response>(); });
+	//registered_string_messages_.emplace(query_messages::get_code_info_response_message::type_name, [] { return std::make_unique<query_messages::get_code_info_response>(); });
+	//registered_string_messages_.emplace(query_messages::browse_response_message::type_name, [] { return std::make_unique<query_messages::browse_response_message>(); });
+	//registered_string_messages_.emplace(query_messages::browse_runtime_response_message::type_name, [] { return std::make_unique<query_messages::browse_runtime_response>(); });
+	//registered_string_messages_.emplace(query_messages::query_response_message::type_name, [] { return std::make_unique<query_messages::query_response_message>(); });
+	//registered_string_messages_.emplace(query_messages::get_type_response::type_name, [] { return std::make_unique<query_messages::get_type_response>(); });
+	//registered_string_messages_.emplace(query_messages::get_runtime_response::type_name, [] { return std::make_unique<query_messages::get_runtime_response>(); });
+	//registered_string_messages_.emplace(rx_connection_context_response::type_name, [] { return std::make_unique<rx_connection_context_response>(); });
+	//registered_string_messages_.emplace(set_messages::delete_type_response::type_name, [] { return std::make_unique<set_messages::delete_type_response>(); });
+	//registered_string_messages_.emplace(set_messages::set_type_response::type_name, [] { return std::make_unique<set_messages::set_type_response>(); });
+	//registered_string_messages_.emplace(set_messages::update_type_response::type_name, [] { return std::make_unique<set_messages::update_type_response>(); });
+	//registered_string_messages_.emplace(set_messages::delete_runtime_response::type_name, [] { return std::make_unique<set_messages::delete_runtime_response>(); });
+	//registered_string_messages_.emplace(set_messages::set_runtime_response::type_name, [] { return std::make_unique<set_messages::set_runtime_response>(); });
+	//registered_string_messages_.emplace(set_messages::update_runtime_response::type_name, [] { return std::make_unique<set_messages::update_runtime_response>(); });
+	//registered_string_messages_.emplace(set_messages::prototype_runtime_response::type_name, [] { return std::make_unique<set_messages::prototype_runtime_response>(); });
+	//registered_string_messages_.emplace(set_messages::read_runtime_response::type_name, [] { return std::make_unique<set_messages::read_runtime_response>(); });
+	//registered_string_messages_.emplace(set_messages::rx_update_directory_response_message::type_name, [] { return std::make_unique<set_messages::rx_update_directory_response_message>(); });
+	//// directory messages
+	//registered_string_messages_.emplace(directory_messages::rx_make_directory_response::type_name, [] { return std::make_unique<directory_messages::rx_make_directory_response>(); });
+	//registered_string_messages_.emplace(directory_messages::rx_remove_directory_response::type_name, [] { return std::make_unique<directory_messages::rx_remove_directory_response>(); });
+	//// subscription messages
+	//registered_string_messages_.emplace(subscription_messages::create_subscription_response::type_name, [] { return std::make_unique<subscription_messages::create_subscription_response>(); });
+	//registered_string_messages_.emplace(subscription_messages::update_subscription_response::type_name, [] { return std::make_unique<subscription_messages::update_subscription_response>(); });
+	//registered_string_messages_.emplace(subscription_messages::delete_subscription_response::type_name, [] { return std::make_unique<subscription_messages::delete_subscription_response>(); });
+	//// subscription items messages
+	//registered_string_messages_.emplace(items_messages::add_items_response::type_name, [] { return std::make_unique<items_messages::add_items_response>(); });
+	//registered_string_messages_.emplace(items_messages::modify_items_response::type_name, [] { return std::make_unique<items_messages::modify_items_response>(); });
+	//registered_string_messages_.emplace(items_messages::remove_items_response::type_name, [] { return std::make_unique<items_messages::remove_items_response>(); });
+	//registered_string_messages_.emplace(items_messages::read_items_response::type_name, [] { return std::make_unique<items_messages::read_items_response>(); });
+	//registered_string_messages_.emplace(items_messages::write_items_response::type_name, [] { return std::make_unique<items_messages::write_items_response>(); });
+	//registered_string_messages_.emplace(items_messages::execute_item_response::type_name, [] { return std::make_unique<items_messages::execute_item_response>(); });
+	//// special messages
+	//registered_string_messages_.emplace(rx_keep_alive_message::type_name, [] { return std::make_unique<rx_keep_alive_message>(); });
+
+	return true;
+}
+
+void rx_response_message::deinit_response_messages ()
+{
+}
+
+rx_transaction_ptr rx_response_message::create_transaction_from_request (request_message_ptr req)
+{
+	auto it = registered_messages_.find(req->get_type_id());
+	if (it != registered_messages_.end())
+	{
+		auto ret = it->second();
+		return ret;
+	}
+	else
+	{
+		return rx_transaction_ptr::null_ptr;
+	}
+}
+
+
+// Class rx_internal::rx_protocol::messages::rx_transaction_base 
 
 
 } // namespace messages

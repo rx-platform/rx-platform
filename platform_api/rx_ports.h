@@ -83,7 +83,7 @@ class rx_port : public rx_runtime
 
       virtual rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
-      virtual rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      virtual rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       virtual void destroy_endpoint (rx_protocol_stack_endpoint* what) = 0;
 
@@ -240,7 +240,7 @@ public:
 
   public:
 
-      rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
@@ -304,7 +304,7 @@ public:
       rx_client_master_port();
 
 
-      rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       void destroy_endpoint (rx_protocol_stack_endpoint* what);
 
@@ -464,7 +464,7 @@ public:
 
   public:
 
-      rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
@@ -504,7 +504,7 @@ public:
 
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* rx_transport_port<endpointT>::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* rx_transport_port<endpointT>::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
     return construct_endpoint_internal();
 }
@@ -672,7 +672,7 @@ rx_client_master_port<endpointT>::rx_client_master_port()
 
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* rx_client_master_port<endpointT>::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* rx_client_master_port<endpointT>::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
     auto ep = this->construct_endpoint();
     auto stack = ep->get_endpoint();
@@ -1031,7 +1031,7 @@ rx_result rx_server_slave_port<endpointT>::initialize_status (rx_init_context& c
 
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* rx_connection_transport_port_impl<endpointT>::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* rx_connection_transport_port_impl<endpointT>::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
     return construct_endpoint_internal();
 }

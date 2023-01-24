@@ -60,6 +60,7 @@ class opcua_basic_server_port;
 
 
 #include "rx_opcua_requests.h"
+using namespace protocols::opcua::opcua_addr_space;
 
 
 namespace protocols {
@@ -79,7 +80,7 @@ class opcua_basic_server_endpoint : public opcua_server_endpoint_base
     DECLARE_REFERENCE_PTR(opcua_basic_server_endpoint);
 
   public:
-      opcua_basic_server_endpoint (const string_type& endpoint_url, const application_description& app_descr, opcua_basic_server_port* port);
+      opcua_basic_server_endpoint (const application_description& app_description, const string_type& endpoint_url, const string_type& port_path, opcua_basic_server_port* port);
 
       ~opcua_basic_server_endpoint();
 
@@ -164,7 +165,7 @@ class opcua_basic_node : public opcua_addr_space::opcua_variable_node
   private:
 
 
-      opcua_basic_mapper *mapper_;
+      rx_reference<opcua_basic_mapper> mapper_;
 
 
       string_type path_;
@@ -201,8 +202,8 @@ class opcua_basic_folder_node : public opcua_addr_space::opcua_object_node
 
 class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_base  
 {
-    typedef std::map<rx_node_id, opcua_basic_node*> variable_nodes_type;
-    typedef std::map<rx_node_id, std::unique_ptr<opcua_basic_folder_node> > folder_nodes_type;
+    typedef std::map<rx_node_id, std::shared_ptr<opcua_basic_node> > variable_nodes_type;
+    typedef std::map<rx_node_id, std::shared_ptr<opcua_basic_folder_node> > folder_nodes_type;
     typedef std::map<rx_node_id, std::set<opcua_subscriptions::opcua_monitored_value*> > value_monitors_type;
 
   public:
@@ -211,9 +212,9 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
 
       void set_parent (opcua_addr_space::opcua_address_space_base* parent);
 
-      rx_result register_node (opcua_basic_node* what);
+      rx_result register_node (std::shared_ptr<opcua_basic_node> what);
 
-      rx_result unregister_node (opcua_basic_node* what);
+      rx_result unregister_node (std::shared_ptr<opcua_basic_node> what);
 
       void read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const;
 
@@ -231,7 +232,7 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
 
       const locks::rw_slim_lock* get_lock () const;
 
-      opcua_addr_space::opcua_node_base* connect_node_reference (opcua_addr_space::opcua_node_base* node, const opcua_addr_space::reference_data& ref_data, bool inverse);
+      std::shared_ptr<opcua_node_base> connect_node_reference (std::shared_ptr<opcua_node_base> node, const opcua_addr_space::reference_data& ref_data, bool inverse);
 
       opcua_result_t register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val);
 
@@ -274,6 +275,22 @@ Basic OPC UA protocol port class. Basic implementation OPC UA binary protocol co
 
     DECLARE_REFERENCE_PTR(opcua_basic_server_port);
 
+    class basic_server_resolver_user : public runtime::relation_subscriber
+    {
+    public:
+        opcua_basic_server_port* my_port;
+        void relation_connected(const string_type& name, const platform_item_ptr& item)
+        {
+            my_port->internal_port_connected(item);
+        }
+        void relation_disconnected(const string_type& name)
+        {
+            my_port->internal_port_disconnected();
+        }
+    };
+    basic_server_resolver_user resolver_user_;
+    friend class opcua_basic_server_port::basic_server_resolver_user;
+
   public:
       opcua_basic_server_port();
 
@@ -282,9 +299,13 @@ Basic OPC UA protocol port class. Basic implementation OPC UA binary protocol co
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
-      rx_result register_node (opcua_basic_node* node);
+      rx_result register_node (std::shared_ptr<opcua_basic_node> node);
 
-      rx_result unregister_node (opcua_basic_node* node);
+      rx_result unregister_node (std::shared_ptr<opcua_basic_node> node);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
 
       opcua_addr_space::opcua_std_address_space std_address_space;
@@ -301,8 +322,15 @@ Basic OPC UA protocol port class. Basic implementation OPC UA binary protocol co
 
   private:
 
+      bool internal_port_connected (const platform_item_ptr& item);
+
+      void internal_port_disconnected ();
+
+
 
       application_description application_description_;
+
+      string_type port_path_;
 
 
 };
@@ -357,7 +385,7 @@ Implementation of OPC UA Basic Mapper");
 
 
 
-      opcua_basic_node node_;
+      std::shared_ptr<opcua_basic_node> node_;
 
 
       locks::slim_lock transactions_lock_;

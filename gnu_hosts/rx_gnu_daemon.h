@@ -38,6 +38,7 @@
 // rx_lock
 #include "lib/rx_lock.h"
 
+#include "gnu_hosts/rx_gnu_file_sys.h"
 
 
 namespace gnu {

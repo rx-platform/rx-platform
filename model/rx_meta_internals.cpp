@@ -33,6 +33,8 @@
 
 // rx_model_dependencies
 #include "model/rx_model_dependencies.h"
+// rx_discovery_items
+#include "discovery/rx_discovery_items.h"
 // rx_meta_internals
 #include "model/rx_meta_internals.h"
 

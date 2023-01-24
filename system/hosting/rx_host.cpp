@@ -313,6 +313,7 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 			continue;
 
 	//	HOST_LOG_TRACE("rx_host", 500, "Reading configuration file "s + config_path);
+		std::cout << "Reading configuration file "s + config_path + "\r\n";
 
 		string_type settings_buff;
 		rx_source_file file;

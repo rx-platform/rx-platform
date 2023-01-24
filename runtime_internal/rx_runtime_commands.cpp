@@ -155,7 +155,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 	ctx->set_waiting();
 
 	rt_item->write_value(sub_item, std::move(value),
-		write_result_callback_t(rctx.object, [ctx, this, sub_item, value, us1](rx_result&& result)
+		write_result_callback_t(rctx.object, [ctx, this, sub_item, value, us1](uint32_t signal_level, rx_result&& result)
 		{
 			uint64_t us2 = rx_get_us_ticks() - us1;
 			auto& out = ctx->get_stdout();
@@ -164,11 +164,13 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 				out << "Write to "
 					<< sub_item
 					<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
+				out << "Signal Level:" << signal_level;
 				out << "Time elapsed: " ANSI_RX_GOOD_COLOR << us2 << ANSI_COLOR_RESET " us\r\n";
 			}
 			else
 			{
 				out << "Write " ANSI_COLOR_BOLD ANSI_COLOR_RED "failed" ANSI_COLOR_RESET ". \r\n";
+				out << "Signal Level:" << signal_level;
 				ctx->raise_error(result);
 			}
 			ctx->continue_scan();
@@ -626,7 +628,7 @@ bool execute_command::do_with_item (platform_item_ptr&& rt_item, string_type sub
 	out << "Start time: " << now.get_string() << "\r\n";
 	uint64_t us1 = rx_get_us_ticks();
 	auto rctx = ctx->create_api_context();
-	rt_item->execute_method(sub_item, std::move(rt_data), execute_method_callback_t(rctx.object, [us1, ctx, sub_item](rx_result result, data::runtime_values_data data)
+	rt_item->execute_method(sub_item, std::move(rt_data), execute_method_callback_t(rctx.object, [us1, ctx, sub_item](uint32_t signal_level, rx_result result, data::runtime_values_data data)
 		{
 			uint64_t us2 = rx_get_us_ticks() - us1;
 			auto& out = ctx->get_stdout();
@@ -635,6 +637,7 @@ bool execute_command::do_with_item (platform_item_ptr&& rt_item, string_type sub
 				out << "Execute "
 					<< sub_item
 					<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
+				out << "Signal Level:" << signal_level;
 				out << "Result:";
 				serialization::pretty_json_writer writer;
 				writer.write_header(STREAMING_TYPE_MESSAGE, 0);
@@ -648,6 +651,7 @@ bool execute_command::do_with_item (platform_item_ptr&& rt_item, string_type sub
 			else
 			{
 				out << "Execute " ANSI_COLOR_BOLD ANSI_COLOR_RED "failed" ANSI_COLOR_RESET ". \r\n";
+				out << "Signal Level:" << signal_level;
 				ctx->raise_error(result);
 			}
 			ctx->continue_scan();

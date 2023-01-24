@@ -1973,12 +1973,15 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	switch (time_compare)
 	{
 	case time_compare_type::skip:
-		return data_.quality == right.data_.quality && rx_compare_values(&data_.value, &right.data_.value) == 0;
+		return data_.origin == right.data_.origin && data_.quality == right.data_.quality 
+			&& rx_compare_values(&data_.value, &right.data_.value) == 0;
 	case time_compare_type::ms_accurate:
-		return data_.quality == right.data_.quality && rx_compare_values(&data_.value, &right.data_.value) == 0
+		return data_.origin == right.data_.origin && data_.quality == right.data_.quality 
+			&& rx_compare_values(&data_.value, &right.data_.value) == 0
 			&& (rx_time(data_.time).get_longlong_miliseconds() == rx_time(right.data_.time).get_longlong_miliseconds());
 	case time_compare_type::exact:
-		return data_.quality == right.data_.quality && rx_compare_values(&data_.value, &right.data_.value) == 0
+		return data_.origin == right.data_.origin && data_.quality == right.data_.quality 
+			&& rx_compare_values(&data_.value, &right.data_.value) == 0
 			&& data_.time.t_value == right.data_.time.t_value;
 	default:
 		return false;
@@ -2068,6 +2071,18 @@ void rx_value::set_origin (uint32_t val)
 	data_.origin = (data_.origin & ~RX_ORIGIN_MASK) | (val & RX_ORIGIN_MASK);
 }
 
+uint32_t rx_value::increment_signal_level ()
+{
+	uint32_t temp = data_.origin + 1;
+	data_.origin = (data_.origin & ~RX_LEVEL_MASK) | (temp & RX_LEVEL_MASK);
+	return temp;
+}
+
+uint32_t rx_value::get_signal_level () const
+{
+	return data_.origin & RX_LEVEL_MASK;
+}
+
 
 rx_value::rx_value()
 {
@@ -2151,7 +2166,8 @@ rx_value::rx_value(const rx_timed_value& right, uint32_t quality)
 
 bool rx_value::operator==(const rx_value& right) const
 {
-	return data_.quality == right.data_.quality && rx_compare_values(&data_.value, &right.data_.value) == 0;
+	return data_.origin == right.data_.origin && data_.quality == right.data_.quality
+		&& rx_compare_values(&data_.value, &right.data_.value) == 0;
 }
 bool rx_value::operator!=(const rx_value& right) const
 {

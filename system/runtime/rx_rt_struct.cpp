@@ -2286,6 +2286,7 @@ rx_result variable_data::start_runtime (runtime::runtime_start_context& ctx)
 	auto result = item->start_runtime(ctx);
 	if (result)
 		result = variable_ptr->start_variable(ctx);
+	process_runtime(ctx.context);
 	ctx.variables.pop_variable();
 	ctx.structure.pop_item();
 	if (result)
@@ -2997,11 +2998,18 @@ rx_result source_data::initialize_runtime (runtime::runtime_init_context& ctx)
 	if (input_value.value.get_type() == RX_NULL_TYPE && my_variable_)
 		input_value.value.convert_to(my_variable_->value.get_type());
 	source_ptr->value_type_ = input_value.value.get_type();
+	input_value.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
 	source_ptr->container_ = this;
 
 	auto result = item->initialize_runtime(ctx);
 	if (result)
 		result = source_ptr->initialize_source(ctx);
+
+	if (current_value_.is_null())
+	{
+		current_value_ = input_value.value;
+		current_value_.increment_signal_level();
+	}
 
 	if (rx_is_debug_instance())
 		full_path = ctx.meta.get_full_path() + RX_OBJECT_DELIMETER + ctx.path.get_current_path();
@@ -3066,6 +3074,8 @@ void source_data::process_update (values::rx_value&& value)
 	{
 		if (value != current_value_)
 		{
+			if (value.is_good())
+				RX_ASSERT(false);
 			input_value.set_value(value, context_);
 			rx_result result;
 			auto& filters = item->get_filters();

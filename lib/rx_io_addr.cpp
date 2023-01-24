@@ -75,6 +75,23 @@ string_type get_ip4_addr_string(const sockaddr_in* addr_struct)
 	}
 	return "ERROR parsing IP4 address.";
 }
+
+rx_result split_ip4_addr_string(const sockaddr_in* addr_struct, string_type& ip_addr, uint16_t& ip_port)
+{
+    if (addr_struct == NULL)
+        return "ERROR, invalid pointer.";
+    if (addr_struct->sin_family != AF_INET)
+        return "ERROR, wrong address type.";
+    char buff[INET_ADDRSTRLEN];
+    const char* addr = inet_ntop(AF_INET, &addr_struct->sin_addr, buff, sizeof(buff) / sizeof(buff[0]));
+    if (addr)
+    {
+        ip_addr = addr;
+        ip_port = ntohs(addr_struct->sin_port);
+        return true;
+    }
+    return "ERROR parsing IP4 address.";
+}
 string_type get_ip4_addr_string(const string_type& addr, uint16_t port)
 {
     std::ostringstream ss;
@@ -407,6 +424,19 @@ const sockaddr* ip4_address::get_address () const
         return nullptr;
     else
         return (const sockaddr*)&this->value.ip4_address;
+}
+
+void ip4_address::get_splitted (string_type& addr, uint16_t& port)
+{
+    if (!is_valid())
+    {
+        addr = "";
+        port = 0;
+    }
+    else
+    {
+        split_ip4_addr_string(&this->value.ip4_address, addr, port);
+    }
 }
 
 ip4_address::ip4_address(ip4_address&& right) noexcept

@@ -33,12 +33,12 @@
 
 
 
-// rx_port_helpers
-#include "system/runtime/rx_port_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -268,7 +268,7 @@ protected:
       full_duplex_addr_packet_port();
 
 
-      rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 

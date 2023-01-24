@@ -93,6 +93,10 @@ class opcua_sec_none_endpoint : public opcua_sec_none_protocol_type
 
       opcua_sec_none_port* port_;
 
+      string_type url_address_;
+
+      string_type url_path_;
+
 
 };
 
@@ -118,6 +122,13 @@ OPC-UA Security None port. Implementation of binary OPC-UA Security None server 
 
   public:
       opcua_sec_none_port();
+
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
 
       static std::map<rx_node_id, opcua_sec_none_port::smart_ptr> runtime_instances;
@@ -160,6 +171,8 @@ class opcua_sec_none_client_endpoint : public opcua_sec_none_protocol_type
 
       static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
+      static rx_protocol_result_t disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason);
+
 
 
       opcua_sec_none_client_port* port_;
@@ -173,7 +186,7 @@ class opcua_sec_none_client_endpoint : public opcua_sec_none_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_sec_none_client_endpoint  > opcua_sec_none_client_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::opcua::opcua_transport::opcua_sec_none_client_endpoint  > opcua_sec_none_client_base;
 
 
 
@@ -189,6 +202,9 @@ OPC-UA Security None port. Implementation of binary OPC-UA Security None client 
 
   public:
       opcua_sec_none_client_port();
+
+
+      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
 
       static std::map<rx_node_id, opcua_sec_none_client_port::smart_ptr> runtime_instances;

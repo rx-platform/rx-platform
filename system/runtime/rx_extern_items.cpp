@@ -448,7 +448,7 @@ rx_protocol_stack_endpoint* extern_port_runtime::construct_listener_endpoint (co
     return impl_->def->construct_listener_endpoint(impl_->anchor.target, local_address, remote_address);
 }
 
-rx_protocol_stack_endpoint* extern_port_runtime::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* extern_port_runtime::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
     return impl_->def->construct_initiator_endpoint(impl_->anchor.target);
 }

@@ -196,7 +196,7 @@ full_duplex_addr_packet_port<addrT>::full_duplex_addr_packet_port()
 
 
 template <typename addrT>
-rx_protocol_stack_endpoint* full_duplex_addr_packet_port<addrT>::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* full_duplex_addr_packet_port<addrT>::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
 	return &initiator_endpoint_;
 }

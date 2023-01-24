@@ -52,8 +52,9 @@ using namespace rx;
 #define RX_VARIABLE_PERSISTENCE_VERSION 0x10005
 #define RX_SIMULATE_VERSION 0x10006
 #define RX_ARRAYS_VERSION 0x10007
+#define RX_SIGNAL_LEVEL_VERSION 0x10008
 
-#define RX_CURRENT_SERIALIZE_VERSION RX_ARRAYS_VERSION
+#define RX_CURRENT_SERIALIZE_VERSION RX_SIGNAL_LEVEL_VERSION
 
 //////////////////////////////////////////////////
 // streaming constants from header

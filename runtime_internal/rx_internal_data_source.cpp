@@ -131,13 +131,13 @@ void internal_data_subscription::items_changed (const std::vector<update_item>& 
 	controler_->items_changed(values);
 }
 
-void internal_data_subscription::write_completed (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results)
+void internal_data_subscription::write_completed (runtime_transaction_id_t transaction_id, std::vector<write_result_item> results)
 {
 	for (auto& one : results)
 	{
 		// we can reuse this one in a loop because we are changing only item handle value and reusing rest
-		handles_.item = one.first;
-		controler_->result_received(handles_.make_handle(), std::move(one.second), transaction_id);
+		handles_.item = one.handle;
+		controler_->result_received(handles_.make_handle(), std::move(one.result), transaction_id);
 	}
 }
 

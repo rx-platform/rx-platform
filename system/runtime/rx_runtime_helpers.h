@@ -297,12 +297,14 @@ struct write_result_item
 {
     runtime_handle_t handle;
     rx_result result;
+    uint32_t signal_level;
 };
 struct write_result_data
 {
     runtime_transaction_id_t transaction_id;
     runtime_handle_t item;
     rx_result result;
+    uint32_t signal_level;
 };
 
 struct write_tag_data
@@ -319,6 +321,7 @@ struct execute_result_data
     runtime_handle_t item;
     rx_result result;
     data::runtime_values_data data;
+    uint32_t signal_level;
 };
 
 struct execute_tag_data

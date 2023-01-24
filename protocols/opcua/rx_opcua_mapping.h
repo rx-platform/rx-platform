@@ -55,10 +55,12 @@
 namespace protocols {
 
 namespace opcua {
+void opcua_split_url(const string_type& url, string_type& addr, string_type& path);
 
 namespace opcua_transport {
 
 constexpr size_t opc_ua_endpoint_name_len = 0x100;
+
 
 
 

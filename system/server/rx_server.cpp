@@ -54,6 +54,7 @@
 #include "system/server/rx_directory_cache.h"
 #include "http_server/rx_http_server.h"
 #include "upython/upython.h"
+#include "discovery/rx_discovery_main.h"
 
 
 namespace rx_platform {
@@ -121,6 +122,7 @@ void rx_gate::cleanup ()
 rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
 	configuration_ = data;
+	rx_internal::discovery::discovery_manager::instance();// create discovery instance!!!!
 #ifdef PYTHON_SUPPORT
 	python::py_script* python = &python::py_script::instance();
 	scripts_.emplace(python->get_definition().name, python);
@@ -154,9 +156,21 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 						for (auto one : scripts_)
 							one.second->initialize();
 
-						result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
+						result = rx_internal::discovery::discovery_manager::instance().initialize(host, data);
+						if (result)
+						{
+							result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
+							if (!result)
+							{
+								result.register_error("Error initializing platform types manager!");
+							}
+						}
 						if (!result)
-							result.register_error("Error initializing platform types manager!");
+						{
+							result.register_error("Error initializing discovery manager!");
+						}
+
+						
 					}
 					else
 					{

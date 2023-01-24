@@ -98,6 +98,8 @@ class ip4_address : public protocol_address
 
       const sockaddr* get_address () const;
 
+      void get_splitted (string_type& addr, uint16_t& port);
+
       ip4_address(ip4_address&& right) noexcept;
       ip4_address& operator=(const ip4_address& right);
       ip4_address& operator=(ip4_address&& right) noexcept;

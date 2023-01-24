@@ -3,7 +3,7 @@
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 1
 #define RX_HAL_MINOR_VERSION 2
-#define RX_HAL_BUILD_NUMBER 0
+#define RX_HAL_BUILD_NUMBER 1
 
 /*********************************************************************************
 
@@ -28,6 +28,7 @@
 1.0.2 corrected file open error with O_TRUNC flag
 1.0.3 support for rx-common shared library
 1.1.0 added rx_thread_set_afinity
-1.1.0 added raw socket support
+1.2.0 added raw socket support
+1.2.1 corrected read after release bug
 
 *********************************************************************************/

@@ -422,7 +422,10 @@ rx_protocol_result_t opcua_parse_close_message(struct rx_protocol_stack_endpoint
 
 }
 
-
+rx_protocol_result_t opcua_bin_sec_none_connect(struct rx_protocol_stack_endpoint* reference, struct rx_session_def* session)
+{
+	return RX_PROTOCOL_NOT_IMPLEMENTED;
+}
 
 rx_protocol_result_t opcua_bin_init_sec_none_transport(opcua_sec_none_protocol_type* transport
 	, int server_side)
@@ -433,7 +436,10 @@ rx_protocol_result_t opcua_bin_init_sec_none_transport(opcua_sec_none_protocol_t
 
 	// fill protocol stack header
 	if (!server_side)
+	{
 		transport->stack_entry.connected_function = opcua_bin_sec_none_client_connected;
+		transport->stack_entry.connect_function = opcua_bin_sec_none_connect;
+	}
 	transport->stack_entry.received_function = opcua_bin_sec_none_bytes_received;
 	transport->stack_entry.send_function = opcua_bin_sec_none_bytes_send;
 	//transport->stack_entry.closed_function = opcua_bin_closed;
@@ -451,6 +457,8 @@ rx_protocol_result_t opcua_bin_init_sec_none_transport(opcua_sec_none_protocol_t
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
+	rx_create_string_address(&transport->ep_address, NULL);
+
 	return RX_PROTOCOL_OK;
 }
 rx_protocol_result_t opcua_bin_init_sec_none_client_transport(opcua_sec_none_protocol_type* transport)
@@ -465,6 +473,8 @@ rx_protocol_result_t opcua_bin_init_sec_none_server_transport(opcua_sec_none_pro
 
 rx_protocol_result_t opcua_bin_deinit_sec_none_transport(opcua_sec_none_protocol_type* transport)
 {
+	
+	rx_free_address(&transport->ep_address);
 	rx_deinit_packet_buffer(&transport->receive_buffer);
 
 	return RX_PROTOCOL_OK;
@@ -798,6 +808,8 @@ rx_protocol_result_t opcua_bin_sec_none_bytes_received(struct rx_protocol_stack_
 						transport->current_state = opcua_transport_opening;
 						// Connected!!!
 						transport->connection_data = *ack_data;
+						if (packet.to_addr)
+							rx_copy_address(&transport->ep_address, packet.to_addr);
 					}
 				}
 				else //if (transport->current_state == opcua_transport_opening)
@@ -827,7 +839,9 @@ rx_protocol_result_t opcua_bin_sec_none_bytes_received(struct rx_protocol_stack_
 				{
 					transport->current_state = opcua_transport_active;
 					if (transport->transport_connected)
-						result = transport->transport_connected(reference, NULL, NULL);
+					{
+						result = transport->transport_connected(reference, &transport->ep_address, NULL);
+					}
 					else
 						result = RX_PROTOCOL_STACK_STRUCTURE_ERROR;
 				}
@@ -1040,6 +1054,15 @@ rx_protocol_result_t opcua_bin_sec_none_bytes_send(struct rx_protocol_stack_endp
 		}
 	}
 
+	return RX_PROTOCOL_OK;
+}
+
+rx_protocol_result_t opcua_sec_none_client_disconnected(struct rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason)
+{
+
+	opcua_sec_none_protocol_type* transport = (opcua_sec_none_protocol_type*)reference->user_data;
+
+	transport->current_state = opcua_transport_idle;
 	return RX_PROTOCOL_OK;
 }
 

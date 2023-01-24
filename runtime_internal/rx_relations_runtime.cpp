@@ -107,12 +107,12 @@ void local_relation_connector::items_changed (const std::vector<update_item>& it
     parent_->items_changed(items);
 }
 
-void local_relation_connector::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
+void local_relation_connector::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data)
 {
     parent_->execute_complete(transaction_id, item, std::move(result), std::move(data));
 }
 
-void local_relation_connector::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result)
+void local_relation_connector::write_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result&& result)
 {
     parent_->write_complete(transaction_id, item, std::move(result));
 }

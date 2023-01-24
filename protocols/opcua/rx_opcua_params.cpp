@@ -127,20 +127,21 @@ void reference_description::deserialize(binary::ua_binary_istream& stream)
 
 void browse_result_internal::add_reference_data(bool forward, const opcua_addr_space::reference_data& data, const opcua_browse_description& to_browse)
 {
+	auto node_ptr = data.resolved_node.lock();
 	reference_description temp;
 	temp.target_id = data.target_id;
 	if (to_browse.result_mask & 0x01)// reference type
 		temp.reference_id = data.reference_id;
 	if (to_browse.result_mask & 0x02)// is forward
 		temp.is_forward = forward;
-	if (to_browse.result_mask & 0x04)// node class
-		temp.node_class = data.resolved_node->get_node_class();
-	if (to_browse.result_mask & 0x08)// browse name
-		temp.browse_name = data.resolved_node->get_browse_name();
-	if (to_browse.result_mask & 0x10)// display name
-		temp.display_name = localized_text{ data.resolved_node->get_display_name() };
-	if (to_browse.result_mask & 0x20)// type def
-		temp.type_id = data.resolved_node->get_type_id();
+	if ((to_browse.result_mask & 0x04) && node_ptr)// node class
+		temp.node_class = node_ptr->get_node_class();
+	if ((to_browse.result_mask & 0x08) && node_ptr)// browse name
+		temp.browse_name = node_ptr->get_browse_name();
+	if ((to_browse.result_mask & 0x10) && node_ptr)// display name
+		temp.display_name = localized_text{ node_ptr->get_display_name() };
+	if ((to_browse.result_mask & 0x20) && node_ptr)// type def
+		temp.type_id = node_ptr->get_type_id();
 	references.push_back(std::move(temp));
 }
 

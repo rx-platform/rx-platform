@@ -65,7 +65,7 @@ enum class runtime_value_type
 
 
 typedef callback::rx_any_callback<rx_result, rx_value> read_result_callback_t;
-typedef callback::rx_any_callback<rx_result> write_result_callback_t;
+typedef callback::rx_any_callback<uint32_t, rx_result> write_result_callback_t;
 typedef callback::rx_any_callback<rx_result, std::vector<runtime_item_attribute>> browse_result_callback_t;
 
 
@@ -75,14 +75,14 @@ struct read_struct_data
     read_struct_callback_t callback;
     runtime_value_type type;
 };
-typedef callback::rx_any_callback<rx_result, std::vector<rx_result> > write_struct_callback_t;
+typedef callback::rx_any_callback<uint32_t, rx_result, std::vector<rx_result> > write_struct_callback_t;
 struct write_struct_data
 {
     write_struct_callback_t callback;
     runtime_value_type type;
 };
 
-typedef callback::rx_any_callback<rx_result, data::runtime_values_data> execute_method_callback_t;
+typedef callback::rx_any_callback<uint32_t, rx_result, data::runtime_values_data> execute_method_callback_t;
 
 
 namespace ns {

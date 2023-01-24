@@ -540,7 +540,7 @@ transaction_limiter_port::transaction_limiter_port()
         write_timeout_(200),
         queue_size_(0)
 {
-    construct_func = [this]()
+    construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
     {
         auto rt = std::make_unique<limiter_endpoint>(this);
         auto entry = rt->bind([this](int64_t count)

@@ -148,7 +148,7 @@ basic testing subscription connect/disconnect.");
 		{
 			printf("\r\n**********Transaction complete fired!!!\r\n");
 		}
-        void write_completed(runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results)
+        void write_completed(runtime_transaction_id_t transaction_id, std::vector<write_result_item> results)
         {
             printf("\r\n**********Write complete fired!!!\r\n");
         }

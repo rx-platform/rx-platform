@@ -210,7 +210,7 @@ rx_protocol_result_t stxetx_endpoint::received_packet (recv_protocol_packet pack
 stxetx_port::stxetx_port()
       : max_buffer_size(0x1000)
 {
-    construct_func = [this]()
+    construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
     {
         auto rt = std::make_unique<stxetx_endpoint>(this);
         auto entry = rt->bind([this](int64_t count)

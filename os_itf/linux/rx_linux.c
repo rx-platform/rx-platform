@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -1000,7 +1000,7 @@ uint32_t rx_io_write(struct rx_io_register_data_t* what, const void* data, size_
             struct epoll_event event;
             event.data.ptr=what;
             event.events=EPOLLOUT|EPOLLET|EPOLLONESHOT;
-            ret=epoll_ctl(type_data->epoll_handle,EPOLL_CTL_MOD,type_data->write_handle,&event);
+            ret=epoll_ctl(type_data->epoll_handle,EPOLL_CTL_MOD, __atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST),&event);
 			if(ret==0)
 			{
                 return RX_ASYNC;
@@ -1062,7 +1062,7 @@ uint32_t rx_socket_write_to(struct rx_io_register_data_t* what, const void* data
             struct epoll_event event;
             event.data.ptr=what;
             event.events=EPOLLOUT|EPOLLET|EPOLLONESHOT;
-            ret=epoll_ctl(type_data->epoll_handle,EPOLL_CTL_MOD,type_data->write_handle,&event);
+            ret=epoll_ctl(type_data->epoll_handle,EPOLL_CTL_MOD, __atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST),&event);
 			if(ret==0)
 			{
                 return RX_ASYNC;
@@ -1154,7 +1154,7 @@ uint32_t rx_socket_connect(struct rx_io_register_data_t* what, const struct sock
             struct epoll_event event;
             event.data.ptr = what;
             event.events = EPOLLOUT | EPOLLET | EPOLLONESHOT;
-            ret = epoll_ctl(type_data->epoll_handle, EPOLL_CTL_MOD, type_data->write_handle, &event);
+            ret = epoll_ctl(type_data->epoll_handle, EPOLL_CTL_MOD, __atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST), &event);
             if (ret == 0)
             {
                 return RX_ASYNC;
@@ -1196,7 +1196,7 @@ uint32_t rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_registe
         type_data->write_handle=dup(data->handle);
         type_data->epoll_handle=disp->epoll_fd;
         event.events=0;
-        ret=epoll_ctl(disp->epoll_fd,EPOLL_CTL_ADD,type_data->write_handle,&event);
+        ret=epoll_ctl(disp->epoll_fd,EPOLL_CTL_ADD, __atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST),&event);
         if(ret==0)
         {
             return RX_OK;
@@ -1214,18 +1214,20 @@ int rx_dispatcher_unregister(rx_kernel_dispather_t disp, struct rx_io_register_d
     event.data.ptr=data;
     event.events=0;
     int ret;
+    int temp_write = 0;
+    struct linux_epoll_subscriber_t* type_data = (struct linux_epoll_subscriber_t*)data->internal;
+    temp_write = __atomic_exchange_4(&type_data->write_handle, 0, __ATOMIC_SEQ_CST);
     ret=epoll_ctl(disp->epoll_fd,EPOLL_CTL_DEL,data->handle,&event);
     if(ret==0)
     {
-        struct linux_epoll_subscriber_t* type_data=(struct linux_epoll_subscriber_t*)data->internal;
-        ret=epoll_ctl(disp->epoll_fd,EPOLL_CTL_DEL,type_data->write_handle,&event);
+        ret=epoll_ctl(disp->epoll_fd,EPOLL_CTL_DEL, temp_write,&event);
         if(ret==0)
         {
             // here we take all operations that are not yet callbacked
             //  subsract 1000 to ensure that no one is fired after this code
             int ops=__atomic_fetch_sub(&type_data->pending_operations, 10000, __ATOMIC_SEQ_CST);
             //printf("####Still pending: %d\r\n",ops);
-            close(type_data->write_handle);
+            close(temp_write);
             return ops;
         }
         else
@@ -1277,270 +1279,282 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
 						return 0;// exit the loop
 				}
 			}
-			else
-			{
+            else
+            {
                 struct sockaddr_storage local_addr;
                 struct sockaddr_storage remote_addr;
-				struct linux_epoll_subscriber_t* type_data;
-				struct rx_io_register_data_t* io_data;
-				io_data = (struct rx_io_register_data_t*)one.data.ptr;
-				type_data = (struct linux_epoll_subscriber_t*)io_data->internal;
+                struct linux_epoll_subscriber_t* type_data;
+                struct rx_io_register_data_t* io_data;
+                io_data = (struct rx_io_register_data_t*)one.data.ptr;
+                type_data = (struct linux_epoll_subscriber_t*)io_data->internal;
 
 
-                if(one.events&EPOLLERR)// || one.events&EPOLLHUP)
+
+                if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
                 {
-                    int ops=remove_pending_op(type_data);
-                    if(ops>=0)
-                        (io_data->shutdown_callback)(io_data->data, errno);
-                }
-                else
-                {
-                    if (one.events&EPOLLIN)
-                    {// reading on handle
-                        switch (type_data->read_type)
-                        {
-                        case EPOLL_READ_TYPE:
+
+                    if (one.events & EPOLLERR)// || one.events&EPOLLHUP)
+                    {
+                        int ops = remove_pending_op(type_data);
+                        if (ops >= 0)
+                            (io_data->shutdown_callback)(io_data->data, errno);
+                    }
+                    else
+                    {
+                        if (one.events & EPOLLIN)
+                        {// reading on handle
+                            switch (type_data->read_type)
                             {
-                                type_data->read_type = 0;
-                                int err = read(io_data->handle, io_data->read_buffer, io_data->read_buffer_size);
-                                if (err == -1)
+                            case EPOLL_READ_TYPE:
                                 {
-                                    if (err != EAGAIN && err != EWOULDBLOCK)
+                                    type_data->read_type = 0;
+                                    int err = read(io_data->handle, io_data->read_buffer, io_data->read_buffer_size);
+                                    if (err == -1)
                                     {
-                                        int ops=remove_pending_op(type_data);
-                                        if(ops>=0)
-                                            (io_data->shutdown_callback)(io_data->data, errno);
+                                        if (err != EAGAIN && err != EWOULDBLOCK)
+                                        {
+                                            int ops = remove_pending_op(type_data);
+                                            if (ops >= 0)
+                                                (io_data->shutdown_callback)(io_data->data, errno);
+                                        }
+                                        // nothing to do here, he will call us again any way
                                     }
-                                    // nothing to do here, he will call us again any way
-                                }
-                                else
-                                {
-                                    int ops=remove_pending_op(type_data);
-                                    if(ops>=0)
+                                    else
                                     {
-                                        // READLOOP
-                                        //if(err==0)// closed up
-                                        //    (io_data->shutdown_callback)(io_data->data, errno);
-                                       // else
+                                        int ops = remove_pending_op(type_data);
+                                        if (ops >= 0)
+                                        {
+                                            // READLOOP
+                                            //if(err==0)// closed up
+                                            //    (io_data->shutdown_callback)(io_data->data, errno);
+                                           // else
                                             (io_data->read_callback)(io_data->data, 0, err);
+                                        }
+                                    }
+
+                                    if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
+                                    {
+                                        one.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+                                        epoll_ctl(disp->epoll_fd, EPOLL_CTL_MOD, io_data->handle, &one);
                                     }
                                 }
+                                break;
 
-                                one.events=EPOLLIN|EPOLLET|EPOLLONESHOT;
-                                epoll_ctl(disp->epoll_fd,EPOLL_CTL_MOD,io_data->handle,&one);
-                            }
-                            break;
-
-                        case EPOLL_READ_FROM_TYPE:
-                            {
-                                type_data->read_type = 0;
-
-                                struct sockaddr_storage addr;
-                                socklen_t addr_len = SOCKET_ADDR_SIZE;
-                                int err = recvfrom(io_data->handle, io_data->read_buffer, io_data->read_buffer_size, 0, (struct sockaddr*)&addr, &addr_len);
-                                if (err == -1)
+                            case EPOLL_READ_FROM_TYPE:
                                 {
-                                    if (err != EAGAIN && err != EWOULDBLOCK)
+                                    type_data->read_type = 0;
+
+                                    struct sockaddr_storage addr;
+                                    socklen_t addr_len = SOCKET_ADDR_SIZE;
+                                    int err = recvfrom(io_data->handle, io_data->read_buffer, io_data->read_buffer_size, 0, (struct sockaddr*)&addr, &addr_len);
+                                    if (err == -1)
                                     {
-                                        int ops=remove_pending_op(type_data);
-                                        if(ops>=0)
-                                            (io_data->shutdown_callback)(io_data->data, errno);
+                                        if (err != EAGAIN && err != EWOULDBLOCK)
+                                        {
+                                            int ops = remove_pending_op(type_data);
+                                            if (ops >= 0)
+                                                (io_data->shutdown_callback)(io_data->data, errno);
+                                        }
+                                        // nothing to do here, he will call us again any way
                                     }
-                                    // nothing to do here, he will call us again any way
-                                }
-                                else
-                                {
-                                    int ops=remove_pending_op(type_data);
-                                    if(ops>=0)
+                                    else
                                     {
-                                        // READLOOP
-                                        //if(err==0)// closed up
-                                        //    (io_data->shutdown_callback)(io_data->data, errno);
-                                        //else
+                                        int ops = remove_pending_op(type_data);
+                                        if (ops >= 0)
+                                        {
+                                            // READLOOP
+                                            //if(err==0)// closed up
+                                            //    (io_data->shutdown_callback)(io_data->data, errno);
+                                            //else
                                             (io_data->read_from_callback)(io_data->data, 0, err, (struct sockaddr*)&addr, addr_len);
+                                        }
+                                    }
+                                    if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
+                                    {
+                                        one.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+                                        epoll_ctl(disp->epoll_fd, EPOLL_CTL_MOD, io_data->handle, &one);
                                     }
                                 }
-
-                                one.events=EPOLLIN|EPOLLET|EPOLLONESHOT;
-                                epoll_ctl(disp->epoll_fd,EPOLL_CTL_MOD,io_data->handle,&one);
-                            }
-                            break;
-                        case EPOLL_ACCEPT_TYPE:
-                            {
-                                type_data->read_type = 0;
-                                socklen_t addr_size = io_data->read_buffer_size;
-                                int err = accept4(io_data->handle, (struct sockaddr*)io_data->read_buffer, &addr_size, SOCK_NONBLOCK);
-                                if (err == -1)
+                                break;
+                            case EPOLL_ACCEPT_TYPE:
                                 {
-                                    if (err != EAGAIN && err != EWOULDBLOCK)
+                                    type_data->read_type = 0;
+                                    socklen_t addr_size = io_data->read_buffer_size;
+                                    int err = accept4(io_data->handle, (struct sockaddr*)io_data->read_buffer, &addr_size, SOCK_NONBLOCK);
+                                    if (err == -1)
                                     {
-                                        int ops=remove_pending_op(type_data);
-                                        if(ops>=0)
-                                            (io_data->shutdown_callback)(io_data->data, errno);
-                                    }
-                                    // nothing to do here, he will call us again any way
-                                }
-                                else
-                                {
-                                    int ops=remove_pending_op(type_data);
-                                    if(ops>=0)
-                                    {
-                                        socklen_t addr_size=sizeof(local_addr);
-                                        getsockname(err,(struct sockaddr*)&local_addr,&addr_size);
-										(io_data->accept_callback)(io_data->data, 0, err, io_data->read_buffer, (struct sockaddr*)&local_addr);
-                                    }
-                                }
-
-                                one.events=EPOLLIN|EPOLLET|EPOLLONESHOT;
-                                epoll_ctl(disp->epoll_fd,EPOLL_CTL_MOD,io_data->handle,&one);
-                            }
-                            break;
-                        }
-                    }
-                    if (one.events&EPOLLOUT)
-                    {// writing on handle
-                        switch (type_data->write_type)
-                        {
-                        case EPOLL_WRITE_TYPE:
-                            {
-                                if (type_data->write_buffer)
-                                {
-                                    int rt = write(io_data->handle, type_data->write_buffer, type_data->left_to_write);
-                                    if (rt == -1)
-                                    {
-                                        int err = errno;
                                         if (err != EAGAIN && err != EWOULDBLOCK)
-                                        {// error occured do the shutdown
-                                            int ops=remove_pending_op(type_data);
-                                            if(ops>=0)
-                                                (io_data->shutdown_callback)(io_data->data, err);
+                                        {
+                                            int ops = remove_pending_op(type_data);
+                                            if (ops >= 0)
+                                                (io_data->shutdown_callback)(io_data->data, errno);
                                         }
                                         // nothing to do here, he will call us again any way
                                     }
                                     else
                                     {
-                                        size_t written = (size_t)rt;
-                                        if (written<type_data->left_to_write)
-                                        {// din't write all do it again
-                                            uint8_t* temp = (uint8_t*)type_data->write_buffer;
-                                            temp += written;
-                                            type_data->write_buffer = temp;
-                                            type_data->left_to_write = type_data->left_to_write - written;
-                                            rt = write(io_data->handle, type_data->write_buffer, type_data->left_to_write);
-                                            if (rt == -1)
-                                            {
-                                                int err = errno;
-                                                if (err != EAGAIN && err != EWOULDBLOCK)
-                                                {// error occured do the shutdown
-                                                    int ops=remove_pending_op(type_data);
-                                                    if(ops>=0)
-                                                        (io_data->shutdown_callback)(io_data->data, err);
-                                                }
-                                                // nothing to do here, he will call us again any way
+                                        int ops = remove_pending_op(type_data);
+                                        if (ops >= 0)
+                                        {
+                                            socklen_t addr_size = sizeof(local_addr);
+                                            getsockname(err, (struct sockaddr*)&local_addr, &addr_size);
+                                            (io_data->accept_callback)(io_data->data, 0, err, io_data->read_buffer, (struct sockaddr*)&local_addr);
+                                        }
+                                    }
+                                    if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
+                                    {
+                                        one.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+                                        epoll_ctl(disp->epoll_fd, EPOLL_CTL_MOD, io_data->handle, &one);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        if (one.events & EPOLLOUT)
+                        {// writing on handle
+                            switch (type_data->write_type)
+                            {
+                            case EPOLL_WRITE_TYPE:
+                                {
+                                    if (type_data->write_buffer)
+                                    {
+                                        int rt = write(io_data->handle, type_data->write_buffer, type_data->left_to_write);
+                                        if (rt == -1)
+                                        {
+                                            int err = errno;
+                                            if (err != EAGAIN && err != EWOULDBLOCK)
+                                            {// error occured do the shutdown
+                                                int ops = remove_pending_op(type_data);
+                                                if (ops >= 0)
+                                                    (io_data->shutdown_callback)(io_data->data, err);
                                             }
+                                            // nothing to do here, he will call us again any way
                                         }
                                         else
                                         {
-                                            type_data->write_type = 0;
-                                            type_data->write_buffer = NULL;
-                                            int ops=remove_pending_op(type_data);
-                                            if(ops>=0)
-                                                (io_data->write_callback)(io_data->data, 0);
+                                            size_t written = (size_t)rt;
+                                            if (written < type_data->left_to_write)
+                                            {// din't write all do it again
+                                                uint8_t* temp = (uint8_t*)type_data->write_buffer;
+                                                temp += written;
+                                                type_data->write_buffer = temp;
+                                                type_data->left_to_write = type_data->left_to_write - written;
+                                                rt = write(io_data->handle, type_data->write_buffer, type_data->left_to_write);
+                                                if (rt == -1)
+                                                {
+                                                    int err = errno;
+                                                    if (err != EAGAIN && err != EWOULDBLOCK)
+                                                    {// error occured do the shutdown
+                                                        int ops = remove_pending_op(type_data);
+                                                        if (ops >= 0)
+                                                            (io_data->shutdown_callback)(io_data->data, err);
+                                                    }
+                                                    // nothing to do here, he will call us again any way
+                                                }
+                                            }
+                                            else
+                                            {
+                                                type_data->write_type = 0;
+                                                type_data->write_buffer = NULL;
+                                                int ops = remove_pending_op(type_data);
+                                                if (ops >= 0)
+                                                    (io_data->write_callback)(io_data->data, 0);
+                                            }
                                         }
-                                    }
-                                }
-                                else
-                                {
-                                }
-
-                            }
-                            break;
-                        case EPOLL_WRITE_TO_TYPE:
-                            {
-                                if (type_data->write_buffer)
-                                {
-                                    int rt = sendto(io_data->handle, type_data->write_buffer, type_data->left_to_write, 0
-                                        , (struct sockaddr*)type_data->addr_buffer, type_data->addr_size);
-                                    if (rt == -1)
-                                    {
-                                        int err = errno;
-                                        if (err != EAGAIN && err != EWOULDBLOCK)
-                                        {// error occured do the shutdown
-                                            int ops=remove_pending_op(type_data);
-                                            if(ops>=0)
-                                                (io_data->shutdown_callback)(io_data->data, err);
-                                        }
-                                        // nothing to do here, he will call us again any way
                                     }
                                     else
                                     {
-                                        size_t written = (size_t)rt;
-                                        if (written<type_data->left_to_write)
-                                        {// din't write all do it again
-                                            uint8_t* temp = (uint8_t*)type_data->write_buffer;
-                                            temp += written;
-                                            type_data->write_buffer = temp;
-                                            type_data->left_to_write = type_data->left_to_write - written;
-                                            rt = sendto(io_data->handle, type_data->write_buffer, type_data->left_to_write, 0
-                                                , (struct sockaddr*)type_data->addr_buffer, type_data->addr_size);
-                                            if (rt == -1)
-                                            {
-                                                int err = errno;
-                                                if (err != EAGAIN && err != EWOULDBLOCK)
-                                                {// error occured do the shutdown
-                                                    int ops=remove_pending_op(type_data);
-                                                    if(ops>=0)
-                                                        (io_data->shutdown_callback)(io_data->data, err);
-                                                }
-                                                // nothing to do here, he will call us again any way
+                                    }
+
+                                }
+                                break;
+                            case EPOLL_WRITE_TO_TYPE:
+                                {
+                                    if (type_data->write_buffer)
+                                    {
+                                        int rt = sendto(io_data->handle, type_data->write_buffer, type_data->left_to_write, 0
+                                            , (struct sockaddr*)type_data->addr_buffer, type_data->addr_size);
+                                        if (rt == -1)
+                                        {
+                                            int err = errno;
+                                            if (err != EAGAIN && err != EWOULDBLOCK)
+                                            {// error occured do the shutdown
+                                                int ops = remove_pending_op(type_data);
+                                                if (ops >= 0)
+                                                    (io_data->shutdown_callback)(io_data->data, err);
                                             }
+                                            // nothing to do here, he will call us again any way
                                         }
                                         else
                                         {
-                                            type_data->write_type = 0;
-                                            type_data->write_buffer = NULL;
-                                            int ops=remove_pending_op(type_data);
-                                            if(ops>=0)
-                                                (io_data->write_callback)(io_data->data, 0);
+                                            size_t written = (size_t)rt;
+                                            if (written < type_data->left_to_write)
+                                            {// din't write all do it again
+                                                uint8_t* temp = (uint8_t*)type_data->write_buffer;
+                                                temp += written;
+                                                type_data->write_buffer = temp;
+                                                type_data->left_to_write = type_data->left_to_write - written;
+                                                rt = sendto(io_data->handle, type_data->write_buffer, type_data->left_to_write, 0
+                                                    , (struct sockaddr*)type_data->addr_buffer, type_data->addr_size);
+                                                if (rt == -1)
+                                                {
+                                                    int err = errno;
+                                                    if (err != EAGAIN && err != EWOULDBLOCK)
+                                                    {// error occured do the shutdown
+                                                        int ops = remove_pending_op(type_data);
+                                                        if (ops >= 0)
+                                                            (io_data->shutdown_callback)(io_data->data, err);
+                                                    }
+                                                    // nothing to do here, he will call us again any way
+                                                }
+                                            }
+                                            else
+                                            {
+                                                type_data->write_type = 0;
+                                                type_data->write_buffer = NULL;
+                                                int ops = remove_pending_op(type_data);
+                                                if (ops >= 0)
+                                                    (io_data->write_callback)(io_data->data, 0);
+                                            }
                                         }
                                     }
-                                }
-                                else
-                                {
-                                }
-
-                            }
-                            break;
-                        case EPOLL_CONNECT_TYPE:
-                            {
-                                type_data->write_type = 0;
-
-                                socklen_t addr_size=sizeof(local_addr);
-                                int err = getsockname(io_data->handle,(struct sockaddr*)&local_addr,&addr_size);
-                                if(err==0)
-                                {
-                                    addr_size=sizeof(local_addr);
-                                    err = getpeername(io_data->handle,(struct sockaddr*)&remote_addr,&addr_size);
-                                }
-                                int ops=remove_pending_op(type_data);
-                                if(ops>=0)
-                                {
-                                    if(err==0)
-                                        (io_data->connect_callback)(io_data->data, 0, (struct sockaddr*)&remote_addr,(struct sockaddr*)&local_addr);
                                     else
-                                        (io_data->shutdown_callback)(io_data->data, err);
-                                }
+                                    {
+                                    }
 
+                                }
+                                break;
+                            case EPOLL_CONNECT_TYPE:
+                                {
+                                    type_data->write_type = 0;
+
+                                    socklen_t addr_size = sizeof(local_addr);
+                                    int err = getsockname(io_data->handle, (struct sockaddr*)&local_addr, &addr_size);
+                                    if (err == 0)
+                                    {
+                                        addr_size = sizeof(local_addr);
+                                        err = getpeername(io_data->handle, (struct sockaddr*)&remote_addr, &addr_size);
+                                    }
+                                    int ops = remove_pending_op(type_data);
+                                    if (ops >= 0)
+                                    {
+                                        if (err == 0)
+                                            (io_data->connect_callback)(io_data->data, 0, (struct sockaddr*)&remote_addr, (struct sockaddr*)&local_addr);
+                                        else
+                                            (io_data->shutdown_callback)(io_data->data, err);
+                                    }
+
+                                }
+                                break;
+                            case 0:
+                                {
+                                }
+                                break;
                             }
-                            break;
-                        case 0:
-                            {
-                            }
-                            break;
                         }
                     }
-				}
-			}
+                }
+            }
 		}
 	}
 	return 1;// do the loop again

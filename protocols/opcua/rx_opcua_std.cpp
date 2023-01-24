@@ -37,6 +37,7 @@ using namespace protocols::opcua::ids;
 #include "protocols/opcua/rx_opcua_std.h"
 
 #include "rx_opcua_server.h"
+#include "rx_opcua_build_nodes2.h"
 
 
 namespace protocols {
@@ -46,9 +47,9 @@ namespace opcua {
 namespace opcua_addr_space {
 struct std_nodes_comparator
 {
-    bool operator()(const opcua_std_node& left, const opcua_std_node& right)
+    bool operator()(const std::shared_ptr<opcua_std_node>& left, const uint32_t& right)
     {
-        return left.node_id < right.node_id;
+        return left->node_id < right;
     }
 };
 
@@ -83,14 +84,14 @@ void opcua_std_address_space::read_attributes (const std::vector<read_value_id>&
             auto val_it = get_valued_by_id(one.node_id.get_numeric());
             if (val_it != registered_valued_nodes_.end())
             {
-                val_it->read_attribute(one.attr_id, one.range, one.data_encoding.name, temp_val, config_ts_);
+                (*val_it)->read_attribute(one.attr_id, one.range, one.data_encoding.name, temp_val, config_ts_);
             }
             else
             {
                 auto it = get_by_id(one.node_id.get_numeric());
                 if (it != registered_nodes_.end())
                 {
-                    it->read_attribute(one.attr_id, one.range, one.data_encoding.name, temp_val, config_ts_);
+                    (*it)->read_attribute(one.attr_id, one.range, one.data_encoding.name, temp_val, config_ts_);
                 }
             }
         }
@@ -108,14 +109,14 @@ std::pair<opcua_result_t, runtime_transaction_id_t> opcua_std_address_space::wri
         auto val_it = get_valued_by_id(node_id.get_numeric());
         if (val_it != registered_valued_nodes_.end())
         {
-            result = val_it->write_attribute(id, range, value, ep);
+            result = (*val_it)->write_attribute(id, range, value, ep);
         }
         else
         {
             auto it = get_by_id(node_id.get_numeric());
             if (it != registered_nodes_.end())
             {
-                result = it->write_attribute(id, range, value, ep);
+                result = (*it)->write_attribute(id, range, value, ep);
             }
         }
     }
@@ -137,14 +138,14 @@ void opcua_std_address_space::browse (const opcua_view_description& view, const 
             auto val_it = get_valued_by_id(one.node_id.get_numeric());
             if (val_it != registered_valued_nodes_.end())
             {
-                val_it->browse(one, temp_val, &ctx);
+                (*val_it)->browse(one, temp_val, &ctx);
             }
             else
             {
                 auto it = get_by_id(one.node_id.get_numeric());
                 if (it != registered_nodes_.end())
                 {
-                    it->browse(one, temp_val, &ctx);
+                    (*it)->browse(one, temp_val, &ctx);
                 }
             }
         }
@@ -168,7 +169,7 @@ void opcua_std_address_space::translate (const std::vector<browse_path>& browse_
             if (val_it != registered_valued_nodes_.end())
             {
                 temp_val.status_code = opcid_OK;
-                val_it->translate(one.path, temp_val, &ctx);
+                (*val_it)->translate(one.path, temp_val, &ctx);
             }
             else
             {
@@ -176,7 +177,7 @@ void opcua_std_address_space::translate (const std::vector<browse_path>& browse_
                 if (it != registered_nodes_.end())
                 {
                     temp_val.status_code = opcid_OK;
-                    it->translate(one.path, temp_val, &ctx);
+                    (*it)->translate(one.path, temp_val, &ctx);
                 }
             }
         }
@@ -214,14 +215,14 @@ rx_result opcua_std_address_space::set_node_value (const rx_node_id& id, values:
         auto val_node_it = get_valued_by_id(id.get_numeric());
         if (val_node_it != registered_valued_nodes_.end())
         {
-            return val_node_it->set_node_value(std::move(val));
+            return (*val_node_it)->set_node_value(std::move(val));
         }
         else
         {
             auto node_it = get_by_id(id.get_numeric());
             if (node_it != registered_nodes_.end())
             {
-                return node_it->set_node_value(std::move(val));
+                return (*node_it)->set_node_value(std::move(val));
             }
         }
     }
@@ -238,23 +239,23 @@ const locks::rw_slim_lock* opcua_std_address_space::get_lock () const
     return &ns_lock_;
 }
 
-opcua_node_base* opcua_std_address_space::connect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse)
+std::shared_ptr<opcua_node_base> opcua_std_address_space::connect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse)
 {
     if (ref_data.target_id.is_null() || !ref_data.target_id.is_opc())
         return nullptr;
     auto it = get_by_id(ref_data.target_id.get_numeric());
     if (it != registered_nodes_.end())
     {
-        if (!it->references_.connect_node_reference(node, ref_data, inverse))
+        if (!(*it)->references_.connect_node_reference(node, ref_data, inverse))
             return nullptr;
-        return &(*it);
+        return (*it);
     }
     auto it_val = get_valued_by_id(ref_data.target_id.get_numeric());
     if (it_val != registered_valued_nodes_.end())
     {
-        if (!it_val->references_.connect_node_reference(node, ref_data, inverse))
+        if (!(*it_val)->references_.connect_node_reference(node, ref_data, inverse))
             return nullptr;
-        return &(*it_val);
+        return (*it_val);
     }
     return nullptr;
 }
@@ -272,7 +273,7 @@ opcua_result_t opcua_std_address_space::unregister_value_monitor (opcua_subscrip
 opcua_std_address_space::registered_nodes_type::const_iterator opcua_std_address_space::get_by_id (uint32_t id) const
 {
     auto it = std::lower_bound(registered_nodes_.begin(), registered_nodes_.end(), id, std_nodes_comparator());
-    if (it != registered_nodes_.end() && it->node_id == id)
+    if (it != registered_nodes_.end() && (*it)->node_id == id)
         return it;
     else
         return registered_nodes_.end();
@@ -281,7 +282,7 @@ opcua_std_address_space::registered_nodes_type::const_iterator opcua_std_address
 opcua_std_address_space::registered_nodes_type::iterator opcua_std_address_space::get_by_id (uint32_t id)
 {
     auto it = std::lower_bound(registered_nodes_.begin(), registered_nodes_.end(), id, std_nodes_comparator());
-    if (it != registered_nodes_.end() && it->node_id == id)
+    if (it != registered_nodes_.end() && (*it)->node_id == id)
         return it;
     else
         return registered_nodes_.end();
@@ -290,7 +291,7 @@ opcua_std_address_space::registered_nodes_type::iterator opcua_std_address_space
 opcua_std_address_space::registered_valued_nodes_type::const_iterator opcua_std_address_space::get_valued_by_id (uint32_t id) const
 {
     auto it = std::lower_bound(registered_valued_nodes_.begin(), registered_valued_nodes_.end(), id, std_nodes_comparator());
-    if (it != registered_valued_nodes_.end() && it->node_id == id)
+    if (it != registered_valued_nodes_.end() && (*it)->node_id == id)
         return it;
     else
         return registered_valued_nodes_.end();
@@ -299,7 +300,7 @@ opcua_std_address_space::registered_valued_nodes_type::const_iterator opcua_std_
 opcua_std_address_space::registered_valued_nodes_type::iterator opcua_std_address_space::get_valued_by_id (uint32_t id)
 {
     auto it = std::lower_bound(registered_valued_nodes_.begin(), registered_valued_nodes_.end(), id, std_nodes_comparator());
-    if (it != registered_valued_nodes_.end() && it->node_id == id)
+    if (it != registered_valued_nodes_.end() && (*it)->node_id == id)
         return it;
     else
         return registered_valued_nodes_.end();
@@ -336,13 +337,18 @@ opcua_std_node::opcua_std_node (const opcua_std_node_argument_t& arg)
 {
     if (arg.references.size > 0 && arg.references.data)
     {
-        references_.references.insert(references_.references.end()
-            , arg.references.data, arg.references.data + arg.references.size);
+        for (size_t i = 0; i < arg.references.size; i++)
+        {
+            references_.references.emplace_back(rx_node_id::opcua_standard_id(arg.references.data[i].ref_id), rx_node_id::opcua_standard_id(arg.references.data[i].target_id));
+        }
     }
     if (arg.inverse_references.size > 0 && arg.inverse_references.data)
     {
-        references_.inverse_references.insert(references_.inverse_references.end()
-            , arg.inverse_references.data, arg.inverse_references.data + arg.inverse_references.size);
+
+        for (size_t i = 0; i < arg.inverse_references.size; i++)
+        {
+            references_.inverse_references.emplace_back(rx_node_id::opcua_standard_id(arg.inverse_references.data[i].ref_id), rx_node_id::opcua_standard_id(arg.inverse_references.data[i].target_id));
+        }
     }
 }
 
@@ -503,9 +509,10 @@ void opcua_std_node::browse (const opcua_browse_description& to_browse, browse_r
     {
         for (const auto& one : references_.references)
         {
-            if (one.resolved_node
+            auto node_ptr = one.resolved_node.lock();
+            if (node_ptr
                 && (to_browse.node_class_mask==0 
-                    || ((uint32_t)one.resolved_node->get_node_class() & to_browse.node_class_mask) != 0))
+                    || ((uint32_t)node_ptr->get_node_class() & to_browse.node_class_mask) != 0))
             {
                 if(!refIds.empty() && refIds.count(one.reference_id))
                     result.add_reference_data(true, one, to_browse);
@@ -517,9 +524,10 @@ void opcua_std_node::browse (const opcua_browse_description& to_browse, browse_r
     {
         for (const auto& one : references_.inverse_references)
         {
-            if (one.resolved_node
+            auto node_ptr = one.resolved_node.lock();
+            if (node_ptr
                 && (to_browse.node_class_mask == 0
-                    || ((uint32_t)one.resolved_node->get_node_class() & to_browse.node_class_mask) != 0))
+                    || ((uint32_t)node_ptr->get_node_class() & to_browse.node_class_mask) != 0))
             {
                 if (!refIds.empty() && refIds.count(one.reference_id))
                     result.add_reference_data(false, one, to_browse);
@@ -560,13 +568,14 @@ void opcua_std_node::translate (const relative_path& path, browse_path_result& r
     {
         for (const auto& one : references_.references)
         {
-            if (one.resolved_node)
+            auto node_ptr = one.resolved_node.lock();
+            if (node_ptr)
             {
                 if (!refIds.empty() && refIds.count(one.reference_id)
-                    && one.resolved_node->get_browse_name() == one_path.target_name)
+                    && node_ptr->get_browse_name() == one_path.target_name)
                 {
                     target_it->target_id = one.target_id;
-                    one.resolved_node->translate(path, results, ctx);
+                    node_ptr->translate(path, results, ctx);
                     return;
                 }
             }
@@ -576,13 +585,14 @@ void opcua_std_node::translate (const relative_path& path, browse_path_result& r
     {
         for (const auto& one : references_.inverse_references)
         {
-            if (one.resolved_node)
+            auto node_ptr = one.resolved_node.lock();
+            if (node_ptr)
             {
                 if (!refIds.empty() && refIds.count(one.reference_id)
-                    && one.resolved_node->get_browse_name() == one_path.target_name)
+                    && node_ptr->get_browse_name() == one_path.target_name)
                 {
                     target_it->target_id = one.target_id;
-                    one.resolved_node->translate(path, results, ctx);
+                    node_ptr->translate(path, results, ctx);
                     return;
                 }
             }
@@ -624,6 +634,18 @@ rx_result opcua_std_node::set_node_value (values::rx_value&& val)
 node_references& opcua_std_node::get_reference_data ()
 {
     return references_;
+}
+
+void opcua_std_node::resolve_std_references (const opcua_std_node_argument_t& data, opcua_std_address_space& server)
+{
+    if (data.references.size > 0 && data.references.data)
+    {
+        opcua_addr_space::opcua_std_address_space_builder::resolve_references_collection(references_.references, data.references, server);
+    }
+    if (data.inverse_references.size > 0 && data.inverse_references.data)
+    {
+        opcua_addr_space::opcua_std_address_space_builder::resolve_references_collection(references_.inverse_references, data.inverse_references, server);
+    }
 }
 
 

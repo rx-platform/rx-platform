@@ -60,12 +60,12 @@ one<=>one transport port implementation");
 
     typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> > active_endpoints_type;
 public:
-    typedef std::function<std::pair<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> >()> construct_func_type;
+    typedef std::function<std::pair<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> >(const protocol_address* local_address, const protocol_address* remote_address)> construct_func_type;
     construct_func_type construct_func;
 
   public:
 
-      rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
@@ -76,7 +76,7 @@ public:
 
   private:
 
-      rx_protocol_stack_endpoint* construct_endpoint ();
+      rx_protocol_stack_endpoint* construct_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
 
 
@@ -93,19 +93,19 @@ public:
 template <typename endpointT>
 class connection_transport_port_impl : public items::port_runtime  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+    DECLARE_CODE_INFO("rx", 0, 2, 0, "\
 one<=>one transport port implementation");
 
     DECLARE_REFERENCE_PTR(connection_transport_port_impl);
 
     typedef std::map<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> > active_endpoints_type;
 public:
-    typedef std::function<std::pair<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> >()> construct_func_type;
+    typedef std::function<std::pair<rx_protocol_stack_endpoint*, std::unique_ptr<endpointT> >(const protocol_address* local_address, const protocol_address* remote_address)> construct_func_type;
     construct_func_type construct_func;
 
   public:
 
-      rx_protocol_stack_endpoint* construct_initiator_endpoint ();
+      rx_protocol_stack_endpoint* construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
       rx_protocol_stack_endpoint* construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
@@ -118,7 +118,7 @@ public:
 
   private:
 
-      rx_protocol_stack_endpoint* construct_endpoint ();
+      rx_protocol_stack_endpoint* construct_endpoint (const protocol_address* local_address, const protocol_address* remote_address);
 
 
 
@@ -132,15 +132,15 @@ public:
 
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* transport_port_impl<endpointT>::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* transport_port_impl<endpointT>::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
-    return construct_endpoint();
+    return construct_endpoint(local_address, remote_address);
 }
 
 template <typename endpointT>
 rx_protocol_stack_endpoint* transport_port_impl<endpointT>::construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
-    return construct_endpoint();
+    return construct_endpoint(local_address, remote_address);
 }
 
 template <typename endpointT>
@@ -154,11 +154,11 @@ void transport_port_impl<endpointT>::destroy_endpoint (rx_protocol_stack_endpoin
 }
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* transport_port_impl<endpointT>::construct_endpoint ()
+rx_protocol_stack_endpoint* transport_port_impl<endpointT>::construct_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
     if (!construct_func)
         return nullptr;
-    auto endpoint_data = construct_func();
+    auto endpoint_data = construct_func(local_address, remote_address);
 
     if (endpoint_data.first->closed_function == nullptr)
     {
@@ -206,15 +206,15 @@ rx_protocol_stack_endpoint* transport_port_impl<endpointT>::construct_endpoint (
 
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* connection_transport_port_impl<endpointT>::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* connection_transport_port_impl<endpointT>::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
-    return construct_endpoint();
+    return construct_endpoint(local_address, remote_address);
 }
 
 template <typename endpointT>
 rx_protocol_stack_endpoint* connection_transport_port_impl<endpointT>::construct_listener_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
-    return construct_endpoint();
+    return construct_endpoint(local_address, remote_address);
 }
 
 template <typename endpointT>
@@ -228,11 +228,11 @@ void connection_transport_port_impl<endpointT>::destroy_endpoint (rx_protocol_st
 }
 
 template <typename endpointT>
-rx_protocol_stack_endpoint* connection_transport_port_impl<endpointT>::construct_endpoint ()
+rx_protocol_stack_endpoint* connection_transport_port_impl<endpointT>::construct_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
     if (!construct_func)
         return nullptr;
-    auto endpoint_data = construct_func();
+    auto endpoint_data = construct_func(local_address, remote_address);
 
     if (endpoint_data.first->closed_function == nullptr)
     {

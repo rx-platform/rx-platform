@@ -243,6 +243,7 @@ rx_result extern_source_runtime::source_write (write_data&& data, runtime_proces
 
 rx_result extern_source_runtime::update_source (rx_value&& val)
 {
+    val.increment_signal_level();
     return source_value_changed(std::move(val));
 }
 

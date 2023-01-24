@@ -35,6 +35,7 @@
 // rx_gnu_daemon
 #include "gnu_hosts/rx_gnu_daemon.h"
 
+#include "third-party/cxxopts/include/cxxopts.hpp"
 #include <sys/stat.h>
 bool g_forked_daemon = false;
 

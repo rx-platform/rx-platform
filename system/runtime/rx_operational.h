@@ -81,9 +81,9 @@ class rx_tags_callback : public rx::pointers::reference_object
 
       virtual void items_changed (const std::vector<update_item>& items) = 0;
 
-      virtual void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data) = 0;
+      virtual void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data) = 0;
 
-      virtual void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result) = 0;
+      virtual void write_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result&& result) = 0;
 
 
   protected:

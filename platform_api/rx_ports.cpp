@@ -128,7 +128,7 @@ extern "C"
     }
     rx_protocol_stack_endpoint* c_construct_initiator_endpoint(rx_platform_api::rx_port* self)
     {
-        return self->construct_initiator_endpoint();
+        return self->construct_initiator_endpoint(nullptr, nullptr);
     }
 }
 
@@ -240,7 +240,7 @@ rx_protocol_stack_endpoint* rx_port::construct_listener_endpoint (const protocol
     return nullptr;
 }
 
-rx_protocol_stack_endpoint* rx_port::construct_initiator_endpoint ()
+rx_protocol_stack_endpoint* rx_port::construct_initiator_endpoint (const protocol_address* local_address, const protocol_address* remote_address)
 {
     RX_ASSERT(false);
     return nullptr;

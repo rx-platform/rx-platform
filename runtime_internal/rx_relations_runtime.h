@@ -80,15 +80,15 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
             if (parent_)
                 parent_->items_changed(items);
         }
-        void execute_complete(runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
+        void execute_complete(runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data)
         {
             if (parent_)
-                parent_->execute_complete(transaction_id, item, std::move(result), std::move(data));
+                parent_->execute_complete(transaction_id, item, ++signal_level, std::move(result), std::move(data));
         }
-        void write_complete(runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result)
+        void write_complete(runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result)
         {
             if (parent_)
-                parent_->write_complete(transaction_id, item, std::move(result));
+                parent_->write_complete(transaction_id, item, ++signal_level, std::move(result));
         }
         void parent_destroyed()
         {
@@ -123,9 +123,9 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
 
       void items_changed (const std::vector<update_item>& items);
 
-      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data);
 
-      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result&& result);
+      void write_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result&& result);
 
 
   protected:

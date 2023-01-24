@@ -84,12 +84,7 @@ rx_json_protocol_port::rx_json_protocol_port()
 	construct_func = [this]()
 	{
 		auto rt = rx_create_reference<rx_server_connection>(this);
-		auto entry = rt->bind_endpoint([this](int64_t count)
-			{
-			},
-			[this](int64_t count)
-			{
-			});
+		auto entry = rt->bind_endpoint();
 		return construct_func_type::result_type{ entry, rt };
 	};
 }
@@ -186,7 +181,7 @@ void rx_protocol_subscription::execute_completed (runtime_transaction_id_t trans
 	}
 }
 
-void rx_protocol_subscription::write_completed (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_result> > results)
+void rx_protocol_subscription::write_completed (runtime_transaction_id_t transaction_id, std::vector<write_result_item> results)
 {
 	if (!results.empty() && connection_)
 	{
@@ -197,10 +192,11 @@ void rx_protocol_subscription::write_completed (runtime_transaction_id_t transac
 		notify_msg->results.reserve(results.size());
 		for (auto&& one : results)
 		{
-			auto it = items_.find(one.first);
+			auto it = items_.find(one.handle);
 			if (it != items_.end())
 			{
-				notify_msg->add_result(it->second.client_handle, std::move(one.second));
+				one.handle = it->second.client_handle;
+				notify_msg->add_result(std::move(one));
 			}
 		}
 		connection_->data_processed(std::move(notify_msg));
@@ -306,7 +302,7 @@ rx_server_connection::~rx_server_connection()
 
 
 
-rx_protocol_stack_endpoint* rx_server_connection::bind_endpoint (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+rx_protocol_stack_endpoint* rx_server_connection::bind_endpoint ()
 {
 	model::platform_types_manager::instance().get_types_resolver().register_subscriber(smart_this(), [this](model::resolver_event_data data)
 		{
@@ -499,6 +495,23 @@ void rx_protocol_connection::request_received (request_message_ptr&& request)
 	}
 }
 
+void rx_protocol_connection::response_received (response_message_ptr&& response)
+{
+	if (current_directory_)
+	{
+		api::rx_context ctx;
+		ctx.active_path = current_directory_->meta_info().get_full_path();
+		ctx.object = smart_this();
+
+		auto result = response->process_response(ctx, smart_this());
+
+		if (!result)
+		{
+			
+		}
+	}
+}
+
 rx_result rx_protocol_connection::set_current_directory (const string_type& path)
 {
 	auto temp = rx_gate::instance().get_directory(path);
@@ -634,18 +647,421 @@ message_ptr rx_protocol_connection::set_context (api::rx_context ctx, const mess
 
 // Class rx_internal::rx_protocol::rx_client_connection 
 
-rx_client_connection::rx_client_connection()
+rx_client_connection::rx_client_connection (rx_json_protocol_client_port* port)
+      : executer_(-1),
+        port_(port),
+        stream_version_(RX_CURRENT_SERIALIZE_VERSION),
+        last_sent_(0)
 {
+	RXCOMM_LOG_DEBUG("rx_client_connection", 200, "{rx-platform} communication client endpoint created.");
+	rx_init_stack_entry(&stack_entry_, this);
+	stack_entry_.received_function = &rx_client_connection::received_function;
+	stack_entry_.connected_function = &rx_client_connection::connected_function;
+	stack_entry_.disconnected_function = &rx_client_connection::disconnected_function;
+
+	executer_ = port->get_executer();
 }
 
 
 rx_client_connection::~rx_client_connection()
 {
+	RXCOMM_LOG_DEBUG("rx_server_connection", 200, "{rx-platform} communication client endpoint destroyed.");
 }
 
 
 
+rx_protocol_result_t rx_client_connection::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
+{
+	rx_client_connection* self = reinterpret_cast<rx_client_connection*>(reference->user_data);
+	messages::rx_connection_context_request con_context;
+	con_context.request_id = 1;
+	con_context.stream_version = RX_CURRENT_SERIALIZE_VERSION;
+	self->send_message(con_context);
+	return RX_PROTOCOL_OK;
+}
+
+rx_protocol_result_t rx_client_connection::disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason)
+{
+	rx_client_connection* self = reinterpret_cast<rx_client_connection*>(reference->user_data);
+	self->notify_disconnected();
+	return RX_PROTOCOL_OK;
+}
+
+rx_protocol_result_t rx_client_connection::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+{
+	rx_client_connection* self = reinterpret_cast<rx_client_connection*>(reference->user_data);
+
+	return self->received(packet);
+}
+
+void rx_client_connection::close_endpoint ()
+{
+	if (port_)
+		port_->notify_disconnected();
+}
+
+rx_protocol_stack_endpoint* rx_client_connection::get_endpoint ()
+{
+	return &stack_entry_;
+}
+
+rx_protocol_stack_endpoint* rx_client_connection::bind_endpoint ()
+{
+	return &stack_entry_;
+}
+
+void rx_client_connection::send_message (messages::rx_message_base& msg)
+{
+	uint32_t temp_version = RX_CURRENT_SERIALIZE_VERSION;
+	if (stream_version_)
+		temp_version = stream_version_;
+	serialization::json_writer writter(temp_version);
+	auto result = serialize_message(writter, msg.request_id, msg);
+	if (result)
+	{
+		string_type ret_data;
+		ret_data = writter.get_string();
+		auto buff_result = port_->alloc_io_buffer();
+		if (buff_result)
+		{
+			buff_result.value().write_to_buffer((uint8_t)1);
+			buff_result.value().write_to_buffer((uint8_t)1);
+			buff_result.value().write_to_buffer((uint16_t)0x7fff);
+			result = buff_result.value().write_string(ret_data);
+			send_protocol_packet packet = rx_create_send_packet(msg.request_id, &buff_result.value(), 0, 0);
+
+			auto protocol_res = rx_move_packet_down(&stack_entry_, packet);
+			if (protocol_res != RX_PROTOCOL_OK)
+			{
+				std::cout << "Error returned from move_down:"
+					<< rx_protocol_error_message(protocol_res)
+					<< "\r\n";
+			}
+			else
+			{
+				last_sent_ = rx_get_tick_count();
+			}
+			port_->release_io_buffer(buff_result.move_value());
+		}
+	}
+}
+
+rx_protocol_result_t rx_client_connection::received (recv_protocol_packet packet)
+{
+	io::rx_const_io_buffer received(packet.buffer);
+	uint8_t type;
+	uint8_t namespace_id;
+	uint16_t num_id;
+	auto result = received.read_from_buffer(type);
+	if (!result)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	if (type != 0x1)// has to be string value
+		return RX_PROTOCOL_PARSING_ERROR;
+	result = received.read_from_buffer(namespace_id);
+	if (!result)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	result = received.read_from_buffer(num_id);
+	if (!result)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	if (num_id != 0x7fff)// has to be exact value
+		return RX_PROTOCOL_PARSING_ERROR;
+
+
+	string_type json;
+	result = received.read_string(json);
+	if (result)
+	{
+		uint32_t temp_version = stream_version_ == 0 ? RX_CURRENT_SERIALIZE_VERSION : stream_version_;
+
+		messages::rx_request_id_t request_id = 0;
+		// read the header first
+		serialization::json_reader reader(temp_version);
+		if (!reader.parse_data(json))
+			return RX_PROTOCOL_PARSING_ERROR;
+
+		string_type msgType;
+
+		if (!reader.start_object("header"))
+			return RX_PROTOCOL_PARSING_ERROR;
+		if (!reader.read_int("requestId", request_id))
+			return RX_PROTOCOL_PARSING_ERROR;
+		if (!reader.read_string("msgType", msgType))
+			return RX_PROTOCOL_PARSING_ERROR;
+		if (!reader.end_object())
+			return RX_PROTOCOL_PARSING_ERROR;
+
+		if (request_id == 0)
+		{
+			if (msgType == "connCtxResp")
+			{
+				messages::rx_connection_context_response resp;
+
+				rx_result temp_res;
+
+				temp_res = reader.start_object("body");
+				if (temp_res)
+				{
+					temp_res = resp.deserialize(reader);
+					if (temp_res)
+					{
+						temp_res = reader.end_object();
+					}
+				}
+				if (temp_res)
+				{
+					stream_version_ = resp.stream_version;
+
+					notify_connected();
+				}
+				else
+				{
+					RXCOMM_LOG_ERROR("rx_client_connection", 500, "Error connection context response:"s + temp_res.errors_line());
+				}
+			}
+			else if (msgType == "connectionNotify")
+			{
+				messages::rx_connection_notify_message resp;
+
+				rx_result temp_res;
+
+				temp_res = reader.start_object("body");
+				if (temp_res)
+				{
+					temp_res = resp.deserialize(reader);
+					if (temp_res)
+					{
+						temp_res = reader.end_object();
+					}
+				}
+				if (temp_res)
+				{
+					notify_item_change(resp.changed_id, resp.changed_path);
+				}
+				else
+				{
+					RXCOMM_LOG_ERROR("rx_client_connection", 500, "Error connection context response:"s + temp_res.errors_line());
+				}
+			}
+
+		}
+		else
+		{
+			auto transaction = get_transaction(request_id);
+			if (transaction)
+			{
+				auto temp_res = transaction->deserialize(reader, msgType);
+				if (temp_res)
+				{
+					rx_post_function_to(get_executer(), smart_this(),
+						[](smart_ptr whose, messages::rx_transaction_ptr&& transaction) {
+							whose->transaction_received(std::move(transaction));
+						}, smart_this(), std::move(transaction));
+				}
+				else
+				{
+					RXCOMM_LOG_ERROR("rx_client_connection", 500, "Error deserializing response:"s + temp_res.errors_line());
+				}
+			}
+		}
+	}
+	return RX_PROTOCOL_OK;
+}
+
+void rx_client_connection::notify_connected ()
+{
+	if (port_)
+		port_->notify_connected();
+}
+
+void rx_client_connection::notify_disconnected ()
+{
+	if (port_)
+		port_->notify_disconnected();
+}
+
+void rx_client_connection::notify_item_change (const rx_node_id& id, const string_type& path)
+{
+	if (port_)
+		port_->notify_item_change(id, path);
+}
+
+void rx_client_connection::timer_tick ()
+{
+	if (rx_get_tick_count() > last_sent_ + 8000)
+	{
+		messages::rx_keep_alive_message msg;
+		msg.request_id = g_next_request_id++;
+		if (msg.request_id == 0)
+			msg.request_id = g_next_request_id++;
+
+		send_message(msg);
+	}
+}
+
+
 // Class rx_internal::rx_protocol::rx_local_subscription 
+
+
+// Class rx_internal::rx_protocol::rx_protocol_client_connection 
+
+std::atomic<messages::rx_request_id_t> rx_protocol_client_connection::g_next_request_id = 1;
+
+rx_protocol_client_connection::rx_protocol_client_connection()
+{
+}
+
+
+rx_protocol_client_connection::~rx_protocol_client_connection()
+{
+}
+
+
+
+void rx_protocol_client_connection::transaction_received (messages::rx_transaction_ptr response)
+{
+	auto result = response->process();
+	if (!result)
+	{
+		RXCOMM_LOG_ERROR("rx_protocol_client_connection", 500, "Error processing response:"s + result.errors_line());
+	}
+}
+
+void rx_protocol_client_connection::register_transaction (messages::rx_request_id_t id, messages::rx_transaction_ptr trans)
+{
+	locks::auto_lock_t _(&transactions_lock_);
+	pending_transactions_.emplace(id, std::move(trans));
+}
+
+messages::rx_transaction_ptr rx_protocol_client_connection::get_transaction (messages::rx_request_id_t id)
+{
+	locks::auto_lock_t _(&transactions_lock_);
+	auto it = pending_transactions_.find(id);
+	if (it != pending_transactions_.end())
+	{
+		messages::rx_transaction_ptr ret = std::move(it->second);
+		pending_transactions_.erase(it);
+		return ret;
+	}
+	else
+	{
+		return messages::rx_transaction_ptr::null_ptr;
+	}
+}
+
+void rx_protocol_client_connection::set_context (api::rx_context ctx, const messages::rx_connection_context_response& req)
+{
+}
+
+rx_result rx_protocol_client_connection::send_request (messages::rx_transaction_ptr trans, uint32_t timeout)
+{
+	trans->get_request().request_id = g_next_request_id++;
+	if(trans->get_request().request_id==0)
+		trans->get_request().request_id = g_next_request_id++;
+	messages::rx_request_id_t req_id = trans->get_request().request_id;
+
+	register_transaction(req_id, trans);
+	send_message(trans->get_request());
+	return true;
+}
+
+void rx_protocol_client_connection::timer_tick ()
+{
+}
+
+
+// Class rx_internal::rx_protocol::rx_protocol_client_user 
+
+
+// Class rx_internal::rx_protocol::rx_json_protocol_client_port 
+
+std::map<rx_node_id,rx_json_protocol_client_port::smart_ptr> rx_json_protocol_client_port::runtime_instances;
+
+rx_json_protocol_client_port::rx_json_protocol_client_port()
+{
+	construct_func = [this]()
+	{
+		auto rt = rx_create_reference<rx_client_connection>(this);
+		auto entry = rt->bind_endpoint();
+		return construct_func_type::result_type{ entry, rt };
+	};
+}
+
+
+
+void rx_json_protocol_client_port::stack_assembled ()
+{
+	connect(nullptr, nullptr);
+}
+
+rx_result rx_json_protocol_client_port::send_request (messages::rx_transaction_ptr trans, uint32_t timeout)
+{
+	auto ep_ptr = active_endpoint();
+	if (ep_ptr)
+		return ep_ptr->send_request(std::move(trans), timeout);
+	else
+		return RX_NOT_CONNECTED;
+}
+
+void rx_json_protocol_client_port::register_user (rx_protocol_client_user::smart_ptr user)
+{
+	RX_ASSERT(!user_);
+	user_ = user;
+}
+
+void rx_json_protocol_client_port::unregister_user (rx_protocol_client_user::smart_ptr user)
+{
+	RX_ASSERT(user_ == user);
+	user_ = rx_protocol_client_user::smart_ptr::null_ptr;
+}
+
+void rx_json_protocol_client_port::notify_connected ()
+{
+	if (user_)
+		user_->client_connected();
+}
+
+void rx_json_protocol_client_port::notify_disconnected ()
+{
+	if (user_)
+		user_->client_disconnected();
+}
+
+void rx_json_protocol_client_port::notify_item_change (const rx_node_id& id, const string_type& path)
+{
+	if (user_)
+		user_->item_changed(id, path);;
+}
+
+rx_result rx_json_protocol_client_port::start_runtime (runtime_start_context& ctx)
+{
+	rx_timer_ptr timer_ = create_timer_function([this]()
+		{
+			auto ep = active_endpoint();
+			if(ep)
+				ep->timer_tick();
+		});
+	timer_->start(200);
+	return true;
+}
+
+rx_result rx_json_protocol_client_port::stop_runtime (runtime_stop_context& ctx)
+{
+	if (timer_)
+	{
+		timer_->suspend();
+		timer_->cancel();
+		timer_ = rx_timer_ptr::null_ptr;
+	}
+	return true;
+}
+
+void rx_json_protocol_client_port::message_sent ()
+{
+}
+
+void rx_json_protocol_client_port::message_received ()
+{
+}
 
 
 } // namespace rx_protocol

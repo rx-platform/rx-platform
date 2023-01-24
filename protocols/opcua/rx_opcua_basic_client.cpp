@@ -451,6 +451,7 @@ void opcua_basic_source::opcua_value_changed (const data_value& val)
 	auto result = val.fill_rx_value(rval);
 	if (!result)
 		rval.set_quality(RX_BAD_QUALITY_SYNTAX_ERROR);
+	rval.increment_signal_level();
 	source_value_changed(std::move(rval));
 }
 

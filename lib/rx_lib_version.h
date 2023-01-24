@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 2
 #define RX_LIB_MINOR_VERSION 7
-#define RX_LIB_BUILD_NUMBER 1
+#define RX_LIB_BUILD_NUMBER 2
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -58,5 +58,6 @@
 // version 2.6.1 added ASN library
 // version 2.7.0 added member_check.h
 // version 2.7.1 fill_code_info is const
+// version 2.7.2 rx_value has increment_signal_level
 
 

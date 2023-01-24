@@ -53,6 +53,7 @@ enum class std_address_space_type
 
 class opcua_std_address_space;
 class opcua_std_address_space_builder;
+class opcua_std_valued_node;
 
 struct reference_data_argument_t
 {
@@ -122,6 +123,8 @@ protected:
       rx_result set_node_value (values::rx_value&& val);
 
       node_references& get_reference_data ();
+
+      void resolve_std_references (const opcua_std_node_argument_t& data, opcua_std_address_space& server);
 
 
       uint32_t node_id;
@@ -206,8 +209,8 @@ class opcua_std_valued_node : public opcua_std_node
 
 class opcua_std_address_space : public opcua_address_space_base  
 {
-    typedef std::vector<opcua_std_node> registered_nodes_type;
-    typedef std::vector<opcua_std_valued_node> registered_valued_nodes_type;
+    typedef std::vector<std::shared_ptr<opcua_std_node> > registered_nodes_type;
+    typedef std::vector< std::shared_ptr<opcua_std_valued_node> > registered_valued_nodes_type;
     typedef std::map<uint32_t, std::set<uint32_t> > references_tree_type;
 
   public:
@@ -232,7 +235,7 @@ class opcua_std_address_space : public opcua_address_space_base
 
       const locks::rw_slim_lock* get_lock () const;
 
-      opcua_node_base* connect_node_reference (opcua_node_base* node, const reference_data& ref_data, bool inverse);
+      std::shared_ptr<opcua_node_base> connect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse);
 
       opcua_result_t register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val);
 

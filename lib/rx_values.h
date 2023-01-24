@@ -41,8 +41,8 @@
 #include "dummy.h"
 
 namespace rx {
-class base_meta_writer;
 class base_meta_reader;
+class base_meta_writer;
 
 } // namespace rx
 
@@ -409,6 +409,10 @@ public:
       byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
 
       void set_origin (uint32_t val);
+
+      uint32_t increment_signal_level ();
+
+      uint32_t get_signal_level () const;
 
 
   protected:

@@ -40,6 +40,7 @@
 using namespace protocols::opcua::ids;
 
 #include "rx_opcua_server.h"
+#include "rx_opcua_resources.h"
 
 
 namespace protocols {
@@ -132,7 +133,7 @@ opcua_response_ptr opcua_find_servers::do_job (opcua_server_endpoint_ptr ep)
 {
 	auto ret_ptr = std::make_unique<opcua_find_servers_response>(*this);
 
-	ret_ptr->servers.push_back(std::move(ep->get_application_description(endpoint)));
+	ret_ptr->servers = opcua_resources_repository::instance().find_servers(endpoint, ep->get_port_path());
 
 	return ret_ptr;
 }
