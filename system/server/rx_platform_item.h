@@ -70,10 +70,19 @@ typedef callback::rx_any_callback<rx_result, std::vector<runtime_item_attribute>
 
 
 typedef callback::rx_any_callback<rx_result, data::runtime_values_data> read_struct_callback_t;
+struct read_prototype_t
+{
+    std::set<string_type> paths;
+    bool is_conained(const string_type& what)
+    {
+        return paths.empty() || paths.count(what) > 0;
+    }
+};
 struct read_struct_data
 {
     read_struct_callback_t callback;
     runtime_value_type type;
+    read_prototype_t proto;
 };
 typedef callback::rx_any_callback<uint32_t, rx_result, std::vector<rx_result> > write_struct_callback_t;
 struct write_struct_data

@@ -90,7 +90,7 @@ rx_result register_internal_constructor(library::rx_plugin_base* plugin
         {
             std::ostringstream ss;
             ss << "Instance " << new_id.to_string()
-                << " could not be created for class"; 
+                << " could not be created for class";
             return ret;
         }
         else
@@ -480,6 +480,7 @@ public:
 	typedef typename typeT::smart_ptr Tptr;
 	typedef rx_result_with<Tptr> TdefRes;
 
+    typedef typename std::map<rx_node_id, rx_reference<discovery::peer_item> > registered_peer_types_type;
 	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
     typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
@@ -511,6 +512,8 @@ public:
 
       bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
 
+      rx_result register_peer_type (rx_reference<discovery::peer_item> what);
+
 
   protected:
 
@@ -526,6 +529,8 @@ public:
       registered_types_type registered_types_;
 
       constructors_type constructors_;
+
+      registered_peer_types_type registered_peer_types_;
 
 	  std::function<RTypePtr()> default_constructor_;
 };
@@ -652,6 +657,7 @@ public:
 		runtime_state state;
 	};
 
+    typedef typename std::map<rx_node_id, rx_reference<discovery::peer_item> > registered_peer_types_type;
 	typedef typename std::map<rx_node_id, runtime_data_t> registered_objects_type;
 	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
     //typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
@@ -705,6 +711,8 @@ public:
 
       constructors_type constructors_;
 
+      registered_peer_types_type registered_peer_types_;
+
       std::function<RTypePtr()> default_constructor_;
 };
 
@@ -726,6 +734,7 @@ public:
     typedef typename data_type::smart_ptr Tptr;
     typedef rx_result_with<Tptr> TdefRes;
 
+    typedef typename std::map<rx_node_id, rx_reference<discovery::peer_item> > registered_peer_types_type;
     typedef typename std::map<rx_node_id, Tptr> registered_types_type;
 
   public:
@@ -765,6 +774,8 @@ public:
 
 
       registered_types_type registered_types_;
+
+      registered_peer_types_type registered_peer_types_;
 
 
 };

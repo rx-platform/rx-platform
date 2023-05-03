@@ -239,12 +239,7 @@ byte_string rx_item_implementation<TImpl>::get_definition_as_bytes () const
 {
 	memory::std_buffer buff;
 	serialization::std_buffer_writer writer(buff);
-
-	writer.write_header(STREAMING_TYPE_OBJECT, 0);
-
-	impl_->serialize(writer, STREAMING_TYPE_OBJECT);
-
-	writer.write_footer();
+	impl_->serialize(writer, STREAMING_TYPE_MESSAGE);
 
 	return writer.get_data();
 }
@@ -677,7 +672,7 @@ string_type rx_proxy_item_implementation<TImpl>::get_name () const
 template <class TImpl>
 rx_node_id rx_proxy_item_implementation<TImpl>::get_node_id () const
 {
-  return rx_node_id::null_id;
+  return rx_node_id();
 }
 
 template <class TImpl>

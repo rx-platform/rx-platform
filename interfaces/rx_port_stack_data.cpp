@@ -253,12 +253,17 @@ rx_result port_passive_map::register_passive (rx_port_ptr who, io::any_address& 
     auto it_inv = inverse_passive_map_.find(who);
     if (it_inv == inverse_passive_map_.end())
     {
+        
         if (local_addr.is_null() && remote_addr.is_null())
         {
             data::runtime_values_data data;
             port_algorithm_t::collect_data(data, runtime_value_type::simple_runtime_value, *who);
             owner->get_implementation()->extract_bind_address(data, local_addr, remote_addr);
         }
+       /* if (local_addr.type != protocol_address_none || remote_addr.type != protocol_address_none)
+        {
+            printf("Local : %s, Remote: %s \r\n", local_addr.to_string().c_str(), remote_addr.to_string().c_str());
+        }*/
         addr_pair_t addrs(local_addr, remote_addr);
         map_lock_.lock();
         auto it = passive_map_.find(addrs);
@@ -268,7 +273,7 @@ rx_result port_passive_map::register_passive (rx_port_ptr who, io::any_address& 
             std::ostringstream ss;
             ss << "Port "
                 << who->meta_info().get_full_path()
-                << " not registered to "
+                << " not registered passive to "
                 << owner->meta_info().get_full_path()
                 << ". Duplicate registration at "
                 << "["
@@ -286,7 +291,7 @@ rx_result port_passive_map::register_passive (rx_port_ptr who, io::any_address& 
         std::ostringstream ss;
         ss << "Port "
             << who->meta_info().get_full_path()
-            << " registered at "
+            << " registered passive at "
             << owner->meta_info().get_full_path()
             << "["
             << addrs.first.to_string()
@@ -375,6 +380,7 @@ rx_port_ptr port_passive_map::get_binded_port (const io::any_address& local_addr
         if (it_port != passive_map_.end())
             return it_port->second;
     }
+   
     return rx_port_ptr::null_ptr;
 }
 

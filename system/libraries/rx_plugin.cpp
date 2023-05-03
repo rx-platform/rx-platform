@@ -85,27 +85,48 @@ rx_dynamic_plugin::~rx_dynamic_plugin()
 
 rx_result rx_dynamic_plugin::bind_plugin ()
 {
+    if (prxBindPlugin2_ || prxBindPlugin_)
+    {
+        uintptr_t plugin_id;
+        uint32_t plugin_version;
+        rx_result ret = prxBindPlugin2_ != nullptr ?
+            prxBindPlugin2_(rx_platform::api::get_plugins_dynamic_api2(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id)
+            : prxBindPlugin_(rx_platform::api::get_plugins_dynamic_api(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id);
+
+        if (ret)
+        {
+            registered_plugins_.emplace(plugin_id, this);
+            stream_version_ = plugin_version;
+            prxGetPluginInfo_ = (rxGetPluginInfo_t)rx_get_func_address(module_, "rxGetPluginInfo");
+            prxGetPluginName_ = (rxGetPluginName_t)rx_get_func_address(module_, "rxGetPluginName");
+            prxInitPlugin_ = (rxInitPlugin_t)rx_get_func_address(module_, "rxInitPlugin");
+            prxDeinitPlugin_ = (rxDeinitPlugin_t)rx_get_func_address(module_, "rxDeinitPlugin");
+            prxBuildPlugin_ = (rxBuildPlugin_t)rx_get_func_address(module_, "rxBuildPlugin");
+        }
+
+        return ret;
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return RX_INTERNAL_ERROR;
+    }
+}
+
+rx_result rx_dynamic_plugin::load_plugin ()
+{
     module_ = rx_load_library(lib_path_.c_str());
     if (module_)
     {
+        prxBindPlugin2_ = (rxBindPlugin2_t)rx_get_func_address(module_, "rxBindPlugin2");
+        if (prxBindPlugin2_)
+        {
+            return true;
+        }
         prxBindPlugin_ = (rxBindPlugin_t)rx_get_func_address(module_, "rxBindPlugin");
         if (prxBindPlugin_)
         {
-            uintptr_t plugin_id;
-            uint32_t plugin_version;
-            rx_result ret = prxBindPlugin_(rx_platform::api::get_plugins_dynamic_api(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id);
-            if (ret)
-            {
-                registered_plugins_.emplace(plugin_id, this);
-                stream_version_ = plugin_version;
-                prxGetPluginInfo_ = (rxGetPluginInfo_t)rx_get_func_address(module_, "rxGetPluginInfo");
-                prxGetPluginName_ = (rxGetPluginName_t)rx_get_func_address(module_, "rxGetPluginName");
-                prxInitPlugin_ = (rxInitPlugin_t)rx_get_func_address(module_, "rxInitPlugin");
-                prxDeinitPlugin_ = (rxDeinitPlugin_t)rx_get_func_address(module_, "rxDeinitPlugin");
-                prxBuildPlugin_ = (rxBuildPlugin_t)rx_get_func_address(module_, "rxBuildPlugin");
-            }
-
-            return ret;
+            return true;
         }
         else
         {
@@ -139,7 +160,7 @@ rx_plugin_info rx_dynamic_plugin::get_plugin_info () const
 
 rx_result rx_dynamic_plugin::init_plugin ()
 {
-    if (prxBindPlugin_)
+    if (prxBindPlugin_ || prxBindPlugin2_)
     {
         if (prxInitPlugin_)
         {

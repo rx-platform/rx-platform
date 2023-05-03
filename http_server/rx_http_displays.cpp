@@ -40,6 +40,7 @@
 #include "system/server/rx_file_helpers.h"
 #include "runtime_internal/rx_runtime_internal.h"
 #include "system/server/rx_directory_cache.h"
+#include "sys_internal/rx_plugin_manager.h"
 
 
 namespace rx_internal {
@@ -816,6 +817,48 @@ rx_http_simple_display::~rx_http_simple_display()
 void rx_http_simple_display::fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path)
 {
 	content.mapped_content["main"] = ctx.structure.get_current_item().get_local_as<string_type>("Content", "");
+}
+
+
+// Class rx_internal::rx_http_server::http_displays::rx_http_main_display 
+
+rx_http_main_display::rx_http_main_display()
+{
+}
+
+rx_http_main_display::rx_http_main_display (const string_type& name, const rx_node_id& id)
+	: rx_http_static_display(name, id)
+{
+}
+
+
+rx_http_main_display::~rx_http_main_display()
+{
+}
+
+
+
+void rx_http_main_display::fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path)
+{
+	std::ostringstream stream;
+	data::runtime_values_data data;
+	ctx.structure.get_root().collect_data(data, runtime_value_type::simple_runtime_value);
+
+	const auto& plugins = plugins::plugins_manager::instance().get_plugins();
+	for (const auto& one : plugins)
+	{
+		stream << "<tr><td>"
+			<< one->get_plugin_name()
+			<< ":</td>"
+			<< "<td><b>"
+			<< one->get_plugin_info().plugin_version
+			<< "</b></td></tr>";
+	}
+	content.mapped_content["plugins"] = stream.str();
+}
+
+void rx_http_main_display::fill_div (std::ostream& stream, const string_type& rt_name, const string_type& path, const data::runtime_values_data& data)
+{
 }
 
 

@@ -43,6 +43,43 @@ namespace rx_internal {
 namespace interfaces {
 
 namespace ethernet {
+std::map<string_type, byte_string> local_mac;
+locks::slim_lock mac_lock;
+
+void rebuild_addresses()
+{
+    ETH_interface* interfaces = nullptr;
+    size_t count = 0;
+    auto res = rx_list_eth_cards(&interfaces, &count);
+    if (res == RX_OK)
+    {
+        local_mac.clear();
+        for (size_t i = 0; i < count; i++)
+        {
+            local_mac.emplace(interfaces[i].name, byte_string((std::byte*)interfaces[i].mac_address, (std::byte*)interfaces[i].mac_address + MAC_ADDR_SIZE));
+        }
+    }
+}
+bool fill_mac_address_internal(const char* port, void* buff, bool first)
+{
+    std::scoped_lock _(mac_lock);
+    auto it = local_mac.find(port);
+    if (it != local_mac.end())
+    {
+        memcpy(buff, &it->second[0], MAC_ADDR_SIZE);
+        return true;
+    }
+    else if(first)
+    {
+        rebuild_addresses();
+        return fill_mac_address_internal(port, buff, false);
+    }
+    return false;
+}
+bool fill_mac_address(const char* port, void* buff)
+{
+    return fill_mac_address_internal(port, buff, true);
+}
 
 // Class rx_internal::interfaces::ethernet::ethernet_endpoint 
 
@@ -52,6 +89,7 @@ ethernet_endpoint::ethernet_endpoint()
         handle_(0),
         stop_(false)
     , thread("EthernetWorker", 0)
+    , local_mac_(MAC_ADDR_SIZE)
 {
     ITF_LOG_DEBUG("ethernet_endpoint", 200, "Ethernet endpoint created.");
     rx_protocol_stack_endpoint* mine_entry = &stack_endpoint_;
@@ -96,7 +134,33 @@ runtime::items::port_runtime* ethernet_endpoint::get_port ()
 
 rx_protocol_result_t ethernet_endpoint::send_packet (send_protocol_packet packet)
 {
-    my_port_->status.sent_packet(packet.buffer->size);
+    if (packet.buffer)
+    {
+        if (packet.to_addr && packet.to_addr->type == protocol_address_mac)
+        {
+            // append the addresses 
+            rx_protocol_result_t result;
+            uint8_t* front = (uint8_t*)rx_alloc_from_packet_front(packet.buffer, 2 * MAC_ADDR_SIZE/*two mac addresses*/, &result);
+            memcpy(front, &packet.to_addr->value.mac_address, MAC_ADDR_SIZE);
+            /*if (packet.from_addr && packet.from_addr->type == protocol_address_mac)
+            {
+                memcpy(front + MAC_ADDR_SIZE, &packet.from_addr->value.mac_address, MAC_ADDR_SIZE);
+            }
+            else*/
+            {
+                memcpy(front + MAC_ADDR_SIZE, &local_mac_[0], MAC_ADDR_SIZE);
+            }
+            auto ret = rx_send_ethernet_packet(handle_, packet.buffer->buffer_ptr, packet.buffer->size);
+            if (ret != RX_OK)
+            {
+                return RX_PROTOCOL_DISCONNECTED;
+            }
+        }
+        else
+        {
+            return RX_PROTOCOL_INVALID_ADDR;
+        }
+    }
     return RX_PROTOCOL_OK;
 }
 
@@ -117,6 +181,10 @@ rx_result ethernet_endpoint::open (const string_type& port_name, security::secur
         ITF_LOG_ERROR("ethernet_endpoint", 900, "Error opening ethernet card:"s + buff);
         my_port_ = nullptr;
         return buff;
+    }
+    if (!fill_mac_address(port_name.c_str(), &local_mac_[0]))
+    {
+
     }
     stop_ = false;
     start(RX_PRIORITY_REALTIME);

@@ -63,9 +63,9 @@ rx_result rx_system_info_response::serialize (base_meta_writer& stream) const
         return stream.get_error();
     if (!stream.write_string("node", node.c_str()))
         return stream.get_error();
-    if (!stream.write_time("started", start_time))
+    if (!stream.write_time("started", start_time.c_data()))
         return stream.get_error();
-    if (!stream.write_time("current", current_time))
+    if (!stream.write_time("current", current_time.c_data()))
         return stream.get_error();
     if (!stream.write_string("platform", platform.c_str()))
         return stream.get_error();
@@ -102,10 +102,13 @@ rx_result rx_system_info_response::deserialize (base_meta_reader& stream)
         return stream.get_error();
     if (!stream.read_string("node", node))
         return stream.get_error();
-    if (!stream.read_time("started", start_time))
+    rx_time_struct_t temp;
+    if (!stream.read_time("started", temp))
         return stream.get_error();
-    if (!stream.read_time("current", current_time))
+    start_time = temp;
+    if (!stream.read_time("current", temp))
         return stream.get_error();
+    current_time = temp;
     if (!stream.read_string("platform", platform))
         return stream.get_error();
     if (!stream.read_string("lib", library))

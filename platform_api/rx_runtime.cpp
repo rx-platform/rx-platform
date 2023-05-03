@@ -69,6 +69,7 @@ rxCtxGetValue_t api_get_value_func;
 rxCtxSetValue_t api_set_value_func;
 rxCtxSetRemotePending_t api_set_remote_pending_func;
 
+
 extern "C"
 {
 
@@ -164,49 +165,49 @@ rx_result register_source_runtime(const rx_node_id& id, rx_source_constructor_t 
     data.constructor = construct_func;
     data.register_func = nullptr;
     data.unregister_func = nullptr;
-    auto ret = api_reg_source_func(g_plugin, id.c_ptr(), data);
+    auto ret = api_reg_source_func(get_rx_plugin(), id.c_ptr(), data);
     return ret;
 }
 rx_result register_mapper_runtime(const rx_node_id& id, rx_mapper_constructor_t construct_func)
 {
     RX_ASSERT(api_reg_mapper_func != nullptr);
-    auto ret = api_reg_mapper_func(g_plugin, id.c_ptr(), construct_func);
+    auto ret = api_reg_mapper_func(get_rx_plugin(), id.c_ptr(), construct_func);
     return ret;
 }
 rx_result register_filter_runtime(const rx_node_id& id, rx_filter_constructor_t construct_func)
 {
     RX_ASSERT(api_reg_filter_func != nullptr);
-    auto ret = api_reg_filter_func(g_plugin, id.c_ptr(), construct_func);
+    auto ret = api_reg_filter_func(get_rx_plugin(), id.c_ptr(), construct_func);
     return ret;
 }
 rx_result register_struct_runtime(const rx_node_id& id, rx_struct_constructor_t construct_func)
 {
     RX_ASSERT(api_reg_struct_func != nullptr);
-    auto ret = api_reg_struct_func(g_plugin, id.c_ptr(), construct_func);
+    auto ret = api_reg_struct_func(get_rx_plugin(), id.c_ptr(), construct_func);
     return ret;
 }
 rx_result register_variable_runtime(const rx_node_id& id, rx_variable_constructor_t construct_func)
 {
     RX_ASSERT(api_reg_variable_func != nullptr);
-    auto ret = api_reg_variable_func(g_plugin, id.c_ptr(), construct_func);
+    auto ret = api_reg_variable_func(get_rx_plugin(), id.c_ptr(), construct_func);
     return ret;
 }
 rx_result register_method_runtime(const rx_node_id& id, rx_method_constructor_t construct_func)
 {
     RX_ASSERT(api_reg_method_func != nullptr);
-    auto ret = api_reg_method_func(g_plugin, id.c_ptr(), construct_func);
+    auto ret = api_reg_method_func(get_rx_plugin(), id.c_ptr(), construct_func);
     return ret;
 }
 rx_result register_program_runtime(const rx_node_id& id, rx_program_constructor_t construct_func)
 {
     RX_ASSERT(api_reg_program_func != nullptr);
-    auto ret = api_reg_program_func(g_plugin, id.c_ptr(), construct_func);
+    auto ret = api_reg_program_func(get_rx_plugin(), id.c_ptr(), construct_func);
     return ret;
 }
 rx_result register_display_runtime(const rx_node_id& id, rx_display_constructor_t construct_func)
 {
     RX_ASSERT(api_reg_display_func != nullptr);
-    auto ret = api_reg_display_func(g_plugin, id.c_ptr(), construct_func);
+    auto ret = api_reg_display_func(get_rx_plugin(), id.c_ptr(), construct_func);
     return ret;
 }
 rx_result register_relation_runtime(const rx_node_id& id, rx_relation_constructor_t construct_func, rx_runtime_register_func_t reg_function, rx_runtime_unregister_func_t unreg_function)
@@ -216,7 +217,7 @@ rx_result register_relation_runtime(const rx_node_id& id, rx_relation_constructo
     data.constructor = construct_func;
     data.register_func = reg_function;
     data.unregister_func = unreg_function;
-    auto ret = api_reg_relation_func(g_plugin, id.c_ptr(), data);
+    auto ret = api_reg_relation_func(get_rx_plugin(), id.c_ptr(), data);
     return ret;
 }
 
@@ -370,7 +371,7 @@ rx_node_id rx_init_context::get_node_id ()
     if (id)
         return rx_node_id(id);
     else
-        return rx_node_id::null_id;
+        return rx_node_id();
 }
 
 string_type rx_init_context::get_path ()

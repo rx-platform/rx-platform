@@ -86,6 +86,8 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configurat
 		for (const auto& alias : one)
 			ip4_aliases_[alias.first] = alias.second;
 
+	ethernet::rebuild_addresses();
+
 	alias_result = host->read_config_files("rx-serial.yml");
 	for (const auto& one : alias_result)
 		for (const auto& alias : one)

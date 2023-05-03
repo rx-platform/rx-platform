@@ -138,6 +138,8 @@ struct configuration_data_t
 	meta_configuration_data_t meta_configuration;
 	io_manager_data_t io;
 	general_data_t other;
+    std::map<string_type, string_type> user_storages;
+    std::map<string_type, string_type> system_storages;
 };
 
 enum class rx_platform_status
@@ -160,6 +162,8 @@ class rx_gate
   public:
 
       static rx_gate& instance ();
+
+      void set_host (hosting::rx_platform_host* host);
 
       void cleanup ();
 

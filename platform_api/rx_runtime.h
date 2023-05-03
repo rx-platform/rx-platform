@@ -727,9 +727,9 @@ public:
         {
             values::rx_simple_value temp_val;
             temp_val.assign_static<typeT>(std::forward<typeT>(right));
-            ctx_.set_value(handle_, std::move(right));
+            ctx_.set_value(handle_, std::move(temp_val));
         }
-        return this;
+        return *this;
     }
     operator typeT() const
     {

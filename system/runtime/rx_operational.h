@@ -83,7 +83,7 @@ class rx_tags_callback : public rx::pointers::reference_object
 
       virtual void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data) = 0;
 
-      virtual void write_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result&& result) = 0;
+      virtual void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result) = 0;
 
 
   protected:
@@ -244,6 +244,7 @@ class binded_tags
 	typedef std::map<structure::value_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > values_type;
     typedef std::map<structure::full_value_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > full_values_type;
     typedef std::map<logic_blocks::method_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > methods_type;
+    typedef std::map<structure::variable_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > >variables_type;
 	typedef std::map<runtime_handle_t, rt_value_ref> handles_map_type;
 
   public:
@@ -271,6 +272,8 @@ class binded_tags
       rx_result get_item (const string_type& path, rx_simple_value& what, runtime_start_context& ctx);
 
       rx_result get_item (const string_type& path, rx_simple_value& what, runtime_init_context& ctx);
+
+      void variable_change (structure::variable_data* whose, const rx_value& val);
 
 	  template<typename T>
 	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
@@ -302,11 +305,13 @@ class binded_tags
 
       values_type values_;
 
-      structure::const_value_data *const_values_;
+      const_values_type const_values_;
 
       full_values_type full_values_;
 
       methods_type methods_;
+
+      variables_type variables_;
 
 
       handles_map_type handles_map_;

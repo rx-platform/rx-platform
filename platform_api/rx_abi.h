@@ -53,6 +53,7 @@ extern "C" {
 	RX_PLATFORM_API void rxLockRuntimeManager();
 	RX_PLATFORM_API void rxUnlockRuntimeManager();
 
+
 	typedef void(*rxWriteLog_t)(uintptr_t plugin, int type, const char* library, const char* source, uint16_t level, const char* code, const char* message);
 	typedef rx_result_struct(*rxRegisterItem_t)(uintptr_t plugin, uint8_t item_type, const char* name, const char* path
 		, const rx_node_id_struct* id, const rx_node_id_struct* parent
@@ -73,6 +74,7 @@ extern "C" {
 
 		rxLockRuntimeManager_t prxLockRuntimeManager;
 		rxUnlockRuntimeManager_t prxUnlockRuntimeManager;
+
 
 	} platform_general_api;
 
@@ -210,6 +212,7 @@ extern "C" {
 	typedef rx_result_struct(*rxRegisterDisplayRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_display_constructor_t construct_func);
 
 
+
 	typedef void* init_ctx_ptr;
 	typedef void(*bind_callback_t)(void* target, const struct full_value_type* val);
 	typedef struct bind_callback_data_t
@@ -337,6 +340,27 @@ extern "C" {
 	} platform_api;
 
 
+	struct plugin_storage_struct_t;
+	typedef struct plugin_storage_struct_t* (*rx_storage_constructor_t)();
+	RX_PLATFORM_API rx_result_struct rxRegisterStorageType(uintptr_t plugin, const char* prefix, rx_storage_constructor_t construct_func);
+	typedef rx_result_struct(*rxRegisterStorageType_t)(uintptr_t plugin, const char* prefix, rx_storage_constructor_t construct_func);
+
+	typedef struct platform_storage_api_t
+	{
+
+		rxRegisterStorageType_t prxRegisterStorageType;
+
+	} platform_storage_api;
+
+	typedef struct platform_api2_t
+	{
+		platform_general_api general;
+		platform_runtime_api runtime;
+		platform_storage_api storage;
+
+	} platform_api2;
+
+
 	// common host stuff, timers...
 	typedef rx_result_struct(*rx_post_job_t)(void* whose, int type, plugin_job_struct* job, uint32_t period);
 	typedef runtime_handle_t(*rx_create_timer_t)(void* whose, int type, plugin_job_struct* job, uint32_t period);
@@ -358,6 +382,7 @@ extern "C" {
 	typedef void(*rx_get_code_info_t)(void* whose, const char* name, string_value_struct* info);
 
 	RX_PLUGIN_API rx_result_struct rxBindPlugin(const platform_api* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin);
+	RX_PLUGIN_API rx_result_struct rxBindPlugin2(const platform_api2* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin);
 
 	RX_PLUGIN_API void rxGetPluginInfo(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver);
 	RX_PLUGIN_API void rxGetPluginName(string_value_struct* name);
@@ -373,6 +398,9 @@ extern "C" {
 	typedef rx_result_struct(*rxInitPlugin_t)();
 	typedef rx_result_struct(*rxDeinitPlugin_t)();
 	typedef rx_result_struct(*rxBuildPlugin_t)(const char* root);
+
+	typedef rx_result_struct(*rxBindPlugin2_t)(const struct platform_api2_t* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin);
+
 
 	// Source ABI interface
 	//!!! IMPORTANT rx_value_t is fast_uint8, so we have to convert
@@ -978,6 +1006,50 @@ extern "C" {
 		uint32_t io_data;
 
 	} plugin_relation_runtime_struct;
+
+
+
+	// Storage ABI interface
+
+
+
+
+
+	typedef rx_result_struct(*rx_init_storage_t)(void* whose, const char* reference);
+	typedef rx_result_struct(*rx_deinit_storage_t)(void* whose);
+
+	typedef rx_result_struct (*construct_storage_connection_t)(void* whose);
+
+	typedef struct plugin_storage_def_struct_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_storage_t init_storage;
+		rx_deinit_storage_t deinit_storage;
+
+		construct_storage_connection_t construct_storage_connection;
+
+	} plugin_storage_def_struct;
+
+	// common storage stuff...
+	typedef rx_result_struct(*rx_post_storage_job_t)(void* whose, int type, plugin_job_struct* job, uint32_t period);
+
+	typedef struct host_storage_def_struct_t
+	{
+		rx_post_storage_job_t post_job;
+
+	} host_storage_def_struct;
+
+
+	typedef struct plugin_storage_struct_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_storage_def_struct* def;
+		host_storage_def_struct* host_def;
+
+	} plugin_storage_struct;
+
 
 
 #ifdef __cplusplus

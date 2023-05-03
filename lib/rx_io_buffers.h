@@ -130,6 +130,8 @@ class rx_io_buffer : public rx_packet_buffer
 
       void reinit ();
 
+      rx_result write_front (const void* data, size_t size);
+
 	  // disable copy semantics
 	  rx_io_buffer(const rx_io_buffer&) = delete;
 	  rx_io_buffer& operator=(const rx_io_buffer&) = delete;
@@ -160,6 +162,36 @@ class rx_io_buffer : public rx_packet_buffer
           rx_protocol_result_t result;
 
           T* ptr = (T*)rx_alloc_from_packet(this, sizeof(T), &result);
+
+          if (result == RX_PROTOCOL_OK)
+              return ptr;
+          else
+              return nullptr;
+      }
+
+      template<typename T>
+      rx_result write_to_buffer_front(const T& val)
+      {
+          static_assert(std::is_trivial<T>::value);
+
+          rx_protocol_result_t result;
+
+          result = rx_push_to_packet_front(this, &val, sizeof(val));
+
+          if (result == RX_PROTOCOL_OK)
+              return true;
+          else
+              return rx_protocol_error_message(result);
+      }
+
+      template<typename T>
+      T* alloc_from_buffer_front()
+      {
+          static_assert(std::is_trivial<T>::value);
+
+          rx_protocol_result_t result;
+
+          T* ptr = (T*)rx_alloc_from_packet_front(this, sizeof(T), &result);
 
           if (result == RX_PROTOCOL_OK)
               return ptr;

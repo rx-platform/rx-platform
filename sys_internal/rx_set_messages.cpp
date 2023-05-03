@@ -168,7 +168,7 @@ template<typename T>
 message_ptr delete_type_request::do_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
 		{
@@ -203,7 +203,7 @@ template<typename T>
 message_ptr delete_type_request::do_simple_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
 	{
@@ -238,7 +238,7 @@ message_ptr delete_type_request::do_simple_job(api::rx_context ctx, rx_protocol_
 message_ptr delete_type_request::do_relation_job(api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
 		{
@@ -274,7 +274,7 @@ message_ptr delete_type_request::do_relation_job(api::rx_context ctx, rx_protoco
 message_ptr delete_type_request::do_data_job(api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
 		{
@@ -342,7 +342,7 @@ rx_message_type_t delete_type_response::get_type_id ()
 template <class itemT>
 message_ptr protocol_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data)
 {
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_with_callback<typename itemT::smart_ptr>(ctx.object, [create, request, conn](rx_result_with<typename itemT::smart_ptr>&& result) mutable
 	{
@@ -766,7 +766,7 @@ rx_message_type_t update_type_response<itemT>::get_type_id ()
 template <class itemT>
 message_ptr protocol_simple_type_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data)
 {
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto dummy = rx_create_reference<itemT>();
 
@@ -856,7 +856,7 @@ rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& st
 
 message_ptr protocol_relation_type_creator::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data)
 {
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_with_callback<object_types::relation_type::smart_ptr>(ctx.object, [create, request, conn](rx_result_with<object_types::relation_type::smart_ptr>&& result) mutable
 	{
@@ -939,7 +939,7 @@ rx_result protocol_relation_type_creator::deserialize (base_meta_reader& stream,
 
 message_ptr protocol_data_type_creator::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, bool create, const rx_update_type_data* data)
 {
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto dummy = rx_create_reference<data_type>();
 
@@ -1112,7 +1112,7 @@ template<typename T>
 message_ptr delete_runtime_request::do_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_callback(ctx.object, [request_id, conn](rx_result&& result) mutable
 	{
@@ -1179,7 +1179,7 @@ rx_message_type_t delete_runtime_response::get_type_id ()
 template <class itemT>
 message_ptr protocol_runtime_creator<itemT>::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn, rx_request_id_t request, int create_type, const rx_update_runtime_data* data)
 {
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_with_callback<typename itemT::RTypePtr>(ctx.object, [create_type, request, conn](rx_result_with<typename itemT::RTypePtr>&& result) mutable
 	{

@@ -32,6 +32,7 @@
 #define rx_storage_h 1
 
 
+#include "platform_api/rx_abi.h"
 
 // rx_ptr
 #include "lib/rx_ptr.h"
@@ -220,10 +221,6 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual string_type get_storage_info () = 0;
 
-      virtual rx_result init_storage (const string_type& storage_reference, hosting::rx_platform_host* host);
-
-      virtual void deinit_storage ();
-
       virtual rx_result list_storage (std::vector<rx_storage_item_ptr>& items) = 0;
 
       virtual bool is_valid_storage () const = 0;
@@ -233,6 +230,8 @@ class rx_platform_storage : public rx::pointers::reference_object
       virtual rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type) = 0;
 
       virtual string_type get_storage_reference () = 0;
+
+      virtual void preprocess_meta_data (meta::meta_data& data) = 0;
 
 
       const string_type& get_base_path () const
@@ -322,6 +321,8 @@ class rx_code_storage : public rx_platform_storage
 
       string_type get_storage_reference ();
 
+      void preprocess_meta_data (meta::meta_data& data);
+
 
   protected:
 
@@ -377,7 +378,6 @@ class rx_storage_connection : public rx::pointers::reference_object
 
 class rx_platform_storage_type 
 {
-	typedef std::map<string_type, rx_platform_storage::smart_ptr> initialized_storages_type;
 
   public:
       rx_platform_storage_type();
@@ -423,6 +423,8 @@ class rx_empty_storage : public rx_platform_storage
 
       string_type get_storage_reference ();
 
+      void preprocess_meta_data (meta::meta_data& data);
+
 
   protected:
 
@@ -452,6 +454,153 @@ class rx_empty_storage_connection : public rx_storage_connection
 
 
   private:
+
+
+};
+
+
+
+
+
+
+class rx_plugin_storage : public rx_platform_storage  
+{
+    DECLARE_REFERENCE_PTR(rx_plugin_storage);
+
+  public:
+      rx_plugin_storage (plugin_storage_struct* impl);
+
+      ~rx_plugin_storage();
+
+
+      string_type get_storage_info ();
+
+      rx_result list_storage (std::vector<rx_storage_item_ptr>& items);
+
+      bool is_valid_storage () const;
+
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data, rx_item_type type);
+
+      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type);
+
+      string_type get_storage_reference ();
+
+      rx_result init_storage (const string_type& name, const string_type& ref);
+
+      void preprocess_meta_data (meta::meta_data& data);
+
+
+  protected:
+
+  private:
+
+
+      plugin_storage_struct* impl_;
+
+
+};
+
+
+
+
+
+
+class rx_plugin_storage_connection : public rx_storage_connection  
+{
+
+  public:
+      rx_plugin_storage_connection (rx_storage_constructor_t construct_func);
+
+
+      string_type get_storage_reference () const;
+
+      string_type get_storage_info () const;
+
+      rx_result init_connection (const string_type& storage_reference, hosting::rx_platform_host* host);
+
+
+  protected:
+
+      rx_result_with<rx_storage_ptr> get_and_init_storage (const string_type& name, hosting::rx_platform_host* host);
+
+
+  private:
+
+
+      rx_storage_constructor_t constructor_;
+
+      string_type reference_;
+
+
+};
+
+
+
+
+
+
+class rx_plugin_storage_item : public rx_storage_item  
+{
+
+  public:
+      rx_plugin_storage_item();
+
+
+      base_meta_reader& read_stream ();
+
+      base_meta_writer& write_stream ();
+
+      rx_result open_for_read ();
+
+      rx_result open_for_write ();
+
+      rx_result close_read ();
+
+      rx_result commit_write ();
+
+      const string_type& get_item_reference () const;
+
+      rx_result delete_item ();
+
+      bool preprocess_meta_data (meta::meta_data& data);
+
+      string_type get_item_path () const;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_plugin_storage_type : public rx_platform_storage_type  
+{
+
+  public:
+      rx_plugin_storage_type (const string_type& prefix, rx_storage_constructor_t construct_func);
+
+
+      string_type get_storage_info ();
+
+      rx_storage_connection::smart_ptr construct_storage_connection ();
+
+      string_type get_reference_prefix () const;
+
+
+  protected:
+
+  private:
+
+
+      string_type prefix_;
+
+      rx_storage_constructor_t constructor_;
 
 
 };

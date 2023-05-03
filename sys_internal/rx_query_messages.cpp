@@ -319,7 +319,7 @@ template<typename T>
 message_ptr get_type_request::do_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 
 	rx_result result = api::meta::rx_get_type<T>(reference
@@ -356,7 +356,7 @@ template<typename T>
 message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	rx_result result = api::meta::rx_get_simple_type<T>(reference
 		, rx_result_with_callback<typename T::smart_ptr>(ctx.object,
@@ -392,7 +392,7 @@ message_ptr get_type_request::do_simple_job(api::rx_context ctx, rx_protocol_con
 message_ptr get_type_request::do_relation_job(api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_with_callback<typename object_types::relation_type::smart_ptr>(ctx.object, [request_id, conn](rx_result_with<typename object_types::relation_type::smart_ptr>&& result) mutable
 	{
@@ -429,7 +429,7 @@ message_ptr get_type_request::do_relation_job(api::rx_context ctx, rx_protocol_c
 message_ptr get_type_request::do_data_job(api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	auto callback = rx_result_with_callback<typename basic_types::data_type::smart_ptr>(ctx.object, [request_id, conn](rx_result_with<typename basic_types::data_type::smart_ptr>&& result) mutable
 		{
@@ -676,7 +676,7 @@ template<typename T>
 message_ptr get_runtime_request::do_job(api::rx_context ctx, rx_protocol_connection_ptr conn, tl::type2type<T>)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	rx_result result = api::meta::rx_get_runtime<T>(reference
 		, rx_result_with_callback<typename T::RTypePtr>(ctx.object,
@@ -1165,7 +1165,7 @@ rx_result query_request_message::deserialize (base_meta_reader& stream)
 message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
 {
 	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 
 	rx_result_with_callback<api::query_result> callback(ctx.object,
 		[request_id, conn](rx_result_with<api::query_result>&& result) mutable

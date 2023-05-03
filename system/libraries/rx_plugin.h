@@ -133,6 +133,8 @@ class rx_dynamic_plugin : public rx_plugin_base
 
       rx_result bind_plugin ();
 
+      rx_result load_plugin ();
+
       rx_plugin_info get_plugin_info () const;
 
       rx_result init_plugin ();
@@ -158,6 +160,8 @@ class rx_dynamic_plugin : public rx_plugin_base
       rx_module_handle_t module_;
 
       rxBindPlugin_t prxBindPlugin_;
+
+      rxBindPlugin2_t prxBindPlugin2_;
 
       rxGetPluginInfo_t prxGetPluginInfo_;
 

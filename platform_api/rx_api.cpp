@@ -45,6 +45,7 @@ extern rxUnlockRuntimeManager_t api_unlock_runtime_manager;
 
 extern rxWriteLog_t api_write_log_func;
 extern rxRegisterItem_t api_reg_item_binary_func;
+extern rxRegisterRuntimeItem_t api_reg_runtime_binary_func;
 extern string_type api_plugin_root;
 
 extern rxRegisterSourceRuntime_t api_reg_source_func;
@@ -86,12 +87,35 @@ extern rxCtxSetValue_t api_set_value_func;
 extern rxCtxSetRemotePending_t api_set_remote_pending_func;
 
 
-const platform_api* g_api;
+extern rxRegisterStorageType_t api_reg_storage_func;
 
-uintptr_t g_plugin = 0;
+
+const platform_api2* g_api;
+
+
 
 
 namespace rx_platform_api {
+
+namespace
+{
+
+static uintptr_t g_plugin = 0;
+}
+
+intptr_t get_rx_plugin()
+{
+	return g_plugin;
+}
+
+
+intptr_t set_rx_plugin(intptr_t what)
+{
+	uintptr_t prev = g_plugin;
+	g_plugin = what;
+	RX_ASSERT(prev == 0);
+	return prev;
+}
 
 namespace
 {
@@ -102,7 +126,7 @@ uint32_t _g_stream_version_ = RX_CURRENT_SERIALIZE_VERSION;
 }
 
 
-rx_result_struct rx_bind_plugin(const platform_api* api, uint32_t host_stream_version, uint32_t* plugin_stream_version)
+rx_result_struct rx_bind_plugin(const platform_api2* api, uint32_t host_stream_version, uint32_t* plugin_stream_version)
 {
 	_g_stream_version_ = std::min(host_stream_version, _g_stream_version_);
 	*plugin_stream_version = _g_stream_version_;
@@ -127,6 +151,7 @@ rx_result_struct rx_bind_plugin(const platform_api* api, uint32_t host_stream_ve
 
 	api_write_log_func = api->general.pWriteLog;
 	api_reg_item_binary_func = api->general.pRegisterItem;
+	api_reg_runtime_binary_func = api->general.prxRegisterRuntimeItem;
 
 	api_lock_runtime_manager = api->general.prxLockRuntimeManager;
 	api_unlock_runtime_manager = api->general.prxUnlockRuntimeManager;
@@ -168,6 +193,8 @@ rx_result_struct rx_bind_plugin(const platform_api* api, uint32_t host_stream_ve
 	api_get_value_func = api->runtime.prxCtxGetValue;
 	api_set_value_func = api->runtime.prxCtxSetValue;
 	api_set_remote_pending_func = api->runtime.prxCtxSetRemotePending;
+	
+	api_reg_storage_func = api->storage.prxRegisterStorageType;
 
 	return rx_result(true).move();
 }

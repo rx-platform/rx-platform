@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Molecule"
 #define RX_SERVER_MAJOR_VERSION 1
 #define RX_SERVER_MINOR_VERSION 10
-#define RX_SERVER_BUILD_NUMBER 1
+#define RX_SERVER_BUILD_NUMBER 3
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -45,4 +45,5 @@
 // version 1.9.0 added ethernet port
 // version 1.10.0 CHANGED ABI!!!! (without versioning!!!)
 // version 1.10.1 added signal level support
+// version 1.10.2 added some discovery features, ARM32 dynamic linking
 

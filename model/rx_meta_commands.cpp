@@ -2072,6 +2072,7 @@ bool carray_command::do_console_command (std::istream& in, std::ostream& out, st
 				if (data)
 				{
 					std::istringstream in(line);
+					string_type json = data.value()->get_definition_as_json();
 					byte_string buff = data.value()->get_definition_as_bytes();
 					if (buff.size() < 2)
 					{

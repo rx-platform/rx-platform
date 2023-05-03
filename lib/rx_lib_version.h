@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 2
 #define RX_LIB_MINOR_VERSION 7
-#define RX_LIB_BUILD_NUMBER 2
+#define RX_LIB_BUILD_NUMBER 5
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -59,5 +59,8 @@
 // version 2.7.0 added member_check.h
 // version 2.7.1 fill_code_info is const
 // version 2.7.2 rx_value has increment_signal_level
+// version 2.7.3 support for ARM dynamic linking
+// version 2.7.4 added ASN writer
+// version 2.7.5 added get_origin to rx_value
 
 

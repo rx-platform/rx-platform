@@ -44,6 +44,24 @@ namespace rx_internal {
 
 namespace discovery {
 
+// Class rx_internal::discovery::peer_item 
+
+peer_item::peer_item (rx_item_type t, meta::meta_data m, peer_connection_ptr conn)
+      : type(t),
+        meta(std::move(m)),
+        connection(std::move(conn))
+{
+    DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer item "s + meta.get_full_path() + " created.");
+}
+
+
+peer_item::~peer_item()
+{
+	DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer item "s + meta.get_full_path() + " destroyed.");
+}
+
+
+
 // Class rx_internal::discovery::peer_item_stub 
 
 peer_item_stub::~peer_item_stub()
@@ -63,24 +81,6 @@ peer_type_item<typeT>::peer_type_item()
 template <class typeT>
 peer_type_item<typeT>::~peer_type_item()
 {
-}
-
-
-
-// Class rx_internal::discovery::peer_item 
-
-peer_item::peer_item (rx_item_type t, meta::meta_data m, peer_connection_ptr conn)
-      : type(t),
-        meta(std::move(m)),
-        connection(std::move(conn))
-{
-    DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer item "s + meta.get_full_path() + " created.");
-}
-
-
-peer_item::~peer_item()
-{
-	DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer item "s + meta.get_full_path() + " destroyed.");
 }
 
 

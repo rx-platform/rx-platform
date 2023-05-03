@@ -36,7 +36,10 @@
 
 #include "rx_opcua_binary_ser.h"
 #include "common/rx_common.h"
+#include "rx_opcua_transport.h"
 
+
+const uint32_t opcid_Bad_TcpEndpointUrlInvalid = 0x80830000;
 
 #pragma pack(push)
 #pragma pack(1)
@@ -209,7 +212,7 @@ rx_protocol_result_t parse_asymetric_security_header(struct rx_protocol_stack_en
 const uint8_t open_channel_request_node_id[] = { 0x01, 0x00, 0xbe, 0x01 };
 const uint8_t open_channel_response_node_id[] = { 0x01, 0x00, 0xc1, 0x01 };
 
-rx_protocol_result_t opcua_parse_open_message(struct rx_protocol_stack_endpoint* reference, opcua_sec_none_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id)
+rx_protocol_result_t opcua_parse_open_message(struct rx_protocol_stack_endpoint* reference, opcua_sec_none_protocol_type* transport, const opcua_transport_header* header, rx_const_packet_buffer* buffer, rx_packet_id_type id, send_protocol_packet* to_send, rx_packet_buffer* result_buffer)
 {
 	opcua_sequence_header* sequence_header;
 	const struct opcua_request_open_channel_def* prequest = NULL;
@@ -252,13 +255,12 @@ rx_protocol_result_t opcua_parse_open_message(struct rx_protocol_stack_endpoint*
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
-	rx_packet_buffer result_buffer;
-	result = reference->allocate_packet(reference, &result_buffer);
+	result = reference->allocate_packet(reference, result_buffer);
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
 
-	opcua_transport_header* header_ptr = (opcua_transport_header*)rx_alloc_from_packet(&result_buffer
+	opcua_transport_header* header_ptr = (opcua_transport_header*)rx_alloc_from_packet(result_buffer
 		, sizeof(opcua_transport_header), &result);
 	if (result != RX_PROTOCOL_OK)
 		return result;
@@ -279,32 +281,32 @@ rx_protocol_result_t opcua_parse_open_message(struct rx_protocol_stack_endpoint*
 		}
 	} while (1);
 
-	result = rx_push_to_packet(&result_buffer, &rand_id, sizeof(rand_id));
+	result = rx_push_to_packet(result_buffer, &rand_id, sizeof(rand_id));
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
-	result = opcua_write_string(&result_buffer, "http://opcfoundation.org/UA/SecurityPolicy#None");
+	result = opcua_write_string(result_buffer, "http://opcfoundation.org/UA/SecurityPolicy#None");
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
 	int32_t null_len = -1;
 
-	result = rx_push_to_packet(&result_buffer, &null_len, sizeof(null_len));
+	result = rx_push_to_packet(result_buffer, &null_len, sizeof(null_len));
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
-	result = rx_push_to_packet(&result_buffer, &null_len, sizeof(null_len));
+	result = rx_push_to_packet(result_buffer, &null_len, sizeof(null_len));
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
-	sequence_header = (opcua_sequence_header*)rx_alloc_from_packet(&result_buffer
+	sequence_header = (opcua_sequence_header*)rx_alloc_from_packet(result_buffer
 		, sizeof(opcua_sequence_header), &result);
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
 
 
-	result = rx_push_to_packet(&result_buffer, &open_channel_response_node_id, sizeof(open_channel_response_node_id));
+	result = rx_push_to_packet(result_buffer, &open_channel_response_node_id, sizeof(open_channel_response_node_id));
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
@@ -324,17 +326,17 @@ rx_protocol_result_t opcua_parse_open_message(struct rx_protocol_stack_endpoint*
 	transport->channel_id = rand_id;
 	transport->token_id = rand_id;
 
-	result = rx_push_to_packet(&result_buffer, &response_data, sizeof(response_data));
+	result = rx_push_to_packet(result_buffer, &response_data, sizeof(response_data));
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
 
-	result = rx_push_to_packet(&result_buffer, nonce, sizeof(nonce));
+	result = rx_push_to_packet(result_buffer, nonce, sizeof(nonce));
 	if (result != RX_PROTOCOL_OK)
 		return result;
 
 
-	header_ptr->message_size = (uint32_t)rx_get_packet_usable_data(&result_buffer);
+	header_ptr->message_size = (uint32_t)rx_get_packet_usable_data(result_buffer);
 
 
 	sequence_header->request_id = transport->current_request_id;
@@ -342,9 +344,8 @@ rx_protocol_result_t opcua_parse_open_message(struct rx_protocol_stack_endpoint*
 	// TODO - handle rollover
 	transport->current_sequence_id++;
 
-	send_protocol_packet to_send = rx_create_send_packet(sequence_header->request_id, &result_buffer, 0, 0);
+	*to_send = rx_create_send_packet(sequence_header->request_id, result_buffer, 0, 0);
 
-	result = rx_move_packet_down(reference, to_send);
 
 	return result;
 }
@@ -834,13 +835,62 @@ rx_protocol_result_t opcua_bin_sec_none_bytes_received(struct rx_protocol_stack_
 		case opcua_open_msg_type:
 			if (transport->current_state == opcua_transport_opening)
 			{
-				result = opcua_parse_open_message(reference, transport, header, packet.buffer, packet.id);
+				rx_packet_buffer result_buffer;
+				result = reference->allocate_packet(reference, &result_buffer);
+				if (result != RX_PROTOCOL_OK)
+					return result;
+
+				send_protocol_packet to_send;
+				memzero(&to_send, sizeof(to_send));
+				result = opcua_parse_open_message(reference, transport, header, packet.buffer, packet.id, &to_send, &result_buffer);
 				if (result == RX_PROTOCOL_OK)
 				{
-					transport->current_state = opcua_transport_active;
 					if (transport->transport_connected)
 					{
 						result = transport->transport_connected(reference, &transport->ep_address, NULL);
+						if (result == RX_PROTOCOL_OK)
+						{
+							transport->current_state = opcua_transport_active;
+							result = rx_move_packet_down(reference, to_send);
+
+							reference->release_packet(reference, &result_buffer);
+
+							if (result != RX_PROTOCOL_OK)
+								return result;
+						}
+						else if (result == RX_PROTOCOL_INVALID_ADDR)
+						{
+							transport->current_state = opcua_transport_opening;
+
+							rx_reinit_packet_buffer(&result_buffer);
+
+							opcua_transport_header* header_ptr = (opcua_transport_header*)rx_alloc_from_packet(&result_buffer
+								, sizeof(opcua_transport_header), &result);
+							if (result != RX_PROTOCOL_OK)
+								return result;
+							header_ptr->is_final = 'F';
+							header_ptr->message_type[0] = 'E';
+							header_ptr->message_type[1] = 'R';
+							header_ptr->message_type[2] = 'R';
+							header_ptr->message_size = 0;
+
+							opcua_transport_error* transp_ptr = (opcua_transport_error*)rx_alloc_from_packet(&result_buffer
+								, sizeof(opcua_transport_error), &result);
+
+							transp_ptr->error_code = opcid_Bad_TcpEndpointUrlInvalid;
+							transp_ptr->reason_size = 0;
+
+							header_ptr->message_size = (uint32_t)rx_get_packet_usable_data(&result_buffer);
+
+							to_send = rx_create_send_packet(0, &result_buffer, 0, 0);
+
+							result = rx_move_packet_down(reference, to_send);
+
+							reference->release_packet(reference, &result_buffer);
+
+							if (result != RX_PROTOCOL_OK)
+								return result;
+						}
 					}
 					else
 						result = RX_PROTOCOL_STACK_STRUCTURE_ERROR;

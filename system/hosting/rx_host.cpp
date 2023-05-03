@@ -196,6 +196,8 @@ bool get_bool_value(const string_type val)
     // for now this is allowed
     return false;
 }
+
+
 void read_base_config_options(const std::map<string_type, string_type>& options, rx_platform::configuration_data_t& config)
 {
 	for (auto& row : options)
@@ -228,12 +230,16 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.rx_port = atoi(row.second.c_str());
 		else if (row.first == "other.logs" && config.management.logs_directory.empty())
 			config.management.logs_directory = row.second;
-		else if (row.first == "processor.real-time" && !config.processor.real_time && get_bool_value(row.second))
+		else if (row.first == "processor.realtime" && !config.processor.real_time && get_bool_value(row.second))
 			config.processor.real_time = true;
-		else if (row.first == "processor.no-hd-timer" && !config.processor.no_hd_timer && get_bool_value(row.second))
+		else if (row.first == "processor.nohdtimer" && !config.processor.no_hd_timer && get_bool_value(row.second))
 			config.processor.no_hd_timer = true;
 		else if (row.first == "instance.code" && !config.meta_configuration.build_system_from_code && get_bool_value(row.second))
 			config.meta_configuration.build_system_from_code = true;
+		else if (row.first.size() > 8 && row.first.substr(0, 6) == "world.")
+			config.user_storages.emplace(row);
+		else if (row.first.size() > 6 && row.first.substr(0, 4) == "sys.")
+			config.system_storages.emplace(row);
 	}
 }
 }
@@ -312,8 +318,6 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 		if (config_path.empty() || !rx_file_exsist(config_path.c_str()))
 			continue;
 
-	//	HOST_LOG_TRACE("rx_host", 500, "Reading configuration file "s + config_path);
-		std::cout << "Reading configuration file "s + config_path + "\r\n";
 
 		string_type settings_buff;
 		rx_source_file file;
@@ -511,6 +515,41 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 
 	HOST_LOG_INFO("Base", 999, "Initializing storages");
 
+	std::vector<configured_storage_t> storages_to_create;
+
+	for (const auto& strg : config.user_storages)
+	{
+		auto idx = strg.second.find('@');
+		configured_storage_t arg;
+		arg.name = (idx != string_type::npos) ? strg.second.substr(0, idx) : "";
+		arg.reference = (idx != string_type::npos) ? strg.second.substr(idx + 1) : strg.second;
+		arg.storage_id = strg.first;
+		storages_to_create.push_back(std::move(arg));
+	}
+	for (const auto& strg : config.system_storages)
+	{
+		auto idx = strg.second.find('@');
+		configured_storage_t arg;
+		arg.name = (idx != string_type::npos) ? strg.second.substr(0, idx) : "";
+		arg.reference = (idx != string_type::npos) ? strg.second.substr(idx + 1) : strg.second;
+		arg.storage_id = strg.first;
+		storages_to_create.push_back(std::move(arg));
+	}
+
+	auto fss = read_config_files("rx-fss.yml");
+	for (const auto& one : fss)
+	{
+		for (const auto& strg : one)
+		{
+			auto idx = strg.second.find('@');
+			configured_storage_t arg;
+			arg.name = (idx != string_type::npos) ? strg.second.substr(0, idx) : "";
+			arg.reference = (idx != string_type::npos) ? strg.second.substr(idx + 1) : strg.second;
+			arg.storage_id = strg.first;
+			storages_to_create.push_back(std::move(arg));
+		}
+	}
+
 	if (config.storage.system_storage_reference.empty())
 	{
 		result = "No valid system storage reference!";
@@ -547,6 +586,26 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 						result.register_error("Unable to initialize plugin storage for "s + one->get_plugin_name() + ".");
 						result.register_errors(add_result.errors());
 						break;
+					}
+				}
+				if (add_result)
+				{
+					for (auto& configured : storages_to_create)
+					{
+
+						result = init_storage(configured.storage_id, configured.reference);
+						if (!result)
+							break;
+						add_result = storages_.registered_connections[configured.storage_id]->get_storage(configured.name, this);
+						if (!add_result)
+						{
+							result.register_error("Unable to initialize configured storage "s + configured.storage_id + ".");
+							result.register_errors(add_result.errors());
+							break;
+						}
+						configured_storage_t to_add(configured);
+						to_add.connection = add_result.value();
+						storages_.configured_storages.emplace_back(std::move(to_add));
 					}
 				}
 			}
@@ -622,6 +681,7 @@ rx_result rx_platform_host::init_storage (const string_type& name, const string_
 
 rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_base*>& plugins)
 {
+	rx_gate::instance().set_host(this);
 	static std::vector<std::unique_ptr<library::rx_dynamic_plugin> > dynamic_plugins;
 	startup_log_ = rx_create_reference<startup_log_subscriber>();
 	rx_platform::log::log_object::instance().register_subscriber(startup_log_);
@@ -632,7 +692,7 @@ rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_bas
 	{
 		HOST_LOG_INFO("Base", 999, "Trying to load library "s + one + "...");
 		auto one_plugin = std::make_unique< library::rx_dynamic_plugin>(one);
-		auto result = one_plugin->bind_plugin();
+		auto result = one_plugin->load_plugin();
 		if (result)
 		{
 			HOST_LOG_INFO("Base", 999, "Loaded library "s + one);
@@ -864,6 +924,44 @@ std::vector<std::map<string_type, string_type> > rx_platform_host::read_config_f
 
 void rx_platform_host::fill_plugin_libs (string_array& paths)
 {
+}
+
+std::vector<std::pair<string_type, rx_storage_ptr> > rx_platform_host::get_configured_storages ()
+{
+	std::vector<std::pair<string_type, rx_storage_ptr> > ret;
+	for (auto one : storages_.configured_storages)
+	{
+		if (one.storage_id.find("world.") == 0)
+		{
+			string_type path(one.storage_id);
+			std::replace_if(path.begin(), path.end(), [](char ch) ->bool { return ch == '.'; }, '/');
+			string_type path_full = "/" + std::move(path);
+			ret.emplace_back(path_full, one.connection);
+		}
+		else if (one.storage_id.find("sys.") == 0)
+		{
+			string_type path(one.storage_id);
+			std::replace_if(path.begin(), path.end(), [](char ch) ->bool { return ch == '.'; }, '/');
+			string_type path_full = "/" + std::move(path);
+			ret.emplace_back(path_full, one.connection);
+		}
+		else
+		{
+			;// jbg do nothing
+		}
+	}
+	return ret;
+}
+
+rx_result rx_platform_host::register_storage_type (const string_type& prefix, storage_base::rx_platform_storage_type* what)
+{
+	auto it = storages_.storage_types.find(prefix);
+	if (it != storages_.storage_types.end())
+		return RX_INVALID_ARGUMENT;
+
+	storages_.storage_types.emplace(prefix, what);
+	
+	return true;
 }
 
 

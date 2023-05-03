@@ -64,6 +64,8 @@ void http_handlers_repository::register_standard_handlers ()
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<http_json_object_reader>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<http_object_writer>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<http_display_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 }

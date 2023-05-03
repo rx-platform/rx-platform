@@ -472,6 +472,10 @@
 #define RX_ASCII_FILTER_TYPE_NAME "ASCIIFilter"
 #define RX_ASCII_FILTER_TYPE_ID 0xc0000a2
 
+
+#define RX_CALC_FILTER_TYPE_NAME "CalcFilter"
+#define RX_CALC_FILTER_TYPE_ID 0xc0000b2
+
 #define RX_SIMULATION_SOURCE_TYPE_NAME "SimulationSource"
 #define RX_SIMULATION_SOURCE_TYPE_ID 0xc000040
 #define RX_RAMP_SIMULATION_SOURCE_TYPE_NAME "RampSource"
@@ -561,6 +565,10 @@
 #define RX_SIMPLE_HTTP_DISPLAY_TYPE_ID 0xc00007a
 #define RX_SIMPLE_HTTP_DISPLAY_TYPE_NAME "SimpleHttpDisplay"
 
+
+#define RX_MAIN_HTTP_DISPLAY_TYPE_ID 0xc0000b3
+#define RX_MAIN_HTTP_DISPLAY_TYPE_NAME "MainHttpDisplay"
+
 // python stuff
 #define RX_UPYTHON_METHOD_TYPE_NAME "uPtyMethod"
 #define RX_UPYTHON_METHOD_TYPE_ID 0xc0000a9
@@ -575,7 +583,7 @@
 #define RX_PEER_STATUS_TYPE_NAME "PeerStatus"
 #define RX_PEER_STATUS_TYPE_ID 0xc0000b0
 
-// last is 0xc0000b1!!!! 
+// last is 0xc0000b3!!!! 
 
 // cpp classes stuff
 #define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"

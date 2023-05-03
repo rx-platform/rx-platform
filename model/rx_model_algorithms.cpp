@@ -624,6 +624,7 @@ rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_ru
 	string_type path = instance_data.meta_info.path;
 	string_type runtime_name = instance_data.meta_info.name;
 
+
 	rx_directory_ptr dir = rx_gate::instance().get_directory(path);
 
 	if (!dir)
@@ -655,7 +656,7 @@ rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_ru
 			auto remove_result = dir->delete_item(runtime_name);
 		});
 
-	if (!temp || rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	if (!temp && rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
 
 		// we have to do save, we are running

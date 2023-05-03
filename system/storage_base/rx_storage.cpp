@@ -43,6 +43,24 @@
 #define RX_CODE_STORAGE_NAME "<code>"
 
 
+extern "C"
+{
+    rx_result_struct c_post_storage_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
+    {
+        return rx_result(RX_NOT_IMPLEMENTED).move();
+    }
+
+    host_storage_def_struct _g_storage_def_
+    {
+        {
+            c_post_storage_job
+        }
+    };
+
+
+}
+
+
 namespace rx_platform {
 
 namespace storage_base {
@@ -58,16 +76,6 @@ rx_platform_storage::~rx_platform_storage()
 {
 }
 
-
-
-rx_result rx_platform_storage::init_storage (const string_type& storage_reference, hosting::rx_platform_host* host)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-void rx_platform_storage::deinit_storage ()
-{
-}
 
 
 // Class rx_platform::storage_base::rx_storage_item 
@@ -206,6 +214,10 @@ string_type rx_code_storage::get_storage_reference ()
     return RX_CODE_STORAGE_NAME;
 }
 
+void rx_code_storage::preprocess_meta_data (meta::meta_data& data)
+{
+}
+
 rx_result split_storage_reference(const string_type full_ref, string_type& type, string_type& reference)
 {
     if (full_ref.empty())
@@ -257,10 +269,7 @@ rx_result rx_storage_connection::init_connection (const string_type& storage_ref
 
 rx_result rx_storage_connection::deinit_connection ()
 {
-    for (auto one : initialized_storages_)
-    {
-        one.second->deinit_storage();
-    }
+
     initialized_storages_.clear();
     return true;
 }
@@ -315,6 +324,10 @@ string_type rx_empty_storage::get_storage_reference ()
     return RX_NULL_ITEM_NAME;
 }
 
+void rx_empty_storage::preprocess_meta_data (meta::meta_data& data)
+{
+}
+
 
 // Class rx_platform::storage_base::rx_empty_storage_connection 
 
@@ -333,6 +346,198 @@ rx_result_with<rx_storage_ptr> rx_empty_storage_connection::get_and_init_storage
 string_type rx_empty_storage_connection::get_storage_info () const
 {
     return RX_NULL_ITEM_NAME " storage";
+}
+
+
+// Class rx_platform::storage_base::rx_plugin_storage 
+
+rx_plugin_storage::rx_plugin_storage (plugin_storage_struct* impl)
+      : impl_(impl)
+{
+    impl_->host = this;
+    impl_->host_def = &_g_storage_def_;
+}
+
+
+rx_plugin_storage::~rx_plugin_storage()
+{
+}
+
+
+
+string_type rx_plugin_storage::get_storage_info ()
+{
+    return "E jebi GA!!!";
+}
+
+rx_result rx_plugin_storage::list_storage (std::vector<rx_storage_item_ptr>& items)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+bool rx_plugin_storage::is_valid_storage () const
+{
+    return true;
+}
+
+rx_result_with<rx_storage_item_ptr> rx_plugin_storage::get_item_storage (const meta::meta_data& data, rx_item_type type)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result_with<rx_storage_item_ptr> rx_plugin_storage::get_runtime_storage (const meta::meta_data& data, rx_item_type type)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+string_type rx_plugin_storage::get_storage_reference ()
+{
+    return string_type();
+}
+
+rx_result rx_plugin_storage::init_storage (const string_type& name, const string_type& ref)
+{
+    return impl_->def->init_storage(impl_->anchor.target, ref.c_str());
+}
+
+void rx_plugin_storage::preprocess_meta_data (meta::meta_data& data)
+{
+}
+
+
+// Class rx_platform::storage_base::rx_plugin_storage_connection 
+
+rx_plugin_storage_connection::rx_plugin_storage_connection (rx_storage_constructor_t construct_func)
+      : constructor_(construct_func)
+{
+}
+
+
+
+string_type rx_plugin_storage_connection::get_storage_reference () const
+{
+    return "Borisa!!!";
+}
+
+rx_result_with<rx_storage_ptr> rx_plugin_storage_connection::get_and_init_storage (const string_type& name, hosting::rx_platform_host* host)
+{
+    auto ptr = constructor_();
+    rx_plugin_storage::smart_ptr storage = rx_create_reference<rx_plugin_storage>(ptr);
+    auto result = storage->init_storage(name, reference_);
+    if (result)
+    {
+        return rx_storage_ptr(storage);
+    }
+    else
+    {
+        return result.errors();
+    }
+}
+
+string_type rx_plugin_storage_connection::get_storage_info () const
+{
+    return RX_NULL_ITEM_NAME " storage";
+}
+
+rx_result rx_plugin_storage_connection::init_connection (const string_type& storage_reference, hosting::rx_platform_host* host)
+{
+    reference_ = storage_reference;
+    return true;
+}
+
+
+// Class rx_platform::storage_base::rx_plugin_storage_item 
+
+rx_plugin_storage_item::rx_plugin_storage_item()
+    : rx_storage_item(rx_storage_item_type::none)
+{
+}
+
+
+
+base_meta_reader& rx_plugin_storage_item::read_stream ()
+{
+    RX_ASSERT(false);
+    // this should not happen but be safe of stupidity
+    static memory::std_buffer dummy_buffer;
+    static serialization::std_buffer_reader dummy(dummy_buffer);
+    return dummy;
+}
+
+base_meta_writer& rx_plugin_storage_item::write_stream ()
+{
+    RX_ASSERT(false);
+    // this should not happen but be safe of stupidity
+    static memory::std_buffer dummy_buffer;
+    static serialization::std_buffer_writer dummy(dummy_buffer);
+    return dummy;
+}
+
+rx_result rx_plugin_storage_item::open_for_read ()
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result rx_plugin_storage_item::open_for_write ()
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result rx_plugin_storage_item::close_read ()
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result rx_plugin_storage_item::commit_write ()
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+const string_type& rx_plugin_storage_item::get_item_reference () const
+{
+    static string_type ret = "Borisa!!!";
+    return ret;
+}
+
+rx_result rx_plugin_storage_item::delete_item ()
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+bool rx_plugin_storage_item::preprocess_meta_data (meta::meta_data& data)
+{
+    return false;
+}
+
+string_type rx_plugin_storage_item::get_item_path () const
+{
+    return "Borisa!!!";
+}
+
+
+// Class rx_platform::storage_base::rx_plugin_storage_type 
+
+rx_plugin_storage_type::rx_plugin_storage_type (const string_type& prefix, rx_storage_constructor_t construct_func)
+      : prefix_(prefix),
+        constructor_(construct_func)
+{
+}
+
+
+
+string_type rx_plugin_storage_type::get_storage_info ()
+{
+    return "Neki info";
+}
+
+rx_storage_connection::smart_ptr rx_plugin_storage_type::construct_storage_connection ()
+{
+    return rx_create_reference<rx_plugin_storage_connection>(constructor_);
+}
+
+string_type rx_plugin_storage_type::get_reference_prefix () const
+{
+    return "tst";
 }
 
 

@@ -282,7 +282,7 @@ public:
     {
         rx_destroy_value(&data_.value);
         assign_value(data_.value, std::forward<typeT>(val));
-        data_.time = ts;
+        data_.time = ts.c_data();
     }
     template<typename typeT>
     typeT extract_static(const typeT& def) const
@@ -414,6 +414,8 @@ public:
 
       uint32_t get_signal_level () const;
 
+      uint32_t get_origin () const;
+
 
   protected:
 
@@ -440,7 +442,7 @@ public:
     {
         rx_destroy_value(&data_.value);
         assign_value(data_.value, std::forward<typeT>(val));
-        data_.time = ts;
+        data_.time = ts.c_data();
     }
     template<typename typeT>
     typeT extract_static(const typeT& def) const

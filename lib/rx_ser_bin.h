@@ -287,7 +287,7 @@ bool binary_reader<allocT,swap_bytes>::read_id (const char* name, rx_node_id& id
             if(!buffer_.read_data(val))
                 return false;
             if (val == 0u)
-                id = rx_node_id::null_id;
+                id = rx_node_id();
             else
                 id = rx_node_id(val);
         }

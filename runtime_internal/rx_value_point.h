@@ -90,7 +90,7 @@ class value_point_impl
   public:
       value_point_impl();
 
-      ~value_point_impl();
+      virtual ~value_point_impl();
 
 
       void connect (const string_type& path, uint32_t rate, data_controler* controler = nullptr, char* buffer = nullptr);
@@ -100,6 +100,8 @@ class value_point_impl
       void write (rx_simple_value val, runtime_transaction_id_t id, data_controler* controler = nullptr);
 
       void execute (data::runtime_values_data data, runtime_transaction_id_t id, data_controler* controler = nullptr);
+
+      rx_value calculate_local_var (const rx_value& val, char* token_buff);
 
       void calculate (char* token_buff);
 
@@ -120,6 +122,8 @@ class value_point_impl
   protected:
 
   private:
+
+      rx_value internal_calculate (char* token_buff);
 
       virtual void value_changed (const rx_value& val) = 0;
 
@@ -157,9 +161,9 @@ class value_point_impl
 
       void put_back (char*& prog, char*& token, char& tok_type, char*& expres);
 
-      void unary (char o, rx_value& r, char*& prog, char*& token, char& tok_type, char*& expres);
+      void unary (uint8_t o, rx_value& r, char*& prog, char*& token, char& tok_type, char*& expres);
 
-      void arith (char o, rx_value& r, rx_value& h, char*& prog, char*& token, char& tok_type, char*& expres);
+      void arith (uint8_t o, rx_value& r, rx_value& h, char*& prog, char*& token, char& tok_type, char*& expres);
 
       void get_expression (rx_value& result, char* tok);
 

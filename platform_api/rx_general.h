@@ -119,6 +119,21 @@ rx_result register_item_binary_with_code(const string_type& name, const string_t
 rx_result register_item_binary(rx_item_type type, const string_type& name, const string_type& path
     , const rx_node_id& id, const rx_node_id& parent, const uint8_t* data, size_t count, uint32_t stream_version = 0);
 
+
+rx_result register_runtime_binary(rx_item_type type, const string_type& name, const string_type& path
+    , const rx_node_id& id, const rx_node_id& parent
+    , uint32_t version, rx_time modified, const uint8_t* data, size_t count, uint32_t stream_version = 0);
+
+template<class T>
+rx_result register_runtime_binary_with_code(const string_type& name, const string_type& path, const rx_node_id& id, const rx_node_id& parent, const uint8_t* data, size_t count, uint32_t stream_version = 0)
+{
+    uint32_t version = (((uint32_t)(T::code_version()[0])) << 16) | (uint16_t)(T::code_version()[1]);
+    return register_runtime_binary(T::runtime_type_id, name, path, id, parent, version, T::compile_time(), data, count, stream_version);
+}
+
+rx_result register_runtime_binary(rx_item_type type, const string_type& name, const string_type& path
+    , const rx_node_id& id, const rx_node_id& parent, const uint8_t* data, size_t count, uint32_t stream_version = 0);
+
 }
 
 

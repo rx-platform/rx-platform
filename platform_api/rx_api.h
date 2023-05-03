@@ -49,7 +49,12 @@
 #include "rx_abi.h"
 
 
-extern uintptr_t g_plugin;
+namespace rx_platform_api {
+
+intptr_t get_rx_plugin();
+intptr_t set_rx_plugin(intptr_t what);
+
+}
 
 ////////////////////////////////////////////////////////////////////////
 // this macro bellow if ugly but hides "C" ABI details from implementer
@@ -58,11 +63,22 @@ extern uintptr_t g_plugin;
 #define RX_DECLARE_PLUGIN(class_name) \
 std::unique_ptr<class_name> _g_plugin_obj_;\
 extern "C" {\
+platform_api2 api2;\
 RX_PLUGIN_API rx_result_struct rxBindPlugin(const platform_api* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin)\
 {\
 	_g_plugin_obj_ = std::make_unique<class_name>();\
-    g_plugin = (uintptr_t)_g_plugin_obj_.get();\
-    *plugin = g_plugin;\
+    rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
+    *plugin = rx_platform_api::get_rx_plugin();\
+    memzero(&api2, sizeof(api2));\
+    api2.general=api->general;\
+    api2.runtime=api->runtime;\
+	return rx_platform_api::rx_bind_plugin(&api2, host_stream_version, plugin_stream_version);\
+}\
+RX_PLUGIN_API rx_result_struct rxBindPlugin2(const platform_api2* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin)\
+{\
+	_g_plugin_obj_ = std::make_unique<class_name>();\
+    rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
+    *plugin = rx_platform_api::get_rx_plugin();\
 	return rx_platform_api::rx_bind_plugin(api, host_stream_version, plugin_stream_version);\
 }\
 RX_PLUGIN_API void rxGetPluginInfo(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver)\
@@ -153,7 +169,7 @@ class rx_platform_plugin
 
 };
 
-rx_result_struct rx_bind_plugin(const platform_api* api, uint32_t host_stream_version, uint32_t* plugin_stream_version);
+rx_result_struct rx_bind_plugin(const platform_api2* api, uint32_t host_stream_version, uint32_t* plugin_stream_version);
 void rx_get_plugin_info(const char* name, int major, int minor, int build, string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver);
 rx_result_struct rx_init_plugin(rx_platform_plugin* plugin);
 rx_result_struct rx_deinit_plugin(rx_platform_plugin* plugin);

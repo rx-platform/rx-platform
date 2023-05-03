@@ -43,6 +43,7 @@
 #include "system/runtime/rx_extern_items.h"
 #include "runtime_internal/rx_runtime_internal.h"
 #include "system/libraries/rx_plugin.h"
+#include "system/storage_base/rx_storage.h"
 
 
 
@@ -220,6 +221,78 @@ rx_result create_type_from_stream(rx_item_type target_type, const char* name, co
 }
 
 
+template<class T>
+rx_result create_concrete_runtime_from_stream(meta::meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, tl::type2type<T>)
+{
+	data::runtime_values_data runtime_data;
+	typename T::instance_data_t instance_data;
+	auto result = instance_data.deserialize(stream, STREAMING_TYPE_OBJECT, meta);
+	if (result)
+	{
+		auto create_result = rx_internal::model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(std::move(instance_data), std::move(runtime_data));
+		if (create_result)
+		{
+			auto rx_type_item = create_result.value()->get_item_ptr();
+			return true;
+		}
+		else
+		{
+			create_result.register_error("Error creating "s + rx_item_type_name(T::RImplType::type_id) + " " + meta.get_full_path());
+			return create_result.errors();
+		}
+	}
+	return result;
+}
+
+rx_result create_runtime_from_stream(rx_item_type target_type, const char* name, const char* path
+	, const rx_node_id_struct* id, const rx_node_id_struct* parent
+	, uint32_t version, rx_time_struct modified, base_meta_reader& stream)
+{
+	meta::meta_data meta;
+	rx_result result;
+	meta.path = path;
+	meta.name = name;
+	meta.id = rx_node_id(id);
+	meta.parent = rx_node_id(parent);
+	meta.version = version;
+	meta.attributes = namespace_item_attributes::namespace_item_system;
+	meta.created_time = rx_time::now();
+	meta.modified_time = rx_time(modified);
+
+	auto dir = ns::rx_directory_cache::instance().get_or_create_directory(meta.path);
+	if (dir)
+	{
+		switch (target_type)
+		{
+			// object types
+		case rx_item_type::rx_object:
+			result = create_concrete_runtime_from_stream(meta, stream, dir.value(), tl::type2type<object_type>());
+			break;
+		case rx_item_type::rx_port:
+			result = create_concrete_runtime_from_stream(meta, stream, dir.value(), tl::type2type<port_type>());
+			break;
+		case rx_item_type::rx_application:
+			result = create_concrete_runtime_from_stream(meta, stream, dir.value(), tl::type2type<application_type>());
+			break;
+		case rx_item_type::rx_domain:
+			result = create_concrete_runtime_from_stream(meta, stream, dir.value(), tl::type2type<domain_type>());
+			break;
+		default:
+			result = "Unknown runtime type: "s + rx_item_type_name(target_type);
+		}
+	}
+	else
+	{
+		result = dir.errors();
+		result.register_error("Error retrieving directory for the new item!");
+	}
+	if (!result)
+		result.register_error("Error building "s + meta.get_full_path());
+	return result;
+}
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -261,7 +334,7 @@ extern "C" {
 		buffer.push_data(data, count);
 		rx::serialization::std_buffer_reader stream(buffer, stream_version > 0 ? stream_version : plugin_obj->get_stream_version());
 
-		return rx_result(RX_NOT_IMPLEMENTED).move();
+		return create_runtime_from_stream((rx_item_type)item_type, name, path, id, parent, version, modified, stream).move();
 		//return create_type_from_stream((rx_item_type)item_type, name, path, id, parent, version, stream).move();
 	}
 
@@ -726,6 +799,18 @@ extern "C" {
 
 
 
+	RX_PLATFORM_API rx_result_struct rxRegisterStorageType(uintptr_t plugin, const char* prefix, rx_storage_constructor_t construct_func)
+	{
+		storage_base::rx_platform_storage_type* temp = new storage_base::rx_plugin_storage_type(prefix, construct_func);
+		auto ret = rx_gate::instance().get_host()->register_storage_type(prefix, temp);
+		if (!ret)
+		{
+			delete temp;
+		}
+		return ret.move();
+	}
+
+
 #ifdef __cplusplus
 }
 #endif
@@ -733,6 +818,7 @@ extern "C" {
 namespace rx_platform
 {
 platform_api g_api;
+platform_api2 g_api2;
 
 namespace api
 {
@@ -741,6 +827,7 @@ void bind_plugins_dynamic_api()
 {
 	g_api.general.pWriteLog = rxWriteLog;
 	g_api.general.pRegisterItem = rxRegisterItem;
+	g_api.general.prxRegisterRuntimeItem = rxRegisterRuntimeItem;
 
 	g_api.general.prxLockRuntimeManager = rxLockRuntimeManager;
 	g_api.general.prxUnlockRuntimeManager = rxUnlockRuntimeManager;
@@ -780,11 +867,64 @@ void bind_plugins_dynamic_api()
 	g_api.runtime.prxCtxGetValue = rxCtxGetValue;
 	g_api.runtime.prxCtxSetValue = rxCtxSetValue;
 	g_api.runtime.prxCtxSetRemotePending = rxCtxSetRemotePending;
+
+
+	g_api2.general.pWriteLog = rxWriteLog;
+	g_api2.general.pRegisterItem = rxRegisterItem;
+	g_api2.general.prxRegisterRuntimeItem = rxRegisterRuntimeItem;
+
+	g_api2.general.prxLockRuntimeManager = rxLockRuntimeManager;
+	g_api2.general.prxUnlockRuntimeManager = rxUnlockRuntimeManager;
+
+	g_api2.runtime.prxRegisterSourceRuntime = rxRegisterSourceRuntime;
+	g_api2.runtime.prxRegisterMapperRuntime = rxRegisterMapperRuntime;
+	g_api2.runtime.prxRegisterFilterRuntime = rxRegisterFilterRuntime;
+	g_api2.runtime.prxRegisterStructRuntime = rxRegisterStructRuntime;
+	g_api2.runtime.prxRegisterVariableRuntime = rxRegisterVariableRuntime;
+	g_api2.runtime.prxRegisterEventRuntime = rxRegisterEventRuntime;
+
+	g_api2.runtime.prxRegisterMethodRuntime = rxRegisterMethodRuntime;
+	g_api2.runtime.prxRegisterDisplayRuntime = rxRegisterDisplayRuntime;
+	g_api2.runtime.prxRegisterProgramRuntime = rxRegisterProgramRuntime;
+
+	g_api2.runtime.prxRegisterObjectRuntime = rxRegisterObjectRuntime;
+	g_api2.runtime.prxRegisterDomainRuntime = rxRegisterDomainRuntime;
+	g_api2.runtime.prxRegisterApplicationRuntime = rxRegisterApplicationRuntime;
+	g_api2.runtime.prxRegisterPortRuntime = rxRegisterPortRuntime;
+
+	g_api2.runtime.prxRegisterRelationRuntime = rxRegisterRelationRuntime;
+
+	g_api2.runtime.prxInitCtxBindItem = rxInitCtxBindItem;
+	g_api2.runtime.prxInitCtxGetCurrentPath = rxInitCtxGetCurrentPath;
+	g_api2.runtime.prxInitCtxGetLocalValue = rxInitCtxGetLocalValue;
+	g_api2.runtime.prxInitCtxSetLocalValue = rxInitCtxSetLocalValue;
+	g_api2.runtime.prxInitCtxGetMappingValues = rxInitCtxGetMappingValues;
+	g_api2.runtime.prxInitCtxGetSourceValues = rxInitCtxGetSourceValues;
+	g_api2.runtime.prxInitCtxGetItemMeta = rxInitCtxGetItemMeta;
+
+
+	g_api2.runtime.prxStartCtxGetCurrentPath = rxStartCtxGetCurrentPath;
+	g_api2.runtime.prxStartCtxCreateTimer = rxStartCtxCreateTimer;
+	g_api2.runtime.prxStartCtxGetLocalValue = rxStartCtxGetLocalValue;
+	g_api2.runtime.prxStartCtxSubscribeRelation = rxStartCtxSubscribeRelation;
+
+	g_api2.runtime.prxCtxGetValue = rxCtxGetValue;
+	g_api2.runtime.prxCtxSetValue = rxCtxSetValue;
+	g_api2.runtime.prxCtxSetRemotePending = rxCtxSetRemotePending;
+
+	g_api2.storage.prxRegisterStorageType = rxRegisterStorageType;
 }
 
 const platform_api_t* get_plugins_dynamic_api()
 {
 	return &g_api;
+}
+
+
+
+const platform_api2_t* get_plugins_dynamic_api2()
+{
+	return &g_api2;
 }
 
 } // api

@@ -692,7 +692,7 @@ void opcua_std_valued_node::read_attribute (attribute_id id, const string_type& 
         if(!value_storage.server_ts.t_value)
         {
             value_storage.server_ps = 0;
-            value_storage.server_ts = config_ts;
+            value_storage.server_ts = config_ts.c_data();
         }
         if (value.status_code != opcid_OK)
         {

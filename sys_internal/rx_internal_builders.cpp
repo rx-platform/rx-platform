@@ -410,7 +410,7 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 {
 	std::vector<std::unique_ptr<rx_platform_builder> > builders;
 	// create system folder structure
-	builders.emplace_back(std::make_unique<root_folder_builder>());
+	builders.emplace_back(std::make_unique<root_folder_builder>(host));
 	if (meta_data.build_system_from_code)
 	{
 		// types builders
@@ -461,6 +461,12 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_test
 std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_other_builders (namespace_data_t& data, hosting::rx_platform_host* host)
 {
 	std::vector<std::unique_ptr<rx_platform_builder> > builders;
+	auto storages = host->get_configured_storages();
+	for (auto one : storages)
+	{
+		builders.emplace_back(std::make_unique<storage::configuration_storage_builder>(one.second));
+
+	}
 	return builders;
 }
 
@@ -601,6 +607,12 @@ void rx_platform_builder::recursive_destory_fs (rx_directory_ptr dir)
 
 // Class rx_internal::builders::root_folder_builder 
 
+root_folder_builder::root_folder_builder (hosting::rx_platform_host* host)
+      : host_(host)
+{
+}
+
+
 
 rx_result root_folder_builder::do_build (configuration_data_t& config)
 {
@@ -672,6 +684,17 @@ rx_result root_folder_builder::do_build (configuration_data_t& config)
 		}
 	}
 
+	auto configured = host_->get_configured_storages();
+	for (auto& one : configured)
+	{
+		auto ret = ns::rx_directory_cache::instance().add_directory(one.first, one.second);
+		if (!ret)
+		{
+			ret.register_error("Unable to add directory "s + one.first + ".");
+			return ret.errors();
+		}
+	}
+
 	BUILD_LOG_INFO("root_folder_builder", 900, "Root folder structure built.");
 	return true;
 }
@@ -693,7 +716,7 @@ rx_result basic_object_types_builder::do_build (configuration_data_t& config)
 		auto obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_CLASS_OBJECT_BASE_NAME
 			, RX_CLASS_OBJECT_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -720,7 +743,7 @@ rx_result basic_object_types_builder::do_build (configuration_data_t& config)
 		auto app = create_type<application_type>(meta::object_type_creation_data{
 			RX_CLASS_APPLICATION_BASE_NAME
 			, RX_CLASS_APPLICATION_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -744,7 +767,7 @@ rx_result basic_object_types_builder::do_build (configuration_data_t& config)
 		auto domain = create_type<domain_type>(meta::object_type_creation_data{
 			RX_CLASS_DOMAIN_BASE_NAME
 			, RX_CLASS_DOMAIN_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -769,7 +792,7 @@ rx_result basic_object_types_builder::do_build (configuration_data_t& config)
 		auto port = create_type<port_type>(meta::object_type_creation_data{
 			RX_CLASS_PORT_BASE_NAME
 			, RX_CLASS_PORT_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -784,7 +807,7 @@ rx_result basic_object_types_builder::do_build (configuration_data_t& config)
 		auto relation = create_type<relation_type>(meta::object_type_creation_data{
 			RX_NS_RELATION_BASE_NAME
 			, RX_NS_RELATION_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -880,7 +903,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		obj->complex_data.register_struct("Info", RX_NS_SYSTEM_INFO_TYPE_ID);
-		obj->object_data.register_display(def_blocks::display_attribute("index", RX_STATIC_HTTP_DISPLAY_TYPE_ID), obj->complex_data);
+		obj->object_data.register_display(def_blocks::display_attribute("index", RX_MAIN_HTTP_DISPLAY_TYPE_ID), obj->complex_data);
 		obj->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "index.html");
 		add_type_to_configuration(dir, obj, false);
 		obj = create_type<object_type>(meta::object_type_creation_data{
@@ -1715,6 +1738,17 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		filter->complex_data.register_simple_value_static("Unlatch", false, false, false);
 		filter->complex_data.register_simple_value_static("Timeout", (uint32_t)0, false, true);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+		
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_CALC_FILTER_TYPE_NAME
+			, RX_CALC_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+				});
+		filter->complex_data.register_simple_value_static("InPath", "x", false, true);
+		filter->complex_data.register_simple_value_static("OutPath", "x", false, true);
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		auto what = create_type<struct_type>(meta::type_creation_data{
 			RX_DISPLAY_RESOURCE_TYPE_NAME
@@ -2158,20 +2192,8 @@ rx_result simulation_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_simple_value_static<uint32_t>("Period", 50, false, true);
 		add_simple_type_to_configuration<source_type>(dir, src, true);
-		src = create_type<basic_types::source_type>(meta::type_creation_data{
-			RX_RAMP_SIMULATION_SOURCE_TYPE_NAME
-			, RX_RAMP_SIMULATION_SOURCE_TYPE_ID
-			, RX_SIMULATION_SOURCE_TYPE_ID
-			, namespace_item_attributes::namespace_item_internal_access
-			, full_path
-			});
-		src->complex_data.register_simple_value_static<double>("Amplitude", 100, false, true);
-		src->complex_data.register_simple_value_static<double>("Increment", 1, false, true);
-		src->complex_data.register_simple_value_static<bool>("Double", false, false, true);
-		add_simple_type_to_configuration<source_type>(dir, src, true);
-
+		
 	}
 	return true;
 }
@@ -2464,6 +2486,15 @@ rx_result http_builder::do_build (configuration_data_t& config)
 		add_simple_type_to_configuration<display_type>(dir, disp, true);
 
 		disp = create_type<basic_types::display_type>(meta::type_creation_data{
+			RX_MAIN_HTTP_DISPLAY_TYPE_NAME
+			, RX_MAIN_HTTP_DISPLAY_TYPE_ID
+			, RX_STATIC_HTTP_DISPLAY_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<display_type>(dir, disp, true);
+
+		disp = create_type<basic_types::display_type>(meta::type_creation_data{
 			RX_SIMPLE_HTTP_DISPLAY_TYPE_NAME
 			, RX_SIMPLE_HTTP_DISPLAY_TYPE_ID
 			, RX_STATIC_HTTP_DISPLAY_TYPE_ID
@@ -2493,7 +2524,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto dtype = create_type<basic_types::data_type>(meta::type_creation_data{
 			RX_CLASS_DATA_BASE_NAME
 			, RX_CLASS_DATA_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2503,7 +2534,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto str = create_type<basic_types::struct_type>(meta::type_creation_data{
 			RX_CLASS_STRUCT_BASE_NAME
 			, RX_CLASS_STRUCT_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2511,7 +2542,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto var = create_type<basic_types::variable_type>(meta::type_creation_data{
 			RX_CLASS_VARIABLE_BASE_NAME
 			, RX_CLASS_VARIABLE_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2521,7 +2552,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto map = create_type<basic_types::mapper_type>(meta::type_creation_data{
 			RX_CLASS_MAPPER_BASE_NAME
 			, RX_CLASS_MAPPER_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2530,7 +2561,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto evnt = create_type<basic_types::event_type>(meta::type_creation_data{
 			RX_CLASS_EVENT_BASE_NAME
 			, RX_CLASS_EVENT_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2538,7 +2569,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto filt = create_type<basic_types::filter_type>(meta::type_creation_data{
 			RX_CLASS_FILTER_BASE_NAME
 			, RX_CLASS_FILTER_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2546,7 +2577,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_CLASS_SOURCE_BASE_NAME
 			, RX_CLASS_SOURCE_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2556,7 +2587,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto met = create_type<basic_types::method_type>(meta::type_creation_data{
 			RX_CLASS_METHOD_BASE_NAME
 			, RX_CLASS_METHOD_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2565,7 +2596,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto prog = create_type<basic_types::program_type>(meta::type_creation_data{
 			RX_CLASS_PROGRAM_BASE_NAME
 			, RX_CLASS_PROGRAM_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2574,7 +2605,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 		auto disp = create_type<basic_types::display_type>(meta::type_creation_data{
 			RX_CLASS_DISPLAY_BASE_NAME
 			, RX_CLASS_DISPLAY_BASE_ID
-			, rx_node_id::null_id
+			, rx_node_id()
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});

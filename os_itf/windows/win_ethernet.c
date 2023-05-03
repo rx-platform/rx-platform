@@ -145,6 +145,7 @@ int rx_is_valid_ip_address(uint32_t addr, uint32_t mask)
 
 struct eth_socket_data
 {
+	uint8_t* write_buffer;
 	uint8_t* buffer;
 	HANDLE handle;
 	size_t next_read;
@@ -173,13 +174,33 @@ uint32_t rx_create_ethernet_socket(const char* adapter_name, peth_socket* psock)
 		free(pret);
 		return RX_ERROR;
 	}
+	pret->write_buffer = VirtualAlloc(NULL, SL_EXCHANGE_BUFFER_SIZE, MEM_COMMIT, PAGE_READWRITE);
+	if (pret->write_buffer == NULL)
+	{
+		VirtualFree(pret->buffer, 0, MEM_RELEASE);
+		CloseHandle(pret->handle);
+		free(pret);
+		return RX_ERROR;
+	}
 	*psock = pret;
 	return RX_OK;
 }
 uint32_t rx_send_ethernet_packet(peth_socket psock, const void* buffer, size_t size)
 {
 	struct eth_socket_data* sock = (struct eth_socket_data*)psock;
-	return RX_ERROR;
+	SL_NUM_PACKET(sock->write_buffer) = 1;
+	SL_SIZE_OF_PACKET(sock->write_buffer, 0) = (UINT)size;
+	memcpy(SL_ADDR_OF_PACKET(sock->write_buffer, 0), buffer, size);
+	DWORD writen;
+	BOOL ret = WriteFile(sock->handle, sock->write_buffer, SL_EXCHANGE_BUFFER_SIZE, &writen, NULL);
+	if (ret)
+	{
+		return RX_OK;
+	}
+	else
+	{
+		return RX_ERROR;
+	}
 }
 
 void fill_next_ether_packet(struct eth_socket_data* sock, uint8_t** buffer, size_t* recv_size, int* has_more, struct timeval* tv)
@@ -236,6 +257,7 @@ uint32_t rx_close_ethernet_socket(peth_socket psock)
 	if (sock == NULL)
 		return RX_ERROR;
 	VirtualFree(sock->buffer, 0, MEM_RELEASE);
+	VirtualFree(sock->write_buffer, 0, MEM_RELEASE);
 	CloseHandle(sock->handle);
 	return RX_OK;
 }

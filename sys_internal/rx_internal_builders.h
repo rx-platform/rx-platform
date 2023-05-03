@@ -114,6 +114,8 @@ class root_folder_builder : public rx_platform_builder
 {
 
   public:
+      root_folder_builder (hosting::rx_platform_host* host);
+
 
       rx_result do_build (configuration_data_t& config);
 
@@ -121,6 +123,9 @@ class root_folder_builder : public rx_platform_builder
   protected:
 
   private:
+
+
+      hosting::rx_platform_host* host_;
 
 
 };

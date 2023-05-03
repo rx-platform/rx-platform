@@ -395,7 +395,6 @@ First Relation. Relation implementation in test plugin.");
       rx_relation::smart_ptr make_target_relation ();
 
       static constexpr rx_item_type type_id = rx_item_type::rx_relation_type;
-
   protected:
 
   private:
@@ -404,6 +403,47 @@ First Relation. Relation implementation in test plugin.");
 
       void relation_disconnected (rx_node_id from, rx_node_id to);
 
+
+
+};
+
+
+
+
+
+
+class first_singleton : public rx_platform_api::rx_object  
+{
+    DECLARE_PLUGIN_CODE_INFO(0, 1, 0, "\
+First Singleton. Singleton implementation in test plugin.");
+
+    DECLARE_REFERENCE_PTR(first_singleton);
+
+  public:
+      first_singleton();
+
+      ~first_singleton();
+
+
+      rx_result initialize_object (rx_platform_api::rx_init_context& ctx);
+
+      rx_result start_object (rx_platform_api::rx_start_context& ctx);
+
+      rx_result stop_object ();
+
+      rx_result deinitialize_object ();
+
+      static first_singleton::smart_ptr instance ();
+
+  protected:
+
+  private:
+
+      void timer_tick ();
+
+
+
+      runtime_handle_t timer_;
 
 
 };

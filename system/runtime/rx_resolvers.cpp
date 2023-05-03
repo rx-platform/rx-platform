@@ -159,7 +159,7 @@ void runtime_resolver<typeT>::runtime_destroyed (const rx_node_id& id)
     if (id == resolved_id_)
     {
         my_state_ = resolver_state::waiting;
-        resolved_id_ = rx_node_id::null_id;
+        resolved_id_ = rx_node_id();
         if (user_)
         {
             user_->runtime_disconnected();
@@ -289,7 +289,7 @@ void runtime_item_resolver::runtime_destroyed (const rx_node_id& id)
     if (id == resolved_id_)
     {
         my_state_ = resolver_state::waiting;
-        resolved_id_ = rx_node_id::null_id;
+        resolved_id_ = rx_node_id();
         if (user_)
         {
             user_->runtime_disconnected();

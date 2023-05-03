@@ -124,6 +124,8 @@ bool dump_dirs_on_console(rx_row_type& row, const term_list_item_options& option
 	if (options.list_qualities || options.list_timestamps)
 	{
 		values::rx_value val;
+		val.set_time(one->meta_info().modified_time);
+		val.set_good_locally();
 
 		if (options.list_qualities)
 		{

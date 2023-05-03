@@ -58,6 +58,7 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Modbus\\x64\\Debug\\rx-modbus.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Siemens\\x64\\Debug\\rx-siemens.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Filters\\x64\\Debug\\rx-filters.dll");
+	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Filters\\x64\\Debug\\rx-simulation.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\ISO\\x64\\Debug\\rx-iso.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\InfoControl\\x64\\Debug\\rx-ics.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Beka\\x64\\Debug\\rx-mesrnp.dll");

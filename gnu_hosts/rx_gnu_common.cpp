@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -95,6 +95,7 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/ISO/bin/Debug/librx-iso.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/Siemens/bin/Debug/librx-siemens.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/iec61850/bin/Debug/libiec61850.so");
+	paths.emplace_back("/media/sf_rx-release/Dev/GCC/rpi/bin/Debug/librx-rpi.so");
 #else
 	string_type search_dir("/usr/lib/rx-platform/plugins");
 	if (!search_dir.empty())

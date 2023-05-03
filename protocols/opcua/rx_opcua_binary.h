@@ -57,6 +57,7 @@ public:
     ua_binary_istream& operator >> (float& val);
     ua_binary_istream& operator >> (double& val);
     ua_binary_istream& operator >> (string_type& val);
+    ua_binary_istream& operator >> (rx_time& val);
     ua_binary_istream& operator >> (rx_time_struct& val);
     ua_binary_istream& operator >> (uint8_t& val);
     ua_binary_istream& operator >> (byte_string& val);

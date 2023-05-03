@@ -50,6 +50,7 @@ struct _rx_port_holder_stub;
 
 struct _rx_relation_holder_stub;
 
+struct _rx_storage_holder_stub;
 
 rx_result_struct c_init_source(struct _rx_source_holder_stub* self, init_ctx_ptr ctx, uint8_t value_type);
 rx_result_struct c_start_source(struct _rx_source_holder_stub* self, start_ctx_ptr ctx);
@@ -480,6 +481,20 @@ rx_result_struct c_relation_disconnected_stub(void* whose, const struct rx_node_
     return c_relation_disconnected(whose, from, to);
 }
 
+
+rx_result_struct c_init_storage(struct _rx_storage_holder_stub* self, const char* reference);
+rx_result_struct c_deinit_storage(struct _rx_storage_holder_stub* self);
+
+
+rx_result_struct c_init_storage_stub(void* self, const char* reference)
+{
+    return c_init_storage(self, reference);
+}
+
+rx_result_struct c_deinit_storage_stub(void* self)
+{
+    return c_deinit_storage(self);
+}
 
 
 

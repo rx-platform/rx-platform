@@ -332,7 +332,7 @@ void relation_data::runtime_disconnected ()
 
 		connections.relation_disconnected();
 
-		target_id = rx_node_id::null_id;
+		target_id = rx_node_id();
 		if (my_state_ != relation_state::stopping)
 			my_state_ = relation_state::idle;
 		algorithms::runtime_relation_algorithms::notify_relation_disconnected(name, context_);

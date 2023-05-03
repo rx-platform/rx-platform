@@ -86,6 +86,8 @@ rx_result binded_tags::get_value (runtime_handle_t handle, rx_simple_value& val)
 			val = it_handles->second.ref_value_ptr.full_value->simple_get_value();
 			return true;
 		case rt_value_ref_type::rt_variable:
+			val = it_handles->second.ref_value_ptr.variable->simple_get_value();
+			return true;
 		default:
 			RX_ASSERT(false);
 			return "Internal error";
@@ -119,6 +121,14 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 				return result;
 			}
 		case rt_value_ref_type::rt_variable:
+			{
+				write_data data;
+				data.internal = true;
+				data.transaction_id = 0;
+				data.value = val;
+				auto result = it_handles->second.ref_value_ptr.variable->write_value(std::move(data), nullptr, ctx);
+				return result;
+			}
 		default:
 			RX_ASSERT(false);
 			return "Internal error";
@@ -182,15 +192,16 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 			return ref_result.errors();
 		revisied_path = path;
 	}
-
-	if (ref.ref_type == rt_value_ref_type::rt_variable)
-		return "Can't bind to variable";
 	// fill out the data
 	auto handle = ctx.get_new_handle();
 	switch (ref.ref_type)
 	{
-	case rt_value_ref_type::rt_const_value:
-		// this is constant so just do nothing
+	case rt_value_ref_type::rt_variable:
+		{
+			auto result = variables_.emplace(ref.ref_value_ptr.variable, values_type::mapped_type{ handle, values_type::mapped_type::second_type() });
+			if (callback)
+				result.first->second.second.emplace_back(callback);
+		}
 		break;
 	case rt_value_ref_type::rt_value:
 		{
@@ -211,6 +222,13 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 			auto result = methods_.emplace(ref.ref_value_ptr.method, values_type::mapped_type{ handle, methods_type::mapped_type::second_type() });
 			if (callback)
 				result.first->second.second.emplace_back(callback);
+		}
+		break;
+	case rt_value_ref_type::rt_const_value:
+		{
+			auto result = const_values_.emplace(ref.ref_value_ptr.const_value, handle);
+			if (callback)
+				callback(result.first->first->get_value(ctx.context));
 		}
 		break;
 	default:
@@ -372,6 +390,18 @@ rx_result binded_tags::internal_get_item (const string_type& path, rx_simple_val
 rx_result binded_tags::get_item (const string_type& path, rx_simple_value& what, runtime_init_context& ctx)
 {
 	return internal_get_item(path, what, ctx.structure, ctx.context);
+}
+
+void binded_tags::variable_change (structure::variable_data* whose, const rx_value& val)
+{
+	auto it = variables_.find(whose);
+	if (it != variables_.end())
+	{
+		for (auto& one : it->second.second)
+		{
+			one(val);
+		}
+	}
 }
 
 
@@ -762,6 +792,7 @@ void connected_tags::variable_change (structure::variable_data* whose, const rx_
 			}
 		}
 	}
+	binded_->variable_change(whose, val);
 }
 
 void connected_tags::relation_value_change (relations::relation_value_data* whose, const rx_value& val)

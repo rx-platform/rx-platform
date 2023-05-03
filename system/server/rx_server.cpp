@@ -111,6 +111,11 @@ rx_gate& rx_gate::instance ()
 	return *g_instance;
 }
 
+void rx_gate::set_host (hosting::rx_platform_host* host)
+{
+	host_ = host;
+}
+
 void rx_gate::cleanup ()
 {
 	ns::rx_directory_cache::instance().clear_cache();
@@ -127,6 +132,7 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 	python::py_script* python = &python::py_script::instance();
 	scripts_.emplace(python->get_definition().name, python);
 #endif
+	RX_ASSERT(host_ = host);
 	host_ = host;
 	rx_name_ = data.meta_configuration.instance_name.empty() ? node_name_ : data.meta_configuration.instance_name;
 

@@ -447,7 +447,7 @@ bool json_reader::read_time (const char* name, rx_time_struct_t& val)
 		{
 			temp = rx_time::now();
 		}
-		val = temp;
+		val = temp.c_data();
 		return true;
 	}
 	return false;
@@ -1006,7 +1006,7 @@ bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
 
 	if (val.IsNull())
 	{
-		ref = rx_item_reference::null_ref;
+		ref = rx_item_reference();
 		if (!end_object())
 			return false;
 		return true;
@@ -1017,7 +1017,7 @@ bool json_reader::read_item_reference (const char* name, rx_item_reference& ref)
 
 	if(val.ObjectEmpty())
 	{
-		ref = rx_item_reference::null_ref;
+		ref = rx_item_reference();
 		if (!end_object())
 			return false;
 		return true;

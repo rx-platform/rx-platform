@@ -88,7 +88,9 @@ class http_rx_item_handler : public rx_platform::http::http_handler
 
   private:
 
-      virtual rx_result do_with_item (string_view_type sub_item, http_request& req, http_response& resp, platform_item_ptr item) = 0;
+      virtual rx_result do_with_item (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, platform_item_ptr item) = 0;
+
+      virtual rx_result do_with_directory (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, rx_directory_ptr item) = 0;
 
 
 
@@ -113,7 +115,38 @@ class http_json_object_reader : public http_rx_item_handler
 
   private:
 
-      rx_result do_with_item (string_view_type sub_item, http_request& req, http_response& resp, platform_item_ptr item);
+      rx_result do_with_item (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, platform_item_ptr item);
+
+      rx_result do_with_directory (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, rx_directory_ptr item);
+
+      rx_result recursive_list_directory (rx_directory_ptr item, std::vector<platform_item_ptr>& rt_items, const std::set<rx_node_id>& by_type);
+
+
+
+};
+
+
+
+
+
+
+class http_object_writer : public http_rx_item_handler  
+{
+
+  public:
+
+      const char* get_content_type ();
+
+      const char* get_extension ();
+
+
+  protected:
+
+  private:
+
+      rx_result do_with_item (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, platform_item_ptr item);
+
+      rx_result do_with_directory (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, rx_directory_ptr item);
 
 
 

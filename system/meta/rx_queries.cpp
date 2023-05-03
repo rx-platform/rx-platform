@@ -166,7 +166,7 @@ rx_result derived_types_query::do_query (api::query_result& result, const string
 template<typename T>
 rx_result derived_types_query::do_query(api::query_result& result, const string_type& dir, tl::type2type<T>)
 {
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 	if (!base_type.empty())
 	{
 		ns::rx_directory_resolver dirs;
@@ -183,7 +183,7 @@ rx_result derived_types_query::do_query(api::query_result& result, const string_
 template<typename T>
 rx_result derived_types_query::do_simple_query(api::query_result& result, const string_type& dir, tl::type2type<T>)
 {
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 	if (!base_type.empty())
 	{
 		ns::rx_directory_resolver dirs;
@@ -200,7 +200,7 @@ rx_result derived_types_query::do_simple_query(api::query_result& result, const 
 rx_result derived_types_query::do_relation_query(api::query_result& result, const string_type& dir)
 {
 
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 	if (!base_type.empty())
 	{
 		ns::rx_directory_resolver dirs;
@@ -217,7 +217,7 @@ rx_result derived_types_query::do_relation_query(api::query_result& result, cons
 rx_result derived_types_query::do_data_query(api::query_result& result, const string_type& dir)
 {
 
-	rx_node_id id = rx_node_id::null_id;
+	rx_node_id id = rx_node_id();
 	if (!base_type.empty())
 	{
 		ns::rx_directory_resolver dirs;
@@ -257,6 +257,7 @@ rx_result rx_query::init_query_types ()
 	registered_queries_.emplace(translate_query::query_name, [] { return std::make_shared<translate_query>(); });
 	registered_queries_.emplace(port_stack_query::query_name, [] { return std::make_shared<port_stack_query>(); });
 	registered_queries_.emplace(dependents_query::query_name, [] { return std::make_shared<dependents_query>(); });
+	registered_queries_.emplace(instaced_runtimes_query::query_name, [] { return std::make_shared<instaced_runtimes_query>(); });
 	return true;
 }
 
@@ -404,10 +405,10 @@ rx_result runtime_objects_query::do_query (api::query_result& result, const stri
 						return type_name + " not found!";
 					id = item.get_meta().id;
 				}
-				auto app_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(id);
-				if (app_ptr)
+				auto domain_ptr = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(id);
+				if (domain_ptr)
 				{
-					app_ptr.value()->get_instance_data().get_objects(result);
+					domain_ptr.value()->get_instance_data().get_objects(result);
 				}
 			}
 		}
@@ -640,6 +641,84 @@ rx_result dependents_query::do_query (api::query_result& result, const string_ty
 }
 
 
+// Class rx_platform::meta::queries::instaced_runtimes_query 
+
+string_type instaced_runtimes_query::query_name = "instanced";
+
+
+rx_result instaced_runtimes_query::serialize (base_meta_writer& stream) const
+{
+	if (!stream.start_object("query"))
+		return stream.get_error();
+
+	if (!stream.write_string("queryType", query_name.c_str()))
+		return stream.get_error();
+
+
+	if (!stream.write_item_reference("typeRef", type_reference))
+		return stream.get_error();
+	if (!stream.write_bool("subQuery", sub_query.c_str()))
+		return stream.get_error();
+	if (!stream.write_string("subfolder", subfolder.c_str()))
+		return stream.get_error();
+
+	if (!stream.end_object())
+		return stream.get_error();
+
+	return true;
+}
+
+rx_result instaced_runtimes_query::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_item_reference("typeRef", type_reference))
+		return stream.get_error();
+	if (!stream.read_string("subQuery", sub_query))
+		return stream.get_error();
+	if (!stream.read_string("subfolder", subfolder))
+		return stream.get_error();
+
+	return true;
+}
+
+const string_type& instaced_runtimes_query::get_query_type ()
+{
+  return query_name;
+
+}
+
+rx_result instaced_runtimes_query::do_query (api::query_result& result, const string_type& dir)
+{
+	std::vector<api::query_result_detail> ret;
+	ns::rx_directory_resolver dirs;
+	dirs.add_paths({ string_type(dir) });
+	rx_item_type type;
+	meta_data meta = rx_internal::model::algorithms::resolve_reference(type_reference, type, dirs);
+	if (type == rx_item_type::rx_invalid_type)
+		return RX_INVALID_PATH;
+	
+	switch (type)
+	{
+	case rx_object_type:
+		return do_query(meta.id, result, dir, tl::type2type<object_types::object_type>());
+	case rx_port_type:
+		return do_query(meta.id, result, dir, tl::type2type<object_types::port_type>());
+	case rx_domain_type:
+		return do_query(meta.id, result, dir, tl::type2type<object_types::domain_type>());
+	case rx_application_type:
+		return do_query(meta.id, result, dir, tl::type2type<object_types::application_type>());
+	default:
+		return type_reference.to_string() + " is not a valid runtime type!";
+	}
+}
+
+
+template<typename T>
+rx_result instaced_runtimes_query::do_query(const rx_node_id& id, api::query_result& result, const string_type& dir, tl::type2type<T>)
+{
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<T>().get_instanced_objects(id);
+
+	return result.success;
+}
 } // namespace queries
 } // namespace meta
 } // namespace rx_platform

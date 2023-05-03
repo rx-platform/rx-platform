@@ -61,6 +61,8 @@ namespace interfaces {
 
 namespace ethernet {
 
+extern std::map<string_type, byte_string> local_mac;
+void rebuild_addresses();
 
 
 
@@ -117,6 +119,8 @@ class ethernet_endpoint : public rx_platform::threads::thread
 
       std::vector<uint16_t> ether_types_;
 
+      byte_string local_mac_;
+
 
 };
 
@@ -126,7 +130,7 @@ class ethernet_endpoint : public rx_platform::threads::thread
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< ethernet_endpoint  > ethernet_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::ethernet::ethernet_endpoint  > ethernet_port_base;
 
 
 
@@ -135,7 +139,7 @@ typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_i
 
 class ethernet_port : public ethernet_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 0, 1, "\
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
 Ethernet port class. implementation of an ethernet level port");
 
     typedef std::stack< buffer_ptr, std::vector<buffer_ptr> > free_buffers_type;

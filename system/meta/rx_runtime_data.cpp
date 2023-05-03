@@ -206,7 +206,7 @@ rx_result domain_data::serialize (base_meta_writer& stream, uint8_t type) const
         }
         else
         {
-            if (!stream.write_id("app", rx_node_id::null_id))
+            if (!stream.write_id("app", rx_node_id()))
                 return stream.get_error();
         }
     }
@@ -265,7 +265,7 @@ rx_result object_data::serialize (base_meta_writer& stream, uint8_t type) const
         }
         else
         {
-            if (!stream.write_id("domain", rx_node_id::null_id))
+            if (!stream.write_id("domain", rx_node_id()))
                 return stream.get_error();
         }
     }
@@ -317,7 +317,7 @@ rx_result port_data::serialize (base_meta_writer& stream, uint8_t type) const
         }
         else
         {
-            if (!stream.write_id("app", rx_node_id::null_id))
+            if (!stream.write_id("app", rx_node_id()))
                 return stream.get_error();
         }
     }

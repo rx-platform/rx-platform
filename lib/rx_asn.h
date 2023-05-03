@@ -241,71 +241,73 @@ struct asn_out_stack_data
     uint32_t start_size;
 };
 
-/*
+
 
 
 
 
 class rx_asn_out_stream 
 {
+    typedef std::stack<asn_out_stack_data> data_stack_type;
 
   public:
-      rx_asn_out_stream (server::backward_binary_buffer* buffer, bool fixed = false);
+      rx_asn_out_stream (io::rx_io_buffer* buffer, bool fixed = false);
 
       ~rx_asn_out_stream();
 
 
-      void start_object (dword type, dword first);
+      void start_object (uint32_t type, uint32_t first);
 
       void end_object ();
 
-      void start_object (dword first);
+      void start_object (uint32_t first);
 
       void skip ();
 
-      void write_explicit (const byte& val, dword type);
+      void write_explicit (const uint8_t& val, uint32_t type);
 
-      void write_explicit (const word& val, dword type);
+      void write_explicit (const uint16_t& val, uint32_t type);
 
-      void write_explicit (const sword& val, dword type);
+      void write_explicit (const int16_t& val, uint32_t type);
 
-      void write_explicit (const dword& val, dword type);
+      void write_explicit (const uint32_t& val, uint32_t type);
 
-      void write_explicit (const sdword& val, dword type);
+      void write_explicit (const int32_t& val, uint32_t type);
 
-      void write_explicit (const oid_t& val, dword type);
+      void write_explicit (const oid_t& val, uint32_t type);
 
-      void write_explicit (const bit_string& val, dword type);
+      void write_explicit (const bit_string& val, uint32_t type);
 
-      void write_explicit (const byte_string& val, dword type);
+      void write_explicit (const byte_string& val, uint32_t type);
 
-      void write_explicit (const null_asn_type val, dword type);
+      void write_explicit (const null_asn_type val, uint32_t type);
 
-      void write_explicit (const string_type& val, dword type);
+      void write_explicit (const string_type& val, uint32_t type);
 
-      void write_explicit (float val, dword type);
+      void write_explicit (float val, uint32_t type);
 
-      void write_explicit (double val, dword type);
+      void write_explicit (double val, uint32_t type);
 
-      void write_explicit (const server::time_stamp& val, dword type);
+      void write_explicit (const rx_time_stamp& val, uint32_t type);
 
-      void write_explicit (bool val, dword type);
+      void write_explicit (bool val, uint32_t type);
 
-      void write_explicit (const server::asn_binary_time& val, dword type);
+      void write_explicit (const asn_binary_time& val, uint32_t type);
 
-      void write_explicit (const server::asn_generalized_time& val, dword type);
+      void write_explicit (const asn_generalized_time& val, uint32_t type);
 
-      void write_explicit (const sqword& val, dword type);
+      void write_explicit (const int64_t& val, uint32_t type);
 
-      void write_explicit (const qword& val, dword type);
+      void write_explicit (const uint64_t& val, uint32_t type);
 
-      void write_explicit (const sbyte& val, dword type);
+      void write_explicit (const int8_t& val, uint32_t type);
 
 
-      server::backward_binary_buffer* get_buffer ()
+      io::rx_io_buffer * get_buffer ()
       {
         return buffer_;
       }
+
 
 
       const bool is_fixed () const
@@ -314,33 +316,39 @@ class rx_asn_out_stream
       }
 
 
+      template<typename T>
+      rx_asn_out_stream& operator << (const T& val)
+      {
+          write_explicit(val, create_stream_simple_type());
+          return *this;
+      }
 
   protected:
 
   private:
 
-      dword create_stream_struct_type (dword type);
+      uint32_t create_stream_struct_type (uint32_t type);
 
-      dword create_stream_simple_type (dword type = 0);
+      uint32_t create_stream_simple_type (uint32_t type = 0);
 
-      size_t write_length (dword len, byte* data);
+      size_t write_length (uint32_t len, uint8_t* data);
 
-      size_t write_type (dword type, byte* data);
+      size_t write_type (uint32_t type, uint8_t* data);
 
 
 
-      server::backward_binary_buffer* buffer_;
+      io::rx_io_buffer *buffer_;
+
 
       data_stack_type stack_;
 
-      byte data_[0x20];
+      uint8_t data_[0x20];
 
       bool fixed_;
 
 
 };
 
-*/
 
 } // namespace asn
 } // namespace rx

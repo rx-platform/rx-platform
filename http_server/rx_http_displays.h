@@ -332,6 +332,38 @@ it enables quick and easy http implementation.)");
 };
 
 
+
+
+
+
+class rx_http_main_display : public rx_http_static_display  
+{
+    DECLARE_REFERENCE_PTR(rx_http_main_display);
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+display that implements main runtime view\r\n\
+of the platform.)");
+
+  public:
+      rx_http_main_display();
+
+      rx_http_main_display (const string_type& name, const rx_node_id& id);
+
+      ~rx_http_main_display();
+
+
+  protected:
+
+  private:
+
+      void fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path);
+
+      void fill_div (std::ostream& stream, const string_type& rt_name, const string_type& path, const data::runtime_values_data& data);
+
+
+
+};
+
+
 } // namespace http_displays
 } // namespace rx_http_server
 } // namespace rx_internal

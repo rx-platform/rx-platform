@@ -79,6 +79,10 @@ rx_result register_filter_constructors()
 		RX_HEX2DEC_FILTER_TYPE_ID, [] {
 			return rx_create_reference<hex2decimal>();
 		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
+		RX_CALC_FILTER_TYPE_ID, [] {
+			return rx_create_reference<calculation_filter>();
+		});
 	return true;
 }
 
@@ -478,6 +482,147 @@ rx_result latch_filter::filter_input (rx_value& val)
 		val.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
 	}
 	return true;
+}
+
+
+// Class rx_internal::sys_runtime::filters::calculation_filter 
+
+calculation_filter::calculation_filter()
+      : input_path_(""),
+        output_path_("")
+	, input_point_(this)
+	, output_point_(this)
+{
+}
+
+
+calculation_filter::~calculation_filter()
+{
+}
+
+
+
+rx_result calculation_filter::initialize_filter (runtime::runtime_init_context& ctx)
+{
+	input_point_.set_context(ctx.context);
+	output_point_.set_context(ctx.context);
+	auto result = input_path_.bind(".InPath", ctx, [this](const string_type& val)
+		{
+			connect_input(val);
+		});
+	result = output_path_.bind(".OutPath", ctx, [this](const string_type& val)
+		{
+			connect_output(val);
+		});
+	return true;
+}
+
+rx_result calculation_filter::start_filter (runtime::runtime_start_context& ctx)
+{
+	auto result = connect_input(input_path_);
+	result = connect_output(output_path_);
+	return true;
+}
+
+rx_result calculation_filter::stop_filter (runtime::runtime_stop_context& ctx)
+{
+	disconnect_input();
+	disconnect_output();
+	return true;
+}
+
+rx_result calculation_filter::filter_input (rx_value& val)
+{
+	val = input_point_.calculate_local_var(val, token_buffer_);
+	return true;
+}
+
+rx_result calculation_filter::filter_output (rx_simple_value& val)
+{
+	rx_value temp(val);
+	temp.set_good_locally();
+	temp = output_point_.calculate_local_var(temp, token_buffer_);
+	if (temp.is_good())
+	{
+		val = temp.to_simple();
+		return true;
+	}
+	else
+	{
+		return "Expression error!";
+	}
+}
+
+rx_result calculation_filter::connect_input (const string_type& path)
+{
+	try
+	{
+		input_point_.connect(path, 200);
+		return true;
+	}
+	catch (std::exception& ex)
+	{
+		return ex.what();
+	}
+}
+
+void calculation_filter::disconnect_input ()
+{
+	input_point_.disconnect();
+}
+
+rx_result calculation_filter::connect_output (const string_type& path)
+{
+	try
+	{
+		output_point_.connect(path, 200);
+		return true;
+	}
+	catch (std::exception& ex)
+	{
+		return ex.what();
+	}
+}
+
+void calculation_filter::disconnect_output ()
+{
+	output_point_.disconnect();
+}
+
+void calculation_filter::input_value_changed (const rx_value& val)
+{
+	filter_changed();
+}
+
+void calculation_filter::output_value_changed (const rx_value& val)
+{
+}
+
+void calculation_filter::value_changed (const rx_value& val, calcualtion_point* whose)
+{
+	if(whose == &input_point_)
+	{
+		input_value_changed(val);
+	}
+	else if (whose != &output_point_)
+	{
+		RX_ASSERT(false);
+	}
+}
+
+
+// Class rx_internal::sys_runtime::filters::calcualtion_point 
+
+calcualtion_point::calcualtion_point (calculation_filter* my_filter)
+      : my_filter_(my_filter)
+{
+}
+
+
+
+void calcualtion_point::value_changed (const rx_value& val)
+{
+	my_filter_->value_changed(val, this);
 }
 
 

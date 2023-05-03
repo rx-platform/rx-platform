@@ -97,9 +97,13 @@ runtime_holder<typeT>::~runtime_holder()
 template <class typeT>
 rx_result runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t type) const
 {
-    auto ret = meta_info_.serialize_meta_data(stream, type, typeT::RImplType::type_id);
-    if (!ret)
-        return ret;
+    rx_result ret;
+    if (type != STREAMING_TYPE_MESSAGE)
+    {
+        ret = meta_info_.serialize_meta_data(stream, type, typeT::RImplType::type_id);
+        if (!ret)
+            return ret;
+    }
 
     if (!stream.start_object("def"))
         return stream.get_error();

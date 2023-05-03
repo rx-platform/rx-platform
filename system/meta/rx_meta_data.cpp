@@ -328,13 +328,13 @@ rx_result meta_data::serialize_meta_data (base_meta_writer& stream, uint8_t type
 		}
 		else
 		{
-			if (!stream.write_id("superId", rx_node_id::null_id))
+			if (!stream.write_id("superId", rx_node_id()))
 				return stream.get_error();
 		}
 	}
-	if (!stream.write_time("created", created_time))
+	if (!stream.write_time("created", created_time.c_data()))
 		return stream.get_error();
-	if (!stream.write_time("modified", modified_time))
+	if (!stream.write_time("modified", modified_time.c_data()))
 		return stream.get_error();
 	if (!stream.write_version("ver", version))
 		return stream.get_error();
@@ -387,10 +387,13 @@ rx_result meta_data::deserialize_meta_data (base_meta_reader& stream, uint8_t ty
 			return stream.get_error();
 		parent = parent_id;
 	}
-	if (!stream.read_time("created", created_time))
+	rx_time_struct_t temp;
+	if (!stream.read_time("created", temp))
 		return stream.get_error();
-	if (!stream.read_time("modified", modified_time))
+	created_time = temp;
+	if (!stream.read_time("modified", temp))
 		return stream.get_error();
+	modified_time = temp;
 	if (!stream.read_version("ver", version))
 		return stream.get_error();
 	if (!stream.read_string("path", path))
@@ -589,6 +592,8 @@ meta_data create_meta_for_new(const meta_data& proto)
 	ret_data.modified_time = now;
 	if(!proto.created_time.is_null())
 		ret_data.created_time = proto.created_time;
+	if (!proto.modified_time.is_null())
+		ret_data.modified_time = proto.modified_time;
 	ret_data.version = RX_INITIAL_ITEM_VERSION;
 	if (ret_data.version < proto.version)
 		ret_data.version = proto.version;

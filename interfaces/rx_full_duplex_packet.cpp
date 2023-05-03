@@ -35,6 +35,7 @@
 #include "interfaces/rx_full_duplex_packet.h"
 
 #include "interfaces/rx_endpoints.h"
+#include "interfaces/rx_port_stack_active.h"
 using namespace rx::io;
 
 
@@ -464,6 +465,7 @@ template <typename addrT>
 rx_protocol_result_t full_duplex_addr_packet_port<addrT>::route_initiator_packet (recv_protocol_packet packet)
 {
 	auto key = address_adapter_type::get_key_from_packet_initiator(packet);
+	auto key_list = address_adapter_type::get_key_from_packet_listener(packet);
 	if (!key.first)
 		return RX_PROTOCOL_INVALID_ADDR;
 	rx_protocol_stack_endpoint* endpoint = nullptr;
@@ -475,7 +477,40 @@ rx_protocol_result_t full_duplex_addr_packet_port<addrT>::route_initiator_packet
 	}
 	else
 	{
-		return RX_PROTOCOL_INVALID_ADDR;
+		for (auto& intance : listener_endpoints_)
+		{
+			endpoint = intance.second->find_listener_endpoint(key_list.second, packet.to_addr, packet.from_addr);
+			if (endpoint)
+				break;
+		}
+		if (endpoint)
+		{
+			return rx_move_packet_up(endpoint, packet);
+		}
+		else
+		{
+
+			auto ep = construct_listener_endpoint(packet.to_addr, packet.from_addr);
+			if (ep)
+			{
+				rx_result result = add_stack_endpoint(ep, packet.to_addr, packet.from_addr);
+				if (result)
+				{
+					return rx_move_packet_up(ep, packet);
+				}
+				else
+				{
+
+					locks::auto_lock_t _(&routing_lock_);
+					listener_endpoints_.erase(ep);
+					return RX_PROTOCOL_INVALID_ADDR;
+				}
+			}
+			else
+			{
+				return RX_PROTOCOL_INVALID_ADDR;
+			}
+		}
 	}
 }
 

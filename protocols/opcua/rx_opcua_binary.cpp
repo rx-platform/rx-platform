@@ -112,7 +112,16 @@ ua_binary_istream& ua_binary_istream::operator>> (string_type& val)
 	}
 	return *this;
 }
-ua_binary_istream& ua_binary_istream::operator>> (rx_time_struct& val)
+ua_binary_istream& ua_binary_istream::operator>> (rx_time& val)
+{
+	rx_time_struct temp;
+	auto result = buffer_->read_from_buffer(temp);
+	if (result)
+		val = temp;
+	return *this;
+}
+
+ua_binary_istream& ua_binary_istream::operator >> (rx_time_struct& val)
 {
 	auto result = buffer_->read_from_buffer(val);
 	return *this;

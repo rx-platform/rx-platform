@@ -274,6 +274,42 @@ class dependents_query : public rx_query
 };
 
 
+
+
+
+
+class instaced_runtimes_query : public rx_query  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_query_type ();
+
+      rx_result do_query (api::query_result& result, const string_type& dir);
+
+
+      rx_item_reference type_reference;
+
+      static string_type query_name;
+
+      string_type subfolder;
+
+      string_type sub_query;
+
+
+  protected:
+
+  private:
+      template<typename T>
+      rx_result do_query(const rx_node_id& id, api::query_result& result, const string_type& dir, tl::type2type<T>);
+
+};
+
+
 } // namespace queries
 } // namespace meta
 } // namespace rx_platform

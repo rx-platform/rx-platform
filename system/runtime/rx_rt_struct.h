@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -141,7 +141,7 @@ struct index_data
 
 
 template <class typeT>
-class empty
+class empty 
 {
 
   public:
@@ -168,7 +168,7 @@ class empty
 
 
 template <class typeT>
-class has
+class has 
 {
 
   public:
@@ -199,7 +199,7 @@ class has
 
 
 
-class const_value_data
+class const_value_data 
 {
 
   public:
@@ -230,7 +230,7 @@ class const_value_data
 
 
 
-class value_data
+class value_data 
 {
 
   public:
@@ -269,7 +269,7 @@ class value_data
 
 
 
-class runtime_item
+class runtime_item 
 {
   public:
 	  typedef std::unique_ptr<runtime_item> smart_ptr;
@@ -343,7 +343,7 @@ class runtime_item
 
 
 
-class struct_data
+class struct_data 
 {
   public:
 	  ~struct_data() = default;
@@ -409,7 +409,7 @@ class struct_data
 
 
 
-class indirect_value_data
+class indirect_value_data 
 {
 
   public:
@@ -446,7 +446,7 @@ class indirect_value_data
 
 
 
-class write_task
+class write_task 
 {
 
   public:
@@ -470,7 +470,7 @@ class write_task
 
 
 
-class full_value_data
+class full_value_data 
 {
 
   public:
@@ -497,7 +497,7 @@ class full_value_data
 
 
 
-class execute_task
+class execute_task 
 {
 
   public:
@@ -520,7 +520,7 @@ class execute_task
 
 
 
-class variable_data
+class variable_data 
 {
   public:
       ~variable_data() = default;
@@ -616,7 +616,7 @@ class variable_data
 
 
 
-class mapper_data
+class mapper_data 
 {
 public:
 	~mapper_data() = default;
@@ -717,7 +717,7 @@ public:
 
 
 
-class source_data
+class source_data 
 {
   public:
 	~source_data() = default;
@@ -822,7 +822,7 @@ class source_data
 
 
 
-class filter_data
+class filter_data 
 {
 public:
 	~filter_data() = default;
@@ -942,7 +942,7 @@ class mapper_write_task : public write_task
 
 
 template <class typeT>
-class array_wrapper
+class array_wrapper 
 {
 
 #ifdef _MSC_VER
@@ -1294,7 +1294,7 @@ class block_data : public runtime_item
 
 
 
-class event_data
+class event_data 
 {
 public:
 	~event_data() = default;
@@ -1364,7 +1364,7 @@ public:
 
 
 
-class const_block_data
+class const_block_data 
 {
 
   public:
@@ -1413,7 +1413,7 @@ class const_block_data
 
 
 
-class value_block_data
+class value_block_data 
 {
 
   public:

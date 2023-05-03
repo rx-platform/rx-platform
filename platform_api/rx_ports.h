@@ -91,10 +91,8 @@ class rx_port : public rx_runtime
 
       rx_result disconnect_stack_endpoint (rx_protocol_stack_endpoint* what);
 
-
-      static rx_item_type runtime_type_id;
-
       static constexpr rx_item_type type_id = rx_item_type::rx_port_type;
+      static constexpr rx_item_type runtime_type_id = rx_item_type::rx_port;
 
       template<typename funcT>
       runtime_handle_t post_job(funcT func, uint32_t period = 0)

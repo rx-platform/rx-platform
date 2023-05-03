@@ -106,6 +106,10 @@ rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (const string
 			dir->meta_.modified_time = dir->meta_.created_time;
 
 			valid_scope valid(it->second->valid_);
+			if (storage)
+			{
+				storage->preprocess_meta_data(dir->meta_);
+			}
 			it->second->meta_.modified_time = dir->meta_.created_time;
 			if (storage)
 				storage->set_base_path(dir_path);

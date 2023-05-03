@@ -698,13 +698,18 @@ void local_dependecy_builder::do_consolidate_for_item(T& container)
 {
 	for (auto& one : container)
 	{
-		if (one.second.remove)
+		if (one.second.create)
+		{
+			consolidate_meta_data(one.second.item.meta_info);
+		}
+
+		/*if (one.second.remove)
 			dirs_to_delete_.emplace(one.second.item.meta_info.path);
 		if (one.second.create)
 		{
 			dirs_to_create_.emplace(one.second.item.meta_info.path);
 			consolidate_meta_data(one.second.item.meta_info);
-		}
+		}*/
 	}
 }
 template<typename T, typename dataT>

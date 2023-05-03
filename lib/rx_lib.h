@@ -452,8 +452,6 @@ public:
 
 	const rx_node_id_type get_node_type() const;
 
-	static const rx_node_id null_id;
-
 };
 
 std::ostream & operator << (std::ostream &out, const rx_node_id &val);
@@ -499,10 +497,6 @@ public:
 
 	rx_node_id get_node_id() const;
 
-
-
-	static const rx_item_reference null_ref;
-
 };
 
 ///////////////////////////////////////////////////////////////
@@ -542,16 +536,17 @@ struct rx_mode_type
 
 ///////////////////////////////////////////////////////////////
 
-class rx_time : public rx_time_struct
+class rx_time
 {
+	rx_time_struct data_;
 public:
 	~rx_time();
 	rx_time() noexcept;
 	rx_time(rx_time_struct tm) noexcept;
-	rx_time(const rx_time&) = default;
-	rx_time(rx_time&&) noexcept = default;
-	rx_time& operator=(const rx_time&) = default;
-	rx_time& operator=(rx_time&&) noexcept = default;
+	rx_time(const rx_time&);
+	rx_time(rx_time&&) noexcept;
+	rx_time& operator=(const rx_time&);
+	rx_time& operator=(rx_time&&) noexcept;
 	rx_time(const timeval& tv);
 	rx_time(const asn_binary_time& bt);
 	rx_time(const asn_generalized_time& bt);
@@ -566,8 +561,8 @@ public:
 	std::string get_string(bool with_date = true) const;
 	void get_time_string(char* buff, size_t len) const;
 	std::string get_IEC_string() const;
-	static rx_time_struct from_IEC_string(const char* str);
-	static rx_time_struct from_SNTP_time(uint32_t seconds, uint32_t fraction);
+	static rx_time from_IEC_string(const char* str);
+	static rx_time from_SNTP_time(uint32_t seconds, uint32_t fraction);
 	void to_SNTP_time(uint32_t& seconds, uint32_t& fraction);
 
 	static uint32_t current_time_quality();
@@ -578,17 +573,17 @@ public:
 	static bool is_valid_time(const rx_time_struct& arg);
 	bool is_valid_time() const;
 
-	rx_time operator+(const rx_time_struct& right) const;
+	rx_time operator+(const rx_time& right) const;
 	rx_time operator+(const uint64_t right) const;
-	rx_time operator-(const rx_time_struct& right) const;
+	rx_time operator-(const rx_time& right) const;
 	rx_time operator-(const uint64_t right) const;
 
-	bool operator==(const rx_time_struct& right) const;
-	bool operator!=(const rx_time_struct& right) const;
-	bool operator>(const rx_time_struct& right) const;
-	bool operator>=(const rx_time_struct& right) const;
-	bool operator<(const rx_time_struct& right) const;
-	bool operator<=(const rx_time_struct& right) const;
+	bool operator==(const rx_time& right) const;
+	bool operator!=(const rx_time& right) const;
+	bool operator>(const rx_time& right) const;
+	bool operator>=(const rx_time& right) const;
+	bool operator<(const rx_time& right) const;
+	bool operator<=(const rx_time& right) const;
 
 	void set_as_span(uint32_t days);
 	uint32_t get_as_span() const;
@@ -606,6 +601,8 @@ public:
 	int64_t get_useconds() const;
 
 	bool is_null() const;
+
+	rx_time_struct c_data() const;
 };
 
 

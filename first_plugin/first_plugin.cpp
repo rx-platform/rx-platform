@@ -37,11 +37,12 @@
 #include "first_ports.h"
 #include "rx_configuration.h"
 #include "ether_test.h"
+#include "storage_test.h"
 
 // first_plugin
 #include "first_plugin/first_plugin.h"
 
-RX_DECLARE_PLUGIN(first_plugin)
+RX_DECLARE_PLUGIN(first_plugin);
 
 static const uint8_t c_def_mojFilter[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -126,6 +127,19 @@ static const uint8_t c_def_ethSubs1[] = {
 	0x74, 0x61, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static const uint8_t c_def_mojSingleton[] = {
+	0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x4d, 0x73, 0x67, 0x00, 0xff,
+	0xff, 0xff, 0xff, 0x0d, 0x0e, 0x00, 0x00, 0x00, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f,
+	0x72, 0x6c, 0x64, 0x21, 0x21, 0x21, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+static const uint8_t c_def_rtSingl[] = {
+	0x00, 0x0a, 0x00, 0x00, 0x00, 0x48, 0x6f, 0x73, 0x74, 0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 
@@ -305,6 +319,18 @@ rx_result first_plugin::init_plugin ()
 	if (!result)
 		return result;
 
+	result = rx_platform_api::register_storage_type<strg::test_storage>("test");
+	if (!result)
+	{
+		RX_PLUGIN_LOG_WARNING("first_plugin", 900, ("Unable to register storage type:"s + result.errors_line()).c_str());
+		result = true;
+	}
+
+	result = rx_platform_api::register_singleton_runtime<first_singleton>(rx_node_id(30, 8));
+	if (!result)
+		return result;
+
+
 	return result;
 }
 
@@ -368,6 +394,18 @@ rx_result first_plugin::build_plugin ()
 		, rx_node_id(26, 8), RX_NS_RELATION_BASE_ID, c_def_mojaRel, sizeof(c_def_mojaRel), 0x10007);
 	if (!result)
 		return result;
+
+	result = rx_platform_api::register_item_binary_with_code<first_singleton>("mojSingleton", "subObjekti"
+		, rx_node_id(31, 8), RX_USER_OBJECT_TYPE_ID, c_def_mojSingleton, sizeof(c_def_mojSingleton), 0x10008);
+	if (!result)
+		return result;
+
+	
+	result = rx_platform_api::register_runtime_binary_with_code<first_singleton>("rtSingl", ""
+		, rx_node_id(32, 8), rx_node_id(31, 8), c_def_rtSingl, sizeof(c_def_rtSingl), 0x10008);
+	if (!result)
+		return result;
+		
 
 	return result;
 }
@@ -714,6 +752,63 @@ rx_relation::smart_ptr first_relation::make_target_relation ()
 {
 	RX_PLUGIN_LOG_DEBUG("first_relation", 100, _rx_func_);
 	return rx_create_reference<first_relation>();
+}
+
+
+// Class first_singleton 
+
+first_singleton::first_singleton()
+      : timer_(0)
+{
+}
+
+
+first_singleton::~first_singleton()
+{
+}
+
+
+
+rx_result first_singleton::initialize_object (rx_platform_api::rx_init_context& ctx)
+{
+	RX_PLUGIN_LOG_DEBUG("first_singleton", 100, _rx_func_);
+	return true;
+}
+
+rx_result first_singleton::start_object (rx_platform_api::rx_start_context& ctx)
+{
+	RX_PLUGIN_LOG_DEBUG("first_singleton", 100, _rx_func_);
+	timer_ = create_calc_timer([this]() {timer_tick(); }, 1000);
+	return true;
+}
+
+rx_result first_singleton::stop_object ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_singleton", 100, _rx_func_);
+	if (timer_)
+		destroy_timer(timer_);
+	return true;
+}
+
+rx_result first_singleton::deinitialize_object ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_singleton", 100, _rx_func_);
+	return true;
+}
+
+void first_singleton::timer_tick ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_singleton", 100, _rx_func_);
+	destroy_timer(timer_);
+	timer_ = 0;
+}
+
+first_singleton::smart_ptr first_singleton::instance ()
+{
+	static first_singleton::smart_ptr g_inst;
+	if (!g_inst)
+		g_inst = rx_create_reference< first_singleton>();
+	return g_inst;
 }
 
 

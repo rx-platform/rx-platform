@@ -233,6 +233,18 @@ void rx_io_buffer::zero_memory ()
 	memzero(this, sizeof(rx_packet_buffer));
 }
 
+rx_result rx_io_buffer::write_front (const void* data, size_t size)
+{
+	rx_protocol_result_t result;
+
+	result = rx_push_to_packet_front(this, data, size);
+
+	if (result == RX_PROTOCOL_OK)
+		return true;
+	else
+		return rx_protocol_error_message(result);
+}
+
 rx_io_buffer::rx_io_buffer(rx_io_buffer&& right) noexcept
 {
 	if (right.buffer_ptr)

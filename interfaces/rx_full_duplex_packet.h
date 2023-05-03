@@ -33,12 +33,12 @@
 
 
 
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
-// rx_port_helpers
-#include "system/runtime/rx_port_helpers.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -185,6 +185,8 @@ class listener_instance
 
       void listener_closed_received (rx_protocol_result_t result);
 
+      rx_protocol_stack_endpoint* find_listener_endpoint (const listener_key_type& key, const protocol_address* local_address, const protocol_address* remote_address);
+
       rx_protocol_result_t remove_listener (const listener_key_type& key);
 
 
@@ -204,9 +206,6 @@ class listener_instance
   protected:
 
   private:
-
-      rx_protocol_stack_endpoint* find_listener_endpoint (const listener_key_type& key, const protocol_address* local_address, const protocol_address* remote_address);
-
 
 
       listeners_type listeners_;

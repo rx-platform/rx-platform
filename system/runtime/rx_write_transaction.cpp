@@ -59,7 +59,7 @@ void write_item_transaction::execute_complete (runtime_transaction_id_t transact
 {
 }
 
-void write_item_transaction::write_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result&& result)
+void write_item_transaction::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result)
 {
     callback_(signal_level, std::move(result));
 }
@@ -83,7 +83,7 @@ void execute_method_transaction::execute_complete (runtime_transaction_id_t tran
     callback_(signal_level, std::move(result), std::move(data));
 }
 
-void execute_method_transaction::write_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result&& result)
+void execute_method_transaction::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result)
 {
 }
 

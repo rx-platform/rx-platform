@@ -445,7 +445,7 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 			}
 		case RX_TIME_TYPE:
 			{
-				rx_time temp;
+				rx_time_struct temp;
 				if (!reader.read_time(name, temp))
 					return false;
 				return rx_init_time_value(&val, temp) == RX_OK;
@@ -1534,7 +1534,7 @@ bool assign_value(typed_value_type& from, rx_time_struct value)
 }
 bool assign_value(typed_value_type& from, rx_time value)
 {
-	return rx_init_time_value(&from, value);
+	return rx_init_time_value(&from, value.c_data());
 }
 bool assign_value(typed_value_type& from, const rx_uuid_t& value)
 {
@@ -1701,7 +1701,7 @@ rx_value::rx_value (const typed_value_type* storage, rx_time ts, const rx_mode_t
 	data_.origin = RX_DEFAULT_ORIGIN;
 	if (mode.is_test())
 		set_test();
-	data_.time = ts;
+	data_.time = ts.c_data();
 }
 
 
@@ -1959,7 +1959,7 @@ void rx_value::set_float (double val, rx_value_t type, size_t idx)
 
 rx_time rx_value::set_time (rx_time time)
 {
-	data_.time = time;
+	data_.time = time.c_data();
 	return time;
 }
 
@@ -2083,6 +2083,11 @@ uint32_t rx_value::get_signal_level () const
 	return data_.origin & RX_LEVEL_MASK;
 }
 
+uint32_t rx_value::get_origin () const
+{
+	return data_.origin & RX_ORIGIN_MASK;
+}
+
 
 rx_value::rx_value()
 {
@@ -2136,14 +2141,14 @@ rx_value::rx_value(rx_simple_value&& right, rx_time ts, uint32_t quality) noexce
 {
 	typed_value_type temp = right.move();
 	rx_move_value(&data_.value, &temp);
-	data_.time = ts;
+	data_.time = ts.c_data();
 	data_.quality = quality;
 	data_.origin = RX_DEFAULT_ORIGIN;
 }
 rx_value::rx_value(const rx_simple_value& right, rx_time ts, uint32_t quality)
 {
 	rx_copy_value(&data_.value, right.c_ptr());
-	data_.time = ts;
+	data_.time = ts.c_data();
 	data_.quality = quality;
 	data_.origin = RX_DEFAULT_ORIGIN;
 }
@@ -2159,7 +2164,7 @@ rx_value::rx_value(rx_timed_value&& right, uint32_t quality) noexcept
 rx_value::rx_value(const rx_timed_value& right, uint32_t quality)
 {
 	rx_copy_value(&data_.value, &right.c_ptr()->value);
-	data_.time = right.get_time();
+	data_.time = right.get_time().c_data();
 	data_.quality = quality;
 	data_.origin = RX_DEFAULT_ORIGIN;
 }
@@ -2510,7 +2515,7 @@ rx_timed_value::rx_timed_value (const timed_value_type* storage)
 rx_timed_value::rx_timed_value (const typed_value_type* storage, rx_time ts)
 {
 	rx_copy_value(&data_.value, storage);
-	data_.time = ts;
+	data_.time = ts.c_data();
 }
 
 
@@ -2603,8 +2608,7 @@ void rx_timed_value::dump_to_stream (std::ostream& out) const
 
 void rx_timed_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
 {
-	ts.t_value = std::max(ts.t_value, data_.time.t_value);
-	val = rx_value(&data_.value, ts, mode);
+	val = rx_value(&data_.value, std::max(ts, rx_time(data_.time)), mode);
 }
 
 rx_value_t rx_timed_value::get_type () const
@@ -2754,7 +2758,7 @@ void rx_timed_value::set_float (double val, rx_value_t type, size_t idx)
 
 rx_time rx_timed_value::set_time (rx_time time)
 {
-	data_.time = time;
+	data_.time = time.c_data();
 	return time;
 }
 
@@ -2807,7 +2811,7 @@ byte_string rx_timed_value::get_byte_string (size_t idx) const
 rx_timed_value::rx_timed_value()
 {
 	rx_init_null_value(&data_.value);
-	data_.time = rx_time::null_time();
+	data_.time = rx_time::null_time().c_data();
 }
 
 rx_timed_value::rx_timed_value(timed_value_type right) noexcept
@@ -2848,12 +2852,12 @@ rx_timed_value::rx_timed_value(rx_simple_value&& right, rx_time ts) noexcept
 {
 	typed_value_type temp = right.move();
 	rx_move_value(&data_.value, &temp);
-	data_.time = ts;
+	data_.time = ts.c_data();
 }
 rx_timed_value::rx_timed_value(const rx_simple_value& right, rx_time ts)
 {
 	rx_copy_value(&data_.value, right.c_ptr());
-	data_.time = ts;
+	data_.time = ts.c_data();
 }
 
 

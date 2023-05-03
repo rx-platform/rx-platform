@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ extern "C" {
 
 
 	extern const char* g_ositf_version;
-	
+
 	///////////////////////////////////////////////////////////////////
 	// anonymous pipes
 
@@ -174,7 +174,8 @@ extern "C" {
 	int rx_file_read(sys_handle_t hndl, void* buffer, uint32_t size, uint32_t* readed);
 	int rx_file_write(sys_handle_t hndl, const void* buffer, uint32_t size, uint32_t* written);
 	int rx_file_get_size(sys_handle_t hndl, uint64_t* size);
-	int rx_file_get_time(sys_handle_t hndl, struct rx_time_struct_t* tm);
+	int rx_file_get_time(sys_handle_t hndl, struct rx_time_struct_t* created,  struct rx_time_struct_t* modified);
+	int rx_file_get_time_from_path(const char* path, struct rx_time_struct_t* created,  struct rx_time_struct_t* modified);
 	int rx_file_close(sys_handle_t hndl);
 	int rx_file_delete(const char* path);
 	int rx_file_rename(const char* old_path, const char* new_path);
@@ -252,7 +253,7 @@ extern "C" {
 
 	sys_handle_t rx_open_serial_port(const char* port, uint32_t baud_rate, int stop_bits, int parity, uint8_t data_bits, int handshake);
 	void rx_close_serial_port(sys_handle_t handle);
-	
+
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// thread abstractions

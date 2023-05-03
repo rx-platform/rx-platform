@@ -104,8 +104,6 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
   private:
 
 
-      rx_time created_time_;
-
       bool valid_;
 
       meta::meta_data storage_meta_;
@@ -153,6 +151,8 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
       rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data, rx_item_type type);
 
       rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type);
+
+      void preprocess_meta_data (meta::meta_data& data);
 
 
   protected:

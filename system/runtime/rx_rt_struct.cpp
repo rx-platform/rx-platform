@@ -3074,8 +3074,6 @@ void source_data::process_update (values::rx_value&& value)
 	{
 		if (value != current_value_)
 		{
-			if (value.is_good())
-				RX_ASSERT(false);
 			input_value.set_value(value, context_);
 			rx_result result;
 			auto& filters = item->get_filters();

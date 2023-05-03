@@ -69,7 +69,7 @@ int g_base_rt_priority=0;
 int g_idle_priority=0;
 int g_realtime_priority=0;
 int g_priority_add=0;
-
+int g_rt = 0;
 int rx_big_endian = 0;
 rx_thread_data_t rx_tls = 0;
 
@@ -142,6 +142,7 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug)
 
     if(rt)
     {
+        g_rt = 1;
         // scheduler stuff
         printf("Setting up RT Scheduler\r\n");
 
@@ -152,14 +153,14 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug)
             perror("limit");
         else
         {
-            g_realtime_priority=sched_get_priority_max(SCHED_RR);
-            g_idle_priority=sched_get_priority_min(SCHED_RR);
+            g_realtime_priority=sched_get_priority_max(SCHED_FIFO);
+            g_idle_priority=sched_get_priority_min(SCHED_FIFO);
             g_base_rt_priority=g_realtime_priority/2;
             printf("Max RT priority: %d\n",(int)g_realtime_priority);
             printf("Min RT priority: %d\n",(int)g_idle_priority);
             memzero(&sp,sizeof(sp));
             sp.__sched_priority=g_base_rt_priority;
-            ret=sched_setscheduler(0,SCHED_RR,&sp);
+            ret=sched_setscheduler(0,SCHED_FIFO,&sp);
             if(ret==-1)
                 perror("sched_setscheduler");
             else
@@ -473,7 +474,7 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
 
 	memzero(&sp,sizeof(sp));
 	sp.__sched_priority = g_base_rt_priority;
-
+    int policy = SCHED_RR;
 	switch(priority)
 	{
         case RX_PRIORITY_IDLE:
@@ -484,12 +485,18 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
             break;
         case RX_PRIORITY_BELOW_NORMAL:
             sp.__sched_priority=g_base_rt_priority-g_priority_add;
+            if (g_rt)
+                policy = SCHED_FIFO;
             break;
         case RX_PRIORITY_ABOVE_NORMAL:
             sp.__sched_priority=g_base_rt_priority+g_priority_add;
+            if (g_rt)
+                policy = SCHED_FIFO;
             break;
         case RX_PRIORITY_HIGH:
             sp.__sched_priority=g_base_rt_priority+2*g_priority_add;
+            if (g_rt)
+                policy = SCHED_FIFO;
             break;
         case RX_PRIORITY_REALTIME:
             sp.__sched_priority=g_realtime_priority;
@@ -502,7 +509,7 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
 
 	pthread_setname_np(chunk->thr, name);
 
-    int ret = pthread_setschedparam(chunk->thr,SCHED_RR,&sp);
+    int ret = pthread_setschedparam(chunk->thr, policy,&sp);
     if(ret==-1)
     {
         perror("pthread_setschedparam");
@@ -617,14 +624,33 @@ sys_handle_t rx_file(const char* path, int access, int creation)
 		ret = open(path, flags, mode);
 	}
 	else
-		ret = open(path, flags);
+    {
+        ret = open(path, flags);
+    }
+
 
 	if (ret == -1)
 	{
 		return 0;
 	}
+	// this bellow is a bit crazy but that's the price for compatibility with windows!!!
+	else if(ret == 0)
+	{
+        int nfd=dup(ret);
+        close(ret);
+        if (ret == -1)
+        {
+            return 0;
+        }
+        else
+        {
+            return nfd;
+        }
+	}
 	else
+	{
 		return ret;
+	}
 }
 int rx_file_read(sys_handle_t hndl, void* buffer, uint32_t size, uint32_t* readed)
 {
@@ -697,6 +723,82 @@ int rx_file_exsist(const char* path)
     else
         return 1;
 }
+// xstat stuff
+
+
+struct xstat_parameters {
+    unsigned long long	request_mask;
+#define XSTAT_REQUEST_MODE		0x00000001ULL
+#define XSTAT_REQUEST_NLINK		0x00000002ULL
+#define XSTAT_REQUEST_UID		0x00000004ULL
+#define XSTAT_REQUEST_GID		0x00000008ULL
+#define XSTAT_REQUEST_RDEV		0x00000010ULL
+#define XSTAT_REQUEST_ATIME		0x00000020ULL
+#define XSTAT_REQUEST_MTIME		0x00000040ULL
+#define XSTAT_REQUEST_CTIME		0x00000080ULL
+#define XSTAT_REQUEST_INO		0x00000100ULL
+#define XSTAT_REQUEST_SIZE		0x00000200ULL
+#define XSTAT_REQUEST_BLOCKS		0x00000400ULL
+#define XSTAT_REQUEST__BASIC_STATS	0x000007ffULL
+#define XSTAT_REQUEST_BTIME		0x00000800ULL
+#define XSTAT_REQUEST_GEN		0x00001000ULL
+#define XSTAT_REQUEST_DATA_VERSION	0x00002000ULL
+#define XSTAT_REQUEST__EXTENDED_STATS	0x00003fffULL
+#define XSTAT_REQUEST__ALL_STATS	0x00003fffULL
+};
+
+struct xstat_dev {
+    unsigned int	major;
+    unsigned int	minor;
+};
+
+struct xstat_time {
+    unsigned long long	tv_sec;
+    unsigned long long	tv_nsec;
+};
+
+struct xstat {
+    unsigned int		st_mode;
+    unsigned int		st_nlink;
+    unsigned int		st_uid;
+    unsigned int		st_gid;
+    struct xstat_dev	st_rdev;
+    struct xstat_dev	st_dev;
+    struct xstat_time	st_atim;
+    struct xstat_time	st_mtim;
+    struct xstat_time	st_ctim;
+    struct xstat_time	st_btim;
+    unsigned long long	st_ino;
+    unsigned long long	st_size;
+    unsigned long long	st_blksize;
+    unsigned long long	st_blocks;
+    unsigned long long	st_gen;
+    unsigned long long	st_data_version;
+    unsigned long long	st_result_mask;
+    unsigned long long	st_extra_results[0];
+};
+
+
+#include <sys/syscall.h>
+
+#define __NR_xstat				300
+#define __NR_fxstat				301
+
+ssize_t xstat(int dfd, const char* filename, unsigned flags,
+    struct xstat_parameters* params,
+    struct xstat* buffer, size_t bufsize)
+{
+    return syscall(__NR_xstat, dfd, filename, flags,
+        params, buffer, bufsize);
+}
+ssize_t fxstat(int fd, unsigned flags,
+    struct xstat_parameters* params,
+    struct xstat* buffer, size_t bufsize)
+{
+    return syscall(__NR_fxstat, fd, flags,
+        params, buffer, bufsize);
+}
+
 
 int rx_file_get_size(sys_handle_t hndl, uint64_t* size)
 {
@@ -712,25 +814,64 @@ int rx_file_get_size(sys_handle_t hndl, uint64_t* size)
 		return RX_OK;
 	}
 }
-int rx_file_get_time(sys_handle_t hndl, struct rx_time_struct_t* tm)
+
+
+
+struct rx_time_struct_t get_rx_time_from_xstat(const struct xstat_time* tv)
 {
-	struct stat data;
-	//struct timeval tv;
-	int ret = fstat(hndl, &data);
+    struct rx_time_struct_t ret;
+    if (tv->tv_sec == 0 && tv->tv_nsec == 0)
+    {
+       ret.t_value = 0;
+    }
+    else
+    {
+        uint64_t temp = ((uint64_t)tv->tv_nsec) / 100 + ((uint64_t)tv->tv_sec) * 10000000;
+        temp += server_time_struct_DIFF_TIMEVAL;
+        ret.t_value = temp;
+    }
+    return ret;
+}
+
+
+int rx_file_get_time(sys_handle_t hndl, struct rx_time_struct_t* created, struct rx_time_struct_t* modified)
+{
+    struct xstat_parameters params;
+	struct xstat data;
+
+    params.request_mask = XSTAT_REQUEST_MTIME | XSTAT_REQUEST_BTIME;
+	int ret = fxstat(hndl, 0, &params, &data, sizeof(data));
 	if (ret == -1)
 	{
 		return RX_ERROR;
 	}
 	else
 	{
-		/*tv.tv_usec = 0;
-		tv.tv_sec = data.st_mtime;
-		tm->t_value = timeval_to_rx_time(&tv);*/
-		rx_os_get_system_time(tm);
+        *created = get_rx_time_from_xstat(&data.st_btim);
+        *modified = get_rx_time_from_xstat(&data.st_mtim);
 		return RX_OK;
 	}
 }
 
+
+int rx_file_get_time_from_path(const char* path, struct rx_time_struct_t* created, struct rx_time_struct_t* modified)
+{
+    struct xstat_parameters params;
+    struct xstat data;
+
+    params.request_mask = XSTAT_REQUEST_MTIME | XSTAT_REQUEST_BTIME;
+    int ret = xstat(AT_FDCWD, path, 0, &params, &data, sizeof(data));
+    if (ret == -1)
+    {
+        return RX_ERROR;
+    }
+    else
+    {
+        *created = get_rx_time_from_xstat(&data.st_btim);
+        *modified = get_rx_time_from_xstat(&data.st_mtim);
+        return RX_OK;
+    }
+}
 
 //directories stuff
 /*typedef struct rx_file_directory_entry_t

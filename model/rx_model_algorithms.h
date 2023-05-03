@@ -257,6 +257,7 @@ rx_result do_with_runtime_item(
 
 
 
+
 template<class resultT, class refT, class... Args>
 rx_result do_with_items(
 	const rx_node_ids& ids
@@ -264,6 +265,40 @@ rx_result do_with_items(
 	, rx_result_callback callback
 	, rx_platform::api::rx_context ctx);
 
+
+template<class callbackT, class funcT>
+rx_result do_in_meta_with_dir(
+    funcT what
+    , callbackT callback
+    , rx_directory_ptr item
+    , rx_platform::api::rx_context ctx)
+{
+    using resultT = decltype(what(item));
+
+    rx_platform::callback::rx_remote_function<resultT, rx_directory_ptr> remote(ctx.object, RX_DOMAIN_META, std::move(what), std::move(callback));
+
+    remote(std::move(item));
+
+    return true;
+}
+
+
+template<class funcT>
+rx_result do_in_meta_with_dir(
+    funcT what
+    , rx_result_callback callback
+    , rx_directory_ptr item
+    , rx_platform::api::rx_context ctx)
+{
+
+    auto meta_executer = infrastructure::server_runtime::instance().get_executer(RX_DOMAIN_META);
+
+    rx_platform::rx_do_with_callback<rx_reference_ptr, funcT>(meta_executer, ctx.object
+        , std::forward<funcT>(what), std::move(callback)
+        , std::move(item));
+
+    return true;
+}
 
 
 

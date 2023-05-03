@@ -155,6 +155,12 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 			storage_meta.name = one.substr(0, idx);
 			storage_meta.path = get_base_path() + path;
 			result_path = rx_combine_paths(file_path, one);
+			rx_time_struct created, modified;
+			if (RX_OK == rx_file_get_time_from_path(result_path.c_str(), &created, &modified))
+			{
+				storage_meta.created_time = created;
+				storage_meta.modified_time = modified;
+			}
 			rx_storage_item_ptr storage_item = get_storage_item_from_file_path(result_path, storage_meta);
 			if(storage_item)
 				items.emplace_back(std::move(storage_item));
@@ -271,6 +277,12 @@ rx_result_with<rx_storage_item_ptr> file_system_storage::get_item_storage (const
 	if (result)
 	{
 		meta::meta_data storage_meta;
+		rx_time_struct created, modified;
+		if (RX_OK == rx_file_get_time_from_path(path.c_str(), &created, &modified))
+		{
+			storage_meta.created_time = created;
+			storage_meta.modified_time = modified;
+		}
 		rx_storage_item_ptr storage_item = get_storage_item_from_file_path(path, storage_meta);
 		if (storage_item)
 			return storage_item;
@@ -307,16 +319,21 @@ string_type file_system_storage::get_file_path (const meta::meta_data& data, con
 		string_type ext;
 		if (data.attributes & namespace_item_attributes::namespace_item_system)
 		{
-			ext = rx_is_runtime(type) ?
-				"." RX_INSTANCE_JSON_FILE_EXTENSION
-				: "." RX_TYPE_JSON_FILE_EXTENSION;
+			if (type != rx_directory)
+			{
+				ext = rx_is_runtime(type) ?
+					"." RX_INSTANCE_JSON_FILE_EXTENSION
+					: "." RX_TYPE_JSON_FILE_EXTENSION;
+			}
 		}
 		else
 		{
-
-			ext = rx_is_runtime(type) ?
-				"." RX_INSTANCE_JSON_FILE_EXTENSION
-				: "." RX_TYPE_JSON_FILE_EXTENSION;
+			if (type != rx_directory)
+			{
+				ext = rx_is_runtime(type) ?
+					"." RX_INSTANCE_JSON_FILE_EXTENSION
+					: "." RX_TYPE_JSON_FILE_EXTENSION;
+			}
 		}
 		file_path = rx_combine_paths(file_path, data.name + ext);
 		items_cache_.emplace(data.get_full_path(), file_path);
@@ -341,6 +358,12 @@ rx_result_with<rx_storage_item_ptr> file_system_storage::get_runtime_storage (co
 	if (result)
 	{
 		meta::meta_data storage_meta;
+		rx_time_struct created, modified;
+		if (RX_OK == rx_file_get_time_from_path(path.c_str(), &created, &modified))
+		{
+			storage_meta.created_time = created;
+			storage_meta.modified_time = modified;
+		}
 		rx_storage_item_ptr storage_item = get_storage_item_from_file_path(path, storage_meta);
 		if (storage_item)
 			return storage_item;
@@ -382,6 +405,32 @@ string_type file_system_storage::get_runtime_file_path (const meta::meta_data& d
 		return it->second;
 }
 
+void file_system_storage::preprocess_meta_data (meta::meta_data& data)
+{
+	string_type base = get_base_path();
+	size_t idx;
+	string_type file_path;
+	idx = data.path.find(base);
+	if (idx == 0)
+	{
+		idx = base.size();
+		idx = data.path.find(RX_DIR_DELIMETER, idx);
+		if (idx != string_type::npos)
+			file_path = rx_combine_paths(root_, data.path.substr(idx + 1));
+		else
+			file_path = root_;
+	}
+	if (!file_path.empty())
+	{
+		rx_time_struct created, modified;
+		if (RX_OK == rx_file_get_time_from_path(file_path.c_str(), &created, &modified))
+		{
+			data.created_time = created;
+			data.modified_time = modified;
+		}
+	}
+}
+
 
 // Parameterized Class storage::files::rx_file_item 
 
@@ -408,7 +457,7 @@ template <class fileT, class streamT>
 values::rx_value rx_file_item<fileT,streamT>::get_value () const
 {
 	values::rx_value temp;
-	temp.set_time(get_created_time());
+	temp.set_time(storage_meta_.created_time);
 	temp.set_quality(valid_ ? RX_GOOD_QUALITY : RX_BAD_QUALITY);
 	return temp;
 }
@@ -416,7 +465,7 @@ values::rx_value rx_file_item<fileT,streamT>::get_value () const
 template <class fileT, class streamT>
 rx_time rx_file_item<fileT,streamT>::get_created_time () const
 {
-	return created_time_;
+	return storage_meta_.created_time;
 }
 
 template <class fileT, class streamT>
@@ -458,12 +507,12 @@ bool rx_file_item<fileT,streamT>::preprocess_meta_data (meta::meta_data& data)
 		data.path = storage_meta_.path;
 		ret = true;
 	}
-	if (storage_meta_.modified_time > data.modified_time)
+	if (storage_meta_.modified_time != rx_time::null_time())
 	{
 		data.modified_time = storage_meta_.modified_time;
 		// ret = true;// this is not worth the trouble
 	}
-	if (storage_meta_.created_time > data.created_time)
+	if (storage_meta_.created_time != rx_time::null_time())
 	{
 		data.created_time = storage_meta_.created_time;
 		// ret = true;// this is not worth the trouble
@@ -611,10 +660,10 @@ rx_result file_system_storage_connection::init_connection (const string_type& st
 rx_result_with<rx_storage_ptr> file_system_storage_connection::get_and_init_storage (const string_type& name, hosting::rx_platform_host* host)
 {
 	string_type sub_path = rx_combine_paths(root_path_, name);
-	rx_storage_ptr result_ptr = rx_create_reference<file_system_storage>();
+	file_system_storage::smart_ptr result_ptr = rx_create_reference<file_system_storage>();
 	auto result = result_ptr->init_storage(sub_path, host);
 	if (result)
-		return result_ptr;
+		return rx_storage_ptr(result_ptr);
 	else
 		return result.errors();
 }

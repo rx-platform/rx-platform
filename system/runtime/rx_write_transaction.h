@@ -60,7 +60,7 @@ class write_item_transaction : public tag_blocks::rx_tags_callback
 
       void execute_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
-      void write_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result&& result);
+      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result);
 
       template<typename... FwdArgs>
       void operator () (FwdArgs&&... args)
@@ -93,7 +93,7 @@ class execute_method_transaction : public tag_blocks::rx_tags_callback
 
       void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data);
 
-      void write_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result&& result);
+      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result);
 
       template<typename... FwdArgs>
       void operator () (FwdArgs&&... args)

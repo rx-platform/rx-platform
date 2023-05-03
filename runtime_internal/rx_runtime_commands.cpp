@@ -304,6 +304,7 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 				{
 					bool is_value = false;
 					string_type postfix;
+					bool is_good = one.value.is_good();
 					string_type value = one.value.extract_static<string_type>(""s);
 					if (one.value.is_null())
 						value = RX_TERMINAL_STRUCT_SYMBOL;
@@ -378,9 +379,16 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 						break;
 					}
 					if (is_value)
-						table[idx].emplace_back(value, ANSI_COLOR_WHITE ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+					{
+						if(is_good)
+							table[idx].emplace_back(value, ANSI_COLOR_WHITE ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+						else
+							table[idx].emplace_back(value, ANSI_COLOR_RED ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+					}
 					else
+					{
 						table[idx].emplace_back(value, ANSI_COLOR_WHITE, ANSI_COLOR_RESET);
+					}
 
 					if (!postfix.empty())
 						table[idx].emplace_back(postfix + rx_runtime_attribute_type_name(one.type));

@@ -113,6 +113,8 @@ oper_struct operations[] = {
 	{ ATAN_CODE,"atan",4}
 };
 
+#define POINT_LOCAL_VAR_NAME "x"
+
 
 extern uint32_t g_count;
 extern uint32_t g_tag_nums;
@@ -534,8 +536,11 @@ void value_point_impl::disconnect (data_controler* controler)
 		rate_ = 0;
 		for (tag_handles_type::iterator it = tag_handles_.begin(); it != tag_handles_.end(); it++)
 		{
-			controler->unregister_value(it->first, this);
-			controler->remove_item(it->first);
+			if (it->first)
+			{
+				controler->unregister_value(it->first, this);
+				controler->remove_item(it->first);
+			}
 		}
 		tag_handles_.clear();
 		tag_variables_.clear();
@@ -636,6 +641,13 @@ void value_point_impl::execute (data::runtime_values_data data, runtime_transact
 	}
 }
 
+rx_value value_point_impl::calculate_local_var (const rx_value& val, char* token_buff)
+{
+	value_changed(0, val);
+	rx_value res = internal_calculate(token_buff);
+	return res;
+}
+
 void value_point_impl::parse_and_connect (const char* path, char* tbuff, const rx_time& now, data_controler* controler)
 {
 	char* token_buff = tbuff;
@@ -646,6 +658,8 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 		token_buff = new char[path_len * 2];
 
 	std::map<string_type, char> vars;
+
+	int local_val_index = -1;
 
 	string_type expres;
 	size_t tags_count = 0;
@@ -729,6 +743,8 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 			auto itv = vars.find(var_name);
 			if (itv == vars.end())
 			{
+				if (var_name == POINT_LOCAL_VAR_NAME)
+					local_val_index = (int)tags_count;
 				tags_count++;
 				rx_value dummy;
 				dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
@@ -768,6 +784,8 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 				auto itv = vars.find(var_name);
 				if (itv == vars.end())
 				{
+					if (var_name == POINT_LOCAL_VAR_NAME)
+						local_val_index = (int)tags_count;
 					tags_count++;
 					rx_value dummy;
 					dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
@@ -804,15 +822,21 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 		for (auto it = vars.begin(); it != vars.end(); it++)
 		{
 			value_handle_type temp = 0;
-			if(translate_path(it->first, buffer))
-				temp = controler->add_item(buffer, rate_);
-			else
-				temp = controler->add_item(it->first, rate_);
-
-			if (temp)
+			if (it->first != POINT_LOCAL_VAR_NAME)
 			{
-				tag_handles_[temp] = (it->second & TAG_ID_MASK);
-				controler->register_value(temp, this);
+				if (translate_path(it->first, buffer))
+					temp = controler->add_item(buffer, rate_);
+				else
+					temp = controler->add_item(it->first, rate_);
+				if (temp)
+				{
+					tag_handles_[temp] = (it->second & TAG_ID_MASK);
+					controler->register_value(temp, this);
+				}
+			}
+			else
+			{
+				tag_handles_[0] = (it->second & TAG_ID_MASK);
 			}
 		}
 	}
@@ -822,6 +846,12 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 }
 
 void value_point_impl::calculate (char* token_buff)
+{
+	rx_value res = internal_calculate(token_buff);
+	value_changed(res);
+}
+
+rx_value value_point_impl::internal_calculate (char* token_buff)
 {
 	uint32_t quality = 0;
 	uint32_t bad_quality = 0;
@@ -862,7 +892,7 @@ void value_point_impl::calculate (char* token_buff)
 	{
 		res.set_quality(bad_quality);
 		res.set_time(last_time);
-		value_changed(res);
+		return res;
 	}
 	else
 	{
@@ -871,15 +901,15 @@ void value_point_impl::calculate (char* token_buff)
 		{
 			get_expression(res, token_buff);
 		}
-		catch (const std::runtime_error&)
+		catch (const std::exception&)
 		{
 			res = rx_value();
-			res.set_quality(RX_BAD_QUALITY);
+			res.set_quality(RX_BAD_QUALITY_SYNTAX_ERROR);
 		}
 		if (res.is_good())
 			res.set_quality(quality);
 		res.set_time(last_time);
-		value_changed(res);
+		return res;
 	}
 }
 
@@ -1261,7 +1291,7 @@ void value_point_impl::put_back (char*& prog, char*& token, char& tok_type, char
 	for (; *t; t++) prog--;
 }
 
-void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::unary (uint8_t o, rx_value& r, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	if (o == '-')
 	{
@@ -1484,7 +1514,7 @@ void value_point_impl::unary (char o, rx_value& r, char*& prog, char*& token, ch
 		RX_ASSERT(false);
 }
 
-void value_point_impl::arith (char o, rx_value& r, rx_value& h, char*& prog, char*& token, char& tok_type, char*& expres)
+void value_point_impl::arith (uint8_t o, rx_value& r, rx_value& h, char*& prog, char*& token, char& tok_type, char*& expres)
 {
 	switch ((uint8_t)o)
 	{

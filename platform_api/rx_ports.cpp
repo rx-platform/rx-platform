@@ -42,6 +42,7 @@ typedef rx_platform_api::rx_port _rx_port_holder_stub;
 rxRegisterPortRuntime_t api_reg_port_func;
 
 
+
 extern "C"
 {
 
@@ -142,13 +143,11 @@ rx_result register_port_runtime(const rx_node_id& id, rx_port_constructor_t cons
     data.constructor = construct_func;
     data.register_func = reg_function;
     data.unregister_func = unreg_function;
-    auto ret = api_reg_port_func(g_plugin, id.c_ptr(), data);
+    auto ret = api_reg_port_func(get_rx_plugin(), id.c_ptr(), data);
     return ret;
 }
 
 // Class rx_platform_api::rx_port 
-
-rx_item_type rx_port::runtime_type_id = rx_item_type::rx_port;
 
 rx_port::rx_port()
 {

@@ -51,15 +51,17 @@ rxUnlockRuntimeManager_t api_unlock_runtime_manager;
 
 rxWriteLog_t api_write_log_func;
 rxRegisterItem_t api_reg_item_binary_func;
+rxRegisterRuntimeItem_t api_reg_runtime_binary_func;
 
 string_type api_plugin_root;
+
 
 namespace rx_platform_api
 {
 
 void write_log(log_event_type type, const char* library, const char* source, uint16_t level, const char* code, const char* message)
 {
-	api_write_log_func(g_plugin, (int)type, library, source, level, code, message);
+	api_write_log_func(get_rx_plugin(), (int)type, library, source, level, code, message);
 }
 rx_result register_item_binary(rx_item_type type, const string_type& name, const string_type& path
 	, const rx_node_id& id, const rx_node_id& parent
@@ -74,13 +76,40 @@ rx_result register_item_binary(rx_item_type type, const string_type& name, const
 	if(!path.empty())
 		real_path += RX_DIR_DELIMETER + path;
 	
-	rx_result ret = api_reg_item_binary_func(g_plugin, (uint8_t)type, name.c_str(), real_path.c_str(), id.c_ptr(), parent.c_ptr(), version, modified, stream_version, data, count);
-	return ret;
+	if(api_reg_item_binary_func)
+		return api_reg_item_binary_func(get_rx_plugin(), (uint8_t)type, name.c_str(), real_path.c_str(), id.c_ptr(), parent.c_ptr(), version, modified.c_data(), stream_version, data, count);
+	else
+		return rx_result(RX_NOT_SUPPORTED);
 }
 rx_result register_item_binary(rx_item_type type, const string_type& name, const string_type& path, const rx_node_id& id
 	, const rx_node_id& parent, const uint8_t* data, size_t count, uint32_t stream_version)
 {
 	return register_item_binary(type, name, path, id, parent, 0x10000, rx_time::now(), data, count, stream_version);
+}
+
+rx_result register_runtime_binary(rx_item_type type, const string_type& name, const string_type& path
+	, const rx_node_id& id, const rx_node_id& parent
+	, uint32_t version, rx_time modified, const uint8_t* data, size_t count, uint32_t stream_version)
+{
+	if (api_plugin_root.empty())
+		return "Operation not possible at this moment!";
+
+	if (data == nullptr || count < 10)
+		return "No data provided";
+	string_type real_path = api_plugin_root;
+	if (!path.empty())
+		real_path += RX_DIR_DELIMETER + path;
+
+
+	if (api_reg_runtime_binary_func)
+		return api_reg_runtime_binary_func(get_rx_plugin(), (uint8_t)type, name.c_str(), real_path.c_str(), id.c_ptr(), parent.c_ptr(), version, modified.c_data(), stream_version, data, count);
+	else
+		return rx_result(RX_NOT_SUPPORTED);
+}
+rx_result register_runtime_binary(rx_item_type type, const string_type& name, const string_type& path, const rx_node_id& id
+	, const rx_node_id& parent, const uint8_t* data, size_t count, uint32_t stream_version)
+{
+	return register_runtime_binary(type, name, path, id, parent, 0x10000, rx_time::now(), data, count, stream_version);
 }
 
 

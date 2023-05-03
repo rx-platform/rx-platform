@@ -35,6 +35,18 @@
 
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
+
+namespace rx_internal {
+namespace sys_runtime {
+namespace filters {
+class calculation_filter;
+
+} // namespace filters
+} // namespace sys_runtime
+} // namespace rx_internal
+
 
 
 
@@ -299,6 +311,90 @@ Supports both string and numeric values");
       runtime::local_value<uint32_t> timeout_;
 
       rx_timer_ptr timer_;
+
+
+};
+
+
+
+
+
+
+class calcualtion_point : public data_source::value_point_impl  
+{
+
+  public:
+      calcualtion_point (calculation_filter* my_filter);
+
+
+  protected:
+
+  private:
+
+      void value_changed (const rx_value& val);
+
+
+
+      calculation_filter *my_filter_;
+
+
+};
+
+
+
+
+
+
+class calculation_filter : public rx_platform::runtime::blocks::filter_runtime  
+{
+
+  public:
+      calculation_filter();
+
+      ~calculation_filter();
+
+
+      rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+      rx_result start_filter (runtime::runtime_start_context& ctx);
+
+      rx_result stop_filter (runtime::runtime_stop_context& ctx);
+
+      void value_changed (const rx_value& val, calcualtion_point* whose);
+
+
+  protected:
+
+  private:
+
+      rx_result filter_input (rx_value& val);
+
+      rx_result filter_output (rx_simple_value& val);
+
+      rx_result connect_input (const string_type& path);
+
+      void disconnect_input ();
+
+      rx_result connect_output (const string_type& path);
+
+      void disconnect_output ();
+
+      void input_value_changed (const rx_value& val);
+
+      void output_value_changed (const rx_value& val);
+
+
+
+      calcualtion_point input_point_;
+
+      calcualtion_point output_point_;
+
+
+      runtime::local_value<string_type> input_path_;
+
+      runtime::local_value<string_type> output_path_;
+
+      char token_buffer_[64];
 
 
 };

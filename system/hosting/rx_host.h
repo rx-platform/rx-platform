@@ -93,6 +93,11 @@ rx_result register_host_data_type(data_type_ptr what);
 template<typename typeT>
 rx_result register_host_runtime(const typename typeT::instance_data_t& instance_data, const data::runtime_values_data* data);
 
+namespace storage_base
+{
+class rx_platform_storage_type;
+}
+
 namespace hosting {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // IP addresses
@@ -174,11 +179,24 @@ class startup_log_subscriber : public log::log_subscriber
 };
 
 
+
+
+struct configured_storage_t
+{
+    string_type storage_id;
+    string_type reference;
+    string_type name;
+    rx_storage_ptr connection;
+};
+
 struct rx_host_storages
 {
 	std::map<string_type, storage_base::rx_platform_storage_type*> storage_types;
     std::map < string_type, storage_base::rx_storage_connection::smart_ptr> registered_connections;
+    std::vector<configured_storage_t> configured_storages;
 };
+
+
 typedef cxxopts::Options command_line_options_t;
 struct rx_host_directories
 {
@@ -223,6 +241,8 @@ struct rx_host_directories
 	}
 };
 using hosts_type = string_array;
+
+
 
 
 
@@ -289,6 +309,10 @@ class rx_platform_host
       std::vector<std::map<string_type, string_type> > read_config_files (const string_type& file_name);
 
       virtual void fill_plugin_libs (string_array& paths);
+
+      std::vector<std::pair<string_type, rx_storage_ptr> > get_configured_storages ();
+
+      rx_result register_storage_type (const string_type& prefix, storage_base::rx_platform_storage_type* what);
 
 
       rx_platform_host * get_parent ()

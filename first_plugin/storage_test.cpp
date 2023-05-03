@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  runtime_internal\rx_simulation.h
+*  first_plugin\storage_test.cpp
 *
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,57 +28,28 @@
 ****************************************************************************/
 
 
-#ifndef rx_simulation_h
-#define rx_simulation_h 1
+#include "pch.h"
+
+
+// storage_test
+#include "first_plugin/storage_test.h"
 
 
 
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
+namespace strg {
 
-using namespace rx_platform::runtime;
+// Class strg::test_storage 
 
-
-namespace rx_internal {
-
-namespace sys_runtime {
-
-namespace simulation {
-
-rx_result register_simulation_constructors();
-
-
-
-
-class local_register_source : public rx_platform::runtime::blocks::source_runtime  
+test_storage::test_storage()
 {
-    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-Local Register Source. Source implementation for register.");
-
-    DECLARE_REFERENCE_PTR(local_register_source);
-
-  public:
-      local_register_source();
+}
 
 
-      rx_result start_source (runtime::runtime_start_context& ctx);
-
-
-  protected:
-
-  private:
-
-      rx_result source_write (write_data&& data, runtime_process_context* ctx);
+test_storage::~test_storage()
+{
+}
 
 
 
-};
+} // namespace strg
 
-
-} // namespace simulation
-} // namespace sys_runtime
-} // namespace rx_internal
-
-
-
-#endif

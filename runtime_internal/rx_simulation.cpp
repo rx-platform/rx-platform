@@ -49,10 +49,6 @@ rx_result register_simulation_constructors()
         RX_REGISTER_SOURCE_TYPE_ID, [] {
             return rx_create_reference<local_register_source>();
         });
-    result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
-        RX_RAMP_SIMULATION_SOURCE_TYPE_ID, [] {
-            return rx_create_reference<ramp_source>();
-        });
     return true;
 }
 
@@ -82,100 +78,8 @@ rx_result local_register_source::start_source (runtime::runtime_start_context& c
 }
 
 
-// Class rx_internal::sys_runtime::simulation::periodic_source 
-
-periodic_source::periodic_source()
-      : period_(200)
-{
-}
-
-
-
-rx_result periodic_source::source_write (write_data&& data, runtime_process_context* ctx)
-{
-    return RX_NOT_IMPLEMENTED;
-}
-
-rx_result periodic_source::start_source (runtime::runtime_start_context& ctx)
-{
-    timer_ = ctx.create_timer_function(smart_this(), [this]()
-        {
-            source_tick(rx_time::now());
-        });
-    if (period_)
-    {
-        timer_->start(period_, true);
-    }
-    return true;
-}
-
-rx_result periodic_source::initialize_source (runtime::runtime_init_context& ctx)
-{
-    auto result = period_.bind(".Period", ctx);    
-    return result;
-}
-
-rx_result periodic_source::stop_source (runtime::runtime_stop_context& ctx)
-{
-    if (timer_)
-    {
-        timer_->cancel();
-        timer_ = rx_timer_ptr::null_ptr;
-    }
-    return true;
-}
-
-
-// Class rx_internal::sys_runtime::simulation::ramp_source 
-
-ramp_source::ramp_source()
-      : amplitude_(100.0),
-        increment_(1.0),
-        current_value_(0.0)
-{
-}
-
-
-
-rx_result ramp_source::initialize_source (runtime::runtime_init_context& ctx)
-{
-    auto result = periodic_source::initialize_source(ctx);
-    if (!result)
-        return result;
-    auto bind_result = amplitude_.bind(".Amplitude", ctx);
-    if (!bind_result)
-    {
-
-    }
-    bind_result = increment_.bind(".Increment", ctx);
-    if (!bind_result)
-    {
-
-    }
-    return true;
-}
-
-rx_result ramp_source::start_source (runtime::runtime_start_context& ctx)
-{
-    auto result = periodic_source::start_source(ctx);
-    if (!result)
-        return result;
-    return true;
-}
-
-void ramp_source::source_tick (rx_time now)
-{
-    current_value_ += increment_;
-    if (current_value_ > amplitude_)
-        current_value_ = 0.0;
-    rx_value val;
-    val.assign_static(current_value_, now);
-    val.set_good_locally();
-    source_value_changed(std::move(val));
-}
-
-
 } // namespace simulation
 } // namespace sys_runtime
 } // namespace rx_internal
+
 

@@ -406,8 +406,6 @@ rx_result rx_result::create_from_c_error(string_view_type text)
 }
 
 
-const rx_item_reference rx_item_reference::null_ref;
-
 
 // placement new and MSVC debug heap problem
 #ifdef _MSC_VER
@@ -669,7 +667,7 @@ bool rx_uuid::operator<=(const rx_uuid& right) const
 	return (memcmp(this, &right, sizeof(rx_uuid_t)) <= 0);
 }
 // {98862E03-F664-48C5-A6AC-24761B5D479F}
-rx_uuid g_null_uuid;
+//rx_uuid g_null_uuid;
 
 
 rx_uuid rx_uuid::create_new()
@@ -680,7 +678,8 @@ rx_uuid rx_uuid::create_new()
 }
 const rx_uuid& rx_uuid::null_uuid()
 {
-	return g_null_uuid;
+	static rx_uuid s_null = rx_uuid{ {0} };
+	return s_null;
 }
 rx_uuid rx_uuid::create_from_string(const string_type& str)
 {
@@ -689,11 +688,12 @@ rx_uuid rx_uuid::create_from_string(const string_type& str)
 	if (RX_OK == rx_string_to_uuid(str.c_str(), &temp))
 		return temp;
 	else
-		return g_null_uuid;
+		return rx_uuid{ {0} };
 }
 bool rx_uuid::is_null() const
 {
-	return memcmp(this, &g_null_uuid, sizeof(rx_uuid_t)) == 0;
+	static rx_uuid s_null = rx_uuid{ {0} };
+	return memcmp(this, &s_null, sizeof(rx_uuid_t)) == 0;
 }
 
 void rx_uuid::to_string(string_type& str) const
@@ -711,9 +711,6 @@ string_type rx_uuid::to_string() const
 	to_string(temp);
 	return temp;
 }
-
-
-const rx_node_id rx_node_id::null_id;
 
 
 std::ostream & operator << (std::ostream &out, const rx_node_id &val)
@@ -1267,7 +1264,6 @@ bool rx_mode_type::turn_off()
 
 namespace
 {
-rx_time g_null_time = { 0 };
 std::atomic<int64_t> g_current_offset(0);
 std::atomic<uint32_t> g_current_time_quality(DEFAULT_TIME_QUALITY);
 }
@@ -1277,23 +1273,41 @@ rx_time::~rx_time()
 }
 rx_time::rx_time() noexcept
 {
-	t_value = 0;
+	data_.t_value = 0;
 }
 
+rx_time::rx_time(const rx_time& right)
+{
+	data_.t_value = right.data_.t_value;
+}
+rx_time::rx_time(rx_time&& right) noexcept
+{
+	data_.t_value = right.data_.t_value;
+}
+rx_time& rx_time::operator=(const rx_time& right)
+{
+	data_.t_value = right.data_.t_value;
+	return *this;
+}
+rx_time& rx_time::operator=(rx_time&& right) noexcept
+{
+	data_.t_value = right.data_.t_value;
+	return *this;
+}
 rx_time::rx_time(rx_time_struct tm) noexcept
 {
-	t_value = tm.t_value;
+	data_.t_value = tm.t_value;
 }
 
 rx_time::rx_time(const timeval& tv)
 {
 	if (tv.tv_sec == 0 && tv.tv_usec == 0)
-		t_value = 0;
+		data_.t_value = 0;
 	else
 	{
 		uint64_t temp = ((uint64_t)tv.tv_usec) * 10 + ((uint64_t)tv.tv_sec) * 10000000;
 		temp += server_time_struct_DIFF_TIMEVAL;
-		t_value = temp;
+		data_.t_value = temp;
 	}
 }
 void rx_time::to_timeval(timeval& tv) const
@@ -1305,7 +1319,7 @@ void rx_time::to_timeval(timeval& tv) const
 	}
 	else
 	{
-		uint64_t temp = t_value;
+		uint64_t temp = data_.t_value;
 		temp -= server_time_struct_DIFF_TIMEVAL;
 		temp /= 10;
 		tv.tv_sec = (long)(temp / 1000000UL);
@@ -1324,12 +1338,12 @@ rx_time::rx_time(const asn_generalized_time& bt)
 	full.second = bt.second;
 	full.milliseconds = (bt.fraction / 1000);
 
-	rx_os_collect_time(&full, this);
+	rx_os_collect_time(&full, &data_);
 }
 void rx_time::to_asn_generalized_time(asn_generalized_time& bt) const
 {
 	rx_full_time full;
-	rx_os_split_time(this, &full);
+	rx_os_split_time(&data_, &full);
 
 	bt.year = full.year;
 	bt.month = full.month;
@@ -1382,16 +1396,16 @@ void rx_time::to_asn_binary_time(asn_binary_time& bt) const
 }
 rx_time::rx_time(const uint64_t interval)
 {
-	t_value = interval*(uint64_t)10000;
+	data_.t_value = interval*(uint64_t)10000;
 }
 rx_time& rx_time::operator=(const rx_time_struct& right) noexcept
 {
-	memcpy(this, &right, sizeof(rx_time_struct));
+	memcpy(&data_, &right, sizeof(rx_time_struct));
 	return *this;
 }
 rx_time& rx_time::operator=(const uint64_t interval) noexcept
 {
-	t_value = interval*(uint64_t)10000;
+	data_.t_value = interval*(uint64_t)10000;
 	return *this;
 }
 bool  rx_time::is_valid_time(const rx_time_struct& arg)
@@ -1400,20 +1414,20 @@ bool  rx_time::is_valid_time(const rx_time_struct& arg)
 }
 bool  rx_time::is_valid_time() const
 {
-	return t_value>0x014f373b00000000ul;
+	return data_.t_value>0x014f373b00000000ul;
 }
 rx_time rx_time::null_time()
 {
-	return g_null_time;
+	return rx_time(0);
 }
 rx_time rx_time::now()
 {
 	rx_time ret;
-	rx_os_get_system_time(&ret);
+	rx_os_get_system_time(&ret.data_);
 	int64_t offset = g_current_offset;
 	if (offset)
 	{
-		ret.t_value = ret.t_value + offset;
+		ret.data_.t_value = ret.data_.t_value + offset;
 	}
 	return ret;
 }
@@ -1431,10 +1445,10 @@ void rx_time::set_synchronized(bool value)
 	uint32_t temp = value ? SYNCHRONIZED_TIME_QUALITY : DEFAULT_TIME_QUALITY;
 	g_current_time_quality.store(temp);
 }
-rx_time rx_time::operator+(const rx_time_struct& right) const
+rx_time rx_time::operator+(const rx_time& right) const
 {
 	rx_time res;
-	res.t_value = t_value + right.t_value;
+	res.data_.t_value = data_.t_value + right.data_.t_value;
 
 	return res;
 }
@@ -1442,16 +1456,16 @@ rx_time rx_time::operator+(const uint64_t right) const
 {
 
 	rx_time res;
-	res.t_value = t_value + right * 10000;
+	res.data_.t_value = data_.t_value + right * 10000;
 
 	return res;
 
 
 }
-rx_time rx_time::operator-(const rx_time_struct& right) const
+rx_time rx_time::operator-(const rx_time& right) const
 {
 	rx_time res;
-	res.t_value = t_value - right.t_value;
+	res.data_.t_value = data_.t_value - right.data_.t_value;
 
 	return res;
 
@@ -1460,47 +1474,47 @@ rx_time rx_time::operator-(const rx_time_struct& right) const
 rx_time rx_time::operator-(const uint64_t right) const
 {
 	rx_time res;
-	res.t_value = t_value - right * 10000;
+	res.data_.t_value = data_.t_value - right * 10000;
 
 	return res;
 
 }
 
-bool rx_time::operator==(const rx_time_struct& right) const
+bool rx_time::operator==(const rx_time& right) const
 {
-	return t_value == right.t_value;
+	return data_.t_value == right.data_.t_value;
 }
-bool rx_time::operator!=(const rx_time_struct& right) const
+bool rx_time::operator!=(const rx_time& right) const
 {
-	return t_value != right.t_value;
+	return data_.t_value != right.data_.t_value;
 }
-bool rx_time::operator>(const rx_time_struct& right) const
+bool rx_time::operator>(const rx_time& right) const
 {
-	return t_value > right.t_value;
+	return data_.t_value > right.data_.t_value;
 }
-bool rx_time::operator>=(const rx_time_struct& right) const
+bool rx_time::operator>=(const rx_time& right) const
 {
-	return t_value >= right.t_value;
+	return data_.t_value >= right.data_.t_value;
 }
-bool rx_time::operator<(const rx_time_struct& right) const
+bool rx_time::operator<(const rx_time& right) const
 {
-	return t_value < right.t_value;
+	return data_.t_value < right.data_.t_value;
 }
 
 
-bool rx_time::operator<=(const rx_time_struct& right) const
+bool rx_time::operator<=(const rx_time& right) const
 {
-	return t_value <= right.t_value;
+	return data_.t_value <= right.data_.t_value;
 }
 
 rx_time& rx_time::to_local()
 {
-	rx_os_to_local_time(this);
+	rx_os_to_local_time(&data_);
 	return *this;
 }
 rx_time& rx_time::to_UTC()
 {
-	rx_os_to_utc_time(this);
+	rx_os_to_utc_time(&data_);
 	return *this;
 }
 
@@ -1539,20 +1553,24 @@ return *this;
 
 uint32_t rx_time::get_miliseconds() const
 {
-	return (uint32_t)(t_value / 10000);
+	return (uint32_t)(data_.t_value / 10000);
 }
 
 bool rx_time::is_null() const
 {
-	return t_value == 0;
+	return data_.t_value == 0;
+}
+rx_time_struct rx_time::c_data() const
+{
+	return data_;
 }
 int64_t rx_time::get_longlong_miliseconds() const
 {
-	return (t_value / 10000);
+	return (data_.t_value / 10000);
 }
 int64_t rx_time::get_useconds() const
 {
-	return (t_value / 10);
+	return (data_.t_value / 10);
 }
 
 std::string rx_time::get_string(bool with_date) const
@@ -1562,7 +1580,7 @@ std::string rx_time::get_string(bool with_date) const
 	rx_full_time full;
 	char buff[0x200];
 
-	rx_os_split_time(this, &full);
+	rx_os_split_time(&data_, &full);
 
 	std::string ret;
 	if (with_date)
@@ -1583,7 +1601,7 @@ std::string rx_time::get_string(bool with_date) const
 
 void rx_time::get_time_string(char* buff, size_t len) const
 {
-	uint64_t abs = t_value / 10;
+	uint64_t abs = data_.t_value / 10;
 
 	uint64_t usec = abs % 1000;
 	abs = abs / 1000;
@@ -1603,7 +1621,7 @@ void rx_time::get_time_string(char* buff, size_t len) const
 		(int)hour, (int)min, (int)sec, (int)msec, (int)usec);
 
 }
-rx_time_struct rx_time::from_SNTP_time(uint32_t seconds, uint32_t fraction)
+rx_time rx_time::from_SNTP_time(uint32_t seconds, uint32_t fraction)
 {
 	uint64_t temp = ((uint64_t)seconds) * 10000000ull;
 	temp = temp + (((uint64_t)fraction) * 10000000ull / 0x100000000ull);
@@ -1617,7 +1635,7 @@ rx_time_struct rx_time::from_SNTP_time(uint32_t seconds, uint32_t fraction)
 }
 void rx_time::to_SNTP_time(uint32_t& seconds, uint32_t& fraction)
 {
-	int64_t temp = t_value;
+	int64_t temp = data_.t_value;
 	temp = temp - 0x014f373bfde04000ull;
 
 	if (temp > 0)
@@ -1637,7 +1655,7 @@ void rx_time::to_SNTP_time(uint32_t& seconds, uint32_t& fraction)
 	}
 
 }
-rx_time_struct rx_time::from_IEC_string(const char* str)
+rx_time rx_time::from_IEC_string(const char* str)
 {
 	const char* ptr = str;
 
@@ -1653,12 +1671,12 @@ rx_time_struct rx_time::from_IEC_string(const char* str)
 	else if (sscanf(ptr, "%4u%2u%2u", &os_time.year, &os_time.month, &os_time.day) == 3)
 		ptr += 8;
 	else
-		return g_null_time;
+		return rx_time();
 
 	if (*ptr != L'\0')
 	{
 		if (*ptr != L'T')
-			return g_null_time;
+			return rx_time();
 		ptr++;
 
 		if (sscanf(ptr, "%2u:%2u", &os_time.hour, &os_time.minute) == 2)
@@ -1666,7 +1684,7 @@ rx_time_struct rx_time::from_IEC_string(const char* str)
 		else if (sscanf(ptr, "%2u%2u", &os_time.hour, &os_time.minute) == 2)
 			ptr += 4;
 		else
-			return g_null_time;
+			return rx_time();
 
 		if (*ptr == L':')
 			ptr++;
@@ -1676,7 +1694,7 @@ rx_time_struct rx_time::from_IEC_string(const char* str)
 			if (sscanf(ptr, "%2u", &os_time.second) == 1)
 				ptr += 2;
 			else
-				return g_null_time;
+				return rx_time();
 			if (*ptr == L'.')
 			{
 				ptr++;
@@ -1692,13 +1710,13 @@ rx_time_struct rx_time::from_IEC_string(const char* str)
 		return ts;
 	}
 	else
-		return g_null_time;
+		return rx_time();
 }
 string_type rx_time::get_IEC_string() const
 {
 	char buff[0x200];
 
-	rx_time_struct temp = *this;
+	rx_time_struct temp = data_;
 	string_type ret;
 
 	rx_full_time os_time;
@@ -1719,13 +1737,13 @@ void rx_time::set_as_span(uint32_t days)
 
 	uint64_t temp = ((uint64_t)days) * 10000 * 1000 * 3600 * 24;
 
-	t_value = temp;
+	data_.t_value = temp;
 
 }
 
 uint32_t rx_time::get_as_span() const
 {
-	uint64_t temp = t_value;
+	uint64_t temp = data_.t_value;
 
 	return ((uint32_t)(temp / ((uint64_t)10000 * (uint64_t)1000 * (uint64_t)3600 * (uint64_t)24)));
 
@@ -1733,7 +1751,7 @@ uint32_t rx_time::get_as_span() const
 rx_time_stamp rx_time_stamp::now()
 {
 	rx_time_stamp ret;
-	ret.time = rx_time::now();
+	ret.time = rx_time::now().c_data();
 	ret.quality = rx_time::current_time_quality();
 	return ret;
 }

@@ -139,7 +139,7 @@ void relation_runtime::relation_disconnected ()
 
 rx_item_reference relation_runtime::get_implicit_reference (const meta::meta_data& info)
 {
-	return rx_item_reference::null_ref;
+	return rx_item_reference();
 }
 
 relation_runtime::smart_ptr relation_runtime::make_target_relation ()

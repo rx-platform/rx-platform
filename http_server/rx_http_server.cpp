@@ -83,10 +83,15 @@ rx_result http_server::initialize (hosting::rx_platform_host* host, configuratio
 	result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
 		RX_STANDARD_HTTP_DISPLAY_TYPE_ID, [] {
 			return rx_create_reference<http_displays::rx_http_standard_display>();
-		});
+		}); 
 	result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
 		RX_SIMPLE_HTTP_DISPLAY_TYPE_ID, [] {
 			return rx_create_reference<http_displays::rx_http_simple_display>();
+		});
+
+	result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
+		RX_MAIN_HTTP_DISPLAY_TYPE_ID, [] {
+			return rx_create_reference<http_displays::rx_http_main_display>();
 		});
 	return true;
 }
@@ -291,9 +296,13 @@ rx_result standard_request_filter::handle_request_after (http_request& req, http
 rx_result standard_request_filter::handle_request_before (http_request& req, http_response& resp)
 {
 	size_t idx = req.path.rfind('.');
-	if (idx != !string_type::npos)
+	if (idx != string_type::npos)
 	{
 		req.extension = req.path.substr(idx + 1);
+	}
+	else
+	{
+		req.extension = "json";
 	}
 	return true;
 }

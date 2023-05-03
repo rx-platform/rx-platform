@@ -439,7 +439,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 			{
 				if (temp_type.value()->meta_info.parent.is_null())
 				{
-					temp_base = rx_node_id::null_id;
+					temp_base = rx_node_id();
 				}
 				else
 				{
@@ -582,7 +582,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	{
 		platform_types_manager::instance().get_dependecies_cache().add_dependency(meta.id, parent_id);
 		registered_objects_.emplace(meta.id, runtime_data_t{ ret.ptr, runtime_state::runtime_state_created, parent_id });
-		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+		//if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			instance_hash_.add_to_hash_data(meta.id, parent_id, base);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.id, typeT::RImplType::type_id, meta);
 		RX_ASSERT(type_ret);// has to be, we checked earlier
@@ -677,7 +677,7 @@ rx_result types_repository<typeT>::register_type (typename types_repository<type
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
-		registered_types_.emplace(what->meta_info.id, type_data_t{ what, rx_node_id::null_id });
+		registered_types_.emplace(what->meta_info.id, type_data_t{ what, rx_node_id() });
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
 			rx_node_id parent_id;
@@ -823,9 +823,9 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 		}
 		else
 		{
-			one.second.super_type = rx_node_id::null_id;
-			to_add.emplace_back(one.second.type_ptr->meta_info.id, rx_node_id::null_id);
-			collect_and_add_depedencies(*one.second.type_ptr, rx_node_id::null_id);
+			one.second.super_type = rx_node_id();
+			to_add.emplace_back(one.second.type_ptr->meta_info.id, rx_node_id());
+			collect_and_add_depedencies(*one.second.type_ptr, rx_node_id());
 		}
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
@@ -1160,7 +1160,7 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 					if (!result)
 						return result;
 					to_add.erase(one.first);
-					one.first = rx_node_id::null_id;
+					one.first = rx_node_id();
 				}
 			}
 		}
@@ -1206,7 +1206,7 @@ bool instance_hash::add_to_hash_data (const rx_node_id& new_id, const rx_node_id
 		type_data_it = instance_hash_.find(one);
 		if (type_data_it == instance_hash_.end())
 		{// type node id does not exists
-			type_data_it = instance_hash_.emplace(type_id, std::make_unique<hash_elements_type>()).first;
+			type_data_it = instance_hash_.emplace(one, std::make_unique<hash_elements_type>()).first;
 		}
 		type_data_it->second->emplace(new_id);
 	}
@@ -1294,7 +1294,7 @@ rx_result simple_types_repository<typeT>::register_type (typename simple_types_r
 {
 	const auto& id = what->meta_info.id;
 	auto it = registered_types_.find(id);
-	if (it == registered_types_.end())
+	if (it == registered_types_.end() && registered_peer_types_.find(id)== registered_peer_types_.end())
 	{
 		registered_types_.emplace(what->meta_info.id, what);
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
@@ -1323,7 +1323,7 @@ rx_result simple_types_repository<typeT>::register_type (typename simple_types_r
 	}
 	else
 	{
-		return false;
+		return "Duplicated Node Id: "s + what->meta_info.id.to_string() + " for " + what->meta_info.name;
 	}
 }
 
@@ -1358,7 +1358,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 			{
 				if (temp_type.value()->meta_info.parent.is_null())
 				{
-					temp_base = rx_node_id::null_id;
+					temp_base = rx_node_id();
 				}
 				else
 				{
@@ -1529,7 +1529,7 @@ rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host*
 		if (parent_id)
 			to_add.emplace_back(one.second->meta_info.id, parent_id.value());
 		else
-			to_add.emplace_back(one.second->meta_info.id, rx_node_id::null_id);
+			to_add.emplace_back(one.second->meta_info.id, rx_node_id());
 		collect_and_add_depedencies(*one.second, parent_id.value());
 
 	}
@@ -1611,6 +1611,21 @@ void simple_types_repository<typeT>::collect_and_add_depedencies (const typeT& w
 	{
 		if (one_id)
 			platform_types_manager::instance().get_dependecies_cache().add_dependency(what.meta_info.id, one_id);
+	}
+}
+
+template <class typeT>
+rx_result simple_types_repository<typeT>::register_peer_type (rx_reference<discovery::peer_item> what)
+{
+	auto it = registered_peer_types_.find(what->meta.id);
+	if (it == registered_peer_types_.end() && registered_types_.find(what->meta.id) == registered_types_.end())
+	{
+		registered_peer_types_.emplace(what->meta.id, what);
+		return true;
+	}
+	else
+	{
+		return "Duplicated Node Id: "s + what->meta.id.to_string() + " for " + what->meta.name;
 	}
 }
 
@@ -1877,7 +1892,7 @@ rx_result relations_type_repository::initialize (hosting::rx_platform_host* host
 		if(parent_id)
 			to_add.emplace_back(one.second->meta_info.id, parent_id.value());
 		else
-			to_add.emplace_back(one.second->meta_info.id, rx_node_id::null_id);
+			to_add.emplace_back(one.second->meta_info.id, rx_node_id());
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	return result;
@@ -1932,7 +1947,7 @@ rx_result_with<create_runtime_result<relation_type> > relations_type_repository:
 			{
 				if (temp_type.value()->meta_info.parent.is_null())
 				{
-					temp_base = rx_node_id::null_id;
+					temp_base = rx_node_id();
 					base.emplace_back(temp_base);
 				}
 				else
@@ -2102,7 +2117,7 @@ rx_result_with<data_blocks_prototype> data_type_repository::create_data_type (co
 			{
 				if (temp_type.value()->meta_info.parent.is_null())
 				{
-					temp_base = rx_node_id::null_id;
+					temp_base = rx_node_id();
 				}
 				else
 				{
@@ -2233,7 +2248,7 @@ rx_result data_type_repository::initialize (hosting::rx_platform_host* host, con
 		if (parent_id)
 			to_add.emplace_back(one.second->meta_info.id, parent_id.value());
 		else
-			to_add.emplace_back(one.second->meta_info.id, rx_node_id::null_id);
+			to_add.emplace_back(one.second->meta_info.id, rx_node_id());
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	return result;

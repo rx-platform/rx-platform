@@ -2026,16 +2026,16 @@ RX_COMMON_API int rx_parse_string(struct typed_value_type* val, const char* data
 		double temp_dbl;
 		rx_uuid_t temp_uuid;
 		// try bool first
-		if (parse_bool(data, &temp))
-		{
-			return rx_init_bool_value(val, temp);
-		}
-		else if (parse_uint64(data, &temp_uint))
+		if (parse_uint64(data, &temp_uint))
 		{
 			if (temp_uint < UINT_MAX)
 				return rx_init_uint32_value(val, (uint32_t)temp_uint);
 			else
 				return rx_init_uint64_value(val, temp_uint);
+		}
+		else if (parse_bool(data, &temp))
+		{
+			return rx_init_bool_value(val, temp);
 		}
 		else if (parse_int64(data, &temp_int))
 		{

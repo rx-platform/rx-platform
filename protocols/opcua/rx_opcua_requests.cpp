@@ -62,7 +62,7 @@ opcua_request_base::opcua_request_base()
         diagnostics(0),
         timeout(3600000)
 {
-	timestamp = rx_time::now();
+	timestamp = rx_time::now().c_data();
 }
 
 opcua_request_base::opcua_request_base (uint32_t req_id, uint32_t req_handle)
@@ -73,7 +73,7 @@ opcua_request_base::opcua_request_base (uint32_t req_id, uint32_t req_handle)
 {
 	request_id = req_id;
 	request_handle = req_handle;
-	timestamp = rx_time::now();
+	timestamp = rx_time::now().c_data();
 }
 
 
@@ -285,7 +285,7 @@ opcua_response_base::opcua_response_base (const opcua_request_base& req)
         request_handle(0),
         result(0)
 {
-	timestamp = rx_time::now();
+	timestamp = rx_time::now().c_data();
 	request_handle = req.request_handle;
 	request_id = req.request_id;
 }
@@ -380,7 +380,7 @@ opcua_unsupported_request::opcua_unsupported_request (const rx_node_id& id)
 
 rx_node_id opcua_unsupported_request::get_binary_request_id ()
 {
-	return rx_node_id::null_id;
+	return rx_node_id();
 }
 
 opcua_request_ptr opcua_unsupported_request::create_empty () const

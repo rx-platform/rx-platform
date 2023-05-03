@@ -57,7 +57,7 @@ rx_node_id get_type_id<bool>()
 
 template<typename T>
 std::unique_ptr<opcua_property_node> create_standard_property_node(const string_type& name, uint32_t code, const T& val
-	, const rx_node_id& type_id = rx_node_id::null_id, opc_access_level access=opc_access_level::current_read)
+	, const rx_node_id& type_id = rx_node_id(), opc_access_level access=opc_access_level::current_read)
 {
 	auto node = std::make_unique<opcua_property_node>();
 	node->browse_name.name = name;
@@ -77,7 +77,7 @@ std::unique_ptr<opcua_property_node> create_standard_property_node(const string_
 
 template<typename T>
 std::unique_ptr<opcua_property_node> create_standard_property_node(const string_type& name, uint32_t code, const std::vector<T>& val
-	, const rx_node_id& type_id = rx_node_id::null_id, opc_access_level access = opc_access_level::current_read)
+	, const rx_node_id& type_id = rx_node_id(), opc_access_level access = opc_access_level::current_read)
 {
 	auto node = std::make_unique<opcua_property_node>();
 	node->browse_name.name = name;

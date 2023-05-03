@@ -374,7 +374,7 @@ uint8_t assign_vunion(vunion_type& what, const values::rx_value& value, uint8_t 
 			}
 			break;
 		case RX_TIME_TYPE:
-			assign_vunion(what, value.extract_static<rx_time_struct>(rx_time::null_time()));
+			assign_vunion(what, value.extract_static<rx_time_struct>(rx_time::null_time().c_data()));
 			return opcid_DateTime;
 		case RX_UUID_TYPE:
 			assign_vunion(what, value.extract_static<rx_uuid>(rx_uuid::null_uuid()));
@@ -389,7 +389,7 @@ uint8_t assign_vunion(vunion_type& what, const values::rx_value& value, uint8_t 
 			RX_ASSERT(false);
 			return false;
 		case RX_NODE_ID_TYPE:
-			assign_vunion(what, value.extract_static<rx_node_id>(rx_node_id::null_id));
+			assign_vunion(what, value.extract_static<rx_node_id>(rx_node_id()));
 			if (hint == opcid_ExpandedNodeId)
 				return opcid_ExpandedNodeId;
 			else
@@ -555,7 +555,7 @@ variant_type::variant_type(rx_time val)
 	: type_(opcid_DateTime),
 	array_len_(-1)
 {
-	assign_vunion(union_, val);
+	assign_vunion(union_, val.c_data());
 }
 
 variant_type::~variant_type()
@@ -1140,9 +1140,9 @@ data_value::~data_value()
 }
 void data_value::set_timestamp(rx_time val)
 {
-	source_ts = val;
+	source_ts = val.c_data();
 	source_ps = 0;
-	server_ts = val;
+	server_ts = val.c_data();
 	server_ps = 0;
 }
 

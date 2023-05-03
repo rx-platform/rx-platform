@@ -1095,13 +1095,28 @@ int rx_file_get_size(sys_handle_t hndl, uint64_t* size)
 	else
 		return RX_ERROR;
 }
-int rx_file_get_time(sys_handle_t hndl, struct rx_time_struct_t* tm)
+int rx_file_get_time(sys_handle_t hndl, struct rx_time_struct_t* created, struct rx_time_struct_t* modified)
 {
 	BY_HANDLE_FILE_INFORMATION fi;
 	ZeroMemory(&fi, sizeof(fi));
 	if (GetFileInformationByHandle(hndl, &fi))
 	{
-		tm->t_value = (((uint64_t)fi.ftLastWriteTime.dwHighDateTime) << 32) + fi.ftLastWriteTime.dwLowDateTime;
+		modified->t_value = (((uint64_t)fi.ftLastWriteTime.dwHighDateTime) << 32) + fi.ftLastWriteTime.dwLowDateTime;
+		created->t_value = (((uint64_t)fi.ftCreationTime.dwHighDateTime) << 32) + fi.ftCreationTime.dwLowDateTime;
+		return RX_OK;
+	}
+	else
+		return RX_ERROR;
+}
+
+int rx_file_get_time_from_path(const char* path, struct rx_time_struct_t* created, struct rx_time_struct_t* modified)
+{
+	WIN32_FILE_ATTRIBUTE_DATA fi;
+	ZeroMemory(&fi, sizeof(fi));
+	if (GetFileAttributesExA(path, GetFileExInfoStandard, &fi))
+	{
+		modified->t_value = (((uint64_t)fi.ftLastWriteTime.dwHighDateTime) << 32) + fi.ftLastWriteTime.dwLowDateTime;
+		created->t_value = (((uint64_t)fi.ftCreationTime.dwHighDateTime) << 32) + fi.ftCreationTime.dwLowDateTime;
 		return RX_OK;
 	}
 	else
@@ -1273,7 +1288,7 @@ uint32_t rx_dispatcher_register(rx_kernel_dispather_t disp, struct rx_io_registe
 
 int rx_dispatcher_unregister(rx_kernel_dispather_t disp, struct rx_io_register_data_t* data)
 {
-	return 0;// nothing here on windows closing handle is enougth
+	return 0;// nothing here on windows closing handle is enough
 }
 
 uint32_t rx_io_read(struct rx_io_register_data_t* what, size_t* readed)
