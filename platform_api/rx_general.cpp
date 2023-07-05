@@ -34,6 +34,7 @@
 // rx_general
 #include "rx_general.h"
 
+#include "lib/rx_meta_data.h"
 #include "rx_configuration.h"
 
 extern "C"

@@ -66,6 +66,9 @@ system application. contains system objects and internal system communication");
       void deinitialize ();
 
 
+      rx_reference<rx_platform::security::security_context> system_identity;
+
+
   protected:
 
   private:
@@ -127,6 +130,9 @@ this application is for unassigned domains.it allways has bad quality");
       static unassigned_application::smart_ptr instance ();
 
       void deinitialize ();
+
+
+      rx_reference<rx_platform::security::security_context> unassigned_identity;
 
 
   protected:
@@ -246,6 +252,76 @@ Host object implementation");
       rx_timer_ptr timer_;
 
       runtime::owned_value<uint64_t> free_memory_;
+
+
+};
+
+
+
+
+
+
+class world_application : public runtime::items::application_runtime  
+{
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+world application. contains identity of the applications");
+
+    DECLARE_REFERENCE_PTR(world_application);
+
+  public:
+      ~world_application();
+
+
+      namespace_item_attributes get_attributes () const;
+
+      static world_application::smart_ptr instance ();
+
+      void deinitialize ();
+
+
+      rx_reference<rx_platform::security::security_context> world_identity;
+
+
+  protected:
+
+  private:
+      world_application();
+
+
+
+};
+
+
+
+
+
+
+class host_application : public runtime::items::application_runtime  
+{
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+host application. contains identity of the host");
+
+    DECLARE_REFERENCE_PTR(host_application);
+
+  public:
+      ~host_application();
+
+
+      namespace_item_attributes get_attributes () const;
+
+      static host_application::smart_ptr instance ();
+
+      void deinitialize ();
+
+
+      rx_reference<rx_platform::security::security_context> host_identity;
+
+
+  protected:
+
+  private:
+      host_application();
+
 
 
 };

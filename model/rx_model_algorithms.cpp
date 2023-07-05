@@ -61,7 +61,7 @@ namespace
 }
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_node_id id)
 {
-	meta::meta_data info;
+	meta_data info;
 	auto type = model::platform_types_manager::instance().get_types_resolver().get_item_data(id, info);
 	if (type == rx_item_type::rx_invalid_type)
 		return (id.to_string() + " is not the registered id!");
@@ -644,6 +644,7 @@ rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_ru
 		ret_value.register_error("Unable to create runtime in repository.");
 		return ret_value.errors();
 	}
+
 
 	result = dir->add_item(ret_value.value().ptr->get_item_ptr());
 	if (!result)
@@ -1324,7 +1325,7 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 		dir->delete_item(old_meta.name);
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		auto storage_result = instance_data.meta_info.resolve_storage();
+		auto storage_result = resolve_storage(instance_data.meta_info);
 		if (storage_result)
 		{
 			auto temp_result = storage_result.value()->get_runtime_storage(instance_data.meta_info, typeT::type_id);

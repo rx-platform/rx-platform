@@ -38,6 +38,7 @@
 // rx_host
 #include "system/hosting/rx_host.h"
 
+#include "sys_internal/rx_security/rx_platform_security.h"
 #include "system/hosting/rx_yaml.h"
 #include "system/server/rx_ns.h"
 #include "sys_internal/rx_internal_ns.h"
@@ -222,6 +223,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.py_path = row.second;
 		else if (row.first == "rx.security" && config.other.rx_security.empty())
 			config.other.rx_security = row.second;
+		else if (row.first.size() > 8 && row.first.substr(0, 5) == "x509.")
+			config.other.certificates.emplace(row);
 		else if (row.first == "http.port" && config.other.http_port == 0)
 			config.other.http_port = atoi(row.second.c_str());
 		else if (row.first == "opc.port" && config.other.opcua_port == 0)
@@ -557,14 +560,20 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 	else
 	{
 		result = init_storage("sys", config.storage.system_storage_reference);
+		get_system_storage("sys");
 
 	}
 	if (result)
 	{
 		if (config.storage.user_storage_reference.empty())
+		{
 			result = "No valid user storage reference!";
+		}
 		else
+		{
 			result = init_storage("usr", config.storage.user_storage_reference);
+			get_user_storage();
+		}
 		if (result)
 		{
 			if (!config.storage.test_storage_reference.empty())
@@ -573,6 +582,10 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 				if (!result)
 				{
 					result.register_error("Error initializing test storage!");
+				}
+				else
+				{
+					get_test_storage();
 				}
 			}
 			auto add_result = storages_.registered_connections["sys"]->get_storage(get_host_name(), this);
@@ -624,6 +637,17 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 	{
 		result.register_error("Error initializing system storage!");
 	}
+
+	get_test_storage();
+
+	std::vector<rx_roles_storage_item_ptr> storage_roles;
+
+	for (auto& one : storages_.registered_connections)
+		one.second->list_storage_roles(storage_roles);
+	result = rx_internal::rx_security::platform_security::instance().initialize_roles(std::move(storage_roles));
+	if (!result)
+		return result;
+
 	return result;
 }
 
@@ -705,12 +729,16 @@ rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_bas
 		}
 	}
 	rx_platform::api::bind_plugins_dynamic_api();
-	rx_result ret;
+	rx_result ret = true;
 	for (auto one : plugins)
 	{
 		ret = rx_internal::plugins::plugins_manager::instance().register_plugin(one);
+		if (!ret)
+		{
+			HOST_LOG_ERROR("Base", 999, "Error registering plugin "s + one->get_plugin_name() + ". " + ret.errors_line());
+		}
 	}
-	return ret;
+	return true;
 }
 
 string_type rx_platform_host::get_manual (string_type what) const
@@ -865,7 +893,8 @@ void rx_platform_host::dump_startup_log (std::ostream& out)
 	query.count = 10000;
 	log::log_events_type events;
 	query.type = log::rx_log_error_level;
-	startup_log_->read_log(query, events);
+	if(startup_log_)
+		startup_log_->read_log(query, events);
 
 	hosting::rx_platform_host::dump_log_items(events, out);
 }
@@ -974,12 +1003,12 @@ rx_result rx_platform_host::register_storage_type (const string_type& prefix, st
 // Class rx_platform::hosting::startup_log_subscriber 
 
 
-void startup_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
+void startup_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when)
 {
 	if (started_)
 		return;
 
-	log::log_event_data one = { event_type,library,source,level,code,message,when };
+	log::log_event_data one = { event_type,library,source,level,code,message,when, user };
 
 	locks::auto_lock_t _(&pending_lock_);
 	pending_events_.emplace_back(std::move(one));

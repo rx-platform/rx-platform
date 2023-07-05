@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -46,7 +46,34 @@ rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory);
 rx_protocol_result_t rx_deinit_protocols();
 
 
+void handle_error(const char* file, int lineno, const char* msg) {
+    fprintf(stderr, "** %s:%i %s\n", file, lineno, msg);
+    ERR_print_errors_fp(stderr);
+    exit(1);
+}
+
+#define int_error(msg) handle_error(__FILE__, __LINE__, msg)
+
+
 int g_is_debug_instance = 0;
+
+
+extern SSL_CTX* g_ssl_ctx;
+
+
+
+void create_ssl_context()
+{
+/* create the SSL server context */
+    g_ssl_ctx = SSL_CTX_new(TLS_method());
+
+    SSL_CTX_set_options(g_ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+
+    //SSL_CTX_set_default_verify_paths(g_ssl_ctx);
+
+    //SSL_CTX_set_verify(g_ssl_ctx, SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
+
+}
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 {
@@ -62,6 +89,14 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 
         rx_init_protocols(NULL);
 
+
+        /* SSL library initialisation */
+        SSL_library_init();
+        OpenSSL_add_all_algorithms();
+        SSL_load_error_strings();
+
+        create_ssl_context();
+
         return RX_OK;
     }
     else
@@ -71,6 +106,8 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 }
 RX_COMMON_API void rx_deinit_common_library()
 {
+
+	SSL_CTX_free(g_ssl_ctx);
 }
 
 

@@ -104,6 +104,10 @@ rx_protocol_result_t opcua_sec_none_endpoint::transport_connected (rx_protocol_s
     return RX_PROTOCOL_OK;
 }
 
+void opcua_sec_none_endpoint::close_endpoint ()
+{
+}
+
 
 // Class protocols::opcua::opcua_transport::opcua_sec_none_port 
 

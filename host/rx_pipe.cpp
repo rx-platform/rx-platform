@@ -351,7 +351,6 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 	auto sec_result = rx_platform::rx_gate::instance().initialize(this, config);
 	if (sec_result)
 	{
-		security::secured_scope _(sec_result.value());
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 		std::cout << "Starting {rx-platform} ...";
@@ -385,7 +384,7 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 			rx_dump_error_result(std::cout, result);
 		}
 		std::cout << "De-initializing {rx-platform} ...";
-		result = rx_platform::rx_gate::instance().deinitialize(sec_result.value());
+		result = rx_platform::rx_gate::instance().deinitialize();
 		if (result)
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		else
@@ -674,9 +673,9 @@ rx_pipe_stdout_log_subscriber::rx_pipe_stdout_log_subscriber (bool supports_ansi
 
 
 
-void rx_pipe_stdout_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
+void rx_pipe_stdout_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when)
 {
-	log::log_event_data one = { event_type,library,source,level,code,message,when };
+	log::log_event_data one = { event_type,library,source,level,code,message,when, user };
 	log::log_query_type query;
 	query.type = log_query;
 	if (!one.is_included(query))

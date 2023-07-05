@@ -99,7 +99,7 @@ char g_console_unauthorized[] = ANSI_COLOR_RED "You are unauthorized!" ANSI_COLO
 
 // Class rx_internal::terminal::term_ports::vt100_endpoint 
 
-vt100_endpoint::vt100_endpoint (runtime::items::port_runtime* port, bool to_echo)
+vt100_endpoint::vt100_endpoint (runtime::items::port_runtime* port, security::security_guard_ptr guard, bool to_echo)
       : state_(parser_normal),
         current_idx_(string_type::npos),
         password_mode_(false),
@@ -117,27 +117,27 @@ vt100_endpoint::vt100_endpoint (runtime::items::port_runtime* port, bool to_echo
 		[this](bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
 		{
 			process_result(result, out_buffer, err_buffer, done);
-		});
+		}, guard);
+	pull_timer_ = rx_timer_ptr::null_ptr;
 }
 
 
 vt100_endpoint::~vt100_endpoint()
 {
 	CONSOLE_LOG_TRACE("vt100_endpoint", 900, "VT-100 Endpoint destroyed.");
+	if (pull_timer_)
+		pull_timer_->cancel();
 }
 
 
 
 bool vt100_endpoint::move_cursor_left ()
 {
-	if (current_idx_ == string_type::npos && !current_line_.empty())
-	{
-		current_idx_ = current_line_.size() - 1;
-		return true;
-	}
-	if (current_idx_ < 0x1000000 )
+	if (current_idx_ != string_type::npos && !current_line_.empty() && current_idx_ > 0)
 	{
 		current_idx_--;
+		if(current_idx_==0)
+			current_idx_ = string_type::npos;
 		return true;
 	}
 	return false;
@@ -637,6 +637,14 @@ rx_protocol_result_t vt100_endpoint::received_function (rx_protocol_stack_endpoi
 	return result;
 }
 
+
+
+#define ANSI_CUR_SAVE_POS "\x1b[s"
+#define ANSI_CUR_RESTORE_POS "\x1b[u"
+
+#define ANSI_CUR_SAVE "\x1b" "7"
+#define ANSI_CUR_RESTORE "\x1b" "8"
+
 rx_protocol_result_t vt100_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
 {
 	vt100_endpoint* self = reinterpret_cast<vt100_endpoint*>(reference->user_data);
@@ -657,6 +665,27 @@ rx_protocol_result_t vt100_endpoint::connected_function (rx_protocol_stack_endpo
 	out << msg;
 	self->process_result(true, out_buffer, err_buffer, true);
 
+	self->pull_timer_ = self->port_->create_timer_function([self]()
+		{
+
+			/*auto send_buffer = self->port_->alloc_io_buffer();
+			if (send_buffer)
+			{
+				string_type str_prefix = ANSI_CUR_SAVE ANSI_COLOR_BOLD ANSI_COLOR_GREEN ANSI_CUR(0,0);
+				string_type str_postfix = ANSI_COLOR_RESET ANSI_CUR_RESTORE;
+				send_buffer.value().write_chars(str_prefix);
+				send_buffer.value().write_chars("Jeeeee!!!");
+				send_buffer.value().write_chars(str_postfix);
+
+				send_protocol_packet packet = rx_create_send_packet(0, &send_buffer.value(), 0, 0);
+				auto result = rx_move_packet_down(&self->stack_entry, packet);
+
+				self->port_->release_io_buffer(send_buffer.move_value());
+			}*/
+			 
+		});
+
+	self->pull_timer_->start(200);
 	return RX_PROTOCOL_OK;
 }
 
@@ -877,6 +906,11 @@ void vt100_endpoint::get_wellcome (string_type& wellcome)
 void vt100_endpoint::close_endpoint ()
 {
 	stack_entry.received_function = nullptr;
+	if (pull_timer_)
+	{
+		pull_timer_->cancel();
+		pull_timer_ = rx_timer_ptr::null_ptr;
+	}
 	if (console_program_)
 		console_program_->reset();
 }
@@ -888,7 +922,7 @@ vt100_port::vt100_port()
 {
 	construct_func = [this]()
 	{
-		auto rt = rx_create_reference<vt100_endpoint>(this);
+		auto rt = rx_create_reference<vt100_endpoint>(this, security_guard_);
 		return construct_func_type::result_type{ &rt->stack_entry, rt };
 	};
 }
@@ -903,6 +937,12 @@ void vt100_port::stack_assembled ()
 		// handle the fucking error!!!
 		CONSOLE_LOG_WARNING("VT-100", 200, "Listen failed on (nullptr, nullptr):" + result.errors_line());
 	}
+}
+
+rx_result vt100_port::initialize_runtime (runtime_init_context& ctx)
+{
+	security_guard_ = ctx.context->get_security_guard();
+	return true;
 }
 
 

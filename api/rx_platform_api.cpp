@@ -48,7 +48,7 @@
 
 
 template<class T>
-rx_result create_concrete_type_from_stream(meta::meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, tl::type2type<T>)
+rx_result create_concrete_type_from_stream(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, tl::type2type<T>)
 {
 	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
@@ -71,7 +71,7 @@ rx_result create_concrete_type_from_stream(meta::meta_data& meta, base_meta_read
 	return result;
 }
 template<class T>
-rx_result create_concrete_simple_type_from_stream(meta::meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, tl::type2type<T>)
+rx_result create_concrete_simple_type_from_stream(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, tl::type2type<T>)
 {
 	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
@@ -94,7 +94,7 @@ rx_result create_concrete_simple_type_from_stream(meta::meta_data& meta, base_me
 	return result;
 }
 
-rx_result create_concrete_relation_type_from_stream(meta::meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir)
+rx_result create_concrete_relation_type_from_stream(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir)
 {
 	auto created = rx_create_reference<relation_type>();
 	created->meta_info = meta;
@@ -117,7 +117,7 @@ rx_result create_concrete_relation_type_from_stream(meta::meta_data& meta, base_
 }
 
 
-rx_result create_concrete_data_type_from_stream(meta::meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir)
+rx_result create_concrete_data_type_from_stream(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir)
 {
 	auto created = rx_create_reference<data_type>();
 	created->meta_info = meta;
@@ -142,7 +142,7 @@ rx_result create_type_from_stream(rx_item_type target_type, const char* name, co
 	, const rx_node_id_struct* id, const rx_node_id_struct* parent
 	, uint32_t version, rx_time_struct modified, base_meta_reader& stream)
 {
-	meta::meta_data meta;
+	meta_data meta;
 	rx_result result;
 	meta.path = path;
 	meta.name = name;
@@ -222,7 +222,7 @@ rx_result create_type_from_stream(rx_item_type target_type, const char* name, co
 
 
 template<class T>
-rx_result create_concrete_runtime_from_stream(meta::meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, tl::type2type<T>)
+rx_result create_concrete_runtime_from_stream(meta_data& meta, base_meta_reader& stream, rx_directory_ptr dir, tl::type2type<T>)
 {
 	data::runtime_values_data runtime_data;
 	typename T::instance_data_t instance_data;
@@ -248,7 +248,7 @@ rx_result create_runtime_from_stream(rx_item_type target_type, const char* name,
 	, const rx_node_id_struct* id, const rx_node_id_struct* parent
 	, uint32_t version, rx_time_struct modified, base_meta_reader& stream)
 {
-	meta::meta_data meta;
+	meta_data meta;
 	rx_result result;
 	meta.path = path;
 	meta.name = name;

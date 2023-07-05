@@ -80,18 +80,13 @@ rx_result udp_port::start_listen (const protocol_address* local_address, const p
 {
     auto session_timeout = recv_timeout_;
     endpoint_ = std::make_unique<udp_endpoint>();
-    auto sec_result = create_security_context();
-    if (!sec_result)
-    {
-        sec_result.register_error("Unable to create security context");
-        return sec_result.errors();
-    }
+    auto sec_ctx = get_security_context();
     endpoint_->get_stack_endpoint()->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
     {
         udp_endpoint* whose = reinterpret_cast<udp_endpoint*>(entry->user_data);
         whose->get_port()->disconnect_stack_endpoint(entry);
     };
-    auto result = endpoint_->open(bind_address_, sec_result.value(), this);
+    auto result = endpoint_->open(bind_address_, sec_ctx, this);
     if (!result)
     {
         stop_passive();
@@ -110,18 +105,13 @@ rx_result_with<port_connect_result> udp_port::start_connect (const protocol_addr
 {
     auto session_timeout = recv_timeout_;
     endpoint_ = std::make_unique<udp_endpoint>();
-    auto sec_result = create_security_context();
-    if (!sec_result)
-    {
-        sec_result.register_error("Unable to create security context");
-        return sec_result.errors();
-    }
+    auto sec_ctx = get_security_context();
     endpoint_->get_stack_endpoint()->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
     {
         udp_endpoint* whose = reinterpret_cast<udp_endpoint*>(entry->user_data);
         whose->get_port()->disconnect_stack_endpoint(entry);
     };
-    auto result = endpoint_->open(bind_address_, sec_result.value(), this);
+    auto result = endpoint_->open(bind_address_, sec_ctx, this);
     if (!result)
     {
         stop_passive();

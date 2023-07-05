@@ -34,15 +34,63 @@
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
 
-#include "system/runtime/rx_blocks.h"
-#include "rx_def_blocks.h"
+#include "api/rx_platform_api.h"
+//#include "system/runtime/rx_blocks.h"
+//#include "rx_def_blocks.h"
+#include "system/meta/rx_obj_types.h"
 #include "model/rx_meta_internals.h"
+#include "system/meta/rx_meta_algorithm.h"
 using namespace rx_platform::runtime::structure;
 
 
 namespace rx_platform {
 
+meta_data create_type_meta_data(const object_type_creation_data& type_data)
+{
+	meta_data ret;
+	ret.set_id(type_data.id);
+	ret.set_name(type_data.name);
+	ret.set_path(type_data.path);
+	ret.set_parent(type_data.base_id);
+	ret.set_created_time(rx_time::now());
+	ret.set_modified_time(ret.created_time);
+	ret.set_attributes(type_data.attributes);
+
+	return ret;
+}
+
+meta_data create_type_meta_data(const type_creation_data& type_data)
+{
+	meta_data ret;
+	ret.set_id(type_data.id);
+	ret.set_name(type_data.name);
+	ret.set_path(type_data.path);
+	ret.set_parent(type_data.base_id);
+	ret.set_created_time(rx_time::now());
+	ret.set_modified_time(ret.created_time);
+	ret.set_attributes(type_data.attributes);
+
+	return ret;
+}
+
+rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data)
+{
+
+	auto dir = rx_gate::instance().get_directory(data.path);
+	if (dir)
+	{
+		auto storage = dir->get_storage();
+		if (!storage)
+			return "No storage defined for item";
+		else
+			return storage;
+	}
+	else
+		return "Unable to locate item's storage!";
+}
+
 namespace meta {
+
 
 // Class rx_platform::meta::type_check_context 
 
@@ -1247,6 +1295,184 @@ runtime::structure::block_data data_blocks_prototype::create_runtime ()
 
 
 // Class rx_platform::meta::dependencies_context 
+
+
+// Class rx_platform::meta::config_part_container 
+
+
+rx_result config_part_container::serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const
+{
+	size_t count = objects.size() + domains.size() + ports.size() + apps.size();
+	if (!stream.start_array(name.c_str(), count))
+		return stream.get_error();
+
+	for (const auto& one : apps)
+	{
+		auto result = one->serialize(stream, type);
+		if (!result)
+			return result;
+	}
+	for (const auto& one : domains)
+	{
+		auto result = one->serialize(stream, type);
+		if (!result)
+			return result;
+	}
+	for (const auto& one : ports)
+	{
+		auto result = one->serialize(stream, type);
+		if (!result)
+			return result;
+	}
+	for (const auto& one : objects)
+	{
+		auto result = one->serialize(stream, type);
+		if (!result)
+			return result;
+	}
+
+	return true;
+}
+
+rx_result config_part_container::deserialize (const string_type& name, base_meta_reader& stream, uint8_t type)
+{
+	if (!stream.start_array(name.c_str()))
+		return stream.get_error();
+
+	while (!stream.array_end())
+	{
+		if (!stream.start_object("item"))
+			return stream.get_error();
+		meta_data meta;
+		rx_item_type target_type;
+		auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
+		if (!result)
+		{
+			result.register_error("Error building "s + meta.get_full_path());
+			return result;
+		}
+		switch (target_type)
+		{
+		case rx_item_type::rx_object:
+			{
+				runtime_data::object_runtime_data data;
+				result = data.deserialize(stream, type);
+				if (!result)
+					return result;
+				data.meta_info = std::move(meta);
+				objects.emplace_back(std::make_unique<runtime_data::object_runtime_data>(data));
+			}
+			break;
+		case rx_item_type::rx_port:
+			{
+				runtime_data::port_runtime_data data;
+				result = data.deserialize(stream, type);
+				if (!result)
+					return result;
+				data.meta_info = std::move(meta);
+				ports.emplace_back(std::make_unique<runtime_data::port_runtime_data>(data));
+			}
+			break;
+		case rx_item_type::rx_domain:
+			{
+				runtime_data::domain_runtime_data data;
+				result = data.deserialize(stream, type);
+				if (!result)
+					return result;
+				data.meta_info = std::move(meta);
+				domains.emplace_back(std::make_unique<runtime_data::domain_runtime_data>(data));
+			}
+			break;
+		case rx_item_type::rx_application:
+			{
+				runtime_data::application_runtime_data data;
+				result = data.deserialize(stream, type);
+				if (!result)
+					return result;
+				data.meta_info = std::move(meta);
+				apps.emplace_back(std::make_unique<runtime_data::application_runtime_data>(data));
+			}
+			break;
+		case rx_item_type::rx_object_type:
+			{
+				using algorithm_type = typename object_types::object_type::algorithm_type;
+
+				auto item = rx_create_reference<object_types::object_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				object_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_port_type:
+			{
+				using algorithm_type = typename object_types::port_type::algorithm_type;
+
+				auto item = rx_create_reference<object_types::port_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				port_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_domain_type:
+			{
+				using algorithm_type = typename object_types::domain_type::algorithm_type;
+
+				auto item = rx_create_reference<object_types::domain_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				domain_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_application_type:
+			{
+				using algorithm_type = typename object_types::application_type::algorithm_type;
+
+				auto item = rx_create_reference<object_types::application_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				app_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_struct_type:
+			{
+				using algorithm_type = typename basic_types::struct_type::algorithm_type;
+
+				auto item = rx_create_reference<basic_types::struct_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				struct_types.emplace_back(item);
+			}
+			break;
+		case rx_item_type::rx_variable_type:
+			{
+				using algorithm_type = typename basic_types::variable_type::algorithm_type;
+
+				auto item = rx_create_reference<basic_types::variable_type>();
+				auto result = algorithm_type::deserialize_type(*item, stream, STREAMING_TYPE_TYPE);
+				if (!result)
+					return result;
+				item->meta_info = meta;
+				variable_types.emplace_back(item);
+			}
+			break;
+		default:
+			return RX_NOT_IMPLEMENTED;
+		}
+		if (!stream.end_object())
+			return stream.get_error();
+	}
+	return true;
+}
 
 
 } // namespace meta

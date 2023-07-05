@@ -32,7 +32,6 @@
 #define rx_logic_h 1
 
 
-#include "system/meta/rx_meta_data.h"
 
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
@@ -93,7 +92,7 @@ public:
 
       virtual void process_program (logic::program_context* context, runtime::runtime_process_context& rt_context) = 0;
 
-      virtual std::unique_ptr<program_context> create_program_context (program_context* parent_context) = 0;
+      virtual std::unique_ptr<program_context> create_program_context (program_context* parent_context, security::security_guard_ptr guard) = 0;
 
 
       string_type get_name () const
@@ -124,7 +123,7 @@ class method_execution_context
     friend class runtime::logic_blocks::method_data;
 
   public:
-      method_execution_context (execute_data data);
+      method_execution_context (execute_data data, security::security_guard_ptr guard);
 
 
       void execution_complete (rx_result result, data::runtime_values_data data);
@@ -132,6 +131,8 @@ class method_execution_context
       void execution_complete (rx_result result);
 
       void execution_complete (data::runtime_values_data data);
+
+      security::security_guard_ptr get_security_guard ();
 
 
   protected:
@@ -145,6 +146,8 @@ class method_execution_context
       runtime::runtime_process_context* context_;
 
       runtime::logic_blocks::method_data* method_data_;
+
+      security::security_guard_ptr security_guard_;
 
 
 };
@@ -175,7 +178,7 @@ class method_runtime : public rx::pointers::reference_object
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      virtual method_execution_context* create_execution_context (execute_data data);
+      virtual method_execution_context* create_execution_context (execute_data data, security::security_guard_ptr guard);
 
       virtual rx_result execute (data::runtime_values_data args, method_execution_context* context);
 
@@ -240,7 +243,7 @@ class program_context
 {
 
   public:
-      program_context (program_context* parent, program_runtime_ptr runtime);
+      program_context (program_context* parent, program_runtime_ptr runtime, security::security_guard_ptr guard);
 
 
       virtual void init_scan ();
@@ -252,6 +255,8 @@ class program_context
       virtual void set_waiting () = 0;
 
       virtual void reset_waiting () = 0;
+
+      security::security_guard_ptr get_security_guard ();
 
       virtual ~program_context() = default;
       program_context(const program_context&) = delete;
@@ -266,6 +271,9 @@ class program_context
       program_context *parent_;
 
       program_runtime_ptr runtime_;
+
+
+      security::security_guard_ptr security_guard_;
 
 
 };

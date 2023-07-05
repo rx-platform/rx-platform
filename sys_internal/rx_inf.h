@@ -53,7 +53,7 @@ class data_controler;
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"
 
-using rx_platform::namespace_item_attributes;
+
 using namespace rx_platform;
 
 #define RX_PRIORITY_FROM_DOMAIN(d) ((uint8_t)(((d)>>16)&0xff))

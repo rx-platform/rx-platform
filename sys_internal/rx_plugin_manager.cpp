@@ -135,7 +135,7 @@ bool plugin_command::do_console_command (std::istream& in, std::ostream& out, st
 {
 	string_type sub_command;
 	in >> sub_command;
-	if (sub_command == "list")
+	if (sub_command.empty())
 	{
 		const auto& plugins = plugins_manager::instance().get_plugins();
 		for (const auto& one : plugins)
@@ -148,40 +148,35 @@ bool plugin_command::do_console_command (std::istream& in, std::ostream& out, st
 	}
 	else
 	{
-		if (sub_command.empty())
+		const rx_platform::library::rx_plugin_base* plugin = nullptr;
+		const auto& plugins = plugins_manager::instance().get_plugins();
+		for (const auto& one : plugins)
 		{
-			err << "Specify a sub-command.";
+			if (sub_command == one->get_plugin_name())
+			{
+				plugin = one;
+				break;
+			}
+		}
+		if (plugin)
+		{
+			auto info = plugin->get_plugin_info();
+
+			out << ANSI_COLOR_GREEN ANSI_COLOR_BOLD "$>";
+			out << plugin->get_plugin_name()
+				<< ANSI_COLOR_RESET "\r\n";
+			out << info.plugin_version << "\r\n";
+			out << "Platform: " << info.platform_version << "\r\n";
+			out << "Library: " << info.lib_version << "\r\n";
+			out << "Compiler: " << info.comp_version << "\r\n";
+			out << "ABI: " << (info.abi_version.empty() ? "-" : info.abi_version) << "\r\n";
+			out << "Common: " << (info.common_version.empty() ? "-" : info.common_version) << "\r\n";
+
 		}
 		else
 		{
-			const rx_platform::library::rx_plugin_base* plugin = nullptr;
-			const auto& plugins = plugins_manager::instance().get_plugins();
-			for (const auto& one : plugins)
-			{
-				if (sub_command == one->get_plugin_name())
-				{
-					plugin = one;
-					break;
-				}
-			}
-			if (plugin)
-			{
-				auto info = plugin->get_plugin_info();
-
-				out << ANSI_COLOR_GREEN ANSI_COLOR_BOLD "$>";
-				out << plugin->get_plugin_name()
-					<< ANSI_COLOR_RESET "\r\n";
-				out << info.plugin_version << "\r\n";
-				out << "Platform: " << info.platform_version << "\r\n";
-				out << "Library: " << info.lib_version << "\r\n";
-				out << "Compiler: " << info.comp_version << "\r\n";
-
-			}
-			else
-			{
-				err << sub_command << " is unknown sub-command!";
-				return false;
-			}
+			err << sub_command << " is unknown plugin!";
+			return false;
 		}
 	}
 	return true;

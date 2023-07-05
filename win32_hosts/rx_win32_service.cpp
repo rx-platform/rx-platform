@@ -122,11 +122,13 @@ rx_result win32_service_host::start_service (int argc, char* argv[], std::vector
 	else
 	{
 		printf("Running as normal process...\r\n");
-		initialize_platform(argc, argv, "rx_win32_service"
+		if (initialize_platform(argc, argv, "rx_win32_service"
 			, log::log_subscriber::smart_ptr::null_ptr
-			, host::headless::synchronize_callback_t(), plugins);
-		start_platform();
-		finished_.wait_handle();
+			, host::headless::synchronize_callback_t(), plugins))
+		{
+			start_platform();
+			finished_.wait_handle();
+		}
 	}
 	return ret;
 }
@@ -359,18 +361,20 @@ VOID WINAPI win32_service_host::ServiceMain (DWORD argc, LPSTR* argv)
 
 	OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Initializing application");
 
-	win32_service_host::instance().initialize_platform(argc, argv, "rx_win32_service"
+	if (win32_service_host::instance().initialize_platform(argc, argv, "rx_win32_service"
 		, log::log_subscriber::smart_ptr::null_ptr
-		, host::headless::synchronize_callback_t(), win32_service_host::instance().plugins_);
+		, host::headless::synchronize_callback_t(), win32_service_host::instance().plugins_))
+	{
 
-	OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Starting application");
+		OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Starting application");
 
-	win32_service_host::instance().start_platform();
+		win32_service_host::instance().start_platform();
 
 
-	OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Application started");
+		OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Application started");
 
-	stop_.wait_handle();
+		stop_.wait_handle();
+	}
 
 	OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Stopping application");
 	win32_service_host::instance().stop_platform();

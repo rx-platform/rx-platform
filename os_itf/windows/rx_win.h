@@ -155,9 +155,57 @@ typedef DWORD rx_thread_data_t;
 
 
 
+
+
 #ifdef _DEBUG
 #define new DEBUG_CLIENTBLOCK
 #endif
+
+
+
+#define SECURITY_WIN32
+
+#include <Security.h>
+#include <schannel.h>
+
+typedef struct rx_cred
+{
+	CredHandle handle;
+	uint32_t buffer_size;
+
+	char name_buffer[0x200];
+} rx_cred_t;
+
+typedef struct rx_auth_context
+{
+	int has_handle;
+	int has_context;
+	CtxtHandle handle;
+
+	char name_buffer[0x200];
+
+} rx_auth_context_t;
+
+struct rx_time_struct_t;
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#include "common/rx_common.h"
+
+int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert);
+int rx_aquire_ntlm_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time
+	, const char* user, const char* domain, const char* pass);
+
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #include "os_itf/rx_ositf.h"
 

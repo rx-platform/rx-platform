@@ -32,6 +32,8 @@
 #define rx_discovery_algorithm_h 1
 
 
+#include "system/runtime/rx_runtime_helpers.h"
+using namespace rx_platform;
 
 // rx_discovery_items
 #include "discovery/rx_discovery_items.h"

@@ -236,7 +236,7 @@ void platform_runtime_manager::stop_all ()
 	std::map<rx_thread_handle_t, std::vector<rx_domain_ptr> > domains;
 	for (auto& one : applications_)
 	{
-		apps[one.first].push_back(one.second);
+		apps[one.second->get_executer()].push_back(one.second);
 		std::vector<rx_domain_ptr> temp = one.second->get_instance_data().get_domains();
 		for (auto& one_dom : temp)
 		{

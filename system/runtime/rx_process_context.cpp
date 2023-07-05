@@ -91,7 +91,7 @@ bool runtime_process_context::should_do_step()
 
 // Class rx_platform::runtime::runtime_process_context 
 
-runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor)
+runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, security::security_guard_ptr guard)
       : tags_(tags),
         binded_(binded),
         current_step_(runtime_process_step::idle),
@@ -100,7 +100,8 @@ runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binde
         serialize_value_(false),
         stopping_(false),
         job_queue_(nullptr),
-        anchor_(anchor)
+        anchor_(anchor),
+        security_guard_(guard)
 {
     mode_.turn_off();
     now = rx_time::now();
@@ -541,6 +542,11 @@ remotes_data_type& runtime_process_context::get_from_remote ()
 void runtime_process_context::full_value_changed (structure::full_value_data* whose)
 {
     binded_.full_value_changed(whose, whose->get_value(this), tags_);
+}
+
+security::security_guard_ptr runtime_process_context::get_security_guard ()
+{
+    return security_guard_;
 }
 
 rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)

@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/meta/rx_meta_attr_algorithm.h"
 #include "system/meta/rx_types.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/runtime/rx_objbase.h"
@@ -665,7 +666,7 @@ void local_dependecy_builder::process (rx_result&& result)
 	}
 }
 
-rx_result local_dependecy_builder::consolidate_meta_data (meta::meta_data& new_data, const meta::meta_data& old_data)
+rx_result local_dependecy_builder::consolidate_meta_data (meta_data& new_data, const meta_data& old_data)
 {
 	new_data.id = old_data.id;
 	if (old_data.created_time.is_valid_time())
@@ -679,7 +680,7 @@ rx_result local_dependecy_builder::consolidate_meta_data (meta::meta_data& new_d
 	return true;
 }
 
-rx_result local_dependecy_builder::consolidate_meta_data (meta::meta_data& data)
+rx_result local_dependecy_builder::consolidate_meta_data (meta_data& data)
 {
 	if (data.id.is_null())
 		data.id = rx_node_id::generate_new();

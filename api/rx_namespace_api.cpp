@@ -34,7 +34,6 @@
 // rx_namespace_api
 #include "api/rx_namespace_api.h"
 
-#include "system/meta/rx_meta_data.h"
 #include "model/rx_meta_internals.h"
 #include "model/rx_model_algorithms.h"
 #include "system/server/rx_ns.h"

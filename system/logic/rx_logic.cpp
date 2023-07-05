@@ -138,9 +138,9 @@ rx_result method_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 	return true;
 }
 
-method_execution_context* method_runtime::create_execution_context (execute_data data)
+method_execution_context* method_runtime::create_execution_context (execute_data data, security::security_guard_ptr guard)
 {
-	return new method_execution_context(data);
+	return new method_execution_context(data, guard);
 }
 
 rx_result method_runtime::execute (data::runtime_values_data args, method_execution_context* context)
@@ -151,10 +151,11 @@ rx_result method_runtime::execute (data::runtime_values_data args, method_execut
 
 // Class rx_platform::logic::method_execution_context 
 
-method_execution_context::method_execution_context (execute_data data)
+method_execution_context::method_execution_context (execute_data data, security::security_guard_ptr guard)
       : data_(data),
         context_(nullptr),
-        method_data_(nullptr)
+        method_data_(nullptr),
+        security_guard_(guard)
 {
 }
 
@@ -178,6 +179,11 @@ void method_execution_context::execution_complete (rx_result result)
 void method_execution_context::execution_complete (data::runtime_values_data data)
 {
 	execution_complete(true, std::move(data));
+}
+
+security::security_guard_ptr method_execution_context::get_security_guard ()
+{
+	return security_guard_;
 }
 
 
@@ -220,8 +226,9 @@ rx_result ladder_program::deserialize (base_meta_reader& stream, uint8_t type)
 
 // Class rx_platform::logic::program_context 
 
-program_context::program_context (program_context* parent, program_runtime_ptr runtime)
-      : runtime_(runtime)
+program_context::program_context (program_context* parent, program_runtime_ptr runtime, security::security_guard_ptr guard)
+      : runtime_(runtime),
+        security_guard_(guard)
 {
 }
 
@@ -237,6 +244,11 @@ bool program_context::schedule_scan (uint32_t interval)
 		return parent_->schedule_scan(interval);
 	else
 		return false;
+}
+
+security::security_guard_ptr program_context::get_security_guard ()
+{
+	return security_guard_;
 }
 
 

@@ -34,7 +34,7 @@
 
 
 // rx_meta_data
-#include "system/meta/rx_meta_data.h"
+#include "lib/rx_meta_data.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 
@@ -181,7 +181,7 @@ struct basic_runtime_data
 
       rx::data::runtime_values_data overrides;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
   public:
 

@@ -33,8 +33,9 @@
 
 
 #include "system/threads/rx_job.h"
+#include "system/rx_platform_typedefs.h"
 #include "rx_runtime_helpers.h"
-#include "system/meta/rx_meta_data.h"
+#include "security/rx_security.h"
 
 
 namespace rx_platform {
@@ -342,7 +343,7 @@ class runtime_process_context
     //typedef std::vector<context_value_point*> points_type;
 
   public:
-      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta::meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor);
+      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, security::security_guard_ptr guard);
 
 
       rx_result init_context ();
@@ -441,6 +442,8 @@ class runtime_process_context
 
       void full_value_changed (structure::full_value_data* whose);
 
+      security::security_guard_ptr get_security_guard ();
+
 
       const rx_mode_type get_mode () const
       {
@@ -463,7 +466,7 @@ class runtime_process_context
 
       rx_time now;
 
-      const meta::meta_data& meta_info;
+      const meta_data& meta_info;
 
       template<typename T>
       rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
@@ -565,6 +568,8 @@ class runtime_process_context
       threads::job_thread* job_queue_;
 
       rx_reference_ptr anchor_;
+
+      security::security_guard_ptr security_guard_;
 
       template<runtime_process_step step>
       void turn_on_pending();

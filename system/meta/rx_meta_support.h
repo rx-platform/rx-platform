@@ -32,23 +32,50 @@
 #define rx_meta_support_h 1
 
 
+
+#include "system/rx_platform_typedefs.h"
+#include "system/server/rx_ns_resolver.h"
+#include "system/runtime/rx_runtime_logic.h"
+#include "system/runtime/rx_display_blocks.h"
+
+
 // temporary error codes!!!
 #define RX_ITEM_NOT_FOUND 0x801
 #define RX_NO_INVERSE_NAME_FOUND 0x802
 
+namespace rx_platform
+{
 
-// rx_display_blocks
-#include "system/runtime/rx_display_blocks.h"
-// rx_runtime_logic
-#include "system/runtime/rx_runtime_logic.h"
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
+namespace api
+{
+struct rx_context;
+struct query_result_detail;
+struct query_result;
+}
 
-#include "system/server/rx_ns.h"
-#include "system/server/rx_ns_resolver.h"
+namespace meta
+{
+struct object_type_creation_data;
+struct type_creation_data;
+
+}
+
+
+meta_data create_type_meta_data(const meta::object_type_creation_data& type_data);
+
+meta_data create_type_meta_data(const meta::type_creation_data& type_data);
+
+rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data);
+
+
+
+}// namespace rx_platform
+
+
 
 
 namespace rx_platform {
+
 
 namespace meta {
 
@@ -637,6 +664,63 @@ class dependencies_context
       ns::rx_directory_resolver directories;
 
       std::set<rx_node_id> cache;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class config_part_container 
+{
+public:
+    typedef std::vector<std::unique_ptr<runtime_data::object_runtime_data> > objects_type;
+    typedef std::vector<std::unique_ptr<runtime_data::domain_runtime_data> > domains_type;
+    typedef std::vector<std::unique_ptr<runtime_data::port_runtime_data> > ports_type;
+    typedef std::vector<std::unique_ptr<runtime_data::application_runtime_data> > apps_type;
+
+
+    typedef std::vector<rx_object_type_ptr> object_types_type;
+    typedef std::vector<rx_port_type_ptr> port_types_type;
+    typedef std::vector<rx_domain_type_ptr> domain_types_type;
+    typedef std::vector<rx_application_type_ptr> app_types_type;
+
+    typedef std::vector<struct_type_ptr> struct_types_type;
+    typedef std::vector<variable_type_ptr> variable_types_type;
+
+  public:
+
+      rx_result serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (const string_type& name, base_meta_reader& stream, uint8_t type);
+
+
+      objects_type objects;
+
+      domains_type domains;
+
+      ports_type ports;
+
+      apps_type apps;
+
+      object_types_type object_types;
+
+      port_types_type port_types;
+
+      domain_types_type domain_types;
+
+      app_types_type app_types;
+
+      struct_types_type struct_types;
+
+      variable_types_type variable_types;
 
 
   protected:

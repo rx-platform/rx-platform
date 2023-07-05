@@ -22,3 +22,4 @@
 #define ANSI_REDRAW_LINE ANSI_CLEAR_LINE ANSI_CUR_BEGIN
 
 #define ANSI_CUR(x,y) "\x1b[" #x ";" #y "H"
+

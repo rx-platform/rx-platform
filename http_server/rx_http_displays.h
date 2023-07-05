@@ -158,7 +158,7 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
   private:
 
-      string_type preprocess_static (const string_type& content, const http_displays::http_display_custom_content& custom, const meta::meta_data& meta_info);
+      string_type preprocess_static (const string_type& content, const http_displays::http_display_custom_content& custom, const meta_data& meta_info);
 
       string_array get_paths_to_register (runtime::runtime_process_context* ctx, const string_type& disp_path);
 

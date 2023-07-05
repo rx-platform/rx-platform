@@ -59,14 +59,14 @@ template<class T>
 rx_reference<T> create_type(meta::object_type_creation_data data)
 {
 	auto ret = rx_create_reference<T>();
-	ret->meta_info = data;
+	ret->meta_info = create_type_meta_data(data);
 	return ret;
 }
 template<class T>
 rx_reference<T> create_type(meta::type_creation_data data)
 {
 	auto ret = rx_create_reference<T>();
-	ret->meta_info = data;
+	ret->meta_info = create_type_meta_data(data);
 	return ret;
 }
 
@@ -480,6 +480,14 @@ rx_result rx_platform_builder::register_system_constructors ()
 		result.register_error("Error registering constructor for system application!");
 		return result;
 	}
+	// world app
+	result = model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
+		RX_NS_WORLD_APP_TYPE_ID, [] { return rx_platform::sys_objects::world_application::instance(); });
+	if (!result)
+	{
+		result.register_error("Error registering constructor for world application!");
+		return result;
+	}
 	// system domain
 	result = model::platform_types_manager::instance().get_type_repository<domain_type>().register_constructor(
 		RX_NS_SYSTEM_DOM_TYPE_ID, [] { return rx_platform::sys_objects::system_domain::instance(); });
@@ -582,6 +590,8 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_plug
 void rx_platform_builder::deinitialize ()
 {
 	rx_platform::sys_objects::system_application::instance()->deinitialize();
+	rx_platform::sys_objects::host_application::instance()->deinitialize();
+	rx_platform::sys_objects::world_application::instance()->deinitialize();
 	rx_platform::sys_objects::system_domain::instance()->deinitialize();
 	rx_platform::sys_objects::system_object::instance()->deinitialize();
 	rx_platform::sys_objects::host_object::instance()->deinitialize();
@@ -961,6 +971,15 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		add_type_to_configuration(dir, dom, false);
+		app = create_type<application_type>(meta::object_type_creation_data{
+			RX_NS_WORLD_APP_TYPE_NAME
+			, RX_NS_WORLD_APP_TYPE_ID
+			, RX_INTERNAL_APP_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		//app->complex_data.register_event(event_attribute("ItemChanged", RX_NS_CHANGED_DATA_EVENT_ID));
+		add_type_to_configuration(dir, app, false);
 		dom = create_type<domain_type>(meta::object_type_creation_data{
 			RX_HOST_DOMAIN_TYPE_NAME
 			, RX_HOST_DOMAIN_TYPE_ID
@@ -1146,6 +1165,15 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			RX_NS_HTTP_TYPE_NAME
 			, RX_NS_HTTP_TYPE_ID
 			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_NS_WS_TYPE_NAME
+			, RX_NS_WS_TYPE_ID
+			, RX_CONN_TRANSPORT_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -1395,6 +1423,19 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 		port->complex_data.register_struct("Options", RX_LIMITER_PORT_OPTIONS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			TLS_PORT_TYPE_NAME
+			, TLS_PORT_TYPE_ID
+			, RX_CONN_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Timeouts", TLS_PORT_TIMEOUTS_TYPE_ID);
+		port->complex_data.register_struct("Status", TLS_PORT_STATUS_TYPE_ID);
+		port->complex_data.register_struct("Options", TLS_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_STXETX_TYPE_NAME
 			, RX_STXETX_TYPE_ID
@@ -1459,6 +1500,16 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		domain_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		domain_instance_data.instance_data.priority = rx_domain_priority::normal;
 		result = add_object_to_configuration(dir, std::move(domain_instance_data), data::runtime_values_data(), tl::type2type<domain_type>());
+		
+		app_instance_data.meta_info.name = RX_NS_WORLD_APP_NAME;
+		app_instance_data.meta_info.id = RX_NS_WORLD_APP_ID;
+		app_instance_data.meta_info.parent = RX_NS_WORLD_APP_TYPE_ID;
+		app_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		app_instance_data.meta_info.path = full_path;
+		app_instance_data.instance_data.processor = 0;
+		app_instance_data.instance_data.priority = rx_domain_priority::normal;
+		result = add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>());
+
 
 		runtime_data::object_runtime_data instance_data;
 		instance_data = runtime_data::object_runtime_data();
@@ -1716,6 +1767,16 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		filter->complex_data.register_const_value_static<uint8_t>("InvalidChar", '?');
 		filter->complex_data.register_const_value_static<uint8_t>("Columns", 0);
 		filter->complex_data.register_const_value_static<uint8_t>("MaxLen", 0);
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_CUMULATIVE_SPEED_FILTER_TYPE_NAME
+			, RX_CUMULATIVE_SPEED_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		filter->complex_data.register_const_value_static<uint32_t>("Period", 1000);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
@@ -1995,6 +2056,40 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			});
 		what->complex_data.register_const_value_static<bool>("Reverse", false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			TLS_PORT_OPTIONS_TYPE_NAME
+			, TLS_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static<string_type>("Certificate", "host");
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			TLS_PORT_STATUS_TYPE_NAME
+			, TLS_PORT_STATUS_TYPE_ID
+			, RX_PORT_STATUS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static<bool>("SecActive", false, false, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			TLS_PORT_TIMEOUTS_TYPE_NAME
+			, TLS_PORT_TIMEOUTS_TYPE_ID
+			, RX_TIMEOUTS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static<uint32_t>("TokenTimeout", 300000, false, true);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
 		what = create_type<struct_type>(meta::type_creation_data{
 			RX_OPCUA_CLIENT_TRANSPORT_OPTIONS_TYPE_NAME
 			, RX_OPCUA_CLIENT_TRANSPORT_OPTIONS_TYPE_ID

@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/runtime/rx_runtime_helpers.h"
 
 // rx_runtime_logic
 #include "system/runtime/rx_runtime_logic.h"
@@ -93,7 +94,7 @@ rx_result logic_holder::initialize_logic (runtime::runtime_init_context& ctx)
         if (!ret)
             return ret;
 
-        one.context = one.program_ptr->create_program_context(nullptr);
+        one.context = one.program_ptr->create_program_context(nullptr, ctx.context->get_security_guard());
     }
     for (auto& one : runtime_methods_)
     {
@@ -427,7 +428,7 @@ void logic_holder::set_programs (std::vector<program_data> data)
 
 // Class rx_platform::runtime::logic_blocks::program_data 
 
-program_data::program_data (structure::runtime_item::smart_ptr&& rt, program_runtime_ptr&& var, const program_data& prototype)
+program_data::program_data (runtime_item_ptr&& rt, program_runtime_ptr&& var, const program_data& prototype)
     : program_ptr(std::move(var))
     , item(std::move(rt))
 {
@@ -656,13 +657,14 @@ rx_result method_data::execute (execute_data&& data, structure::execute_task* ta
     auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
     pending_tasks_->emplace(new_trans, task);
     data.transaction_id = new_trans;
-    auto context = method_ptr->create_execution_context(std::move(data));
+    auto context = method_ptr->create_execution_context(std::move(data), ctx->get_security_guard());
 
 
     if (context)
     {
         context->method_data_ = this;
         context->context_ = ctx;
+        context->security_guard_ = ctx->get_security_guard();
         result = method_ptr->execute(std::move(args), context);
     }
     else

@@ -36,6 +36,7 @@
 // rx_blocks
 #include "system/runtime/rx_blocks.h"
 
+#include "system/runtime/rx_runtime_helpers.h"
 using namespace rx_platform::runtime;
 
 

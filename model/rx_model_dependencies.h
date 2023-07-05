@@ -36,6 +36,8 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
+#include "system/meta/rx_meta_attr_algorithm.h"
+#include "system/meta/rx_queries.h"
 #include "system/runtime/rx_runtime_helpers.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/meta/rx_runtime_data.h"
@@ -268,9 +270,9 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
       void process (rx_result&& result);
 
-      rx_result consolidate_meta_data (meta::meta_data& new_data, const meta::meta_data& old_data);
+      rx_result consolidate_meta_data (meta_data& new_data, const meta_data& old_data);
 
-      rx_result consolidate_meta_data (meta::meta_data& data);
+      rx_result consolidate_meta_data (meta_data& data);
 
 
 

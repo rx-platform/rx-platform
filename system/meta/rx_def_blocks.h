@@ -34,7 +34,7 @@
 
 
 // rx_meta_support
-#include "system/meta/rx_meta_support.h"
+//#include "system/meta/rx_meta_support.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 
@@ -53,7 +53,6 @@ class mapper_attribute;
 
 using namespace rx;
 using namespace rx::values;
-using namespace rx_platform::ns;
 
 #define RT_TYPE_ID_CONST_VALUE 1
 #define RT_TYPE_ID_VALUE 2
@@ -238,6 +237,8 @@ public:
 
       values::rx_simple_value value_;
 
+      rx_item_reference data_type_ref_;
+
 
 };
 
@@ -385,6 +386,8 @@ public:
       std::vector<values::rx_simple_value> values_;
 
       values::rx_simple_value value_;
+
+      rx_item_reference data_type_ref_;
 
 
 };
@@ -657,6 +660,8 @@ class variable_attribute
       std::vector<values::rx_simple_value> values_;
 
       values::rx_simple_value value_;
+
+      rx_item_reference data_type_ref_;
 
 
 };

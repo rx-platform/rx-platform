@@ -119,8 +119,6 @@ rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_d
 
 	extern_executer_ = data.extern_executer;
 
-
-
 	auto result = sys_runtime::platform_runtime_manager::instance().initialize(host, data);
 
 	// register I/O constructors

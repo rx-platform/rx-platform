@@ -34,12 +34,12 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 namespace rx_internal {
 namespace interfaces {

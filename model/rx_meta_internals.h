@@ -422,6 +422,8 @@ public:
 
       void deinitialize ();
 
+      rx_result start (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+
       api::query_result get_instanced_objects (const rx_node_id& id) const;
 
       rx_result_with<typename typeT::RTypePtr> mark_runtime_for_delete (rx_node_id id, const rx_uuid& checkout = rx_uuid::null_uuid());

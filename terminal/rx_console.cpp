@@ -49,11 +49,12 @@ namespace console {
 
 // Class rx_internal::terminal::console::console_runtime 
 
-console_runtime::console_runtime (rx_thread_handle_t executer, console_runtime_callback_t callback)
+console_runtime::console_runtime (rx_thread_handle_t executer, console_runtime_callback_t callback, security::security_guard_ptr guard)
       : executer_(executer),
         callback_(callback),
         term_width_(80),
-        term_height_(24)
+        term_height_(24),
+        security_guard_(guard)
 {
 	CONSOLE_LOG_TRACE("console_runtime", 900, "Console endpoint created.");
 #ifdef _DEBUG
@@ -84,14 +85,15 @@ void console_runtime::do_command (const string_type& line, security::security_co
 	else
 	{
 		// create main program
-		current_program_ = rx_create_reference<script::console_program>();
+		current_program_ = rx_create_reference<console_runtime_program>();
 		current_program_->load(line);
 		// create context
 		program_context_ = std::make_unique<console_runtime_program_context>(nullptr
-			, current_program_, current_directory_
-			, rx_create_reference<memory::std_buffer_type>()
-			, rx_create_reference<memory::std_buffer_type>()
-			, smart_this());
+				, current_program_, current_directory_
+				, rx_create_reference<memory::std_buffer_type>()
+				, rx_create_reference<memory::std_buffer_type>()
+				, smart_this());
+
 		program_context_->init_scan();
 		program_context_->set_terminal_width(term_width_);
 		program_context_->set_terminal_height(term_height_);
@@ -174,6 +176,11 @@ void console_runtime::process_program (bool continue_scan)
 	}
 }
 
+security::security_guard_ptr console_runtime::get_security_guard ()
+{
+	return security_guard_;
+}
+
 
 // Class rx_internal::terminal::console::console_runtime_program_context 
 
@@ -183,7 +190,7 @@ console_runtime_program_context::console_runtime_program_context (program_contex
 		, err_(err)
 		, out_std_(out_.unsafe_ptr())
 		, err_std_(err_.unsafe_ptr())
-		, console_program_context(parent, runtime, current_directory)
+		, console_program_context(parent, runtime, current_directory, host->get_security_guard())
 {
 }
 
@@ -244,6 +251,29 @@ bool console_runtime_program_context::schedule_scan (uint32_t interval)
 			});
 	}
 	return true;
+}
+
+
+// Class rx_internal::terminal::console::console_runtime_program 
+
+console_runtime_program::console_runtime_program ()
+{
+}
+
+
+console_runtime_program::~console_runtime_program()
+{
+}
+
+
+
+std::unique_ptr<logic::program_context> console_runtime_program::create_program_context (logic::program_context* parent_context, security::security_guard_ptr guard)
+{
+	return std::make_unique<console_runtime_program_context>(parent_context
+		, smart_this(), ""
+		, rx_create_reference<memory::std_buffer_type>()
+		, rx_create_reference<memory::std_buffer_type>()
+		, console_runtime::smart_ptr());
 }
 
 

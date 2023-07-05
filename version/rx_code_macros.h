@@ -51,7 +51,7 @@ public:\
 								}; \
 				return &temp;\
 		}\
-	void fill_code_info(std::ostream& info,const string_type& name)\
+	void fill_code_info(std::ostream& info,const string_type& name) const\
 	{\
 		char compile_time[0x100] = {'\0'};\
 		if(compile_time[0]=='\0')\

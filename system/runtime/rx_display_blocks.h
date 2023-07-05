@@ -32,6 +32,7 @@
 #define rx_display_blocks_h 1
 
 
+#include "system/server/rx_platform_item.h"
 
 // rx_displays
 #include "system/displays/rx_displays.h"
@@ -64,7 +65,7 @@ public:
     }
 
   public:
-      display_data (structure::runtime_item::smart_ptr&& rt, display_runtime_ptr&& var, const display_data& prototype);
+      display_data (runtime_item_ptr&& rt, display_runtime_ptr&& var, const display_data& prototype);
 
 
       void fill_data (const data::runtime_values_data& data);

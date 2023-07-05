@@ -141,7 +141,7 @@ void rx_platform_directory::fill_dir_code_info (std::ostream& info)
 	fill_code_info(info, name);
 }
 
-meta_data_t rx_platform_directory::meta_info () const
+meta_data rx_platform_directory::meta_info () const
 {
 	valid_scope valid(valid_);
 	if (valid)
@@ -150,7 +150,7 @@ meta_data_t rx_platform_directory::meta_info () const
 	}
 	else
 	{
-		return meta_data_t();
+		return meta_data();
 	}
 }
 
@@ -357,7 +357,7 @@ rx_value rx_namespace_item::get_value () const
 }
 
 
-const meta::meta_data& rx_namespace_item::get_meta () const
+const rx::meta_data& rx_namespace_item::get_meta () const
 {
   return meta_;
 }

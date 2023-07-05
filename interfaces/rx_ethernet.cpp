@@ -319,12 +319,7 @@ rx_result ethernet_port::initialize_runtime (runtime::runtime_init_context& ctx)
 rx_result ethernet_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
 {
     endpoint_ = std::make_unique<ethernet_endpoint>();
-    auto sec_result = create_security_context();
-    if (!sec_result)
-    {
-        sec_result.register_error("Unable to create security context");
-        return sec_result.errors();
-    }
+    auto sec_ctx = get_security_context();
     endpoint_->get_stack_endpoint()->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
     {
         ethernet_endpoint* whose = reinterpret_cast<ethernet_endpoint*>(entry->user_data);
@@ -332,7 +327,7 @@ rx_result ethernet_port::start_listen (const protocol_address* local_address, co
         if(port)
             port->disconnect_stack_endpoint(entry);
     };
-    auto result = endpoint_->open(port_name_, sec_result.value(), this, ether_types_);
+    auto result = endpoint_->open(port_name_, sec_ctx, this, ether_types_);
     if (!result)
     {
         stop_passive();
@@ -350,12 +345,7 @@ rx_result ethernet_port::start_listen (const protocol_address* local_address, co
 rx_result_with<port_connect_result> ethernet_port::start_connect (const protocol_address* local_address, const protocol_address* remote_address, rx_protocol_stack_endpoint* endpoint)
 {
     endpoint_ = std::make_unique<ethernet_endpoint>();
-    auto sec_result = create_security_context();
-    if (!sec_result)
-    {
-        sec_result.register_error("Unable to create security context");
-        return sec_result.errors();
-    }
+    auto sec_ctx = get_security_context();
     endpoint_->get_stack_endpoint()->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
     {
         ethernet_endpoint* whose = reinterpret_cast<ethernet_endpoint*>(entry->user_data);
@@ -363,7 +353,7 @@ rx_result_with<port_connect_result> ethernet_port::start_connect (const protocol
         if(port)
             port->disconnect_stack_endpoint(entry);
     };
-    auto result = endpoint_->open(port_name_, sec_result.value(), this, ether_types_);
+    auto result = endpoint_->open(port_name_, sec_ctx, this, ether_types_);
     if (!result)
     {
         stop_passive();

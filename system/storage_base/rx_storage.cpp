@@ -78,6 +78,12 @@ rx_platform_storage::~rx_platform_storage()
 
 
 
+rx_result rx_platform_storage::list_storage_roles (std::vector<rx_roles_storage_item_ptr>& items)
+{
+    return true;
+}
+
+
 // Class rx_platform::storage_base::rx_storage_item 
 
 rx_storage_item::rx_storage_item (rx_storage_item_type storage_type)
@@ -163,7 +169,7 @@ rx_result rx_code_storage_item::delete_item ()
     return "Delete not valid for this item.";
 }
 
-bool rx_code_storage_item::preprocess_meta_data (meta::meta_data& data)
+bool rx_code_storage_item::preprocess_meta_data (meta_data& data)
 {
     return false;
 }
@@ -198,13 +204,13 @@ bool rx_code_storage::is_valid_storage () const
     return true;
 }
 
-rx_result_with<rx_storage_item_ptr> rx_code_storage::get_item_storage (const meta::meta_data& data, rx_item_type type)
+rx_result_with<rx_storage_item_ptr> rx_code_storage::get_item_storage (const meta_data& data, rx_item_type type)
 {
     rx_storage_item_ptr ret = std::make_unique<rx_code_storage_item>();
     return ret;
 }
 
-rx_result_with<rx_storage_item_ptr> rx_code_storage::get_runtime_storage (const meta::meta_data& data, rx_item_type type)
+rx_result_with<rx_storage_item_ptr> rx_code_storage::get_runtime_storage (const meta_data& data, rx_item_type type)
 {
     return "Not implemented for this storage type.";
 }
@@ -214,7 +220,7 @@ string_type rx_code_storage::get_storage_reference ()
     return RX_CODE_STORAGE_NAME;
 }
 
-void rx_code_storage::preprocess_meta_data (meta::meta_data& data)
+void rx_code_storage::preprocess_meta_data (meta_data& data)
 {
 }
 
@@ -285,6 +291,15 @@ std::vector<std::pair<string_type, string_type> > rx_storage_connection::get_mou
     return ret;
 }
 
+rx_result rx_storage_connection::list_storage_roles (std::vector<rx_roles_storage_item_ptr>& items)
+{
+    for (auto& one : initialized_storages_)
+    {
+        one.second->list_storage_roles(items);
+    }
+    return true;
+}
+
 
 // Class rx_platform::storage_base::rx_empty_storage 
 
@@ -309,12 +324,12 @@ bool rx_empty_storage::is_valid_storage () const
     return true;
 }
 
-rx_result_with<rx_storage_item_ptr> rx_empty_storage::get_item_storage (const meta::meta_data& data, rx_item_type type)
+rx_result_with<rx_storage_item_ptr> rx_empty_storage::get_item_storage (const meta_data& data, rx_item_type type)
 {
     return RX_NOT_SUPPORTED;
 }
 
-rx_result_with<rx_storage_item_ptr> rx_empty_storage::get_runtime_storage (const meta::meta_data& data, rx_item_type type)
+rx_result_with<rx_storage_item_ptr> rx_empty_storage::get_runtime_storage (const meta_data& data, rx_item_type type)
 {
     return RX_NOT_SUPPORTED;
 }
@@ -324,7 +339,7 @@ string_type rx_empty_storage::get_storage_reference ()
     return RX_NULL_ITEM_NAME;
 }
 
-void rx_empty_storage::preprocess_meta_data (meta::meta_data& data)
+void rx_empty_storage::preprocess_meta_data (meta_data& data)
 {
 }
 
@@ -380,12 +395,12 @@ bool rx_plugin_storage::is_valid_storage () const
     return true;
 }
 
-rx_result_with<rx_storage_item_ptr> rx_plugin_storage::get_item_storage (const meta::meta_data& data, rx_item_type type)
+rx_result_with<rx_storage_item_ptr> rx_plugin_storage::get_item_storage (const meta_data& data, rx_item_type type)
 {
     return RX_NOT_IMPLEMENTED;
 }
 
-rx_result_with<rx_storage_item_ptr> rx_plugin_storage::get_runtime_storage (const meta::meta_data& data, rx_item_type type)
+rx_result_with<rx_storage_item_ptr> rx_plugin_storage::get_runtime_storage (const meta_data& data, rx_item_type type)
 {
     return RX_NOT_IMPLEMENTED;
 }
@@ -400,7 +415,7 @@ rx_result rx_plugin_storage::init_storage (const string_type& name, const string
     return impl_->def->init_storage(impl_->anchor.target, ref.c_str());
 }
 
-void rx_plugin_storage::preprocess_meta_data (meta::meta_data& data)
+void rx_plugin_storage::preprocess_meta_data (meta_data& data)
 {
 }
 
@@ -504,7 +519,7 @@ rx_result rx_plugin_storage_item::delete_item ()
     return RX_NOT_IMPLEMENTED;
 }
 
-bool rx_plugin_storage_item::preprocess_meta_data (meta::meta_data& data)
+bool rx_plugin_storage_item::preprocess_meta_data (meta_data& data)
 {
     return false;
 }
@@ -539,6 +554,19 @@ string_type rx_plugin_storage_type::get_reference_prefix () const
 {
     return "tst";
 }
+
+
+// Class rx_platform::storage_base::rx_roles_storage_item 
+
+rx_roles_storage_item::rx_roles_storage_item()
+{
+}
+
+
+rx_roles_storage_item::~rx_roles_storage_item()
+{
+}
+
 
 
 } // namespace storage_base

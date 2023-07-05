@@ -38,6 +38,8 @@
 #define RX_IO_DATA_INPUT_MASK 0x01
 #define RX_IO_DATA_OUTPUT_MASK 0x02
 
+#include "rx_abi_version.h"
+
 
 
 #ifdef __cplusplus
@@ -385,6 +387,7 @@ extern "C" {
 	RX_PLUGIN_API rx_result_struct rxBindPlugin2(const platform_api2* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin);
 
 	RX_PLUGIN_API void rxGetPluginInfo(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver);
+	RX_PLUGIN_API void rxGetPluginInfo2(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver, string_value_struct* abi_ver, string_value_struct* common_ver);
 	RX_PLUGIN_API void rxGetPluginName(string_value_struct* name);
 
 	RX_PLUGIN_API rx_result_struct rxInitPlugin();
@@ -394,6 +397,7 @@ extern "C" {
 
 	typedef rx_result_struct(*rxBindPlugin_t)(const struct platform_api_t* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin);
 	typedef void(*rxGetPluginInfo_t)(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver);
+	typedef void(*rxGetPluginInfo2_t)(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver, string_value_struct* abi_ver, string_value_struct* common_ver);
 	typedef void(*rxGetPluginName_t)(string_value_struct* name);
 	typedef rx_result_struct(*rxInitPlugin_t)();
 	typedef rx_result_struct(*rxDeinitPlugin_t)();

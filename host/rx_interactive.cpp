@@ -94,7 +94,6 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 	auto init_result = rx_platform::rx_gate::instance().initialize(this, config);
 	if (init_result)
 	{
-		security::secured_scope _(init_result.value());
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 		std::cout << "Starting {rx-platform}...";
@@ -127,7 +126,7 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 			rx_dump_error_result(std::cout, result);
 		}
 		std::cout << "De-initializing {rx-platform}...";
-		result = rx_platform::rx_gate::instance().deinitialize(init_result.value());
+		result = rx_platform::rx_gate::instance().deinitialize();
 		if (result)
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		else

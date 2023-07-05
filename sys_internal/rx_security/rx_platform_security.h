@@ -33,12 +33,15 @@
 
 
 
+// rx_platform_roles
+#include "sys_internal/rx_security/rx_platform_roles.h"
 // rx_security
 #include "security/rx_security.h"
 
 #include "system/hosting/rx_host.h"
 
 #define RX_NONE_SECURITY_NAME "none"
+#define RX_CERT_SECURITY_NAME "x509"
 
 
 namespace rx_internal {
@@ -59,9 +62,9 @@ class built_in_security_context : public rx_platform::security::security_context
       ~built_in_security_context();
 
 
-      virtual rx_result serialize (base_meta_writer& stream) const;
+      rx_result serialize (base_meta_writer& stream) const;
 
-      virtual rx_result deserialize (base_meta_reader& stream);
+      rx_result deserialize (base_meta_reader& stream);
 
 
       const string_type& get_description () const
@@ -91,16 +94,12 @@ class maintenance_context : public built_in_security_context
     DECLARE_REFERENCE_PTR(maintenance_context);
 
   public:
-      maintenance_context (const string_type& port, const string_type& location);
+      maintenance_context();
 
       ~maintenance_context();
 
 
-      bool is_system () const;
-
       bool has_console () const;
-
-      bool is_interactive () const;
 
 
   protected:
@@ -120,12 +119,14 @@ class host_security_context : public built_in_security_context
     DECLARE_REFERENCE_PTR(host_security_context);
 
   public:
-      host_security_context (const string_type& name, const string_type& instance);
+      host_security_context();
 
       ~host_security_context();
 
 
       bool is_system () const;
+
+      bool is_hosted () const;
 
 
   protected:
@@ -144,7 +145,7 @@ class process_context : public built_in_security_context
 {
 
   public:
-      process_context (const string_type& port, const string_type& location);
+      process_context (const string_type& name = "", bool sys = false);
 
       ~process_context();
 
@@ -159,6 +160,9 @@ class process_context : public built_in_security_context
   protected:
 
   private:
+
+
+      bool system_;
 
 
 };
@@ -177,9 +181,15 @@ class platform_security_provider
 
       virtual string_type get_info () = 0;
 
-      virtual rx_result initialize (hosting::rx_platform_host* host) = 0;
+      virtual rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data) = 0;
 
       virtual void deinitialize () = 0;
+
+      virtual rx_result_with<security::security_context_ptr> create_host_context (hosting::rx_platform_host* host, configuration_data_t& data) = 0;
+
+      virtual rx_result_with<security::security_context_ptr> create_system_context (hosting::rx_platform_host* host, configuration_data_t& data) = 0;
+
+      virtual rx_result_with<security::security_context_ptr> create_world_context (hosting::rx_platform_host* host, configuration_data_t& data) = 0;
 
       platform_security_provider() = default;
       platform_security_provider(const platform_security_provider&) = delete;
@@ -209,13 +219,17 @@ class platform_security
 
       rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
 
+      rx_result initialize_roles (std::vector<rx_roles_storage_item_ptr> storages);
+
       void deinitialize ();
 
       rx_result register_role (const string_type& role, const string_type& parent_role, hosting::rx_platform_host* host);
 
-      rx_result register_provider (std::unique_ptr<platform_security_provider>  who, hosting::rx_platform_host* host);
+      rx_result register_provider (std::unique_ptr<platform_security_provider>  who, hosting::rx_platform_host* host, configuration_data_t& data);
 
       platform_security_provider* get_provider (const string_type& name);
+
+      bool check_permissions (security::security_mask_t mask, const string_type& path, security::security_context_ptr ctx);
 
 
   protected:
@@ -231,6 +245,17 @@ class platform_security
       providers_type providers_;
 
       platform_security_provider *default_provider_;
+
+      platform_roles roles_manager_;
+
+
+      security::security_context_ptr host_ctx_;
+
+      security::security_context_ptr system_ctx_;
+
+      security::security_context_ptr world_ctx_;
+
+      security::security_context_ptr unassigned_ctx_;
 
 
 };
@@ -249,9 +274,15 @@ class none_security_provider : public platform_security_provider
 
       string_type get_info ();
 
-      rx_result initialize (hosting::rx_platform_host* host);
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
 
       void deinitialize ();
+
+      rx_result_with<security::security_context_ptr> create_host_context (hosting::rx_platform_host* host, configuration_data_t& data);
+
+      rx_result_with<security::security_context_ptr> create_system_context (hosting::rx_platform_host* host, configuration_data_t& data);
+
+      rx_result_with<security::security_context_ptr> create_world_context (hosting::rx_platform_host* host, configuration_data_t& data);
 
 
   protected:

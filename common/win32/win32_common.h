@@ -151,9 +151,13 @@ typedef HCRYPTKEY crypt_key_t;
 typedef HCRYPTHASH  crypt_hash_t;
 
 
-#define SECURITY_WIN32
+typedef struct rx_certificate
+{
+	PCCERT_CONTEXT ctx;
 
-#include <Security.h>
+} rx_certificate_t;
+
+
 
 
 

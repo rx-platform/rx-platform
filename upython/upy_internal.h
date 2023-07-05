@@ -35,10 +35,10 @@
 
 #ifdef UPYTHON_SUPPORT
 
-// rx_thread
-#include "system/threads/rx_thread.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 
 namespace rx_platform {
 namespace python {

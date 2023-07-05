@@ -64,13 +64,16 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
 // Parameterized Class rx_platform::runtime::algorithms::runtime_holder 
 
 template <class typeT>
-runtime_holder<typeT>::runtime_holder (const meta::meta_data& meta, const typename typeT::instance_data_t& instance, typename typeT::runtime_behavior_t&& rt_behavior)
+runtime_holder<typeT>::runtime_holder (const meta_data& meta, const typename typeT::instance_data_t& instance, typename typeT::runtime_behavior_t&& rt_behavior)
       : job_pending_(false)
     , meta_info_(meta)
     , instance_data_(instance.instance_data, std::move(rt_behavior))
+    , security_guard_(rx_create_reference<security::security_guard>(meta, security::rx_security_null))
     , context_(runtime_holder_algorithms<typeT>::create_context(*this))
 {
     using rimpl_t = typename typeT::RImplType;
+
+    
     RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta.get_full_path()));
 }
 
@@ -195,6 +198,7 @@ rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
             result = logic_.start_logic(ctx);
             if (result)
             {
+                RX_ASSERT(rx_thread_context() == instance_data_.get_executer());
                 result = displays_.start_displays(ctx, rt_path);
             }
         }
@@ -214,6 +218,7 @@ rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
     rx_result result = implementation_->stop_runtime(ctx);
     if (result)
     {
+        RX_ASSERT(typeT::runtime_type_id == rx_item_type::rx_port || rx_thread_context() == instance_data_.get_executer());
         result = displays_.stop_displays(ctx, rt_path);
         if (result)
         {
@@ -239,7 +244,7 @@ rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
 }
 
 template <class typeT>
-meta::meta_data& runtime_holder<typeT>::meta_info ()
+meta_data& runtime_holder<typeT>::meta_info ()
 {
   return meta_info_;
 
@@ -306,6 +311,12 @@ template <class typeT>
 rx_result runtime_holder<typeT>::add_implicit_relation (relations::relation_data::smart_ptr data)
 {
     return relations_.add_implicit_relation(std::move(data));
+}
+
+template <class typeT>
+security::security_guard_ptr runtime_holder<typeT>::get_security_guard ()
+{
+    return security_guard_;
 }
 
 template class runtime_holder<object_types::object_type>;

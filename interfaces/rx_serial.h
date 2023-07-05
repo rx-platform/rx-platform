@@ -45,8 +45,8 @@
 namespace rx_internal {
 namespace interfaces {
 namespace serial {
-class serial_port;
 class serial_endpoint;
+class serial_port;
 
 } // namespace serial
 } // namespace interfaces

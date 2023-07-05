@@ -1,9 +1,9 @@
 #pragma once
 
 
-#define RX_LIB_MAJOR_VERSION 2
-#define RX_LIB_MINOR_VERSION 7
-#define RX_LIB_BUILD_NUMBER 5
+#define RX_LIB_MAJOR_VERSION 3
+#define RX_LIB_MINOR_VERSION 0
+#define RX_LIB_BUILD_NUMBER 0
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -62,5 +62,8 @@
 // version 2.7.3 support for ARM dynamic linking
 // version 2.7.4 added ASN writer
 // version 2.7.5 added get_origin to rx_value
+// version 2.8.0 ABI version added
+// version 2.9.0 added RX_STRUCT_TYPE support
+// version 3.0.0 added meta data and run at
 
 

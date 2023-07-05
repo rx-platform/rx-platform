@@ -75,7 +75,7 @@ rx_result_with<typename T::smart_ptr> create_prototype(const string_type& type_n
 	}
 	data.base_id = base_resolved.move_value();
 	auto ret = rx_create_reference<T>();
-	ret->meta_info = meta_data(data);
+	ret->meta_info = create_type_meta_data(data);
 	return ret;
 }
 template<typename T>
@@ -100,7 +100,7 @@ rx_result_with<typename T::smart_ptr> create_simple_prototype(const string_type&
 	}
 	data.base_id = base_resolved.move_value();
 	auto ret = rx_create_reference<T>();
-	ret->meta_info = meta_data(data);
+	ret->meta_info = create_type_meta_data(data);
 	return ret;
 }
 template<typename T>

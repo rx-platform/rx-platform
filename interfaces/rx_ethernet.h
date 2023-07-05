@@ -130,7 +130,7 @@ class ethernet_endpoint : public rx_platform::threads::thread
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::ethernet::ethernet_endpoint  > ethernet_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< ethernet_endpoint  > ethernet_port_base;
 
 
 

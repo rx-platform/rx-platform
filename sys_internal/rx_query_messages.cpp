@@ -179,7 +179,7 @@ rx_result browse_response_message::deserialize (base_meta_reader& stream)
 	while (!stream.array_end())
 	{
 		rx_item_type type;
-		meta::meta_data one;
+		meta_data one;
 		auto result = one.deserialize_meta_data(stream, 0, type);
 		if (!result)
 		{
@@ -486,6 +486,119 @@ rx_message_type_t get_type_response<itemT>::get_type_id ()
 }
 
 
+// Class rx_internal::rx_protocol::messages::query_messages::query_request_message 
+
+string_type query_request_message::type_name = "queryReq";
+
+rx_message_type_t query_request_message::type_id = rx_query_request_id;
+
+
+rx_result query_request_message::serialize (base_meta_writer& stream) const
+{
+	if (!stream.start_array("queries", queries.size()))
+		return stream.get_error();
+	for (const auto& one : queries)
+	{
+		auto ret = one->serialize(stream);
+		if (!ret)
+			return ret;
+	}
+	if (!stream.end_array())
+		return stream.get_error();
+
+	if (!stream.write_bool("intersection", intersection))
+		return stream.get_error();
+
+	return true;
+}
+
+rx_result query_request_message::deserialize (base_meta_reader& stream)
+{
+	if (!stream.start_array("queries"))
+		return stream.get_error();
+	while (!stream.array_end())
+	{
+		auto one = meta::queries::rx_query::create_query(stream);
+		if (!one)
+			return one.errors();
+		queries.emplace_back(std::move(one.value()));
+	}
+
+	if (!stream.read_bool("intersection", intersection))
+		return stream.get_error();
+
+	return true;
+}
+
+message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	auto request_id = this->request_id;
+	rx_node_id id = rx_node_id();
+
+	rx_result_with_callback<api::query_result> callback(ctx.object,
+		[request_id, conn](rx_result_with<api::query_result>&& result) mutable
+		{
+			if (result)
+			{
+				auto response = std::make_unique<query_response_message>();
+
+				for (const auto& one : result.value().items)
+				{
+					response->items.emplace_back(one.type, one.data);
+				}
+				response->request_id = request_id;
+				conn->data_processed(std::move(response));
+			}
+			else
+			{
+				auto ret_value = std::make_unique<error_message>(result, 14, request_id);
+				conn->data_processed(std::move(ret_value));
+			}
+
+		});
+
+	rx_result result = api::ns::rx_query_model(queries, std::move(callback), ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 14, request_id);
+		return ret_value;
+	}
+	else
+	{
+		// just return we send callback
+		return message_ptr();
+	}
+}
+
+const string_type& query_request_message::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t query_request_message::get_type_id ()
+{
+  return type_id;
+
+}
+
+query_request_message::response_ptr_t query_request_message::create_response_message ()
+{
+	return std::make_unique<query_response_message>();
+}
+
+rx_result query_request_message::process (response_ptr_t response_ptr)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result query_request_message::process (error_message_ptr error_ptr)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+
 // Class rx_internal::rx_protocol::messages::query_messages::query_response_message 
 
 string_type query_response_message::type_name = "queryResp";
@@ -520,7 +633,7 @@ rx_result query_response_message::deserialize (base_meta_reader& stream)
 	while (!stream.array_end())
 	{
 		rx_item_type type;
-		meta::meta_data one;
+		meta_data one;
 		auto result = one.deserialize_meta_data(stream, 0, type);
 		if (!result)
 		{
@@ -1115,119 +1228,6 @@ rx_message_type_t get_code_info_response_message::get_type_id ()
 {
   return type_id;
 
-}
-
-
-// Class rx_internal::rx_protocol::messages::query_messages::query_request_message 
-
-string_type query_request_message::type_name = "queryReq";
-
-rx_message_type_t query_request_message::type_id = rx_query_request_id;
-
-
-rx_result query_request_message::serialize (base_meta_writer& stream) const
-{
-	if (!stream.start_array("queries", queries.size()))
-		return stream.get_error();
-	for (const auto& one : queries)
-	{
-		auto ret = one->serialize(stream);
-		if (!ret)
-			return ret;
-	}
-	if (!stream.end_array())
-		return stream.get_error();
-
-	if (!stream.write_bool("intersection", intersection))
-		return stream.get_error();
-
-	return true;
-}
-
-rx_result query_request_message::deserialize (base_meta_reader& stream)
-{
-	if (!stream.start_array("queries"))
-		return stream.get_error();
-	while (!stream.array_end())
-	{
-		auto one = meta::queries::rx_query::create_query(stream);
-		if (!one)
-			return one.errors();
-		queries.emplace_back(std::move(one.value()));
-	}
-
-	if (!stream.read_bool("intersection", intersection))
-		return stream.get_error();
-
-	return true;
-}
-
-message_ptr query_request_message::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
-{
-	auto request_id = this->request_id;
-	rx_node_id id = rx_node_id();
-
-	rx_result_with_callback<api::query_result> callback(ctx.object,
-		[request_id, conn](rx_result_with<api::query_result>&& result) mutable
-		{
-			if (result)
-			{
-				auto response = std::make_unique<query_response_message>();
-
-				for (const auto& one : result.value().items)
-				{
-					response->items.emplace_back(one.type, one.data);
-				}
-				response->request_id = request_id;
-				conn->data_processed(std::move(response));
-			}
-			else
-			{
-				auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-				conn->data_processed(std::move(ret_value));
-			}
-
-		});
-
-	rx_result result = api::ns::rx_query_model(queries, std::move(callback), ctx);
-
-	if (!result)
-	{
-		auto ret_value = std::make_unique<error_message>(result, 14, request_id);
-		return ret_value;
-	}
-	else
-	{
-		// just return we send callback
-		return message_ptr();
-	}
-}
-
-const string_type& query_request_message::get_type_name ()
-{
-  return type_name;
-
-}
-
-rx_message_type_t query_request_message::get_type_id ()
-{
-  return type_id;
-
-}
-
-query_request_message::response_ptr_t query_request_message::create_response_message ()
-{
-	return std::make_unique<query_response_message>();
-}
-
-rx_result query_request_message::process (response_ptr_t response_ptr)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-rx_result query_request_message::process (error_message_ptr error_ptr)
-{
-	return RX_NOT_IMPLEMENTED;
 }
 
 

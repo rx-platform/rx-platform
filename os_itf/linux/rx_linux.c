@@ -176,6 +176,7 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug)
 }
 void rx_deinitialize_os()
 {
+
     if (init_common_result)
         rx_deinit_common_library();
 }
@@ -1452,9 +1453,17 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                     int err = read(io_data->handle, io_data->read_buffer, io_data->read_buffer_size);
                                     if (err == -1)
                                     {
+                                        err = errno;
+
+                                        if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
+                                        {
+                                            one.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+                                            epoll_ctl(disp->epoll_fd, EPOLL_CTL_MOD, io_data->handle, &one);
+                                        }
+
+                                        int ops = remove_pending_op(type_data);
                                         if (err != EAGAIN && err != EWOULDBLOCK)
                                         {
-                                            int ops = remove_pending_op(type_data);
                                             if (ops >= 0)
                                                 (io_data->shutdown_callback)(io_data->data, errno);
                                         }
@@ -1462,6 +1471,12 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                     }
                                     else
                                     {
+                                        if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
+                                        {
+                                            one.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+                                            epoll_ctl(disp->epoll_fd, EPOLL_CTL_MOD, io_data->handle, &one);
+                                        }
+
                                         int ops = remove_pending_op(type_data);
                                         if (ops >= 0)
                                         {
@@ -1471,12 +1486,6 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                            // else
                                             (io_data->read_callback)(io_data->data, 0, err);
                                         }
-                                    }
-
-                                    if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
-                                    {
-                                        one.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-                                        epoll_ctl(disp->epoll_fd, EPOLL_CTL_MOD, io_data->handle, &one);
                                     }
                                 }
                                 break;
@@ -1490,9 +1499,17 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                     int err = recvfrom(io_data->handle, io_data->read_buffer, io_data->read_buffer_size, 0, (struct sockaddr*)&addr, &addr_len);
                                     if (err == -1)
                                     {
+                                        err = errno;
+
+                                        if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
+                                        {
+                                            one.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+                                            epoll_ctl(disp->epoll_fd, EPOLL_CTL_MOD, io_data->handle, &one);
+                                        }
+                                        int ops = remove_pending_op(type_data);
+
                                         if (err != EAGAIN && err != EWOULDBLOCK)
                                         {
-                                            int ops = remove_pending_op(type_data);
                                             if (ops >= 0)
                                                 (io_data->shutdown_callback)(io_data->data, errno);
                                         }
@@ -1500,6 +1517,12 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                     }
                                     else
                                     {
+                                        if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
+                                        {
+                                            one.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+                                            epoll_ctl(disp->epoll_fd, EPOLL_CTL_MOD, io_data->handle, &one);
+                                        }
+
                                         int ops = remove_pending_op(type_data);
                                         if (ops >= 0)
                                         {
@@ -1509,11 +1532,6 @@ uint32_t rx_dispatch_events(rx_kernel_dispather_t disp)
                                             //else
                                             (io_data->read_from_callback)(io_data->data, 0, err, (struct sockaddr*)&addr, addr_len);
                                         }
-                                    }
-                                    if (__atomic_load_4(&type_data->write_handle, __ATOMIC_SEQ_CST))
-                                    {
-                                        one.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-                                        epoll_ctl(disp->epoll_fd, EPOLL_CTL_MOD, io_data->handle, &one);
                                     }
                                 }
                                 break;

@@ -31,6 +31,7 @@
 #include "pch.h"
 
 #include "system/runtime/rx_value_templates.h"
+#include "system/meta/rx_meta_attr_algorithm.h"
 
 // rx_simulation
 #include "runtime_internal/rx_simulation.h"

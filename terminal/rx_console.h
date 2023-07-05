@@ -69,74 +69,6 @@ namespace terminal {
 
 namespace console {
 
-typedef std::function<void(bool, memory::buffer_ptr, memory::buffer_ptr, bool)> console_runtime_callback_t;
-
-
-
-
-class console_runtime : public rx::pointers::reference_object  
-{
-    DECLARE_REFERENCE_PTR(console_runtime);
-
-  public:
-      console_runtime (rx_thread_handle_t executer, console_runtime_callback_t callback);
-
-      ~console_runtime();
-
-
-      void do_command (const string_type& line, security::security_context_ptr ctx);
-
-      void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
-
-      bool cancel_command (security::security_context_ptr ctx);
-
-      rx_result check_validity ();
-
-      void reset ();
-
-      void get_prompt (string_type& prompt);
-
-      void set_terminal_size (int width, int height);
-
-      void process_program (bool continue_scan);
-
-
-      const string_type get_current_directory () const
-      {
-        return current_directory_;
-      }
-
-
-
-      string_type current_directory_;
-
-
-  protected:
-
-  private:
-
-
-      std::unique_ptr<console_runtime_program_context> program_context_;
-
-      rx_reference<script::console_program> current_program_;
-
-
-      string_type line_;
-
-      string_type name_;
-
-      rx_thread_handle_t executer_;
-
-      console_runtime_callback_t callback_;
-
-      int term_width_;
-
-      int term_height_;
-
-
-};
-
-
 
 
 
@@ -192,6 +124,109 @@ class console_runtime_program_context : public script::console_program_context
       std::ostream out_std_;
 
       std::ostream err_std_;
+
+
+};
+
+
+
+
+
+
+class console_runtime_program : public script::console_program  
+{
+
+    DECLARE_REFERENCE_PTR(console_runtime_program);
+
+
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+terminal console program class.");
+    typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
+
+  public:
+      console_runtime_program ();
+
+      ~console_runtime_program();
+
+
+      std::unique_ptr<logic::program_context> create_program_context (logic::program_context* parent_context, security::security_guard_ptr guard);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+typedef std::function<void(bool, memory::buffer_ptr, memory::buffer_ptr, bool)> console_runtime_callback_t;
+
+
+
+
+class console_runtime : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(console_runtime);
+
+  public:
+      console_runtime (rx_thread_handle_t executer, console_runtime_callback_t callback, security::security_guard_ptr guard);
+
+      ~console_runtime();
+
+
+      void do_command (const string_type& line, security::security_context_ptr ctx);
+
+      void process_event (bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done);
+
+      bool cancel_command (security::security_context_ptr ctx);
+
+      rx_result check_validity ();
+
+      void reset ();
+
+      void get_prompt (string_type& prompt);
+
+      void set_terminal_size (int width, int height);
+
+      void process_program (bool continue_scan);
+
+      security::security_guard_ptr get_security_guard ();
+
+
+      const string_type get_current_directory () const
+      {
+        return current_directory_;
+      }
+
+
+
+      string_type current_directory_;
+
+
+  protected:
+
+  private:
+
+
+      std::unique_ptr<console_runtime_program_context> program_context_;
+
+      rx_reference<console_runtime_program> current_program_;
+
+
+      string_type line_;
+
+      string_type name_;
+
+      rx_thread_handle_t executer_;
+
+      console_runtime_callback_t callback_;
+
+      int term_width_;
+
+      int term_height_;
+
+      security::security_guard_ptr security_guard_;
 
 
 };

@@ -32,13 +32,21 @@
 #define rx_platform_item_h 1
 
 
+#include "security/rx_security.h"
 
-// rx_ns
-#include "system/server/rx_ns.h"
 // rx_values
 #include "lib/rx_values.h"
 
+namespace rx_platform {
+namespace ns {
+class rx_platform_directory;
+
+} // namespace ns
+} // namespace rx_platform
+
+
 #include "system/callbacks/rx_callback.h"
+//#include "api/rx_platform_api.h"
 
 
 namespace rx_platform {
@@ -122,7 +130,7 @@ private:
 
       virtual rx_result save () const = 0;
 
-      virtual const meta_data_t& meta_info () const = 0;
+      virtual const meta_data& meta_info () const = 0;
 
       virtual void read_value (const string_type& path, read_result_callback_t callback) const = 0;
 
@@ -142,7 +150,7 @@ private:
 
       virtual std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
-      virtual rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx) = 0;
+      virtual rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
       virtual rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
@@ -163,6 +171,8 @@ private:
       virtual rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type) = 0;
 
       virtual rx_platform_item::smart_ptr clone () const = 0;
+
+      virtual security::security_guard_ptr get_security_guard () = 0;
 
 
   protected:

@@ -426,6 +426,11 @@ const string_type& relation_data::get_name () const
 	return name;
 }
 
+security::security_guard_ptr relation_data::get_security_guard ()
+{
+	return context_->get_security_guard();
+}
+
 
 // Class rx_platform::runtime::relations::relations_holder 
 

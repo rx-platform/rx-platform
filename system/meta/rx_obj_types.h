@@ -39,12 +39,12 @@
 
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_meta_data
+#include "lib/rx_meta_data.h"
 
 #include "system/runtime/rx_rt_struct.h"
 #include "system/meta/rx_runtime_data.h"
@@ -236,7 +236,7 @@ public:
 
       object_data_type object_data;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::complex_data_type complex_data;
 
@@ -246,6 +246,8 @@ public:
       static rx_item_type type_id;
 
       static rx_item_type runtime_type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -283,7 +285,7 @@ public:
 
       object_data_type object_data;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::complex_data_type complex_data;
 
@@ -293,6 +295,8 @@ public:
       static rx_item_type type_id;
 
       static rx_item_type runtime_type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -332,7 +336,7 @@ public:
 
       object_data_type object_data;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::complex_data_type complex_data;
 
@@ -342,6 +346,8 @@ public:
       static rx_item_type type_id;
 
       static rx_item_type runtime_type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -379,7 +385,7 @@ public:
 
       object_data_type object_data;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::complex_data_type complex_data;
 
@@ -389,6 +395,8 @@ public:
       static const rx_item_type type_id;
 
       static rx_item_type runtime_type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -468,12 +476,14 @@ public:
 
 
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       relation_type_data relation_data;
 
 
       static rx_item_type type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:

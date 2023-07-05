@@ -3,9 +3,9 @@
 #include "version/rx_version.h"
 
 #define RX_SERVER_NAME "Molecule"
-#define RX_SERVER_MAJOR_VERSION 1
-#define RX_SERVER_MINOR_VERSION 10
-#define RX_SERVER_BUILD_NUMBER 3
+#define RX_SERVER_MAJOR_VERSION 2
+#define RX_SERVER_MINOR_VERSION 0
+#define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -46,4 +46,6 @@
 // version 1.10.0 CHANGED ABI!!!! (without versioning!!!)
 // version 1.10.1 added signal level support
 // version 1.10.2 added some discovery features, ARM32 dynamic linking
+// version 1.11.0 ABI and Common versioning, Data Structs, added Web Socket support
+// version 2.0.0 added security and meta moved to rx-common
 

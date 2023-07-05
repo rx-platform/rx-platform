@@ -207,9 +207,18 @@ void create_module_version_string(const char* prefix, int major, int minor, int 
 	else if (strcmp(str, "Dec") == 0)
 		month = 12;
 
-	sprintf(buffer, "%s Ver %d.%d.%d.%d%04d", prefix,
-		major,minor,build,
-		(year), month * 100 + day);
+	if (prefix && prefix[0] != '\0')
+	{
+		sprintf(buffer, "%s Ver %d.%d.%d.%d%04d", prefix,
+			major, minor, build,
+			(year), month * 100 + day);
+	}
+	else
+	{
+		sprintf(buffer, "Ver %d.%d.%d.%d%04d",
+			major, minor, build,
+			(year), month * 100 + day);
+	}
 
 
 }

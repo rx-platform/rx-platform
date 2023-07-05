@@ -298,6 +298,8 @@ class relation_data : public rx::pointers::reference_object
 
       const string_type& get_name () const;
 
+      security::security_guard_ptr get_security_guard ();
+
 
       const rx_reference<relation_runtime> get_implementation () const
       {
@@ -312,7 +314,7 @@ class relation_data : public rx::pointers::reference_object
       }
 
 
-      const meta::meta_data& meta_info () const
+      const meta_data& meta_info () const
       {
         return meta_info_;
       }
@@ -371,7 +373,7 @@ class relation_data : public rx::pointers::reference_object
 
       bool is_target_;
 
-      meta::meta_data meta_info_;
+      meta_data meta_info_;
 
 
 };

@@ -36,7 +36,6 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
-#include "system/server/rx_ns.h"
 #include "system/callbacks/rx_callback.h"
 #include "system/runtime/rx_runtime_helpers.h"
 #include "system/runtime/rx_rt_struct.h"

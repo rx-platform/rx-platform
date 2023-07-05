@@ -33,16 +33,17 @@
 
 
 #include "lib/rx_lock.h"
+#include "system/rx_platform_typedefs.h"
+#include "system/server/rx_platform_item.h"
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
-// rx_storage
-#include "system/storage_base/rx_storage.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_meta_data
+#include "lib/rx_meta_data.h"
+// rx_storage
+#include "system/storage_base/rx_storage.h"
 
 
-#include "system/runtime/rx_runtime_helpers.h"
 
 /////////////////////////////////////////////////////////////
 // logging macros for host library
@@ -75,11 +76,6 @@ namespace rx_platform {
 
 void rx_split_path(const string_type& full_path, string_type& directory_path, string_type& item_path);
 
-namespace meta
-{
-class meta_data;
-}
-typedef typename meta::meta_data meta_data_t;
 
 bool rx_is_valid_name_character(char ch);
 bool rx_is_valid_namespace_name(const string_type& name);
@@ -88,7 +84,7 @@ typedef std::vector<rx_directory_ptr> platform_directories_type;
 
 
 namespace ns {
-
+class rx_directory_cache;
 void fill_attributes_string(namespace_item_attributes attr, string_type& str);
 
 
@@ -115,7 +111,7 @@ class rx_namespace_item
       rx_value get_value () const;
 
 
-      const meta::meta_data& get_meta () const;
+      const rx::meta_data& get_meta () const;
 
 
       rx_item_type get_type () const;
@@ -129,7 +125,7 @@ class rx_namespace_item
   private:
 
 
-      meta::meta_data meta_;
+      rx::meta_data meta_;
 
 
       rx_item_type type_;
@@ -182,6 +178,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 	typedef std::map<string_type, rx_namespace_item> sub_items_type;
 	typedef std::unordered_set<string_type> reserved_type;
     friend class rx_internal::builders::rx_platform_builder;
+    friend class rx_platform::ns::rx_directory_cache;
 
   public:
       ~rx_platform_directory();
@@ -193,7 +190,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       void fill_dir_code_info (std::ostream& info);
 
-      virtual meta_data_t meta_info () const;
+      virtual meta_data meta_info () const;
 
       virtual void list_content (platform_directories_type& sub_directories, platform_items_type& sub_items, const string_type& pattern) const;
 
@@ -222,7 +219,7 @@ class rx_platform_directory : public rx::pointers::reference_object
 
       sub_items_type sub_items_;
 
-      meta::meta_data meta_;
+      rx::meta_data meta_;
 
       rx_reference<storage_base::rx_platform_storage> storage_;
 
@@ -232,7 +229,6 @@ class rx_platform_directory : public rx::pointers::reference_object
       reserved_type reserved_;
 
 
-    friend class rx_directory_cache;
     friend class rx_internal::internal_ns::namespace_algorithms;
 };
 

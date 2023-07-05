@@ -33,10 +33,10 @@
 
 
 
-// rx_protocol_templates
-#include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
 // rx_console
 #include "terminal/rx_console.h"
 // rx_ptr
@@ -70,7 +70,7 @@ class vt100_endpoint : public rx::pointers::reference_object
 	typedef std::list<string_type> history_type;
 
   public:
-      vt100_endpoint (runtime::items::port_runtime* port, bool to_echo = true);
+      vt100_endpoint (runtime::items::port_runtime* port, security::security_guard_ptr guard, bool to_echo = true);
 
       ~vt100_endpoint();
 
@@ -172,6 +172,7 @@ class vt100_endpoint : public rx::pointers::reference_object
 
       string_type os_command_;
 
+      rx_timer_ptr pull_timer_;
 
 };
 
@@ -181,7 +182,7 @@ class vt100_endpoint : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< vt100_endpoint  > vt100_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_internal::terminal::term_ports::vt100_endpoint  > vt100_port_base;
 
 
 
@@ -203,10 +204,15 @@ executes input based script program.");
 
       void stack_assembled ();
 
+      rx_result initialize_runtime (runtime_init_context& ctx);
+
 
   protected:
 
   private:
+
+
+      security::security_guard_ptr security_guard_;
 
 
 };

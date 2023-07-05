@@ -156,8 +156,6 @@ class server_command : public rx_platform::logic::method_runtime
 
       virtual bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx) = 0;
 
-      bool dword_check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask);
-
 
       rx_time time_stamp_;
 
@@ -166,8 +164,6 @@ class server_command : public rx_platform::logic::method_runtime
 
 
       string_type console_name_;
-
-      security::security_guard_ptr security_guard_;
 
       rx_time modified_time_;
 

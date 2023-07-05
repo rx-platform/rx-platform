@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -148,6 +148,49 @@ typedef pthread_key_t rx_thread_data_t;
 
 #ifdef PYTHON_SUPPORT
 #include <python2.7/Python.h>
+#endif
+
+
+#include <openssl/ssl.h>
+
+typedef struct rx_auth_context
+{
+	int fd;
+
+	SSL* ssl;
+
+	BIO* rbio; /* SSL reads from, we write to. */
+	BIO* wbio; /* SSL writes to, we read from. */
+
+	int init_finished;
+
+} rx_auth_context_t;
+
+
+typedef struct rx_cred
+{
+    SSL_CTX* ssl_ctx;
+	uint32_t buffer_size;
+} rx_cred_t;
+
+
+
+struct rx_time_struct_t;
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "common/rx_common.h"
+
+int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert);
+
+
+
+#ifdef __cplusplus
+}
 #endif
 
 

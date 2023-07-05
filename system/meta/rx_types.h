@@ -33,13 +33,14 @@
 
 
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_meta_data
+#include "lib/rx_meta_data.h"
 
+#include "system/meta/rx_meta_support.h"
 using rx_platform::meta::construct_context;
 
 
@@ -85,12 +86,14 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
 
       static rx_item_type type_id;
 
       rx_item_reference arguments;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -131,10 +134,12 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
 
       static rx_item_type type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -166,7 +171,7 @@ public:
       platform_item_ptr get_item_ptr () const;
 
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::complex_data_type complex_data;
 
@@ -174,6 +179,8 @@ public:
 
 
       static rx_item_type type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -214,12 +221,14 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::filtered_data_type filter_data;
 
 
       static rx_item_type type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -262,10 +271,12 @@ public:
 
       def_blocks::mapped_data_type mapping_data;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
 
       static rx_item_type type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -306,7 +317,7 @@ public:
 
 
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::variable_data_type variable_data;
 
@@ -316,6 +327,8 @@ public:
 
 
       static rx_item_type type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -357,12 +370,14 @@ public:
 
 
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::data_type_def complex_data;
 
 
       static rx_item_type type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -403,7 +418,7 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
 
       static rx_item_type type_id;
@@ -411,6 +426,8 @@ public:
       rx_item_reference inputs;
 
       rx_item_reference outputs;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -449,12 +466,14 @@ public:
 
 
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::complex_data_type complex_data;
 
 
       static rx_item_type type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -493,12 +512,14 @@ public:
 
 
 
-      meta_data meta_info;
+      rx::meta_data meta_info;
 
       def_blocks::complex_data_type complex_data;
 
 
       static rx_item_type type_id;
+
+      security::security_guard_ptr security_guard;
 
 
   protected:

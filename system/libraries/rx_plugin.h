@@ -52,12 +52,15 @@ namespace rx_platform {
 
 namespace library {
 
+#define DEFAULT_VER_STRING "_._._"
 struct rx_plugin_info
 {
-    string_type plugin_version;
-    string_type comp_version;
-    string_type lib_version;
-    string_type platform_version;
+    string_type plugin_version = DEFAULT_VER_STRING;
+    string_type comp_version = DEFAULT_VER_STRING;
+    string_type lib_version = DEFAULT_VER_STRING;
+    string_type platform_version = DEFAULT_VER_STRING;
+    string_type abi_version = DEFAULT_VER_STRING;
+    string_type common_version = DEFAULT_VER_STRING;
 
 };
 
@@ -164,6 +167,8 @@ class rx_dynamic_plugin : public rx_plugin_base
       rxBindPlugin2_t prxBindPlugin2_;
 
       rxGetPluginInfo_t prxGetPluginInfo_;
+
+      rxGetPluginInfo2_t prxGetPluginInfo2_;
 
       rxGetPluginName_t prxGetPluginName_;
 

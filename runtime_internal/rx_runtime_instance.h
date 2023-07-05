@@ -236,6 +236,8 @@ class application_instance_data
 
       std::vector<rx_port_ptr> get_ports ();
 
+      rx_thread_handle_t resolve_executer ();
+
 
       const rx_platform::meta::runtime_data::application_data& get_data () const
       {
@@ -274,6 +276,8 @@ class application_instance_data
       rx_thread_handle_t executer_;
 
       locks::slim_lock domains_lock_;
+
+      bool mine_security_;
 
 
 };

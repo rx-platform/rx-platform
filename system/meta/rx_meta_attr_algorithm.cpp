@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/meta/rx_meta_attr_algorithm.h"
 
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
@@ -185,6 +186,29 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_compl
 		return stream.get_error();
 	if (!stream.write_bool("ro", whose.read_only_))
 		return stream.get_error();
+
+	if (stream.get_version() >= RX_STRUCT_LEVEL_VERSION)
+	{
+		if (!stream.write_item_reference("datatype", whose.data_type_ref_))
+			return stream.get_error();
+		if (!whose.data_type_ref_.is_null())
+		{
+			// just read rest of the stuff ignore values
+			if (!stream.write_int("array", whose.array_size_))
+				return stream.get_error();
+			if (!stream.write_string("description", whose.description_.c_str()))
+				return stream.get_error();
+			if (!stream.write_bool("persist", whose.persistent_))
+				return stream.get_error();
+			return true;
+		}
+	}
+	else
+	{
+		if(!whose.data_type_ref_.is_null())
+			return "Can not serialize data type with this version!";
+	}
+
 	if (stream.get_version() >= RX_ARRAYS_VERSION)
 	{
 		if (!stream.write_int("array", whose.array_size_))
@@ -236,6 +260,28 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_com
 		return stream.get_error();
 	if (!stream.read_bool("ro", whose.read_only_))
 		return stream.get_error();
+
+
+	if (stream.get_version() >= RX_STRUCT_LEVEL_VERSION)
+	{
+		if (!stream.read_item_reference("datatype", whose.data_type_ref_))
+			return stream.get_error();
+		if (!whose.data_type_ref_.is_null())
+		{
+			// just read rest of the stuff ignore values
+			if (!stream.read_int("array", whose.array_size_))
+				return stream.get_error();
+			if (!stream.read_string("description", whose.description_))
+				return stream.get_error();
+			if (!stream.read_bool("persist", whose.persistent_))
+				return stream.get_error();
+			return true;
+		}
+	}
+	else
+	{
+		whose.data_type_ref_ = rx_item_reference();
+	}
 	if (stream.get_version() >= RX_ARRAYS_VERSION)
 	{
 		if (!stream.read_int("array", whose.array_size_))

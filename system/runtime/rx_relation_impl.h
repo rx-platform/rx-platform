@@ -33,7 +33,6 @@
 
 
 #include "rx_runtime_helpers.h"
-#include "system/meta/rx_meta_data.h"
 #include "lib/rx_rt_data.h"
 
 // rx_ptr
@@ -73,7 +72,7 @@ class relation_runtime : public rx::pointers::reference_object
 
       virtual rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
-      virtual rx_item_reference get_implicit_reference (const meta::meta_data& info);
+      virtual rx_item_reference get_implicit_reference (const meta_data& info);
 
       virtual relation_runtime::smart_ptr make_target_relation ();
 
@@ -114,7 +113,7 @@ class extern_relation_runtime : public relation_runtime
 
       rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
-      rx_item_reference get_implicit_reference (const meta::meta_data& info);
+      rx_item_reference get_implicit_reference (const meta_data& info);
 
       relation_runtime::smart_ptr make_target_relation ();
 

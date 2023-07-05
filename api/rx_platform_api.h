@@ -44,7 +44,6 @@
 #include "system/meta/rx_types.h"
 #include "platform_api/rx_abi.h"
 
-using rx_platform::meta::meta_data;
 using namespace rx_platform::meta;
 
 

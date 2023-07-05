@@ -14,6 +14,7 @@
 #include "lib/rx_ptr.h"
 #include "interfaces/rx_stream_io.h"
 #include "system/meta/rx_obj_types.h"
+#include "system//meta/rx_meta_support.h"
 
 
 using namespace rx;
@@ -259,8 +260,8 @@ void test_thread()
 void test_classes()
 {
 	rx_platform::rx_object_type_ptr obj;
-	obj->meta_info = rx_platform::meta::object_type_creation_data
-		{ "test_class", 55, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_full_access };
+	obj->meta_info = create_type_meta_data(rx_platform::meta::object_type_creation_data
+		{ "test_class", 55, RX_CLASS_OBJECT_BASE_ID, namespace_item_attributes::namespace_item_full_access });
 }
 
 

@@ -138,7 +138,7 @@ public:
     typedef typename typeT::RImplType ImplType;
 
   public:
-      runtime_holder (const meta::meta_data& meta, const typename typeT::instance_data_t& instance, typename typeT::runtime_behavior_t&& rt_behavior);
+      runtime_holder (const meta_data& meta, const typename typeT::instance_data_t& instance, typename typeT::runtime_behavior_t&& rt_behavior);
 
       ~runtime_holder();
 
@@ -155,7 +155,7 @@ public:
 
       rx_result do_command (rx_object_command_t command_type);
 
-      meta::meta_data& meta_info ();
+      meta_data& meta_info ();
 
       platform_item_ptr get_item_ptr () const;
 
@@ -172,6 +172,8 @@ public:
       typename typeT::instance_data_t get_definition_data ();
 
       rx_result add_implicit_relation (relations::relation_data::smart_ptr data);
+
+      security::security_guard_ptr get_security_guard ();
 
 
       rx::data::runtime_values_data& get_overrides ()
@@ -193,7 +195,7 @@ public:
 
 
 
-      const meta::meta_data& meta_info () const
+      const meta_data& meta_info () const
       {
         return meta_info_;
       }
@@ -212,6 +214,9 @@ public:
   protected:
 
   private:
+
+      security::security_guard_ptr security_guard_;
+
 
 
       logic_blocks::logic_holder logic_;
@@ -233,7 +238,7 @@ public:
       tag_blocks::tags_holder tags_;
 
 
-      meta::meta_data meta_info_;
+      meta_data meta_info_;
 
       bool job_pending_;
 

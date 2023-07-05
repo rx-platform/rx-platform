@@ -150,7 +150,7 @@ class protocol_type_creator_base
 
       virtual rx_result serialize (base_meta_writer& stream) const = 0;
 
-      virtual rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta) = 0;
+      virtual rx_result deserialize (base_meta_reader& stream, const meta_data& meta) = 0;
 
 
   protected:
@@ -175,7 +175,7 @@ class protocol_type_creator : public protocol_type_creator_base
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
+      rx_result deserialize (base_meta_reader& stream, const meta_data& meta);
 
 
       typename itemT::smart_ptr item;
@@ -333,7 +333,7 @@ class protocol_simple_type_creator : public protocol_type_creator_base
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
+      rx_result deserialize (base_meta_reader& stream, const meta_data& meta);
 
 
       typename itemT::smart_ptr item;
@@ -360,7 +360,7 @@ class protocol_relation_type_creator : public protocol_type_creator_base
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
+      rx_result deserialize (base_meta_reader& stream, const meta_data& meta);
 
 
       object_types::relation_type::smart_ptr item;
@@ -387,7 +387,7 @@ class protocol_data_type_creator : public protocol_type_creator_base
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
+      rx_result deserialize (base_meta_reader& stream, const meta_data& meta);
 
 
       data_type_ptr item;
@@ -490,7 +490,7 @@ class protocol_runtime_creator_base
 
       virtual rx_result serialize (base_meta_writer& stream) const = 0;
 
-      virtual rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta) = 0;
+      virtual rx_result deserialize (base_meta_reader& stream, const meta_data& meta) = 0;
 
 
   protected:
@@ -515,7 +515,7 @@ class protocol_runtime_creator : public protocol_runtime_creator_base
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      rx_result deserialize (base_meta_reader& stream, const meta::meta_data& meta);
+      rx_result deserialize (base_meta_reader& stream, const meta_data& meta);
 
 
       typename itemT::instance_data_t item;

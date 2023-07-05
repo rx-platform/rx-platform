@@ -37,12 +37,12 @@
 #include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_http_server
 #include "http_server/rx_http_server.h"
 // rx_io_buffers
 #include "lib/rx_io_buffers.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/http_c/rx_http_c_impl.h"
@@ -116,6 +116,8 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
       runtime::items::port_runtime* port_;
 
+      bool upgraded_;
+
 
 };
 
@@ -125,7 +127,7 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_http_endpoint  > rx_http_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< protocols::rx_http::rx_http_endpoint  > rx_http_port_base;
 
 
 

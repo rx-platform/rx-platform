@@ -107,6 +107,8 @@ list current directory on console ( dir, ls ");
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
+      bool do_non_list_command (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, rx_directory_ptr directory, console_context_ptr ctx);
+
 
   private:
 
@@ -148,9 +150,6 @@ class ls_command : public list_command
       ls_command();
 
       ~ls_command();
-
-
-      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
   protected:

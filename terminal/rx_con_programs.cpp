@@ -69,12 +69,6 @@ console_program::~console_program()
 
 
 
-std::unique_ptr<logic::program_context> console_program::create_program_context (logic::program_context* parent_context)
-{
-	RX_ASSERT(false);// had to place here because of current implementation, will be changed later
-	return std::unique_ptr<logic::program_context>();
-}
-
 void console_program::load (const string_type& text)
 {
 	size_t count = text.size();
@@ -190,7 +184,7 @@ bool console_program::parse_line (const string_type& line, std::ostream& out, st
 
 // Class rx_internal::terminal::console::script::console_program_context 
 
-console_program_context::console_program_context (program_context* parent, console_program_ptr runtime, const string_type& current_directory)
+console_program_context::console_program_context (program_context* parent, console_program_ptr runtime, const string_type& current_directory, security::security_guard_ptr guard)
       : current_directory_(current_directory),
         canceled_(false),
         terminal_width_(80),
@@ -198,8 +192,10 @@ console_program_context::console_program_context (program_context* parent, conso
         current_line_(0),
         waiting_(false),
         error_(false)
-    , program_context(parent, runtime)
+    , program_context(parent, runtime, guard)
 {
+	if (current_directory_.empty())
+		current_directory_ = "/world";
 }
 
 

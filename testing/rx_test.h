@@ -33,14 +33,14 @@
 
 
 
-// rx_meta_data
-#include "system/meta/rx_meta_data.h"
 // rx_con_programs
 #include "terminal/rx_con_programs.h"
 // rx_commands
 #include "terminal/rx_commands.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_meta_data
+#include "lib/rx_meta_data.h"
 
 namespace testing {
 class test_case;
@@ -252,8 +252,10 @@ public:
 
       void async_test_end (test_program_context* ctx);
 
+      security::security_guard_ptr get_security_guard ();
 
-      const rx_platform::meta::meta_data& meta_info () const;
+
+      const rx::meta_data& meta_info () const;
 
 
       const rx_time get_modified_time () const
@@ -283,7 +285,7 @@ public:
 
 
 
-      rx_platform::meta::meta_data meta_info_;
+      rx::meta_data meta_info_;
 
 
       uint64_t start_tick_;

@@ -211,7 +211,7 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 
 rx_result configuration_storage_builder::create_object_from_storage (rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr root)
 {
-	meta::meta_data meta;
+	meta_data meta;
 	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(storage->read_stream(), STREAMING_TYPE_OBJECT, target_type);
 	if (!result)
@@ -263,7 +263,7 @@ rx_result configuration_storage_builder::create_object_from_storage (rx_storage_
 
 rx_result configuration_storage_builder::create_type_from_storage (rx_storage_item_ptr& storage, rx_directory_ptr root)
 {
-	meta::meta_data meta;
+	meta_data meta;
 	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(storage->read_stream(), STREAMING_TYPE_TYPE, target_type);
 	if (!result)
@@ -402,7 +402,7 @@ rx_result_with<rx_directory_ptr> configuration_storage_builder::storage_get_dire
 
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_type_from_storage(meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
 {
 	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
@@ -427,7 +427,7 @@ rx_result configuration_storage_builder::create_concrete_type_from_storage(meta:
 }
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_simple_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_simple_type_from_storage(meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
 {
 	using algorithm_type = typename T::algorithm_type;
 	auto created = rx_create_reference<T>();
@@ -451,7 +451,7 @@ rx_result configuration_storage_builder::create_concrete_simple_type_from_storag
 	return result;
 }
 
-rx_result configuration_storage_builder::create_concrete_relation_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save)
+rx_result configuration_storage_builder::create_concrete_relation_type_from_storage(meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save)
 {
 	auto created = rx_create_reference<relation_type>();
 	created->meta_info = meta;
@@ -475,7 +475,7 @@ rx_result configuration_storage_builder::create_concrete_relation_type_from_stor
 }
 
 
-rx_result configuration_storage_builder::create_concrete_data_type_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save)
+rx_result configuration_storage_builder::create_concrete_data_type_from_storage(meta_data& meta, rx_storage_item_ptr& storage, rx_directory_ptr dir, bool save)
 {
 	auto created = rx_create_reference<data_type>();
 	created->meta_info = meta;
@@ -499,7 +499,7 @@ rx_result configuration_storage_builder::create_concrete_data_type_from_storage(
 }
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_object_from_storage(meta::meta_data& meta, rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_object_from_storage(meta_data& meta, rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
 {
 	data::runtime_values_data runtime_data;
 	typename T::instance_data_t instance_data;

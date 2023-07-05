@@ -36,7 +36,6 @@
 // rx_runtime_helpers
 #include "system/runtime/rx_runtime_helpers.h"
 
-#include "system/server/rx_ns.h"
 #include "system/runtime/rx_objbase.h"
 #include "system/runtime/rx_holder_algorithms.h"
 #include "lib/rx_func_to_go.h"
@@ -228,6 +227,32 @@ class shutdown_algorithms
       static void deinit_ports (std::vector<rx_port_ptr> ports);
 
       static void deinit_objects (std::vector<rx_object_ptr> objects);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class startup_algorithms 
+{
+
+  public:
+
+      static void start_applications (std::vector<rx_application_ptr> apps);
+
+      static void start_domains (std::vector<rx_domain_ptr> domains);
+
+      static void start_ports (std::vector<rx_port_ptr> ports);
+
+      static void start_objects (std::vector<rx_object_ptr> objects);
 
 
   protected:

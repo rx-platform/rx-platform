@@ -487,8 +487,15 @@ void test_case::async_test_end (test_program_context* ctx)
 	ctx->continue_scan();
 }
 
+security::security_guard_ptr test_case::get_security_guard ()
+{
+	return rx_create_reference<security::security_guard>(
+		security::rx_security_read_access| security::rx_security_read_access
+		, "$test:"s + name_);
+}
 
-const rx_platform::meta::meta_data& test_case::meta_info () const
+
+const rx::meta_data& test_case::meta_info () const
 {
   return meta_info_;
 }
@@ -596,7 +603,7 @@ test_program_context::test_program_context (program_context* parent, rx_internal
         err_std_(err.unsafe_ptr()),
         out_(out),
         err_(err)
-	, console_program_context(parent, runtime,  current_directory)
+	, console_program_context(parent, runtime,  current_directory, parent->get_security_guard())
 {
 }
 

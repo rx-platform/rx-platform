@@ -32,6 +32,11 @@
 #define rx_common_h 1
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "rx_common_version.h"
 
 // standard return codes
 #define RX_ERROR 0
@@ -47,9 +52,6 @@
 #endif
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct rx_platform_init_data_t
 {
@@ -480,6 +482,7 @@ RX_COMMON_API int rx_node_id_from_string(rx_node_id_struct* data, const char* st
 
 RX_COMMON_API void rx_destory_node_id(rx_node_id_struct* data);
 
+
 union rx_value_union
 {
 	uint_fast8_t bool_value;
@@ -509,6 +512,7 @@ union rx_value_union
 	string_value_struct string_value;
 	bytes_value_struct bytes_value;
 	rx_node_id_struct* node_id_value;
+	struct_value_type struct_value;
 
 	array_value_struct array_value;
 };
@@ -555,6 +559,9 @@ RX_COMMON_API int rx_init_float_value(struct typed_value_type* val, float data);
 RX_COMMON_API int rx_init_double_value(struct typed_value_type* val, double data);
 RX_COMMON_API int rx_init_complex_value(struct typed_value_type* val, complex_value_struct data);
 
+
+RX_COMMON_API int rx_init_struct_value(struct typed_value_type* val, const struct typed_value_type* data, size_t count);
+RX_COMMON_API int rx_init_struct_value_with_ptrs(struct typed_value_type* val, const struct typed_value_type** data, size_t count);
 
 RX_COMMON_API int rx_init_bool_array_value(struct typed_value_type* val, const uint_fast8_t* data, size_t count);
 
@@ -695,6 +702,44 @@ RX_COMMON_API const char* rx_result_get_error(const rx_result_struct* res, size_
 RX_COMMON_API void rx_destroy_result_struct(rx_result_struct* res);
 
 
+
+typedef enum namespace_item_attributes_t
+{
+	namespace_item_null = 0,
+	namespace_item_read_access = 1,
+	namespace_item_write_access = 2,
+	namespace_item_delete_access = 4,
+	namespace_item_pull_access = 8,
+	namespace_item_execute_access = 0x10,
+	// special type of item
+	namespace_item_system = 0x20,
+	namespace_item_internal = 0x40,
+	// combinations
+	namespace_item_full_type_access = 0xf,
+	namespace_item_full_access = 0x1f,
+	namespace_item_system_access = 0x29,
+	namespace_item_internal_access = 0x79,
+	// masks
+	namespace_item_system_mask = 0x60
+
+} namespace_item_attributes;
+
+typedef struct rx_meta_data_struct_t
+{
+	rx_node_id_struct id;
+	string_value_struct name;
+	string_value_struct path;
+	rx_reference_struct parent;
+	rx_time_struct created_time;
+	rx_time_struct modified_time;
+	uint32_t version;
+	namespace_item_attributes attributes;
+
+} rx_meta_data_struct;
+
+RX_COMMON_API void rx_init_meta_data(rx_meta_data_struct* what);
+RX_COMMON_API void rx_deinit_meta_data(rx_meta_data_struct* what);
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // cryptography
 
@@ -725,6 +770,17 @@ RX_COMMON_API crypt_hash_t rx_crypt_create_hash(crypt_key_t key, int alg);
 RX_COMMON_API void rx_crypt_destroy_hash(crypt_hash_t hash);
 RX_COMMON_API int rx_crypt_hash_data(crypt_hash_t hhash, const void* buffer, size_t size);
 RX_COMMON_API int rx_crypt_get_hash(crypt_hash_t hhash, void* buffer, size_t* size);
+
+
+RX_COMMON_API int rx_init_certificate_struct(rx_certificate_t* cert);
+RX_COMMON_API int rx_open_certificate_from_thumb(rx_certificate_t* cert, const char* store, const uint8_t* thumb, size_t size);
+RX_COMMON_API int rx_open_certificate_from_bytes(rx_certificate_t* cert, const uint8_t* data, size_t size);
+RX_COMMON_API int rx_certificate_get_principal_name(const rx_certificate_t* cert, string_value_struct* data);
+RX_COMMON_API int rx_certificate_get_thumbprint(const rx_certificate_t* cert, bytes_value_struct* data);
+RX_COMMON_API int rx_certificate_get_bytes(const rx_certificate_t* cert, bytes_value_struct* data);
+RX_COMMON_API int rx_is_valid_certificate(const rx_certificate_t* cert);
+RX_COMMON_API int rx_close_certificate(rx_certificate_t* cert);
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 	// error handling here

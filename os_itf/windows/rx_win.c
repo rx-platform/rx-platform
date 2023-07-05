@@ -280,6 +280,8 @@ struct WSAData wsaData;
 int init_common_result = RX_ERROR;
 
 
+uint32_t tlc_max_token = 0;
+
 void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug)
 {
 	rx_platform_init_data common_data;
@@ -289,6 +291,16 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug)
 	init_common_result = rx_init_common_library(&common_data);
 	
 	collect_computer_name();
+
+
+
+	PSecPkgInfoA pkgInfo;
+	SECURITY_STATUS ss = QuerySecurityPackageInfoA(UNISP_NAME_A, &pkgInfo);
+
+	if (ss == SEC_E_OK)
+	{
+		tlc_max_token = pkgInfo->cbMaxToken;
+	}
 
 	create_module_version_string(RX_HAL_NAME, RX_HAL_MAJOR_VERSION, RX_HAL_MINOR_VERSION, RX_HAL_BUILD_NUMBER, __DATE__, __TIME__, ver_buffer);
 	g_ositf_version = ver_buffer;

@@ -41,6 +41,7 @@
 #include "system/server/rx_server.h"
 #include "runtime_internal/rx_runtime_relations.h"
 #include "model/rx_meta_internals.h"
+#include "system/runtime/rx_internal_objects.h"
 using namespace meta::object_types;
 
 
@@ -55,7 +56,8 @@ namespace runtime_data {
 // Class rx_internal::sys_runtime::runtime_core::runtime_data::application_instance_data 
 
 application_instance_data::application_instance_data (const application_data& data, int rt_behavior)
-      : executer_(-1)
+      : executer_(-1),
+        mine_security_(false)
     , data_(data)
 {
 }
@@ -115,13 +117,68 @@ void application_instance_data::get_domains (api::query_result& result)
 
 rx_result application_instance_data::before_init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
 {
-    auto sec_ctx = what->get_instance_data().identity_.create_context(what->meta_info().get_full_path(), "", what->get_instance_data().data_.identity);
+    security::security_context_ptr sec_ctx;
+    auto sec_result = what->get_instance_data().identity_.create_context(what->meta_info().get_full_path(), "", what->get_instance_data().data_.identity, sec_ctx);
 
-    if (sec_ctx)
+    if (!sec_result)
     {
-        what->get_instance_data().security_ctx_ = sec_ctx.value();
-        if (what->get_instance_data().security_ctx_)
-            what->get_instance_data().security_ctx_->login();
+        RUNTIME_LOG_WARNING("application_instance_data", 900, "Unable to create security context:"s + sec_result.errors_line());
+    }
+    if(sec_ctx)
+    {
+        what->get_instance_data().security_ctx_ = sec_ctx;
+
+        what->get_instance_data().security_ctx_->login();
+        what->get_instance_data().mine_security_ = true;
+    }
+    else if(what->meta_info().id != rx_node_id(RX_HOST_APP_ID)
+        || what->meta_info().id != rx_node_id(RX_NS_SYSTEM_APP_ID)
+        || what->meta_info().id != rx_node_id(RX_NS_WORLD_APP_ID))
+    {
+        if (what->meta_info().path.size() > 6)
+        {
+            if (memcmp(what->meta_info().path.c_str(), "/world/", 7) == 0)
+            {
+                what->get_instance_data().security_ctx_ = rx_platform::sys_objects::world_application::instance()->world_identity;
+            }
+            else if (memcmp(what->meta_info().path.c_str(), "/sys/", 5) == 0)
+            {
+                if (what->meta_info().path.size() > 10 && memcmp(what->meta_info().path.c_str(), "/sys/host/", 7) == 0)
+                {
+                    what->get_instance_data().security_ctx_ = rx_platform::sys_objects::host_application::instance()->host_identity;
+                }
+                else
+                {
+                    what->get_instance_data().security_ctx_ = rx_platform::sys_objects::system_application::instance()->system_identity;
+                }
+            }
+            else
+            {
+                what->get_instance_data().security_ctx_ = rx_platform::sys_objects::unassigned_application::instance()->unassigned_identity;
+            }
+        }
+        else
+        {
+            RUNTIME_LOG_WARNING("application_instance_data", 900, "Unable to create security context:"s + sec_result.errors_line());
+        }
+ 
+    }
+    else
+    {
+        switch (what->meta_info().id.get_numeric())
+        {
+        case RX_HOST_APP_ID:
+            what->get_instance_data().security_ctx_ = rx_platform::sys_objects::host_application::instance()->host_identity;
+            break;
+        case RX_NS_SYSTEM_APP_ID:
+            what->get_instance_data().security_ctx_ = rx_platform::sys_objects::system_application::instance()->system_identity;
+            break;
+        case RX_NS_WORLD_APP_ID:
+            what->get_instance_data().security_ctx_ = rx_platform::sys_objects::world_application::instance()->world_identity;
+            break;
+        default:
+            RUNTIME_LOG_WARNING("application_instance_data", 900, "Unable to create security context:"s + sec_result.errors_line());
+        }
     }
 
     what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
@@ -138,13 +195,15 @@ rx_result application_instance_data::before_start_runtime (rx_application_ptr wh
 
 rx_result application_instance_data::after_deinit_runtime (rx_application_ptr what, runtime::runtime_deinit_context& ctx)
 {
+    if (what->get_instance_data().mine_security_ && what->get_instance_data().security_ctx_)
+        what->get_instance_data().security_ctx_->logout();
+    what->get_instance_data().security_ctx_ = security::security_context_ptr::null_ptr;
     return true;
 }
 
 rx_result application_instance_data::after_stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx)
 {
-    if (what->get_instance_data().security_ctx_)
-        what->get_instance_data().security_ctx_->logout();
+    
     return true;
 }
 
@@ -177,6 +236,12 @@ std::vector<rx_port_ptr> application_instance_data::get_ports ()
         result.emplace_back(one.second);
     }
     return result;
+}
+
+rx_thread_handle_t application_instance_data::resolve_executer ()
+{
+    executer_ = executer_;
+    return executer_;
 }
 
 
@@ -284,6 +349,8 @@ rx_result domain_instance_data::before_init_runtime (rx_domain_ptr what, runtime
 
 rx_result domain_instance_data::before_start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx, tag_blocks::binded_tags* binded)
 {
+    auto result = binded->set_item_static<int>("CPU", (int)rx_internal::infrastructure::server_runtime::instance().get_CPU(what->get_instance_data().executer_), ctx);
+
     return true;
 }
 

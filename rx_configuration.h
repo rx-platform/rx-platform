@@ -1,20 +1,5 @@
 #pragma once
 
-#define RX_DIR_DELIMETER '/'
-#define RX_OBJECT_DELIMETER '.'
-#define RX_DIR_OBJECT_DELIMETER '/'
-#define RX_PATH_CURRENT '.'
-#define RX_PATH_PARENT '#'
-#define RX_SOURCE_DELIMETER '#'
-#define RX_DIR_DELIMETER_STR "/"
-#define RX_OBJECT_DELIMETER_STR "."
-#define RX_DIR_OBJECT_DELIMETER_STR "/"
-#define RX_PATH_CURRENT_STR "."
-#define RX_PATH_PARENT_STR '$'
-#define RX_DEFAULT_VARIABLE_NAME "_"
-#define RX_SOURCE_DELIMETER_STR "#"
-#define RX_MACRO_SYMBOL '$'
-#define RX_MACRO_SYMBOL_STR "$"
 
 #define RX_LINE_END "\n"
 #define RX_LINE_END_CH '\n'
@@ -105,6 +90,10 @@
 #define RX_HOST_OBJECT_NAME "Host"
 
 
+#define RX_NS_WORLD_APP_NAME "WorldApp"
+#define RX_NS_WORLD_APP_ID 0xc0000bb
+
+
 #define RX_NS_RELATION_BASE_NAME "RelationBase"
 #define RX_NS_RELATION_BASE_ID 0x0000000e
 
@@ -155,6 +144,9 @@
 // system objects type stuff
 #define RX_NS_SYSTEM_APP_TYPE_NAME "SysAppType"
 #define RX_NS_SYSTEM_APP_TYPE_ID 0xc000000
+
+#define RX_NS_WORLD_APP_TYPE_NAME "WorldAppType"
+#define RX_NS_WORLD_APP_TYPE_ID 0xc0000ba
 
 #define RX_NS_SYSTEM_TYPE_NAME "SystemType"
 #define RX_NS_SYSTEM_TYPE_ID 0xc000054
@@ -411,6 +403,18 @@
 #define RX_OPCUA_SIMPLE_BINARY_CLIENT_PORT_TYPE_NAME "OpcSimpleBinClient"
 #define RX_OPCUA_SIMPLE_BINARY_CLIENT_PORT_TYPE_ID 0xc000097
 
+#define TLS_PORT_TYPE_NAME "TlsPortType"
+#define TLS_PORT_TYPE_ID 0xc0000b6
+
+#define TLS_PORT_OPTIONS_TYPE_NAME "TlsPortOptions"
+#define TLS_PORT_OPTIONS_TYPE_ID 0xc0000b7
+
+#define TLS_PORT_STATUS_TYPE_NAME "TlsPortStatus"
+#define TLS_PORT_STATUS_TYPE_ID 0xc0000b8
+
+#define TLS_PORT_TIMEOUTS_TYPE_NAME "TlsPortTimeouts"
+#define TLS_PORT_TIMEOUTS_TYPE_ID 0xc0000b9
+
 
 #define RX_EXTERN_MAPPER_TYPE_NAME "ExternMapper"
 #define RX_EXTERN_MAPPER_TYPE_ID 0xc000033
@@ -476,6 +480,10 @@
 #define RX_CALC_FILTER_TYPE_NAME "CalcFilter"
 #define RX_CALC_FILTER_TYPE_ID 0xc0000b2
 
+
+#define RX_CUMULATIVE_SPEED_FILTER_TYPE_NAME "CumulativeSpeedFilter"
+#define RX_CUMULATIVE_SPEED_FILTER_TYPE_ID 0xc0000b5
+
 #define RX_SIMULATION_SOURCE_TYPE_NAME "SimulationSource"
 #define RX_SIMULATION_SOURCE_TYPE_ID 0xc000040
 #define RX_RAMP_SIMULATION_SOURCE_TYPE_NAME "RampSource"
@@ -526,6 +534,10 @@
 #define RX_NS_HTTP_TCP_ID 0xc000052
 #define RX_NS_HTTP_NAME "Http"
 #define RX_NS_HTTP_ID 0xc000053
+
+
+#define RX_NS_WS_TYPE_NAME "WSProtocol"
+#define RX_NS_WS_TYPE_ID 0xc0000b4
 
 
 #define RX_TCP_HTTP_PORT_TYPE_ID 0xc000058
@@ -583,51 +595,8 @@
 #define RX_PEER_STATUS_TYPE_NAME "PeerStatus"
 #define RX_PEER_STATUS_TYPE_ID 0xc0000b0
 
-// last is 0xc0000b3!!!! 
+// last is 0xc0000bb!!!! 
 
-// cpp classes stuff
-#define RX_CPP_OBJECT_CLASS_TYPE_NAME "object_type"
-#define RX_CPP_OBJECT_TYPE_NAME "object"
-#define RX_CPP_OBJECT_TYPE_ID "object"
-#define RX_CPP_DOMAIN_CLASS_TYPE_NAME "domain_type"
-#define RX_CPP_DOMAIN_TYPE_NAME "domain"
-#define RX_CPP_APPLICATION_CLASS_TYPE_NAME "application_type"
-#define RX_CPP_APPLICATION_TYPE_NAME "application"
-#define RX_CPP_PORT_CLASS_TYPE_NAME "port_type"
-#define RX_CPP_PORT_TYPE_NAME "port"
-#define RX_TEST_CASE_TYPE_NAME "test_case"
-
-#define RX_CPP_DIRECORY_TYPE_NAME "directory"
-#define RX_CPP_COMMAND_TYPE_NAME "command"
-
-#define RX_CONST_VALUE_TYPE_NAME "const_value"
-#define RX_VALUE_TYPE_NAME "value"
-#define RX_INDIRECT_VALUE_TYPE_NAME "value"
-
-#define RX_CPP_VARIABLE_CLASS_TYPE_NAME "variable_type"
-#define RX_CPP_VARIABLE_TYPE_NAME "variable"
-#define RX_CPP_STRUCT_CLASS_TYPE_NAME "struct_type"
-#define RX_CPP_STRUCT_TYPE_NAME "struct"
-#define RX_CPP_MAPPER_CLASS_TYPE_NAME "mapper_type"
-#define RX_CPP_MAPPER_TYPE_NAME "mapper"
-#define RX_CPP_SOURCE_CLASS_TYPE_NAME "source_type"
-#define RX_CPP_SOURCE_TYPE_NAME "source"
-#define RX_CPP_FILTER_CLASS_TYPE_NAME "filter_type"
-#define RX_CPP_FILTER_TYPE_NAME "filter"
-#define RX_CPP_EVENT_CLASS_TYPE_NAME "event_type"
-#define RX_CPP_EVENT_TYPE_NAME "event"
-#define RX_CPP_RELATION_CLASS_TYPE_NAME "relation_type"
-#define RX_CPP_RELATION_TYPE_NAME "relation"
-#define RX_CPP_RELATION_TARGET_TYPE_NAME "relation_target"
-
-#define RX_CPP_METHOD_CLASS_TYPE_NAME "method_type"
-#define RX_CPP_METHOD_TYPE_NAME "method"
-#define RX_CPP_PROGRAM_CLASS_TYPE_NAME "program_type"
-#define RX_CPP_PROGRAM_TYPE_NAME "program"
-#define RX_CPP_DATA_CLASS_TYPE_NAME "data_type"
-#define RX_CPP_DATA_TYPE_NAME "data"
-#define RX_CPP_DISPLAY_CLASS_TYPE_NAME "display_type"
-#define RX_CPP_DISPLAY_TYPE_NAME "display"
 
 //Main messages
 #define RX_ACCESS_DENIED "*ACCESS DENIED*"

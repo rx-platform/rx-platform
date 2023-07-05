@@ -223,6 +223,7 @@ void connection_transport_port_impl<endpointT>::destroy_endpoint (rx_protocol_st
     auto it = active_endpoints_.find(what);
     if (it != active_endpoints_.end())
     {
+        it->second->close_endpoint();
         active_endpoints_.erase(it);
     }
 }
@@ -234,6 +235,10 @@ rx_protocol_stack_endpoint* connection_transport_port_impl<endpointT>::construct
         return nullptr;
     auto endpoint_data = construct_func(local_address, remote_address);
 
+    if (endpoint_data.first == nullptr)
+    {
+        return nullptr;
+    }
     if (endpoint_data.first->closed_function == nullptr)
     {
         endpoint_data.first->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)

@@ -54,8 +54,10 @@
 #include "protocols/opcua/rx_opcua_basic.h"
 #include "protocols/opcua/rx_opcua_basic_client.h"
 #include "protocols/http/rx_http_mapping.h"
+#include "protocols/http/rx_web_socket_mapping.h"
 #include "interfaces/rx_io.h"
 #include "discovery/rx_discovery_main.h"
+#include "protocols/tls/rx_tls_mapping.h"
 
 
 namespace rx_internal {
@@ -216,8 +218,16 @@ void server_command_manager::register_internal_commands ()
 			return rx_create_reference<rx_internal::terminal::term_ports::telnet_transport_port>();
 		});
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		TLS_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::rx_tls::tls_transport_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_NS_HTTP_TYPE_ID, [] {
 			return rx_create_reference<protocols::rx_http::rx_http_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_NS_WS_TYPE_ID, [] {
+			return rx_create_reference<protocols::rx_http::rx_web_socket_port>();
 		});
 	
 	auto commands = get_internal_commands();
@@ -386,7 +396,6 @@ bool echo_server_command::do_console_command (std::istream& in, std::ostream& ou
 server_command::server_command (const string_type& name)
       : time_stamp_(rx_time::now()),
         console_name_(name),
-        security_guard_(std::make_unique<security::security_guard>()),
         modified_time_(rx_time::now())
 	, method_runtime(name, name.c_str())
 {
@@ -419,7 +428,7 @@ namespace_item_attributes server_command::get_attributes () const
 
 bool server_command::console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
-	if (security_guard_->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
+	if (ctx->get_security_guard()->check_permission(security::rx_security_execute_access))
 	{
 		return do_console_command(in, out, err, ctx);
 	}
@@ -428,11 +437,6 @@ bool server_command::console_execute (std::istream& in, std::ostream& out, std::
 		err << ANSI_COLOR_RED RX_ACCESS_DENIED ANSI_COLOR_RESET;
 		return false;
 	}
-}
-
-bool server_command::dword_check_premissions (security::security_mask_t mask, security::extended_security_mask_t extended_mask)
-{
-	return security_guard_->check_premissions(mask, extended_mask);
 }
 
 rx_time server_command::get_created_time () const
@@ -501,7 +505,7 @@ rx_result server_command::execute (data::runtime_values_data args, logic::method
 				out_result.add_value_static("Result", result);
 				context->execution_complete(std::move(out_result));
 			}
-		});
+		}, context->get_security_guard());
 	console_program->do_command(line, security::active_security());
 	return true;
 }

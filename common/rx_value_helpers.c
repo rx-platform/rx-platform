@@ -180,6 +180,16 @@ void destroy_union_value(union rx_value_union* who, rx_value_t type)
 		case RX_BYTES_TYPE:
 			rx_destory_bytes_value_struct(&who->bytes_value);
 			break;
+		case RX_STRUCT_TYPE:
+			if (who->struct_value.size > 0)
+			{
+				for (size_t i = 0; i < who->struct_value.size; i++)
+				{
+					destroy_union_value(&who->struct_value.values[i].value, who->struct_value.values[i].value_type);
+				}
+				free(who->struct_value.values);
+			}
+			break;
 		case RX_NODE_ID_TYPE:
 			rx_destory_node_id(who->node_id_value);
 			free(who->node_id_value);
@@ -356,6 +366,43 @@ RX_COMMON_API int rx_init_bool_array_value(struct typed_value_type* val, const u
 	else
 	{
 		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+
+RX_COMMON_API int rx_init_struct_value(struct typed_value_type* val, const struct typed_value_type* data, size_t count)
+{
+	val->value_type = RX_STRUCT_TYPE;
+	val->value.struct_value.size = count;
+	if (count)
+	{
+		val->value.struct_value.values = malloc(sizeof(struct struct_value_type_t) * count);
+		for (int i = 0; i < count; i++)
+		{
+			rx_copy_value(&val->value.struct_value.values[i], &data[i]);
+		}
+	}
+	else
+	{
+		val->value.struct_value.values = NULL;
+	}
+	return RX_OK;
+}
+RX_COMMON_API int rx_init_struct_value_with_ptrs(struct typed_value_type* val, const struct typed_value_type** data, size_t count)
+{
+	val->value_type = RX_STRUCT_TYPE;
+	val->value.struct_value.size = count;
+	if (count)
+	{
+		val->value.struct_value.values = malloc(sizeof(struct struct_value_type_t) * count);
+		for (int i = 0; i < count; i++)
+		{
+			rx_copy_value(&val->value.struct_value.values[i], data[i]);
+		}
+	}
+	else
+	{
+		val->value.struct_value.values = NULL;
 	}
 	return RX_OK;
 }
@@ -604,6 +651,16 @@ void assign_value(union rx_value_union* left, const union rx_value_union* right,
 		case RX_BYTES_TYPE:
 			rx_copy_bytes_value(&left->bytes_value, &right->bytes_value);
 			break;
+		case RX_STRUCT_TYPE:
+			if (right->struct_value.size)
+			{
+				left->struct_value.values = malloc(sizeof(struct struct_value_type_t) * right->struct_value.size);
+				for (size_t i = 0; i < right->struct_value.size; i++)
+				{
+					assign_value(&left->struct_value.values[i].value, &right->struct_value.values[i].value, right->struct_value.values[i].value_type);
+				}
+			}
+			break;
 		case RX_NODE_ID_TYPE:
 			left->node_id_value = malloc(sizeof(rx_node_id_struct));
 			rx_copy_node_id(left->node_id_value, right->node_id_value);
@@ -826,6 +883,11 @@ int get_float_value(const union rx_value_union* val, rx_value_t type, size_t idx
 			if (ret_type)
 				*ret_type = RX_DOUBLE_TYPE;
 			return RX_OK;
+		case RX_STRUCT_TYPE:
+			*value = 0;
+			if (ret_type)
+				*ret_type = RX_FLOAT_TYPE;
+			return RX_ERROR;
 		default:
 			*value = 0;
 			if (ret_type)
@@ -942,6 +1004,11 @@ int get_integer_value(const union rx_value_union* val, rx_value_t type, size_t i
 			if (ret_type)
 				*ret_type = RX_INT64_TYPE;
 			return RX_OK;
+		case RX_STRUCT_TYPE:
+			*value = (int64_t)val->struct_value.size;
+			if (ret_type)
+				*ret_type = RX_INT8_TYPE;
+			return RX_OK;
 		default:
 			*value = 0;
 			if (ret_type)
@@ -1044,6 +1111,7 @@ int get_unassigned_value(const union rx_value_union* val, rx_value_t type, size_
 				*ret_type = RX_UINT64_TYPE;
 			return RX_OK;
 		case RX_BYTES_TYPE:
+		case RX_STRUCT_TYPE:
 			*value = (uint64_t)val->bytes_value.size;
 			if (ret_type)
 				*ret_type = RX_UINT64_TYPE;
@@ -1189,6 +1257,9 @@ int get_string_value(const union rx_value_union* val, rx_value_t type, size_t id
 					return RX_OK;
 				case RX_TIME_TYPE:
 					ret = time_to_ISO8601(val->time_value, value);
+					return RX_OK;
+				case RX_STRUCT_TYPE:
+					ret = rx_init_string_value_struct(value, "{}", -1);
 					return RX_OK;
 				default:
 					ret = rx_init_string_value_struct(value, NULL, -1);

@@ -32,6 +32,8 @@
 #define rx_meta_attr_algorithm_h 1
 
 
+#include "system/rx_platform_typedefs.h"
+using namespace rx_platform::runtime::structure;
 
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"

@@ -33,12 +33,10 @@
 
 
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
-// rx_security
-#include "security/rx_security.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 #include "system/server/rx_server.h"
 using rx_platform::hosting::hosts_type;
@@ -152,8 +150,6 @@ class headless_platform_host : public rx_platform::hosting::rx_platform_host
       virtual rx_result remove_headless_thread_security ();
 
 
-
-      rx_reference<rx_platform::security::security_context> host_security_context_;
 
       rx_thread_synchronizer thread_synchronizer_;
 

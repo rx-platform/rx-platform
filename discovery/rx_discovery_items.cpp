@@ -46,7 +46,7 @@ namespace discovery {
 
 // Class rx_internal::discovery::peer_item 
 
-peer_item::peer_item (rx_item_type t, meta::meta_data m, peer_connection_ptr conn)
+peer_item::peer_item (rx_item_type t, meta_data m, peer_connection_ptr conn)
       : type(t),
         meta(std::move(m)),
         connection(std::move(conn))

@@ -195,6 +195,56 @@ byte_string rx_to_std_bytes(const bytes_value_struct& str)
 		return byte_string();
 }
 
+byte_string rx_hexstr_to_bytes(const string_type& str)
+{
+	byte_string ret;
+	uint32_t size = 0;
+	uint32_t char_idx = 0;
+
+	while (str[char_idx] != '\0')
+	{
+		uint8_t one_byte = 0;
+		char temp = str[char_idx];
+		if (temp >= '0' && temp <= '9')
+		{
+			one_byte += temp - '0';
+		}
+		else if (temp >= 'A' && temp <= 'F')
+		{
+			one_byte += temp - 'A' + 0xa;
+		}
+		else if (temp >= 'a' && temp <= 'f')
+		{
+			one_byte += temp - 'a' + 0xa;
+		}
+		else
+		{
+			return byte_string();
+		}
+		one_byte <<= 4;
+		char_idx++;
+		temp = str[char_idx];
+		if (temp >= '0' && temp <= '9')
+		{
+			one_byte += temp - '0';
+		}
+		else if (temp >= 'A' && temp <= 'F')
+		{
+			one_byte += temp - 'A' + 0xa;
+		}
+		else if (temp >= 'a' && temp <= 'f')
+		{
+			one_byte += temp - 'a' + 0xa;
+		}
+		else
+		{
+			return byte_string();
+		}
+		char_idx++;
+		ret.push_back((std::byte)one_byte);
+	}
+	return ret;
+}
 
 
 rx_result::rx_result()
@@ -1008,6 +1058,8 @@ const rx_node_id_type rx_node_id::get_node_type() const
 
 const char* g_complie_time;
 const char* g_lib_version;
+const char* g_abi_version;
+const char* g_common_version;
 
 namespace
 {
@@ -1017,6 +1069,8 @@ namespace
 
 		char compile_buffer[0x100];
 		char version_buffer[0x100];
+		char abi_version_buffer[0x100];
+		char common_version_buffer[0x100];
 		dummy_starter()
 		{
 			static_assert(sizeof(rx_uuid_t) == 16);
@@ -1024,6 +1078,10 @@ namespace
 			g_complie_time = compile_buffer;
 			create_module_version_string("", RX_LIB_MAJOR_VERSION, RX_LIB_MINOR_VERSION, RX_LIB_BUILD_NUMBER,__DATE__, __TIME__, version_buffer);
 			g_lib_version = version_buffer;
+			create_module_version_string("", RX_ABI_MAJOR_VERSION, RX_ABI_MINOR_VERSION, RX_ABI_BUILD_NUMBER, __DATE__, __TIME__, abi_version_buffer);
+			g_abi_version = abi_version_buffer;
+			create_module_version_string("", RX_COMMON_MAJOR_VERSION, RX_COMMON_MINOR_VERSION, RX_COMMON_BUILD_NUMBER, __DATE__, __TIME__, common_version_buffer);
+			g_common_version = common_version_buffer;
 		}
 	};
 

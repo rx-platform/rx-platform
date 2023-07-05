@@ -395,6 +395,8 @@ RX_COMMON_API const char* rx_get_value_type_name(rx_value_t type)
 		return "uuid";
 	case RX_BYTES_TYPE:
 		return "bytes";
+	case RX_STRUCT_TYPE:
+		return "struct";
 	case RX_NODE_ID_TYPE:
 		return "nodeid";
 	case RX_COMPLEX_TYPE:

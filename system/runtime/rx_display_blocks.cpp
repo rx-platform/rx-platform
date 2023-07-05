@@ -31,6 +31,7 @@
 #include "pch.h"
 
 #include "system/server/rx_log.h"
+#include "system/runtime/rx_runtime_helpers.h"
 
 // rx_display_blocks
 #include "system/runtime/rx_display_blocks.h"
@@ -308,7 +309,7 @@ void displays_holder::set_displays (std::vector<display_data> data)
 
 // Class rx_platform::runtime::display_blocks::display_data 
 
-display_data::display_data (structure::runtime_item::smart_ptr&& rt, display_runtime_ptr&& var, const display_data& prototype)
+display_data::display_data (runtime_item_ptr&& rt, display_runtime_ptr&& var, const display_data& prototype)
     : display_ptr(std::move(var))
     , item(std::move(rt))
 {

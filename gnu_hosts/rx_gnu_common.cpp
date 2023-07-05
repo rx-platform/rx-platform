@@ -30,6 +30,9 @@
 
 #include "pch.h"
 
+
+#include "system/hosting/rx_host.h"
+
 #include "system/server/rx_log.h"
 #include "system/server/rx_file_helpers.h"
 
@@ -95,7 +98,7 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/ISO/bin/Debug/librx-iso.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/Siemens/bin/Debug/librx-siemens.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/iec61850/bin/Debug/libiec61850.so");
-	paths.emplace_back("/media/sf_rx-release/Dev/GCC/rpi/bin/Debug/librx-rpi.so");
+//	paths.emplace_back("/media/sf_rx-release/Dev/GCC/rpi/bin/Debug/librx-rpi.so");
 #else
 	string_type search_dir("/usr/lib/rx-platform/plugins");
 	if (!search_dir.empty())

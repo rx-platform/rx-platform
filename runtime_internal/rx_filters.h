@@ -347,6 +347,11 @@ class calcualtion_point : public data_source::value_point_impl
 
 class calculation_filter : public rx_platform::runtime::blocks::filter_runtime  
 {
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation of calculation filter.\r\n\
+General expression filter.");
+
+    DECLARE_REFERENCE_PTR(calculation_filter);
 
   public:
       calculation_filter();
@@ -395,6 +400,57 @@ class calculation_filter : public rx_platform::runtime::blocks::filter_runtime
       runtime::local_value<string_type> output_path_;
 
       char token_buffer_[64];
+
+
+};
+
+
+
+
+
+
+class cumulative_speed_filter : public rx_platform::runtime::blocks::filter_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation of cumulative speed filter.\r\n\
+");
+
+    DECLARE_REFERENCE_PTR(cumulative_speed_filter);
+
+  public:
+
+      rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+      rx_result start_filter (runtime::runtime_start_context& ctx);
+
+      rx_result stop_filter (runtime::runtime_stop_context& ctx);
+
+      rx_result deinitialize_filter (runtime::runtime_deinit_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result filter_input (rx_value& val);
+
+      bool supports_output () const;
+
+      void timer_tick ();
+
+
+
+      uint64_t last_value_;
+
+      uint64_t current_value_;
+
+      rx_timer_ticks_t last_tick_;
+
+      rx_value my_value_;
+
+      rx_timer_ptr timer_;
+
+      runtime::remote_local_value<uint32_t> period_;
 
 
 };

@@ -90,6 +90,7 @@ struct general_data_t
     uint16_t rx_port;
     string_type rx_security;
     string_type py_path;
+    std::map<string_type, string_type> certificates;
 };
 struct runtime_data_t
 {
@@ -167,9 +168,9 @@ class rx_gate
 
       void cleanup ();
 
-      rx_result_with<security::security_context_ptr> initialize (hosting::rx_platform_host* host, configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
 
-      rx_result deinitialize (security::security_context_ptr sec_ctx);
+      rx_result deinitialize ();
 
       rx_result start (hosting::rx_platform_host* host, const configuration_data_t& data);
 
@@ -277,6 +278,18 @@ class rx_gate
       }
 
 
+      const string_type& get_abi_version () const
+      {
+        return abi_version_;
+      }
+
+
+      const string_type& get_common_version () const
+      {
+        return common_version_;
+      }
+
+
 
 	  template <class typeT>
 	  rx_result register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
@@ -324,6 +337,10 @@ class rx_gate
       rx_platform_status platform_status_;
 
       configuration_data_t configuration_;
+
+      string_type abi_version_;
+
+      string_type common_version_;
 
 
 };

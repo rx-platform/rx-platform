@@ -154,7 +154,9 @@ rx_result http_displays_repository::register_display (const string_type& path, r
 	auto it = registered_displays_.find(path);
 	if (it == registered_displays_.end())
 	{
-		registered_displays_.emplace(path, display_data_t { who, rx_thread_context() });
+		auto ctx = rx_thread_context();
+		//RX_ASSERT()
+		registered_displays_.emplace(path, display_data_t { who, ctx });
 		return true;
 	}
 	else
@@ -170,7 +172,8 @@ rx_result http_displays_repository::unregister_display (const string_type& path,
 	auto it = registered_displays_.find(path);
 	if (it != registered_displays_.end())
 	{
-		RX_ASSERT(it->second.display_ptr == who && rx_thread_context() == it->second.executer);
+		RX_ASSERT(rx_thread_context() == it->second.executer);
+		RX_ASSERT(it->second.display_ptr == who);
 		if (it->second.display_ptr == who && rx_thread_context() == it->second.executer)
 		{
 			registered_displays_.erase(it);
@@ -190,7 +193,8 @@ rx_result_with<rx_http_display_base::smart_ptr> http_displays_repository::get_di
 	auto it = registered_displays_.find(path);
 	if (it != registered_displays_.end())
 	{
-		executer = it->second.executer;
+		rx_thread_handle_t temp = it->second.executer;
+		executer = temp;
 		return it->second.display_ptr;
 	}
 	else
@@ -336,7 +340,7 @@ rx_result rx_http_display_base::parse_display_data (runtime::runtime_init_contex
 	return true;
 }
 
-string_type rx_http_display_base::preprocess_static (const string_type& content, const http_displays::http_display_custom_content& custom, const meta::meta_data& meta_info)
+string_type rx_http_display_base::preprocess_static (const string_type& content, const http_displays::http_display_custom_content& custom, const meta_data& meta_info)
 {
 	string_type ret;
 	size_t str_len = content.size();

@@ -114,7 +114,7 @@ void domain_relation::relation_connected ()
     if (from_ && to_)
     {
         RUNTIME_LOG_DEBUG("domain_relation", 900, from_->meta_info().get_full_path() + "=>" + to_->meta_info().get_full_path() + " OK");
-        meta::meta_data meta;
+        meta_data meta;
         //to_->get_implementation()->push(from_->get_implementation(), meta);
     }
 }
@@ -123,7 +123,7 @@ void domain_relation::relation_disconnected ()
 {
 }
 
-rx_item_reference domain_relation::get_implicit_reference (const meta::meta_data& info)
+rx_item_reference domain_relation::get_implicit_reference (const meta_data& info)
 {
     auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().get_runtime(info.id);
     if (!result)
@@ -180,7 +180,7 @@ void application_relation::relation_connected ()
     if (from_ && to_)
     {
         RUNTIME_LOG_DEBUG("application_relation", 900, from_->meta_info().get_full_path() + "=>" + to_->meta_info().get_full_path() + " OK");
-        meta::meta_data meta;
+        meta_data meta;
         //to_->get_implementation()->push(from_->get_implementation(), meta);
     }
 }
@@ -189,7 +189,7 @@ void application_relation::relation_disconnected ()
 {
 }
 
-rx_item_reference application_relation::get_implicit_reference (const meta::meta_data& info)
+rx_item_reference application_relation::get_implicit_reference (const meta_data& info)
 {
     auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(info.id);
     if (!result)
@@ -246,7 +246,7 @@ void port_app_relation::relation_connected ()
     if (from_ && to_)
     {
         RUNTIME_LOG_DEBUG("port_app_relation", 900, from_->meta_info().get_full_path() + "=>" + to_->meta_info().get_full_path() + " OK");
-        meta::meta_data meta;
+        meta_data meta;
         //to_->get_implementation()->push(from_->get_implementation(), meta);
     }
 }
@@ -255,7 +255,7 @@ void port_app_relation::relation_disconnected ()
 {
 }
 
-rx_item_reference port_app_relation::get_implicit_reference (const meta::meta_data& info)
+rx_item_reference port_app_relation::get_implicit_reference (const meta_data& info)
 {
     auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().get_runtime(info.id);
     if (!result)

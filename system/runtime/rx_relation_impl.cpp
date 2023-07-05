@@ -137,7 +137,7 @@ void relation_runtime::relation_disconnected ()
 {
 }
 
-rx_item_reference relation_runtime::get_implicit_reference (const meta::meta_data& info)
+rx_item_reference relation_runtime::get_implicit_reference (const meta_data& info)
 {
 	return rx_item_reference();
 }
@@ -189,7 +189,7 @@ rx_result extern_relation_runtime::stop_relation (runtime::runtime_stop_context&
     return impl_->def->stop_relation(impl_->anchor.target, is_target ? 1 : 0);
 }
 
-rx_item_reference extern_relation_runtime::get_implicit_reference (const meta::meta_data& info)
+rx_item_reference extern_relation_runtime::get_implicit_reference (const meta_data& info)
 {
     return rx_item_reference();
 }

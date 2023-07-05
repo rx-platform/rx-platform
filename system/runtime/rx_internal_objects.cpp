@@ -45,6 +45,8 @@ namespace rx_platform {
 namespace sys_objects {
 namespace {
 system_application::smart_ptr g_system_application_inst;
+world_application::smart_ptr g_world_application_inst;
+host_application::smart_ptr g_host_application_inst;
 unassigned_application::smart_ptr g_unassigned_application_inst;
 system_domain::smart_ptr g_system_domain_inst;
 unassigned_domain::smart_ptr g_unassigned_domain_inst;
@@ -337,6 +339,70 @@ void host_object::deinitialize ()
     timer_ = rx_timer_ptr::null_ptr;
     if (g_host_object_inst)
         g_host_object_inst = smart_ptr::null_ptr;
+}
+
+
+// Class rx_platform::sys_objects::world_application 
+
+world_application::world_application()
+{
+}
+
+
+world_application::~world_application()
+{
+}
+
+
+
+namespace_item_attributes world_application::get_attributes () const
+{
+    return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+}
+
+world_application::smart_ptr world_application::instance ()
+{
+    if (!g_world_application_inst)
+        g_world_application_inst = smart_ptr::create_from_pointer_without_bind(new world_application());
+    return g_world_application_inst;
+}
+
+void world_application::deinitialize ()
+{
+    if (g_world_application_inst)
+        g_world_application_inst = smart_ptr::null_ptr;
+}
+
+
+// Class rx_platform::sys_objects::host_application 
+
+host_application::host_application()
+{
+}
+
+
+host_application::~host_application()
+{
+}
+
+
+
+namespace_item_attributes host_application::get_attributes () const
+{
+    return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+}
+
+host_application::smart_ptr host_application::instance ()
+{
+    if (!g_host_application_inst)
+        g_host_application_inst = smart_ptr::create_from_pointer_without_bind(new host_application());
+    return g_host_application_inst;
+}
+
+void host_application::deinitialize ()
+{
+    if (g_host_application_inst)
+        g_host_application_inst = smart_ptr::null_ptr;
 }
 
 

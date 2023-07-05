@@ -105,7 +105,6 @@ tcp_server_endpoint::~tcp_server_endpoint()
 rx_result_with<tcp_server_endpoint::socket_ptr> tcp_server_endpoint::open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, security::security_context_ptr identity)
 {
     identity_ = identity;
-    identity_->login();
     my_port_ = my_port;
     tcp_socket_ = rx_create_reference<socket_holder_t>(this, handle, addr, local_addr);
     tcp_socket_->set_identity(identity->get_handle());
@@ -296,19 +295,12 @@ rx_result tcp_server_port::start_listen (const protocol_address* local_address, 
         [this](sys_handle_t handle, sockaddr_in* his, sockaddr_in* mine, rx_security_handle_t identity) -> tcp_socket_std_buffer::smart_ptr
         {
              auto new_endpoint = std::make_unique<tcp_server_endpoint>();
-             auto sec_result = create_security_context();
-             if (!sec_result)
-             {
-                 rx_result ret(sec_result.errors());
-                 ret.register_error("Unable to create security context");
-             }
-            auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), sec_result.value());
+             auto sec_ctx = get_security_context();
+            auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), sec_ctx);
             if (ret_ptr)
             {
-                if (recv_timeout_)
-                    new_endpoint->set_receive_timeout(recv_timeout_);
-                if (send_timeout_)
-                    new_endpoint->set_send_timeout(send_timeout_);
+                new_endpoint->set_receive_timeout(recv_timeout_);
+                new_endpoint->set_send_timeout(send_timeout_);
                 io::ip4_address local_addr(mine);
                 io::ip4_address remote_addr(his);
                 auto stack_ptr = new_endpoint->get_stack_endpoint();

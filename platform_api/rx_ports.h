@@ -405,6 +405,8 @@ public:
 
       void status_sent_packet ();
 
+      void foreach_endpoint (std::function<void(rx_reference<endpointT>&)> verb);
+
 
   protected:
 
@@ -1022,6 +1024,15 @@ rx_result rx_server_slave_port<endpointT>::initialize_status (rx_init_context& c
 
 
     return result;
+}
+
+template <typename endpointT>
+void rx_server_slave_port<endpointT>::foreach_endpoint (std::function<void(rx_reference<endpointT>&)> verb)
+{
+    for (auto& one : active_endpoints_)
+    {
+        verb(one.second);
+    }
 }
 
 

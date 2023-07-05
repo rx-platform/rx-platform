@@ -443,7 +443,7 @@ bool connection_transport_behavior::is_extern ()
 
 bool connection_transport_behavior::is_endpoit_binder ()
 {
-	return false;
+	return true;
 }
 
 bool connection_transport_behavior::is_endpoint_user ()

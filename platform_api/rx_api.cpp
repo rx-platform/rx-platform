@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -122,6 +122,8 @@ namespace
 string_type rx_version_;
 string_type lib_version_;
 string_type comp_version_;
+string_type abi_version_;
+string_type common_version_;
 uint32_t _g_stream_version_ = RX_CURRENT_SERIALIZE_VERSION;
 }
 
@@ -140,12 +142,17 @@ rx_result_struct rx_bind_plugin(const platform_api2* api, uint32_t host_stream_v
 
 
 	lib_version_ = g_lib_version;
+	abi_version_ = g_abi_version;
+	common_version_ = g_common_version;
 
 	sprintf(buff, "%s %d.%d.%d",
 		RX_COMPILER_NAME,
 		RX_COMPILER_VERSION,
 		RX_COMPILER_MINOR,
 		RX_COMPILER_BUILD);
+#ifdef _DEBUG
+	strcat(buff, " [DEBUG]");
+#endif
 	comp_version_ = buff;
 
 
@@ -193,7 +200,7 @@ rx_result_struct rx_bind_plugin(const platform_api2* api, uint32_t host_stream_v
 	api_get_value_func = api->runtime.prxCtxGetValue;
 	api_set_value_func = api->runtime.prxCtxSetValue;
 	api_set_remote_pending_func = api->runtime.prxCtxSetRemotePending;
-	
+
 	api_reg_storage_func = api->storage.prxRegisterStorageType;
 
 	return rx_result(true).move();
@@ -213,6 +220,30 @@ void rx_get_plugin_info(const char* name, int major, int minor, int build, strin
 	rx_init_string_value_struct(comp_ver, comp_version_.c_str(), -1);
 }
 
+
+void rx_get_plugin_info2(const char* name, int major, int minor, int build
+	, string_value_struct* plugin_ver
+	, string_value_struct* lib_ver
+	, string_value_struct* sys_ver
+	, string_value_struct* comp_ver
+	, string_value_struct* abi_ver
+	, string_value_struct* common_ver)
+{
+	static char buff[0x60] = { 0 };
+	if (!buff[0])
+	{
+		ASSIGN_MODULE_VERSION(buff, name, major, minor, build);
+	}
+	string_type info = buff;
+	rx_init_string_value_struct(plugin_ver, info.c_str(), -1);
+	rx_init_string_value_struct(lib_ver, lib_version_.c_str(), -1);
+	rx_init_string_value_struct(sys_ver, rx_version_.c_str(), -1);
+	rx_init_string_value_struct(comp_ver, comp_version_.c_str(), -1);
+	rx_init_string_value_struct(abi_ver, abi_version_.c_str(), -1);
+	rx_init_string_value_struct(common_ver, common_version_.c_str(), -1);
+}
+
+
 rx_result_struct rx_init_plugin(rx_platform_plugin* plugin)
 {
 	return plugin->init_plugin().move();
@@ -230,10 +261,10 @@ rx_result_struct rx_build_plugin(rx_platform_plugin* plugin, const char* root)
 	return ret;
 }
 
-// Class rx_platform_api::rx_platform_plugin 
+// Class rx_platform_api::rx_platform_plugin
 
 
-// Class rx_platform_api::rx_shared_reference 
+// Class rx_platform_api::rx_shared_reference
 
 
 } // namespace rx_platform_api

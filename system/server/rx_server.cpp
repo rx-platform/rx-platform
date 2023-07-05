@@ -67,7 +67,10 @@ rx_gate::rx_gate()
       : host_(nullptr),
         started_(rx_time::now()),
         pid_(0),
-        security_guard_(std::make_unique<security::security_guard>()),
+        security_guard_(rx_create_reference<security::security_guard>(
+			security::rx_security_read_access
+			| security::rx_security_delete_access
+			, "@gate")),
         shutting_down_(false),
         platform_status_(rx_platform_status::initializing)
 {
@@ -83,6 +86,8 @@ rx_gate::rx_gate()
 	node_name_ = rx_get_node_name();
 
 	lib_version_ = g_lib_version;
+	abi_version_ = g_abi_version;
+	common_version_ = g_common_version;
 	rx_init_hal_version();
 	hal_version_ = g_ositf_version;
 
@@ -91,6 +96,10 @@ rx_gate::rx_gate()
 		RX_COMPILER_VERSION,
 		RX_COMPILER_MINOR,
 		RX_COMPILER_BUILD);
+
+#ifdef _DEBUG
+	strcat(buff, " [DEBUG]");
+#endif
 	comp_version_ = buff;
 
 	// create io manager instance
@@ -124,7 +133,7 @@ void rx_gate::cleanup ()
 	g_instance = nullptr;
 }
 
-rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
+rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
 	configuration_ = data;
 	rx_internal::discovery::discovery_manager::instance();// create discovery instance!!!!
@@ -136,80 +145,72 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 	host_ = host;
 	rx_name_ = data.meta_configuration.instance_name.empty() ? node_name_ : data.meta_configuration.instance_name;
 
-	security::security_context_ptr host_ctx = rx_create_reference<rx_internal::rx_security::host_security_context>(host_->get_host_name(), rx_name_);
-	auto result = host_ctx->login();
+	auto result = rx_internal::infrastructure::server_runtime::instance().initialize(host, data.processor, data.io);
 	if (result)
 	{
-		result = rx_internal::infrastructure::server_runtime::instance().initialize(host, data.processor, data.io);
+		result = io_manager_->initialize(host, data);
 		if (result)
 		{
-			result = io_manager_->initialize(host, data);
-			if (result)
+
+			result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
+			if (!result)
 			{
-
-				result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
-				if (!result)
-				{
-					result.register_error("Error initializing http server!");
-					rx_internal::rx_http_server::http_server::instance().deinitialize();
-				}
-				else
-				{
-					auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data);
-
-					if (build_result)
-					{
-						for (auto one : scripts_)
-							one.second->initialize();
-
-						result = rx_internal::discovery::discovery_manager::instance().initialize(host, data);
-						if (result)
-						{
-							result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
-							if (!result)
-							{
-								result.register_error("Error initializing platform types manager!");
-							}
-						}
-						if (!result)
-						{
-							result.register_error("Error initializing discovery manager!");
-						}
-
-						
-					}
-					else
-					{
-						result = build_result.errors();
-						result.register_error("Error building platform!");
-					}
-				}
-				if (!result)
-				{
-					io_manager_->deinitialize();
-					rx_internal::infrastructure::server_runtime::instance().deinitialize();
-					io_manager_->deinitialize();
-				}
+				result.register_error("Error initializing http server!");
+				rx_internal::rx_http_server::http_server::instance().deinitialize();
 			}
 			else
 			{
+				auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data);
+
+				if (build_result)
+				{
+					for (auto one : scripts_)
+						one.second->initialize();
+
+					result = rx_internal::discovery::discovery_manager::instance().initialize(host, data);
+					if (result)
+					{
+						result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
+						if (!result)
+						{
+							result.register_error("Error initializing platform types manager!");
+						}
+					}
+					if (!result)
+					{
+						result.register_error("Error initializing discovery manager!");
+					}
+
+
+				}
+				else
+				{
+					result = build_result.errors();
+					result.register_error("Error building platform!");
+				}
+			}
+			if (!result)
+			{
+				io_manager_->deinitialize();
 				rx_internal::infrastructure::server_runtime::instance().deinitialize();
-				result.register_error("Error initializing I/O manager!");
+				io_manager_->deinitialize();
 			}
 		}
 		else
 		{
-			result.register_error("Error initializing platform runtime!");
+			rx_internal::infrastructure::server_runtime::instance().deinitialize();
+			result.register_error("Error initializing I/O manager!");
 		}
 	}
 	else
 	{
-		result.register_error("Error impersonating host!");
+		result.register_error("Error initializing platform runtime!");
 	}
+
 	if (result)
 	{
 		platform_status_ = rx_platform_status::starting;
-		return host_ctx;
+		return true;
 	}
 	else
 	{
@@ -217,7 +218,7 @@ rx_result_with<security::security_context_ptr> rx_gate::initialize (hosting::rx_
 	}
 }
 
-rx_result rx_gate::deinitialize (security::security_context_ptr sec_ctx)
+rx_result rx_gate::deinitialize ()
 {
 
 	for (auto one : scripts_)
@@ -231,8 +232,6 @@ rx_result rx_gate::deinitialize (security::security_context_ptr sec_ctx)
 
 	io_manager_->deinitialize();
 	rx_internal::infrastructure::server_runtime::instance().deinitialize();
-
-	sec_ctx->logout();
 
 	cleanup();
 
@@ -313,7 +312,7 @@ rx_result_with<rx_directory_ptr> rx_gate::add_directory (const string_type& path
 
 bool rx_gate::shutdown (const string_type& msg)
 {
-	if (!security_guard_->check_premissions(security::rx_security_delete_access, security::rx_security_ext_null))
+	if (!security_guard_->check_permission(security::rx_security_delete_access))
 	{
 		return false;
 	}
@@ -333,7 +332,7 @@ bool rx_gate::read_log (const string_type& log, const log::log_query_type& query
 
 bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	if (!security_guard_->check_premissions(security::rx_security_execute_access, security::rx_security_ext_null))
+	if (security_guard_->check_permission(security::rx_security_execute_access))
 	{
 		return host_->do_host_command(line, out_buffer, err_buffer, ctx);
 	}

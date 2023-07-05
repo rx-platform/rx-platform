@@ -62,14 +62,14 @@ class peer_item : public rx::pointers::reference_object
     DECLARE_REFERENCE_PTR(peer_item);
 
   public:
-      peer_item (rx_item_type t, meta::meta_data m, peer_connection_ptr conn);
+      peer_item (rx_item_type t, meta_data m, peer_connection_ptr conn);
 
       ~peer_item();
 
 
       rx_item_type type;
 
-      meta::meta_data meta;
+      meta_data meta;
 
       peer_connection_ptr connection;
 

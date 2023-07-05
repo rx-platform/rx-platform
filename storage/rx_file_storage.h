@@ -35,16 +35,9 @@
 
 // rx_storage
 #include "system/storage_base/rx_storage.h"
+// rx_file_internals
+#include "storage/rx_file_internals.h"
 
-namespace storage {
-namespace files {
-class rx_simple_file;
-class rx_runtime_file;
-class rx_binary_file;
-class rx_json_file;
-
-} // namespace files
-} // namespace storage
 
 
 using storage_base::rx_storage_connection;
@@ -65,7 +58,7 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 {
 
   public:
-      rx_file_item (const string_type& file_path, const meta::meta_data& storage_meta, rx_storage_item_type storage_type = rx_storage_item_type::none);
+      rx_file_item (const string_type& file_path, const meta_data& storage_meta, rx_storage_item_type storage_type = rx_storage_item_type::none);
 
       ~rx_file_item();
 
@@ -82,7 +75,7 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 
       const string_type& get_item_reference () const;
 
-      bool preprocess_meta_data (meta::meta_data& data);
+      bool preprocess_meta_data (meta_data& data);
 
       base_meta_reader& read_stream ();
 
@@ -106,7 +99,7 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 
       bool valid_;
 
-      meta::meta_data storage_meta_;
+      meta_data storage_meta_;
 
       streamT item_data_;
 
@@ -144,15 +137,17 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       rx_result list_storage (std::vector<rx_storage_item_ptr>& items);
 
+      rx_result list_storage_roles (std::vector<rx_roles_storage_item_ptr>& items);
+
       string_type get_storage_reference ();
 
       bool is_valid_storage () const;
 
-      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data, rx_item_type type);
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta_data& data, rx_item_type type);
 
-      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type);
+      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta_data& data, rx_item_type type);
 
-      void preprocess_meta_data (meta::meta_data& data);
+      void preprocess_meta_data (meta_data& data);
 
 
   protected:
@@ -161,17 +156,17 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
       rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
 
-      rx_storage_item_ptr get_storage_item_from_file_path (const string_type& path, const meta::meta_data& storage_meta);
+      rx_storage_item_ptr get_storage_item_from_file_path (const string_type& path, const meta_data& storage_meta);
 
       rx_result ensure_path_exsistence (const string_type& path);
 
       rx_result recursive_create_directory (const string_type& path);
 
-      string_type get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base, rx_item_type type);
+      string_type get_file_path (const meta_data& data, const string_type& root, const string_type& base, rx_item_type type);
 
-      void add_file_path (const meta::meta_data& data, const string_type& path);
+      void add_file_path (const meta_data& data, const string_type& path);
 
-      string_type get_runtime_file_path (const meta::meta_data& data, const string_type& root, const string_type& base, rx_item_type type);
+      string_type get_runtime_file_path (const meta_data& data, const string_type& root, const string_type& base, rx_item_type type);
 
 
 
@@ -240,6 +235,48 @@ class file_system_storage_type : public rx_platform::storage_base::rx_platform_s
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+
+class rx_roles_file : public rx_platform::storage_base::rx_roles_storage_item  
+{
+
+  public:
+      rx_roles_file (const string_type& file_path);
+
+      ~rx_roles_file();
+
+
+      rx_result delete_item ();
+
+      base_meta_reader& read_stream ();
+
+      base_meta_writer& write_stream ();
+
+      rx_result open_for_read ();
+
+      rx_result open_for_write ();
+
+      rx_result close_read ();
+
+      rx_result commit_write ();
+
+
+  protected:
+
+  private:
+
+
+      rx_json_file item_data_;
+
+      string_type file_path_;
 
 
 };

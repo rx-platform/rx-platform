@@ -36,14 +36,14 @@
 #include "system/server/rx_server.h"
 #include "lib/rx_io_addr.h"
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_meta_data
-#include "system/meta/rx_meta_data.h"
+#include "lib/rx_meta_data.h"
 // dummy
 #include "dummy.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_io_buffers
 #include "lib/rx_io_buffers.h"
 
@@ -479,7 +479,7 @@ system port class. basic implementation of a port");
 
       virtual void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
-      virtual rx_result_with<security::security_context_ptr> create_security_context ();
+      virtual security::security_context_ptr get_security_context ();
 
       rx_result_with<io::rx_io_buffer> alloc_io_buffer ();
 

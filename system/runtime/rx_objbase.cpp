@@ -380,9 +380,9 @@ void port_runtime::extract_bind_address (const data::runtime_values_data& binder
 {
 }
 
-rx_result_with<security::security_context_ptr> port_runtime::create_security_context ()
+security::security_context_ptr port_runtime::get_security_context ()
 {
-	return runtime_->get_instance_data().create_security_context(runtime_->meta_info());
+	return runtime_->get_instance_data().get_security_context();
 }
 
 rx_result_with<io::rx_io_buffer> port_runtime::alloc_io_buffer ()

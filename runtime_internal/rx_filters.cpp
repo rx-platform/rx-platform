@@ -38,6 +38,7 @@
 // rx_filters
 #include "runtime_internal/rx_filters.h"
 
+#include "sys_internal/rx_async_functions.h"
 
 
 namespace rx_internal {
@@ -70,6 +71,10 @@ rx_result register_filter_constructors()
 	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
 		RX_ASCII_FILTER_TYPE_ID, [] {
 			return rx_create_reference<ascii_filter>();
+		});//
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
+		RX_CUMULATIVE_SPEED_FILTER_TYPE_ID, [] {
+			return rx_create_reference<cumulative_speed_filter>();
 		});
 	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
 		RX_LATCH_FILTER_TYPE_ID, [] {
@@ -332,20 +337,20 @@ string_type ascii_filter::wrap (const string_type& what)
 	std::ostringstream wrapped;
 	std::string word;
 
-	if (words >> word) 
+	if (words >> word)
 	{
 		wrapped << word;
 		size_t space_left = columns_ - word.length();
-		while (words >> word) 
+		while (words >> word)
 		{
-			if (space_left < word.length() + 1) 
+			if (space_left < word.length() + 1)
 			{
 				for (size_t i = 0; i < space_left; i++)
 					wrapped << ' ';
 				wrapped << word;
 				space_left = columns_ - word.length();
 			}
-			else 
+			else
 			{
 				wrapped << ' ' << word;
 				space_left -= word.length() + 1;
@@ -623,6 +628,91 @@ calcualtion_point::calcualtion_point (calculation_filter* my_filter)
 void calcualtion_point::value_changed (const rx_value& val)
 {
 	my_filter_->value_changed(val, this);
+}
+
+
+// Class rx_internal::sys_runtime::filters::cumulative_speed_filter 
+
+
+rx_result cumulative_speed_filter::initialize_filter (runtime::runtime_init_context& ctx)
+{
+	auto result = period_.bind(".Period", ctx, [this](const uint32_t& val)
+		{
+			if (val)
+				timer_->start(val);
+			else
+				timer_->suspend();
+		});
+	return true;
+}
+
+rx_result cumulative_speed_filter::start_filter (runtime::runtime_start_context& ctx)
+{
+	timer_ = rx_create_io_periodic_function(smart_this(), [this]()
+		{
+			timer_tick();
+		});
+	if (period_ > 0)
+		timer_->start(period_);
+	my_value_.assign_static<double>(0);
+	my_value_.set_time(ctx.context->now);
+	my_value_.adapt_quality_to_mode(ctx.context->get_mode());
+
+	return true;
+}
+
+rx_result cumulative_speed_filter::stop_filter (runtime::runtime_stop_context& ctx)
+{
+	timer_->cancel();
+	timer_ = rx_timer_ptr::null_ptr;
+	return true;
+}
+
+rx_result cumulative_speed_filter::deinitialize_filter (runtime::runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+rx_result cumulative_speed_filter::filter_input (rx_value& val)
+{
+	if (val.is_good())
+	{
+		uint64_t num_val = val.extract_static<uint64_t>(0ull);
+		current_value_ = num_val;
+	}
+	else
+	{
+		current_value_ = 0;
+	}
+	val = my_value_;
+	return true;
+}
+
+bool cumulative_speed_filter::supports_output () const
+{
+  return false;
+
+}
+
+void cumulative_speed_filter::timer_tick ()
+{
+	double val = 0;
+	auto ticks = rx_get_tick_count();
+	if (last_tick_ > 0)
+	{
+		double diff =(double)(current_value_ - last_value_);
+		double time = (double)(ticks - last_tick_) / 1000.0;
+		if (time > 0)
+		{
+			val = diff / time;
+		}
+	}
+	last_tick_ = ticks;
+	last_value_ = current_value_;
+	my_value_.assign_static<double>(val);
+	my_value_.set_time(rx_time::now());
+	my_value_.set_good_locally();
+	filter_changed();
 }
 
 

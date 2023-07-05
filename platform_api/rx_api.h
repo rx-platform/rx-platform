@@ -85,6 +85,10 @@ RX_PLUGIN_API void rxGetPluginInfo(string_value_struct* plugin_ver, string_value
 {\
 	rx_platform_api::rx_get_plugin_info(RX_PLUGIN_NAME, RX_PLUGIN_MAJOR_VERSION, RX_PLUGIN_MINOR_VERSION, RX_PLUGIN_BUILD_NUMBER, plugin_ver, lib_ver, sys_ver, comp_ver);\
 }\
+RX_PLUGIN_API void rxGetPluginInfo2(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver, string_value_struct* abi_ver, string_value_struct* common_ver)\
+{\
+	rx_platform_api::rx_get_plugin_info2(RX_PLUGIN_NAME, RX_PLUGIN_MAJOR_VERSION, RX_PLUGIN_MINOR_VERSION, RX_PLUGIN_BUILD_NUMBER, plugin_ver, lib_ver, sys_ver, comp_ver, abi_ver, common_ver);\
+}\
 RX_PLUGIN_API void rxGetPluginName(string_value_struct* name)\
 {\
 	rx_init_string_value_struct(name, RX_PLUGIN_ID, -1);\
@@ -174,6 +178,14 @@ void rx_get_plugin_info(const char* name, int major, int minor, int build, strin
 rx_result_struct rx_init_plugin(rx_platform_plugin* plugin);
 rx_result_struct rx_deinit_plugin(rx_platform_plugin* plugin);
 rx_result_struct rx_build_plugin(rx_platform_plugin* plugin, const char* root);
+
+void rx_get_plugin_info2(const char* name, int major, int minor, int build
+    , string_value_struct* plugin_ver
+    , string_value_struct* lib_ver
+    , string_value_struct* sys_ver
+    , string_value_struct* comp_ver
+    , string_value_struct* abi_ver
+    , string_value_struct* common_ver);
 
 
 

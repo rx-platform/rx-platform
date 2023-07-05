@@ -39,6 +39,8 @@
 #include "system/server/rx_identity.h"
 // rx_port_stack_data
 #include "interfaces/rx_port_stack_data.h"
+// rx_security
+#include "security/rx_security.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -212,8 +214,6 @@ class port_instance_data
 
       static rx_result after_stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx);
 
-      security::security_context_ptr create_security_context (const meta::meta_data& meta);
-
       security::security_context_ptr get_security_context () const;
 
 
@@ -252,8 +252,12 @@ class port_instance_data
 
       rx_reference<rx_platform::runtime::items::port_runtime> implementation_;
 
+      rx_reference<rx_platform::security::security_context> security_ctx_;
+
 
       rx_thread_handle_t executer_;
+
+      bool mine_security_;
 
 
 };

@@ -68,7 +68,7 @@ bool dump_info(std::ostream& out, rx_namespace_item& item)
 	string_type console;
 	string_type storage_name(RX_NULL_ITEM_NAME);
 	string_type storage_reference(RX_NULL_ITEM_NAME);
-	auto storage_result = item.get_meta().resolve_storage();
+	auto storage_result = resolve_storage(item.get_meta());
 	if (storage_result)
 	{
 		storage_name = storage_result.value()->get_storage_info();
@@ -169,7 +169,7 @@ bool info_command::dump_dir_info (std::ostream& out, rx_directory_ptr directory)
 	string_type console;
 	directory->get_class_info(cls_name, console, has_code);
 
-	meta::meta_data info = directory->meta_info();
+	meta_data info = directory->meta_info();
 	string_type pera = g_complie_time;
 	out << "\r\nINFO" << "\r\n";
 	out << "--------------------------------------------------------------------------------" << "\r\n";
@@ -227,39 +227,64 @@ rx_name_command::~rx_name_command()
 
 bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
-	out << "System Information\r\n";
-	out << RX_CONSOLE_HEADER_LINE "\r\n";
-	out << "Instance Name: " << rx_gate::instance().get_instance_name() << "\r\n";
-	out << "Node Name: " << rx_get_node_name() << "\r\n";
-	out << "Engine Version: " << rx_gate::instance().get_rx_version() << "\r\n";
-	out << "Library Version: " << rx_gate::instance().get_lib_version() << "\r\n";
-	out << "Firmware: " << rx_gate::instance().get_hal_version() << "\r\n";
-	out << "Compiler: " << rx_gate::instance().get_comp_version() << "\r\n";
-	out << "OS: " << rx_gate::instance().get_os_info() << " [PID:" << rx_gate::instance().get_pid() << "]\r\n";
+
+	rx_table_type table(10);
+	const char* color_prefix = ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
+	const char* col_prefix = ANSI_COLOR_YELLOW ANSI_COLOR_BOLD;
+
+	table[0].emplace_back("Instance", col_prefix, ANSI_COLOR_RESET);
+	table[0].emplace_back(rx_gate::instance().get_instance_name(), color_prefix, ANSI_COLOR_RESET);
+	table[1].emplace_back("Node", col_prefix, ANSI_COLOR_RESET);
+	table[1].emplace_back(rx_get_node_name(), color_prefix, ANSI_COLOR_RESET);
+	table[2].emplace_back("Engine", col_prefix, ANSI_COLOR_RESET);
+	table[2].emplace_back(rx_gate::instance().get_rx_version(), color_prefix, ANSI_COLOR_RESET);
+	table[3].emplace_back("Library");
+	table[3].emplace_back(rx_gate::instance().get_lib_version());
+	table[4].emplace_back("Compiler");
+	table[4].emplace_back(rx_gate::instance().get_comp_version());
+	table[5].emplace_back("ABI", col_prefix, ANSI_COLOR_RESET);
+	table[5].emplace_back(rx_gate::instance().get_abi_version(), color_prefix, ANSI_COLOR_RESET);
+	table[6].emplace_back("Common", col_prefix, ANSI_COLOR_RESET);
+	table[6].emplace_back(rx_gate::instance().get_common_version(), color_prefix, ANSI_COLOR_RESET);
+	table[7].emplace_back("Firmware");
+	table[7].emplace_back(rx_gate::instance().get_hal_version());
+
+	char buff[0x100];
+	sprintf(buff, "0x%0X - %u", rx_gate::instance().get_pid(), rx_gate::instance().get_pid());
+
+	table[8].emplace_back("OS", col_prefix, ANSI_COLOR_RESET);
+	table[8].emplace_back(rx_gate::instance().get_os_info() + buff, color_prefix, ANSI_COLOR_RESET);
+
 
 	/////////////////////////////////////////////////////////////////////////
 	// Processor
-	char buff[0x100];
 	size_t cpu_count = 1;
 	rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]), &cpu_count);
-	out << "CPU: " << buff
+	/*out << "CPU: " << buff
 		<< ( rx_big_endian ? "; Big-endian" : "; Little-endian" )
-		<< "\r\n";
-	/////////////////////////////////////////////////////////////////////////
-	// memory
-	size_t total = 0;
-	size_t free = 0;
-	size_t process = 0;
-	rx_collect_memory_info(&total, &free, &process);
-	out << "Memory: Total "
-		<< (int)(total / 1048576ull)
-		<< "MiB / Free "
-		<< (int)(free / 1048576ull)
-		<< "MiB / Process "
-		<< (int)(process / 1024ull)
-		<< "KiB \r\n";
-	/////////////////////////////////////////////////////////////////////////
-	out << "Page size: " << (int)rx_os_page_size() << " bytes\r\n";
+		<< "\r\n";*/
+
+	table[9].emplace_back("CPU");
+	table[9].emplace_back(string_type(buff) + (rx_big_endian ? "; Big-endian" : "; Little-endian"), color_prefix, ANSI_COLOR_RESET);
+
+	rx_dump_table(table, out, false, true);
+
+	///////////////////////////////////////////////////////////////////////////
+	//// memory
+	//sprintf(buff, "Total:")
+	//size_t total = 0;
+	//size_t free = 0;
+	//size_t process = 0;
+	//rx_collect_memory_info(&total, &free, &process);
+	//out << "Memory: Total "
+	//	<< (int)(total / 1048576ull)
+	//	<< "MiB / Free "
+	//	<< (int)(free / 1048576ull)
+	//	<< "MiB / Process "
+	//	<< (int)(process / 1024ull)
+	//	<< "KiB \r\n";
+	///////////////////////////////////////////////////////////////////////////
+	//out << "Page size: " << (int)rx_os_page_size() << " bytes\r\n";
 
 	return true;
 }
@@ -454,12 +479,16 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 	bool help = false;
 	bool acceding = false;
 	bool version = false;
+	bool user = false;
+	bool sub = false;
 	string_type pattern = "*";
 	int count = 40;
 
 
 
 	parser_t parser;
+	parser.add_bit_option('u', "user", &user, "Show user column.");
+	parser.add_bit_option('s', "subsystem", &sub, "Show subsystem column.");
 	parser.add_bit_option('e', "error", &error, "Reads error level content, only error and critical events are returned.");
 	parser.add_bit_option('h', "help", &help, "Prints help.");
 	parser.add_bit_option('v', "version", &version, "Prints version of the command.");
@@ -504,7 +533,7 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 			query.count = count;
 
 			ctx->set_waiting();
-			ret = rx_gate::instance().read_log(log_name, query, [ctx, this](rx_result_with<log::log_events_type>&& result)
+			ret = rx_gate::instance().read_log(log_name, query, [ctx, this, user, sub](rx_result_with<log::log_events_type>&& result)
 				{
 					auto& out = ctx->get_stdout();
 					if (result)
@@ -517,9 +546,10 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 							list_log_options options;
 							options.list_level = false;
 							options.list_code = false;
-							options.list_library = false;
+							options.list_library = sub;
 							options.list_source = false;
 							options.list_dates = false;
+							options.list_user = user;
 							dump_log_items(result.value(), options, out, 1000);
 						}
 						else
@@ -557,6 +587,8 @@ void log_command::dump_log_items (const log::log_events_type& items, list_log_op
 	{
 		table[0].emplace_back("Time");
 		table[0].emplace_back("Type");
+		if (options.list_user)
+			table[0].emplace_back("User");
 		if (options.list_source)
 			table[0].emplace_back("Source");
 		if (options.list_level)
@@ -574,14 +606,15 @@ void log_command::dump_log_items (const log::log_events_type& items, list_log_op
 	{
 		auto& one = items.data[i];
 		table[idx].emplace_back(one.when.get_string(options.list_dates));
-
 		table[idx].emplace_back(create_log_type_cell(one.event_type));
+		if (options.list_user)
+			table[idx].emplace_back(rx_table_cell_struct{ one.user, ANSI_COLOR_WHITE ANSI_COLOR_BOLD, ANSI_COLOR_RESET });
 		if (options.list_source)
-			table[idx].emplace_back(one.source);
+			table[idx].emplace_back(rx_table_cell_struct{ one.source, ANSI_COLOR_GRAY, ANSI_COLOR_RESET });
 		if (options.list_level)
 			table[idx].emplace_back(std::to_string(one.level));
 		if (options.list_library)
-			table[idx].emplace_back(one.library);
+			table[idx].emplace_back(rx_table_cell_struct{ one.library, ANSI_COLOR_WHITE ANSI_COLOR_BOLD, ANSI_COLOR_RESET });
 		table[idx].emplace_back(one.message);
 		if (options.list_code)
 			table[idx].emplace_back(one.code);

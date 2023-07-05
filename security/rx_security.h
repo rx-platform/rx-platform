@@ -37,7 +37,6 @@
 // rx_ptr
 #include "lib/rx_ptr.h"
 
-
 #include "system/server/rx_log.h"
 
 /////////////////////////////////////////////////////////////
@@ -98,6 +97,10 @@ class security_context : public rx::pointers::reference_object
       virtual bool is_hosted () const;
 
       virtual bool is_interactive () const;
+
+      virtual rx_result serialize (base_meta_writer& stream) const = 0;
+
+      virtual rx_result deserialize (base_meta_reader& stream) = 0;
 
 
       const rx_security_handle_t get_handle () const
@@ -205,40 +208,57 @@ class security_manager
 
 enum security_mask_t : std::uint_fast32_t
 {
-	rx_security_execute_access	= 0x01,
-	rx_security_read_access		= 0x02,
-	rx_security_write_access	= 0x04,
-	rx_security_delete_access	= 0x08
+    rx_security_null            = 0,
+
+    rx_security_read_access     = 0x01,
+	rx_security_write_access	= 0x02,
+	rx_security_delete_access	= 0x04,
+    rx_security_poll_access     = 0x04,
+    rx_security_execute_access  = 0x10,
+
+    rx_security_full            = 0x1f,
 };
+
 
 enum extended_security_mask_t : std::uint_fast32_t
 {
-	rx_security_ext_null = 0
+	rx_security_ext_null = 0,
+
+    rx_security_requires_system = 0x01,
+    rx_security_requires_internal = 0x02,
 };
 
 
 
 
-class security_guard 
+class security_guard : public rx::pointers::reference_object  
 {
-  public:
-	typedef std::unique_ptr<security_guard> smart_ptr;
+    DECLARE_REFERENCE_PTR(security_guard);
 
   public:
-      security_guard();
+      security_guard (const meta_data& data, security_mask_t access = security::rx_security_null);
+
+      security_guard (security_mask_t access, const string_type& path, extended_security_mask_t extended = rx_security_ext_null);
 
       ~security_guard();
 
 
-      bool check_premissions (security_mask_t mask, extended_security_mask_t extended_mask);
+      bool check_permission (security_mask_t access);
 
 
   protected:
 
-      virtual bool check_premissions (security_mask_t mask, extended_security_mask_t extended_mask, security_context_ptr ctx);
+      virtual bool check_permission (security_mask_t mask, security_context_ptr ctx);
 
 
   private:
+
+
+      security_mask_t access_mask_;
+
+      extended_security_mask_t extended_mask_;
+
+      string_type path_base_;
 
 
 };
@@ -254,7 +274,7 @@ class secured_scope
 {
 
   public:
-      secured_scope (const security_context_ptr& ctx);
+      secured_scope (security_context_ptr ctx);
 
       secured_scope (rx_security_handle_t ctx);
 
@@ -288,38 +308,16 @@ class unathorized_security_context : public security_context
 
       bool is_authenticated () const;
 
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
 
   protected:
 
       void interface_bind ();
 
       void interface_release ();
-
-
-  private:
-
-
-};
-
-
-
-
-
-
-class loose_security_guard : public security_guard  
-{
-public:
-	typedef std::unique_ptr<security_guard> smart_ptr;
-
-  public:
-      loose_security_guard();
-
-      ~loose_security_guard();
-
-
-  protected:
-
-      bool check_premissions (security_mask_t mask, extended_security_mask_t extended_mask, security_context_ptr ctx);
 
 
   private:

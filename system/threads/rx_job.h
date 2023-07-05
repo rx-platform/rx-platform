@@ -34,15 +34,15 @@
 
 #include "lib/rx_lock.h"
 
-// rx_func_to_go
-#include "lib/rx_func_to_go.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_func_to_go
+#include "lib/rx_func_to_go.h"
 
 namespace rx_platform {
 namespace threads {
-class timer;
 class job_thread;
+class timer;
 
 } // namespace threads
 } // namespace rx_platform
@@ -108,6 +108,17 @@ class job : private rx::pointers::reference_object
       virtual void process () = 0;
 
       virtual void process_wrapper ();
+
+
+      const rx_security_handle_t get_security_context () const
+      {
+        return security_context_;
+      }
+
+      void set_security_context (rx_security_handle_t value)
+      {
+        security_context_ = value;
+      }
 
 
       const rx_criticalness get_criticalness () const

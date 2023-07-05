@@ -411,7 +411,7 @@ rx_result protocol_type_creator<itemT>::serialize (base_meta_writer& stream) con
 }
 
 template <class itemT>
-rx_result protocol_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+rx_result protocol_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta_data& meta)
 {
 	using algorithm_type = typename itemT::algorithm_type;
 
@@ -461,7 +461,7 @@ rx_result set_type_request::deserialize (base_meta_reader& stream)
 	if (!stream.start_object("item"))
 		return stream.get_error();
 
-	meta::meta_data meta;
+	meta_data meta;
 	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_TYPE, target_type);
 	if (!result)
@@ -639,7 +639,7 @@ rx_result update_type_request::deserialize (base_meta_reader& stream)
 	if (!stream.start_object("item"))
 		return stream.get_error();
 
-	meta::meta_data meta;
+	meta_data meta;
 	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_TYPE, target_type);
 	if (!result)
@@ -838,7 +838,7 @@ rx_result protocol_simple_type_creator<itemT>::serialize (base_meta_writer& stre
 }
 
 template <class itemT>
-rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+rx_result protocol_simple_type_creator<itemT>::deserialize (base_meta_reader& stream, const meta_data& meta)
 {
 	using algorithm_type = typename itemT::algorithm_type;
 
@@ -922,7 +922,7 @@ rx_result protocol_relation_type_creator::serialize (base_meta_writer& stream) c
 	return true;
 }
 
-rx_result protocol_relation_type_creator::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+rx_result protocol_relation_type_creator::deserialize (base_meta_reader& stream, const meta_data& meta)
 {
 	using algorithm_type = object_types::relation_type::algorithm_type;
 	item = rx_create_reference<object_types::relation_type>();
@@ -1009,7 +1009,7 @@ rx_result protocol_data_type_creator::serialize (base_meta_writer& stream) const
 	return true;
 }
 
-rx_result protocol_data_type_creator::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+rx_result protocol_data_type_creator::deserialize (base_meta_reader& stream, const meta_data& meta)
 {
 	using algorithm_type = typename data_type::algorithm_type;
 
@@ -1266,7 +1266,7 @@ rx_result protocol_runtime_creator<itemT>::serialize (base_meta_writer& stream) 
 }
 
 template <class itemT>
-rx_result protocol_runtime_creator<itemT>::deserialize (base_meta_reader& stream, const meta::meta_data& meta)
+rx_result protocol_runtime_creator<itemT>::deserialize (base_meta_reader& stream, const meta_data& meta)
 {
 	return item.deserialize(stream, STREAMING_TYPE_OBJECT, meta);
 }
@@ -1309,7 +1309,7 @@ rx_result set_runtime_request::deserialize (base_meta_reader& stream)
 	if (!stream.start_object("item"))
 		return stream.get_error();
 
-	meta::meta_data meta;
+	meta_data meta;
 	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
 	if (!result)
@@ -1460,7 +1460,7 @@ rx_result update_runtime_request::deserialize (base_meta_reader& stream)
 	if (!stream.start_object("item"))
 		return stream.get_error();
 
-	meta::meta_data meta;
+	meta_data meta;
 	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
 	if (!result)
@@ -1597,7 +1597,7 @@ rx_result prototype_runtime_request::deserialize (base_meta_reader& stream)
 	if (!stream.start_object("item"))
 		return stream.get_error();
 
-	meta::meta_data meta;
+	meta_data meta;
 	rx_item_type target_type;
 	auto result = meta.deserialize_meta_data(stream, STREAMING_TYPE_OBJECT, target_type);
 	if (!result)

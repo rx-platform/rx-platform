@@ -54,7 +54,7 @@ class security_context_holder
 
   public:
 
-      rx_result_with<security::security_context_ptr> create_context (const string_type& port, const string_type& location, const byte_string& data);
+      rx_result create_context (const string_type& port, const string_type& location, const byte_string& data, security::security_context_ptr& ctx);
 
 
   protected:

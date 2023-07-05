@@ -32,6 +32,7 @@
 #define rx_runtime_logic_h 1
 
 
+#include "system/server/rx_platform_item.h"
 #include "rx_runtime_helpers.h"
 #include "rx_rt_struct.h"
 
@@ -67,7 +68,7 @@ public:
     }
 
   public:
-      program_data (structure::runtime_item::smart_ptr&& rt, program_runtime_ptr&& var, const program_data& prototype);
+      program_data (runtime_item_ptr&& rt, program_runtime_ptr&& var, const program_data& prototype);
 
 
       void fill_data (const data::runtime_values_data& data);
@@ -90,7 +91,7 @@ public:
       std::unique_ptr<logic::program_context> context;
 
 
-      structure::runtime_item::smart_ptr item;
+      runtime_item_ptr item;
 
       string_type name;
 

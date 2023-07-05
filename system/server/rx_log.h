@@ -36,14 +36,14 @@
 
 typedef std::function<void(void)> log_callback_func_t;
 
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_lock
+#include "lib/rx_lock.h"
 // rx_job
 #include "system/threads/rx_job.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
-// rx_lock
-#include "lib/rx_lock.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 
 
@@ -92,6 +92,7 @@ struct log_event_data
 	string_type code;
 	string_type message;
 	rx_time when;
+    string_type user;
 
 	void dump_to_stream(std::ostream& stream) const;
 	void dump_to_stream_simple(std::ostream& stream) const;
@@ -124,7 +125,7 @@ class log_subscriber : public rx::pointers::reference_object
       ~log_subscriber();
 
 
-      virtual void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when) = 0;
+      virtual void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when) = 0;
 
       virtual string_type get_name () const = 0;
 
@@ -178,7 +179,7 @@ class log_object : public rx::locks::lockable
       log_object & operator=(const log_object &right);
 
 
-      void sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* code, const char* message, log_callback_func_t callback, rx_time when);
+      void sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* user, const char* code, const char* message, log_callback_func_t callback, rx_time when);
 
 
 
@@ -232,6 +233,8 @@ class log_event_job : public jobs::job
 
       log_callback_func_t callback_;
 
+      string_type user_;
+
 
 };
 
@@ -250,7 +253,7 @@ class stream_log_subscriber : public log_subscriber
       ~stream_log_subscriber();
 
 
-      void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
+      void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when);
 
       string_type get_name () const;
 
@@ -283,7 +286,7 @@ class cache_log_subscriber : public log_subscriber
       ~cache_log_subscriber();
 
 
-      void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
+      void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when);
 
       rx_result read_log (const log_query_type& query, log_events_type& result);
 

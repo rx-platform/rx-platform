@@ -39,7 +39,6 @@
 #include "runtime_internal/rx_value_point.h"
 
 #include "rx_configuration.h"
-#include "system/server/rx_ns.h"
 #include "runtime_internal/rx_runtime_internal.h"
 
 

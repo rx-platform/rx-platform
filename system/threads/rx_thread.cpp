@@ -344,10 +344,11 @@ void thread::_inner_handler (void* arg)
 	thread *p = static_cast<thread *>(arg);
 
 	rx_push_thread_context(p->rx_thread_id_);
+	{
+		security::secured_scope _(p->security_context_);
 
-	p->handler();
-
-
+		p->handler();
+	}
 	rx_thread_data_object* ptr = (rx_thread_data_object*)rx_get_thread_data(rx_tls);
 	if (ptr)
 		delete ptr;
@@ -357,6 +358,9 @@ void thread::start (int priority)
 {
 	if (handle_)
 		rx_thread_close(handle_);
+
+
+	security_context_ = rx_security_context();
 
 	handle_ = rx_thread_create(_inner_handler, this, priority, &thread_id_, name_.c_str());
 

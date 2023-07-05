@@ -433,12 +433,7 @@ rx_result_with<port_connect_result> tcp_client_port::start_connect (const protoc
 {
     auto session_timeout = recv_timeout_;
     endpoint_ = std::make_unique<tcp_client_endpoint>();
-    auto sec_result = create_security_context();
-    if (!sec_result)
-    {
-        sec_result.register_error("Unable to create security context");
-        return sec_result.errors();
-    }
+    auto sec_ctx = get_security_context();
     endpoint_->get_stack_endpoint()->closed_function = [](rx_protocol_stack_endpoint* entry, rx_protocol_result_t result)
     {
         tcp_client_endpoint* whose = reinterpret_cast<tcp_client_endpoint*>(entry->user_data);
@@ -467,7 +462,7 @@ rx_result_with<port_connect_result> tcp_client_port::start_connect (const protoc
 
         return RX_PROTOCOL_OK;
     };
-    auto result = endpoint_->open(&bind_address_, &connect_address_, sec_result.value(), this);
+    auto result = endpoint_->open(&bind_address_, &connect_address_, sec_ctx, this);
     if (!result)
     {
         stop_passive();

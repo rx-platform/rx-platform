@@ -137,7 +137,7 @@ std::vector<rx_result> runtime_holder_algorithms<typeT>::disconnect_items (const
 template <class typeT>
 void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whose)
 {
-    auto storage_result = whose.meta_info_.resolve_storage();
+    auto storage_result = resolve_storage(whose.meta_info_);
     if (storage_result)
     {
         auto item_result = storage_result.value()->get_runtime_storage(whose.meta_info_, whose.get_type_id());
@@ -178,7 +178,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
 template <class typeT>
 runtime_process_context runtime_holder_algorithms<typeT>::create_context (typename typeT::RType& whose)
 {
-    return runtime_process_context(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.smart_this());
+    return runtime_process_context(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.smart_this(), whose.security_guard_);
 }
 
 template <class typeT>

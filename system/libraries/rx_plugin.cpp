@@ -65,6 +65,7 @@ registered_plugins_type rx_dynamic_plugin::registered_plugins_;
 rx_dynamic_plugin::rx_dynamic_plugin (const string_type& lib_path)
       : module_(nullptr),
         prxGetPluginInfo_(nullptr),
+        prxGetPluginInfo2_(nullptr),
         prxGetPluginName_(nullptr),
         prxInitPlugin_(nullptr),
         prxDeinitPlugin_(nullptr),
@@ -98,6 +99,7 @@ rx_result rx_dynamic_plugin::bind_plugin ()
             registered_plugins_.emplace(plugin_id, this);
             stream_version_ = plugin_version;
             prxGetPluginInfo_ = (rxGetPluginInfo_t)rx_get_func_address(module_, "rxGetPluginInfo");
+            prxGetPluginInfo2_ = (rxGetPluginInfo2_t)rx_get_func_address(module_, "rxGetPluginInfo2");
             prxGetPluginName_ = (rxGetPluginName_t)rx_get_func_address(module_, "rxGetPluginName");
             prxInitPlugin_ = (rxInitPlugin_t)rx_get_func_address(module_, "rxInitPlugin");
             prxDeinitPlugin_ = (rxDeinitPlugin_t)rx_get_func_address(module_, "rxDeinitPlugin");
@@ -142,6 +144,23 @@ rx_result rx_dynamic_plugin::load_plugin ()
 rx_plugin_info rx_dynamic_plugin::get_plugin_info () const
 {
     rx_plugin_info ret;
+    if (prxGetPluginInfo2_)
+    {
+        string_value_struct plugin_ver, lib_ver, sys_ver, comp_ver, abi_ver, common_ver;
+        (prxGetPluginInfo2_)(&plugin_ver, &lib_ver, &sys_ver, &comp_ver, &abi_ver, &common_ver);
+        ret.plugin_version = rx_c_str(&plugin_ver);
+        rx_destory_string_value_struct(&plugin_ver);
+        ret.lib_version = rx_c_str(&lib_ver);
+        rx_destory_string_value_struct(&lib_ver);
+        ret.platform_version = rx_c_str(&sys_ver);
+        rx_destory_string_value_struct(&sys_ver);
+        ret.comp_version = rx_c_str(&comp_ver);
+        rx_destory_string_value_struct(&comp_ver);
+        ret.abi_version = rx_c_str(&abi_ver);
+        rx_destory_string_value_struct(&abi_ver);
+        ret.common_version = rx_c_str(&common_ver);
+        rx_destory_string_value_struct(&common_ver);
+    }
     if (prxGetPluginInfo_)
     {
         string_value_struct plugin_ver, lib_ver, sys_ver, comp_ver;

@@ -34,6 +34,14 @@
 // rx_platform_security
 #include "sys_internal/rx_security/rx_platform_security.h"
 
+#include "system/runtime/rx_internal_objects.h"
+#include "rx_x509_security.h"
+namespace rx_platform
+{
+rx_security_handle_t rx_security_context();
+bool rx_push_security_context(rx_security_handle_t obj);
+bool rx_pop_security_context();
+}
 #include "lib/rx_ser_json.h"
 #include "system/server/rx_server.h"
 
@@ -50,15 +58,14 @@ namespace
 {
 platform_security* g_instance = nullptr;
 string_type g_none_security_name = RX_NONE_SECURITY_NAME;
+string_type g_cert_security_name = RX_CERT_SECURITY_NAME;
 }
 
 // Class rx_internal::rx_security::maintenance_context 
 
-maintenance_context::maintenance_context (const string_type& port, const string_type& location)
+maintenance_context::maintenance_context()
 {
-    location_ = location;
-    user_name_ = "management";
-    full_name_ = "management@" + location_;
+    location_ = rx_gate::instance().get_node_name();
 }
 
 
@@ -68,19 +75,7 @@ maintenance_context::~maintenance_context()
 
 
 
-bool maintenance_context::is_system () const
-{
-  return true;
-
-}
-
 bool maintenance_context::has_console () const
-{
-  return true;
-
-}
-
-bool maintenance_context::is_interactive () const
 {
   return true;
 
@@ -90,7 +85,8 @@ bool maintenance_context::is_interactive () const
 // Class rx_internal::rx_security::platform_security 
 
 platform_security::platform_security()
-      : default_provider_(nullptr)
+      : default_provider_(nullptr),
+        unassigned_ctx_(rx_create_reference<security::unathorized_security_context>())
 {
 }
 
@@ -111,9 +107,17 @@ platform_security& platform_security::instance ()
 rx_result platform_security::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
     security::security_manager::instance();
+
+    auto roles_result = roles_manager_.initialize(host, data);
+    if (!roles_result)
+    {
+        roles_result.register_error("Unable to initialize roles manager!");
+        return roles_result;
+    }
+
     auto internal_providers = collect_internal_providers();
     for (auto& one : internal_providers)
-        register_provider(std::move(one), host);
+        register_provider(std::move(one), host, data);
     // handle the default provider
     bool default_is_none = false;
     if (data.other.rx_security.empty() || data.other.rx_security == RX_NONE_SECURITY_NAME)
@@ -136,11 +140,105 @@ rx_result platform_security::initialize (hosting::rx_platform_host* host, config
     }
     if (default_is_none)
         SECURITY_LOG_WARNING("platform_security", 999, "Default security provider is set to none. This rx-platform instance is not secured!");
+
+
+    auto ctx_result = default_provider_->create_host_context(host, data);
+    if (ctx_result)
+    {
+
+        sys_objects::host_application::instance()->host_identity = ctx_result.value();
+        host_ctx_ = ctx_result.move_value();
+
+
+        SECURITY_LOG_INFO("platform_security", 999, "Logging to host account...");
+        auto result = host_ctx_->login();
+        if (result)
+        {
+            rx_push_security_context(host_ctx_->get_handle());
+        }
+        else
+        {
+            SECURITY_LOG_ERROR("platform_security", 999, "Error logging on as "s + host_ctx_->get_full_name() + ".");
+            return result;
+        }
+
+        ctx_result = default_provider_->create_system_context(host, data);
+        if (ctx_result)
+        {
+            sys_objects::system_application::instance()->system_identity = ctx_result.value();
+            system_ctx_ = ctx_result.move_value();
+
+            SECURITY_LOG_INFO("platform_security", 999, "Logging to system account...");
+            auto result = system_ctx_->login();
+            if (!result)
+            {
+                SECURITY_LOG_ERROR("platform_security", 999, "Error logging on as "s + system_ctx_->get_full_name() + ".");
+                return result;
+            }
+        }
+        else
+        {
+            SECURITY_LOG_WARNING("platform_security", 999, "System security identity not set >> defaulting to host identity!");
+            sys_objects::system_application::instance()->system_identity = host_ctx_;
+        }
+        ctx_result = default_provider_->create_world_context(host, data);
+        if (ctx_result)
+        {
+            sys_objects::world_application::instance()->world_identity = ctx_result.value();
+            world_ctx_ = ctx_result.move_value();
+
+            SECURITY_LOG_INFO("platform_security", 999, "Logging to world account...");
+            auto result = world_ctx_->login();
+            if (!result)
+            {
+                SECURITY_LOG_ERROR("platform_security", 999, "Error logging on as "s + world_ctx_->get_full_name() + ".");
+                return result;
+            }
+        }
+        else
+        {
+            SECURITY_LOG_WARNING("platform_security", 999, "Word security identity not set >> defaulting to system identity!");
+            sys_objects::world_application::instance()->world_identity = sys_objects::system_application::instance()->system_identity;
+        }
+    }
+    else
+    {
+        SECURITY_LOG_ERROR("platform_security", 999, "Error creating host security context.");
+        return ctx_result.errors();
+    }
+
+
     return true;
+}
+
+rx_result platform_security::initialize_roles (std::vector<rx_roles_storage_item_ptr> storages)
+{
+    return roles_manager_.initialize_roles(std::move(storages));
 }
 
 void platform_security::deinitialize ()
 {
+    if (host_ctx_)
+    {
+        rx_pop_security_context();
+        host_ctx_->logout();
+        host_ctx_ = security::security_context_ptr::null_ptr;
+    }
+    if (system_ctx_)
+    {
+        system_ctx_->logout();
+        system_ctx_ = security::security_context_ptr::null_ptr;
+    }
+    if (world_ctx_)
+    {
+        world_ctx_->logout();
+        world_ctx_ = security::security_context_ptr::null_ptr;
+    }
+    if (unassigned_ctx_)
+    {
+        unassigned_ctx_->logout();
+        unassigned_ctx_ = security::security_context_ptr::null_ptr;
+    }
     for (auto& one : providers_)
         one.second->deinitialize();
     security::security_manager::instance().deinitialize();
@@ -152,12 +250,12 @@ rx_result platform_security::register_role (const string_type& role, const strin
     return true;
 }
 
-rx_result platform_security::register_provider (std::unique_ptr<platform_security_provider>  who, hosting::rx_platform_host* host)
+rx_result platform_security::register_provider (std::unique_ptr<platform_security_provider>  who, hosting::rx_platform_host* host, configuration_data_t& data)
 {
     auto it = providers_.find(who->get_name());
     if (it == providers_.end())
     {
-        auto result = who->initialize(host);
+        auto result = who->initialize(host, data);
         if (!result)
         {
             std::ostringstream ss;
@@ -217,7 +315,13 @@ std::vector<std::unique_ptr<platform_security_provider> > platform_security::col
 {
     std::vector<std::unique_ptr<platform_security_provider> > ret;
     ret.push_back(std::make_unique<none_security_provider>());
+    ret.push_back(std::make_unique<certificate_security_provider>());
     return ret;
+}
+
+bool platform_security::check_permissions (security::security_mask_t mask, const string_type& path, security::security_context_ptr ctx)
+{
+    return roles_manager_.check_permissions(mask, path, ctx);
 }
 
 
@@ -225,7 +329,6 @@ std::vector<std::unique_ptr<platform_security_provider> > platform_security::col
 
 built_in_security_context::built_in_security_context()
 {
-    location_ = rx_get_node_name();
 }
 
 
@@ -257,12 +360,11 @@ rx_result built_in_security_context::deserialize (base_meta_reader& stream)
 
 // Class rx_internal::rx_security::host_security_context 
 
-host_security_context::host_security_context (const string_type& name, const string_type& instance)
+host_security_context::host_security_context()
 {
-    user_name_ = name;
-    location_ = instance;
-    full_name_ = user_name_ + "@";
-    full_name_ += location_;
+    user_name_ = "host";
+    location_ = rx_gate::instance().get_node_name();
+    full_name_ = user_name_ + "@" + location_;
 }
 
 
@@ -278,11 +380,22 @@ bool host_security_context::is_system () const
 
 }
 
+bool host_security_context::is_hosted () const
+{
+  return true;
+
+}
+
 
 // Class rx_internal::rx_security::process_context 
 
-process_context::process_context (const string_type& port, const string_type& location)
+process_context::process_context (const string_type& name, bool sys)
+      : system_(sys)
 {
+    user_name_ = name;
+    location_ = rx_gate::instance().get_node_name();
+    if(!user_name_.empty())
+        full_name_ = user_name_ + "@" + location_;
 }
 
 
@@ -294,7 +407,7 @@ process_context::~process_context()
 
 bool process_context::is_system () const
 {
-  return true;
+  return system_;
 
 }
 
@@ -327,13 +440,31 @@ string_type none_security_provider::get_info ()
     return RX_NONE_SECURITY_INFO;
 }
 
-rx_result none_security_provider::initialize (hosting::rx_platform_host* host)
+rx_result none_security_provider::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
     return true;
 }
 
 void none_security_provider::deinitialize ()
 {
+}
+
+rx_result_with<security::security_context_ptr> none_security_provider::create_host_context (hosting::rx_platform_host* host, configuration_data_t& data)
+{
+    security::security_context_ptr ret = rx_create_reference<host_security_context>();
+    return ret;
+}
+
+rx_result_with<security::security_context_ptr> none_security_provider::create_system_context (hosting::rx_platform_host* host, configuration_data_t& data)
+{
+    security::security_context_ptr ret = rx_create_reference<process_context>("system", true);
+    return ret;
+}
+
+rx_result_with<security::security_context_ptr> none_security_provider::create_world_context (hosting::rx_platform_host* host, configuration_data_t& data)
+{
+    security::security_context_ptr ret = rx_create_reference<process_context>(data.meta_configuration.instance_name);
+    return ret;
 }
 
 

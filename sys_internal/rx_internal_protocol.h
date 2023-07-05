@@ -33,6 +33,8 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // dummy
@@ -41,8 +43,6 @@
 #include "sys_internal/rx_protocol_messages.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 namespace rx_internal {
 namespace rx_protocol {
@@ -528,7 +528,7 @@ class rx_client_connection : public rx_protocol_client_connection
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::master_client_port_impl< rx_internal::rx_protocol::rx_client_connection  > rx_json_client_protocol_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::master_client_port_impl< rx_client_connection  > rx_json_client_protocol_port_base;
 
 
 

@@ -902,76 +902,6 @@ void rx_client_connection::timer_tick ()
 // Class rx_internal::rx_protocol::rx_local_subscription 
 
 
-// Class rx_internal::rx_protocol::rx_protocol_client_connection 
-
-std::atomic<messages::rx_request_id_t> rx_protocol_client_connection::g_next_request_id = 1;
-
-rx_protocol_client_connection::rx_protocol_client_connection()
-{
-}
-
-
-rx_protocol_client_connection::~rx_protocol_client_connection()
-{
-}
-
-
-
-void rx_protocol_client_connection::transaction_received (messages::rx_transaction_ptr response)
-{
-	auto result = response->process();
-	if (!result)
-	{
-		RXCOMM_LOG_ERROR("rx_protocol_client_connection", 500, "Error processing response:"s + result.errors_line());
-	}
-}
-
-void rx_protocol_client_connection::register_transaction (messages::rx_request_id_t id, messages::rx_transaction_ptr trans)
-{
-	locks::auto_lock_t _(&transactions_lock_);
-	pending_transactions_.emplace(id, std::move(trans));
-}
-
-messages::rx_transaction_ptr rx_protocol_client_connection::get_transaction (messages::rx_request_id_t id)
-{
-	locks::auto_lock_t _(&transactions_lock_);
-	auto it = pending_transactions_.find(id);
-	if (it != pending_transactions_.end())
-	{
-		messages::rx_transaction_ptr ret = std::move(it->second);
-		pending_transactions_.erase(it);
-		return ret;
-	}
-	else
-	{
-		return messages::rx_transaction_ptr::null_ptr;
-	}
-}
-
-void rx_protocol_client_connection::set_context (api::rx_context ctx, const messages::rx_connection_context_response& req)
-{
-}
-
-rx_result rx_protocol_client_connection::send_request (messages::rx_transaction_ptr trans, uint32_t timeout)
-{
-	trans->get_request().request_id = g_next_request_id++;
-	if(trans->get_request().request_id==0)
-		trans->get_request().request_id = g_next_request_id++;
-	messages::rx_request_id_t req_id = trans->get_request().request_id;
-
-	register_transaction(req_id, trans);
-	send_message(trans->get_request());
-	return true;
-}
-
-void rx_protocol_client_connection::timer_tick ()
-{
-}
-
-
-// Class rx_internal::rx_protocol::rx_protocol_client_user 
-
-
 // Class rx_internal::rx_protocol::rx_json_protocol_client_port 
 
 std::map<rx_node_id,rx_json_protocol_client_port::smart_ptr> rx_json_protocol_client_port::runtime_instances;
@@ -1062,6 +992,76 @@ void rx_json_protocol_client_port::message_sent ()
 void rx_json_protocol_client_port::message_received ()
 {
 }
+
+
+// Class rx_internal::rx_protocol::rx_protocol_client_connection 
+
+std::atomic<messages::rx_request_id_t> rx_protocol_client_connection::g_next_request_id = 1;
+
+rx_protocol_client_connection::rx_protocol_client_connection()
+{
+}
+
+
+rx_protocol_client_connection::~rx_protocol_client_connection()
+{
+}
+
+
+
+void rx_protocol_client_connection::transaction_received (messages::rx_transaction_ptr response)
+{
+	auto result = response->process();
+	if (!result)
+	{
+		RXCOMM_LOG_ERROR("rx_protocol_client_connection", 500, "Error processing response:"s + result.errors_line());
+	}
+}
+
+void rx_protocol_client_connection::register_transaction (messages::rx_request_id_t id, messages::rx_transaction_ptr trans)
+{
+	locks::auto_lock_t _(&transactions_lock_);
+	pending_transactions_.emplace(id, std::move(trans));
+}
+
+messages::rx_transaction_ptr rx_protocol_client_connection::get_transaction (messages::rx_request_id_t id)
+{
+	locks::auto_lock_t _(&transactions_lock_);
+	auto it = pending_transactions_.find(id);
+	if (it != pending_transactions_.end())
+	{
+		messages::rx_transaction_ptr ret = std::move(it->second);
+		pending_transactions_.erase(it);
+		return ret;
+	}
+	else
+	{
+		return messages::rx_transaction_ptr::null_ptr;
+	}
+}
+
+void rx_protocol_client_connection::set_context (api::rx_context ctx, const messages::rx_connection_context_response& req)
+{
+}
+
+rx_result rx_protocol_client_connection::send_request (messages::rx_transaction_ptr trans, uint32_t timeout)
+{
+	trans->get_request().request_id = g_next_request_id++;
+	if(trans->get_request().request_id==0)
+		trans->get_request().request_id = g_next_request_id++;
+	messages::rx_request_id_t req_id = trans->get_request().request_id;
+
+	register_transaction(req_id, trans);
+	send_message(trans->get_request());
+	return true;
+}
+
+void rx_protocol_client_connection::timer_tick ()
+{
+}
+
+
+// Class rx_internal::rx_protocol::rx_protocol_client_user 
 
 
 } // namespace rx_protocol

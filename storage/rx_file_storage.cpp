@@ -38,6 +38,8 @@
 #define RX_RUNTIME_JSON_FILE_EXTENSION "json"
 #define RX_RUNTIME_BINARY_FILE_EXTENSION "bin"
 
+#define RX_ROLES_FILE_NAME "roles.json"
+
 #define RX_FILE_STORAGE_RUNTIME_DIR ".runtime"
 
 #include "lib/rx_ser_json.h"
@@ -126,6 +128,16 @@ rx_result file_system_storage::list_storage (std::vector<rx_storage_item_ptr>& i
 	return result;
 }
 
+rx_result file_system_storage::list_storage_roles (std::vector<rx_roles_storage_item_ptr>& items)
+{
+	string_type path = rx_combine_paths(root_, RX_ROLES_FILE_NAME);
+	if (rx_file_exsist(path.c_str()))
+	{
+		items.push_back(std::make_unique<rx_roles_file>(path));
+	}
+	return true;
+}
+
 rx_result file_system_storage::recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items)
 {
 	string_type result_path;
@@ -144,7 +156,7 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 		}
 		for (auto& one : file_names)
 		{
-			meta::meta_data storage_meta;
+			meta_data storage_meta;
 			auto idx1 = one.rfind('.');
 			auto idx = idx1;
 			while (idx1 != string_type::npos && idx1 != 0)
@@ -179,7 +191,7 @@ bool file_system_storage::is_valid_storage () const
 	return !root_.empty();
 }
 
-rx_storage_item_ptr file_system_storage::get_storage_item_from_file_path (const string_type& path, const meta::meta_data& storage_meta)
+rx_storage_item_ptr file_system_storage::get_storage_item_from_file_path (const string_type& path, const meta_data& storage_meta)
 {
 	string_type ext = rx_get_extension(path);
 
@@ -268,7 +280,7 @@ rx_result file_system_storage::recursive_create_directory (const string_type& pa
 		return true;
 }
 
-rx_result_with<rx_storage_item_ptr> file_system_storage::get_item_storage (const meta::meta_data& data, rx_item_type type)
+rx_result_with<rx_storage_item_ptr> file_system_storage::get_item_storage (const meta_data& data, rx_item_type type)
 {
 	string_type path = get_file_path(data, root_, get_base_path(), type);
 	if (path.empty())
@@ -276,7 +288,7 @@ rx_result_with<rx_storage_item_ptr> file_system_storage::get_item_storage (const
 	auto result = ensure_path_exsistence(path);
 	if (result)
 	{
-		meta::meta_data storage_meta;
+		meta_data storage_meta;
 		rx_time_struct created, modified;
 		if (RX_OK == rx_file_get_time_from_path(path.c_str(), &created, &modified))
 		{
@@ -296,7 +308,7 @@ rx_result_with<rx_storage_item_ptr> file_system_storage::get_item_storage (const
 	}
 }
 
-string_type file_system_storage::get_file_path (const meta::meta_data& data, const string_type& root, const string_type& base, rx_item_type type)
+string_type file_system_storage::get_file_path (const meta_data& data, const string_type& root, const string_type& base, rx_item_type type)
 {
 	if (data.path.empty())
 		return "";
@@ -343,13 +355,13 @@ string_type file_system_storage::get_file_path (const meta::meta_data& data, con
 		return it->second;
 }
 
-void file_system_storage::add_file_path (const meta::meta_data& data, const string_type& path)
+void file_system_storage::add_file_path (const meta_data& data, const string_type& path)
 {
 	locks::auto_lock_t<decltype(cache_lock_)> _(&cache_lock_);
 	items_cache_[data.get_full_path()] = path;
 }
 
-rx_result_with<rx_storage_item_ptr> file_system_storage::get_runtime_storage (const meta::meta_data& data, rx_item_type type)
+rx_result_with<rx_storage_item_ptr> file_system_storage::get_runtime_storage (const meta_data& data, rx_item_type type)
 {
 	string_type path = get_runtime_file_path(data, root_, get_base_path(), type);
 	if (path.empty())
@@ -357,7 +369,7 @@ rx_result_with<rx_storage_item_ptr> file_system_storage::get_runtime_storage (co
 	auto result = ensure_path_exsistence(path);
 	if (result)
 	{
-		meta::meta_data storage_meta;
+		meta_data storage_meta;
 		rx_time_struct created, modified;
 		if (RX_OK == rx_file_get_time_from_path(path.c_str(), &created, &modified))
 		{
@@ -377,7 +389,7 @@ rx_result_with<rx_storage_item_ptr> file_system_storage::get_runtime_storage (co
 	}
 }
 
-string_type file_system_storage::get_runtime_file_path (const meta::meta_data& data, const string_type& root, const string_type& base, rx_item_type type)
+string_type file_system_storage::get_runtime_file_path (const meta_data& data, const string_type& root, const string_type& base, rx_item_type type)
 {
 	if (data.path.empty())
 		return "";
@@ -405,7 +417,7 @@ string_type file_system_storage::get_runtime_file_path (const meta::meta_data& d
 		return it->second;
 }
 
-void file_system_storage::preprocess_meta_data (meta::meta_data& data)
+void file_system_storage::preprocess_meta_data (meta_data& data)
 {
 	string_type base = get_base_path();
 	size_t idx;
@@ -435,7 +447,7 @@ void file_system_storage::preprocess_meta_data (meta::meta_data& data)
 // Parameterized Class storage::files::rx_file_item 
 
 template <class fileT, class streamT>
-rx_file_item<fileT,streamT>::rx_file_item (const string_type& file_path, const meta::meta_data& storage_meta, rx_storage_item_type storage_type)
+rx_file_item<fileT,streamT>::rx_file_item (const string_type& file_path, const meta_data& storage_meta, rx_storage_item_type storage_type)
       : valid_(false),
         storage_meta_(storage_meta),
         file_path_(file_path)
@@ -494,7 +506,7 @@ const string_type& rx_file_item<fileT,streamT>::get_item_reference () const
 }
 
 template <class fileT, class streamT>
-bool rx_file_item<fileT,streamT>::preprocess_meta_data (meta::meta_data& data)
+bool rx_file_item<fileT,streamT>::preprocess_meta_data (meta_data& data)
 {
 	bool ret = false;
 	if (!storage_meta_.name.empty() && storage_meta_.name!=data.name)
@@ -690,6 +702,95 @@ rx_storage_connection::smart_ptr file_system_storage_type::construct_storage_con
 string_type file_system_storage_type::get_reference_prefix () const
 {
 	return RX_FILE_PREFIX;
+}
+
+
+// Class storage::files::rx_roles_file 
+
+rx_roles_file::rx_roles_file (const string_type& file_path)
+      : file_path_(file_path)
+{
+}
+
+
+rx_roles_file::~rx_roles_file()
+{
+}
+
+
+
+rx_result rx_roles_file::delete_item ()
+{
+	int result = rx_file_delete(file_path_.c_str());
+	return result == RX_OK ? true : false;
+}
+
+base_meta_reader& rx_roles_file::read_stream ()
+{
+	return item_data_.read_stream();
+}
+
+base_meta_writer& rx_roles_file::write_stream ()
+{
+	return item_data_.write_stream();
+}
+
+rx_result rx_roles_file::open_for_read ()
+{
+	rx_source_file file;
+	auto result = file.open(file_path_.c_str());
+	if (result)
+	{
+		string_type data;
+		result = file.read_string(data);
+		if (result)
+		{
+			result = item_data_.open_for_read(data, file_path_);
+		}
+		else
+		{
+			result.register_error("Error reading file "s + file_path_ + "!");
+		}
+	}
+	else
+	{
+		result.register_error("Unable to open file "s + file_path_ + "!");
+	}
+	return result;
+}
+
+rx_result rx_roles_file::open_for_write ()
+{
+	auto result = item_data_.open_for_write(file_path_);
+	return result;
+}
+
+rx_result rx_roles_file::close_read ()
+{
+	return item_data_.close_read(file_path_);
+}
+
+rx_result rx_roles_file::commit_write ()
+{
+	rx_source_file file;
+	auto result = file.open_write(file_path_.c_str());
+	if (result)
+	{
+		string_type data;
+		result = item_data_.get_data(data);
+		if (result)
+		{
+			if (!file.write_string(data))
+			{
+				result = "Error writing file "s + file_path_ + "!";
+			}
+		}
+	}
+	else
+	{
+		result = "Unable to open file "s + file_path_ + " for write!";
+	}
+	return result;
 }
 
 

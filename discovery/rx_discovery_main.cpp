@@ -222,102 +222,6 @@ peer_endpoint::peer_endpoint(peer_endpoint&& right) noexcept
 	, path(std::move(right.path))
 {
 }
-// Class rx_internal::discovery::peer_object 
-
-peer_object::peer_object()
-      : online_(false),
-        stream_version_("")
-{
-	resolver_user_.my_obj = this;
-	DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer object created.");
-}
-
-
-peer_object::~peer_object()
-{
-	DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer object destroyed.");
-}
-
-
-
-rx_result peer_object::initialize_runtime (runtime_init_context& ctx)
-{
-	rx_result ret;
-	connection_ = discovery_manager::instance().get_peer(ctx.get_item_static<string_type>("Endpoint.Name", ""));
-	online_.bind("Status.Online", ctx);
-	stream_version_.bind("Status.Version", ctx);
-	if (connection_)
-	{
-		ret = connection_->initialize_runtime(ctx, smart_this());
-	}
-	return ret;
-}
-
-rx_result peer_object::deinitialize_runtime (runtime_deinit_context& ctx)
-{
-	rx_result ret;
-	if (connection_)
-	{
-		ret = connection_->deinitialize_runtime(ctx);
-	}
-	connection_ = peer_connection_ptr::null_ptr;
-	return ret;
-}
-
-rx_result peer_object::start_runtime (runtime_start_context& ctx)
-{
-	auto ret = ctx.register_relation_subscriber("Conn", &resolver_user_);
-	if (!ret)
-	{
-		RUNTIME_LOG_WARNING("peer_connection", 900, "Error starting port registration "
-			+ ctx.context->meta_info.get_full_path() + "." + ctx.path.get_current_path() + " " + ret.errors_line());
-	}
-	if (connection_)
-	{
-		ret = connection_->start_runtime(ctx);
-	}
-	return ret;
-}
-
-rx_result peer_object::stop_runtime (runtime_stop_context& ctx)
-{
-	rx_result ret;
-	if (connection_)
-	{
-		ret = connection_->stop_runtime(ctx);
-	}
-	return ret;
-}
-
-bool peer_object::internal_port_connected (const platform_item_ptr& item)
-{
-	if (connection_)
-	{
-		auto result = rx_platform::get_runtime_instance<rx_protocol::rx_json_protocol_client_port>(item->meta_info().id);
-		if (result)
-		{
-			connection_->port_connected(result.value());
-			return true;
-		}
-	}
-	return false;
-}
-
-void peer_object::internal_port_disconnected ()
-{
-	if (connection_)
-	{
-		connection_->port_disconnected();
-	}
-}
-
-void peer_object::set_status (bool online, const string_type& ver)
-{
-	online_ = online;
-	stream_version_ = ver;
-}
-
-
 // Class rx_internal::discovery::peer_connection 
 
 peer_connection::peer_connection (peer_endpoint endpoint)
@@ -504,6 +408,102 @@ void peer_connection::remove_peer_item (const rx_node_id& id)
 		cached_paths_.erase(it->second->meta.get_full_path());
 		cached_items_.erase(it);
 	}
+}
+
+
+// Class rx_internal::discovery::peer_object 
+
+peer_object::peer_object()
+      : online_(false),
+        stream_version_("")
+{
+	resolver_user_.my_obj = this;
+	DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer object created.");
+}
+
+
+peer_object::~peer_object()
+{
+	DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer object destroyed.");
+}
+
+
+
+rx_result peer_object::initialize_runtime (runtime_init_context& ctx)
+{
+	rx_result ret;
+	connection_ = discovery_manager::instance().get_peer(ctx.get_item_static<string_type>("Endpoint.Name", ""));
+	online_.bind("Status.Online", ctx);
+	stream_version_.bind("Status.Version", ctx);
+	if (connection_)
+	{
+		ret = connection_->initialize_runtime(ctx, smart_this());
+	}
+	return ret;
+}
+
+rx_result peer_object::deinitialize_runtime (runtime_deinit_context& ctx)
+{
+	rx_result ret;
+	if (connection_)
+	{
+		ret = connection_->deinitialize_runtime(ctx);
+	}
+	connection_ = peer_connection_ptr::null_ptr;
+	return ret;
+}
+
+rx_result peer_object::start_runtime (runtime_start_context& ctx)
+{
+	auto ret = ctx.register_relation_subscriber("Conn", &resolver_user_);
+	if (!ret)
+	{
+		RUNTIME_LOG_WARNING("peer_connection", 900, "Error starting port registration "
+			+ ctx.context->meta_info.get_full_path() + "." + ctx.path.get_current_path() + " " + ret.errors_line());
+	}
+	if (connection_)
+	{
+		ret = connection_->start_runtime(ctx);
+	}
+	return ret;
+}
+
+rx_result peer_object::stop_runtime (runtime_stop_context& ctx)
+{
+	rx_result ret;
+	if (connection_)
+	{
+		ret = connection_->stop_runtime(ctx);
+	}
+	return ret;
+}
+
+bool peer_object::internal_port_connected (const platform_item_ptr& item)
+{
+	if (connection_)
+	{
+		auto result = rx_platform::get_runtime_instance<rx_protocol::rx_json_protocol_client_port>(item->meta_info().id);
+		if (result)
+		{
+			connection_->port_connected(result.value());
+			return true;
+		}
+	}
+	return false;
+}
+
+void peer_object::internal_port_disconnected ()
+{
+	if (connection_)
+	{
+		connection_->port_disconnected();
+	}
+}
+
+void peer_object::set_status (bool online, const string_type& ver)
+{
+	online_ = online;
+	stream_version_ = ver;
 }
 
 

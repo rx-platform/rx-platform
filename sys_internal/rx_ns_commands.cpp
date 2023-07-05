@@ -36,8 +36,10 @@
 
 #include "terminal/rx_console.h"
 #include "sys_internal/rx_namespace_algorithms.h"
+#include "runtime_internal/rx_runtime_internal.h"
 #include "terminal/rx_term_table.h"
 #include "system/server/rx_directory_cache.h"
+#include "terminal/parser3000.h"
 
 
 namespace rx_internal {
@@ -226,65 +228,6 @@ ls_command::~ls_command()
 
 
 
-bool ls_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
-{
-	if (in.eof())
-	{// dump here
-		string_type filter;
-		auto current_directory = ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory());
-
-		platform_directories_type dirs;
-		platform_items_type items;
-		current_directory->list_content(dirs, items, filter);
-
-		size_t count = dirs.size() + items.size();
-
-		rx_row_type row;
-		row.reserve(count);
-
-		for (auto& one : dirs)
-		{
-			row.emplace_back(one->meta_info().name, ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
-		}
-		for (auto& one : items)
-		{
-			if (one.is_type())
-				row.emplace_back(one.get_meta().name, ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET);
-			else if (one.is_object())
-			{
-				switch (one.get_type())
-				{
-				case rx_item_type::rx_application:
-					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_APP_COLOR, ANSI_COLOR_RESET });
-					break;
-				case rx_item_type::rx_domain:
-					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_DOMAIN_COLOR, ANSI_COLOR_RESET });
-					break;
-				case rx_item_type::rx_port:
-					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_PORT_COLOR, ANSI_COLOR_RESET });
-					break;
-				case rx_item_type::rx_object:
-					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
-					break;
-				default:
-					row.emplace_back(one.get_meta().name, ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
-				}
-			}
-			else
-				row.emplace_back(one.get_meta().name, ANSI_RX_DATA_COLOR, ANSI_COLOR_RESET);
-
-		}
-		rx_dump_large_row(row, out, ctx->get_terminal_width());
-		return true;
-
-	}
-	else
-	{
-		return list_command::do_console_command(in, out, err, ctx);
-	}
-}
-
-
 // Class rx_internal::internal_ns::namespace_commands::list_command 
 
 list_command::list_command (const string_type& console_name)
@@ -303,6 +246,11 @@ bool list_command::list_directory (std::ostream& out, std::ostream& err, const s
 {
 	platform_directories_type dirs;
 	platform_items_type items;
+
+
+	ns::rx_directory_resolver resolver;
+
+
 	directory->list_content(dirs, items, filter);
 
 	size_t count = dirs.size() + items.size();
@@ -343,43 +291,138 @@ bool list_command::list_directory (std::ostream& out, std::ostream& err, const s
 
 bool list_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
+
+	string_type path = ".";
+
 	string_type filter;
 	term_list_item_options options;
+
 	options.list_attributes = false;
 	options.list_qualities = false;
 	options.list_timestamps = false;
 	options.list_created = false;
 	options.list_type = true;
 	options.list_size = false;
-	while (!in.eof())
+	bool list = false;
+
+	if (!in.eof())
 	{
-		string_type opt;
-		in >> opt;
-		if (opt == "-q")
-			options.list_qualities = true;
-		if (opt == "-t")
-			options.list_timestamps = true;
-		if (opt == "-a")
-			options.list_attributes = true;
-		if (opt == "-c")
-			options.list_created = true;
-		if (opt == "-s")
-			options.list_size = true;
-		if (opt == "-f" || opt=="-h" || opt=="-l")
+		auto pos = in.tellg();
+		in >> path;
+		if (!path.empty() && path[0] == '-')
 		{
-			options.list_attributes = true;
-			options.list_qualities = true;
-			options.list_timestamps = true;
+			path = "";
+			in.seekg(pos);
+		}
+
+		using parser_t = urke::parser::parser3000;
+		parser_t parser;
+
+		bool help = false;
+		bool version = false;
+
+		parser.add_bit_option('a', "attr", &options.list_attributes, "Display attributes.");
+		parser.add_bit_option('h', "help", &help, "Prints help.");
+		parser.add_bit_option('v', "version", &version, "Prints version of the command.");
+		parser.add_bit_option('l', "long", &list, "Long format of list.");
+		parser.add_bit_option('t', "time", &options.list_timestamps, "List timestamps.");
+		parser.add_bit_option('q', "quality", &options.list_qualities, "List qualities.");
+		parser.add_string_option('f', "filter", &filter, "Search pattern filter.");
+		parser.add_bit_option('y', "type", &options.list_type, "List types.");
+
+
+
+
+		auto ret = parser.parse(in, err);
+		if (ret)
+		{
+			if (help)
+			{
+				parser.print_help("ls [path] ", out);
+				return true;
+			}
+			else if (version)
+			{
+				auto version = code_version();
+				out << "Version "
+					<< version[0] << ". "
+					<< version[1] << ". "
+					<< version[2] << ".";
+				return true;
+			}
+		}
+		else
+		{
+			return ret;
 		}
 	}
 
-	rx_directory_ptr dir = ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory());
+	rx_directory_resolver resl;
+	resl.add_paths({ ctx->get_current_directory() });
+	rx_directory_ptr dir = resl.resolve_directory(path);
 	if (!dir)
 	{
 		err << RX_INVALID_PATH;
 		return false;
 	}
-	return list_directory(out, err, filter, options, dir);
+	if (list)
+	{
+		return list_directory(out, err, filter, options, dir);
+	}
+	else
+	{
+		return do_non_list_command(out, err, filter, options, dir, ctx);
+	}
+}
+
+bool list_command::do_non_list_command (std::ostream& out, std::ostream& err, const string_type& filter, const term_list_item_options& options, rx_directory_ptr directory, console_context_ptr ctx)
+{
+
+
+	platform_items_type items;
+	platform_directories_type dirs;
+
+	directory->list_content(dirs, items, filter);
+
+	size_t count = dirs.size() + items.size();
+
+	rx_row_type row;
+	row.reserve(count);
+
+	for (auto& one : dirs)
+	{
+		row.emplace_back(one->meta_info().name, ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
+	}
+	for (auto& one : items)
+	{
+		if (one.is_type())
+			row.emplace_back(one.get_meta().name, ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET);
+		else if (one.is_object())
+		{
+			switch (one.get_type())
+			{
+			case rx_item_type::rx_application:
+				row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_APP_COLOR, ANSI_COLOR_RESET });
+				break;
+			case rx_item_type::rx_domain:
+				row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_DOMAIN_COLOR, ANSI_COLOR_RESET });
+				break;
+			case rx_item_type::rx_port:
+				row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_PORT_COLOR, ANSI_COLOR_RESET });
+				break;
+			case rx_item_type::rx_object:
+				row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
+				break;
+			default:
+				row.emplace_back(one.get_meta().name, ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+			}
+		}
+		else
+			row.emplace_back(one.get_meta().name, ANSI_RX_DATA_COLOR, ANSI_COLOR_RESET);
+
+	}
+	rx_dump_large_row(row, out, ctx->get_terminal_width());
+	return true;
 }
 
 
@@ -558,3 +601,64 @@ bool clone_command::do_console_command (std::istream& in, std::ostream& out, std
 } // namespace internal_ns
 } // namespace rx_internal
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	if (in.eof())
+	{// dump here
+		string_type filter;
+		auto current_directory = ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory());
+
+		platform_directories_type dirs{ current_directory };
+		platform_items_type items;
+		current_directory->list_content(dirs, items, filter);
+
+		size_t count = dirs.size() + items.size();
+
+		rx_row_type row;
+		row.reserve(count);
+
+		for (auto& one : dirs)
+		{
+			row.emplace_back(one->meta_info().name, ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
+		}
+		for (auto& one : items)
+		{
+			if (one.is_type())
+				row.emplace_back(one.get_meta().name, ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET);
+			else if (one.is_object())
+			{
+				switch (one.get_type())
+				{
+				case rx_item_type::rx_application:
+					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_APP_COLOR, ANSI_COLOR_RESET });
+					break;
+				case rx_item_type::rx_domain:
+					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_DOMAIN_COLOR, ANSI_COLOR_RESET });
+					break;
+				case rx_item_type::rx_port:
+					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_PORT_COLOR, ANSI_COLOR_RESET });
+					break;
+				case rx_item_type::rx_object:
+					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
+					break;
+				default:
+					row.emplace_back(one.get_meta().name, ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
+				}
+			}
+			else
+				row.emplace_back(one.get_meta().name, ANSI_RX_DATA_COLOR, ANSI_COLOR_RESET);
+
+		}
+		rx_dump_large_row(row, out, ctx->get_terminal_width());
+		return true;
+
+	}
+	else
+	{
+		return list_command::do_console_command(in, out, err, ctx);
+	}
+
+#endif

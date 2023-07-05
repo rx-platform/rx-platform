@@ -193,7 +193,6 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 								auto result = rx_platform::rx_gate::instance().initialize(this, config_);
 								if (result)
 								{
-									host_security_context_ = result.value();
 
 									std::cout << "OK\r\n";
 									return 1;
@@ -273,8 +272,7 @@ int headless_platform_host::deinitialize_platform ()
 
 	std::cout << "De-initializing{rx-platform} ...";
 	rx_result result;
-	if (host_security_context_)
-		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
+	result = rx_platform::rx_gate::instance().deinitialize();
 	if (result)
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 	else
@@ -287,8 +285,6 @@ int headless_platform_host::deinitialize_platform ()
 
 
 	rx_internal::rx_security::platform_security::instance().deinitialize();
-
-	HOST_LOG_INFO("Main", 999, "Console Host exited.");
 
 	deinitialize_storages();
 
@@ -438,8 +434,7 @@ int headless_platform_host::start_platform ()
 		rx_dump_error_result(std::cout, result);
 	}
 	std::cout << "De-initializing {rx-platform} ...";
-	if(host_security_context_)
-		result = rx_platform::rx_gate::instance().deinitialize(host_security_context_);
+	result = rx_platform::rx_gate::instance().deinitialize();
 	if (result)
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 	else

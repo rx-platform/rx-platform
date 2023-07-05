@@ -89,6 +89,14 @@ rx_result rx_system_info_response::serialize (base_meta_writer& stream) const
         return stream.get_error();
     if (!stream.write_string("memory", memory.c_str()))
         return stream.get_error();
+    if (stream.get_version() >= RX_ABI_COMMON_LEVEL_VERSION)
+    {
+        if (!stream.write_string("abi", abi.c_str()))
+            return stream.get_error();
+
+        if (!stream.write_string("common", common.c_str()))
+            return stream.get_error();
+    }
     if (!stream.end_object())
         return stream.get_error();
     return true;
@@ -131,6 +139,14 @@ rx_result rx_system_info_response::deserialize (base_meta_reader& stream)
         return stream.get_error();
     if (!stream.read_string("memory", memory))
         return stream.get_error();
+    if (stream.get_version() >= RX_ABI_COMMON_LEVEL_VERSION)
+    {
+        if (!stream.read_string("abi", abi))
+            return stream.get_error();
+
+        if (!stream.read_string("common", common))
+            return stream.get_error();
+    }
     if (!stream.end_object())
         return stream.get_error();
     return true;
@@ -174,6 +190,8 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
     response->node = rx_gate::instance().get_node_name();
     response->platform = rx_gate::instance().get_rx_version();
     response->library = rx_gate::instance().get_lib_version();
+    response->abi = rx_gate::instance().get_abi_version();
+    response->common = rx_gate::instance().get_common_version();
     response->os_itf = rx_gate::instance().get_hal_version();
     response->terminal = terminal::term_ports::vt100_endpoint::get_terminal_info();
     response->http = rx_http_server::http_server::get_server_info();

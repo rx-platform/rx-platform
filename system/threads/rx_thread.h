@@ -122,6 +122,8 @@ class thread : public rx::locks::waitable
 
       rx_thread_handle_t rx_thread_id_;
 
+      rx_security_handle_t security_context_;
+
 
 };
 

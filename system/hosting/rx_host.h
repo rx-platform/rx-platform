@@ -32,6 +32,7 @@
 #define rx_host_h 1
 
 
+#include "system/rx_platform_typedefs.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/storage_base/rx_storage.h"
 
@@ -155,7 +156,7 @@ class startup_log_subscriber : public log::log_subscriber
 
   public:
 
-      void log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
+      void log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when);
 
       rx_result read_log (const log::log_query_type& query, log::log_events_type& result);
 

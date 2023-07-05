@@ -37,6 +37,7 @@
 
 #include "lib/rx_ser_bin.h"
 #include "sys_internal/rx_security/rx_platform_security.h"
+#include "sys_internal/rx_security/rx_x509_security.h"
 
 
 /*
@@ -70,10 +71,10 @@ namespace items {
 // Class rx_platform::runtime::items::security_context_holder 
 
 
-rx_result_with<security::security_context_ptr> security_context_holder::create_context (const string_type& port, const string_type& location, const byte_string& data)
+rx_result security_context_holder::create_context (const string_type& port, const string_type& location, const byte_string& data, security::security_context_ptr& ctx)
 {
     if (data.empty())
-        return security::active_security();
+        return true;
     memory::std_buffer buffer;
     buffer.push_data(&data[0], data.size());
     serialization::std_buffer_reader reader(buffer);
@@ -91,21 +92,22 @@ rx_result_with<security::security_context_ptr> security_context_holder::create_c
                 {
                 case MAINTENANCE_PORT:
                     {
-                        ptr = rx_create_reference<rx_internal::rx_security::maintenance_context>(port, location);
+                        ptr = rx_create_reference<rx_internal::rx_security::maintenance_context>();
                     }
                     break;
                 case PROCESS_PORT:
                     {
-                        ptr = rx_create_reference<rx_internal::rx_security::process_context>(port, location);
+                        ptr = rx_create_reference<rx_internal::rx_security::process_context>();
                     }
                     break;
                 default:
-                    return security::active_security();// wrong type!?!
+                    return "Wrong built-in identity type!";
                 }
                 auto result = ptr->deserialize(reader);
                 if (!result)
                     return result.errors();
-                return rx_result_with<security::security_context_ptr>(ptr);
+                ctx = ptr;
+                return true;
             }
             break;
         case USER_ACCOUNT:
@@ -114,19 +116,24 @@ rx_result_with<security::security_context_ptr> security_context_holder::create_c
                 {
                 case X509_ACCOUNT:
                     {
-
+                        auto ptr = rx_create_reference<rx_internal::rx_security::x509_security_context>();
+                        auto result = ptr->deserialize(reader);
+                        if (!result)
+                            return result.errors();
+                        ctx = ptr;
+                        return true;
                     }
                     break;
                 default:
-                    return security::active_security();// wrong type!?!
+                    return "Wrong user identity type!";
                 }
             }
             break;
         default:
-            return security::active_security();// wrong type!?!
+            return "Wrong identity type!";
         }
     }
-    return security::active_security();// wtf, just in case!?!
+    return true;
 }
 
 

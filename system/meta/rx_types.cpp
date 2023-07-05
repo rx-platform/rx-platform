@@ -31,6 +31,7 @@
 #include "pch.h"
 
 #include "rx_configuration.h"
+#include "system/meta/rx_meta_attr_algorithm.h"
 
 // rx_types
 #include "system/meta/rx_types.h"

@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/runtime/rx_runtime_helpers.h"
 
 // rx_internal_ns
 #include "sys_internal/rx_internal_ns.h"
@@ -106,7 +107,7 @@ rx_result rx_item_implementation<TImpl>::serialize (base_meta_writer& stream) co
 }
 
 template <class TImpl>
-const meta_data_t& rx_item_implementation<TImpl>::meta_info () const
+const meta_data& rx_item_implementation<TImpl>::meta_info () const
 {
 	return impl_->meta_info();
 }
@@ -154,7 +155,7 @@ std::vector<rx_result> rx_item_implementation<TImpl>::disconnect_items (const st
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
+rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::read_items(items, monitor, *impl_);
 }
@@ -206,7 +207,7 @@ rx_result rx_item_implementation<TImpl>::deserialize_value (base_meta_reader& st
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::save () const
 {
-	
+
 	return rx_save_platform_item(*this);
 }
 
@@ -242,6 +243,12 @@ byte_string rx_item_implementation<TImpl>::get_definition_as_bytes () const
 	impl_->serialize(writer, STREAMING_TYPE_MESSAGE);
 
 	return writer.get_data();
+}
+
+template <class TImpl>
+security::security_guard_ptr rx_item_implementation<TImpl>::get_security_guard ()
+{
+	return impl_->get_security_guard();
 }
 
 
@@ -302,7 +309,7 @@ rx_result rx_meta_item_implementation<TImpl>::serialize (base_meta_writer& strea
 }
 
 template <class TImpl>
-const meta_data_t& rx_meta_item_implementation<TImpl>::meta_info () const
+const meta_data& rx_meta_item_implementation<TImpl>::meta_info () const
 {
 	return impl_->meta_info;
 }
@@ -356,7 +363,7 @@ std::vector<rx_result> rx_meta_item_implementation<TImpl>::disconnect_items (con
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
+rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -449,6 +456,12 @@ byte_string rx_meta_item_implementation<TImpl>::get_definition_as_bytes () const
 	return writer.get_data();
 }
 
+template <class TImpl>
+security::security_guard_ptr rx_meta_item_implementation<TImpl>::get_security_guard ()
+{
+	return impl_->security_guard;
+}
+
 
 // Parameterized Class rx_internal::internal_ns::rx_other_implementation 
 
@@ -503,7 +516,7 @@ rx_result rx_other_implementation<TImpl>::serialize (base_meta_writer& stream) c
 }
 
 template <class TImpl>
-const meta_data_t& rx_other_implementation<TImpl>::meta_info () const
+const meta_data& rx_other_implementation<TImpl>::meta_info () const
 {
 	return impl_->meta_info();
 }
@@ -557,7 +570,7 @@ std::vector<rx_result> rx_other_implementation<TImpl>::disconnect_items (const s
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
+rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -634,6 +647,12 @@ byte_string rx_other_implementation<TImpl>::get_definition_as_bytes () const
 	return byte_string();
 }
 
+template <class TImpl>
+security::security_guard_ptr rx_other_implementation<TImpl>::get_security_guard ()
+{
+	return impl_->get_security_guard();
+}
+
 
 // Parameterized Class rx_internal::internal_ns::rx_proxy_item_implementation 
 
@@ -682,9 +701,9 @@ rx_result rx_proxy_item_implementation<TImpl>::serialize (base_meta_writer& stre
 }
 
 template <class TImpl>
-const meta_data_t& rx_proxy_item_implementation<TImpl>::meta_info () const
+const meta_data& rx_proxy_item_implementation<TImpl>::meta_info () const
 {
-  return meta_data_t();
+  return meta_data();
 }
 
 template <class TImpl>
@@ -739,7 +758,7 @@ std::vector<rx_result> rx_proxy_item_implementation<TImpl>::disconnect_items (co
 }
 
 template <class TImpl>
-rx_result rx_proxy_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
+rx_result rx_proxy_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
   return RX_NOT_IMPLEMENTED;
 }
@@ -813,6 +832,12 @@ byte_string rx_proxy_item_implementation<TImpl>::get_definition_as_bytes () cons
   return byte_string();
 }
 
+template <class TImpl>
+security::security_guard_ptr rx_proxy_item_implementation<TImpl>::get_security_guard ()
+{
+	return impl_->get_security_guard();
+}
+
 
 // Parameterized Class rx_internal::internal_ns::rx_relation_item_implementation 
 
@@ -863,7 +888,7 @@ rx_result rx_relation_item_implementation<TImpl>::serialize (base_meta_writer& s
 }
 
 template <class TImpl>
-const meta_data_t& rx_relation_item_implementation<TImpl>::meta_info () const
+const meta_data& rx_relation_item_implementation<TImpl>::meta_info () const
 {
 	return impl_->meta_info();
 }
@@ -923,7 +948,7 @@ std::vector<rx_result> rx_relation_item_implementation<TImpl>::disconnect_items 
 }
 
 template <class TImpl>
-rx_result rx_relation_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx)
+rx_result rx_relation_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -998,6 +1023,12 @@ template <class TImpl>
 byte_string rx_relation_item_implementation<TImpl>::get_definition_as_bytes () const
 {
 	return byte_string();
+}
+
+template <class TImpl>
+security::security_guard_ptr rx_relation_item_implementation<TImpl>::get_security_guard ()
+{
+	return impl_->get_security_guard();
 }
 
 

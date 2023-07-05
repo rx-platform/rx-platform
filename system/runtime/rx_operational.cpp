@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/runtime/rx_runtime_helpers.h"
 
 // rx_runtime_logic
 #include "system/runtime/rx_runtime_logic.h"
@@ -45,6 +46,11 @@
 #include "system/runtime/rx_blocks.h"
 #include "runtime_internal/rx_runtime_internal.h"
 #include "sys_internal/rx_async_functions.h"
+
+namespace rx_platform
+{
+rx_security_handle_t rx_security_context();
+}
 
 
 namespace rx_platform {
@@ -651,7 +657,7 @@ rx_result connected_tags::read_tag (runtime_handle_t item, tags_callback_ptr mon
 
 rx_result connected_tags::write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor)
 {
-	write_requests_.push_back({ trans_id, item, std::move(value), monitor });
+	write_requests_.push_back({ trans_id, item, std::move(value), monitor, rx_security_context() });
 	context_->tag_writes_pending();
 	return true;
 }
@@ -727,7 +733,7 @@ bool connected_tags::process_transactions ()
 	{
 		for (auto& one : write_requests_)
 		{
-			auto result = internal_write_tag(one.transaction_id, one.item, std::move(one.value), one.callback);
+			auto result = internal_write_tag(one.transaction_id, one.item, std::move(one.value), one.callback, one.identity);
 			if (!result)
 			{
 				write_results_[one.callback].emplace_back(write_result_data{ one.transaction_id, one.item, std::move(result) });
@@ -822,7 +828,7 @@ void connected_tags::write_result_arrived (tags_callback_ptr whose, write_result
 	context_->tag_updates_pending();
 }
 
-rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor)
+rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, rx_security_handle_t identity)
 {
 	auto it = handles_map_.find(item);
 	if (it != handles_map_.end())
@@ -831,6 +837,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 		data.transaction_id = trans_id;
 		data.value = std::move(value);
 		data.internal = false;
+		data.identity = identity;
 		switch (it->second.reference.ref_type)
 		{
 		case rt_value_ref_type::rt_const_value:

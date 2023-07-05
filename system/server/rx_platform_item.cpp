@@ -32,10 +32,13 @@
 
 #include "system/server/rx_server.h"
 
+// rx_ns
+#include "system/server/rx_ns.h"
 // rx_platform_item
 #include "system/server/rx_platform_item.h"
 
 #include "sys_internal/rx_async_functions.h"
+#include "system/meta/rx_meta_support.h"
 
 
 namespace rx_platform {
@@ -53,7 +56,7 @@ rx_platform_item::~rx_platform_item()
 rx_result rx_platform_item::delete_item () const
 {
 	const auto& meta = meta_info();
-	auto storage_result = meta.resolve_storage();
+	auto storage_result = resolve_storage(meta);
 	if (storage_result)
 	{
 		auto item_result = storage_result.value()->get_item_storage(meta, get_type_id());

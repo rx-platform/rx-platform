@@ -310,6 +310,7 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 				return rx_init_time_value(&val, temp) == RX_OK;
 			}*/
 		case RX_BYTES_TYPE:
+		case RX_STRUCT_TYPE:
 			RX_ASSERT(false);//not implemented
 			return false;
 			/*{
@@ -460,6 +461,31 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 					return rx_init_bytes_value(&val, (uint8_t*)&temp[0], temp.size());
 			}
 			break;
+		case RX_STRUCT_TYPE:
+			{
+				reader.start_object(name);
+				uint32_t size = 0;
+				reader.read_uint("size", size);
+				{
+					reader.start_object("val");
+					if (size)
+					{
+						std::vector<rx_simple_value> temp(size);
+						int counter = 1;
+						char name_buff[0x10];
+						for (size_t i = 0; i < size; i++)
+						{
+							sprintf(name_buff, "v%d", counter++);
+							bool ret = temp[i].deserialize(name_buff, reader);
+							if (!ret)
+								return false;
+						}
+					}
+					reader.end_object();
+				}
+				reader.end_object();
+			}
+			break;
 		default:
 			RX_ASSERT(false);
 			// shouldn't happened
@@ -531,6 +557,30 @@ bool serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_val
 				size_t size = 0;
 				const std::byte* data = (const std::byte*)rx_c_ptr(&who.bytes_value, &size);
 				writer.write_bytes(name, data, size);
+			}
+			break;
+		case RX_STRUCT_TYPE:
+			{
+				size_t size = who.struct_value.size;
+				writer.start_object(name);
+				writer.write_uint("size", (uint32_t)size);
+				{
+					writer.start_object("val");
+					if (size)
+					{
+						int counter = 1;
+						char name_buff[0x10];
+						for (size_t i = 0; i < size; i++)
+						{
+							sprintf(name_buff, "v%d", counter++);
+							bool ret = serialize_value(writer, who.struct_value.values[i].value, who.struct_value.values[i].value_type, name_buff);
+							if (!ret)
+								return false;
+						}
+					}
+					writer.end_object();
+				}
+				writer.end_object();
 			}
 			break;
 		case RX_COMPLEX_TYPE:

@@ -33,6 +33,7 @@
 
 
 #include "platform_api/rx_abi.h"
+#include "system/rx_platform_typedefs.h"
 
 // rx_ptr
 #include "lib/rx_ptr.h"
@@ -60,45 +61,8 @@ class server_command;
 namespace rx_platform
 {
 
-enum rx_item_type : uint8_t
-{
-    rx_directory = 0,
-    rx_application = 1,
-    rx_application_type = 2,
-    rx_domain = 3,
-    rx_domain_type = 4,
-    rx_object = 5,
-    rx_object_type = 6,
-    rx_port = 7,
-    rx_port_type = 8,
-    rx_struct_type = 9,
-    rx_variable_type = 10,
-    rx_source_type = 11,
-    rx_filter_type = 12,
-    rx_event_type = 13,
-    rx_mapper_type = 14,
-    rx_relation_type = 15,
-    rx_program_type = 16,
-    rx_method_type = 17,
-    rx_data_type = 18,
-    rx_display_type = 19,
-    rx_relation = 20,
-
-    rx_first_invalid = 21,
-
-    rx_test_case_type = 0xfe,
-    rx_invalid_type = 0xff
-};
 
 struct configuration_data_t;
-namespace ns
-{
-class rx_platform_item;
-}
-namespace meta
-{
-class meta_data;
-}
 }
 /////////////////////////////////////////////////////////////
 // logging macros for storage library
@@ -111,23 +75,9 @@ class meta_data;
 
 
 namespace rx_platform {
-namespace storage_base
-{
-class rx_storage_item;
-class rx_platform_storage;
-}
-typedef std::unique_ptr<storage_base::rx_storage_item> rx_storage_item_ptr;
-typedef rx_reference<storage_base::rx_platform_storage> rx_storage_ptr;
 
-namespace ns
-{
-class rx_platform_directory;
-}
 
 typedef rx::pointers::reference<rx_internal::terminal::commands::server_command> server_command_base_ptr;
-typedef std::unique_ptr<rx_platform::ns::rx_platform_item> platform_item_ptr;
-typedef rx::pointers::reference<ns::rx_platform_directory> rx_directory_ptr;
-typedef std::vector<rx_directory_ptr> platform_directories_type;
 
 enum class rx_storage_item_type
 {
@@ -171,7 +121,7 @@ class rx_storage_item
 
       virtual string_type get_item_path () const = 0;
 
-      virtual bool preprocess_meta_data (meta::meta_data& data) = 0;
+      virtual bool preprocess_meta_data (meta_data& data) = 0;
 
 
       const rx_storage_item_type& get_storage_type () const
@@ -191,67 +141,6 @@ class rx_storage_item
 
 
       rx_storage_item_type storage_type_;
-
-
-};
-
-
-enum rx_storage_type
-{
-	invalid_storage = 0,
-	system_storage,
-	user_storage,
-	extern_storage,
-	test_storage
-};
-
-
-
-
-
-class rx_platform_storage : public rx::pointers::reference_object  
-{
-	DECLARE_REFERENCE_PTR(rx_platform_storage);
-
-  public:
-      rx_platform_storage();
-
-      ~rx_platform_storage();
-
-
-      virtual string_type get_storage_info () = 0;
-
-      virtual rx_result list_storage (std::vector<rx_storage_item_ptr>& items) = 0;
-
-      virtual bool is_valid_storage () const = 0;
-
-      virtual rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data, rx_item_type type) = 0;
-
-      virtual rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type) = 0;
-
-      virtual string_type get_storage_reference () = 0;
-
-      virtual void preprocess_meta_data (meta::meta_data& data) = 0;
-
-
-      const string_type& get_base_path () const
-      {
-        return base_path_;
-      }
-
-      void set_base_path (const string_type& value)
-      {
-        base_path_ = value;
-      }
-
-
-
-  protected:
-
-  private:
-
-
-      string_type base_path_;
 
 
 };
@@ -284,7 +173,7 @@ class rx_code_storage_item : public rx_storage_item
 
       rx_result delete_item ();
 
-      bool preprocess_meta_data (meta::meta_data& data);
+      bool preprocess_meta_data (meta_data& data);
 
       string_type get_item_path () const;
 
@@ -292,6 +181,145 @@ class rx_code_storage_item : public rx_storage_item
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class rx_plugin_storage_item : public rx_storage_item  
+{
+
+  public:
+      rx_plugin_storage_item();
+
+
+      base_meta_reader& read_stream ();
+
+      base_meta_writer& write_stream ();
+
+      rx_result open_for_read ();
+
+      rx_result open_for_write ();
+
+      rx_result close_read ();
+
+      rx_result commit_write ();
+
+      const string_type& get_item_reference () const;
+
+      rx_result delete_item ();
+
+      bool preprocess_meta_data (meta_data& data);
+
+      string_type get_item_path () const;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_roles_storage_item 
+{
+
+  public:
+      rx_roles_storage_item();
+
+      virtual ~rx_roles_storage_item();
+
+
+      virtual rx_result open_for_read () = 0;
+
+      virtual base_meta_reader& read_stream () = 0;
+
+      virtual rx_result close_read () = 0;
+
+      virtual rx_result open_for_write () = 0;
+
+      virtual base_meta_writer& write_stream () = 0;
+
+      virtual rx_result commit_write () = 0;
+
+      virtual rx_result delete_item () = 0;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+enum rx_storage_type
+{
+	invalid_storage = 0,
+	system_storage,
+	user_storage,
+	extern_storage,
+	test_storage
+};
+
+
+
+
+
+class rx_platform_storage : public rx::pointers::reference_object  
+{
+	DECLARE_REFERENCE_PTR(rx_platform_storage);
+
+  public:
+      rx_platform_storage();
+
+      ~rx_platform_storage();
+
+
+      virtual string_type get_storage_info () = 0;
+
+      virtual rx_result list_storage (std::vector<rx_storage_item_ptr>& items) = 0;
+
+      virtual rx_result list_storage_roles (std::vector<rx_roles_storage_item_ptr>& items);
+
+      virtual bool is_valid_storage () const = 0;
+
+      virtual rx_result_with<rx_storage_item_ptr> get_item_storage (const meta_data& data, rx_item_type type) = 0;
+
+      virtual rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta_data& data, rx_item_type type) = 0;
+
+      virtual string_type get_storage_reference () = 0;
+
+      virtual void preprocess_meta_data (meta_data& data) = 0;
+
+
+      const string_type& get_base_path () const
+      {
+        return base_path_;
+      }
+
+      void set_base_path (const string_type& value)
+      {
+        base_path_ = value;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type base_path_;
 
 
 };
@@ -315,13 +343,13 @@ class rx_code_storage : public rx_platform_storage
 
       bool is_valid_storage () const;
 
-      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data, rx_item_type type);
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta_data& data, rx_item_type type);
 
-      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type);
+      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta_data& data, rx_item_type type);
 
       string_type get_storage_reference ();
 
-      void preprocess_meta_data (meta::meta_data& data);
+      void preprocess_meta_data (meta_data& data);
 
 
   protected:
@@ -355,6 +383,8 @@ class rx_storage_connection : public rx::pointers::reference_object
       virtual string_type get_storage_info () const = 0;
 
       std::vector<std::pair<string_type, string_type> > get_mounted_storages () const;
+
+      rx_result list_storage_roles (std::vector<rx_roles_storage_item_ptr>& items);
 
 
   protected:
@@ -417,13 +447,13 @@ class rx_empty_storage : public rx_platform_storage
 
       bool is_valid_storage () const;
 
-      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data, rx_item_type type);
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta_data& data, rx_item_type type);
 
-      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type);
+      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta_data& data, rx_item_type type);
 
       string_type get_storage_reference ();
 
-      void preprocess_meta_data (meta::meta_data& data);
+      void preprocess_meta_data (meta_data& data);
 
 
   protected:
@@ -479,15 +509,15 @@ class rx_plugin_storage : public rx_platform_storage
 
       bool is_valid_storage () const;
 
-      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta::meta_data& data, rx_item_type type);
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta_data& data, rx_item_type type);
 
-      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta::meta_data& data, rx_item_type type);
+      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta_data& data, rx_item_type type);
 
       string_type get_storage_reference ();
 
       rx_result init_storage (const string_type& name, const string_type& ref);
 
-      void preprocess_meta_data (meta::meta_data& data);
+      void preprocess_meta_data (meta_data& data);
 
 
   protected:
@@ -530,46 +560,6 @@ class rx_plugin_storage_connection : public rx_storage_connection
       rx_storage_constructor_t constructor_;
 
       string_type reference_;
-
-
-};
-
-
-
-
-
-
-class rx_plugin_storage_item : public rx_storage_item  
-{
-
-  public:
-      rx_plugin_storage_item();
-
-
-      base_meta_reader& read_stream ();
-
-      base_meta_writer& write_stream ();
-
-      rx_result open_for_read ();
-
-      rx_result open_for_write ();
-
-      rx_result close_read ();
-
-      rx_result commit_write ();
-
-      const string_type& get_item_reference () const;
-
-      rx_result delete_item ();
-
-      bool preprocess_meta_data (meta::meta_data& data);
-
-      string_type get_item_path () const;
-
-
-  protected:
-
-  private:
 
 
 };

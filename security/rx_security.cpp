@@ -40,6 +40,7 @@ rx_security_handle_t rx_security_context();
 bool rx_push_security_context(rx_security_handle_t obj);
 bool rx_pop_security_context();
 }
+#include "sys_internal/rx_security/rx_platform_security.h"
 
 
 namespace rx_platform {
@@ -155,8 +156,17 @@ security_manager& security_manager::instance ()
 rx_security_handle_t security_manager::context_activated (security_context::smart_ptr who)
 {
 	char buff[0x100];
-	snprintf(buff, sizeof(buff), "User %s, security context created.", who->get_full_name().c_str());
+
+	if (who->get_handle())
+	{
+		snprintf(buff, sizeof(buff), "User %s already logged in.", who->get_full_name().c_str());
+		SECURITY_LOG_INFO("manager", 900, buff);
+		return 0;
+	}
+
+	snprintf(buff, sizeof(buff), "User %s logged in.", who->get_full_name().c_str());
 	SECURITY_LOG_INFO("manager", 900, buff);
+
 	locks::auto_lock_t dummy(&active_lock_);
 	
 	intptr_t new_id;
@@ -175,14 +185,12 @@ rx_security_handle_t security_manager::context_activated (security_context::smar
 rx_security_handle_t security_manager::context_deactivated (security_context::smart_ptr who)
 {
 	char buff[0x100];
-	snprintf(buff, sizeof(buff), "User %s, security context destroying...", who->get_full_name().c_str());
-	SECURITY_LOG_INFO("manager", 900, buff);
 	locks::auto_lock_t dummy(&active_lock_);
 	auto it = active_contexts_.find(who->get_handle());
 	if (it != active_contexts_.end())
 	{
 		active_contexts_.erase(it);
-		snprintf(buff, sizeof(buff), "User %s, security context destroyed.", who->get_full_name().c_str());
+		snprintf(buff, sizeof(buff), "User %s logged off.", who->get_full_name().c_str());
 		SECURITY_LOG_INFO("manager", 900, buff);
 		return 0;
 	}
@@ -265,7 +273,23 @@ void pop_security()
 }
 // Class rx_platform::security::security_guard 
 
-security_guard::security_guard()
+security_guard::security_guard (const meta_data& data, security_mask_t access)
+	: access_mask_((security_mask_t)(data.attributes&namespace_item_full_access))
+	, extended_mask_(rx_security_ext_null)
+	, path_base_(data.get_full_path())
+{
+	/*if (data.attributes | namespace_item_internal_access)
+		extended_mask_ = extended_mask_ | rx_security_requires_internal;
+	if (data.attributes | namespace_item_system_access)
+		extended_mask_ = extended_mask_ | rx_security_requires_system;*/
+	if (access)
+		access_mask_ = access_mask_ | access;
+}
+
+security_guard::security_guard (security_mask_t access, const string_type& path, extended_security_mask_t extended)
+	: access_mask_(access)
+	, extended_mask_(extended)
+	, path_base_(path)
 {
 }
 
@@ -276,13 +300,13 @@ security_guard::~security_guard()
 
 
 
-bool security_guard::check_premissions (security_mask_t mask, extended_security_mask_t extended_mask)
+bool security_guard::check_permission (security_mask_t access)
 {
 	bool ret = false;
 	security_context_ptr ctx = active_security();
 	if (ctx)
 	{
-		ret = check_premissions(mask, extended_mask, ctx);
+		ret = check_permission(access, ctx);
 	}
 	if (!ret)
 	{
@@ -291,19 +315,36 @@ bool security_guard::check_premissions (security_mask_t mask, extended_security_
 	return ret;
 }
 
-bool security_guard::check_premissions (security_mask_t mask, extended_security_mask_t extended_mask, security_context_ptr ctx)
+bool security_guard::check_permission (security_mask_t mask, security_context_ptr ctx)
 {
-	if (!ctx->is_system())
+	if (!ctx->is_authenticated())
 	{
 		return false;
 	}
-	return true;
+	else
+	{
+		if ((mask & access_mask_) == rx_security_null)
+		{
+			return false;
+		}
+		if ((extended_mask_ & rx_security_requires_system) && !ctx->is_system())
+		{
+			return false;
+		}
+		else if ((extended_mask_ & rx_security_requires_internal) && !ctx->is_hosted())
+		{
+			return false;
+		}
+
+		return rx_internal::rx_security::platform_security::instance().check_permissions(
+			mask, path_base_, ctx);
+	}
 }
 
 
 // Class rx_platform::security::secured_scope 
 
-secured_scope::secured_scope (const security_context_ptr& ctx)
+secured_scope::secured_scope (security_context_ptr ctx)
 	: ctx_(ctx ? ctx->get_handle() : 0)
 {
 	if (ctx_)
@@ -357,30 +398,26 @@ void unathorized_security_context::interface_release ()
 {
 }
 
-
-// Class rx_platform::security::loose_security_guard 
-
-loose_security_guard::loose_security_guard()
+rx_result unathorized_security_context::serialize (base_meta_writer& stream) const
 {
+	return RX_NOT_IMPLEMENTED;
 }
 
-
-loose_security_guard::~loose_security_guard()
+rx_result unathorized_security_context::deserialize (base_meta_reader& stream)
 {
-}
-
-
-
-bool loose_security_guard::check_premissions (security_mask_t mask, extended_security_mask_t extended_mask, security_context_ptr ctx)
-{
-	if (!ctx->is_authenticated())
-	{
-		return false;
-	}
-	return true;
+	return RX_NOT_IMPLEMENTED;
 }
 
 
 } // namespace security
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	: access_mask_(rx_security_null)
+	, extended_mask_(rx_security_ext_null)
+
+#endif

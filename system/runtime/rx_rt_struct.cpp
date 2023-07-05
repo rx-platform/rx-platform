@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/rx_platform_typedefs.h"
 #include "system/server/rx_server.h"
 
 // rx_rt_struct
@@ -287,6 +288,31 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				}
 			}
 			break;
+		case rt_const_data_index_type:
+			{
+				if constexpr (has_const_data())
+				{
+					if (type != runtime_value_type::persistent_runtime_value)
+					{
+						data::runtime_values_data child_data;
+						const_blocks.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
+						if (!child_data.empty())
+							data.add_child(one.name, std::move(child_data));
+					}
+				}
+			}
+			break;
+		case rt_value_data_index_type:
+			{
+				if constexpr (has_value_data())
+				{
+					data::runtime_values_data child_data;
+					value_blocks.collection[(one.index >> rt_type_shift)].collect_data(child_data, type);
+					if (!child_data.empty())
+						data.add_child(one.name, std::move(child_data));
+				}
+			}
+			break;
 		default:
 			RX_ASSERT(false);
 		}
@@ -482,6 +508,30 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 				}
 			}
 			break;
+		case rt_const_data_index_type:
+			{// event
+				if constexpr (has_const_data())
+				{
+					auto it = data.children.find(one.name);
+					if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
+					{
+						const_blocks.collection[one.index >> rt_type_shift].fill_data(std::get<data::runtime_values_data>(it->second));
+					}
+				}
+			}
+			break;
+		case rt_value_data_index_type:
+			{// event
+				if constexpr (has_value_data())
+				{
+					auto it = data.children.find(one.name);
+					if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
+					{
+						value_blocks.collection[one.index >> rt_type_shift].fill_data(std::get<data::runtime_values_data>(it->second));
+					}
+				}
+			}
+			break;
 		default:
 			RX_ASSERT(false);// shouldn't happened
 		}
@@ -553,6 +603,10 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 						return filters.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
 					case rt_event_index_type:
 						return events.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+					case rt_const_data_index_type:
+						return const_blocks.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
+					case rt_value_data_index_type:
+						return value_blocks.collection[idx >> rt_type_shift].get_value(bellow, val, ctx);
 					default:
 						RX_ASSERT(false);
 					}
@@ -579,6 +633,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 					case rt_mapper_index_type:
 					case rt_filter_index_type:
 					case rt_event_index_type:
+					case rt_const_data_index_type:
+					case rt_value_data_index_type:
 						return "Not an array!";
 					default:
 						RX_ASSERT(false);
@@ -615,6 +671,10 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 								val = ctx->adapt_value(temp_val);
 								return true;
 							}
+							else
+							{
+								return "Not an array!";
+							}
 						}
 					}
 					else
@@ -633,6 +693,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 							return "Out of bounds!";
 						}
 					}
+					break;
 				case rt_value_index_type:
 					if (array_idx < 0)
 					{
@@ -711,6 +772,26 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 						{
 							return "Out of bounds!";
 						}
+					}
+					return true;
+				case rt_const_data_index_type:
+					if (array_idx < 0)
+					{
+						return const_blocks.collection[idx >> rt_type_shift].get_value("", val, ctx);
+					}
+					else
+					{
+						return "Not an array!";
+					}
+					return true;
+				case rt_value_data_index_type:
+					if (array_idx < 0)
+					{
+						return value_blocks.collection[idx >> rt_type_shift].get_value("", val, ctx);
+					}
+					else
+					{
+						return "Not an array!";
 					}
 					return true;
 				}
@@ -3671,6 +3752,11 @@ void value_data::object_state_changed (runtime_process_context* ctx)
 
 rx_result value_data::write_value (write_data&& data, runtime_process_context* ctx)
 {
+	security::secured_scope _(data.identity);
+	std::ostringstream ss;
+	ss << "Writing value "
+		<< data.value.to_string();
+	RUNTIME_LOG_TRACE("value_data", 200, ss.str());
 	if (value_opt[runtime::structure::value_opt_readonly] && !data.internal)
 		return "Access Denied!";
 	if (data.value.convert_to(value.get_type()))

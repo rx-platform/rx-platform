@@ -98,6 +98,10 @@ class rx_system_info_response : public rx_message_base
 
       string_type http;
 
+      string_type abi;
+
+      string_type common;
+
 
   protected:
 

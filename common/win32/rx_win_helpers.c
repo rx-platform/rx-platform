@@ -77,7 +77,9 @@ size_t g_page_size = 0;
 
 extern HCRYPTPROV hcrypt;
 
-int g_is_debug_instance = 0;
+extern HCERTSTORE hcert_store;
+
+int g_is_debug_instance;
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 {
@@ -106,6 +108,8 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 		BOOL cret = CryptAcquireContext(&hcrypt, NULL, MS_ENH_RSA_AES_PROV, PROV_RSA_AES, CRYPT_VERIFYCONTEXT);
 
 
+		hcert_store = CertOpenSystemStoreA(0, "My");
+
 		return RX_OK;
 	}
 	else
@@ -116,6 +120,9 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 RX_COMMON_API void rx_deinit_common_library()
 {
 	rx_deinit_protocols();
+
+	if (hcert_store)
+		CertCloseStore(hcert_store, CERT_CLOSE_STORE_CHECK_FLAG);
 
 	if (hcrypt)
 		CryptReleaseContext(hcrypt, 0);

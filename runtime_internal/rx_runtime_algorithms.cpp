@@ -150,6 +150,8 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 	auto result = what->get_instance_data().before_init_runtime(what, ctx);
 	if (result)
 	{
+		security::secured_scope _(what->get_instance_data().get_security_context());
+
 		result = what->initialize_runtime(ctx);
 		if (result)
 		{
@@ -341,6 +343,8 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 	auto result = what->get_instance_data().before_init_runtime(what, ctx);
 	if (result)
 	{
+		security::secured_scope _(what->get_instance_data().get_security_context());
+
 		result = what->initialize_runtime(ctx);
 		if (result)
 		{
@@ -530,6 +534,8 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 	auto result = what->get_instance_data().before_init_runtime(what, ctx);
 	if (result)
 	{
+		security::secured_scope _(what->get_instance_data().get_security_context());
+
 		result = what->initialize_runtime(ctx);
 		if (result)
 		{
@@ -718,13 +724,17 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 	auto it = platform_runtime_manager::instance().applications_.find(what->meta_info().id);
 	if (it == platform_runtime_manager::instance().applications_.end())
 	{
-		platform_runtime_manager::instance().applications_.emplace(what->meta_info().id, what);
+		auto insert_result = platform_runtime_manager::instance().applications_.emplace(what->meta_info().id, what);
 		ret = what->get_instance_data().before_init_runtime(what, ctx);
 		if (ret)
 		{
+			security::secured_scope _(what->get_instance_data().get_security_context());
+
 			ret = what->initialize_runtime(ctx);
 			if (ret)
 			{
+				auto executer = what->get_instance_data().resolve_executer();// .get_executer());
+
 				RUNTIME_LOG_TRACE("application_algorithms", 100, "Initialized "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_full_path());
 
 				runtime::tag_blocks::binded_tags* binded = ctx.tags;
@@ -734,6 +744,7 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 						auto result = start_runtime(whose, start_ctx, binded);
 						if (result)
 						{
+
 							RUNTIME_LOG_TRACE("application_algorithms", 100, ("Started "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
 						}
 						else
@@ -947,6 +958,51 @@ void shutdown_algorithms::deinit_objects (std::vector<rx_object_ptr> objects)
 		runtime::runtime_deinit_context deinit_ctx(one->meta_info());
 		one->deinitialize_runtime(deinit_ctx);
 		one->get_instance_data().after_deinit_runtime(one, deinit_ctx);
+	}
+}
+
+
+// Class rx_internal::sys_runtime::algorithms::startup_algorithms 
+
+
+void startup_algorithms::start_applications (std::vector<rx_application_ptr> apps)
+{
+	for (auto app : apps)
+	{
+		std::vector<rx_port_ptr> ports = app->get_instance_data().get_ports();
+		start_ports(std::move(ports));
+		auto ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::application_type>::create_start_context(*app);
+		//algorithms::application_algorithms::start_runtime(app, ctx);
+	}
+}
+
+void startup_algorithms::start_domains (std::vector<rx_domain_ptr> domains)
+{
+
+	for (auto domain : domains)
+	{
+		std::vector<rx_object_ptr> objects = domain->get_instance_data().get_objects();
+		start_objects(std::move(objects));
+		auto ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::domain_type>::create_start_context(*domain);
+		//algorithms::domain_algorithms::start_runtime(domain, ctx);
+	}
+}
+
+void startup_algorithms::start_ports (std::vector<rx_port_ptr> ports)
+{
+	for (auto port : ports)
+	{
+		auto ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::port_type>::create_start_context(*port);
+	//	algorithms::port_algorithms::start_runtime(port, ctx);
+	}
+}
+
+void startup_algorithms::start_objects (std::vector<rx_object_ptr> objects)
+{
+	for (auto one : objects)
+	{
+		auto ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::object_type>::create_start_context(*one);
+	//	algorithms::object_algorithms::start_runtime(one, ctx);
 	}
 }
 

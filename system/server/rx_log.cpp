@@ -211,7 +211,7 @@ void log_object::log_event (log_event_type event_type, const char* library, cons
 	va_end(args);
 }
 
-void log_object::sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* code, const char* message, log_callback_func_t callback, rx_time when)
+void log_object::sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* user, const char* code, const char* message, log_callback_func_t callback, rx_time when)
 {
 
 
@@ -226,7 +226,7 @@ void log_object::sync_log_event (log_event_type event_type, const char* library,
 		temp_array.push_back(one.second);
 	unlock();
 	for (auto one : temp_array)
-		one->log_event(event_type, library, source, level, code, message,when);
+		one->log_event(event_type, library, source, level, user, code, message,when);
 	if (callback)
 		callback();
 }
@@ -248,7 +248,7 @@ void log_object::deinitialize ()
 	worker_.end();
 	const char* line = "Log Stopped!";
 	LOG_CODE_PREFIX
-	sync_log_event(log_event_type::info, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, LOG_CODE_INFO, line, nullptr, rx_time::now());
+	sync_log_event(log_event_type::info, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, "", LOG_CODE_INFO, line, nullptr, rx_time::now());
 	LOG_CODE_POSTFIX
 
 	delete g_object;
@@ -263,7 +263,7 @@ rx_result log_object::start (bool test, size_t log_cache_size, int priority)
 	}
 	const char* line = "Log started!";
 	LOG_CODE_PREFIX
-	sync_log_event(log_event_type::info, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, LOG_CODE_INFO, line, nullptr, rx_time::now());
+	sync_log_event(log_event_type::info, RX_LOG_CONFIG_NAME, RX_LOG_CONFIG_NAME, RX_LOG_SELF_PRIORITY, "", LOG_CODE_INFO, line, nullptr, rx_time::now());
 	LOG_CODE_POSTFIX
 
 	worker_.start(priority);
@@ -380,6 +380,7 @@ log_event_job::log_event_job (log_event_type event_type, const char* library, co
         when_(when),
         callback_(callback)
 {
+	user_ = security::active_security()->get_full_name();
 }
 
 
@@ -391,7 +392,7 @@ log_event_job::~log_event_job()
 
 void log_event_job::process ()
 {
-	log_object::instance().sync_log_event(event_type_, library_.c_str(), source_.c_str(), level_, code_.c_str(), message_.c_str(), callback_, when_);
+	log_object::instance().sync_log_event(event_type_, library_.c_str(), source_.c_str(), level_, user_.c_str(), code_.c_str(), message_.c_str(), callback_, when_);
 }
 
 
@@ -409,10 +410,10 @@ stream_log_subscriber::~stream_log_subscriber()
 
 
 
-void stream_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
+void stream_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when)
 {
 
-	log_event_data one = { event_type,library,source,level,code,message,when };
+	log_event_data one = { event_type,library,source,level,code,message,when, user };
 
 	one.dump_to_stream(stream_);
 }
@@ -443,9 +444,9 @@ cache_log_subscriber::~cache_log_subscriber()
 
 
 
-void cache_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when)
+void cache_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when)
 {
-	log_event_data one = { event_type,library,source,level,code,message,when };
+	log_event_data one = { event_type,library,source,level,code,message,when, user };
 	locks::auto_lock_t dummy(&cache_lock_);
 	events_cache_.emplace(when, one);
 	if (events_cache_.size() > max_size_ + (max_size_ >> 4))

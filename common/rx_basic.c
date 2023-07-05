@@ -233,3 +233,16 @@ RX_COMMON_API void rx_destroy_result_struct(rx_result_struct* res)
 }
 
 
+RX_COMMON_API void rx_init_meta_data(rx_meta_data_struct* what)
+{
+	memzero(what, sizeof(rx_meta_data_struct));
+}
+RX_COMMON_API void rx_deinit_meta_data(rx_meta_data_struct* what)
+{
+	rx_destory_string_value_struct(&what->name);
+	rx_destory_string_value_struct(&what->path);
+	rx_deinit_reference(&what->parent);
+}
+
+
+

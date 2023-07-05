@@ -139,7 +139,7 @@ public:
 };
 
 byte_string rx_to_std_bytes(const bytes_value_struct& str);
-
+byte_string rx_hexstr_to_bytes(const string_type& str);
 
 //template <typename resultT>
 class rx_transaction_type
@@ -352,6 +352,8 @@ public:
 
 extern const char* g_complie_time;
 extern const char* g_lib_version;
+extern const char* g_abi_version;
+extern const char* g_common_version;
 
 
 string_type& to_upper(string_type& str);

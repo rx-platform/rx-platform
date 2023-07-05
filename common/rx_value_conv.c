@@ -605,7 +605,17 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 				}
 			case RX_BYTES_TYPE:
 				{
-					uint_fast8_t temp = what->string_value.size > 0;
+					uint_fast8_t temp = what->struct_value.size > 0;
+					if (temp)
+					{
+						free(what->struct_value.values);
+					}
+					what->bool_value = temp;
+					return RX_OK;
+				}
+			case RX_STRUCT_TYPE:
+				{
+					uint_fast8_t temp = what->bytes_value.size > 0;
 					rx_destory_bytes_value_struct(&what->bytes_value);
 					what->bool_value = temp;
 					return RX_OK;
@@ -697,6 +707,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -779,6 +790,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -861,6 +873,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -943,6 +956,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1025,6 +1039,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1107,6 +1122,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1189,6 +1205,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1271,6 +1288,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1353,6 +1371,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1435,6 +1454,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1530,6 +1550,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1611,6 +1632,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1658,6 +1680,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
 			}
@@ -1701,6 +1724,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
 			}
@@ -1783,6 +1807,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
@@ -1870,6 +1895,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					rx_destory_bytes_value_struct(&temp);
 					return ret;
 				}
+			case RX_STRUCT_TYPE:
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
 			}
@@ -1905,12 +1931,14 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return RX_ERROR;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
 			}
 		}
 		break;
 	case RX_BYTES_TYPE:
+	case RX_STRUCT_TYPE:
 		{
 			switch (source)
 			{
@@ -1938,6 +1966,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return RX_ERROR;
 				}
 			case RX_BYTES_TYPE:
+			case RX_STRUCT_TYPE:
 			case RX_NODE_ID_TYPE:
 				return RX_ERROR;
 			}

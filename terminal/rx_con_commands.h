@@ -175,6 +175,7 @@ struct list_log_options
 	bool list_level;
 	bool list_code;
 	bool list_dates;
+    bool list_user;
 };
 
 

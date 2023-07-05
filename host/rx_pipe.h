@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -35,12 +35,12 @@
 
 #include "system/server/rx_server.h"
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_log
 #include "system/server/rx_log.h"
 // rx_anonymus_pipes
 #include "host/rx_anonymus_pipes.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 
@@ -61,7 +61,7 @@ class rx_pipe_stdout_log_subscriber : public rx_platform::log::log_subscriber
       rx_pipe_stdout_log_subscriber (bool supports_ansi = true);
 
 
-      void log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& code, const string_type& message, rx_time when);
+      void log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when);
 
       void release_log (bool dump_previous);
 

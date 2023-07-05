@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "system/meta/rx_meta_attr_algorithm.h"
 
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
@@ -176,6 +177,30 @@ rx_result const_value_def::serialize_definition (base_meta_writer& stream) const
 {
 	if (!stream.write_string("name", name_.c_str()))
 		return stream.get_error();
+
+
+	if (stream.get_version() >= RX_STRUCT_LEVEL_VERSION)
+	{
+		if (!stream.write_item_reference("datatype", data_type_ref_))
+			return stream.get_error();
+		if (!data_type_ref_.is_null())
+		{
+			// just read rest of the stuff ignore values
+			if (!stream.write_int("array", array_size_))
+				return stream.get_error();
+			if (!stream.write_string("description", description_.c_str()))
+				return stream.get_error();
+			if (!stream.write_bool("config", config_only_))
+				return stream.get_error();
+			return true;
+		}
+	}
+	else
+	{
+		if (!data_type_ref_.is_null())
+			return "Can not serialize data type with this version!";
+	}
+
     if(stream.get_version()>=RX_ARRAYS_VERSION)
     {
         if (!stream.write_int("array", array_size_))
@@ -220,30 +245,51 @@ rx_result const_value_def::deserialize_definition (base_meta_reader& stream)
 {
 	if (!stream.read_string("name", name_))
 		return stream.get_error();
-    if(stream.get_version()>=RX_ARRAYS_VERSION)
-    {
-        if (!stream.read_int("array", array_size_))
-            return stream.get_error();
-        if(array_size_<0)
-        {
-            if (!value_.deserialize("value", stream))
-                return stream.get_error();
-        }
-        else
-        {
-            if(!stream.start_array("values"))
-                return stream.get_error();
+
+	if (stream.get_version() >= RX_STRUCT_LEVEL_VERSION)
+	{
+		if (!stream.read_item_reference("datatype", data_type_ref_))
+			return stream.get_error();
+		if (!data_type_ref_.is_null())
+		{
+			// just read rest of the stuff ignore values
+			if (!stream.read_int("array", array_size_))
+				return stream.get_error();
+			if (!stream.read_string("description", description_))
+				return stream.get_error();
+			if (!stream.read_bool("config", config_only_))
+				return stream.get_error();
+			return true;
+		}
+	}
+	else
+	{
+		data_type_ref_ = rx_item_reference();
+	}
+	if (stream.get_version() >= RX_ARRAYS_VERSION)
+	{
+		if (!stream.read_int("array", array_size_))
+			return stream.get_error();
+		if (array_size_ < 0)
+		{
+			if (!value_.deserialize("value", stream))
+				return stream.get_error();
+		}
+		else
+		{
+			if (!stream.start_array("values"))
+				return stream.get_error();
 
 			values_.clear();
-            while(!stream.array_end())
-            {
-                values::rx_simple_value temp;
-                if(!temp.deserialize("value", stream))
-                    return stream.get_error();
+			while (!stream.array_end())
+			{
+				values::rx_simple_value temp;
+				if (!temp.deserialize("value", stream))
+					return stream.get_error();
 				values_.push_back(std::move(temp));
-            }
-        }
-    }
+			}
+		}
+	}
     else
     {
         array_size_=-1;
@@ -385,6 +431,29 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream) cons
 		return stream.get_error();
 	if (!stream.write_bool("ro", read_only_))
 		return stream.get_error();
+
+	if (stream.get_version() >= RX_STRUCT_LEVEL_VERSION)
+	{
+		if (!stream.write_item_reference("datatype", data_type_ref_))
+			return stream.get_error();
+		if (!data_type_ref_.is_null())
+		{
+			// just read rest of the stuff ignore values
+			if (!stream.write_int("array", array_size_))
+				return stream.get_error();
+			if (!stream.write_bool("persist", persistent_))
+				return stream.get_error();
+			if (!stream.write_string("description", description_.c_str()))
+				return stream.get_error();
+			return true;
+		}
+	}
+	else
+	{
+		if (!data_type_ref_.is_null())
+			return "Can not serialize data type with this version!";
+	}
+
 	if (stream.get_version() >= RX_ARRAYS_VERSION)
 	{
 		if (!stream.write_int("array", array_size_))
@@ -434,6 +503,28 @@ rx_result simple_value_def::deserialize_definition (base_meta_reader& stream)
 		return stream.get_error();
 	if (!stream.read_bool("ro", read_only_))
 		return stream.get_error();
+
+	if (stream.get_version() >= RX_STRUCT_LEVEL_VERSION)
+	{
+		if (!stream.read_item_reference("datatype", data_type_ref_))
+			return stream.get_error();
+		if (!data_type_ref_.is_null())
+		{
+			// just read rest of the stuff ignore values
+			if (!stream.read_int("array", array_size_))
+				return stream.get_error();
+			if (!stream.read_bool("persist", persistent_))
+				return stream.get_error();
+			if (!stream.read_string("description", description_))
+				return stream.get_error();
+			return true;
+		}
+	}
+	else
+	{
+		data_type_ref_ = rx_item_reference();
+	}
+
 	if (stream.get_version() >= RX_ARRAYS_VERSION)
 	{
 		if (!stream.read_int("array", array_size_))

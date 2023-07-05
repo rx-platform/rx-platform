@@ -55,11 +55,9 @@ class filter_data;
 #include "lib/rx_rt_data.h"
 #include "lib/rx_const_size_vector.h"
 #include "rx_configuration.h"
-#include "system/meta/rx_meta_data.h"
 #include "system/server/rx_platform_item.h"
 using namespace rx;
 using namespace rx::values;
-using rx_platform::runtime_item_attribute;
 
 
 namespace rx_platform {
@@ -95,44 +93,6 @@ class relation_attribute;
 namespace runtime {
 
 namespace structure {
-
-// value options bitset
-constexpr static int value_opt_readonly = 0;
-constexpr static int value_opt_persistent = 1;
-
-// internal status for state ignorant values (On, Test, Status Simulate)
-constexpr static int opt_state_ignorant = 30;
-
-// typedefs for masks
-constexpr uint_fast8_t rt_const_index_type		= 0x01;
-constexpr uint_fast8_t rt_value_index_type		= 0x02;
-constexpr uint_fast8_t rt_variable_index_type	= 0x03;
-constexpr uint_fast8_t rt_struct_index_type		= 0x04;
-constexpr uint_fast8_t rt_source_index_type		= 0x05;
-constexpr uint_fast8_t rt_mapper_index_type		= 0x06;
-constexpr uint_fast8_t rt_filter_index_type		= 0x07;
-constexpr uint_fast8_t rt_event_index_type		= 0x08;
-constexpr uint_fast8_t rt_data_index_type       = 0x09;
-
-constexpr uint_fast8_t rt_bit_none			= 0x00;
-constexpr uint_fast8_t rt_bit_has_variables	= 0x01;
-constexpr uint_fast8_t rt_bit_has_structs	= 0x02;
-constexpr uint_fast8_t rt_bit_has_sources	= 0x04;
-constexpr uint_fast8_t rt_bit_has_mappers	= 0x08;
-constexpr uint_fast8_t rt_bit_has_filters	= 0x10;
-constexpr uint_fast8_t rt_bit_has_events	= 0x20;
-
-typedef uint_fast16_t members_index_type;
-
-constexpr members_index_type rt_type_shift = 0xc;
-constexpr members_index_type rt_type_mask = 0xfff;
-
-struct index_data
-{
-	string_type name;
-	members_index_type index;
-};
-
 
 
 
@@ -1500,6 +1460,14 @@ class runtime_data : public runtime_item
 	  {
 		  return events_type::can_insert();
 	  }
+      static constexpr bool has_const_data()
+      {
+          return cblocks_type::can_insert();
+      }
+      static constexpr bool has_value_data()
+      {
+          return vblocks_type::can_insert();
+      }
 	  typedef const_size_vector<array_wrapper<const_value_data> > const_values_type;
 	  typedef const_size_vector< array_wrapper<value_data> > values_type;
       typedef const_size_vector<indirect_value_data> indirect_values_type;

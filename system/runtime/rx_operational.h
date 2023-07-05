@@ -33,12 +33,12 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -178,7 +178,7 @@ class connected_tags
 
       rx_result_with<runtime_handle_t> connect_tag_from_relations (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor);
 
-      rx_result internal_write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor);
+      rx_result internal_write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, rx_security_handle_t identity);
 
       rx_result internal_execute_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, data::runtime_values_data args, tags_callback_ptr monitor, rx_security_handle_t identity);
 

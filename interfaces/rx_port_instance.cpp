@@ -57,7 +57,8 @@ namespace runtime_data {
 // Class rx_internal::sys_runtime::runtime_core::runtime_data::port_instance_data 
 
 port_instance_data::port_instance_data (const port_data& data, port_behaviors&& rt_behavior)
-      : executer_(-1)
+      : executer_(-1),
+        mine_security_(false)
     , data_(data)
     , behavior(std::move(rt_behavior))
 {
@@ -94,6 +95,27 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
     RX_ASSERT(what->get_instance_data().my_application_);
     if (what->get_instance_data().my_application_)
     {
+        what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
+
+        security::security_context_ptr sec_ctx;
+        auto sec_result = what->get_instance_data().identity_.create_context(what->meta_info().get_full_path(), "", what->get_instance_data().data_.identity, sec_ctx);
+
+        if (!sec_result)
+        {
+            RUNTIME_LOG_WARNING("application_instance_data", 900, "Unable to create security context:"s + sec_result.errors_line());
+        }
+        if (sec_ctx)
+        {
+            what->get_instance_data().security_ctx_ = sec_ctx;
+
+            what->get_instance_data().security_ctx_->login();
+            what->get_instance_data().mine_security_ = true;
+        }
+        else 
+        {
+            what->get_instance_data().security_ctx_ = what->get_instance_data().my_application_->get_instance_data().get_security_context();
+        }
+
         const auto& app_meta = what->get_instance_data().my_application_->meta_info();
         auto relation_ptr = rx_create_reference<relations::relation_data>();
         auto& repository = rx_internal::model::platform_types_manager::instance().get_relations_repository();
@@ -125,7 +147,6 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
         {
             return create_result.errors();
         }
-        what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
         // for port we have to have executer cached value
         what->get_instance_data().implementation_ = what->get_implementation();
         auto rt_ptr = what->get_instance_data().implementation_;
@@ -151,6 +172,8 @@ rx_result port_instance_data::before_start_runtime (rx_port_ptr what, runtime::r
 
 rx_result port_instance_data::after_deinit_runtime (rx_port_ptr what, runtime::runtime_deinit_context& ctx)
 {
+    if (what->get_instance_data().mine_security_ && what->get_instance_data().security_ctx_)
+        what->get_instance_data().security_ctx_->logout();
     what->get_implementation()->runtime_ = rx_port_ptr::null_ptr;
     return true;
 }
@@ -166,18 +189,13 @@ rx_result port_instance_data::after_stop_runtime (rx_port_ptr what, runtime::run
     return true;
 }
 
-security::security_context_ptr port_instance_data::create_security_context (const meta::meta_data& meta)
-{
-    auto sec_result = identity_.create_context(meta.get_full_path(), rx_gate::instance().get_instance_name(), data_.identity);
-    if (sec_result)
-        return sec_result.value();
-    else
-        return security::unauthorized_context();
-}
-
 security::security_context_ptr port_instance_data::get_security_context () const
 {
-    if (my_application_)
+    if (security_ctx_)
+    {
+        return security_ctx_;
+    }
+    else if (my_application_)
     {
         return my_application_->get_instance_data().get_security_context();
     }
@@ -237,3 +255,15 @@ namespace port_stack {
 } // namespace interfaces
 } // namespace rx_internal
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+    auto sec_result = identity_.create_context(meta.get_full_path(), rx_gate::instance().get_instance_name(), data_.identity);
+    if (sec_result)
+        return sec_result.value();
+    else
+        return security::unauthorized_context();
+
+#endif

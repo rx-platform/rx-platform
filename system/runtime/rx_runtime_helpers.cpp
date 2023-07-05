@@ -31,7 +31,6 @@
 #include "pch.h"
 
 #include "system/server/rx_log.h"
-#include "system/server/rx_server.h"
 
 // rx_ns_resolver
 #include "system/server/rx_ns_resolver.h"
@@ -83,7 +82,7 @@ bool io_capabilities::get_output () const
 
 // Class rx_platform::runtime::runtime_deinit_context 
 
-runtime_deinit_context::runtime_deinit_context (const meta::meta_data& meta_data)
+runtime_deinit_context::runtime_deinit_context (const meta_data& meta_data)
       : meta(meta_data)
 {
 }
@@ -92,7 +91,7 @@ runtime_deinit_context::runtime_deinit_context (const meta::meta_data& meta_data
 
 // Class rx_platform::runtime::runtime_init_context 
 
-runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta::meta_data& meta, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, rx_item_type type)
+runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta_data& meta, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, rx_item_type type)
       : context(context),
         next_handle_(0x80000000),
         meta(meta),
@@ -248,7 +247,7 @@ void runtime_start_context::add_io_periodic_job (jobs::periodic_job::smart_ptr j
 
 // Class rx_platform::runtime::runtime_stop_context 
 
-runtime_stop_context::runtime_stop_context (const meta::meta_data& meta_data, runtime_process_context* context)
+runtime_stop_context::runtime_stop_context (const meta_data& meta_data, runtime_process_context* context)
       : context(context),
         meta(meta_data)
 {

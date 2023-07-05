@@ -32,6 +32,8 @@
 #define rx_runtime_relations_h 1
 
 
+#include "system/runtime/rx_runtime_helpers.h"
+using namespace rx_platform;
 
 // rx_relation_impl
 #include "system/runtime/rx_relation_impl.h"
@@ -63,7 +65,7 @@ class domain_relation : public rx_platform::runtime::relations::relation_runtime
 
       rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
-      rx_item_reference get_implicit_reference (const meta::meta_data& info);
+      rx_item_reference get_implicit_reference (const meta_data& info);
 
 
   protected:
@@ -104,7 +106,7 @@ class application_relation : public rx_platform::runtime::relations::relation_ru
 
       rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
-      rx_item_reference get_implicit_reference (const meta::meta_data& info);
+      rx_item_reference get_implicit_reference (const meta_data& info);
 
 
   protected:
@@ -145,7 +147,7 @@ class port_app_relation : public rx_platform::runtime::relations::relation_runti
 
       rx_result stop_relation (runtime::runtime_stop_context& ctx, bool is_target);
 
-      rx_item_reference get_implicit_reference (const meta::meta_data& info);
+      rx_item_reference get_implicit_reference (const meta_data& info);
 
 
   protected:

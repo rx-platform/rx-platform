@@ -54,7 +54,7 @@ rx_result rx_save_platform_item(itemT& item)
 {
     //rx_internal::model::algorithms::do_with_item_storage()
     const auto& meta = item.meta_info();
-    auto storage_result = meta.resolve_storage();
+    auto storage_result = resolve_storage(meta);
     if (storage_result)
     {
         auto item_result = storage_result.value()->get_item_storage(meta, item.get_type_id());
@@ -109,7 +109,7 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      const meta_data_t& meta_info () const;
+      const meta_data& meta_info () const;
 
       void fill_code_info (std::ostream& info, const string_type& name);
 
@@ -125,7 +125,7 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx);
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -150,6 +150,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
+
+      security::security_guard_ptr get_security_guard ();
 
 
   protected:
@@ -193,7 +195,7 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      const meta_data_t& meta_info () const;
+      const meta_data& meta_info () const;
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
 
@@ -207,7 +209,7 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx);
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -232,6 +234,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
+
+      security::security_guard_ptr get_security_guard ();
 
 
   protected:
@@ -275,7 +279,7 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      const meta_data_t& meta_info () const;
+      const meta_data& meta_info () const;
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
 
@@ -289,7 +293,7 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx);
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -314,6 +318,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
+
+      security::security_guard_ptr get_security_guard ();
 
 
   protected:
@@ -351,7 +357,7 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      const meta_data_t& meta_info () const;
+      const meta_data& meta_info () const;
 
       void fill_code_info (std::ostream& info, const string_type& name);
 
@@ -367,7 +373,7 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
 
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx);
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -392,6 +398,8 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
+
+      security::security_guard_ptr get_security_guard ();
 
 
   protected:
@@ -429,7 +437,7 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result serialize (base_meta_writer& stream) const;
 
-      const meta_data_t& meta_info () const;
+      const meta_data& meta_info () const;
 
       void fill_code_info (std::ostream& info, const string_type& name);
 
@@ -445,7 +453,7 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
 
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
-      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, api::rx_context ctx);
+      rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -470,6 +478,8 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
+
+      security::security_guard_ptr get_security_guard ();
 
 
   protected:

@@ -294,6 +294,18 @@ extern "C" {
 	uint32_t rx_recive_ethernet_packet(peth_socket psock, uint8_t** buffer, size_t* recv_size, int* has_more, struct timeval* tv);
 	uint32_t rx_close_ethernet_socket(peth_socket psock);
 
+
+	int rx_init_auth_context(rx_auth_context_t* ctx);
+	int rx_is_auth_context_complete(rx_auth_context_t* ctx);
+	int rx_deinit_auth_context(rx_auth_context_t* ctx);
+	int rx_accept_credentials(rx_cred_t* cred, rx_auth_context_t* ctx, const void* data, size_t size, void* out_data, size_t* out_size);
+	int rx_decrypt_message(rx_auth_context_t* ctx, const void* data, size_t size, void* out_data, size_t* out_size);
+	int rx_encrypt_message(rx_auth_context_t* ctx, const void* data, size_t size, size_t* processed_count, void* out_data, size_t* out_size);
+
+	int rx_get_peer_certificate(rx_auth_context_t* ctx, rx_certificate_t* cert);
+
+	int rx_release_credentials(rx_cred_t* cred);
+
 #ifdef __cplusplus
 }
 #endif

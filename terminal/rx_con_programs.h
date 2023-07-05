@@ -41,6 +41,7 @@
 #include "security/rx_security.h"
 #include "system/server/rx_ns.h"
 #include "rx_terminal_style.h"
+#include "api/rx_platform_api.h"
 
 
 namespace rx_internal {
@@ -70,7 +71,7 @@ public:
     friend class console_program;
 
   public:
-      console_program_context (program_context* parent, console_program_ptr runtime, const string_type& current_directory);
+      console_program_context (program_context* parent, console_program_ptr runtime, const string_type& current_directory, security::security_guard_ptr guard);
 
       ~console_program_context();
 
@@ -186,6 +187,12 @@ public:
 
 class console_program : public rx_platform::logic::program_runtime  
 {
+
+    DECLARE_REFERENCE_PTR(console_program);
+
+
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+console program class.");
     typedef memory::std_strbuff<memory::std_vector_allocator>::smart_ptr buffer_ptr;
 
   public:
@@ -193,8 +200,6 @@ class console_program : public rx_platform::logic::program_runtime
 
       ~console_program();
 
-
-      std::unique_ptr<logic::program_context> create_program_context (logic::program_context* parent_context);
 
       void load (const string_type& text);
 
