@@ -182,16 +182,16 @@ RX_COMMON_API rx_timer_ticks_t rx_get_tick_count()
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-	uint64_t ret = ts.tv_sec * 1000;
-	ret = ret + ts.tv_nsec / 1000000ul;
-	return (uint32_t)ret;
+	uint64_t ret = (uint64_t)ts.tv_sec * 1000;
+	ret = ret + (uint64_t)ts.tv_nsec / 1000000ul;
+	return (uint64_t)ret;
 }
 RX_COMMON_API rx_timer_ticks_t rx_get_us_ticks()
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-	uint64_t ret = ts.tv_sec * 1000000ul;
-	ret = ret + ts.tv_nsec / 1000ul;
+	uint64_t ret = (uint64_t)ts.tv_sec * 1000000ul;
+	ret = ret + (uint64_t)ts.tv_nsec / 1000ul;
 	return ret;
 }
 
@@ -528,7 +528,7 @@ RX_COMMON_API int rx_event_destroy(sys_handle_t hndl)
 }
 RX_COMMON_API int rx_event_set(sys_handle_t hndl)
 {
-    eventfd_t val = 0xfffffffe;
+    eventfd_t val = 0x1;// 0xfffffffe;
     int fd = (int)hndl;
     int ret = write(fd, &val, sizeof(val));
     if (ret < 0)

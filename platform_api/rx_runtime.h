@@ -613,8 +613,7 @@ class rx_relation : public rx_runtime
 
       virtual rx_relation::smart_ptr make_target_relation ();
 
-
-      static rx_item_type runtime_type_id;
+      static constexpr rx_item_type type_id = rx_item_type::rx_relation_type;
 
       template<class T>
       friend rx_result register_relation_runtime(const rx_node_id& id);
@@ -766,7 +765,8 @@ public:
         {
             ctx_.bind(rt_ctx);
             handle_ = result.move_value();
-            operator=(val_);
+            if (handle_)
+                internal_commit();
             return true;
         }
         else
@@ -884,7 +884,8 @@ public:
         {
             ctx_.bind(rt_ctx);
             handle_ = result.move_value();
-            operator=(val_);
+            if (handle_)
+                internal_commit();
             return true;
         }
         else

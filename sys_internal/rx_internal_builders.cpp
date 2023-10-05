@@ -423,6 +423,7 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 		builders.emplace_back(std::make_unique<system_types_builder>());
 		builders.emplace_back(std::make_unique<port_types_builder>());
 		builders.emplace_back(std::make_unique<opc_types_builder>());
+		builders.emplace_back(std::make_unique<mqtt_types_builder>());
 		builders.emplace_back(std::make_unique<simulation_types_builder>());
 		//// objects builders
 		builders.emplace_back(std::make_unique<system_objects_builder>());
@@ -655,6 +656,8 @@ rx_result root_folder_builder::do_build (configuration_data_t& config)
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_PORT_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_OPC_CLASSES_NAME
+			, rx_storage_ptr::null_ptr },
+		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_MQTT_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_SUPPORT_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
@@ -1195,6 +1198,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, full_path
 				});
 		add_type_to_configuration(dir, port, false);
+
 	}
 	BUILD_LOG_INFO("system_classes_builder", 900, "System types built.");
 	return true;
@@ -1386,6 +1390,18 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_MAC_ROUTER_TYPE_NAME
 			, RX_MAC_ROUTER_TYPE_ID
+			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_ROUTER_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+
+		// special types of ports, routers, limiters, bridges....
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_STRING_ROUTER_TYPE_NAME
+			, RX_STRING_ROUTER_TYPE_ID
 			, RX_ROUTED_TRANSPORT_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
@@ -2025,6 +2041,8 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		what->complex_data.register_const_value_static<string_type>("Endpoint", "");
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
+
+
 		what = create_type<struct_type>(meta::type_creation_data{
 			RX_PEER_ENDPOINT_TYPE_NAME
 			, RX_PEER_ENDPOINT_TYPE_ID
@@ -2143,6 +2161,8 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		what->complex_data.register_const_value_static("PublishInterval", (uint32_t)200);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
+
+
 		what = create_type<struct_type>(meta::type_creation_data{
 			RX_POOL_DATA_TYPE_NAME
 			, RX_POOL_DATA_TYPE_ID
@@ -2151,6 +2171,10 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		what->complex_data.register_const_value_static("Threads", (uint16_t)0);
+		what->complex_data.register_simple_value_static("LastProcTime", 0.0, true, false);
+		what->complex_data.register_simple_value_static<uint32_t>("QueueSize", 0, true, false);
+		what->complex_data.register_simple_value_static("MaxProcTime", 0.0, true, false);
+		what->complex_data.register_simple_value_static<uint32_t>("MaxQueueSize", 0, true, false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -3013,6 +3037,221 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 
 	}
 	BUILD_LOG_INFO("opc_types_builder", 900, "OPC UA types built.");
+	return true;
+}
+
+
+// Class rx_internal::builders::mqtt_types_builder 
+
+
+rx_result mqtt_types_builder::do_build (configuration_data_t& config)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_MQTT_CLASSES_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir_result = ns::rx_directory_cache::instance().get_directory(full_path);
+	if (dir_result)
+	{
+		auto dir = dir_result;
+
+
+		auto what = create_type<struct_type>(meta::type_creation_data{
+			RX_MQTT_ENDPOINT_DATA_NAME
+			, RX_MQTT_ENDPOINT_DATA_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static<string_type>("Address", "");
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_MQTT_SERVER_PORT_OPTIONS_TYPE_NAME
+			, RX_MQTT_SERVER_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("MaxSessExpiry", (uint16_t)120);
+		what->complex_data.register_const_value_static("MinKeepAlive", (uint16_t)60);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_MQTT_SERVER_PORT_STATUS_TYPE_NAME
+			, RX_MQTT_SERVER_PORT_STATUS_TYPE_ID
+			, RX_PORT_STATUS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static("Published", (uint64_t)0, true, false);
+		what->complex_data.register_simple_value_static("Received", (uint64_t)0, true, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_MQTT_CLIENT_PORT_OPTIONS_TYPE_NAME
+			, RX_MQTT_CLIENT_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("TopicBase", "");
+		what->complex_data.register_const_value_static("PublishTimeBuffer", (uint32_t)50);
+		what->complex_data.register_const_value_static("ClientID", "rx-platform");
+		what->complex_data.register_const_value_static("KeepAlive", (uint16_t)0);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_MQTT_CLIENT_PORT_STATUS_TYPE_NAME
+			, RX_MQTT_CLIENT_PORT_STATUS_TYPE_ID
+			, RX_PORT_STATUS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static("Connected", false, true, false);
+		what->complex_data.register_simple_value_static("Published", (uint64_t)0, true, false);
+		what->complex_data.register_simple_value_static("Received", (uint64_t)0, true, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+
+		auto port = create_type<port_type>(meta::object_type_creation_data{
+			RX_MQTT_SIMPLE_SERVER_PORT_TYPE_NAME
+			, RX_MQTT_SIMPLE_SERVER_PORT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Status", RX_MQTT_SERVER_PORT_STATUS_TYPE_ID);
+		port->complex_data.register_struct("Options", RX_MQTT_SERVER_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		relation_type_data def_data;
+		def_data.abstract_type = false;
+		def_data.sealed_type = false;
+		def_data.symmetrical = false;
+		def_data.hierarchical = false;
+		def_data.dynamic = false;
+		def_data.target = rx_item_reference(RX_MQTT_SIMPLE_SERVER_PORT_TYPE_ID);
+		def_data.inverse_name = RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR;
+
+		auto relation = create_type<relation_type>(meta::object_type_creation_data{
+			RX_MQTT_SIMPLE_SERVER_RELATION_TYPE_NAME
+			, RX_MQTT_SIMPLE_SERVER_RELATION_TYPE_ID
+			, RX_NS_PORT_REF_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		relation->relation_data = def_data;
+		add_relation_type_to_configuration(dir, relation);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_MQTT_SIMPLE_CLIENT_PORT_TYPE_NAME
+			, RX_MQTT_SIMPLE_CLIENT_PORT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Status", RX_MQTT_CLIENT_PORT_STATUS_TYPE_ID);
+		port->complex_data.register_struct("Options", RX_MQTT_CLIENT_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		def_data.abstract_type = false;
+		def_data.sealed_type = false;
+		def_data.symmetrical = false;
+		def_data.hierarchical = false;
+		def_data.dynamic = false;
+		def_data.target = rx_item_reference(RX_MQTT_SIMPLE_CLIENT_PORT_TYPE_ID);
+		def_data.inverse_name = RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR;
+
+		relation = create_type<relation_type>(meta::object_type_creation_data{
+			RX_MQTT_SIMPLE_CLIENT_RELATION_TYPE_NAME
+			, RX_MQTT_SIMPLE_CLIENT_RELATION_TYPE_ID
+			, RX_NS_PORT_REF_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		relation->relation_data = def_data;
+		add_relation_type_to_configuration(dir, relation);
+
+		// mappers
+		auto map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_MQTT_MAPPER_BASE_TYPE_NAME
+			, RX_MQTT_MAPPER_BASE_TYPE_ID
+			, RX_EXTERN_MAPPER_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static("Topic", "");
+		map->complex_data.register_const_value_static<uint8_t>("QoS", 1);
+		map->complex_data.register_const_value_static("Retain", true);
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_MQTT_SIMPLE_MAPPER_TYPE_NAME
+			, RX_MQTT_SIMPLE_MAPPER_TYPE_ID
+			, RX_MQTT_MAPPER_BASE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static("JSONFormat", "{ 'val' : @val }");
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_MQTT_SIMPLE_BROKER_MAPPER_TYPE_NAME
+			, RX_MQTT_SIMPLE_BROKER_MAPPER_TYPE_ID
+			, RX_MQTT_MAPPER_BASE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static("JSONFormat", "{ 'val' : @val }");
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+
+		// sources
+		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_MQTT_SOURCE_BASE_TYPE_NAME
+			, RX_MQTT_SOURCE_BASE_TYPE_ID
+			, RX_EXTERN_SOURCE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static("Topic", "");
+		src->complex_data.register_const_value_static<uint8_t>("QoS", 1);
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_MQTT_SIMPLE_SOURCE_TYPE_NAME
+			, RX_MQTT_SIMPLE_SOURCE_TYPE_ID
+			, RX_MQTT_SOURCE_BASE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static("ValuePath", "val");
+		src->complex_data.register_const_value_static("TimePath", "");
+		src->complex_data.register_const_value_static("QualityPath", "");
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_MQTT_SIMPLE_BROKER_SOURCE_TYPE_NAME
+			, RX_MQTT_SIMPLE_BROKER_SOURCE_TYPE_ID
+			, RX_MQTT_SOURCE_BASE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static("ValuePath", "val");
+		src->complex_data.register_const_value_static("TimePath", "");
+		src->complex_data.register_const_value_static("QualityPath", "");
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+
+	}
+
+	BUILD_LOG_INFO("mqtt_types_builder", 900, "MQTT types built.");
 	return true;
 }
 

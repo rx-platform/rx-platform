@@ -677,21 +677,29 @@ rx_result rx_platform_host::init_storage (const string_type& name, const string_
 		auto result = storage_base::split_storage_reference(full_reference, type, reference);
 		if (result)
 		{
-			auto temp_ptr = storages_.storage_types[type]->construct_storage_connection();
-			RX_ASSERT(temp_ptr);
-			if (temp_ptr)
+			auto its = storages_.storage_types.find(type);
+			if (its != storages_.storage_types.end())
 			{
-				result = temp_ptr->init_connection(reference, this);
-				if (result)
+				auto temp_ptr = storages_.storage_types[type]->construct_storage_connection();
+				RX_ASSERT(temp_ptr);
+				if (temp_ptr)
 				{
-					storages_.registered_connections.emplace(name, std::move(temp_ptr));
+					result = temp_ptr->init_connection(reference, this);
 					if (result)
 					{
-						std::ostringstream ss;
-						ss << "Initialized storage [" << name
-							<< "] with reference: " << full_reference;
-						HOST_LOG_INFO("Base", 999, ss.str());
+						storages_.registered_connections.emplace(name, std::move(temp_ptr));
+						if (result)
+						{
+							std::ostringstream ss;
+							ss << "Initialized storage [" << name
+								<< "] with reference: " << full_reference;
+							HOST_LOG_INFO("Base", 999, ss.str());
+						}
 					}
+				}
+				else
+				{
+					result = "Storage type "s + type + " can not create storage connection.";
 				}
 			}
 			else

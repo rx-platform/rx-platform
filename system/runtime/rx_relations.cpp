@@ -203,7 +203,7 @@ void relation_data::try_resolve ()
 		auto resolve_result = rx_internal::model::algorithms::resolve_reference(parent_path, dirs);
 		if (!resolve_result)
 		{
-			RUNTIME_LOG_WARNING("relation_runtime", 100, "Unable to resolve relation reference to "s + parent_path);
+			RUNTIME_LOG_TRACE("relation_runtime", 100, "Unable to resolve relation reference to "s + parent_path);
 			return;
 		}
 		target_id = resolve_result.move_value();
@@ -375,17 +375,19 @@ rx_result relation_data::resolve_inverse_name ()
 
 rx_result relation_data::write_value (write_data&& data, runtime_process_context* ctx)
 {
-	if (my_state_ == relation_state::local_domain
-		|| my_state_ == relation_state::same_domain
-		|| my_state_ == relation_state::remote)
+	
+	bool changed = false;
+	auto result =  value.write_value(std::move(data), ctx, changed);
+	if (result && changed)
 	{
-		runtime_disconnected();
-	}
+		if (my_state_ == relation_state::local_domain
+			|| my_state_ == relation_state::same_domain
+			|| my_state_ == relation_state::remote)
+		{
+			runtime_disconnected();
+		}
 
 
-	auto result =  value.write_value(std::move(data), ctx);
-	if (result)
-	{
 		auto val = value.simple_get_value();
 		target_path = val.get_string();
 

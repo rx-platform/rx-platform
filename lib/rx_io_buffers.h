@@ -71,6 +71,8 @@ class rx_const_io_buffer
 
       bool eof () const;
 
+      rx_result read_to_end (byte_string& data);
+
 	  template<typename T>
 	  rx_result read_from_buffer(T& val)
 	  {
@@ -84,6 +86,21 @@ class rx_const_io_buffer
 		  else
 			  return rx_protocol_error_message(result);
 	  }
+
+      template<typename T>
+      const T* get_from_buffer()
+      {
+          static_assert(std::is_trivial<T>::value);
+
+          rx_protocol_result_t result;
+
+          const T* ptr = (const T*)rx_get_from_packet(buffer_, sizeof(T), &result);
+
+          if (result == RX_PROTOCOL_OK)
+              return ptr;
+          else
+              return nullptr;
+      }
   protected:
 
   private:

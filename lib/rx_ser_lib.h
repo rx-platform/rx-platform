@@ -56,8 +56,9 @@ using namespace rx;
 #define RX_ABI_COMMON_LEVEL_VERSION 0x10009
 #define RX_RUN_AT_LEVEL_VERSION     0x20000
 #define RX_STRUCT_LEVEL_VERSION     0x20001
+#define RX_CONST_OPTS_VERSION       0x20002
 
-#define RX_CURRENT_SERIALIZE_VERSION RX_RUN_AT_LEVEL_VERSION
+#define RX_CURRENT_SERIALIZE_VERSION RX_CONST_OPTS_VERSION
 
 //////////////////////////////////////////////////
 // streaming constants from header

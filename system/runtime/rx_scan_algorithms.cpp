@@ -72,7 +72,8 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     do
     {
         bool on = whose.tags_.common_tags_.on_;
-        if (on != whose.context_.mode_.is_on())
+        bool my_on = whose.context_.mode_.is_on();
+        if (on != my_on)
         {
             if (on)
             {
@@ -302,6 +303,7 @@ void runtime_scan_algorithms<typeT>::process_status_change (typename typeT::RTyp
 {
     while (ctx.should_process_status_change())
     {
+        whose.tags_.connected_tags_.object_state_changed(&ctx);
         whose.tags_.item_->object_state_changed(&ctx);
     }
 }

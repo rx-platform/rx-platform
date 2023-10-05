@@ -118,10 +118,12 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 			return "Not supported!";
 		case rt_value_ref_type::rt_value:
 			{
-				auto result= it_handles->second.ref_value_ptr.value->simple_set_value(std::move(val), ctx);
-				if (result)
+				bool changed = false;
+				auto result= it_handles->second.ref_value_ptr.value->simple_set_value(std::move(val), ctx, changed);
+				if (result && changed)
 				{
 					auto new_value = it_handles->second.ref_value_ptr.value->get_value(ctx);
+					value_change(it_handles->second.ref_value_ptr.value, new_value);
 					tags.binded_value_change(it_handles->second.ref_value_ptr.value, new_value);
 				}
 				return result;
@@ -213,7 +215,9 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 		{
 			auto result = values_.emplace(ref.ref_value_ptr.value, values_type::mapped_type{ handle, values_type::mapped_type::second_type() });
 			if (callback)
+			{
 				result.first->second.second.emplace_back(callback);
+			}
 		}
 		break;
 	case rt_value_ref_type::rt_full_value:
@@ -234,7 +238,9 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 		{
 			auto result = const_values_.emplace(ref.ref_value_ptr.const_value, handle);
 			if (callback)
-				callback(result.first->first->get_value(ctx.context));
+			{
+				ctx.const_callbacks.emplace_back(ref.ref_value_ptr.const_value, std::move(callback));
+			}
 		}
 		break;
 	default:
@@ -406,6 +412,23 @@ void binded_tags::variable_change (structure::variable_data* whose, const rx_val
 		for (auto& one : it->second.second)
 		{
 			one(val);
+		}
+	}
+}
+
+void binded_tags::runtime_started (runtime_start_context& ctx)
+{
+	for (auto& one : ctx.const_callbacks)
+	{
+		rx_value val = one.first->get_value(ctx.context);
+		one.second(val);
+	}
+	for (auto& one : values_)
+	{
+		rx_value temp = one.first->get_value(ctx.context);
+		for (auto cb : one.second.second)
+		{
+			cb(temp);
 		}
 	}
 }
@@ -846,17 +869,18 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 			return "Unsupported!";
 		case rt_value_ref_type::rt_value:
 			{
-				auto result = it->second.reference.ref_value_ptr.value->write_value(std::move(data), context_);
-				if (result)
+				bool changed = false;
+				auto result = it->second.reference.ref_value_ptr.value->write_value(std::move(data), context_, changed);
+				if (result && changed)
 				{
 					auto val = it->second.reference.ref_value_ptr.value->get_value(context_);
-					write_results_[monitor].emplace_back(write_result_data{trans_id, item, std::move(result)});
 					for(const auto& one : it->second.monitors)
 						next_send_[one].insert_or_assign(item, val);
 					if (binded_)
 						binded_->value_change(it->second.reference.ref_value_ptr.value, val);
 					context_->tag_updates_pending();
-				}
+				};
+				write_results_[monitor].emplace_back(write_result_data{ trans_id, item, std::move(result) });
 				return result;
 			}
 		case rt_value_ref_type::rt_variable:
@@ -1012,6 +1036,47 @@ void connected_tags::full_value_changed (structure::full_value_data* whose, cons
 		}
 	}
 	context_->tag_updates_pending();
+}
+
+void connected_tags::object_state_changed (runtime_process_context* ctx)
+{
+	for (auto& one : handles_map_)
+	{
+		switch (one.second.reference.ref_type)
+		{
+		case rt_value_ref_type::rt_const_value:
+			for(auto& monitor : one.second.monitors)
+				next_send_[monitor].insert_or_assign(one.first, one.second.reference.ref_value_ptr.const_value->get_value(context_));
+			break;
+		case rt_value_ref_type::rt_value:
+			for (auto& monitor : one.second.monitors)
+				next_send_[monitor].insert_or_assign(one.first, one.second.reference.ref_value_ptr.value->get_value(context_));
+			break;
+		case rt_value_ref_type::rt_full_value:
+			for (auto& monitor : one.second.monitors)
+				next_send_[monitor].insert_or_assign(one.first, one.second.reference.ref_value_ptr.full_value->get_value(context_));
+			break;
+		case rt_value_ref_type::rt_variable:
+			for (auto& monitor : one.second.monitors)
+				next_send_[monitor].insert_or_assign(one.first, one.second.reference.ref_value_ptr.variable->get_value(context_));
+			break;
+		case rt_value_ref_type::rt_method:
+			for (auto& monitor : one.second.monitors)
+				next_send_[monitor].insert_or_assign(one.first, one.second.reference.ref_value_ptr.method->value.get_value(context_));
+			break;
+		case rt_value_ref_type::rt_relation:
+			for (auto& monitor : one.second.monitors)
+				next_send_[monitor].insert_or_assign(one.first, one.second.reference.ref_value_ptr.relation->value.get_value(context_));
+			break;
+		case rt_value_ref_type::rt_relation_value:
+			for (auto& monitor : one.second.monitors)
+				next_send_[monitor].insert_or_assign(one.first, one.second.reference.ref_value_ptr.relation_value->get_value(context_));
+			break;
+		default:
+			RX_ASSERT(false);
+		}
+		context_->tag_updates_pending();
+	}
 }
 
 

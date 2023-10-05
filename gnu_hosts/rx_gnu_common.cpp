@@ -98,7 +98,14 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/ISO/bin/Debug/librx-iso.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/Siemens/bin/Debug/librx-siemens.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/iec61850/bin/Debug/libiec61850.so");
-//	paths.emplace_back("/media/sf_rx-release/Dev/GCC/rpi/bin/Debug/librx-rpi.so");
+	// rPi plugin not working in regular ubuntu!!!
+	paths.emplace_back("/media/sf_rx-release/Dev/GCC/rpi/bin/Debug/librx-rpi.so");
+	// simulation stuff
+	paths.emplace_back("//media/sf_rx-release/Dev/GCC/Filters/rx-simulation/bin/Debug/librx-simulation.so");
+	paths.emplace_back("//media/sf_rx-release/Dev/GCC/Filters/rx-filters/bin/Debug/librx-filters.so");
+	// LINN TEM plugins
+	paths.emplace_back("/media/sf_MES/GCC/project/bin/Debug/librx-linnmes.so");
+	paths.emplace_back("/media/sf_MES/GCC/project/bin/Debug/librx-linntms.so");
 #else
 	string_type search_dir("/usr/lib/rx-platform/plugins");
 	if (!search_dir.empty())

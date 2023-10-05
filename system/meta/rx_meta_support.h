@@ -71,11 +71,12 @@ rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data);
 
 }// namespace rx_platform
 
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 
 
 
 namespace rx_platform {
-
 
 namespace meta {
 
@@ -87,6 +88,7 @@ namespace meta {
 class runtime_data_prototype 
 {
 	typedef std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > const_values_type;
+    typedef std::vector<std::bitset<32> > const_values_opts_type;
 	typedef std::vector< runtime::structure::array_wrapper<runtime::structure::value_data> > values_type;
 	typedef std::vector<std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::variable_data> > > variables_type;
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::struct_data> > > structs_type;
@@ -99,13 +101,13 @@ class runtime_data_prototype
 
   public:
 
-      rx_result add_const_value (const string_type& name, rx_simple_value value);
+      rx_result add_const_value (const string_type& name, rx_simple_value value, const std::bitset<32>& value_opt);
 
-      rx_result add_const_value (const string_type& name, std::vector<values::rx_simple_value> value);
+      rx_result add_const_value (const string_type& name, std::vector<values::rx_simple_value> value, const std::bitset<32>& value_opt);
 
-      rx_result add_value (const string_type& name, rx_timed_value value, bool read_only, bool persistent);
+      rx_result add_value (const string_type& name, rx_timed_value value, const std::bitset<32>& value_opt);
 
-      rx_result add_value (const string_type& name, std::vector<rx_timed_value> value, bool read_only, bool persistent);
+      rx_result add_value (const string_type& name, std::vector<rx_timed_value> value, const std::bitset<32>& value_opt);
 
       rx_result add (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id);
 
@@ -142,6 +144,8 @@ class runtime_data_prototype
 
       events_type events;
 
+      const_values_opts_type const_values_opts;
+
 
   protected:
 
@@ -150,7 +154,7 @@ class runtime_data_prototype
       int check_member_name (const string_type& name) const;
 
 
-
+      bool check_read_only(const std::bitset<32>& to, const std::bitset<32>& from);
 };
 
 typedef std::vector<runtime_data_prototype> runtime_data_type;
@@ -544,7 +548,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      runtime_data_prototype pop_rt_name ();
+      rx_platform::meta::runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 

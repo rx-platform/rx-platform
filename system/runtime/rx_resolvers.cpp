@@ -141,8 +141,8 @@ void runtime_resolver<typeT>::runtime_appeared (platform_item_ptr&& item)
                     else
                     {
                         my_state_ = resolver_state::waiting;
-                        RUNTIME_LOG_ERROR("runtime_resolver", 100, result.errors_line());
-                        RUNTIME_LOG_ERROR("runtime_resolver", 100, "Unable to resolve port reference to "s + runtime_reference_.to_string());
+                        RUNTIME_LOG_TRACE("runtime_resolver", 100, runtime_reference_.to_string() + result.errors_line());
+                        RUNTIME_LOG_TRACE("runtime_resolver", 100, "Unable to resolve port reference to "s + runtime_reference_.to_string());
                     }
                 }
             });
@@ -207,9 +207,10 @@ rx_result runtime_item_resolver::start_resolver (const rx_item_reference& ref, i
 
 void runtime_item_resolver::stop_resolver ()
 {
+    bool connected = my_state_ == resolver_state::resolved;
     my_state_ = resolver_state::stopped;
     rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().unregister_subscriber(runtime_reference_, this);
-    if (user_)
+    if (user_ && connected)
     {
         user_->runtime_disconnected();
     }
@@ -273,8 +274,8 @@ void runtime_item_resolver::runtime_appeared (platform_item_ptr&& item)
                     else
                     {
                         my_state_ = resolver_state::waiting;
-                        RUNTIME_LOG_ERROR("item_port_resolver", 100, result.errors_line());
-                        RUNTIME_LOG_ERROR("item_port_resolver", 100, "Unable to resolve port reference to "s + runtime_reference_.to_string());
+                        RUNTIME_LOG_TRACE("item_port_resolver", 100, result.errors_line());
+                        RUNTIME_LOG_TRACE("item_port_resolver", 100, "Unable to resolve port reference to "s + runtime_reference_.to_string());
                     }
                 }
             });

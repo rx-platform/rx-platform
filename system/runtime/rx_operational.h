@@ -33,12 +33,12 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -171,6 +171,8 @@ class connected_tags
 
       void full_value_changed (structure::full_value_data* whose, const rx_value& val);
 
+      void object_state_changed (runtime_process_context* ctx);
+
 
   protected:
 
@@ -200,7 +202,7 @@ class connected_tags
 
       binded_tags *binded_;
 
-      structure::const_value_data const_values_;
+      const_values_type const_values_;
 
       full_values_type full_values_;
 
@@ -274,6 +276,8 @@ class binded_tags
       rx_result get_item (const string_type& path, rx_simple_value& what, runtime_init_context& ctx);
 
       void variable_change (structure::variable_data* whose, const rx_value& val);
+
+      void runtime_started (runtime_start_context& ctx);
 
 	  template<typename T>
 	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)

@@ -618,6 +618,12 @@ ua_binary_ostream& ua_binary_ostream::operator << (const rx_time_struct& val)
 	auto result = buffer_->write_to_buffer(val);
 	return *this;
 }
+
+ua_binary_ostream& ua_binary_ostream::operator << (const rx_time& val)
+{
+	auto result = buffer_->write_to_buffer(val.c_data());
+	return *this;
+}
 ua_binary_ostream& ua_binary_ostream::operator << (const byte_string& val)
 {
 	if (val.empty())

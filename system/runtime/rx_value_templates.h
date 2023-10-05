@@ -131,7 +131,8 @@ public:
         {
             ctx_ = ctx.context;
             handle_ = result.move_value();
-            operator=(val_);
+            if (handle_)
+                internal_commit();
             return true;
         }
         else
@@ -247,7 +248,8 @@ public:
         {
             ctx_ = ctx.context;
             handle_ = result.move_value();
-            operator=(val_);
+            if (handle_)
+                internal_commit();
             return true;
         }
         else

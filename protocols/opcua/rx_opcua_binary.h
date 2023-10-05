@@ -175,6 +175,7 @@ public:
     ua_binary_ostream& operator << (double val);
     ua_binary_ostream& operator << (const string_type& val);
     ua_binary_ostream& operator << (const rx_time_struct& val);
+    ua_binary_ostream& operator << (const rx_time& val);
     ua_binary_ostream& operator << (const byte_string& val);
     ua_binary_ostream& operator << (uint8_t val);
     ua_binary_ostream& operator << (const diagnostic_info& val);

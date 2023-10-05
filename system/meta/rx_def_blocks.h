@@ -34,7 +34,7 @@
 
 
 // rx_meta_support
-//#include "system/meta/rx_meta_support.h"
+#include "system/meta/rx_meta_support.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 
@@ -201,9 +201,21 @@ public:
       }
 
 
+      const bool get_read_only () const
+      {
+        return read_only_;
+      }
+
+
       const string_type& get_description () const
       {
         return description_;
+      }
+
+
+      const bool get_persistent () const
+      {
+        return persistent_;
       }
 
 
@@ -227,7 +239,11 @@ public:
 
       string_type name_;
 
+      bool read_only_;
+
       string_type description_;
+
+      bool persistent_;
 
       bool config_only_;
 

@@ -156,8 +156,8 @@ class callback_data : public rx::pointers::reference_object
 
       template<typename funcT>
       callback_data(rx_reference_ptr anchor, funcT&& func)
-          : callback_(std::forward<funcT>(func))
-          , anchor_(anchor)
+          : anchor_(anchor)
+          , callback_(std::forward<funcT>(func))
       {
           init_api_data();
       }

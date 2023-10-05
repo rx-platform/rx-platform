@@ -130,6 +130,29 @@ bool rx_const_io_buffer::eof () const
 	return rx_buffer_eof(buffer_) != 0;
 }
 
+rx_result rx_const_io_buffer::read_to_end (byte_string& data)
+{
+	auto available = rx_get_packet_available_data(buffer_);
+	if (available > 0)
+	{
+		rx_protocol_result_t ret;
+		std::byte* temp = (std::byte*)rx_get_from_packet(buffer_, available, &ret);
+		if (temp)
+		{
+			data.assign(temp, temp + available);
+		}
+		else
+		{
+			return rx_protocol_error_message(ret);
+		}
+	}
+	else
+	{
+		data.clear();
+	}
+	return true;
+}
+
 
 // Class rx::io::rx_io_buffer 
 

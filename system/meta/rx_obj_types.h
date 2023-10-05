@@ -37,14 +37,14 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_meta_data
 #include "lib/rx_meta_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "system/runtime/rx_rt_struct.h"
 #include "system/meta/rx_runtime_data.h"
@@ -111,6 +111,8 @@ public:
       rx_item_reference target;
 
       string_type description;
+
+      string_type value;
 
 
   protected:

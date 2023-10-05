@@ -2567,6 +2567,7 @@ void variable_data::variable_result_pending (runtime_process_context* ctx, rx_re
 void variable_data::object_state_changed (runtime_process_context* ctx)
 {
 	item->object_state_changed(ctx);
+	ctx->variable_pending(this);
 }
 
 rx_simple_value variable_data::simple_get_value () const
@@ -3747,10 +3748,12 @@ void value_data::set_value (rx_simple_value&& val, const rx_time& time)
 void value_data::object_state_changed (runtime_process_context* ctx)
 {
 	if (ctx->get_mode_time() > value.get_time())
+	{
 		value.set_time(ctx->get_mode_time());
+	}
 }
 
-rx_result value_data::write_value (write_data&& data, runtime_process_context* ctx)
+rx_result value_data::write_value (write_data&& data, runtime_process_context* ctx, bool& changed)
 {
 	security::secured_scope _(data.identity);
 	std::ostringstream ss;
@@ -3761,9 +3764,19 @@ rx_result value_data::write_value (write_data&& data, runtime_process_context* c
 		return "Access Denied!";
 	if (data.value.convert_to(value.get_type()))
 	{
-		value = rx_timed_value(std::move(data.value), rx_time::now());
-		if (value_opt[runtime::structure::value_opt_persistent])
-			ctx->runtime_dirty();
+
+		rx_timed_value temp(std::move(data.value), rx_time::now());
+		if (!temp.compare(value, time_compare_type::skip))
+		{
+			changed = true;
+			value = std::move(temp);
+			if (value_opt[runtime::structure::value_opt_persistent])
+				ctx->runtime_dirty();
+		}
+		else
+		{
+			changed = false;
+		}
 		return true;
 	}
 	else
@@ -3777,13 +3790,22 @@ rx_simple_value value_data::simple_get_value () const
 	return value.to_simple();
 }
 
-rx_result value_data::simple_set_value (rx_simple_value&& val, runtime_process_context* ctx)
+rx_result value_data::simple_set_value (rx_simple_value&& val, runtime_process_context* ctx, bool& changed)
 {
 	if (val.convert_to(value.get_type()))
 	{
-		value = rx_timed_value(std::move(val), rx_time::now());
-		if (value_opt[runtime::structure::value_opt_persistent])
-			ctx->runtime_dirty();
+		rx_timed_value temp(std::move(val), rx_time::now());
+		if (!temp.compare(value, time_compare_type::skip))
+		{
+			changed = true;
+			value = std::move(temp);
+			if (value_opt[runtime::structure::value_opt_persistent])
+				ctx->runtime_dirty();
+		}
+		else
+		{
+			changed = false;
+		}
 		return true;
 	}
 	else

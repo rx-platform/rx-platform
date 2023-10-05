@@ -448,7 +448,11 @@ runtime_data_t server_runtime::get_cpu_data ()
 // Class rx_internal::infrastructure::server_dispatcher_object 
 
 server_dispatcher_object::server_dispatcher_object (int count, const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask)
-      : threads_count_(count)
+      : threads_count_(count),
+        last_proc_time_(0),
+        max_proc_time_(0),
+        queue_size_(0),
+        max_queue_size_(0)
 	, pool_(count, name, rx_thread_id, cpu_mask)
 {
 	//register_const_value("count", count);
@@ -472,6 +476,10 @@ rx_result server_dispatcher_object::initialize_runtime (runtime::runtime_init_co
 	if (result)
 	{
 		ctx.tags->set_item_static("Pool.Threads", get_pool_size(), ctx);
+		last_proc_time_.bind("Pool.LastProcTime", ctx);
+		max_proc_time_.bind("Pool.MaxProcTime", ctx);
+		queue_size_.bind("Pool.QueueSize", ctx);
+		max_queue_size_.bind("Pool.MaxSize", ctx);
 	}
 	return result;
 }
@@ -506,7 +514,11 @@ void dispatcher_subscribers_job::process ()
 domains_pool::domains_pool (uint32_t pool_size, uint32_t start_cpu, uint32_t end_cpu)
       : pool_size_(pool_size),
         start_cpu_(pool_size),
-        end_cpu_(pool_size)
+        end_cpu_(pool_size),
+        last_proc_time_(0),
+        max_proc_time_(0),
+        queue_size_(0),
+        max_queue_size_(0)
 {
 }
 
@@ -615,7 +627,11 @@ uint16_t domains_pool::get_pool_size () const
 // Class rx_internal::infrastructure::physical_thread_object 
 
 physical_thread_object::physical_thread_object (const string_type& name, rx_thread_handle_t rx_thread_id)
-	: pool_(name, rx_thread_id)
+      : last_proc_time_(0),
+        max_proc_time_(0),
+        queue_size_(0),
+        max_queue_size_(0)
+	, pool_(name, rx_thread_id)
 {
 	data_controler_ = new sys_runtime::data_source::data_controler(&pool_);
 }
@@ -634,6 +650,10 @@ rx_result physical_thread_object::initialize_runtime (runtime::runtime_init_cont
 	if (result)
 	{
 		ctx.tags->set_item_static("Pool.Threads", 1 , ctx);
+		last_proc_time_.bind("Pool.LastProcTime", ctx);
+		max_proc_time_.bind("Pool.MaxProcTime", ctx);
+		queue_size_.bind("Pool.QueueSize", ctx);
+		max_queue_size_.bind("Pool.MaxSize", ctx);
 	}
 	return result;
 }

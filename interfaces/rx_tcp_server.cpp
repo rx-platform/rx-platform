@@ -95,8 +95,6 @@ tcp_server_endpoint::~tcp_server_endpoint()
 {
     if (tcp_socket_)
         tcp_socket_->disconnect();
-    if(identity_)
-        identity_->logout();
     ITF_LOG_DEBUG("tcp_server_endpoint", 200, "TCP server endpoint destroyed.");
 }
 

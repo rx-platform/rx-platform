@@ -283,6 +283,7 @@ struct runtime_deinit_context
 };
 
 
+typedef std::vector<std::pair<structure::const_value_data*, tag_blocks::binded_callback_t> > const_callbacks_type;
 
 
 
@@ -329,6 +330,8 @@ struct runtime_start_context
       bool simulation;
 
       threads::job_thread* queue;
+
+      const_callbacks_type const_callbacks;
 
   public:
       template<typename funcT, typename... Args>
@@ -518,6 +521,8 @@ struct runtime_init_context
       rx_reference_ptr anchor;
 
       rx_item_type item_type;
+
+      const_callbacks_type const_callbacks;
 
   public:
       template<typename T>

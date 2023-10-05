@@ -319,7 +319,7 @@ void rx_subscription::process_subscription (bool posted)
 		std::vector<update_item> to_send;
 
 		items_lock_.lock();
-		RX_ASSERT(pending_updates_.size() <= tag_paths_.size() * 10);
+		RX_ASSERT(pending_updates_.size() <= tag_paths_.size() * 50);
 		callback = callback_;
 		if (!pending_updates_.empty())
 		{

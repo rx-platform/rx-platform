@@ -34,8 +34,6 @@
 
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_meta_attr_algorithm
-#include "system/meta/rx_meta_attr_algorithm.h"
 
 #include "system/runtime/rx_blocks.h"
 #include "model/rx_model_algorithms.h"
@@ -1077,7 +1075,10 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 				{
 					rx_result ret = ctx.runtime_data().add_const_value(
 						one.first,
-						whose.const_values_[one.second & complex_data_type::index_mask].get_value());
+						whose.const_values_[one.second & complex_data_type::index_mask].get_value(),
+						get_value_opt(
+							whose.const_values_[one.second & complex_data_type::index_mask].get_read_only(),
+							whose.const_values_[one.second & complex_data_type::index_mask].get_persistent()));
 					if (!ret)
 					{
 						ret.register_error("Unable to add const value "s + one.first + "!");
@@ -1088,7 +1089,10 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 				{
 					rx_result ret = ctx.runtime_data().add_const_value(
 						one.first,
-						whose.const_values_[one.second & complex_data_type::index_mask].get_values());
+						whose.const_values_[one.second & complex_data_type::index_mask].get_values(),
+						get_value_opt(
+							whose.const_values_[one.second & complex_data_type::index_mask].get_read_only(),
+							whose.const_values_[one.second & complex_data_type::index_mask].get_persistent()));
 					if (!ret)
 					{
 						ret.register_error("Unable to add const value "s + one.first + "!");
@@ -1105,8 +1109,9 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 					rx_result ret = ctx.runtime_data().add_value(
 						one.first,
 						whose.simple_values_[one.second & complex_data_type::index_mask].get_value(ctx.now),
-						whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
-						whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent());
+						get_value_opt(
+							whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
+							whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent()));
 					if (!ret)
 					{
 						ret.register_error("Unable to add simple value "s + one.first + "!");
@@ -1118,8 +1123,9 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 					rx_result ret = ctx.runtime_data().add_value(
 						one.first,
 						whose.simple_values_[one.second & complex_data_type::index_mask].get_values(ctx.now),
-						whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
-						whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent());
+						get_value_opt(
+							whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
+							whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent()));
 					if (!ret)
 					{
 						ret.register_error("Unable to add simple value "s + one.first + "!");
@@ -1218,6 +1224,14 @@ rx_result complex_data_algorithm::get_depends (const complex_data_type& whose, d
 		}
 	}
 	return true;
+}
+
+std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool persistent)
+{
+	std::bitset<32> ret;
+	ret[runtime::structure::value_opt_readonly] = read_only;
+	ret[runtime::structure::value_opt_persistent] = persistent;
+	return ret;
 }
 
 

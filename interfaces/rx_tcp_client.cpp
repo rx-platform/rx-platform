@@ -118,6 +118,13 @@ void tcp_client_endpoint::disconnected (rx_security_handle_t identity)
         }
 
     }
+    std::ostringstream ss;
+    ss << "IP4 client"
+        << " disconnected from:"
+        << remote_addr_.to_string()
+        << ".";
+    ITF_LOG_TRACE("tcp_client_port", 500, ss.str());
+
     locks::auto_lock_t _(&state_lock_);
     if (current_state_ == tcp_state::connected || current_state_ == tcp_state::connecting)
     {
@@ -238,6 +245,9 @@ bool tcp_client_endpoint::tick ()
                 result = temp_socket->bind_socket_tcpip_4(local_addr_.get_ip4_address());
             if (result)
             {
+                temp_socket->set_connect_timeout(my_port_->get_connect_timeout());
+                temp_socket->set_receive_timeout(my_port_->get_receive_timeout());
+                temp_socket->set_send_timeout(my_port_->get_send_timeout());
                 current_state_ = tcp_state::connecting;
                 const sockaddr* remote_addr = remote_addr_.get_address();
                 if (remote_addr)
@@ -541,6 +551,21 @@ buffer_ptr tcp_client_port::get_buffer ()
         }
     }
     return rx_create_reference<buffer_ptr::pointee_type>();
+}
+
+uint32_t tcp_client_port::get_receive_timeout () const
+{
+    return recv_timeout_;
+}
+
+uint32_t tcp_client_port::get_send_timeout () const
+{
+    return send_timeout_;
+}
+
+uint32_t tcp_client_port::get_connect_timeout () const
+{
+    return connect_timeout_;
 }
 
 

@@ -223,8 +223,6 @@ rx_result register_relation_runtime(const rx_node_id& id, rx_relation_constructo
 
 // Class rx_platform_api::rx_relation 
 
-rx_item_type rx_relation::runtime_type_id = rx_item_type::rx_relation;
-
 rx_relation::rx_relation()
 {
     impl_.def = &_g_relation_def_;

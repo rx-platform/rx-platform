@@ -34,12 +34,12 @@
 
 #include "system/runtime/rx_value_templates.h"
 
-// rx_port_helpers
-#include "system/runtime/rx_port_helpers.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_stream_io
 #include "interfaces/rx_stream_io.h"
 
@@ -199,6 +199,12 @@ TCP Server port class. implementation of an TCP/IP4 client side, connect...");
       void release_buffer (buffer_ptr what);
 
       buffer_ptr get_buffer ();
+
+      uint32_t get_receive_timeout () const;
+
+      uint32_t get_send_timeout () const;
+
+      uint32_t get_connect_timeout () const;
 
 
       rx_platform::runtime::io_types::external_port_status status;

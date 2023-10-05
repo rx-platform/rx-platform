@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -43,6 +43,7 @@
 #include "system/runtime/rx_holder_algorithms.h"
 #include "system/meta/rx_meta_algorithm.h"
 #include "security/rx_security.h"
+#include "system/runtime/rx_rt_struct.h"
 using namespace rx;
 
 
@@ -54,7 +55,7 @@ namespace
 std::unique_ptr<platform_types_manager> g_platform_types_instance;
 }
 
-// Class rx_internal::model::platform_types_manager 
+// Class rx_internal::model::platform_types_manager
 
 platform_types_manager::platform_types_manager()
 {
@@ -180,7 +181,7 @@ transactions::dependency_cache& platform_types_manager::get_dependecies_cache ()
 }
 
 
-// Class rx_internal::model::relations_hash_data 
+// Class rx_internal::model::relations_hash_data
 
 relations_hash_data::relations_hash_data()
 {
@@ -358,7 +359,7 @@ void relations_hash_data::deinitialize ()
 }
 
 
-// Parameterized Class rx_internal::model::types_repository 
+// Parameterized Class rx_internal::model::types_repository
 
 template <class typeT>
 types_repository<typeT>::types_repository()
@@ -547,7 +548,10 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	rx_time now = rx_time::now();
 	ts_value.assign_static(now, now);
 	auto rt_data = ctx.pop_rt_name();
-	rt_data.add_const_value("_Name", name_value);
+	std::bitset<32> opts;
+	opts[runtime::structure::value_opt_readonly] = true;
+	opts[runtime::structure::value_opt_persistent] = false;
+	rt_data.add_const_value("_Name", name_value, opts);
 	ret.ptr->tags_.set_runtime_data(create_runtime_data(rt_data));
 	// now handle methods, programs and rest of the stuff
 
@@ -842,17 +846,6 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 		}
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
-	return result;
-}
-
-template <class typeT>
-void types_repository<typeT>::deinitialize ()
-{
-}
-
-template <class typeT>
-rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
-{
 	for (auto& one : registered_objects_)
 	{
 		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second.target);
@@ -875,6 +868,18 @@ rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const
 		if (res)
 			platform_types_manager::instance().get_dependecies_cache().add_dependency(one.first, res.move_value());
 	}
+	return result;
+}
+
+template <class typeT>
+void types_repository<typeT>::deinitialize ()
+{
+}
+
+template <class typeT>
+rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+{
+
 	return true;
 }
 
@@ -1011,7 +1016,7 @@ void types_repository<typeT>::collect_and_add_depedencies (const typeT& what, co
 }
 
 
-// Class rx_internal::model::inheritance_hash 
+// Class rx_internal::model::inheritance_hash
 
 inheritance_hash::inheritance_hash()
 {
@@ -1203,7 +1208,7 @@ bool inheritance_hash::is_derived_from (rx_node_id id, rx_node_id base_id) const
 }
 
 
-// Class rx_internal::model::instance_hash 
+// Class rx_internal::model::instance_hash
 
 instance_hash::instance_hash()
 {
@@ -1274,7 +1279,7 @@ void instance_hash::deinitialize ()
 }
 
 
-// Parameterized Class rx_internal::model::simple_types_repository 
+// Parameterized Class rx_internal::model::simple_types_repository
 
 template <class typeT>
 simple_types_repository<typeT>::simple_types_repository()
@@ -1649,7 +1654,7 @@ rx_result simple_types_repository<typeT>::register_peer_type (rx_reference<disco
 }
 
 
-// Class rx_internal::model::types_resolver 
+// Class rx_internal::model::types_resolver
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)
@@ -1740,7 +1745,7 @@ void types_resolver::deinitialize ()
 }
 
 
-// Class rx_internal::model::relations_type_repository 
+// Class rx_internal::model::relations_type_repository
 
 relations_type_repository::relations_type_repository()
 {
@@ -2054,7 +2059,7 @@ void relations_type_repository::collect_and_add_depedencies (const relations_typ
 }
 
 
-// Class rx_internal::model::data_type_repository 
+// Class rx_internal::model::data_type_repository
 
 data_type_repository::data_type_repository()
 {

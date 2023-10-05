@@ -33,12 +33,12 @@
 
 
 
+// dummy
+#include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// dummy
-#include "dummy.h"
 
 namespace rx_internal {
 namespace interfaces {
@@ -440,6 +440,37 @@ class word_routing_port : public word_routing_port_base
 Word address routing port implementation, for both initiators and listeners");
 
     DECLARE_REFERENCE_PTR(word_routing_port);
+
+  public:
+
+      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+typedef full_duplex_addr_packet_port< io::string_address  > string_routing_port_base;
+
+
+
+
+
+
+class string_routing_port : public string_routing_port_base  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+String address routing port implementation, for both publishers and subscribers");
+
+    DECLARE_REFERENCE_PTR(string_routing_port);
 
   public:
 

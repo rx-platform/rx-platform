@@ -206,6 +206,10 @@ rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
     if (result)
     {
         result = implementation_->start_runtime(ctx);
+        if (result)
+        {
+            tags_.runtime_started(ctx);
+        }
     }
     ctx.structure.pop_item();
     return result;

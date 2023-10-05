@@ -145,6 +145,11 @@ rx_result tags_holder::get_value_ref (string_view_type path, rt_value_ref& ref)
 	return item_->get_value_ref(path, ref, false);
 }
 
+void tags_holder::runtime_started (runtime_start_context& ctx)
+{
+	binded_tags_.runtime_started(ctx);
+}
+
 
 // Class rx_platform::runtime::tag_blocks::common_runtime_tags 
 

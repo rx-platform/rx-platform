@@ -763,6 +763,16 @@ RX_COMMON_API int rx_compare_values(const struct typed_value_type* val, const st
 					return 1;
 			}
 		}
+
+		else if (val->value_type == RX_TIME_TYPE)
+		{
+			if (val->value.time_value.t_value == right->value.time_value.t_value)
+				return 0;
+			if (val->value.time_value.t_value < right->value.time_value.t_value)
+				return -1;
+			else
+				return 1;
+		}
 		else if (val->value_type == RX_UUID_TYPE)
 		{
 #ifndef RX_VALUE_SIZE_16

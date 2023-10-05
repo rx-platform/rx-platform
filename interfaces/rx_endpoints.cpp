@@ -206,6 +206,10 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configurat
 				return rx_create_reference<rx_internal::interfaces::ports_lib::mac_routing_port>();
 			});
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_STRING_ROUTER_TYPE_ID, [] {
+				return rx_create_reference<rx_internal::interfaces::ports_lib::string_routing_port>();
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 			RX_TRANS_LIMITER_TYPE_ID, [] {
 				return rx_create_reference<rx_internal::interfaces::ports_lib::transaction_limiter_port>();
 			});

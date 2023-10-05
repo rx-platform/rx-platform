@@ -55,67 +55,6 @@ namespace blocks_templates {
 
 
 template <class portT>
-class extern_mapper_impl : public mapper_runtime  
-{
-    DECLARE_REFERENCE_PTR(extern_mapper_impl);
-
-    class mapper_resolver_user : public relation_subscriber
-    {
-    public:
-        extern_mapper_impl<portT>* my_mapper;
-        void relation_connected(const string_type& name, const platform_item_ptr& item)
-        {
-            my_mapper->internal_port_connected(item);
-        }
-        void relation_disconnected(const string_type& name)
-        {
-            my_mapper->internal_port_disconnected();
-        }
-    };
-    mapper_resolver_user resolver_user_;
-    friend class extern_mapper_impl::mapper_resolver_user;
-public:
-    typedef typename portT::smart_ptr port_ptr_t;
-protected:
-    port_ptr_t my_port_;
-
-  public:
-      extern_mapper_impl();
-
-
-      rx_result start_mapper (runtime::runtime_start_context& ctx);
-
-      rx_result stop_mapper (runtime::runtime_stop_context& ctx);
-
-      virtual void port_connected (port_ptr_t port) = 0;
-
-      virtual void port_disconnected (port_ptr_t port) = 0;
-
-
-  protected:
-
-  private:
-
-      bool internal_port_connected (const platform_item_ptr& item);
-
-      void internal_port_disconnected ();
-
-
-
-      rx_thread_handle_t my_executer_;
-
-      rx_thread_handle_t his_executer_;
-
-
-};
-
-
-
-
-
-
-
-template <class portT>
 class extern_source_impl : public source_runtime  
 {
     DECLARE_REFERENCE_PTR(extern_source_impl);
@@ -171,67 +110,65 @@ protected:
 };
 
 
-// Parameterized Class rx_platform::runtime::blocks::blocks_templates::extern_mapper_impl 
 
-template <class portT>
-extern_mapper_impl<portT>::extern_mapper_impl()
-      : my_executer_(0),
-        his_executer_(0)
-{
-    resolver_user_.my_mapper = this;
-}
+
 
 
 
 template <class portT>
-rx_result extern_mapper_impl<portT>::start_mapper (runtime::runtime_start_context& ctx)
+class extern_mapper_impl : public mapper_runtime  
 {
-    auto ret = mapper_runtime::start_mapper(ctx);
-    if (!ret)
-        return ret;
+    DECLARE_REFERENCE_PTR(extern_mapper_impl);
 
-    my_executer_ = rx_thread_context();
-    auto port_reference = ctx.structure.get_current_item().get_local_as<string_type>("Port", "");
-    ret = ctx.register_relation_subscriber(port_reference, &resolver_user_);
-    if (!ret)
+    class mapper_resolver_user : public relation_subscriber
     {
-        RUNTIME_LOG_WARNING("extern_mapper_impl", 900, "Error starting mapper "
-            + ctx.context->meta_info.get_full_path() + "." + ctx.path.get_current_path() + " " + ret.errors_line());
-    }
-    return true;
-}
-
-template <class portT>
-rx_result extern_mapper_impl<portT>::stop_mapper (runtime::runtime_stop_context& ctx)
-{
-    auto ret = mapper_runtime::stop_mapper(ctx);
-    return ret;
-}
-
-template <class portT>
-bool extern_mapper_impl<portT>::internal_port_connected (const platform_item_ptr& item)
-{
-    if (!my_port_)
-    {
-        auto result = rx_platform::get_runtime_instance<portT>(item->meta_info().id);
-        if (result)
+    public:
+        extern_mapper_impl<portT>* my_mapper;
+        void relation_connected(const string_type& name, const platform_item_ptr& item)
         {
-            his_executer_ = item->get_executer();
-            my_port_ = result.value();
-            this->port_connected(my_port_);
-            map_current_value();
-            return true;
+            my_mapper->internal_port_connected(item);
         }
-    }
-    return false;
-}
+        void relation_disconnected(const string_type& name)
+        {
+            my_mapper->internal_port_disconnected();
+        }
+    };
+    mapper_resolver_user resolver_user_;
+    friend class extern_mapper_impl::mapper_resolver_user;
+public:
+    typedef typename portT::smart_ptr port_ptr_t;
+protected:
+    port_ptr_t my_port_;
 
-template <class portT>
-void extern_mapper_impl<portT>::internal_port_disconnected ()
-{
-    if (my_port_)
-        this->port_disconnected(my_port_);
-}
+  public:
+      extern_mapper_impl();
+
+
+      rx_result start_mapper (runtime::runtime_start_context& ctx);
+
+      rx_result stop_mapper (runtime::runtime_stop_context& ctx);
+
+      virtual void port_connected (port_ptr_t port) = 0;
+
+      virtual void port_disconnected (port_ptr_t port) = 0;
+
+
+  protected:
+
+  private:
+
+      bool internal_port_connected (const platform_item_ptr& item);
+
+      void internal_port_disconnected ();
+
+
+
+      rx_thread_handle_t my_executer_;
+
+      rx_thread_handle_t his_executer_;
+
+
+};
 
 
 // Parameterized Class rx_platform::runtime::blocks::blocks_templates::extern_source_impl 
@@ -300,6 +237,69 @@ void extern_source_impl<portT>::internal_port_disconnected ()
         this->port_disconnected(my_port_);
         my_port_ = portT::smart_ptr::null_ptr;
     }
+}
+
+
+// Parameterized Class rx_platform::runtime::blocks::blocks_templates::extern_mapper_impl 
+
+template <class portT>
+extern_mapper_impl<portT>::extern_mapper_impl()
+      : my_executer_(0),
+        his_executer_(0)
+{
+    resolver_user_.my_mapper = this;
+}
+
+
+
+template <class portT>
+rx_result extern_mapper_impl<portT>::start_mapper (runtime::runtime_start_context& ctx)
+{
+    auto ret = mapper_runtime::start_mapper(ctx);
+    if (!ret)
+        return ret;
+
+    my_executer_ = rx_thread_context();
+    auto port_reference = ctx.structure.get_current_item().get_local_as<string_type>("Port", "");
+    ret = ctx.register_relation_subscriber(port_reference, &resolver_user_);
+    if (!ret)
+    {
+        RUNTIME_LOG_WARNING("extern_mapper_impl", 900, "Error starting mapper "
+            + ctx.context->meta_info.get_full_path() + "." + ctx.path.get_current_path() + " " + ret.errors_line());
+    }
+    return true;
+}
+
+template <class portT>
+rx_result extern_mapper_impl<portT>::stop_mapper (runtime::runtime_stop_context& ctx)
+{
+    auto ret = mapper_runtime::stop_mapper(ctx);
+    return ret;
+}
+
+template <class portT>
+bool extern_mapper_impl<portT>::internal_port_connected (const platform_item_ptr& item)
+{
+    if (!my_port_)
+    {
+        auto result = rx_platform::get_runtime_instance<portT>(item->meta_info().id);
+        if (result)
+        {
+            his_executer_ = item->get_executer();
+            my_port_ = result.value();
+            this->port_connected(my_port_);
+            map_current_value();
+            return true;
+        }
+    }
+    return false;
+}
+
+template <class portT>
+void extern_mapper_impl<portT>::internal_port_disconnected ()
+{
+    if (my_port_)
+        this->port_disconnected(my_port_);
 }
 
 

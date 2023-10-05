@@ -98,8 +98,6 @@ namespace structure {
 
 
 
-
-
 template <class typeT>
 class empty 
 {
@@ -201,11 +199,11 @@ class value_data
 
       void object_state_changed (runtime_process_context* ctx);
 
-      rx_result write_value (write_data&& data, runtime_process_context* ctx);
+      rx_result write_value (write_data&& data, runtime_process_context* ctx, bool& changed);
 
       rx_simple_value simple_get_value () const;
 
-      rx_result simple_set_value (rx_simple_value&& val, runtime_process_context* ctx);
+      rx_result simple_set_value (rx_simple_value&& val, runtime_process_context* ctx, bool& changed);
 
 
       rx::values::rx_timed_value value;

@@ -227,55 +227,97 @@ rx_name_command::~rx_name_command()
 
 bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
+	bool show_all = false;
 
-	rx_table_type table(10);
+	string_type in_str;
+	in >> in_str;
+	if (in_str == "-a" || in_str == "--all")
+		show_all = true;
+
+	rx_table_type table;
 	const char* color_prefix = ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
 	const char* col_prefix = ANSI_COLOR_YELLOW ANSI_COLOR_BOLD;
 
-	table[0].emplace_back("Instance", col_prefix, ANSI_COLOR_RESET);
-	table[0].emplace_back(rx_gate::instance().get_instance_name(), color_prefix, ANSI_COLOR_RESET);
-	table[1].emplace_back("Node", col_prefix, ANSI_COLOR_RESET);
-	table[1].emplace_back(rx_get_node_name(), color_prefix, ANSI_COLOR_RESET);
-	table[2].emplace_back("Engine", col_prefix, ANSI_COLOR_RESET);
-	table[2].emplace_back(rx_gate::instance().get_rx_version(), color_prefix, ANSI_COLOR_RESET);
-	table[3].emplace_back("Library");
-	table[3].emplace_back(rx_gate::instance().get_lib_version());
-	table[4].emplace_back("Compiler");
-	table[4].emplace_back(rx_gate::instance().get_comp_version());
-	table[5].emplace_back("ABI", col_prefix, ANSI_COLOR_RESET);
-	table[5].emplace_back(rx_gate::instance().get_abi_version(), color_prefix, ANSI_COLOR_RESET);
-	table[6].emplace_back("Common", col_prefix, ANSI_COLOR_RESET);
-	table[6].emplace_back(rx_gate::instance().get_common_version(), color_prefix, ANSI_COLOR_RESET);
-	table[7].emplace_back("Firmware");
-	table[7].emplace_back(rx_gate::instance().get_hal_version());
-
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("Instance", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(rx_gate::instance().get_instance_name(), color_prefix, ANSI_COLOR_RESET);
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("Node", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(rx_get_node_name(), color_prefix, ANSI_COLOR_RESET);
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("Engine", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(rx_gate::instance().get_rx_version(), color_prefix, ANSI_COLOR_RESET);
+	if (show_all)
+	{
+		table.emplace_back(rx_row_type());
+		table.back().emplace_back("Library");
+		table.back().emplace_back(rx_gate::instance().get_lib_version());
+		table.emplace_back(rx_row_type());
+		table.back().emplace_back("Compiler");
+		table.back().emplace_back(rx_gate::instance().get_comp_version());
+	}
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("ABI", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(rx_gate::instance().get_abi_version(), color_prefix, ANSI_COLOR_RESET);
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("Common", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(rx_gate::instance().get_common_version(), color_prefix, ANSI_COLOR_RESET);
+	if (show_all)
+	{
+		table.emplace_back(rx_row_type());
+		table.back().emplace_back("Firmware");
+		table.back().emplace_back(rx_gate::instance().get_hal_version());
+	}
 	char buff[0x100];
 	sprintf(buff, "0x%0X - %u", rx_gate::instance().get_pid(), rx_gate::instance().get_pid());
 
-	table[8].emplace_back("OS", col_prefix, ANSI_COLOR_RESET);
-	table[8].emplace_back(rx_gate::instance().get_os_info() + buff, color_prefix, ANSI_COLOR_RESET);
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("OS", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(rx_gate::instance().get_os_info() + buff, color_prefix, ANSI_COLOR_RESET);
 
 
-	/////////////////////////////////////////////////////////////////////////
-	// Processor
-	size_t cpu_count = 1;
-	rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]), &cpu_count);
-	/*out << "CPU: " << buff
-		<< ( rx_big_endian ? "; Big-endian" : "; Little-endian" )
-		<< "\r\n";*/
+	if (show_all)
+	{
+		/////////////////////////////////////////////////////////////////////////
+		// Processor
+		size_t cpu_count = 1;
+		rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]), &cpu_count);
+		/*out << "CPU: " << buff
+			<< ( rx_big_endian ? "; Big-endian" : "; Little-endian" )
+			<< "\r\n";*/
 
-	table[9].emplace_back("CPU");
-	table[9].emplace_back(string_type(buff) + (rx_big_endian ? "; Big-endian" : "; Little-endian"), color_prefix, ANSI_COLOR_RESET);
+		table.emplace_back(rx_row_type());
+		table.back().emplace_back("CPU");
+		table.back().emplace_back(string_type(buff) + (rx_big_endian ? "; Big-endian" : "; Little-endian"));
+	}
 
-	rx_dump_table(table, out, false, true);
 
 	///////////////////////////////////////////////////////////////////////////
 	//// memory
+
+	size_t total = 0;
+	size_t free = 0;
+	size_t process = 0;
+	rx_collect_memory_info(&total, &free, &process);
+
+	string_type mem_str;
+	std::ostringstream ss;
+
+	ss << "Total "
+		<< (int)(total / 1048576ull)
+		<< "MiB/ Free "
+		<< (int)(free / 1048576ull)
+		<< "MiB";
+	ss << "/ Page " << (int)rx_os_page_size() << " bytes\r\n";
+
+
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("Memory", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(ss.str(), color_prefix, ANSI_COLOR_RESET);
+
+	rx_dump_table(table, out, false, true);
+
 	//sprintf(buff, "Total:")
-	//size_t total = 0;
-	//size_t free = 0;
-	//size_t process = 0;
-	//rx_collect_memory_info(&total, &free, &process);
 	//out << "Memory: Total "
 	//	<< (int)(total / 1048576ull)
 	//	<< "MiB / Free "

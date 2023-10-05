@@ -144,6 +144,8 @@ class tags_holder
 
       rx_result get_value_ref (string_view_type path, rt_value_ref& ref);
 
+      void runtime_started (runtime_start_context& ctx);
+
       template<typename valT>
       valT get_binded_as(runtime_handle_t handle, const valT& default_value)
       {

@@ -58,6 +58,8 @@
 #include "interfaces/rx_io.h"
 #include "discovery/rx_discovery_main.h"
 #include "protocols/tls/rx_tls_mapping.h"
+#include "protocols/mqtt/mqtt_simple.h"
+#include "protocols/mqtt/mqtt_simple_server.h"
 
 
 namespace rx_internal {
@@ -207,7 +209,38 @@ void server_command_manager::register_internal_commands ()
 			return rx_create_reference<protocols::opcua::opcua_basic_client::opcua_basic_source>();
 		});
 
-	//TODO OPCUA
+	//TODO OPCUA system
+
+	// MQTT
+
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::mqtt::mqtt_simple::mqtt_simple_server_port>(
+		nullptr, RX_MQTT_SIMPLE_SERVER_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_simple_server_port>();
+		}); 
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::mqtt::mqtt_simple::mqtt_simple_client_port>(
+		nullptr, RX_MQTT_SIMPLE_CLIENT_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_simple_client_port>();
+		});
+
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().register_constructor(
+		RX_MQTT_SIMPLE_MAPPER_TYPE_ID, [] {
+			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_mapper>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().register_constructor(
+		RX_MQTT_SIMPLE_BROKER_MAPPER_TYPE_ID, [] {
+			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_broker_mapper>();
+		});
+
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
+		RX_MQTT_SIMPLE_SOURCE_TYPE_ID, [] {
+			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_source>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
+		RX_MQTT_SIMPLE_BROKER_SOURCE_TYPE_ID, [] {
+			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_broker_source>();
+		});
+
+	// 
 
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_VT00_TYPE_ID, [] {

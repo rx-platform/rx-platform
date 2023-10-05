@@ -64,12 +64,12 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Beka\\x64\\Debug\\rx-mesrnp.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\SAMTMS\\x64\\Debug\\rx-samcomm.dll");
 	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\iec61850\\x64\\Debug\\iec61850.dll");
-	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\rx-linntms.dll");
-	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\rx-linnmes.dll");
+	paths.emplace_back("D:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linntms.dll");
+	paths.emplace_back("D:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linnmes.dll");
 //	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
 
-	paths.emplace_back("D:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_simm.dll");
-	paths.emplace_back("D:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_test.dll");
+	//paths.emplace_back("D:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_simm.dll");
+	//paths.emplace_back("D:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_test.dll");
 #else
 	char buff[MAX_PATH];
 	DWORD size = sizeof(buff);

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -39,7 +39,7 @@
 #include "security/rx_security.h"
 namespace rx_platform
 {
-	
+
 
 rx_security_handle_t rx_security_context();
 bool rx_push_security_context(rx_security_handle_t obj);
@@ -51,7 +51,7 @@ namespace rx_platform {
 
 namespace jobs {
 
-// Class rx_platform::jobs::job 
+// Class rx_platform::jobs::job
 
 job::job()
       : canceled_(false)
@@ -111,7 +111,7 @@ void job::post_process_job ()
 }
 
 
-// Class rx_platform::jobs::timer_job 
+// Class rx_platform::jobs::timer_job
 
 timer_job::timer_job()
       : next_(0x0),
@@ -178,7 +178,7 @@ void timer_job::process_wrapper1 ()
 }
 
 
-// Class rx_platform::jobs::post_period_job 
+// Class rx_platform::jobs::post_period_job
 
 post_period_job::post_period_job()
 {
@@ -188,6 +188,7 @@ post_period_job::post_period_job()
 
 rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove)
 {
+	std::scoped_lock _(*this);
 	if (current_tick + period_error_ >= next_)
 	{
 		// should be done
@@ -198,24 +199,30 @@ rx_timer_ticks_t post_period_job::tick (rx_timer_ticks_t current_tick, rx_timer_
 		return 0;// return for how long
 	}
 	else
+	{
+
+		/*if (this->period_ > 15000)
+			printf("\r\n************skipping the job\r\n");*/
+
 		return std::min(max_sleep_period, next_ - current_tick);// not jet so send how much more to timer
+	}
 }
 
 void post_period_job::start (uint32_t period)
 {
-	lock();
 	{
+		std::scoped_lock _(*this);
 		if (suspended_)
 			suspended_ = false;
 		period_ = ((rx_timer_ticks_t)period) * 1000;
 		next_ = rx_get_us_ticks() + period_ + get_random_time_offset();
 		wake_timer();
 	}
-	unlock();
+	wake_timer();
 }
 
 
-// Class rx_platform::jobs::periodic_job 
+// Class rx_platform::jobs::periodic_job
 
 periodic_job::periodic_job()
 {
@@ -225,16 +232,17 @@ periodic_job::periodic_job()
 
 rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove)
 {
+	std::scoped_lock _(*this);
 	if (suspended_)
+	{
 		return 0;
+	}
 
 	if (current_tick + period_error_ >= next_)
 	{
-		// should be done
 		executer_->append(smart_this());// add job to right thread
 
 		int loop_count = 0;
-		next_ += random_offset;
 		do
 		{
 			loop_count++;
@@ -242,35 +250,47 @@ rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, rx_timer_tic
 
 		} while (next_ < current_tick);
 
-		return next_ - current_tick;// return for how long
+		next_ += random_offset;
+
+		auto diff = next_ - current_tick;// not jet so send how match more to timer
+		RX_ASSERT(diff > 0);
+
+		return diff;
 	}
 	else
-		return next_ - current_tick;// not jet so send how match more to timer
+	{
+
+		auto diff = next_ - current_tick;// not jet so send how match more to timer
+		RX_ASSERT(diff > 0);
+
+		return diff;
+	}
 }
 
 void periodic_job::start (uint32_t period, bool now)
 {
-	lock();
 	{
+		std::scoped_lock _(*this);
 		if (suspended_)
 			suspended_ = false;
 		period_ = ((rx_timer_ticks_t)period) * 1000;
-		next_ = (now ? rx_get_us_ticks() : rx_get_us_ticks() + period_ + get_random_time_offset());
-		wake_timer();
+		uint64_t real_ticks = rx_get_us_ticks();
+		next_ = (now ? real_ticks : real_ticks + period_ + get_random_time_offset());
 	}
-	unlock();
+	wake_timer();
 }
 
 void periodic_job::suspend ()
 {
+	std::scoped_lock _(*this);
 	suspended_ = true;
 }
 
 
-// Parameterized Class rx_platform::jobs::args_job 
+// Parameterized Class rx_platform::jobs::args_job
 
 
-// Parameterized Class rx_platform::jobs::remote_args_job 
+// Parameterized Class rx_platform::jobs::remote_args_job
 
 
 } // namespace jobs

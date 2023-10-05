@@ -977,6 +977,38 @@ void word_routing_port::extract_bind_address (const data::runtime_values_data& b
 }
 
 
+// Class rx_internal::interfaces::ports_lib::string_routing_port 
+
+
+void string_routing_port::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
+{
+	if (local_addr.is_null())
+	{
+		auto addr = binder_data.get_value("Bind.Address");
+		string_type addr_val;
+		if (addr.is_string())
+			addr_val = addr.extract_static(string_type{});
+		if (addr_val.size() == MAC_ADDR_SIZE)
+		{
+			io::string_address str_addr(addr_val);
+			local_addr = &str_addr;
+		}
+	}
+	if (remote_addr.is_null())
+	{
+		auto addr = binder_data.get_value("Connect.Address");
+		string_type addr_val;
+		if (addr.is_byte_string())
+			addr_val = addr.extract_static(string_type{});
+		if (addr_val.size() == MAC_ADDR_SIZE)
+		{
+			io::string_address str_addr(addr_val);
+			remote_addr = &str_addr;
+		}
+	}
+}
+
+
 } // namespace ports_lib
 } // namespace interfaces
 } // namespace rx_internal
@@ -985,3 +1017,4 @@ template class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port<
 template class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port<rx::io::numeric_address<uint8_t> >;
 template class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port<rx::io::numeric_address<uint16_t> >;
 template class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port<rx::io::mac_address >;
+template class rx_internal::interfaces::ports_lib::full_duplex_addr_packet_port<rx::io::string_address >;

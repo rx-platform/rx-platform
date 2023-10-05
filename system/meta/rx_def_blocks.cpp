@@ -159,6 +159,8 @@ const_value_def::const_value_def (const string_type& name, rx_simple_value&& val
       : array_size_(-1)
 	, name_(name)
 	, value_(std::move(value))
+	, read_only_(false)
+	, persistent_(false)
 	, config_only_(config_only)
 {
 }
@@ -167,6 +169,8 @@ const_value_def::const_value_def (const string_type& name, const rx_simple_value
       : array_size_(-1)
 	, name_(name)
 	, value_(value)
+	, read_only_(false)
+	, persistent_(false)
 	, config_only_(config_only)
 {
 }
@@ -192,6 +196,13 @@ rx_result const_value_def::serialize_definition (base_meta_writer& stream) const
 				return stream.get_error();
 			if (!stream.write_bool("config", config_only_))
 				return stream.get_error();
+			if (stream.get_version() >= RX_CONST_OPTS_VERSION)
+			{
+				if (!stream.write_bool("ro", read_only_))
+					return stream.get_error();
+				if (!stream.write_bool("persist", persistent_))
+					return stream.get_error();
+			}
 			return true;
 		}
 	}
@@ -238,6 +249,13 @@ rx_result const_value_def::serialize_definition (base_meta_writer& stream) const
 		if (!stream.write_bool("config", config_only_))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_CONST_OPTS_VERSION)
+	{
+		if (!stream.write_bool("ro", read_only_))
+			return stream.get_error();
+		if (!stream.write_bool("persist", persistent_))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -259,6 +277,18 @@ rx_result const_value_def::deserialize_definition (base_meta_reader& stream)
 				return stream.get_error();
 			if (!stream.read_bool("config", config_only_))
 				return stream.get_error();
+			if (stream.get_version() >= RX_CONST_OPTS_VERSION)
+			{
+				if (!stream.read_bool("ro", read_only_))
+					return stream.get_error();
+				if (!stream.read_bool("persist", persistent_))
+					return stream.get_error();
+			}
+			else
+			{
+				read_only_ = false;
+				persistent_ = false;
+			}
 			return true;
 		}
 	}
@@ -306,6 +336,18 @@ rx_result const_value_def::deserialize_definition (base_meta_reader& stream)
 	else
 	{
 		config_only_ = false;
+	}
+	if (stream.get_version() >= RX_CONST_OPTS_VERSION)
+	{
+		if (!stream.read_bool("ro", read_only_))
+			return stream.get_error();
+		if (!stream.read_bool("persist", persistent_))
+			return stream.get_error();
+	}
+	else
+	{
+		read_only_ = false;
+		persistent_ = false;
 	}
 	return true;
 }

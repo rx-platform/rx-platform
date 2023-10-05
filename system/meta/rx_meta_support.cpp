@@ -91,7 +91,6 @@ rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data)
 
 namespace meta {
 
-
 // Class rx_platform::meta::type_check_context 
 
 type_check_context::type_check_context ()
@@ -248,7 +247,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_stack().push_back(runtime_data_prototype());
 }
 
-runtime_data_prototype construct_context::pop_rt_name ()
+rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(*runtime_stack().rbegin());
@@ -385,7 +384,7 @@ object_data_prototype& construct_context::object_data ()
 // Class rx_platform::meta::runtime_data_prototype 
 
 
-rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_simple_value value)
+rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_simple_value value, const std::bitset<32>& value_opt)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -413,6 +412,8 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
 				runtime::structure::const_value_data temp;
 				temp.value = std::move(value);
+				if (!check_read_only(value_opt, const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override const identifier";
 				const_values.emplace_back(std::move(temp));
 				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
 			}
@@ -442,7 +443,7 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 	}
 }
 
-rx_result runtime_data_prototype::add_const_value (const string_type& name, std::vector<values::rx_simple_value> value)
+rx_result runtime_data_prototype::add_const_value (const string_type& name, std::vector<values::rx_simple_value> value, const std::bitset<32>& value_opt)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -528,7 +529,7 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, std:
 	}
 }
 
-rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_value value, bool read_only, bool persistent)
+rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_value value, const std::bitset<32>& value_opt)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -536,8 +537,7 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 		members_index_type new_idx = static_cast<members_index_type>(values.size());
 		value_data temp_val;
 		temp_val.value = std::move(value);
-		temp_val.value_opt[runtime::structure::value_opt_readonly] = read_only;
-		temp_val.value_opt[runtime::structure::value_opt_persistent] = persistent;
+		temp_val.value_opt = value_opt;
 		values.emplace_back(std::move(temp_val));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_index_type });
 		return true;
@@ -558,8 +558,9 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 				members_index_type new_idx = static_cast<members_index_type>(values.size());
 				value_data temp_val;
 				temp_val.value = std::move(value);
-				temp_val.value_opt[runtime::structure::value_opt_readonly] = read_only;
-				temp_val.value_opt[runtime::structure::value_opt_persistent] = persistent;
+				temp_val.value_opt = value_opt;
+				if (!check_read_only(temp_val.value_opt, const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override const identifier";
 				values.push_back(std::move(temp_val));
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}
@@ -576,8 +577,9 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 				members_index_type new_idx = static_cast<members_index_type>(values.size());
 				value_data temp_val;
 				temp_val.value = std::move(value);
-				temp_val.value_opt[runtime::structure::value_opt_readonly] = read_only;
-				temp_val.value_opt[runtime::structure::value_opt_persistent] = persistent;
+				temp_val.value_opt = value_opt;
+				if (!check_read_only(temp_val.value_opt, this_val.get_item()->value_opt))
+					return "Can't override const identifier";
 				values.push_back(std::move(temp_val));
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}
@@ -592,7 +594,7 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 	}
 }
 
-rx_result runtime_data_prototype::add_value (const string_type& name, std::vector<rx_timed_value> value, bool read_only, bool persistent)
+rx_result runtime_data_prototype::add_value (const string_type& name, std::vector<rx_timed_value> value, const std::bitset<32>& value_opt)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -647,7 +649,7 @@ rx_result runtime_data_prototype::add_value (const string_type& name, std::vecto
 			{
 				auto& this_val = values[elem.index >> rt_type_shift];
 				if (!this_val.is_array())
-					return "Can't override constant value, can not replace simple value with array!";
+					return "Can't override value, can not replace simple value with array!";
 				if (value[0].get_type() != values[elem.index >> rt_type_shift].get_item(0)->value.get_type())
 					return "Can't override value, wrong value type!";
 
@@ -806,6 +808,8 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 		case rt_const_index_type:
 			{
 				auto& this_val = const_values[elem.index >> rt_type_shift];
+				if (!check_read_only(value.value_opt, const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override const identifier";
 				if (this_val.is_array())
 					return "Can't override constant value, can not replace array with simple value!";
 				if (value.value.get_type() != this_val.get_item()->value.get_type())
@@ -819,8 +823,10 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 		case rt_value_index_type:
 			{
 				auto& this_val = values[elem.index >> rt_type_shift];
+				if(!check_read_only(value.value_opt, this_val.get_item()->value_opt))
+					return "Can't override const identifier";
 				if (this_val.is_array())
-					return "Can't override constant value, can not replace array with simple value!";
+					return "Can't override value, can not replace array with simple value!";
 				if (value.value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override value, wrong value type!";
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
@@ -831,6 +837,8 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 		case rt_variable_index_type:
 			{
 				auto& this_val = variables[elem.index >> rt_type_shift].second;
+				if (!check_read_only(value.value_opt, this_val.get_item()->value_opt))
+					return "Can't override const identifier";
 				if (this_val.is_array())
 					return "Can't override constant value, can not replace array with simple value!";
 				if (value.value.get_type() != this_val.get_item()->value.get_type())
@@ -1169,6 +1177,13 @@ runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype)
 	}
 	return runtime_item::smart_ptr();
 
+}
+
+bool runtime_data_prototype::check_read_only(const std::bitset<32>& to, const std::bitset<32>& from)
+{
+	return
+		to[runtime::structure::value_opt_readonly] ||
+		 !from[runtime::structure::value_opt_readonly];
 }
 // Class rx_platform::meta::object_type_creation_data 
 

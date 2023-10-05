@@ -272,8 +272,8 @@ rx_result_with<rx_node_id> resolve_some_reference(const rx_item_reference& ref, 
 	else
 	{
 		auto item = ns::rx_directory_cache::instance().get_cached_item(ref.get_path());
-		if (!item)
-		{// found it in cache, return!
+		if (!item)// found it in cache, return, or else!
+		{
 			item = directories.resolve_item(ref.get_path());
 			if (!item)
 			{
