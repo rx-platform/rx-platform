@@ -446,12 +446,12 @@ void* do_stuff(void* arg)
     int ret;
 	struct linux_thread_chunk* start_chunk = (struct linux_thread_chunk*)arg;
 	eventfd_t buff = 1;
-	start_address_t addr = start_chunk->f;
+	//start_address_t addr = start_chunk->f;
 
 
-	(addr)(start_chunk->arg);
+	//(addr)(start_chunk->arg);
 
-	//(*start_chunk-f)(start_chunk->arg);
+	(*start_chunk->f)(start_chunk->arg);
 	//start_chunk.f(NULL);
 	//(start_chunk->f)(start_chunk->arg);
 

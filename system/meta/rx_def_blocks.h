@@ -231,6 +231,12 @@ public:
       }
 
 
+      rx_item_reference get_data_type_ref () const
+      {
+        return data_type_ref_;
+      }
+
+
 
   protected:
 
@@ -380,6 +386,12 @@ public:
       const int get_array_size () const
       {
         return array_size_;
+      }
+
+
+      rx_item_reference get_data_type_ref () const
+      {
+        return data_type_ref_;
       }
 
 
@@ -652,6 +664,12 @@ class variable_attribute
       const int get_array_size () const
       {
         return array_size_;
+      }
+
+
+      rx_item_reference get_data_type_ref () const
+      {
+        return data_type_ref_;
       }
 
 
@@ -1258,9 +1276,74 @@ public:
 
 
 
+class data_value_def 
+{
+public:
+    data_value_def(const data_value_def& right) = default;
+    data_value_def(data_value_def&& right) = default;
+    data_value_def() = default;
+    ~data_value_def() = default;
+
+  public:
+      data_value_def (const string_type& name, rx_simple_value&& value);
+
+      data_value_def (const string_type& name, const rx_simple_value& value);
+
+
+      rx_result serialize_definition (base_meta_writer& stream) const;
+
+      rx_result deserialize_definition (base_meta_reader& stream);
+
+      rx_simple_value get_value () const;
+
+      std::vector<values::rx_simple_value> get_values () const;
+
+
+      const string_type& get_name () const
+      {
+        return name_;
+      }
+
+
+      const string_type& get_description () const
+      {
+        return description_;
+      }
+
+
+      const int get_array_size () const
+      {
+        return array_size_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      string_type name_;
+
+      string_type description_;
+
+      int array_size_;
+
+      std::vector<values::rx_simple_value> values_;
+
+      values::rx_simple_value value_;
+
+
+};
+
+
+
+
+
+
 class data_type_def 
 {
-    typedef std::vector<def_blocks::const_value_def> values_type;
+    typedef std::vector<def_blocks::data_value_def> values_type;
     typedef std::vector<def_blocks::data_attribute> children_type;
 
     friend class meta_algorithm::data_types_algorithm;

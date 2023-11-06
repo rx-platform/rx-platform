@@ -99,11 +99,11 @@ void rx_json_protocol_port::stack_assembled ()
 
 // Class rx_internal::rx_protocol::rx_protocol_subscription 
 
-rx_protocol_subscription::rx_protocol_subscription (subscription_data& data, rx_protocol_connection_ptr conn)
+rx_protocol_subscription::rx_protocol_subscription (subscription_data& data, rx_protocol_connection_ptr conn, rx_mode_type mode)
       : data_(data)
 	, connection_(conn)
 {
-	my_subscription_ = rx_create_reference<sys_runtime::subscriptions::rx_subscription>(this);
+	my_subscription_ = rx_create_reference<sys_runtime::subscriptions::rx_subscription>(this, mode);
 	if (data.active)
 		my_subscription_->activate();
 	std::ostringstream ss;
@@ -241,7 +241,7 @@ rx_result rx_protocol_subscription::add_items (const std::vector<subscription_it
 	return true;
 }
 
-rx_result rx_protocol_subscription::write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results)
+rx_result rx_protocol_subscription::write_items (runtime_transaction_id_t transaction_id, bool test, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results)
 {
 	auto result = my_subscription_->write_items(transaction_id, std::move(values), results);
 	return result;
@@ -286,6 +286,7 @@ rx_server_connection::rx_server_connection (runtime::items::port_runtime* port)
       : executer_(-1),
         port_(port),
         stream_version_(RX_CURRENT_SERIALIZE_VERSION)
+	, rx_protocol_connection(rx_mode_type())
 {
 	RXCOMM_LOG_DEBUG("rx_server_connection", 200, "{rx-platform} communication server endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
@@ -405,6 +406,7 @@ message_ptr rx_server_connection::set_context (api::rx_context ctx, const messag
 	auto response = std::make_unique<messages::rx_connection_context_response>();
 	response->directory = get_current_directory_path();
 	response->stream_version = get_stream_version();
+	response->mode = req.mode;
 	return response;
 }
 
@@ -451,8 +453,9 @@ void rx_server_connection::send_message (message_ptr msg)
 
 // Class rx_internal::rx_protocol::rx_protocol_connection 
 
-rx_protocol_connection::rx_protocol_connection()
-      : current_directory_path_("/world")
+rx_protocol_connection::rx_protocol_connection (rx_mode_type mode)
+      : current_directory_path_("/world"),
+        mode_(mode)
 {
 	current_directory_ = rx_gate::instance().get_directory("/world");
 }
@@ -531,7 +534,7 @@ rx_result rx_protocol_connection::connect_subscription (subscription_data& data)
 	if (data.subscription_id.is_null())
 	{
 		data.subscription_id = rx_uuid::create_new();
-		auto temp = std::make_unique<rx_protocol_subscription>(data, smart_this());
+		auto temp = std::make_unique<rx_protocol_subscription>(data, smart_this(), mode_);
 		subscriptions_.emplace(data.subscription_id, std::move(temp));
 		return true;
 	}
@@ -587,7 +590,7 @@ rx_result rx_protocol_connection::write_items (const rx_uuid& id, runtime_transa
 	auto it = subscriptions_.find(id);
 	if (it != subscriptions_.end())
 	{
-		return it->second->write_items(transaction_id, std::move(values), results);
+		return it->second->write_items(transaction_id, mode_.is_test(), std::move(values), results);
 	}
 	else
 	{
@@ -632,6 +635,8 @@ void rx_protocol_connection::close_connection ()
 message_ptr rx_protocol_connection::set_context (api::rx_context ctx, const messages::rx_connection_context_request& req)
 {
 	auto request_id = req.request_id;
+	RX_ASSERT(subscriptions_.empty());
+	mode_ = req.mode;
 	if (!req.directory.empty())
 	{
 		auto result = set_current_directory(req.directory);

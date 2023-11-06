@@ -50,6 +50,7 @@
 #include "system/runtime/rx_blocks.h"
 #include "rx_configuration.h"
 #include "sys_internal/rx_inf.h"
+#include "rx_rt_item_types.h"
 
 
 namespace rx_platform {
@@ -77,6 +78,16 @@ bool io_capabilities::get_input () const
 bool io_capabilities::get_output () const
 {
     return settings_.test(1);
+}
+
+void io_capabilities::set_complex (bool val)
+{
+	settings_[2] = val;
+}
+
+bool io_capabilities::get_complex () const
+{
+	return settings_.test(2);
 }
 
 
@@ -113,6 +124,11 @@ runtime_handle_t runtime_init_context::get_new_handle ()
 rx_result_with<runtime_handle_t> runtime_init_context::bind_item (const string_type& path, tag_blocks::binded_callback_t callback)
 {
 	return tags->bind_item(path, *this, callback);
+}
+
+rx_result_with<runtime_handle_t> runtime_init_context::bind_item (const string_type& path, tag_blocks::binded_callback_t callback, tag_blocks::write_callback_t write_callback)
+{
+	return tags->bind_item_with_write(path, *this, callback, write_callback);
 }
 
 rx_result runtime_init_context::set_item (const string_type& path, rx_simple_value&& value)
@@ -244,6 +260,22 @@ void runtime_start_context::add_io_periodic_job (jobs::periodic_job::smart_ptr j
 	rx_internal::infrastructure::server_runtime::instance().append_timer_io_job(job);
 }
 
+rx_value& runtime_start_context::get_current_variable_value ()
+{
+	static rx_value g_null_value;
+	auto entry = variables.get_current_variable();
+
+	if (entry.index() == 0 && std::get<0>(entry))
+	{
+		return std::get<0>(entry)->value;
+	}
+	else if (entry.index() == 1 && std::get<1>(entry))
+	{
+		return std::get<1>(entry)->variable.value;
+	}
+	return g_null_value;
+}
+
 
 // Class rx_platform::runtime::runtime_stop_context 
 
@@ -300,18 +332,23 @@ void variables_stack::push_variable (structure::variable_data* what)
 	variables_.push(what);
 }
 
+void variables_stack::push_variable (structure::variable_block_data* what)
+{
+	variables_.push(what);
+}
+
 void variables_stack::pop_variable ()
 {
 	if (!variables_.empty())
 		variables_.pop();
 }
 
-structure::variable_data* variables_stack::get_current_variable () const
+variable_stack_entry variables_stack::get_current_variable () const
 {
 	if (!variables_.empty())
 		return variables_.top();
 	else
-		return nullptr;
+		return variable_stack_entry();
 }
 
 
@@ -411,6 +448,4 @@ std::vector<rx_simple_value> sources_stack::get_source_values (const rx_node_id&
 
 } // namespace runtime
 } // namespace rx_platform
-
-
 

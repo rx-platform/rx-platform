@@ -71,6 +71,8 @@ rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data);
 
 }// namespace rx_platform
 
+// rx_rt_item_types
+#include "system/runtime/rx_rt_item_types.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 
@@ -96,6 +98,8 @@ class runtime_data_prototype
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::mapper_data> > mappers_type;
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::filter_data> > filters_type;
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::event_data> > events_type;
+    typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::variable_block_data> > > variable_blocks_type;
+    typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::value_block_data> > > blocks_type;
 
 	typedef std::vector<runtime::structure::index_data> items_type;
 
@@ -125,6 +129,14 @@ class runtime_data_prototype
 
       rx_result add (const string_type& name, runtime::structure::event_data&& value, rx_node_id id);
 
+      rx_result add_variable_block (const string_type& name, runtime::structure::variable_block_data&& value, rx_node_id id);
+
+      rx_result add_variable_block (const string_type& name, std::vector<runtime::structure::variable_block_data> value, rx_node_id id);
+
+      rx_result add_value_block (const string_type& name, runtime::structure::value_block_data&& value, rx_node_id id);
+
+      rx_result add_value_block (const string_type& name, std::vector<runtime::structure::value_block_data> value, rx_node_id id);
+
 
       items_type items;
 
@@ -145,6 +157,10 @@ class runtime_data_prototype
       events_type events;
 
       const_values_opts_type const_values_opts;
+
+      blocks_type blocks;
+
+      variable_blocks_type variable_blocks;
 
 
   protected:
@@ -548,7 +564,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      rx_platform::meta::runtime_data_prototype pop_rt_name ();
+      runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 
@@ -608,49 +624,6 @@ class construct_context
       warnings_type warnings_;
 
       int current_display_;
-
-
-};
-
-
-
-
-
-
-class data_blocks_prototype 
-{
-    typedef std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > values_type;
-    typedef std::vector< runtime::structure::array_wrapper<data_blocks_prototype> > children_type;
-
-    typedef std::vector<runtime::structure::index_data> items_type;
-
-  public:
-
-      void add (const string_type& name, data_blocks_prototype&& value);
-
-      void add_value (const string_type& name, rx_simple_value val);
-
-      runtime::structure::block_data create_runtime ();
-
-
-      items_type items;
-
-      values_type values;
-
-      children_type children;
-
-      bool success;
-
-      operator bool() const
-      {
-          return success;
-      }
-  protected:
-
-  private:
-
-      bool check_name (const string_type& name) const;
-
 
 
 };
@@ -746,3 +719,5 @@ runtime::structure::runtime_item::smart_ptr create_runtime_data(runtime_data_pro
 
 
 #endif
+
+

@@ -67,7 +67,7 @@ class data_source
       virtual ~data_source();
 
 
-      virtual void add_item (const string_type& path, uint32_t rate, value_handle_extended& handle) = 0;
+      virtual void add_item (const string_type& path, uint32_t rate, value_handle_extended& handle, rx_mode_type mode) = 0;
 
       virtual void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id) = 0;
 
@@ -159,7 +159,7 @@ class data_controler
 
       void unregister_value (value_handle_type handle, value_point_impl* whose);
 
-      value_handle_type add_item (const string_type& path, uint32_t rate);
+      value_handle_type add_item (const string_type& path, uint32_t rate, rx_mode_type mode);
 
       void write_item (value_handle_type handle, rx_simple_value val, runtime_transaction_id_t id);
 

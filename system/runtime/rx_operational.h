@@ -33,12 +33,12 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -147,9 +147,9 @@ class connected_tags
 
       rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor);
 
-      rx_result write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor);
+      rx_result write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor);
 
-      rx_result execute_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, data::runtime_values_data data, tags_callback_ptr monitor);
+      rx_result execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data data, tags_callback_ptr monitor);
 
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor = tags_callback_ptr::null_ptr);
 
@@ -180,9 +180,9 @@ class connected_tags
 
       rx_result_with<runtime_handle_t> connect_tag_from_relations (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor);
 
-      rx_result internal_write_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, rx_security_handle_t identity);
+      rx_result internal_write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, rx_security_handle_t identity);
 
-      rx_result internal_execute_tag (runtime_transaction_id_t trans_id, runtime_handle_t item, data::runtime_values_data args, tags_callback_ptr monitor, rx_security_handle_t identity);
+      rx_result internal_execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data args, tags_callback_ptr monitor, rx_security_handle_t identity);
 
       connected_tags::relation_ptr get_parent_relation (const string_type& name);
 
@@ -242,11 +242,17 @@ class connected_tags
 
 class binded_tags 
 {
+    struct callback_data_t
+    {
+        runtime_handle_t handle = 0;
+        std::vector<binded_callback_t> update_callabcks;
+        std::unique_ptr<std::vector<write_callback_t> > write_callabcks;
+    };
 	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
-	typedef std::map<structure::value_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > values_type;
-    typedef std::map<structure::full_value_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > full_values_type;
-    typedef std::map<logic_blocks::method_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > > methods_type;
-    typedef std::map<structure::variable_data*, std::pair<runtime_handle_t, std::vector<binded_callback_t> > >variables_type;
+	typedef std::map<structure::value_data*, callback_data_t> values_type;
+    typedef std::map<structure::full_value_data*, callback_data_t> full_values_type;
+    typedef std::map<logic_blocks::method_data*, callback_data_t> methods_type;
+    typedef std::map<structure::variable_data*, callback_data_t>variables_type;
 	typedef std::map<runtime_handle_t, rt_value_ref> handles_map_type;
 
   public:
@@ -260,6 +266,8 @@ class binded_tags
       rx_result set_value (runtime_handle_t handle, rx_simple_value&& val, connected_tags& tags, runtime_process_context* ctx);
 
       rx_result_with<runtime_handle_t> bind_item (const string_type& path, runtime_init_context& ctx, binded_callback_t callback);
+
+      rx_result_with<runtime_handle_t> bind_item_with_write (const string_type& path, runtime_init_context& ctx, binded_callback_t callback, write_callback_t write_callback);
 
       rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_init_context& ctx);
 
@@ -278,6 +286,8 @@ class binded_tags
       void variable_change (structure::variable_data* whose, const rx_value& val);
 
       void runtime_started (runtime_start_context& ctx);
+
+      rx_result do_write_callbacks (rt_value_ref ref, rx_simple_value& value, runtime_process_context* ctx);
 
 	  template<typename T>
 	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
@@ -304,6 +314,8 @@ class binded_tags
       rx_result internal_set_item (const string_type& path, rx_simple_value&& what, runtime_structure_resolver& structure);
 
       rx_result internal_get_item (const string_type& path, rx_simple_value& what, runtime_structure_resolver& structure, runtime_process_context* ctx);
+
+      void add_callbacks (runtime_handle_t handle, binded_callback_t callback, write_callback_t write_callback);
 
 
 

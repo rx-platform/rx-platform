@@ -83,6 +83,8 @@ rx_result_with<rx_node_id> resolve_runtime_reference(
 
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_item_type type, rx_node_id id);
 rx_result_with<platform_item_ptr> get_platform_item_sync(rx_node_id id);
+bool is_derived_from(rx_node_id id, rx_node_id from_id);
+bool is_instanced_from(rx_node_id id, rx_node_id from_id);
 
 rx_result_with<platform_item_ptr> get_working_runtime(const rx_node_id& id);
 

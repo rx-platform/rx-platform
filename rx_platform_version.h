@@ -4,7 +4,7 @@
 
 #define RX_SERVER_NAME "Molecule"
 #define RX_SERVER_MAJOR_VERSION 2
-#define RX_SERVER_MINOR_VERSION 1
+#define RX_SERVER_MINOR_VERSION 2
 #define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
@@ -49,4 +49,5 @@
 // version 1.11.0 ABI and Common versioning, Data Structs, added Web Socket support
 // version 2.0.0 added security and meta moved to rx-common
 // version 2.1.0 added simple mqtt implementation
+// version 2.2.0 added const, value and variable blocks
 

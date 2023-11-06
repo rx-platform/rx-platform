@@ -356,6 +356,7 @@ RX_COMMON_API int rx_event_set(sys_handle_t hndl);
 #define RX_CALLCUALTED_ORIGIN	0x10000000
 #define RX_ESTIMATED_ORIGIN		0x08000000
 #define RX_LOCAL_ORIGIN			0x04000000
+#define RX_ALWAYS_ORIGIN		0x02000000
 
 
 typedef uint_fast8_t rx_value_t;
@@ -563,6 +564,12 @@ RX_COMMON_API int rx_init_complex_value(struct typed_value_type* val, complex_va
 RX_COMMON_API int rx_init_struct_value(struct typed_value_type* val, const struct typed_value_type* data, size_t count);
 RX_COMMON_API int rx_init_struct_value_with_ptrs(struct typed_value_type* val, const struct typed_value_type** data, size_t count);
 
+
+RX_COMMON_API int rx_init_array_value(struct typed_value_type* val, rx_value_t type,  const union rx_value_union* data, size_t count);
+RX_COMMON_API int rx_init_array_value_with_ptrs(struct typed_value_type* val, rx_value_t type, const union rx_value_union** data, size_t count);
+
+
+
 RX_COMMON_API int rx_init_bool_array_value(struct typed_value_type* val, const uint_fast8_t* data, size_t count);
 
 RX_COMMON_API int rx_init_int8_array_value(struct typed_value_type* val, const int8_t* data, size_t count);
@@ -589,6 +596,10 @@ RX_COMMON_API int rx_init_node_id_value(struct typed_value_type* val, const rx_n
 
 RX_COMMON_API int rx_init_string_array_value(struct typed_value_type* val, const char** data, size_t size);
 
+RX_COMMON_API int rx_init_struct_array_value(struct typed_value_type* val, const struct_value_type* data, size_t count);
+RX_COMMON_API int rx_init_struct_array_value_with_ptrs(struct typed_value_type* val, const struct_value_type** data, size_t count);
+
+
 
 RX_COMMON_API int rx_parse_string(struct typed_value_type* val, const char* data);
 
@@ -600,6 +611,8 @@ RX_COMMON_API void rx_move_value(struct typed_value_type* val, struct typed_valu
 RX_COMMON_API int rx_convert_value(struct typed_value_type* val, rx_value_t type);
 
 RX_COMMON_API int rx_compare_values(const struct typed_value_type* val, const struct typed_value_type* right);
+
+RX_COMMON_API int rx_get_array_value(size_t index, struct typed_value_type* val, const struct typed_value_type* right);
 
 
 RX_COMMON_API int rx_is_null_value(const struct typed_value_type* val);

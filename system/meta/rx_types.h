@@ -353,7 +353,7 @@ public:
     typedef std::vector<def_blocks::const_value_def> values_type;
     typedef std::vector<def_blocks::data_attribute> children_type;
 
-    typedef data_blocks_prototype RDataType;
+    typedef runtime::structure::block_data_result_t RDataType;
     typedef meta_algorithm::data_types_algorithm algorithm_type;
 
     friend class meta_algorithm::data_types_algorithm;

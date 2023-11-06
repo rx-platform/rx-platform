@@ -154,7 +154,7 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 	auto rctx = ctx->create_api_context();
 	ctx->set_waiting();
 
-	rt_item->write_value(sub_item, std::move(value),
+	rt_item->write_value(sub_item, false, std::move(value),
 		write_result_callback_t(rctx.object, [ctx, this, sub_item, value, us1](uint32_t signal_level, rx_result&& result)
 		{
 			uint64_t us2 = rx_get_us_ticks() - us1;
@@ -331,8 +331,31 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 						table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
 						break;
 					case rx_attribute_type::variable_array_attribute_type:
-						is_value = false;
 						value = RX_TERMINAL_ARRAY_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::const_data_attribute_type:
+						value = RX_TERMINAL_STRUCT_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::const_data_array_attribute_type:
+						value = RX_TERMINAL_ARRAY_STRUCT_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::value_data_attribute_type:
+						value = RX_TERMINAL_STRUCT_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_VALUE_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::value_data_array_attribute_type:
+						value = RX_TERMINAL_ARRAY_STRUCT_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_VALUE_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::variable_data_attribute_type:
+						value = RX_TERMINAL_STRUCT_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
+						break;
+					case rx_attribute_type::variable_data_array_attribute_type:
+						value = RX_TERMINAL_ARRAY_STRUCT_SYMBOL;
 						table[idx].emplace_back(one.name, ANSI_RX_VARIABLE_COLOR, ANSI_COLOR_RESET);
 						break;
 					case rx_attribute_type::struct_attribute_type:
@@ -373,6 +396,14 @@ bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_
 							value = RX_TERMINAL_RELATION_TARGET_SYMBOL;
 						else
 							value = RX_TERMINAL_RELATION_TARGET_SYMBOL + one.value.to_string();
+						break;
+					case data_attribute_type:
+						value = RX_TERMINAL_STRUCT_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
+						break;
+					case data_array_attribute_type:
+						value = RX_TERMINAL_ARRAY_STRUCT_SYMBOL;
+						table[idx].emplace_back(one.name, ANSI_RX_CONST_COLOR, ANSI_COLOR_RESET);
 						break;
 					default:
 						table[idx].emplace_back(one.name);
@@ -636,7 +667,7 @@ bool execute_command::do_with_item (platform_item_ptr&& rt_item, string_type sub
 	out << "Start time: " << now.get_string() << "\r\n";
 	uint64_t us1 = rx_get_us_ticks();
 	auto rctx = ctx->create_api_context();
-	rt_item->execute_method(sub_item, std::move(rt_data), execute_method_callback_t(rctx.object, [us1, ctx, sub_item](uint32_t signal_level, rx_result result, data::runtime_values_data data)
+	rt_item->execute_method(sub_item, false, std::move(rt_data), execute_method_callback_t(rctx.object, [us1, ctx, sub_item](uint32_t signal_level, rx_result result, data::runtime_values_data data)
 		{
 			uint64_t us2 = rx_get_us_ticks() - us1;
 			auto& out = ctx->get_stdout();

@@ -65,6 +65,7 @@ rx_result local_register_source::source_write (write_data&& data, runtime_proces
 {
     rx_value value(std::move(data.value), rx_time::now());
     value.set_quality(RX_GOOD_QUALITY);
+    value = ctx->adapt_value(value);
     source_value_changed(std::move(value));
     source_result_received(true, data.transaction_id);
     return true;
@@ -72,8 +73,9 @@ rx_result local_register_source::source_write (write_data&& data, runtime_proces
 
 rx_result local_register_source::start_source (runtime::runtime_start_context& ctx)
 {
-    rx_value value = ctx.variables.get_current_variable()->get_value(ctx.context);
+    rx_value value = ctx.get_current_variable_value();
     value.set_quality(RX_GOOD_QUALITY);
+    value = ctx.context->adapt_value(value);
     source_value_changed(std::move(value));
     return true;
 }

@@ -148,7 +148,7 @@ rx_result data_types_algorithm::deserialize_type (data_type& whose, base_meta_re
 
 		if (is_value)
 		{// simple value
-			const_value_def val;
+			data_value_def val;
 			if (!val.deserialize_definition(stream))
 				return stream.get_error();
 			auto ret = whose.complex_data.check_name(val.get_name()
@@ -224,33 +224,137 @@ bool data_types_algorithm::check_type (data_type& whose, type_check_context& ctx
 	return true;
 }
 
-rx_result data_types_algorithm::construct_runtime (const data_type& whose, data_blocks_prototype& what, construct_context& ctx)
+rx_result data_types_algorithm::construct_runtime (const data_type& whose, runtime::structure::block_data& what, construct_context& ctx)
 {
 	rx_result ret = true;
 	// first pass, create structure
+	size_t children_size = 0;
+	size_t values_size = 0;
+	size_t items_size = 0;
+	// first pass find the sizes
+
+	std::vector<runtime::structure::index_data> items;
+	std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > values;
+	std::vector<runtime::structure::array_wrapper<runtime::structure::block_data> > children;
+
 	for (const auto& one : whose.complex_data.names_cache_)
 	{
 		switch (one.second & data_type_def::type_mask)
 		{
 		case data_type_def::simple_values_mask:
 			{
-				what.add_value(one.first
-					, whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
+				if (whose.complex_data.values_[one.second & complex_data_type::index_mask].get_array_size() < 0)
+				{
+					if (check_name(one.first, items))
+					{
+						members_index_type new_idx = static_cast<members_index_type>(values.size());
+						runtime::structure::const_value_data temp;
+						temp.value = std::move(whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
+						values.emplace_back(std::move(temp));
+						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_const_index_type });
+					}
+				}
+				else if (whose.complex_data.values_[one.second & complex_data_type::index_mask].get_array_size() == 0)
+				{
+					if (check_name(one.first, items))
+					{
+						members_index_type new_idx = static_cast<members_index_type>(values.size());
+						runtime::structure::const_value_data temp_const;
+						temp_const.value = std::move(whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
+						runtime::structure::array_wrapper<runtime::structure::const_value_data> temp;
+						temp.declare_null_array(std::move(temp_const));
+						values.emplace_back(std::move(temp));
+						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_const_index_type });
+					}
+				}
+				else
+				{
+					auto size = whose.complex_data.children_[one.second & complex_data_type::index_mask].get_array_size();
+					std::vector<runtime::structure::const_value_data> child_data(size);
+
+					if (check_name(one.first, items))
+					{
+						for (int i = 0; i < size; i++)
+						{
+							runtime::structure::const_value_data one_temp;
+							one_temp.value = std::move(whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
+							child_data.push_back(std::move(one_temp));
+						}
+						members_index_type new_idx = static_cast<members_index_type>(values.size());
+						values.emplace_back(std::move(child_data));
+						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_const_index_type });
+					}
+				}
 			}
 			break;
 		case data_type_def::child_values_mask:
 			{
-				data_blocks_prototype child_data;
-				ret = data_blocks_algorithm::construct_data_attribute(
-					whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, ctx);
-				if (!ret)
-					return ret;
-				what.add(one.first, std::move(child_data));
+				if (whose.complex_data.children_[one.second & complex_data_type::index_mask].get_array_size() < 0)
+				{
+					block_data child_data;
+					ret = data_blocks_algorithm::construct_data_attribute(
+						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, ctx);
+					if (!ret)
+						return ret;
+					if (check_name(one.first, items))
+					{
+						members_index_type new_idx = static_cast<members_index_type>(children.size());
+						children.emplace_back(std::move(child_data));
+						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_data_index_type });
+					}
+				}
+				else if (whose.complex_data.children_[one.second & complex_data_type::index_mask].get_array_size() == 0)
+				{
+					block_data child_data;
+					ret = data_blocks_algorithm::construct_data_attribute(
+						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, ctx);
+					if (!ret)
+						return ret;
+					if (check_name(one.first, items))
+					{
+						members_index_type new_idx = static_cast<members_index_type>(children.size());
+						runtime::structure::array_wrapper<runtime::structure::block_data> temp;
+						temp.declare_null_array(std::move(child_data));
+						children.emplace_back(std::move(temp));
+						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_data_index_type });
+					}
+				}
+				else
+				{
+					auto size = whose.complex_data.children_[one.second & complex_data_type::index_mask].get_array_size();
+					std::vector<block_data> child_data(size);
+					for (auto i = 0; i < size; i++)
+					{
+						ret = data_blocks_algorithm::construct_data_attribute(
+							whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data[i], ctx);
+						if (!ret)
+							return ret;
+					}
+					if (check_name(one.first, items))
+					{
+						members_index_type new_idx = static_cast<members_index_type>(children.size());
+						children.emplace_back(std::move(child_data));
+						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_data_index_type });
+					}
+				}
 			}
 			break;
 		}
 	}
+	what.items = const_size_vector<runtime::structure::index_data>(std::move(items));
+	what.children = const_size_vector<runtime::structure::array_wrapper<runtime::structure::block_data> >(std::move(children));
+	what.values = const_size_vector<runtime::structure::array_wrapper<runtime::structure::const_value_data>>(std::move(values));
 	return ret;
+}
+
+bool data_types_algorithm::check_name (const string_type& name, std::vector<runtime::structure::index_data>& items)
+{
+	for (const auto& one : items)
+	{
+		if (one.name == name)
+			return false;
+	}
+	return true;
 }
 
 
@@ -693,7 +797,7 @@ rx_result basic_types_algorithm<event_type>::construct(const event_type& whose, 
 	{
 		if (prototype.arguments.values.empty() && prototype.arguments.children.empty() &&  !whose.arguments.is_null())
 		{
-			data_blocks_prototype data_proto;
+			block_data data_proto;
 			data_attribute attr;
 			if (whose.arguments.is_node_id())
 				attr = std::move(data_attribute("Args", whose.arguments.get_node_id()));
@@ -702,7 +806,7 @@ rx_result basic_types_algorithm<event_type>::construct(const event_type& whose, 
 			
 			ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
 			if (ret)
-				prototype.arguments = data_proto.create_runtime();
+				prototype.arguments = std::move(data_proto);
 		}
 	}
 	return ret;
@@ -717,7 +821,7 @@ rx_result basic_types_algorithm<method_type>::construct(const method_type& whose
 	{
 		if (prototype.inputs.values.empty() && prototype.inputs.children.empty() && !whose.inputs.is_null())
 		{
-			data_blocks_prototype data_proto;
+			block_data data_proto;
 			data_attribute attr;
 			if (whose.inputs.is_node_id())
 				attr = std::move(data_attribute("In", whose.inputs.get_node_id()));
@@ -726,11 +830,11 @@ rx_result basic_types_algorithm<method_type>::construct(const method_type& whose
 
 			ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
 			if (ret)
-				prototype.inputs = data_proto.create_runtime();
+				prototype.inputs = std::move(data_proto);
 		}
 		if (prototype.outputs.values.empty() && prototype.outputs.children.empty() && !whose.outputs.is_null())
 		{
-			data_blocks_prototype data_proto;
+			block_data data_proto;
 			data_attribute attr;
 			if (whose.outputs.is_node_id())
 				attr = std::move(data_attribute("Out", whose.outputs.get_node_id()));
@@ -739,7 +843,7 @@ rx_result basic_types_algorithm<method_type>::construct(const method_type& whose
 
 			ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
 			if (ret)
-				prototype.outputs = data_proto.create_runtime();
+				prototype.outputs = std::move(data_proto);
 		}
 	}
 	return ret;
@@ -1409,8 +1513,13 @@ rx_result relation_blocks_algorithm::construct_relation_attribute (const object_
 	{
 		data.target_relation_name = replace_in_string(data.target_relation_name, RX_MACRO_SYMBOL_STR "name" RX_MACRO_SYMBOL_STR, ctx.rt_name());
 		data.name = whose.name;
-		if(!target_base_id.is_null())
-			data.target_base_id = target_base_id;
+		if (!target_base_id.is_null())
+		{
+			if (data.target_base_id.is_null() ||  rx_internal::model::algorithms::is_derived_from(target_base_id, data.target_base_id))
+				data.target_base_id = target_base_id;
+			else
+				return "Wrong relation target type!";
+		}
 		rx_timed_value str_val;
 		str_val.assign_static("", ctx.now);
 		data.value.value = str_val;

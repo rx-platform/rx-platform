@@ -34,6 +34,7 @@
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
 
+#include "system/runtime/rx_rt_item_types.h"
 #include "api/rx_platform_api.h"
 //#include "system/runtime/rx_blocks.h"
 //#include "rx_def_blocks.h"
@@ -247,7 +248,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_stack().push_back(runtime_data_prototype());
 }
 
-rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
+runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(*runtime_stack().rbegin());
@@ -392,7 +393,8 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 		members_index_type new_idx = static_cast<members_index_type>(const_values.size());
 		runtime::structure::const_value_data temp;
 		temp.value = std::move(value);
-		const_values.emplace_back(std::move(temp));
+		const_values.push_back(std::move(temp));
+		const_values_opts.push_back(value_opt);
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_const_index_type });
 		return true;
 	}
@@ -413,8 +415,9 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 				runtime::structure::const_value_data temp;
 				temp.value = std::move(value);
 				if (!check_read_only(value_opt, const_values_opts[elem.index >> rt_type_shift]))
-					return "Can't override const identifier";
+					return "Can't override const value wrong read-only value";
 				const_values.emplace_back(std::move(temp));
+				const_values_opts.push_back(value_opt);
 				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
 			}
 			break;
@@ -422,14 +425,17 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 			{
 				auto& this_val = values[elem.index >> rt_type_shift];
 				if (this_val.is_array())
-					return "Can't override constant value, can not replace array with simple value!";
+					return "Can't override value, can not replace array with simple value!";
 				if (value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override value, wrong value type!";
+				if (!check_read_only(value_opt, this_val.get_item()->value_opt))
+					return "Can't override const value wrong read-only value";
 
 				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
 				runtime::structure::const_value_data temp;
 				temp.value = std::move(value);
 				const_values.emplace_back(std::move(temp));
+				const_values_opts.push_back(value_opt);
 				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
 			}
 			break;
@@ -460,7 +466,8 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, std:
 				temp_array.push_back(std::move(temp));
 			}
 		}
-		const_values.emplace_back(temp_array);
+		const_values.emplace_back(std::move(temp_array));
+		const_values_opts.push_back(value_opt);
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_const_index_type });
 		return true;
 	}
@@ -491,6 +498,7 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, std:
 					}
 				}
 				const_values.emplace_back(std::move(temp_array));
+				const_values_opts.push_back(value_opt);
 				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
 			}
 			break;
@@ -498,12 +506,12 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, std:
 			{
 				auto& this_val = values[elem.index >> rt_type_shift];
 				if (!this_val.is_array())
-					return "Can't override constant value, can not replace simple value with array!";
+					return "Can't override value, can not replace simple value with array!";
 				if (value[0].get_type() != values[elem.index >> rt_type_shift].get_item(0)->value.get_type())
 					return "Can't override value, wrong value type!";
 
 				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
-				
+
 				std::vector<runtime::structure::const_value_data> temp_array;
 				int size = (int)value.size();
 				if (size > 0)
@@ -516,6 +524,7 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, std:
 					}
 				}
 				const_values.emplace_back(std::move(temp_array));
+				const_values_opts.push_back(value_opt);
 				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
 			}
 			break;
@@ -551,16 +560,16 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 			{
 				auto& this_val = const_values[elem.index >> rt_type_shift];
 				if (this_val.is_array())
-					return "Can't override constant value, can not replace array with simple value!";
+					return "Can't override value, can not replace array with simple value!";
 				if (value.get_type() != this_val.get_item()->value.get_type())
-					return "Can't override constant value, wrong value type!";
+					return "Can't override const value, wrong value type!";
 
 				members_index_type new_idx = static_cast<members_index_type>(values.size());
 				value_data temp_val;
 				temp_val.value = std::move(value);
 				temp_val.value_opt = value_opt;
 				if (!check_read_only(temp_val.value_opt, const_values_opts[elem.index >> rt_type_shift]))
-					return "Can't override const identifier";
+					return "Can't override const value wrong read-only value";
 				values.push_back(std::move(temp_val));
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}
@@ -569,7 +578,7 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 			{
 				auto& this_val = values[elem.index >> rt_type_shift];
 				if (this_val.is_array())
-					return "Can't override constant value, can not replace array with simple value!";
+					return "Can't override value, can not replace array with simple value!";
 
 				if (value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override value, wrong value type!";
@@ -579,7 +588,7 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 				temp_val.value = std::move(value);
 				temp_val.value_opt = value_opt;
 				if (!check_read_only(temp_val.value_opt, this_val.get_item()->value_opt))
-					return "Can't override const identifier";
+					return "Can't override value wrong read-only value";
 				values.push_back(std::move(temp_val));
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}
@@ -607,11 +616,12 @@ rx_result runtime_data_prototype::add_value (const string_type& name, std::vecto
 			for (int i = 0; i < size; i++)
 			{
 				runtime::structure::value_data temp;
+				temp.value_opt = value_opt;
 				temp.value = std::move(value[i]);
 				temp_array.push_back(std::move(temp));
 			}
 		}
-		values.emplace_back(temp_array);
+		values.emplace_back(std::move(temp_array));
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_index_type });
 		return true;
 	}
@@ -809,7 +819,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 			{
 				auto& this_val = const_values[elem.index >> rt_type_shift];
 				if (!check_read_only(value.value_opt, const_values_opts[elem.index >> rt_type_shift]))
-					return "Can't override const identifier";
+					return "Can't override const value wrong read-only value";
 				if (this_val.is_array())
 					return "Can't override constant value, can not replace array with simple value!";
 				if (value.value.get_type() != this_val.get_item()->value.get_type())
@@ -824,7 +834,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 			{
 				auto& this_val = values[elem.index >> rt_type_shift];
 				if(!check_read_only(value.value_opt, this_val.get_item()->value_opt))
-					return "Can't override const identifier";
+					return "Can't override value wrong read-only value";
 				if (this_val.is_array())
 					return "Can't override value, can not replace array with simple value!";
 				if (value.value.get_type() != this_val.get_item()->value.get_type())
@@ -838,9 +848,9 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 			{
 				auto& this_val = variables[elem.index >> rt_type_shift].second;
 				if (!check_read_only(value.value_opt, this_val.get_item()->value_opt))
-					return "Can't override const identifier";
+					return "Can't override variable wrong read-only value";
 				if (this_val.is_array())
-					return "Can't override constant value, can not replace array with simple value!";
+					return "Can't override variable, can not replace array with simple value!";
 				if (value.value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override variable, wrong value type!";
 				if(id != variables[elem.index >> rt_type_shift].first &&
@@ -891,7 +901,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, std::ve
 			{
 				auto& this_val = values[elem.index >> rt_type_shift];
 				if (!this_val.is_array())
-					return "Can't override constant value, can not replace simple value with array!";
+					return "Can't override value, can not replace simple value with array!";
 				if (value[0].value.get_type() != this_val.get_item(0)->value.get_type())
 					return "Can't override value, wrong value type!";
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
@@ -903,7 +913,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, std::ve
 			{
 				auto& this_val = variables[elem.index >> rt_type_shift].second;
 				if (this_val.is_array())
-					return "Can't override constant value, can not replace array with simple value!";
+					return "Can't override variable, can not replace array with simple value!";
 				if (value[0].value.get_type() != this_val.get_item(0)->value.get_type())
 					return "Can't override variable, wrong value type!";
 				if (id != variables[elem.index >> rt_type_shift].first &&
@@ -1008,14 +1018,76 @@ rx_result runtime_data_prototype::add (const string_type& name, runtime::structu
 	}
 }
 
+rx_result runtime_data_prototype::add_variable_block (const string_type& name, runtime::structure::variable_block_data&& value, rx_node_id id)
+{
+	auto idx = check_member_name(name);
+	if (idx < 0)
+	{
+		members_index_type new_idx = static_cast<members_index_type>(variable_blocks.size());
+		variable_blocks.emplace_back(std::move(id), std::move(value));
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_variable_data_index_type });
+		return true;
+	}
+	else
+	{
+		return RX_NOT_IMPLEMENTED;
+	}
+}
+
+rx_result runtime_data_prototype::add_variable_block (const string_type& name, std::vector<runtime::structure::variable_block_data> value, rx_node_id id)
+{
+	auto idx = check_member_name(name);
+	if (idx < 0)
+	{
+		members_index_type new_idx = static_cast<members_index_type>(variable_blocks.size());
+		variable_blocks.emplace_back(std::move(id), std::move(value));
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_variable_data_index_type });
+		return true;
+	}
+	else
+	{
+		return RX_NOT_IMPLEMENTED;
+	}
+}
+
+rx_result runtime_data_prototype::add_value_block (const string_type& name, runtime::structure::value_block_data&& value, rx_node_id id)
+{
+	auto idx = check_member_name(name);
+	if (idx < 0)
+	{
+		members_index_type new_idx = static_cast<members_index_type>(blocks.size());
+		blocks.emplace_back(std::move(id), std::move(value));
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_data_index_type });
+		return true;
+	}
+	else
+	{
+		return RX_NOT_IMPLEMENTED;
+	}
+}
+
+rx_result runtime_data_prototype::add_value_block (const string_type& name, std::vector<runtime::structure::value_block_data> value, rx_node_id id)
+{
+	auto idx = check_member_name(name);
+	if (idx < 0)
+	{
+		members_index_type new_idx = static_cast<members_index_type>(blocks.size());
+		blocks.emplace_back(std::move(id), std::move(value));
+		items.push_back({ name, (new_idx << rt_type_shift) | rt_value_data_index_type });
+		return true;
+	}
+	else
+	{
+		return RX_NOT_IMPLEMENTED;
+	}
+}
+
 template <class runtime_data_type>
 runtime_item::smart_ptr create_runtime_data_from_prototype(runtime_data_prototype& prototype)
 {
 	std::unique_ptr<runtime_data_type> ret = std::make_unique<runtime_data_type>();
 	if constexpr (runtime_data_type::has_variables())
-	{
 		ret->variables.copy_from(std::move(prototype.variables));
-	}
 	if constexpr (runtime_data_type::has_structs())
 		ret->structs.copy_from(std::move(prototype.structs));
 	if constexpr (runtime_data_type::has_sources())
@@ -1026,6 +1098,10 @@ runtime_item::smart_ptr create_runtime_data_from_prototype(runtime_data_prototyp
 		ret->filters.copy_from(std::move(prototype.filters));
 	if constexpr (runtime_data_type::has_events())
 		ret->events.copy_from(std::move(prototype.events));
+	if constexpr (runtime_data_type::has_block_data())
+		ret->blocks.copy_from(std::move(prototype.blocks));
+	if constexpr (runtime_data_type::has_variable_blocks_data())
+		ret->variable_blocks.copy_from(std::move(prototype.variable_blocks));
 
 	ret->values = const_size_vector< array_wrapper<value_data> >(std::move(prototype.values));
 	ret->const_values = const_size_vector<array_wrapper<const_value_data> >(std::move(prototype.const_values));
@@ -1042,7 +1118,9 @@ runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype)
 		| (prototype.sources.empty() ? rt_bit_none : rt_bit_has_sources)
 		| (prototype.mappers.empty() ? rt_bit_none : rt_bit_has_mappers)
 		| (prototype.filters.empty() ? rt_bit_none : rt_bit_has_filters)
-		| (prototype.events.empty() ? rt_bit_none : rt_bit_has_events);
+		| (prototype.events.empty() ? rt_bit_none : rt_bit_has_events)
+		| (prototype.blocks.empty() ? rt_bit_none : rt_bit_has_data_blocks)
+		| (prototype.variable_blocks.empty() ? rt_bit_none : rt_bit_has_variable_data_blocks);
 
 	switch (effective_type)
 	{
@@ -1174,6 +1252,390 @@ runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype)
 		return create_runtime_data_from_prototype<runtime_data_type3e>(prototype);
 	case 0x3f:
 		return create_runtime_data_from_prototype<runtime_data_type3f>(prototype);
+	case 0x40:
+		return create_runtime_data_from_prototype<runtime_data_type40>(prototype);
+	case 0x41:
+		return create_runtime_data_from_prototype<runtime_data_type41>(prototype);
+	case 0x42:
+		return create_runtime_data_from_prototype<runtime_data_type42>(prototype);
+	case 0x43:
+		return create_runtime_data_from_prototype<runtime_data_type43>(prototype);
+	case 0x44:
+		return create_runtime_data_from_prototype<runtime_data_type44>(prototype);
+	case 0x45:
+		return create_runtime_data_from_prototype<runtime_data_type45>(prototype);
+	case 0x46:
+		return create_runtime_data_from_prototype<runtime_data_type46>(prototype);
+	case 0x47:
+		return create_runtime_data_from_prototype<runtime_data_type47>(prototype);
+	case 0x48:
+		return create_runtime_data_from_prototype<runtime_data_type48>(prototype);
+	case 0x49:
+		return create_runtime_data_from_prototype<runtime_data_type49>(prototype);
+	case 0x4a:
+		return create_runtime_data_from_prototype<runtime_data_type4a>(prototype);
+	case 0x4b:
+		return create_runtime_data_from_prototype<runtime_data_type4b>(prototype);
+	case 0x4c:
+		return create_runtime_data_from_prototype<runtime_data_type4c>(prototype);
+	case 0x4d:
+		return create_runtime_data_from_prototype<runtime_data_type4d>(prototype);
+	case 0x4e:
+		return create_runtime_data_from_prototype<runtime_data_type4e>(prototype);
+	case 0x4f:
+		return create_runtime_data_from_prototype<runtime_data_type4f>(prototype);
+	case 0x50:
+		return create_runtime_data_from_prototype<runtime_data_type50>(prototype);
+	case 0x51:
+		return create_runtime_data_from_prototype<runtime_data_type51>(prototype);
+	case 0x52:
+		return create_runtime_data_from_prototype<runtime_data_type52>(prototype);
+	case 0x53:
+		return create_runtime_data_from_prototype<runtime_data_type53>(prototype);
+	case 0x54:
+		return create_runtime_data_from_prototype<runtime_data_type54>(prototype);
+	case 0x55:
+		return create_runtime_data_from_prototype<runtime_data_type55>(prototype);
+	case 0x56:
+		return create_runtime_data_from_prototype<runtime_data_type56>(prototype);
+	case 0x57:
+		return create_runtime_data_from_prototype<runtime_data_type57>(prototype);
+	case 0x58:
+		return create_runtime_data_from_prototype<runtime_data_type58>(prototype);
+	case 0x59:
+		return create_runtime_data_from_prototype<runtime_data_type59>(prototype);
+	case 0x5a:
+		return create_runtime_data_from_prototype<runtime_data_type5a>(prototype);
+	case 0x5b:
+		return create_runtime_data_from_prototype<runtime_data_type5b>(prototype);
+	case 0x5c:
+		return create_runtime_data_from_prototype<runtime_data_type5c>(prototype);
+	case 0x5d:
+		return create_runtime_data_from_prototype<runtime_data_type5d>(prototype);
+	case 0x5e:
+		return create_runtime_data_from_prototype<runtime_data_type5e>(prototype);
+	case 0x5f:
+		return create_runtime_data_from_prototype<runtime_data_type5f>(prototype);
+	case 0x60:
+		return create_runtime_data_from_prototype<runtime_data_type60>(prototype);
+	case 0x61:
+		return create_runtime_data_from_prototype<runtime_data_type61>(prototype);
+	case 0x62:
+		return create_runtime_data_from_prototype<runtime_data_type62>(prototype);
+	case 0x63:
+		return create_runtime_data_from_prototype<runtime_data_type63>(prototype);
+	case 0x64:
+		return create_runtime_data_from_prototype<runtime_data_type64>(prototype);
+	case 0x65:
+		return create_runtime_data_from_prototype<runtime_data_type65>(prototype);
+	case 0x66:
+		return create_runtime_data_from_prototype<runtime_data_type66>(prototype);
+	case 0x67:
+		return create_runtime_data_from_prototype<runtime_data_type67>(prototype);
+	case 0x68:
+		return create_runtime_data_from_prototype<runtime_data_type68>(prototype);
+	case 0x69:
+		return create_runtime_data_from_prototype<runtime_data_type69>(prototype);
+	case 0x6a:
+		return create_runtime_data_from_prototype<runtime_data_type6a>(prototype);
+	case 0x6b:
+		return create_runtime_data_from_prototype<runtime_data_type6b>(prototype);
+	case 0x6c:
+		return create_runtime_data_from_prototype<runtime_data_type6c>(prototype);
+	case 0x6d:
+		return create_runtime_data_from_prototype<runtime_data_type6d>(prototype);
+	case 0x6e:
+		return create_runtime_data_from_prototype<runtime_data_type6e>(prototype);
+	case 0x6f:
+		return create_runtime_data_from_prototype<runtime_data_type6f>(prototype);
+	case 0x70:
+		return create_runtime_data_from_prototype<runtime_data_type70>(prototype);
+	case 0x71:
+		return create_runtime_data_from_prototype<runtime_data_type71>(prototype);
+	case 0x72:
+		return create_runtime_data_from_prototype<runtime_data_type72>(prototype);
+	case 0x73:
+		return create_runtime_data_from_prototype<runtime_data_type73>(prototype);
+	case 0x74:
+		return create_runtime_data_from_prototype<runtime_data_type74>(prototype);
+	case 0x75:
+		return create_runtime_data_from_prototype<runtime_data_type75>(prototype);
+	case 0x76:
+		return create_runtime_data_from_prototype<runtime_data_type76>(prototype);
+	case 0x77:
+		return create_runtime_data_from_prototype<runtime_data_type77>(prototype);
+	case 0x78:
+		return create_runtime_data_from_prototype<runtime_data_type78>(prototype);
+	case 0x79:
+		return create_runtime_data_from_prototype<runtime_data_type79>(prototype);
+	case 0x7a:
+		return create_runtime_data_from_prototype<runtime_data_type7a>(prototype);
+	case 0x7b:
+		return create_runtime_data_from_prototype<runtime_data_type7b>(prototype);
+	case 0x7c:
+		return create_runtime_data_from_prototype<runtime_data_type7c>(prototype);
+	case 0x7d:
+		return create_runtime_data_from_prototype<runtime_data_type7d>(prototype);
+	case 0x7e:
+		return create_runtime_data_from_prototype<runtime_data_type7e>(prototype);
+	case 0x7f:
+		return create_runtime_data_from_prototype<runtime_data_type7f>(prototype);
+	case 0x80:
+		return create_runtime_data_from_prototype<runtime_data_type80>(prototype);
+	case 0x81:
+		return create_runtime_data_from_prototype<runtime_data_type81>(prototype);
+	case 0x82:
+		return create_runtime_data_from_prototype<runtime_data_type82>(prototype);
+	case 0x83:
+		return create_runtime_data_from_prototype<runtime_data_type83>(prototype);
+	case 0x84:
+		return create_runtime_data_from_prototype<runtime_data_type84>(prototype);
+	case 0x85:
+		return create_runtime_data_from_prototype<runtime_data_type85>(prototype);
+	case 0x86:
+		return create_runtime_data_from_prototype<runtime_data_type86>(prototype);
+	case 0x87:
+		return create_runtime_data_from_prototype<runtime_data_type87>(prototype);
+	case 0x88:
+		return create_runtime_data_from_prototype<runtime_data_type88>(prototype);
+	case 0x89:
+		return create_runtime_data_from_prototype<runtime_data_type89>(prototype);
+	case 0x8a:
+		return create_runtime_data_from_prototype<runtime_data_type8a>(prototype);
+	case 0x8b:
+		return create_runtime_data_from_prototype<runtime_data_type8b>(prototype);
+	case 0x8c:
+		return create_runtime_data_from_prototype<runtime_data_type8c>(prototype);
+	case 0x8d:
+		return create_runtime_data_from_prototype<runtime_data_type8d>(prototype);
+	case 0x8e:
+		return create_runtime_data_from_prototype<runtime_data_type8e>(prototype);
+	case 0x8f:
+		return create_runtime_data_from_prototype<runtime_data_type8f>(prototype);
+	case 0x90:
+		return create_runtime_data_from_prototype<runtime_data_type90>(prototype);
+	case 0x91:
+		return create_runtime_data_from_prototype<runtime_data_type91>(prototype);
+	case 0x92:
+		return create_runtime_data_from_prototype<runtime_data_type92>(prototype);
+	case 0x93:
+		return create_runtime_data_from_prototype<runtime_data_type93>(prototype);
+	case 0x94:
+		return create_runtime_data_from_prototype<runtime_data_type94>(prototype);
+	case 0x95:
+		return create_runtime_data_from_prototype<runtime_data_type95>(prototype);
+	case 0x96:
+		return create_runtime_data_from_prototype<runtime_data_type96>(prototype);
+	case 0x97:
+		return create_runtime_data_from_prototype<runtime_data_type97>(prototype);
+	case 0x98:
+		return create_runtime_data_from_prototype<runtime_data_type98>(prototype);
+	case 0x99:
+		return create_runtime_data_from_prototype<runtime_data_type99>(prototype);
+	case 0x9a:
+		return create_runtime_data_from_prototype<runtime_data_type9a>(prototype);
+	case 0x9b:
+		return create_runtime_data_from_prototype<runtime_data_type9b>(prototype);
+	case 0x9c:
+		return create_runtime_data_from_prototype<runtime_data_type9c>(prototype);
+	case 0x9d:
+		return create_runtime_data_from_prototype<runtime_data_type9d>(prototype);
+	case 0x9e:
+		return create_runtime_data_from_prototype<runtime_data_type9e>(prototype);
+	case 0x9f:
+		return create_runtime_data_from_prototype<runtime_data_type9f>(prototype);
+	case 0xa0:
+		return create_runtime_data_from_prototype<runtime_data_typea0>(prototype);
+	case 0xa1:
+		return create_runtime_data_from_prototype<runtime_data_typea1>(prototype);
+	case 0xa2:
+		return create_runtime_data_from_prototype<runtime_data_typea2>(prototype);
+	case 0xa3:
+		return create_runtime_data_from_prototype<runtime_data_typea3>(prototype);
+	case 0xa4:
+		return create_runtime_data_from_prototype<runtime_data_typea4>(prototype);
+	case 0xa5:
+		return create_runtime_data_from_prototype<runtime_data_typea5>(prototype);
+	case 0xa6:
+		return create_runtime_data_from_prototype<runtime_data_typea6>(prototype);
+	case 0xa7:
+		return create_runtime_data_from_prototype<runtime_data_typea7>(prototype);
+	case 0xa8:
+		return create_runtime_data_from_prototype<runtime_data_typea8>(prototype);
+	case 0xa9:
+		return create_runtime_data_from_prototype<runtime_data_typea9>(prototype);
+	case 0xaa:
+		return create_runtime_data_from_prototype<runtime_data_typeaa>(prototype);
+	case 0xab:
+		return create_runtime_data_from_prototype<runtime_data_typeab>(prototype);
+	case 0xac:
+		return create_runtime_data_from_prototype<runtime_data_typeac>(prototype);
+	case 0xad:
+		return create_runtime_data_from_prototype<runtime_data_typead>(prototype);
+	case 0xae:
+		return create_runtime_data_from_prototype<runtime_data_typeae>(prototype);
+	case 0xaf:
+		return create_runtime_data_from_prototype<runtime_data_typeaf>(prototype);
+	case 0xb0:
+		return create_runtime_data_from_prototype<runtime_data_typeb0>(prototype);
+	case 0xb1:
+		return create_runtime_data_from_prototype<runtime_data_typeb1>(prototype);
+	case 0xb2:
+		return create_runtime_data_from_prototype<runtime_data_typeb2>(prototype);
+	case 0xb3:
+		return create_runtime_data_from_prototype<runtime_data_typeb3>(prototype);
+	case 0xb4:
+		return create_runtime_data_from_prototype<runtime_data_typeb4>(prototype);
+	case 0xb5:
+		return create_runtime_data_from_prototype<runtime_data_typeb5>(prototype);
+	case 0xb6:
+		return create_runtime_data_from_prototype<runtime_data_typeb6>(prototype);
+	case 0xb7:
+		return create_runtime_data_from_prototype<runtime_data_typeb7>(prototype);
+	case 0xb8:
+		return create_runtime_data_from_prototype<runtime_data_typeb8>(prototype);
+	case 0xb9:
+		return create_runtime_data_from_prototype<runtime_data_typeb9>(prototype);
+	case 0xba:
+		return create_runtime_data_from_prototype<runtime_data_typeba>(prototype);
+	case 0xbb:
+		return create_runtime_data_from_prototype<runtime_data_typebb>(prototype);
+	case 0xbc:
+		return create_runtime_data_from_prototype<runtime_data_typebc>(prototype);
+	case 0xbd:
+		return create_runtime_data_from_prototype<runtime_data_typebd>(prototype);
+	case 0xbe:
+		return create_runtime_data_from_prototype<runtime_data_typebe>(prototype);
+	case 0xbf:
+		return create_runtime_data_from_prototype<runtime_data_typebf>(prototype);
+	case 0xc0:
+		return create_runtime_data_from_prototype<runtime_data_typec0>(prototype);
+	case 0xc1:
+		return create_runtime_data_from_prototype<runtime_data_typec1>(prototype);
+	case 0xc2:
+		return create_runtime_data_from_prototype<runtime_data_typec2>(prototype);
+	case 0xc3:
+		return create_runtime_data_from_prototype<runtime_data_typec3>(prototype);
+	case 0xc4:
+		return create_runtime_data_from_prototype<runtime_data_typec4>(prototype);
+	case 0xc5:
+		return create_runtime_data_from_prototype<runtime_data_typec5>(prototype);
+	case 0xc6:
+		return create_runtime_data_from_prototype<runtime_data_typec6>(prototype);
+	case 0xc7:
+		return create_runtime_data_from_prototype<runtime_data_typec7>(prototype);
+	case 0xc8:
+		return create_runtime_data_from_prototype<runtime_data_typec8>(prototype);
+	case 0xc9:
+		return create_runtime_data_from_prototype<runtime_data_typec9>(prototype);
+	case 0xca:
+		return create_runtime_data_from_prototype<runtime_data_typeca>(prototype);
+	case 0xcb:
+		return create_runtime_data_from_prototype<runtime_data_typecb>(prototype);
+	case 0xcc:
+		return create_runtime_data_from_prototype<runtime_data_typecc>(prototype);
+	case 0xcd:
+		return create_runtime_data_from_prototype<runtime_data_typecd>(prototype);
+	case 0xce:
+		return create_runtime_data_from_prototype<runtime_data_typece>(prototype);
+	case 0xcf:
+		return create_runtime_data_from_prototype<runtime_data_typecf>(prototype);
+	case 0xd0:
+		return create_runtime_data_from_prototype<runtime_data_typed0>(prototype);
+	case 0xd1:
+		return create_runtime_data_from_prototype<runtime_data_typed1>(prototype);
+	case 0xd2:
+		return create_runtime_data_from_prototype<runtime_data_typed2>(prototype);
+	case 0xd3:
+		return create_runtime_data_from_prototype<runtime_data_typed3>(prototype);
+	case 0xd4:
+		return create_runtime_data_from_prototype<runtime_data_typed4>(prototype);
+	case 0xd5:
+		return create_runtime_data_from_prototype<runtime_data_typed5>(prototype);
+	case 0xd6:
+		return create_runtime_data_from_prototype<runtime_data_typed6>(prototype);
+	case 0xd7:
+		return create_runtime_data_from_prototype<runtime_data_typed7>(prototype);
+	case 0xd8:
+		return create_runtime_data_from_prototype<runtime_data_typed8>(prototype);
+	case 0xd9:
+		return create_runtime_data_from_prototype<runtime_data_typed9>(prototype);
+	case 0xda:
+		return create_runtime_data_from_prototype<runtime_data_typeda>(prototype);
+	case 0xdb:
+		return create_runtime_data_from_prototype<runtime_data_typedb>(prototype);
+	case 0xdc:
+		return create_runtime_data_from_prototype<runtime_data_typedc>(prototype);
+	case 0xdd:
+		return create_runtime_data_from_prototype<runtime_data_typedd>(prototype);
+	case 0xde:
+		return create_runtime_data_from_prototype<runtime_data_typede>(prototype);
+	case 0xdf:
+		return create_runtime_data_from_prototype<runtime_data_typedf>(prototype);
+	case 0xe0:
+		return create_runtime_data_from_prototype<runtime_data_typee0>(prototype);
+	case 0xe1:
+		return create_runtime_data_from_prototype<runtime_data_typee1>(prototype);
+	case 0xe2:
+		return create_runtime_data_from_prototype<runtime_data_typee2>(prototype);
+	case 0xe3:
+		return create_runtime_data_from_prototype<runtime_data_typee3>(prototype);
+	case 0xe4:
+		return create_runtime_data_from_prototype<runtime_data_typee4>(prototype);
+	case 0xe5:
+		return create_runtime_data_from_prototype<runtime_data_typee5>(prototype);
+	case 0xe6:
+		return create_runtime_data_from_prototype<runtime_data_typee6>(prototype);
+	case 0xe7:
+		return create_runtime_data_from_prototype<runtime_data_typee7>(prototype);
+	case 0xe8:
+		return create_runtime_data_from_prototype<runtime_data_typee8>(prototype);
+	case 0xe9:
+		return create_runtime_data_from_prototype<runtime_data_typee9>(prototype);
+	case 0xea:
+		return create_runtime_data_from_prototype<runtime_data_typeea>(prototype);
+	case 0xeb:
+		return create_runtime_data_from_prototype<runtime_data_typeeb>(prototype);
+	case 0xec:
+		return create_runtime_data_from_prototype<runtime_data_typeec>(prototype);
+	case 0xed:
+		return create_runtime_data_from_prototype<runtime_data_typeed>(prototype);
+	case 0xee:
+		return create_runtime_data_from_prototype<runtime_data_typeee>(prototype);
+	case 0xef:
+		return create_runtime_data_from_prototype<runtime_data_typeef>(prototype);
+	case 0xf0:
+		return create_runtime_data_from_prototype<runtime_data_typef0>(prototype);
+	case 0xf1:
+		return create_runtime_data_from_prototype<runtime_data_typef1>(prototype);
+	case 0xf2:
+		return create_runtime_data_from_prototype<runtime_data_typef2>(prototype);
+	case 0xf3:
+		return create_runtime_data_from_prototype<runtime_data_typef3>(prototype);
+	case 0xf4:
+		return create_runtime_data_from_prototype<runtime_data_typef4>(prototype);
+	case 0xf5:
+		return create_runtime_data_from_prototype<runtime_data_typef5>(prototype);
+	case 0xf6:
+		return create_runtime_data_from_prototype<runtime_data_typef6>(prototype);
+	case 0xf7:
+		return create_runtime_data_from_prototype<runtime_data_typef7>(prototype);
+	case 0xf8:
+		return create_runtime_data_from_prototype<runtime_data_typef8>(prototype);
+	case 0xf9:
+		return create_runtime_data_from_prototype<runtime_data_typef9>(prototype);
+	case 0xfa:
+		return create_runtime_data_from_prototype<runtime_data_typefa>(prototype);
+	case 0xfb:
+		return create_runtime_data_from_prototype<runtime_data_typefb>(prototype);
+	case 0xfc:
+		return create_runtime_data_from_prototype<runtime_data_typefc>(prototype);
+	case 0xfd:
+		return create_runtime_data_from_prototype<runtime_data_typefd>(prototype);
+	case 0xfe:
+		return create_runtime_data_from_prototype<runtime_data_typefe>(prototype);
+	case 0xff:
+		return create_runtime_data_from_prototype<runtime_data_typeff>(prototype);
 	}
 	return runtime_item::smart_ptr();
 
@@ -1244,69 +1706,6 @@ type_check_source::~type_check_source()
 
 
 // Class rx_platform::meta::display_data_prototype 
-
-
-// Class rx_platform::meta::data_blocks_prototype 
-
-
-void data_blocks_prototype::add (const string_type& name, data_blocks_prototype&& value)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(children.size());
-		children.emplace_back(std::move(value));
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_data_index_type });
-	}
-}
-
-void data_blocks_prototype::add_value (const string_type& name, rx_simple_value val)
-{
-	if (check_name(name))
-	{
-		members_index_type new_idx = static_cast<members_index_type>(values.size());
-		runtime::structure::const_value_data temp;
-		temp.value = std::move(val);
-		values.emplace_back(std::move(temp));
-		items.push_back({ name, (new_idx << rt_type_shift) | rt_const_index_type });
-	}
-}
-
-bool data_blocks_prototype::check_name (const string_type& name) const
-{
-	for (const auto& one : items)
-	{
-		if (one.name == name)
-			return false;
-	}
-	return true;
-}
-
-runtime::structure::block_data data_blocks_prototype::create_runtime ()
-{
-	runtime::structure::block_data ret;
-	std::vector< runtime::structure::array_wrapper<block_data> > complex_items;
-	complex_items.reserve(children.size());
-	for (auto& one : children)
-	{
-		if (one.is_array())
-		{
-			std::vector<block_data> temp_array;
-			for (int i = 0; i < one.get_size(); i++)
-			{
-				temp_array.push_back(one.get_item(i)->create_runtime());
-			}
-			complex_items.emplace_back(std::move(temp_array));
-		}
-		else
-		{
-			complex_items.emplace_back(one.get_item()->create_runtime());
-		}
-	}
-	ret.items = const_size_vector<index_data>(std::move(items));
-	ret.values = const_size_vector<runtime::structure::array_wrapper<const_value_data> >(std::move(values));
-	ret.children = const_size_vector<runtime::structure::array_wrapper<block_data> >(std::move(complex_items));
-	return ret;
-}
 
 
 // Class rx_platform::meta::dependencies_context 
@@ -1492,4 +1891,5 @@ rx_result config_part_container::deserialize (const string_type& name, base_meta
 
 } // namespace meta
 } // namespace rx_platform
+
 

@@ -83,11 +83,41 @@ rx_result tags_holder::browse (const string_type& prefix, const string_type& pat
 rx_result tags_holder::initialize_runtime (runtime_init_context& ctx, relations::relations_holder* relations, logic_blocks::logic_holder* logic, display_blocks::displays_holder* displays)
 {
 	ctx.structure.push_item(*item_);
-	auto result = item_->initialize_runtime(ctx);
+	rt_value_ref ref;
+	auto result = item_->get_value_ref("_Object.On", ref, false);
+	if (!result || ref.ref_type!=rt_value_ref_type::rt_value)
+	{
+		result.register_error("Error setting up On value!");
+		return result;
+	}
+	ref.ref_value_ptr.value->value_opt[structure::opt_state_ignorant] = true;
+	result = item_->get_value_ref("_Object.Test", ref, false);
+	if (!result || ref.ref_type != rt_value_ref_type::rt_value)
+	{
+		result.register_error("Error setting up Test value!");
+		return result;
+	}
+	ref.ref_value_ptr.value->value_opt[structure::opt_state_ignorant] = true;
+	result = item_->get_value_ref("_Object.Blocked", ref, false);
+	if (!result || ref.ref_type != rt_value_ref_type::rt_value)
+	{
+		result.register_error("Error setting up Blocked value!");
+		return result;
+	}
+	ref.ref_value_ptr.value->value_opt[structure::opt_state_ignorant] = true;
+	/*result = item_->get_value_ref("_Object.Simulate", ref, false);
+	if (!result || ref.ref_type != rt_value_ref_type::rt_value)
+	{
+		result.register_error("Error setting up Simulate value!");
+		return result;
+	}
+	ref.ref_value_ptr.value->value_opt[structure::opt_state_ignorant] = true;*/
+
+	connected_tags_.init_tags(ctx.context, relations, logic, displays, &binded_tags_);
+
+	result = item_->initialize_runtime(ctx);
 	if (result)
 	{
-		connected_tags_.init_tags(ctx.context, relations, logic, displays, &binded_tags_);
-
 		result = common_tags_.initialize_runtime(ctx);
 	}
 	return result;
@@ -105,6 +135,8 @@ rx_result tags_holder::start_runtime (runtime_start_context& ctx)
 	ctx.simulation |= item_->get_local_as("_Object.Simulate", false);
 	ctx.set_item_static("_Object.SimActive", ctx.simulation);
 	auto result = item_->start_runtime(ctx);
+	
+	ctx.context->status_change_pending();
 	return result;
 }
 
@@ -161,7 +193,11 @@ common_runtime_tags::common_runtime_tags()
         test_(false),
         blocked_(false),
         simulate_(false),
-        queues_size_(0)
+        queues_size_(0),
+        on_handle_(0),
+        test_handle_(0),
+        blocked_handle_(0),
+        simulate_handle_(0)
 {
 }
 
@@ -170,37 +206,111 @@ common_runtime_tags::common_runtime_tags()
 rx_result common_runtime_tags::initialize_runtime (runtime_init_context& ctx)
 {
 	auto bind_result = last_scan_time_.bind("_Object.LastScanTime", ctx);
-	if (bind_result)
-	{
-		bind_result = max_scan_time_.bind("_Object.MaxScanTime", ctx);
-		if (bind_result)
-		{
-			bind_result = loop_count_.bind("_Object.LoopCount", ctx);
-			if (bind_result)
-			{
-				bind_result = on_.bind("_Object.On", ctx);
-				if (bind_result)
-				{
-					bind_result = test_.bind("_Object.Test", ctx);
-					if (bind_result)
-					{
-						bind_result = blocked_.bind("_Object.Blocked", ctx);
-						if (bind_result)
-						{
-							bind_result = simulate_.bind("_Object.Simulate", ctx);
-							if (bind_result)
-							{
-								bind_result = queues_size_.bind("_Object.ProcessQueues", ctx);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
 	if (!bind_result)
-		bind_result.register_error("Unable to bind to common tag.");
-	return bind_result;
+		return bind_result;
+
+	bind_result = max_scan_time_.bind("_Object.MaxScanTime", ctx);
+	if (!bind_result)
+		return bind_result;
+
+	bind_result = loop_count_.bind("_Object.LoopCount", ctx);
+
+	if (!bind_result)
+		return bind_result;
+
+	auto result = ctx.bind_item("_Object.On", [this, context = ctx.context](const rx_value& val)
+		{
+			bool temp = val.extract_static(false);
+			if (temp != on_)
+			{
+				on_ = temp;
+				context->status_change_pending();
+			}
+		});
+	if (!result)
+		return result.errors();
+	on_handle_ = result.move_value();
+	on_ = ctx.context->get_binded_as(on_handle_, false);
+
+	result = ctx.bind_item("_Object.Test", [this, context = ctx.context](const rx_value& val)
+		{
+			bool temp = val.extract_static(false);
+			if (temp != test_)
+			{
+				test_ = temp;
+				context->status_change_pending();
+			}
+		});
+	if (!result)
+		return result.errors();
+	test_handle_ = result.move_value();
+	test_ = ctx.context->get_binded_as(test_handle_, false);
+
+	result = ctx.bind_item("_Object.Blocked", [this, context = ctx.context](const rx_value& val)
+		{
+			bool temp = val.extract_static(false);
+			if (temp != blocked_)
+			{
+				blocked_ = temp;
+				context->status_change_pending();
+			}
+
+		});
+	if (!result)
+		return result.errors();
+	blocked_handle_ = result.move_value();
+	blocked_ = ctx.context->get_binded_as(blocked_handle_, false);
+
+	result = ctx.bind_item("_Object.Simulate", [this, context = ctx.context](const rx_value& val)
+		{
+			bool temp = val.extract_static(false);
+			if (temp != simulate_)
+			{
+				simulate_ = temp;
+				context->status_change_pending();
+			}
+		});
+	if (!result)
+		return result.errors();
+	simulate_handle_ = result.move_value();
+	simulate_ = ctx.context->get_binded_as(simulate_handle_, false);
+
+	bind_result = queues_size_.bind("_Object.ProcessQueues", ctx);
+
+	if (!bind_result)
+		return bind_result;
+	
+	return true;
+}
+
+void common_runtime_tags::adapt_mode (rx_mode_type& mode, runtime_process_context* ctx)
+{
+	on_ = ctx->get_binded_as(on_handle_, false);
+	test_ = ctx->get_binded_as(test_handle_, false);
+	simulate_ = ctx->get_binded_as(simulate_handle_, false);
+	blocked_ = ctx->get_binded_as(blocked_handle_, false);
+	if (test_)
+		mode.set_test();
+	else
+		mode.reset_test();
+	if (blocked_)
+		mode.set_blocked();
+	else
+		mode.reset_blocked();
+	if (simulate_)
+		mode.set_simulate();
+	else
+		mode.ret_simulate();
+	if (on_)
+		mode.turn_on();
+	else
+		mode.turn_off();
+
+	ctx->set_binded_as(on_handle_, mode.is_on());
+	ctx->set_binded_as(test_handle_, mode.is_test());
+	ctx->set_binded_as(blocked_handle_, mode.is_blocked());
+	ctx->set_binded_as(simulate_handle_, mode.is_simulate());
+
 }
 
 

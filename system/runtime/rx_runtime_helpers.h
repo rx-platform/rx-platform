@@ -62,16 +62,16 @@ class variable_data;
 class runtime_item;
 } // namespace structure
 
-namespace relations {
-class relations_holder;
-} // namespace relations
-
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
 
-class relation_subscriber;
 class runtime_process_context;
+namespace relations {
+class relations_holder;
+} // namespace relations
+
+class relation_subscriber;
 namespace tag_blocks {
 class binded_tags;
 
@@ -111,6 +111,7 @@ struct write_tag_data
 {
     runtime_transaction_id_t transaction_id;
     runtime_handle_t item;
+    bool test;
     rx_simple_value value;
     tags_callback_ptr callback;
     rx_security_handle_t identity;
@@ -129,6 +130,7 @@ struct execute_tag_data
 {
     runtime_transaction_id_t transaction_id;
     runtime_handle_t item;
+    bool test;
     data::runtime_values_data data;
     tags_callback_ptr callback;
     rx_security_handle_t identity;
@@ -152,13 +154,17 @@ class io_capabilities
 
       bool get_output () const;
 
+      void set_complex (bool val);
+
+      bool get_complex () const;
+
 
   protected:
 
   private:
 
 
-      std::bitset<2> settings_;
+      std::bitset<16> settings_;
 
 
 };
@@ -229,6 +235,7 @@ class runtime_structure_resolver
 };
 
 
+typedef std::variant<structure::variable_data*, structure::variable_block_data*> variable_stack_entry;
 
 
 
@@ -236,15 +243,17 @@ class runtime_structure_resolver
 
 class variables_stack 
 {
-	typedef std::stack<structure::variable_data*, std::vector<structure::variable_data*> > variables_type;
+	typedef std::stack<variable_stack_entry, std::vector<variable_stack_entry> > variables_type;
 
   public:
 
       void push_variable (structure::variable_data* what);
 
+      void push_variable (structure::variable_block_data* what);
+
       void pop_variable ();
 
-      structure::variable_data* get_current_variable () const;
+      variable_stack_entry get_current_variable () const;
 
 
   protected:
@@ -310,6 +319,8 @@ struct runtime_start_context
       void add_calc_periodic_job (jobs::periodic_job::smart_ptr job);
 
       void add_io_periodic_job (jobs::periodic_job::smart_ptr job);
+
+      rx_value& get_current_variable_value ();
 
 
       runtime_path_resolver path;
@@ -489,6 +500,8 @@ struct runtime_init_context
       runtime_handle_t get_new_handle ();
 
       rx_result_with<runtime_handle_t> bind_item (const string_type& path, tag_blocks::binded_callback_t callback);
+
+      rx_result_with<runtime_handle_t> bind_item (const string_type& path, tag_blocks::binded_callback_t callback, tag_blocks::write_callback_t write_callback);
 
       rx_result set_item (const string_type& path, rx_simple_value&& value);
 

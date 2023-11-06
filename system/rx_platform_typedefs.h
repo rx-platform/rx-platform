@@ -135,6 +135,7 @@ namespace runtime {
 
 struct write_data;
 struct runtime_init_context;
+class runtime_process_context;
 
 namespace structure
 {
@@ -146,6 +147,7 @@ constexpr static int value_opt_persistent = 1;
 
 // internal status for state ignorant values (On, Test, Status Simulate)
 constexpr static int opt_state_ignorant = 30;
+constexpr static int opt_is_constant = 29;
 
 // typedefs for masks
 constexpr uint_fast8_t rt_const_index_type = 0x01;
@@ -157,8 +159,8 @@ constexpr uint_fast8_t rt_mapper_index_type = 0x06;
 constexpr uint_fast8_t rt_filter_index_type = 0x07;
 constexpr uint_fast8_t rt_event_index_type = 0x08;
 constexpr uint_fast8_t rt_data_index_type = 0x09;
-constexpr uint_fast8_t rt_const_data_index_type = 0x0a;
-constexpr uint_fast8_t rt_value_data_index_type = 0x0b;
+constexpr uint_fast8_t rt_value_data_index_type = 0x0a;
+constexpr uint_fast8_t rt_variable_data_index_type = 0x0b;
 
 constexpr uint_fast8_t rt_bit_none = 0x00;
 constexpr uint_fast8_t rt_bit_has_variables = 0x01;
@@ -167,6 +169,8 @@ constexpr uint_fast8_t rt_bit_has_sources = 0x04;
 constexpr uint_fast8_t rt_bit_has_mappers = 0x08;
 constexpr uint_fast8_t rt_bit_has_filters = 0x10;
 constexpr uint_fast8_t rt_bit_has_events = 0x20;
+constexpr uint_fast8_t rt_bit_has_data_blocks = 0x40;
+constexpr uint_fast8_t rt_bit_has_variable_data_blocks = 0x80;
 
 typedef uint_fast16_t members_index_type;
 
@@ -210,6 +214,7 @@ namespace tag_blocks
 class rx_tags_callback;
 typedef rx_reference<rx_tags_callback> tags_callback_ptr;
 typedef std::function<void(const rx_value&)> binded_callback_t;
+typedef std::function<rx_result(rx_simple_value&, runtime_process_context*)> write_callback_t;
 }
 using tag_blocks::tags_callback_ptr;
 
@@ -247,6 +252,8 @@ class value_data;
 class full_value_data;
 class struct_data;
 class variable_data;
+class variable_block_data;
+struct variable_commons_base;
 class event_data;
 class filter_data;
 class source_data;

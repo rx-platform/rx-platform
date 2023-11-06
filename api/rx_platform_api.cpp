@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -308,7 +308,6 @@ extern "C" {
 	{
 		if (count < 0x10 || data == nullptr)
 			return rx_result("Invalid data!").move();
-		uint8_t be = data[0];
 		auto plugin_obj = library::rx_dynamic_plugin::get_registered_plugin(plugin);
 		if(!plugin_obj)
 			return rx_result("Invalid plugin!").move();
@@ -325,7 +324,6 @@ extern "C" {
 	{
 		if (count < 0x10 || data == nullptr)
 			return rx_result("Invalid data!").move();
-		uint8_t be = data[0];
 		auto plugin_obj = library::rx_dynamic_plugin::get_registered_plugin(plugin);
 		if (!plugin_obj)
 			return rx_result("Invalid plugin!").move();
@@ -355,7 +353,7 @@ extern "C" {
 				return rx_create_reference<runtime::blocks::extern_source_runtime>(construct_data.constructor());
 			});
 		return result.move();
-		
+
 	}
 	RX_PLATFORM_API rx_result_struct rxRegisterMapperRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_mapper_constructor_t construct_func)
 	{
@@ -721,7 +719,7 @@ extern "C" {
 		runtime::runtime_init_context* self = (runtime::runtime_init_context*)ctx;
 		*id = self->meta.id.c_ptr();
 		*path = self->meta.path.c_str();
-		*path = self->meta.name.c_str();
+		*name = self->meta.name.c_str();
 	}
 
 	RX_PLATFORM_API rx_result_struct rxCtxGetValue(runtime_ctx_ptr ctx, runtime_handle_t handle, typed_value_type* val)
@@ -789,7 +787,7 @@ extern "C" {
 		return result.move();
 	}
 
-	
+
 
 	RX_PLATFORM_API rx_result_struct rxStartCtxSubscribeRelation(start_ctx_ptr ctx, const char* name, relation_subscriber_data* callback)
 	{
@@ -933,7 +931,7 @@ const platform_api2_t* get_plugins_dynamic_api2()
 
 namespace rx_platform {
 
-// Class rx_platform::extern_timer_job 
+// Class rx_platform::extern_timer_job
 
 extern_timer_job::extern_timer_job (plugin_job_struct* extern_data)
       : anchor_(&extern_data->anchor),
@@ -949,7 +947,7 @@ void extern_timer_job::process ()
 }
 
 
-// Class rx_platform::extern_timers 
+// Class rx_platform::extern_timers
 
 
 extern_timers& extern_timers::instance ()
@@ -961,7 +959,7 @@ extern_timers& extern_timers::instance ()
 runtime_handle_t extern_timers::create_timer (plugin_job_struct* job_impl, uint32_t period, threads::job_thread* pool)
 {
 	runtime_handle_t ret = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
-	extern_timer_job::smart_ptr job_ptr = rx_create_reference<extern_timer_job>(job_impl);	
+	extern_timer_job::smart_ptr job_ptr = rx_create_reference<extern_timer_job>(job_impl);
 	{
 		locks::auto_lock_t _(&lock_);
 		auto ret_val = timers_.emplace(ret, job_ptr);
@@ -1011,7 +1009,7 @@ void extern_timers::start_timer (runtime_handle_t handle, uint32_t period)
 	extern_timer_job::smart_ptr job_ptr;
 	{
 		locks::auto_lock_t _(&lock_);
-		
+
 		auto it = timers_.find(handle);
 		if (it != timers_.end())
 		{
@@ -1056,7 +1054,7 @@ void extern_timers::destroy_timer (runtime_handle_t handle)
 }
 
 
-// Class rx_platform::extern_job 
+// Class rx_platform::extern_job
 
 extern_job::extern_job (plugin_job_struct* extern_data)
       : extern_data_(extern_data),
@@ -1072,7 +1070,7 @@ void extern_job::process ()
 }
 
 
-// Class rx_platform::extern_period_job 
+// Class rx_platform::extern_period_job
 
 extern_period_job::extern_period_job (plugin_job_struct* extern_data)
       : anchor_(&extern_data->anchor),

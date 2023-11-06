@@ -334,49 +334,133 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 		return ret;
 	}
 	target = resolve_result.value();
-	if (whose.array_size_ < 0)
+
+	if (whose.get_data_type_ref().is_null())
 	{
-		auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
-		if (temp)
-		{
-			temp.value().value = whose.get_value(ctx.now);
-			temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
-			temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
-			return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target);
-		}
-		else
-		{
-			return temp.errors();
-		}
-	}
-	else
-	{
-		auto vals = whose.get_values(ctx.now);
-		int vals_size = (int)vals.size();
-		if (vals_size == 0)
-			return "Invalid initialization values!";
-		rx_value first = vals[0];
-		std::vector<runtime::structure::variable_data> data;
-		data.reserve(whose.array_size_);
-		for (int i = 0; i < whose.array_size_; i++)
+		if (whose.array_size_ < 0)
 		{
 			auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 			if (temp)
 			{
-				if (i < vals_size)
-					temp.value().value = vals[i];
-				else
-					temp.value().value = first;
+				temp.value().value = whose.get_value(ctx.now);
 				temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 				temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
-				data.push_back(temp.move_value());
+				return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target);
 			}
 			else
 			{
 				return temp.errors();
 			}
 		}
-		return ctx.runtime_data().add_variable(whose.name_, std::move(data), target);
+		else
+		{
+			auto vals = whose.get_values(ctx.now);
+			int vals_size = (int)vals.size();
+			if (vals_size == 0)
+				return "Invalid initialization values!";
+			rx_value first = vals[0];
+			std::vector<runtime::structure::variable_data> data;
+			data.reserve(whose.array_size_);
+			for (int i = 0; i < whose.array_size_; i++)
+			{
+				auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+				if (temp)
+				{
+					if (i < vals_size)
+						temp.value().value = vals[i];
+					else
+						temp.value().value = first;
+					temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
+					temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+					data.push_back(temp.move_value());
+				}
+				else
+				{
+					return temp.errors();
+				}
+			}
+			return ctx.runtime_data().add_variable(whose.name_, std::move(data), target);
+		}
+	}
+	else
+	{
+
+		rx_node_id data_target;
+		auto resolve_data_result = rx_internal::model::algorithms::resolve_data_type_reference(whose.get_data_type_ref(), ctx.get_directories());
+		if (!resolve_data_result)
+		{
+			rx_result ret(resolve_data_result.errors());
+			ret.register_error("Unable to resolve data attribute");
+			return ret;
+		}
+		data_target = resolve_data_result.value();
+
+		if (whose.array_size_ < 0)
+		{
+			auto temp_data = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(data_target, whose.get_name(), ctx, ctx.get_directories());
+			if (temp_data)
+			{
+				auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+				if (temp)
+				{
+					temp.value().value = whose.get_value(ctx.now);
+					temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
+					temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+					runtime::structure::variable_block_data block;
+					block.variable = temp.move_value();
+					block.block = std::move(temp_data.value().runtime);
+					return ctx.runtime_data().add_variable_block(whose.name_, std::move(block), target);
+				}
+				else
+				{
+					return temp.errors();
+				}
+			}
+			else
+			{
+				return temp_data.errors();
+			}
+		}
+		else
+		{
+			auto vals = whose.get_values(ctx.now);
+			int vals_size = (int)vals.size();
+			if (vals_size == 0)
+				return "Invalid initialization values!";
+			rx_value first = vals[0];
+			std::vector<runtime::structure::variable_block_data> data;
+			data.reserve(whose.array_size_);
+			for (int i = 0; i < whose.array_size_; i++)
+			{
+				auto temp_data = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(data_target, whose.get_name(), ctx, ctx.get_directories());
+				if (temp_data)
+				{
+					auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+					if (temp)
+					{
+						if (i < vals_size)
+							temp.value().value = vals[i];
+						else
+							temp.value().value = first;
+						temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
+						temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+						runtime::structure::variable_block_data block;
+						block.variable = temp.move_value();
+						block.block = std::move(temp_data.value().runtime);
+						data.push_back(std::move(block));
+					}
+					else
+					{
+						return temp.errors();
+					}
+				}
+				else
+				{
+					return temp_data.errors();
+				}
+			}
+			return ctx.runtime_data().add_variable_block(whose.name_, std::move(data), target);
+		}
 	}
 }
 
@@ -1071,67 +1155,25 @@ rx_result complex_data_algorithm::construct_complex_attribute (const complex_dat
 			// constant values
 		case complex_data_type::const_values_mask:
 			{
-				if (whose.const_values_[one.second & complex_data_type::index_mask].get_array_size() < 0)
+				rx_result ret = construct_complex_attribute(whose.const_values_[one.second & complex_data_type::index_mask], ctx);
+				if (!ret)
 				{
-					rx_result ret = ctx.runtime_data().add_const_value(
-						one.first,
-						whose.const_values_[one.second & complex_data_type::index_mask].get_value(),
-						get_value_opt(
-							whose.const_values_[one.second & complex_data_type::index_mask].get_read_only(),
-							whose.const_values_[one.second & complex_data_type::index_mask].get_persistent()));
-					if (!ret)
-					{
-						ret.register_error("Unable to add const value "s + one.first + "!");
-						return ret;
-					}
+					ret.register_error("Unable to create const value "s + one.first + "!");
+					return ret;
 				}
-				else
-				{
-					rx_result ret = ctx.runtime_data().add_const_value(
-						one.first,
-						whose.const_values_[one.second & complex_data_type::index_mask].get_values(),
-						get_value_opt(
-							whose.const_values_[one.second & complex_data_type::index_mask].get_read_only(),
-							whose.const_values_[one.second & complex_data_type::index_mask].get_persistent()));
-					if (!ret)
-					{
-						ret.register_error("Unable to add const value "s + one.first + "!");
-						return ret;
-					}
-				}
+				break;
 			}
 			break;
 			// simple values
 		case complex_data_type::simple_values_mask:
 			{
-				if (whose.simple_values_[one.second & complex_data_type::index_mask].get_array_size() < 0)
+				rx_result ret = construct_complex_attribute(whose.simple_values_[one.second & complex_data_type::index_mask], ctx);
+				if (!ret)
 				{
-					rx_result ret = ctx.runtime_data().add_value(
-						one.first,
-						whose.simple_values_[one.second & complex_data_type::index_mask].get_value(ctx.now),
-						get_value_opt(
-							whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
-							whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent()));
-					if (!ret)
-					{
-						ret.register_error("Unable to add simple value "s + one.first + "!");
-						return ret;
-					}
+					ret.register_error("Unable to create const value "s + one.first + "!");
+					return ret;
 				}
-				else
-				{
-					rx_result ret = ctx.runtime_data().add_value(
-						one.first,
-						whose.simple_values_[one.second & complex_data_type::index_mask].get_values(ctx.now),
-						get_value_opt(
-							whose.simple_values_[one.second & complex_data_type::index_mask].get_read_only(),
-							whose.simple_values_[one.second & complex_data_type::index_mask].get_persistent()));
-					if (!ret)
-					{
-						ret.register_error("Unable to add simple value "s + one.first + "!");
-						return ret;
-					}
-				}
+				break;
 			}
 			break;
 			// structures
@@ -1232,6 +1274,198 @@ std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool pers
 	ret[runtime::structure::value_opt_readonly] = read_only;
 	ret[runtime::structure::value_opt_persistent] = persistent;
 	return ret;
+}
+
+rx_result complex_data_algorithm::construct_complex_attribute (const const_value_def& whose, construct_context& ctx)
+{
+	if (whose.get_data_type_ref().is_null())
+	{
+		if (whose.get_array_size() < 0)
+		{
+			rx_result ret = ctx.runtime_data().add_const_value(
+				whose.get_name(),
+				whose.get_value(),
+				get_value_opt(
+					whose.get_read_only(),
+					whose.get_persistent()));
+			if (!ret)
+			{
+				ret.register_error("Unable to add const value "s + whose.get_name() + "!");
+				return ret;
+			}
+		}
+		else
+		{
+			rx_result ret = ctx.runtime_data().add_const_value(
+				whose.get_name(),
+				whose.get_values(),
+				get_value_opt(
+					whose.get_read_only(),
+					whose.get_persistent()));
+			if (!ret)
+			{
+				ret.register_error("Unable to add const value "s + whose.get_name() + "!");
+				return ret;
+			}
+		}
+	}
+	else
+	{
+
+		rx_node_id target;
+		auto resolve_result = rx_internal::model::algorithms::resolve_data_type_reference(whose.get_data_type_ref(), ctx.get_directories());
+		if (!resolve_result)
+		{
+			rx_result ret(resolve_result.errors());
+			ret.register_error("Unable to resolve data attribute");
+			return ret;
+		}
+		target = resolve_result.value();
+		auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories());
+		if (temp)
+		{
+			if (whose.get_array_size() < 0)
+			{
+				value_block_data data;
+
+				data.struct_value.value_opt = get_value_opt(
+					whose.get_read_only(),
+					whose.get_persistent());
+				data.struct_value.value_opt[opt_is_constant] = true;
+				data.block = std::move(temp.value().runtime);
+				data.timestamp = ctx.now;
+				data.struct_value.value = whose.get_value();
+				data.struct_value.value.set_time(ctx.now);
+				return ctx.runtime_data().add_value_block(whose.get_name(), std::move(data), target);
+			}
+			else
+			{
+				std::vector<value_block_data> data;
+				//if (whose.get_array_size() > 0)
+				{
+					data.reserve(whose.get_array_size());
+					for (int i = 0; i < whose.get_array_size(); i++)
+					{
+					
+						value_block_data temp_data;
+
+						temp_data.struct_value.value_opt = get_value_opt(
+							whose.get_read_only(),
+							whose.get_persistent());
+						temp_data.struct_value.value_opt[opt_is_constant] = true;
+						temp_data.block = std::move(temp.value().runtime);
+						temp_data.timestamp = ctx.now;
+						temp_data.struct_value.value = whose.get_value();
+						temp_data.struct_value.value.set_time(ctx.now);
+
+						data.push_back(std::move(temp_data));
+					}
+					return ctx.runtime_data().add_value_block(whose.get_name(), std::move(data), target);
+				}
+			}
+		}
+		else
+		{
+			return temp.errors();
+		}
+	}
+	return true;
+}
+
+rx_result complex_data_algorithm::construct_complex_attribute (const simple_value_def& whose, construct_context& ctx)
+{
+	if (whose.get_data_type_ref().is_null())
+	{
+		if (whose.get_array_size() < 0)
+		{
+			rx_result ret = ctx.runtime_data().add_value(
+				whose.get_name(),
+				whose.get_value(ctx.now),
+				get_value_opt(
+					whose.get_read_only(),
+					whose.get_persistent()));
+			if (!ret)
+			{
+				ret.register_error("Unable to add simple value "s + whose.get_name() + "!");
+				return ret;
+			}
+		}
+		else
+		{
+			rx_result ret = ctx.runtime_data().add_value(
+				whose.get_name(),
+				whose.get_values(ctx.now),
+				get_value_opt(
+					whose.get_read_only(),
+					whose.get_persistent()));
+			if (!ret)
+			{
+				ret.register_error("Unable to add simple value "s + whose.get_name() + "!");
+				return ret;
+			}
+		}
+	}
+	else
+	{
+
+		rx_node_id target;
+		auto resolve_result = rx_internal::model::algorithms::resolve_data_type_reference(whose.get_data_type_ref(), ctx.get_directories());
+		if (!resolve_result)
+		{
+			rx_result ret(resolve_result.errors());
+			ret.register_error("Unable to resolve data attribute");
+			return ret;
+		}
+		target = resolve_result.value();
+		if (whose.get_array_size() < 0)
+		{
+			auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories());
+			if (temp)
+			{
+				value_block_data data;
+
+				data.struct_value.value_opt = get_value_opt(
+					whose.get_read_only(),
+					whose.get_persistent());
+				data.block = std::move(temp.value().runtime);
+				data.timestamp = ctx.now;
+				data.struct_value.value = whose.get_value(ctx.now);
+				return ctx.runtime_data().add_value_block(whose.get_name(), std::move(data), target);
+			}
+			else
+			{
+				return temp.errors();
+			}
+		}
+		else
+		{
+			std::vector<value_block_data> data;
+			data.reserve(whose.get_array_size());
+			for (int i = 0; i < whose.get_array_size(); i++)
+			{
+				auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories());
+				if (temp)
+				{
+					value_block_data temp_data;
+
+					temp_data.struct_value.value_opt = get_value_opt(
+						whose.get_read_only(),
+						whose.get_persistent());
+					temp_data.block = std::move(temp.value().runtime);
+					temp_data.timestamp = ctx.now;
+					temp_data.struct_value.value = whose.get_value(ctx.now);
+
+					data.push_back(std::move(temp_data));
+				}
+				else
+				{
+					return temp.errors();
+				}
+			}
+			return ctx.runtime_data().add_value_block(whose.get_name(), std::move(data), target);
+		}
+	}
+	return true;
 }
 
 
@@ -1488,6 +1722,11 @@ rx_result data_blocks_algorithm::serialize_data_attribute (const def_blocks::dat
 		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
 		return stream.get_error();
+	if (stream.get_version() >= RX_ARRAYS_VERSION)
+	{
+		if (!stream.write_int("array", whose.array_size_))
+			return stream.get_error();
+	}
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.write_string("description", whose.description_.c_str()))
@@ -1501,7 +1740,16 @@ rx_result data_blocks_algorithm::deserialize_data_attribute (def_blocks::data_at
 	if (!stream.read_string("name", whose.name_))
 		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
-		return stream.get_error();
+		return stream.get_error(); 
+	if (stream.get_version() >= RX_ARRAYS_VERSION)
+	{
+		if (!stream.read_int("array", whose.array_size_))
+			return stream.get_error();
+	}
+	else
+	{
+		whose.array_size_ = -1;
+	}
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.read_string("description", whose.description_))
@@ -1522,7 +1770,7 @@ bool data_blocks_algorithm::check_data_attribute (def_blocks::data_attribute& wh
 		return ctx.is_check_ok();
 }
 
-rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::data_attribute& whose, data_blocks_prototype& data, construct_context& ctx)
+rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, construct_context& ctx)
 {
 	rx_node_id target;
 	auto resolve_result = rx_internal::model::algorithms::resolve_data_type_reference(whose.target_, ctx.get_directories());
@@ -1536,7 +1784,7 @@ rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::dat
 	auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.name_, ctx, ctx.get_directories());
 	if (temp)
 	{
-		data = temp.move_value();
+		data = std::move(temp.value().runtime);
 		return true;
 	}
 	else

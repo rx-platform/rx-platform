@@ -203,8 +203,16 @@ void relation_data::try_resolve ()
 		auto resolve_result = rx_internal::model::algorithms::resolve_reference(parent_path, dirs);
 		if (!resolve_result)
 		{
-			RUNTIME_LOG_TRACE("relation_runtime", 100, "Unable to resolve relation reference to "s + parent_path);
+			RUNTIME_LOG_DEBUG("relation_runtime", 100, "Unable to resolve relation reference to "s + parent_path);
 			return;
+		}
+		if (!target_base_id.is_null())
+		{
+			if (!rx_internal::model::algorithms::is_instanced_from(resolve_result.value(), target_base_id))
+			{
+				RUNTIME_LOG_DEBUG("relation_runtime", 100, parent_path + " is not valid type for this relation type.");
+				return;
+			}
 		}
 		target_id = resolve_result.move_value();
 	}
@@ -380,6 +388,7 @@ rx_result relation_data::write_value (write_data&& data, runtime_process_context
 	auto result =  value.write_value(std::move(data), ctx, changed);
 	if (result && changed)
 	{
+		ctx->runtime_dirty();
 		if (my_state_ == relation_state::local_domain
 			|| my_state_ == relation_state::same_domain
 			|| my_state_ == relation_state::remote)
@@ -550,7 +559,7 @@ void relations_holder::collect_data (data::runtime_values_data& data, runtime_va
 	{
 		for (const auto& one : source_relations_)
 		{
-			if(one->value.value_opt[runtime::structure::value_opt_persistent])
+			//if(one->value.value_opt[runtime::structure::value_opt_persistent])
 				one->collect_data(data, type);
 		}
 	}
@@ -920,6 +929,12 @@ rx_value relation_value_data::get_value (runtime_process_context* ctx) const
 
 rx_result relation_value_data::write_value (write_data&& data, structure::write_task* task, runtime_process_context* ctx)
 {
+	if (ctx->get_mode().is_off())
+		return "Runtime if in Off state!";
+
+	if(data.test != ctx->get_mode().is_test())
+		return "Test mode mismatch!";
+
 	security::secured_scope _(data.identity);
 	return parent->write_tag(handle, std::move(data), task, ctx);
 }
@@ -972,7 +987,7 @@ rx_result relation_connections::write_tag (runtime_handle_t item, write_data&& d
 		auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
 		pending_tasks_.emplace(new_trans, task);
 		data.transaction_id = new_trans;
-		auto result = connector_->write_tag(new_trans, item, std::move(data.value));
+		auto result = connector_->write_tag(new_trans, data.test, item, std::move(data.value));
 		if (!result)
 			pending_tasks_.erase(new_trans);
 
@@ -991,7 +1006,7 @@ rx_result relation_connections::execute_tag (runtime_handle_t item, execute_data
 		auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
 		pending_execute_tasks_.emplace(new_trans, task);
 		data.transaction_id = new_trans;
-		auto result = connector_->execute_tag(new_trans, item, std::move(data.data));
+		auto result = connector_->execute_tag(new_trans, data.test, item, std::move(data.data));
 		if (!result)
 			pending_execute_tasks_.erase(new_trans);
 
@@ -1008,6 +1023,10 @@ void relation_connections::browse (const string_type& prefix, const string_type&
 	if (connector_)
 	{
 		connector_->browse(prefix, path, filter, std::move(callback));
+	}
+	else if(path.empty())
+	{
+		callback(true, std::vector<runtime_item_attribute>());
 	}
 	else
 	{

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -55,7 +55,7 @@ namespace
 std::unique_ptr<platform_types_manager> g_platform_types_instance;
 }
 
-// Class rx_internal::model::platform_types_manager
+// Class rx_internal::model::platform_types_manager 
 
 platform_types_manager::platform_types_manager()
 {
@@ -181,7 +181,7 @@ transactions::dependency_cache& platform_types_manager::get_dependecies_cache ()
 }
 
 
-// Class rx_internal::model::relations_hash_data
+// Class rx_internal::model::relations_hash_data 
 
 relations_hash_data::relations_hash_data()
 {
@@ -359,7 +359,7 @@ void relations_hash_data::deinitialize ()
 }
 
 
-// Parameterized Class rx_internal::model::types_repository
+// Parameterized Class rx_internal::model::types_repository 
 
 template <class typeT>
 types_repository<typeT>::types_repository()
@@ -1015,8 +1015,91 @@ void types_repository<typeT>::collect_and_add_depedencies (const typeT& what, co
 	}
 }
 
+template <class typeT>
+bool types_repository<typeT>::is_derived_from (rx_node_id id, rx_node_id base_id) const
+{
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	{
+		return inheritance_hash_.is_derived_from(id, base_id);
+	}
+	else
+	{
+		ns::rx_directory_resolver resolver;
+		while (!id.is_null())
+		{
+			auto temp_type = get_type_definition(id);
+			if (temp_type)
+			{
+				resolver.add_paths({ temp_type.value()->meta_info.path });
+				auto parent_id = algorithms::resolve_reference(temp_type.value()->meta_info.parent, resolver);
+				if (parent_id)
+				{
+					id = parent_id.value();
+					if (id == base_id)
+						return true;//found it
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	return false;
+}
 
-// Class rx_internal::model::inheritance_hash
+template <class typeT>
+bool types_repository<typeT>::is_instanced_from (rx_node_id id, rx_node_id base_id) const
+{
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	{
+		return instance_hash_.is_instanced_from(id, base_id);
+	}
+	else
+	{
+		ns::rx_directory_resolver resolver;
+		auto temp_rt = get_runtime(id);
+		if (temp_rt)
+		{
+			ns::rx_directory_resolver dirs;
+			dirs.add_paths({ temp_rt.value()->meta_info().path});
+			auto res_result = algorithms::resolve_reference(temp_rt.value()->meta_info().parent, dirs);
+			if(res_result)
+				id = res_result.move_value();
+		}
+		while (!id.is_null())
+		{
+			auto temp_type = get_type_definition(id);
+			if (temp_type)
+			{
+				resolver.add_paths({ temp_type.value()->meta_info.path });
+				auto parent_id = algorithms::resolve_reference(temp_type.value()->meta_info.parent, resolver);
+				if (parent_id)
+				{
+					id = parent_id.value();
+					if (id == base_id)
+						return true;//found it
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	return false;
+}
+
+
+// Class rx_internal::model::inheritance_hash 
 
 inheritance_hash::inheritance_hash()
 {
@@ -1026,6 +1109,7 @@ inheritance_hash::inheritance_hash()
 
 rx_result inheritance_hash::add_to_hash_data (const rx_node_id& new_id, const rx_node_id& base_id)
 {
+	std::scoped_lock _(hash_lock_);
 	if (hash_data_.find(new_id) != hash_data_.end())
 		return "Node already exists!";
 
@@ -1080,6 +1164,7 @@ rx_result inheritance_hash::add_to_hash_data (const rx_node_id& new_id, const rx
 
 rx_result inheritance_hash::get_base_types (const rx_node_id& id, rx_node_ids& result) const
 {
+	std::scoped_lock _(const_cast<locks::slim_lock&>(hash_lock_));
 	auto it = hash_data_.find(id);
 	if (it != hash_data_.end())
 	{
@@ -1094,6 +1179,7 @@ rx_result inheritance_hash::get_base_types (const rx_node_id& id, rx_node_ids& r
 
 rx_result inheritance_hash::get_derived_from (const rx_node_id& id, rx_node_ids& result) const
 {
+	std::scoped_lock _(const_cast<locks::slim_lock&>(hash_lock_));
 	auto it = derived_first_hash_.find(id);
 	if (it != derived_first_hash_.end())
 	{
@@ -1104,6 +1190,7 @@ rx_result inheritance_hash::get_derived_from (const rx_node_id& id, rx_node_ids&
 
 rx_result inheritance_hash::get_all_derived_from (const rx_node_id& id, rx_node_ids& result) const
 {
+	std::scoped_lock _(const_cast<inheritance_hash*>(this)->hash_lock_);
 	auto it = derived_hash_.find(id);
 	if (it != derived_hash_.end())
 	{
@@ -1114,6 +1201,7 @@ rx_result inheritance_hash::get_all_derived_from (const rx_node_id& id, rx_node_
 
 rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& id)
 {
+	std::scoped_lock _(hash_lock_);
 	rx_node_ids ids;
 	auto hash_it = hash_data_.find(id);
 
@@ -1162,6 +1250,7 @@ rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& id)
 
 rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items)
 {
+	std::scoped_lock _(hash_lock_);
 	std::set<rx_node_id> to_add;
 	std::vector<std::pair<rx_node_id, rx_node_id> > local_to_add(items);
 	// first add all items to set for faster search
@@ -1198,6 +1287,7 @@ void inheritance_hash::deinitialize ()
 
 bool inheritance_hash::is_derived_from (rx_node_id id, rx_node_id base_id) const
 {
+	std::scoped_lock _(const_cast<inheritance_hash*>(this)->hash_lock_);
 	auto it = derived_hash_.find(base_id);
 	if (it != derived_hash_.end())
 	{
@@ -1208,7 +1298,7 @@ bool inheritance_hash::is_derived_from (rx_node_id id, rx_node_id base_id) const
 }
 
 
-// Class rx_internal::model::instance_hash
+// Class rx_internal::model::instance_hash 
 
 instance_hash::instance_hash()
 {
@@ -1218,6 +1308,7 @@ instance_hash::instance_hash()
 
 bool instance_hash::add_to_hash_data (const rx_node_id& new_id, const rx_node_id& type_id, const rx_node_ids& all_type_ids)
 {
+	std::scoped_lock _(hash_lock_);
 	auto type_data_it = instance_first_hash_.find(type_id);
 	if (type_data_it == instance_first_hash_.end())
 	{// type node id does not exists
@@ -1239,6 +1330,7 @@ bool instance_hash::add_to_hash_data (const rx_node_id& new_id, const rx_node_id
 
 bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_node_id& type_id, const rx_node_ids& all_type_ids)
 {
+	std::scoped_lock _(hash_lock_);
 	auto type_data_it = instance_first_hash_.find(type_id);
 	if (type_data_it == instance_first_hash_.end())
 	{// type node id does not exists
@@ -1259,6 +1351,7 @@ bool instance_hash::remove_from_hash_data (const rx_node_id& new_id, const rx_no
 
 rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& result) const
 {
+	std::scoped_lock _(const_cast<instance_hash*>(this)->hash_lock_);
 	auto it = instance_hash_.find(id);
 	if (it != instance_hash_.end())
 	{
@@ -1274,12 +1367,24 @@ rx_result instance_hash::get_instanced_from (const rx_node_id& id, rx_node_ids& 
 	}
 }
 
+rx_result instance_hash::is_instanced_from (const rx_node_id& id, rx_node_id base_id) const
+{
+	std::scoped_lock _(const_cast<instance_hash*>(this)->hash_lock_);
+	auto it = instance_hash_.find(base_id);
+	if (it != instance_hash_.end())
+	{
+		auto it2 = it->second->find(id);
+		return it2 != it->second->end();
+	}
+	return false;
+}
+
 void instance_hash::deinitialize ()
 {
 }
 
 
-// Parameterized Class rx_internal::model::simple_types_repository
+// Parameterized Class rx_internal::model::simple_types_repository 
 
 template <class typeT>
 simple_types_repository<typeT>::simple_types_repository()
@@ -1459,7 +1564,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 		if (!it->empty())
 			runtime->fill_data(*it);
 	}
-	return RDataType(std::move(runtime), std::move(ret), rt_prototype);
+	return RDataType(std::move(runtime), std::move(ret), std::move(rt_prototype));
 }
 
 template <class typeT>
@@ -1654,7 +1759,7 @@ rx_result simple_types_repository<typeT>::register_peer_type (rx_reference<disco
 }
 
 
-// Class rx_internal::model::types_resolver
+// Class rx_internal::model::types_resolver 
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)
@@ -1745,7 +1850,7 @@ void types_resolver::deinitialize ()
 }
 
 
-// Class rx_internal::model::relations_type_repository
+// Class rx_internal::model::relations_type_repository 
 
 relations_type_repository::relations_type_repository()
 {
@@ -1951,6 +2056,7 @@ rx_result_with<create_runtime_result<relation_type> > relations_type_repository:
 	create_runtime_result<relation_type> ret;
 	rx_node_id id = rx_node_id::generate_new();
 	rx_node_ids base;
+	rx_node_id target_id;
 	auto type_id = form_what->meta_info.id;
 	base.emplace_back(type_id);
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
@@ -1969,6 +2075,9 @@ rx_result_with<create_runtime_result<relation_type> > relations_type_repository:
 			auto temp_type = get_type_definition(temp_base);
 			if (temp_type)
 			{
+				resolver.add_paths({ temp_type.value()->meta_info.path });
+
+
 				if (temp_type.value()->meta_info.parent.is_null())
 				{
 					temp_base = rx_node_id();
@@ -1976,7 +2085,6 @@ rx_result_with<create_runtime_result<relation_type> > relations_type_repository:
 				}
 				else
 				{
-					resolver.add_paths({ temp_type.value()->meta_info.path });
 					auto parent_id = algorithms::resolve_reference(temp_type.value()->meta_info.parent, resolver);
 					if (parent_id)
 					{
@@ -2013,8 +2121,35 @@ rx_result_with<create_runtime_result<relation_type> > relations_type_repository:
 	if (!implementation_ptr)
 		implementation_ptr = default_constructor_();
 
+	ns::rx_directory_resolver resolver;
+
+	for (auto one_id : base)
+	{
+		if (one_id.is_null())
+			continue;
+
+		auto my_class = get_type_definition(one_id);
+		if (my_class)
+		{
+			resolver.add_paths({ my_class.value()->meta_info.path });
+
+			if (target_id.is_null() && !my_class.value()->relation_data.target.is_null())
+			{
+				auto target_res = algorithms::resolve_reference(my_class.value()->relation_data.target, resolver);
+				if (target_res)
+				{
+					target_id = target_res.move_value();
+				}
+			}
+
+		}
+		else
+			return my_class.errors();
+	}
+
 	ret.ptr = implementation_ptr;
 	data.meta_info_.id = std::move(id);
+	data.target_base_id = target_id;
 
 	return ret;
 }
@@ -2058,8 +2193,44 @@ void relations_type_repository::collect_and_add_depedencies (const relations_typ
 {
 }
 
+bool relations_type_repository::is_derived_from (rx_node_id id, rx_node_id base_id) const
+{
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	{
+		return inheritance_hash_.is_derived_from(id, base_id);
+	}
+	else
+	{
+		ns::rx_directory_resolver resolver;
+		while (!id.is_null())
+		{
+			auto temp_type = get_type_definition(id);
+			if (temp_type)
+			{
+				resolver.add_paths({ temp_type.value()->meta_info.path });
+				auto parent_id = algorithms::resolve_reference(temp_type.value()->meta_info.parent, resolver);
+				if (parent_id)
+				{
+					id = parent_id.value();
+					if (id == base_id)
+						return true;//found it
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	return false;
+}
 
-// Class rx_internal::model::data_type_repository
+
+// Class rx_internal::model::data_type_repository 
 
 data_type_repository::data_type_repository()
 {
@@ -2119,9 +2290,9 @@ rx_result data_type_repository::register_type (data_type_repository::Tptr what)
 	}
 }
 
-rx_result_with<data_blocks_prototype> data_type_repository::create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs)
+rx_result_with<runtime::structure::block_data_result_t> data_type_repository::create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs)
 {
-	runtime::structure::block_data ret;
+	block_data_result_t ret;
 	rx_node_ids base;
 	base.emplace_back(type_id);
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
@@ -2168,18 +2339,17 @@ rx_result_with<data_blocks_prototype> data_type_repository::create_data_type (co
 
 	ctx.push_rt_name(rt_name);
 
-	data_blocks_prototype ret_data;
-	ret_data.success = false;
+	block_data created_data;
 
 	std::vector<data::runtime_values_data> overrides;
-	for (auto one_id : base)
+	for (auto it = base.rbegin(); it != base.rend(); it++)
 	{
-		auto my_class = get_type_definition(one_id);
+		auto my_class = get_type_definition(*it);
 		if (my_class)
 		{
 			std::unique_ptr<data::runtime_values_data> temp_values = std::make_unique<data::runtime_values_data>();
 			ctx.get_directories().add_paths({ my_class.value()->meta_info.path });
-			auto result = meta::meta_algorithm::data_types_algorithm::construct_runtime(*my_class.value(), ret_data, ctx);
+			auto result = meta::meta_algorithm::data_types_algorithm::construct_runtime(*my_class.value(), created_data, ctx);
 
 			if (!result)
 			{// error constructing object
@@ -2193,15 +2363,15 @@ rx_result_with<data_blocks_prototype> data_type_repository::create_data_type (co
 	}
 
 	runtime_data_prototype rt = ctx.pop_rt_name();
-	auto runtime = create_runtime_data(rt);
 	// go reverse with overrides
 	for (auto it = overrides.rbegin(); it != overrides.rend(); it++)
 	{
 		if (!it->empty())
-			runtime->fill_data(*it);
+			created_data.fill_data(*it);
 	}
-	ret_data.success = true;
-	return ret_data;
+	ret.runtime = std::move(created_data);
+	ret.success = true;
+	return ret;
 }
 
 api::query_result data_type_repository::get_derived_types (const rx_node_id& id) const
@@ -2321,6 +2491,42 @@ rx_result data_type_repository::type_exists (rx_node_id id) const
 
 void data_type_repository::collect_and_add_depedencies (const data_type_repository::Tptr& what, const rx_node_id& parent_id)
 {
+}
+
+bool data_type_repository::is_derived_from (rx_node_id id, rx_node_id base_id) const
+{
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	{
+		return inheritance_hash_.is_derived_from(id, base_id);
+	}
+	else
+	{
+		ns::rx_directory_resolver resolver;
+		while (!id.is_null())
+		{
+			auto temp_type = get_type_definition(id);
+			if (temp_type)
+			{
+				resolver.add_paths({ temp_type.value()->meta_info.path });
+				auto parent_id = algorithms::resolve_reference(temp_type.value()->meta_info.parent, resolver);
+				if (parent_id)
+				{
+					id = parent_id.value();
+					if (id == base_id)
+						return true;//found it
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	return false;
 }
 
 

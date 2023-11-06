@@ -285,6 +285,10 @@ rx_result rx_connection_context_request::serialize (base_meta_writer& stream) co
 		return stream.get_error();
 	if (!stream.write_version("sversion", stream_version))
 		return stream.get_error();
+	if (stream_version >= RX_MODE_CONTEXT_VERSION)
+	{
+		stream.write_uint("mode", mode.raw_format);
+	}
 	return true;
 }
 
@@ -298,6 +302,10 @@ rx_result rx_connection_context_request::deserialize (base_meta_reader& stream)
 		return stream.get_error();
 	if (!stream.read_version("sversion", stream_version))
 		return stream.get_error();
+	if (stream_version >= RX_MODE_CONTEXT_VERSION)
+	{
+		stream.read_uint("mode", mode.raw_format);
+	}
 	return true;
 }
 
@@ -340,6 +348,10 @@ rx_result rx_connection_context_response::serialize (base_meta_writer& stream) c
 		return stream.get_error();
 	if (!stream.write_version("sversion", stream_version))
 		return stream.get_error();
+	if (stream.get_version() >= RX_MODE_CONTEXT_VERSION)
+	{
+		stream.write_uint("mode", mode.raw_format);
+	}
 	return true;
 }
 
@@ -357,6 +369,10 @@ rx_result rx_connection_context_response::deserialize (base_meta_reader& stream)
 		return stream.get_error();
 	if (!stream.read_version("sversion", stream_version))
 		return stream.get_error();
+	if (stream.get_version() >= RX_MODE_CONTEXT_VERSION)
+	{
+		stream.read_uint("mode", mode.raw_format);
+	}
 	return true;
 }
 

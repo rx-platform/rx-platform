@@ -75,16 +75,16 @@ rx_result local_relation_connector::disconnect_items (const std::vector<runtime_
     return true;
 }
 
-rx_result local_relation_connector::write_tag (runtime_transaction_id_t trans, runtime_handle_t item, rx_simple_value&& value)
+rx_result local_relation_connector::write_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, rx_simple_value&& value)
 {
     std::vector<std::pair<runtime_handle_t, rx_simple_value> > args;
     args.emplace_back(item, std::move(value));
-    return item_ptr_->write_items(trans, std::move(args), monitor_);
+    return item_ptr_->write_items(trans, test, std::move(args), monitor_);
 }
 
-rx_result local_relation_connector::execute_tag (runtime_transaction_id_t trans, runtime_handle_t item, data::runtime_values_data&& value)
+rx_result local_relation_connector::execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data&& value)
 {
-    return item_ptr_->execute_item(trans, item, value, monitor_);
+    return item_ptr_->execute_item(trans, test, item, value, monitor_);
 }
 
 void local_relation_connector::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback)
@@ -179,7 +179,7 @@ rx_result remote_relation_connector::disconnect_items (const std::vector<runtime
     return true;
 }
 
-rx_result remote_relation_connector::write_tag (runtime_transaction_id_t trans, runtime_handle_t item, rx_simple_value&& value)
+rx_result remote_relation_connector::write_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, rx_simple_value&& value)
 {
     auto it = values_.find(item);
     if (it != values_.end())
@@ -193,7 +193,7 @@ rx_result remote_relation_connector::write_tag (runtime_transaction_id_t trans, 
     }
 }
 
-rx_result remote_relation_connector::execute_tag (runtime_transaction_id_t trans, runtime_handle_t item, data::runtime_values_data&& value)
+rx_result remote_relation_connector::execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data&& value)
 {
     auto it = values_.find(item);
     if (it != values_.end())

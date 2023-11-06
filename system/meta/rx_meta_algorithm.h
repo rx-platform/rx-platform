@@ -98,7 +98,9 @@ class data_types_algorithm
 
       static bool check_type (data_type& whose, type_check_context& ctx);
 
-      static rx_result construct_runtime (const data_type& whose, data_blocks_prototype& what, construct_context& ctx);
+      static rx_result construct_runtime (const data_type& whose, runtime::structure::block_data& what, construct_context& ctx);
+
+      static bool check_name (const string_type& name, std::vector<runtime::structure::index_data>& items);
 
 
   protected:

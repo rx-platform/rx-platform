@@ -47,6 +47,8 @@
 #define ANSI_RX_OBJECT_SIZE ANSI_COLOR_GREEN ANSI_COLOR_BOLD
 #define ANSI_RX_OBJECT_NAME ANSI_COLOR_YELLOW ANSI_COLOR_BOLD
 
+#include "system/runtime/rx_rt_item_types.h"
+
 
 namespace testing {
 
@@ -225,7 +227,7 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 			out << "\r\n";
 		});
 	*/
-	auto subs = rx_create_reference<rx_internal::sys_runtime::subscriptions::rx_subscription>(&callback_);
+	auto subs = rx_create_reference<rx_internal::sys_runtime::subscriptions::rx_subscription>(&callback_, rx_mode_type());
 	subs->activate();
 	string_array paths{ path };
 	std::vector<rx_result_with<runtime_handle_t> > results;

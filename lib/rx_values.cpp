@@ -310,8 +310,56 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 				return rx_init_time_value(&val, temp) == RX_OK;
 			}*/
 		case RX_BYTES_TYPE:
-		case RX_STRUCT_TYPE:
 			RX_ASSERT(false);//not implemented
+			break;
+		case RX_STRUCT_TYPE:
+			{
+				bool ret;
+				std::vector<std::vector<typed_value_type> > arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					reader.start_array("values");
+					int counter = 1;
+					char name_buff[0x10];
+
+					std::vector<typed_value_type> subs;
+
+					while (!reader.array_end())
+					{
+						typed_value_type temp;
+						sprintf(name_buff, "v%d", counter++);
+						reader.start_object(name_buff);
+						bool ret = deserialize_value(reader, temp, "val");
+						if (!ret)
+							return false;
+						subs.push_back(temp);
+						reader.end_object();
+					}
+					if (!subs.empty())
+						arr.push_back(std::move(subs));
+				}
+
+				if (arr.empty())
+				{
+					ret = rx_init_struct_array_value_with_ptrs(&val, nullptr, 0) == RX_OK;
+				}
+				else
+				{
+					std::vector<struct_value_type> helper;
+					helper.reserve(arr.size());
+					for (auto& one : arr)
+					{
+						struct_value_type temp;
+						temp.size = one.size();
+						temp.values = &one[0];
+						helper.push_back(temp);
+					}
+					ret = rx_init_struct_array_value(&val, &helper[0], arr.size()) == RX_OK;
+				}
+				return ret;
+			}
 			return false;
 			/*{
 				byte_string temp;
@@ -463,27 +511,26 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 			break;
 		case RX_STRUCT_TYPE:
 			{
-				reader.start_object(name);
-				uint32_t size = 0;
-				reader.read_uint("size", size);
+				reader.start_array(name);
+				int counter = 1;
+				char name_buff[0x10];
+				std::vector<typed_value_type> subs;
+
+				while (!reader.array_end())
 				{
-					reader.start_object("val");
-					if (size)
-					{
-						std::vector<rx_simple_value> temp(size);
-						int counter = 1;
-						char name_buff[0x10];
-						for (size_t i = 0; i < size; i++)
-						{
-							sprintf(name_buff, "v%d", counter++);
-							bool ret = temp[i].deserialize(name_buff, reader);
-							if (!ret)
-								return false;
-						}
-					}
+					typed_value_type temp;
+					sprintf(name_buff, "v%d", counter++);
+					reader.start_object(name_buff);
+					bool ret = deserialize_value(reader, temp, "val");
+					if (!ret)
+						return false;
+					subs.push_back(temp);
 					reader.end_object();
 				}
-				reader.end_object();
+				if(subs.empty())
+					return rx_init_struct_value(&val, nullptr, 0);
+				else
+					return rx_init_struct_value(&val, &subs[0], subs.size());
 			}
 			break;
 		default:
@@ -562,25 +609,26 @@ bool serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_val
 		case RX_STRUCT_TYPE:
 			{
 				size_t size = who.struct_value.size;
-				writer.start_object(name);
-				writer.write_uint("size", (uint32_t)size);
+				writer.start_array(name, size);
+				if (size)
 				{
-					writer.start_object("val");
-					if (size)
+					int counter = 1;
+					char name_buff[0x10];
+					for (size_t i = 0; i < size; i++)
 					{
-						int counter = 1;
-						char name_buff[0x10];
-						for (size_t i = 0; i < size; i++)
-						{
-							sprintf(name_buff, "v%d", counter++);
-							bool ret = serialize_value(writer, who.struct_value.values[i].value, who.struct_value.values[i].value_type, name_buff);
-							if (!ret)
-								return false;
-						}
+						sprintf(name_buff, "v%d", counter++);
+
+						if (!writer.start_object(name_buff))
+							return false;
+						if (!writer.write_value_type("type", who.struct_value.values[i].value_type))
+							return false;
+						if (!serialize_value(writer, who.struct_value.values[i].value, who.struct_value.values[i].value_type, "val"))
+							return false;
+						if (!writer.end_object())
+							return false;
 					}
-					writer.end_object();
 				}
-				writer.end_object();
+				writer.end_array();
 			}
 			break;
 		case RX_COMPLEX_TYPE:
@@ -1598,6 +1646,21 @@ bool assign_value(typed_value_type& from, const byte_string& value)
 	else
 		return rx_init_bytes_value(&from, reinterpret_cast<const uint8_t*>(&value[0]), value.size());
 }
+bool assign_value(typed_value_type& from, const std::vector<rx_simple_value>& value)
+{
+	if (value.empty())
+	{
+		return rx_init_struct_value(&from, NULL, 0);
+	}
+	else
+	{
+		std::vector<const typed_value_type*> ptrs(value.size());
+		int idx = 0;
+		for (const auto& one : value)
+			ptrs[idx++] = one.c_ptr();
+		return rx_init_struct_value_with_ptrs(&from, &ptrs[0], value.size());
+	}
+}
 
 
 bool assign_value(typed_value_type& from, const std::vector<bool>& value)
@@ -1710,6 +1773,29 @@ bool assign_value(typed_value_type& from, const string_array& value)
 
 		return ret;
 	}
+}
+bool assign_value(typed_value_type& from, const std::vector<std::vector<rx_simple_value> >& value)
+{
+	return false;
+	/*if (value.empty())
+	{
+		return rx_init_struct_array_value(&from, nullptr, 0);
+	}
+	else
+	{
+		if (value.empty())
+		{
+			return rx_init_struct_value(&from, NULL, 0);
+		}
+		else
+		{
+			std::vector<const struct_value_type*> ptrs(value.size());
+			int idx = 0;
+			for (const auto& one : value)
+				ptrs[idx++] = one.c_ptr();
+			return rx_init_struct_value_with_ptrs(&from, &ptrs[0], value.size());
+		}
+	}*/
 }
 
 bool set_integer_to_value(typed_value_type& to, int64_t val, rx_value_t type)
@@ -1853,6 +1939,8 @@ void rx_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type&
 		val.data_.quality = RX_BAD_QUALITY_OFFLINE;
 	if (mode.is_test())
 		val.set_test();
+	if (rx_time(val.data_.time) < ts)
+		val.data_.time = ts.c_data();
 }
 
 rx_value_t rx_value::get_type () const
@@ -1863,7 +1951,7 @@ rx_value_t rx_value::get_type () const
 bool rx_value::convert_to (rx_value_t type)
 {
 	int ret_val = rx_convert_value(&data_.value, type);
-	if (!ret_val)
+	if (ret_val != RX_OK)
 	{
 		data_.quality = RX_BAD_QUALITY_TYPE_MISMATCH;
 	}
@@ -2064,7 +2152,7 @@ bool rx_value::adapt_quality_to_mode (const rx_mode_type& mode)
 	if (((data_.origin&RX_TEST_ORIGIN)!=0) ^ ((mode.raw_format&RX_MODE_MASK_TEST)==0))
 	{
 		ret = true;
-		if (is_test())
+		if (mode.is_test())
 			set_test();
 	}
 	if (is_good() && mode.is_good())
@@ -2136,6 +2224,34 @@ uint32_t rx_value::get_signal_level () const
 uint32_t rx_value::get_origin () const
 {
 	return data_.origin & RX_ORIGIN_MASK;
+}
+
+rx_simple_value rx_value::operator [] (int index) const
+{
+	/*if (is_array())
+	{
+		if (index < 0 || (size_t)index >= array_size())
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		rx_simple_value ret;
+		if (RX_OK != rx_get_array_value(index, &ret.data_, &data_))
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		return ret;
+	}
+	else*/
+	{
+		RX_ASSERT(false);
+		return rx_simple_value();
+	}
+}
+
+void rx_value::assign_array (const std::vector<rx_simple_value>& from, rx_time ts, uint32_t quality)
+{
 }
 
 
@@ -2514,6 +2630,50 @@ byte_string rx_simple_value::get_byte_string (size_t idx) const
 	}
 }
 
+rx_simple_value rx_simple_value::operator [] (int index) const
+{
+	if (is_array())
+	{
+		if (index < 0 || (size_t)index >= array_size())
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		rx_simple_value ret;
+		if(RX_OK!=rx_get_array_value(index, &ret.data_, &data_))
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		return ret;
+	}
+	else
+	{
+		RX_ASSERT(false);
+		return rx_simple_value();
+	}
+}
+
+void rx_simple_value::assign_array (const std::vector<rx_simple_value>& from)
+{
+	if (from.empty())
+		return;	 
+	rx_value_t type = from[0].data_.value_type;
+	for (const auto& val : from)
+	{
+		if (val.data_.value_type != type)
+			return;
+	}
+	std::vector<const rx_value_union*> data(from.size());
+	int idx = 0;
+	for (const auto& val : from)
+	{
+		data[idx++] = &val.data_.value;
+	}
+	rx_destroy_value(&data_);
+	rx_init_array_value_with_ptrs(&data_, type, &data[0], data.size());
+}
+
 rx_simple_value::rx_simple_value()
 {
 	rx_init_null_value(&data_);
@@ -2855,6 +3015,34 @@ byte_string rx_timed_value::get_byte_string (size_t idx) const
 	{
 		return byte_string();
 	}
+}
+
+rx_simple_value rx_timed_value::operator [] (int index) const
+{
+	/*if (is_array())
+	{
+		if (index < 0 || (size_t)index >= array_size())
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		rx_simple_value ret;
+		if (RX_OK != rx_get_array_value(index, &ret.data_, &data_))
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		return ret;
+	}
+	else*/
+	{
+		RX_ASSERT(false);
+		return rx_simple_value();
+	}
+}
+
+void rx_timed_value::assign_array (const std::vector<rx_simple_value>& from, rx_time ts)
+{
 }
 
 

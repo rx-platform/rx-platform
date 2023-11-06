@@ -33,16 +33,16 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_protocol_templates
-#include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_internal {
 namespace rx_protocol {
@@ -135,7 +135,7 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
     typedef std::map<runtime_handle_t, runtime_handle_t> handles_type;
 
   public:
-      rx_protocol_subscription (subscription_data& data, rx_protocol_connection_ptr conn);
+      rx_protocol_subscription (subscription_data& data, rx_protocol_connection_ptr conn, rx_mode_type mode);
 
       ~rx_protocol_subscription();
 
@@ -152,7 +152,7 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
       rx_result add_items (const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results);
 
-      rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results);
+      rx_result write_items (runtime_transaction_id_t transaction_id, bool test, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data);
 
@@ -189,7 +189,7 @@ class rx_protocol_connection : public rx::pointers::reference_object
     typedef std::map<rx_uuid, std::unique_ptr<rx_protocol_subscription> > subscriptions_type;
 
   public:
-      rx_protocol_connection();
+      rx_protocol_connection (rx_mode_type mode);
 
       ~rx_protocol_connection();
 
@@ -242,6 +242,8 @@ class rx_protocol_connection : public rx::pointers::reference_object
       rx_directory_ptr current_directory_;
 
       string_type current_directory_path_;
+
+      rx_mode_type mode_;
 
 
 };

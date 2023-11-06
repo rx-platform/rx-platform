@@ -107,12 +107,12 @@ void runtime_holder_algorithms<typeT>::fire_job (typename typeT::RType& whose)
 }
 
 template <class typeT>
-rx_result runtime_holder_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
+rx_result runtime_holder_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
     std::vector<rx_result> results;
     for (const auto& item : items)
     {
-        auto result = whose.tags_.connected_tags_.write_tag(transaction_id, item.first, rx_simple_value(item.second), monitor);
+        auto result = whose.tags_.connected_tags_.write_tag(transaction_id, test, item.first, rx_simple_value(item.second), monitor);
         results.emplace_back(std::move(result));
     }
     return true;
@@ -377,7 +377,7 @@ void runtime_holder_algorithms<typeT>::read_value (const string_type& path, read
 }
 
 template <class typeT>
-void runtime_holder_algorithms<typeT>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback, typename typeT::RType& whose)
+void runtime_holder_algorithms<typeT>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback, typename typeT::RType& whose)
 {
     auto connect_result = whose.tags_.connected_tags_.connect_tag(path, *whose.tags_.item_);
     if (!connect_result)
@@ -387,7 +387,7 @@ void runtime_holder_algorithms<typeT>::write_value (const string_type& path, rx_
         return;
     }
     auto transaction_ptr = rx_create_reference<write_item_transaction>(std::move(callback));
-    auto result = whose.tags_.connected_tags_.write_tag(1, connect_result.value(), std::move(val), transaction_ptr);
+    auto result = whose.tags_.connected_tags_.write_tag(1, test, connect_result.value(), std::move(val), transaction_ptr);
     if (!result)
     {
         whose.tags_.connected_tags_.disconnect_tag(connect_result.value());
@@ -446,7 +446,7 @@ void runtime_holder_algorithms<typeT>::read_struct (string_view_type path, read_
 }
 
 template <class typeT>
-void runtime_holder_algorithms<typeT>::write_struct (string_view_type path, write_struct_data data, typename typeT::RType& whose)
+void runtime_holder_algorithms<typeT>::write_struct (string_view_type path, bool test, write_struct_data data, typename typeT::RType& whose)
 {
 }
 
@@ -462,7 +462,7 @@ rx_result runtime_holder_algorithms<typeT>::serialize_runtime_value (base_meta_w
 }
 
 template <class typeT>
-void runtime_holder_algorithms<typeT>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback, typename typeT::RType& whose)
+void runtime_holder_algorithms<typeT>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback, typename typeT::RType& whose)
 {
     auto connect_result = whose.tags_.connected_tags_.connect_tag(path, *whose.tags_.item_);
     if (!connect_result)
@@ -472,7 +472,7 @@ void runtime_holder_algorithms<typeT>::execute_method (const string_type& path, 
         return;
     }
     auto transaction_ptr = rx_create_reference<execute_method_transaction>(std::move(callback));
-    auto result = whose.tags_.connected_tags_.execute_tag(1, connect_result.value(), std::move(data), transaction_ptr);
+    auto result = whose.tags_.connected_tags_.execute_tag(1, test, connect_result.value(), std::move(data), transaction_ptr);
     if (!result)
     {
         whose.tags_.connected_tags_.disconnect_tag(connect_result.value());
@@ -482,9 +482,9 @@ void runtime_holder_algorithms<typeT>::execute_method (const string_type& path, 
 }
 
 template <class typeT>
-rx_result runtime_holder_algorithms<typeT>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
+rx_result runtime_holder_algorithms<typeT>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
-    auto result = whose.tags_.connected_tags_.execute_tag(transaction_id, handle, data, monitor);
+    auto result = whose.tags_.connected_tags_.execute_tag(transaction_id, test, handle, data, monitor);
     return result;
 }
 
@@ -540,7 +540,7 @@ void runtime_relation_algorithms::relation_value_change (relations::relation_val
     {// avoid sending dead to others
         rx_value local_val(val);
         local_val.set_quality(RX_NOT_CONNECTED_QUALITY);
-        ctx->tags_.relation_value_change(whose, val);
+        ctx->tags_.relation_value_change(whose, local_val);
     }
     else
     {

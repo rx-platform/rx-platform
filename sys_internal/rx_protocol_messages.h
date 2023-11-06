@@ -284,6 +284,8 @@ class rx_connection_context_request : public rx_request_message
 
       uint32_t stream_version;
 
+      rx_mode_type mode;
+
 
   protected:
 
@@ -488,6 +490,8 @@ class rx_connection_context_response : public rx_response_message
       rx_node_id domain_id;
 
       uint32_t stream_version;
+
+      rx_mode_type mode;
 
 
   protected:

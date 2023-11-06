@@ -823,10 +823,15 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 			value_handle_type temp = 0;
 			if (it->first != POINT_LOCAL_VAR_NAME)
 			{
+				rx_mode_type mode;
+				if (context_ != nullptr)
+				{
+					mode = context_->get_mode();
+				}
 				if (translate_path(it->first, buffer))
-					temp = controler->add_item(buffer, rate_);
+					temp = controler->add_item(buffer, rate_, mode);
 				else
-					temp = controler->add_item(it->first, rate_);
+					temp = controler->add_item(it->first, rate_, mode);
 				if (temp)
 				{
 					tag_handles_[temp] = (it->second & TAG_ID_MASK);
@@ -853,6 +858,7 @@ void value_point_impl::calculate (char* token_buff)
 rx_value value_point_impl::internal_calculate (char* token_buff)
 {
 	uint32_t quality = 0;
+	uint32_t origin = context_->get_mode().create_origin(RX_ALWAYS_ORIGIN);
 	uint32_t bad_quality = 0;
 	rx_time last_time;
 	rx_time last_bad_time;
@@ -867,6 +873,7 @@ rx_value value_point_impl::internal_calculate (char* token_buff)
 			{
 				last_time = tag_variables_[i].get_time();
 				quality = tag_variables_[i].get_quality();
+				origin = tag_variables_[i].get_origin();
 				res = tag_variables_[i];
 			}
 		}
@@ -877,6 +884,7 @@ rx_value value_point_impl::internal_calculate (char* token_buff)
 			{
 				last_time = tag_variables_[i].get_time();
 				res = tag_variables_[i];
+				origin = tag_variables_[i].get_origin();
 			}
 			if (tag_variables_[i].get_time() > last_bad_time)
 			{
@@ -891,11 +899,14 @@ rx_value value_point_impl::internal_calculate (char* token_buff)
 	{
 		res.set_quality(bad_quality);
 		res.set_time(last_time);
+		res.set_origin(origin);
 		return res;
 	}
 	else
 	{
 		res.set_quality(RX_GOOD_QUALITY);
+		if (context_)
+			res = context_->adapt_value(res);
 		try
 		{
 			get_expression(res, token_buff);
@@ -907,6 +918,7 @@ rx_value value_point_impl::internal_calculate (char* token_buff)
 		}
 		if (res.is_good())
 			res.set_quality(quality);
+		res.set_origin(origin);
 		res.set_time(last_time);
 		return res;
 	}
@@ -1018,6 +1030,8 @@ void value_point_impl::level0 (rx_value& result, char*& prog, char*& token, char
 	char op;
 	rx_value hold;
 	hold.set_quality(RX_GOOD_QUALITY);
+	if(context_)
+		hold = context_->adapt_value(hold);
 
 	level05(result, prog, token, tok_type, expres);
 	while ((op = *token) == AND_CODE || op == OR_CODE)
@@ -1033,6 +1047,8 @@ void value_point_impl::level05 (rx_value& result, char*& prog, char*& token, cha
 	char op;
 	rx_value hold;
 	hold.set_quality(RX_GOOD_QUALITY);
+	if (context_)
+		hold = context_->adapt_value(hold);
 
 	level07(result, prog, token, tok_type, expres);
 	while ((op = *token) == BIT_CODE || op == '&')
@@ -1048,6 +1064,8 @@ void value_point_impl::level07 (rx_value& result, char*& prog, char*& token, cha
 	char op;
 	rx_value hold;
 	hold.set_quality(RX_GOOD_QUALITY);
+	if (context_)
+		hold = context_->adapt_value(hold);
 
 	level1(result, prog, token, tok_type, expres);
 	while ((op = *token) == '|')

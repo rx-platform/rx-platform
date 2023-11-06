@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -216,7 +216,6 @@ rx_protocol_result_t opcua_parse_open_message(struct rx_protocol_stack_endpoint*
 {
 	opcua_sequence_header* sequence_header;
 	const struct opcua_request_open_channel_def* prequest = NULL;
-	uint32_t channel_id = 0;
 	uint8_t nonce[] = { 0x01 };
 	uint8_t client_nonce[0x40]; // max 40 bytes for nonce
 	uint32_t requested_lifetime = 0;
@@ -448,7 +447,7 @@ rx_protocol_result_t opcua_bin_init_sec_none_transport(opcua_sec_none_protocol_t
 	// fill options
 	transport->server_side = server_side;
 	// decoder
-	
+
 	// fill state
 	result = opcua_init_sec_none_transport_state(transport);
 	if (result != RX_PROTOCOL_OK)
@@ -474,7 +473,7 @@ rx_protocol_result_t opcua_bin_init_sec_none_server_transport(opcua_sec_none_pro
 
 rx_protocol_result_t opcua_bin_deinit_sec_none_transport(opcua_sec_none_protocol_type* transport)
 {
-	
+
 	rx_free_address(&transport->ep_address);
 	rx_deinit_packet_buffer(&transport->receive_buffer);
 
@@ -714,9 +713,7 @@ rx_protocol_result_t opcua_parse_open_response_message(struct rx_protocol_stack_
 {
 	opcua_sequence_header* sequence_header;
 	const struct opcua_response_open_channel_def* presponse = NULL;
-	uint32_t channel_id = 0;
 	uint8_t server_nonce[0x40]; // max 40 bytes for nonce
-	uint32_t revised_lifetime = 0;
 
 	rx_protocol_result_t result = parse_asymetric_security_header(reference, transport, header, buffer, id);
 	if (result != RX_PROTOCOL_OK)

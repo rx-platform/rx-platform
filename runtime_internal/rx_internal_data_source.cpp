@@ -53,15 +53,15 @@ internal_data_source::internal_data_source (const string_type& path)
 
 
 
-void internal_data_source::add_item (const string_type& path, uint32_t rate, value_handle_extended& handle)
+void internal_data_source::add_item (const string_type& path, uint32_t rate, value_handle_extended& handle, rx_mode_type mode)
 {
-	auto it = rate_subscriptions_.find(rate);
+	auto it = rate_subscriptions_.find({ rate, mode.raw_format });
 	if (it == rate_subscriptions_.end())
 	{
-		auto subs = std::make_unique<internal_data_subscription>(handle, my_controler);
+		auto subs = std::make_unique<internal_data_subscription>(handle, my_controler, mode);
 		uint16_t subs_handle = next_subscription_id_++;
 		internal_data_subscription& subscription(*subs);
-		rate_subscriptions_.emplace(rate, rate_subscription_data{ *subs, subs_handle });
+		rate_subscriptions_.emplace(std::pair<uint32_t, uint32_t>(rate, mode.raw_format), rate_subscription_data{ *subs, subs_handle });
 		subscriptions_.emplace(subs_handle, subscription_data{ std::move(subs), subs_handle });
 		handle.subscription = subs_handle;
 		subscription.add_item(path, handle);
@@ -108,11 +108,11 @@ bool internal_data_source::is_empty () const
 
 // Class rx_internal::sys_runtime::data_source::internal_data_subscription 
 
-internal_data_subscription::internal_data_subscription (value_handle_extended handles, data_controler* controler)
+internal_data_subscription::internal_data_subscription (value_handle_extended handles, data_controler* controler, rx_mode_type mode)
       : controler_(controler),
         handles_(handles)
 {
-	my_subscription_ = rx_create_reference<subscriptions::rx_subscription>(this);
+	my_subscription_ = rx_create_reference<subscriptions::rx_subscription>(this, mode);
 	my_subscription_->activate();
 }
 

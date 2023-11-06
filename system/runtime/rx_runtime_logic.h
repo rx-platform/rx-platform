@@ -125,7 +125,7 @@ public:
     }
 
   public:
-      method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var, const method_data& prototype);
+      method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var, method_data&& prototype);
 
 
       void fill_data (const data::runtime_values_data& data);

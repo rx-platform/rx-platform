@@ -46,6 +46,7 @@ struct local_value
 {
     using callback_t = std::function<void(const typeT&)>;
     callback_t callback_;
+    typeT bad_value_;
     typeT value_;
     runtime_handle_t handle_ = 0;
     runtime_process_context* ctx_ = nullptr;
@@ -61,10 +62,24 @@ public:
         callback_ = callback;
         auto result = ctx.bind_item(path, [this](const rx_value& val)
             {
-                value_ = val.extract_static(value_);
-                if (callback_)
+                
+                if (ctx_->is_mine_value(val))
                 {
-                    callback_(value_);
+                    if (val.is_good())
+                    {
+                        value_ = val.extract_static(value_);
+                    }
+                    else
+                    {
+                        if (value_ == bad_value_)
+                            return; // we already had it!, skip the callback
+
+                        value_ = bad_value_;
+                    }
+                    if (callback_)
+                    {
+                        callback_(value_);
+                    }
                 }
             });
         if (result)
@@ -81,11 +96,23 @@ public:
     }
     local_value(const typeT& right)
     {
+        bad_value_ = right;
         value_ = right;
     }
     local_value(typeT&& right)
     {
+        bad_value_ = right;
         value_ = std::move(right);
+    }
+    local_value(const typeT& right, const typeT& bad_value)
+    {
+        bad_value_ = bad_value;
+        value_ = right;
+    }
+    local_value(typeT&& right, typeT&& bad_value)
+    {
+        value_ = std::move(right);
+        bad_value_ = std::move(bad_value);
     }
     local_value& operator=(typeT right)
     {
@@ -343,6 +370,7 @@ struct remote_local_value
     using callback_t = std::function<void(const typeT&)>;
     callback_t callback_;
     lockT lock_;
+    typeT bad_value_;
     typeT value_;
     runtime_handle_t handle_ = 0;
     runtime_process_context* ctx_ = nullptr;
@@ -357,15 +385,28 @@ public:
     {
         auto result = ctx.bind_item(path, [this](const rx_value& val)
             {
-                typeT temp_val;
+                if (ctx_->is_mine_value(val))
                 {
-                    locks::auto_lock_t<lockT> _(&lock_);
-                    value_ = val.extract_static(value_);
-                    temp_val = value_;
-                }
-                if (callback_)
-                {
-                    callback_(temp_val);
+                    typeT temp_val;
+                    if (val.is_good())
+                    {
+                        locks::auto_lock_t<lockT> _(&lock_);
+                        value_ = val.extract_static(value_);
+                        temp_val = value_;
+                    }
+                    else
+                    {
+                        locks::auto_lock_t<lockT> _(&lock_);
+                        if (value_ == bad_value_)
+                            return; // we already had it!, skip the callback
+                        value_ = bad_value_;
+                        temp_val = value_;
+
+                    }
+                    if (callback_)
+                    {
+                        callback_(temp_val);
+                    }
                 }
             });
         if (result)
@@ -380,12 +421,26 @@ public:
             return result.errors();
         }
     }
+
     remote_local_value(const typeT& right)
     {
+        bad_value_ = right;
         value_ = right;
     }
     remote_local_value(typeT&& right)
     {
+        bad_value_ = right;
+        value_ = std::move(right);
+    }
+    remote_local_value(const typeT& right, const typeT& bad_value)
+    {
+
+        bad_value_ = bad_value;
+        value_ = right;
+    }
+    remote_local_value(typeT&& right, typeT&& bad_value)
+    {
+        bad_value_ = std::move(bad_value);
         value_ = std::move(right);
     }
     remote_local_value& operator=(typeT right)

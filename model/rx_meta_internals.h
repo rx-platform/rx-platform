@@ -275,6 +275,8 @@ class inheritance_hash
       //	contains types derived exactly from this particular type
       relation_hash_type derived_first_hash_;
 
+      locks::slim_lock hash_lock_;
+
 
 };
 
@@ -304,6 +306,8 @@ class instance_hash
 
       rx_result get_instanced_from (const rx_node_id& id, rx_node_ids& result) const;
 
+      rx_result is_instanced_from (const rx_node_id& id, rx_node_id base_id) const;
+
       void deinitialize ();
 
 
@@ -315,6 +319,8 @@ class instance_hash
       relation_hash_type instance_hash_;
 
       relation_hash_type instance_first_hash_;
+
+      locks::slim_lock hash_lock_;
 
 
 };
@@ -433,6 +439,10 @@ public:
       rx_result type_exists (rx_node_id id) const;
 
       std::vector<typename types_repository<typeT>::RTypePtr> get_active_runtimes ();
+
+      bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
+
+      bool is_instanced_from (rx_node_id id, rx_node_id base_id) const;
 
 
   protected:
@@ -693,6 +703,8 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<constructed_data_t<RTypePtr>(const rx_node_id&)> f);
 
+      bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
+
 
   protected:
 
@@ -747,7 +759,7 @@ public:
 
       rx_result register_type (data_type_repository::Tptr what);
 
-      rx_result_with<data_blocks_prototype> create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs);
+      rx_result_with<runtime::structure::block_data_result_t> create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -762,6 +774,8 @@ public:
       rx_result update_type (data_type_repository::Tptr what);
 
       rx_result type_exists (rx_node_id id) const;
+
+      bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
 
 
   protected:

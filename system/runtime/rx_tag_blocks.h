@@ -73,6 +73,8 @@ class common_runtime_tags
 
       rx_result initialize_runtime (runtime_init_context& ctx);
 
+      void adapt_mode (rx_mode_type& mode, runtime_process_context* ctx);
+
 
   protected:
 
@@ -85,15 +87,23 @@ class common_runtime_tags
 
       owned_value<size_t, true> loop_count_;
 
-      local_value<bool> on_;
+      bool on_;
 
-      local_value<bool> test_;
+      bool test_;
 
-      local_value<bool> blocked_;
+      bool blocked_;
 
-      local_value<bool> simulate_;
+      bool simulate_;
 
       owned_value<uint32_t, true> queues_size_;
+
+      runtime_handle_t on_handle_;
+
+      runtime_handle_t test_handle_;
+
+      runtime_handle_t blocked_handle_;
+
+      runtime_handle_t simulate_handle_;
 
 
 };

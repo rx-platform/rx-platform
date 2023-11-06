@@ -56,7 +56,7 @@ class internal_data_subscription : public subscriptions::rx_subscription_callbac
 	typedef std::unique_ptr<internal_data_subscription> smart_ptr;
 
   public:
-      internal_data_subscription (value_handle_extended handles, data_controler* controler);
+      internal_data_subscription (value_handle_extended handles, data_controler* controler, rx_mode_type mode);
 
 
       void items_changed (const std::vector<update_item>& items);
@@ -109,13 +109,13 @@ class internal_data_source : public data_source
 		std::reference_wrapper<internal_data_subscription> subscription;
 		uint16_t handle;
 	};
-	typedef std::unordered_map<uint32_t, rate_subscription_data> rate_subscriptions_type;
+	typedef std::map<std::pair<uint32_t, uint32_t>, rate_subscription_data> rate_subscriptions_type;
 
   public:
       internal_data_source (const string_type& path);
 
 
-      void add_item (const string_type& path, uint32_t rate, value_handle_extended& handle);
+      void add_item (const string_type& path, uint32_t rate, value_handle_extended& handle, rx_mode_type mode);
 
       void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id);
 

@@ -508,8 +508,10 @@ string_type rx_runtime_attribute_type_name(rx_attribute_type type)
 		case struct_array_attribute_type:
 			return RX_CPP_STRUCT_TYPE_NAME "[]";
 		case variable_attribute_type:
+		case variable_data_attribute_type:
 			return RX_CPP_VARIABLE_TYPE_NAME;
 		case variable_array_attribute_type:
+		case variable_data_array_attribute_type:
 			return RX_CPP_VARIABLE_TYPE_NAME "[]";
 		case source_attribute_type:
 			return RX_CPP_SOURCE_TYPE_NAME;
@@ -520,12 +522,16 @@ string_type rx_runtime_attribute_type_name(rx_attribute_type type)
 		case mapper_attribute_type:
 			return RX_CPP_MAPPER_TYPE_NAME;
 		case const_attribute_type:
+		case const_data_attribute_type:
 			return RX_CONST_VALUE_TYPE_NAME;
+		case const_data_array_attribute_type:
 		case const_array_attribute_type:
 			return RX_CONST_VALUE_TYPE_NAME "[]";
 		case value_attribute_type:
+		case value_data_attribute_type:
 			return RX_VALUE_TYPE_NAME;
 		case value_array_attribute_type:
+		case value_data_array_attribute_type:
 			return RX_VALUE_TYPE_NAME "[]";
 		case relation_attribute_type:
 			return RX_CPP_RELATION_TYPE_NAME;
@@ -537,6 +543,8 @@ string_type rx_runtime_attribute_type_name(rx_attribute_type type)
 			return RX_CPP_PROGRAM_TYPE_NAME;
 		case data_attribute_type:
 			return RX_CPP_DATA_TYPE_NAME;
+		case data_array_attribute_type:
+			return RX_CPP_DATA_TYPE_NAME "[]";
 		case display_attribute_type:
 			return RX_CPP_DISPLAY_TYPE_NAME;
 		default:

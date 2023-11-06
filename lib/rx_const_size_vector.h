@@ -136,7 +136,7 @@ public:
 			data_ = nullptr;
 	}
 	// move copy assign operators
-	const_size_vector(const const_size_vector &right)
+	const_size_vector(const const_size_vector& right)
 	{
 		size_ = right.size_;
 		if (size_)
@@ -150,7 +150,7 @@ public:
 		else
 			data_ = nullptr;
 	}
-	const_size_vector & operator=(const const_size_vector &right)
+	const_size_vector& operator=(const const_size_vector& right)
 	{
 		destroy_content();
 		size_ = right.size_;
@@ -168,14 +168,14 @@ public:
 		return *this;
 	}
 	// use 'memmove' to move object around
-	const_size_vector(const_size_vector &&right) noexcept
+	const_size_vector(const_size_vector&& right) noexcept
 	{
 		data_ = right.data_;
 		size_ = right.size_;
 		right.data_ = nullptr;
 		right.size_ = 0;
 	}
-	const_size_vector & operator=(const_size_vector &&right) noexcept
+	const_size_vector& operator=(const_size_vector&& right) noexcept
 	{
 		destroy_content();
 
@@ -271,8 +271,8 @@ private:
 	}
 };
 
-
 }
+
 
 
 

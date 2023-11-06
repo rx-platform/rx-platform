@@ -436,6 +436,20 @@ bool runtime_values_data::get_array_value (const string_type& path, std::vector<
 					val = std::get<array_value_type>(val_it->second);
 					return true;
 				}
+				else if(array_idx<0)
+				{
+					auto temp = std::get<value_type>(val_it->second);
+					if (temp.is_array())
+					{
+						size_t count = temp.array_size();
+						val.reserve(count);
+						for (size_t i = 0; i < count; i++)
+						{
+							val.push_back(temp[(int)i]);
+						}
+						return true;
+					}
+				}
 			}
 		}
 	}

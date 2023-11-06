@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -81,7 +81,7 @@ bool fill_mac_address(const char* port, void* buff)
     return fill_mac_address_internal(port, buff, true);
 }
 
-// Class rx_internal::interfaces::ethernet::ethernet_endpoint 
+// Class rx_internal::interfaces::ethernet::ethernet_endpoint
 
 ethernet_endpoint::ethernet_endpoint()
       : my_port_(nullptr),
@@ -138,7 +138,7 @@ rx_protocol_result_t ethernet_endpoint::send_packet (send_protocol_packet packet
     {
         if (packet.to_addr && packet.to_addr->type == protocol_address_mac)
         {
-            // append the addresses 
+            // append the addresses
             rx_protocol_result_t result;
             uint8_t* front = (uint8_t*)rx_alloc_from_packet_front(packet.buffer, 2 * MAC_ADDR_SIZE/*two mac addresses*/, &result);
             memcpy(front, &packet.to_addr->value.mac_address, MAC_ADDR_SIZE);
@@ -177,7 +177,7 @@ rx_result ethernet_endpoint::open (const string_type& port_name, security::secur
     if (!rx_create_ethernet_socket(port_name.c_str(), &handle_))
     {
         char buff[0x100];
-        auto code = rx_last_os_error(("Error opening port "s + port_name+".").c_str(), buff, sizeof(buff));
+        rx_last_os_error(("Error opening port "s + port_name+".").c_str(), buff, sizeof(buff));
         ITF_LOG_ERROR("ethernet_endpoint", 900, "Error opening ethernet card:"s + buff);
         my_port_ = nullptr;
         return buff;
@@ -297,7 +297,7 @@ void ethernet_endpoint::process_packet (const uint8_t* buffer, size_t size)
 }
 
 
-// Class rx_internal::interfaces::ethernet::ethernet_port 
+// Class rx_internal::interfaces::ethernet::ethernet_port
 
 ethernet_port::ethernet_port()
 {

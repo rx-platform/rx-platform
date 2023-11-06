@@ -514,7 +514,7 @@ rx_value variable_runtime::get_variable_input (runtime_process_context* ctx, run
         if (one.is_input())
         {
             ret = one.get_current_value();
-                return ret;
+            return ret;
         }
     }
     return ret;

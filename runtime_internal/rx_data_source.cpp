@@ -105,7 +105,7 @@ void data_controler::unregister_value (value_handle_type handle, value_point_imp
 	}
 }
 
-value_handle_type data_controler::add_item (const string_type& path, uint32_t rate)
+value_handle_type data_controler::add_item (const string_type& path, uint32_t rate, rx_mode_type mode)
 {
 	string_type source;
 	string_type concrete;
@@ -126,7 +126,7 @@ value_handle_type data_controler::add_item (const string_type& path, uint32_t ra
 	if (it != named_sources_.end())
 	{
 		value_handle_extended handle{ it->second.handle, 0, 0 };
-		it->second.source.get().add_item(concrete, rate, handle);
+		it->second.source.get().add_item(concrete, rate, handle, mode);
 		return handle.make_handle();
 	}
 	else
@@ -140,7 +140,7 @@ value_handle_type data_controler::add_item (const string_type& path, uint32_t ra
 			named_sources_.emplace(source, named_source_data{ *result.first->second.source, id });
 
 			value_handle_extended handle{ id, 0, 0 };
-			result.first->second.source->add_item(concrete, rate, handle);
+			result.first->second.source->add_item(concrete, rate, handle, mode);
 			return handle.make_handle();
 		}
 	}

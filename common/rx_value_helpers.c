@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -32,6 +32,7 @@
 
 #include "rx_common.h"
 #include <math.h>
+#include "protocols/ansi_c/common_c/rx_packet_buffer.h"
 
 
 // these are functions from "rx_value_conv.c"
@@ -143,6 +144,63 @@ RX_COMMON_API int rx_get_array_size(const struct typed_value_type* val, size_t* 
 	{
 		*size = RX_INVALID_INDEX_VALUE;
 		return RX_ERROR;
+	}
+}
+
+
+void assign_value(union rx_value_union* left, const union rx_value_union* right, rx_value_t type)
+{
+	// copy memory first
+	memcpy(left, right, sizeof(union rx_value_union));
+	// now do the actual copy of pointer members
+	if (type & RX_ARRAY_VALUE_MASK)
+	{// we have an array
+		size_t count = left->array_value.size;
+		if (count > 0)
+		{
+			left->array_value.values = malloc(sizeof(union rx_value_union) * count);
+			for (size_t i = 0; i < count; i++)
+			{
+				assign_value(&left->array_value.values[i], &right->array_value.values[i], RX_STRIP_ARRAY_MASK & type);
+			}
+		}
+	}
+	else
+	{//simple union stuff
+		switch (type & RX_SIMPLE_VALUE_MASK)
+		{
+#ifndef RX_VALUE_SIZE_16
+		case RX_COMPLEX_TYPE:
+			left->complex_value = malloc(sizeof(complex_value_struct));
+			*left->complex_value = *right->complex_value;
+			break;
+		case RX_UUID_TYPE:
+			left->uuid_value = malloc(sizeof(rx_uuid_t));
+			*left->uuid_value = *right->uuid_value;
+			break;
+#endif
+		case RX_STRING_TYPE:
+			rx_copy_string_value(&left->string_value, &right->string_value);
+			break;
+		case RX_BYTES_TYPE:
+			rx_copy_bytes_value(&left->bytes_value, &right->bytes_value);
+			break;
+		case RX_STRUCT_TYPE:
+			if (right->struct_value.size)
+			{
+				left->struct_value.values = malloc(sizeof(struct typed_value_type) * right->struct_value.size);
+				for (size_t i = 0; i < right->struct_value.size; i++)
+				{
+					left->struct_value.values[i].value_type = right->struct_value.values[i].value_type;
+					assign_value(&left->struct_value.values[i].value, &right->struct_value.values[i].value, right->struct_value.values[i].value_type);
+				}
+			}
+			break;
+		case RX_NODE_ID_TYPE:
+			left->node_id_value = malloc(sizeof(rx_node_id_struct));
+			rx_copy_node_id(left->node_id_value, right->node_id_value);
+			break;
+		}
 	}
 }
 
@@ -376,7 +434,7 @@ RX_COMMON_API int rx_init_struct_value(struct typed_value_type* val, const struc
 	val->value.struct_value.size = count;
 	if (count)
 	{
-		val->value.struct_value.values = malloc(sizeof(struct struct_value_type_t) * count);
+		val->value.struct_value.values = malloc(sizeof(struct typed_value_type) * count);
 		for (int i = 0; i < count; i++)
 		{
 			rx_copy_value(&val->value.struct_value.values[i], &data[i]);
@@ -388,13 +446,51 @@ RX_COMMON_API int rx_init_struct_value(struct typed_value_type* val, const struc
 	}
 	return RX_OK;
 }
+
+RX_COMMON_API int rx_init_array_value(struct typed_value_type* val, rx_value_t type, const union rx_value_union* data, size_t count)
+{
+	val->value_type = type | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = malloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+			assign_value(&val->value.array_value.values[i], &data[i], type);
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+RX_COMMON_API int rx_init_array_value_with_ptrs(struct typed_value_type* val, rx_value_t type, const union rx_value_union** data, size_t count)
+{
+	val->value_type = type | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = malloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+			assign_value(&val->value.array_value.values[i], data[i], type);
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+
 RX_COMMON_API int rx_init_struct_value_with_ptrs(struct typed_value_type* val, const struct typed_value_type** data, size_t count)
 {
 	val->value_type = RX_STRUCT_TYPE;
 	val->value.struct_value.size = count;
 	if (count)
 	{
-		val->value.struct_value.values = malloc(sizeof(struct struct_value_type_t) * count);
+		val->value.struct_value.values = malloc(sizeof(struct typed_value_type) * count);
 		for (int i = 0; i < count; i++)
 		{
 			rx_copy_value(&val->value.struct_value.values[i], data[i]);
@@ -614,60 +710,8 @@ RX_COMMON_API int rx_init_complex_array_value(struct typed_value_type* val, cons
 }
 
 
-void assign_value(union rx_value_union* left, const union rx_value_union* right, rx_value_t type)
-{
-	// copy memory first
-	memcpy(left, right, sizeof(union rx_value_union));
-	// now do the actual copy of pointer members
-	if (type & RX_ARRAY_VALUE_MASK)
-	{// we have an array
-		size_t count = left->array_value.size;
-		if (count > 0)
-		{
-			left->array_value.values = malloc(sizeof(union rx_value_union) * count);
-			for (size_t i = 0; i < count; i++)
-			{
-				assign_value(&left->array_value.values[i], &right->array_value.values[i], RX_STRIP_ARRAY_MASK & type);
-			}
-		}
-	}
-	else
-	{//simple union stuff
-		switch (type & RX_SIMPLE_VALUE_MASK)
-		{
-#ifndef RX_VALUE_SIZE_16
-		case RX_COMPLEX_TYPE:
-			left->complex_value = malloc(sizeof(complex_value_struct));
-			*left->complex_value = *right->complex_value;
-			break;
-		case RX_UUID_TYPE:
-			left->uuid_value = malloc(sizeof(rx_uuid_t));
-			*left->uuid_value = *right->uuid_value;
-			break;
-#endif
-		case RX_STRING_TYPE:
-			rx_copy_string_value(&left->string_value, &right->string_value);
-			break;
-		case RX_BYTES_TYPE:
-			rx_copy_bytes_value(&left->bytes_value, &right->bytes_value);
-			break;
-		case RX_STRUCT_TYPE:
-			if (right->struct_value.size)
-			{
-				left->struct_value.values = malloc(sizeof(struct struct_value_type_t) * right->struct_value.size);
-				for (size_t i = 0; i < right->struct_value.size; i++)
-				{
-					assign_value(&left->struct_value.values[i].value, &right->struct_value.values[i].value, right->struct_value.values[i].value_type);
-				}
-			}
-			break;
-		case RX_NODE_ID_TYPE:
-			left->node_id_value = malloc(sizeof(rx_node_id_struct));
-			rx_copy_node_id(left->node_id_value, right->node_id_value);
-			break;
-		}
-	}
-}
+
+
 RX_COMMON_API void rx_assign_value(struct typed_value_type* val, const struct typed_value_type* right)
 {
 	val->value_type = right->value_type;
@@ -687,11 +731,256 @@ RX_COMMON_API void rx_move_value(struct typed_value_type* val, struct typed_valu
 
 
 
+RX_COMMON_API int rx_init_struct_array_value(struct typed_value_type* val, const struct_value_type* data, size_t count)
+{
+	val->value_type = RX_STRUCT_TYPE | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = malloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+			val->value.array_value.values[i].struct_value.values = malloc(sizeof(struct typed_value_type) * data[i].size);
+			val->value.array_value.values[i].struct_value.size = data[i].size;
+			for (size_t j = 0; j < data[i].size; j++)
+			{
+				val->value.array_value.values[i].struct_value.values[j].value_type = data[i].values[j].value_type;
+				assign_value(&val->value.array_value.values[i].struct_value.values[j].value, &data[i].values[j].value, data[i].values[j].value_type);
+			}
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+RX_COMMON_API int rx_init_struct_array_value_with_ptrs(struct typed_value_type* val, const struct_value_type** data, size_t count)
+{
+	val->value_type = RX_STRUCT_TYPE | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = malloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+			val->value.array_value.values[i].struct_value.values = malloc(sizeof(struct typed_value_type) * data[i]->size);
+			val->value.array_value.values[i].struct_value.size = data[i]->size;
+			for (size_t j = 0; j < data[i]->size; j++)
+			{
+				val->value.array_value.values[i].struct_value.values[j].value_type = data[i]->values[j].value_type;
+				assign_value(&val->value.array_value.values[i].struct_value.values[j].value, &data[i]->values[j].value, data[i]->values[j].value_type);
+			}
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+
+
+RX_COMMON_API int rx_get_array_value(size_t index, struct typed_value_type* val, const struct typed_value_type* right)
+{
+	if (!rx_is_array_value(right))
+		return RX_ERROR;
+	size_t size = 0;
+	if (RX_OK != rx_get_array_size(right, &size))
+		return RX_ERROR;
+	if (index >=size)
+		return RX_ERROR;
+	val->value_type = right->value_type&RX_STRIP_ARRAY_MASK;
+	assign_value(&val->value, &right->value.array_value.values[index], right->value_type & RX_STRIP_ARRAY_MASK);
+
+	return RX_OK;
+}
+
+
 RX_COMMON_API int rx_compare_values(const struct typed_value_type* val, const struct typed_value_type* right)
 {
 	int64_t temp64_1, temp64_2;
 	uint64_t utemp64_1, utemp64_2;
 	double tempd_1, tempd_2;
+	if (rx_is_array_value(val) && rx_is_array_value(right))
+	{// two arrays
+		size_t count_val = 0;
+		size_t count_right = 0;
+		rx_get_array_size(val, &count_val);
+		rx_get_array_size(right, &count_right);
+		if (count_val == count_right)
+		{// same array sizes
+			if (is_simple_union_type(RX_SIMPLE_TYPE(val->value_type)) && is_simple_union_type(RX_SIMPLE_TYPE(right->value_type)))
+			{
+				if (is_numeric_union_type(RX_SIMPLE_TYPE(val->value_type)) && is_numeric_union_type(right->value_type & RX_STRIP_ARRAY_MASK))
+				{
+					if (is_integer_union_type(val->value_type & RX_STRIP_ARRAY_MASK) && is_integer_union_type(RX_SIMPLE_TYPE(right->value_type)))
+					{
+						for (size_t i = 0; i < count_right; i++)
+						{
+							rx_get_integer_value(val, i, &temp64_1, NULL);
+							rx_get_integer_value(right, i, &temp64_2, NULL);
+
+							if (temp64_1 == temp64_2)
+								continue;
+							else if (temp64_1 < temp64_2)
+								return -1;
+							else //if (temp64_1 > temp64_2)
+								return 1;
+						}
+						return 0;
+					}
+					if (is_unassigned_union_type(RX_SIMPLE_TYPE(val->value_type)) && is_integer_union_type(RX_SIMPLE_TYPE(right->value_type)))
+					{
+						for (size_t i = 0; i < count_right; i++)
+						{
+							rx_get_unassigned_value(val, i, &utemp64_1, NULL);
+							rx_get_unassigned_value(right, i, &utemp64_2, NULL);
+							if (utemp64_1 == utemp64_2)
+								continue;
+							else if (utemp64_1 < utemp64_2)
+								return -1;
+							else //if (utemp64_1 > utemp64_2)
+								return 1;
+						}
+						return 0;
+					}
+					else// is_float() || is_complex()
+					{
+						for (size_t i = 0; i < count_right; i++)
+						{
+							rx_get_float_value(val, i, &tempd_1, NULL);
+							rx_get_float_value(right, i, &tempd_2, NULL);
+							if (tempd_1 == tempd_2)
+								continue;
+							else if (tempd_1 < tempd_2)
+								return -1;
+							else //if (tempd_1 > tempd_2)
+								return 1;
+						}
+						return 0;
+					}
+				}
+				else
+					return RX_SIMPLE_TYPE(val->value_type) - RX_SIMPLE_TYPE(right->value_type);
+			}
+			else if (RX_SIMPLE_TYPE(val->value_type) == RX_SIMPLE_TYPE(right->value_type))
+			{
+				if (RX_SIMPLE_TYPE(val->value_type) == RX_STRING_TYPE)
+				{
+					for (size_t i = 0; i < count_right; i++)
+					{
+						if (val->value.array_value.values[i].string_value.size == 0 && right->value.array_value.values[i].string_value.size == 0)
+						{
+							continue;
+						}
+						else if (val->value.array_value.values[i].string_value.size != 0 && right->value.array_value.values[i].string_value.size != 0)
+						{
+							int temp_ret = strcmp(rx_c_str(&val->value.array_value.values[i].string_value), rx_c_str(&right->value.array_value.values[i].string_value));
+							if (temp_ret != 0)
+								return temp_ret;
+						}
+						else // one of strings is not empty!!!
+							return val->value.array_value.values[i].string_value.size == 0 ? -1 : 1;
+					}
+					return 0;
+				}
+				else if (RX_SIMPLE_TYPE(val->value_type) == RX_BYTES_TYPE)
+				{
+					for (size_t i = 0; i < count_right; i++)
+					{
+						if (val->value.array_value.values[i].bytes_value.size == 0 && right->value.array_value.values[i].bytes_value.size == 0)
+						{
+							continue;
+						}
+						else if (val->value.array_value.values[i].bytes_value.size == right->value.array_value.values[i].bytes_value.size)
+						{
+							int temp_ret = memcmp(val->value.array_value.values[i].bytes_value.value, right->value.array_value.values[i].bytes_value.value, val->value.bytes_value.size);
+							if (temp_ret != 0)
+								return temp_ret;
+						}
+						else
+						{
+							if (val->value.array_value.values[i].bytes_value.size < right->value.array_value.values[i].bytes_value.size)
+								return -1;
+							else // if (val->value.bytes_value.size > right->value.string_value.size)
+								return 1;
+						}
+					}
+					return 0;
+				}
+
+				else if (RX_SIMPLE_TYPE(val->value_type) == RX_STRUCT_TYPE)
+				{
+					for (size_t i = 0; i < count_right; i++)
+					{
+						if (val->value.array_value.values[i].struct_value.size == 0 && right->value.array_value.values[i].struct_value.size == 0)
+						{
+							continue;
+						}
+						else if (val->value.array_value.values[i].struct_value.size == right->value.array_value.values[i].struct_value.size)
+						{
+							for (size_t j = 0; j < right->value.array_value.values[i].struct_value.size; j++)
+							{
+								int ret = rx_compare_values(&val->value.array_value.values[i].struct_value.values[j], &right->value.array_value.values[i].struct_value.values[j]);
+								if (ret != 0)
+									return ret;
+							}
+						}
+						else
+						{
+							if (val->value.array_value.values[i].struct_value.size < right->value.array_value.values[i].struct_value.size)
+								return -1;
+							else // if (val->value.bytes_value.size > right->value.string_value.size)
+								return 1;
+						}
+					}
+					return 0;
+				}
+
+				else if (RX_SIMPLE_TYPE(val->value_type) == RX_TIME_TYPE)
+				{
+					for (size_t i = 0; i < count_right; i++)
+					{
+						if (val->value.array_value.values[i].time_value.t_value == right->value.array_value.values[i].time_value.t_value)
+							continue;
+						if (val->value.array_value.values[i].time_value.t_value < right->value.array_value.values[i].time_value.t_value)
+							return -1;
+						else
+							return 1;
+					}
+					return 0;
+				}
+				else if (RX_SIMPLE_TYPE(val->value_type) == RX_UUID_TYPE)
+				{
+					for (size_t i = 0; i < count_right; i++)
+					{
+#ifndef RX_VALUE_SIZE_16
+						int temp_ret = memcmp(val->value.array_value.values[i].uuid_value, right->value.array_value.values[i].uuid_value, sizeof(rx_uuid_t)) == 0;
+#else
+						int temp_ret = memcmp(&val->value.array_value.values[i].uuid_value, &right->value.array_value.values[i].uuid_value, sizeof(rx_uuid_t)) == 0;
+#endif
+						if (temp_ret != 0)
+							return temp_ret;
+					}
+					return 0;
+				}
+			}
+			return RX_SIMPLE_TYPE(val->value_type) - RX_SIMPLE_TYPE(right->value_type);
+		}
+		else
+		{
+			return (int)count_val - (int)count_right;
+		}
+	}
+	else if(!rx_is_array_value(val) && rx_is_array_value(right))
+	{
+		return -1;
+	}
+	else if (rx_is_array_value(val) && !rx_is_array_value(right))
+	{
+		return 1;
+	}
 	if (is_simple_union_type(val->value_type) && is_simple_union_type(right->value_type))
 	{
 		if (is_numeric_union_type(val->value_type) && is_numeric_union_type(right->value_type))
@@ -747,7 +1036,7 @@ RX_COMMON_API int rx_compare_values(const struct typed_value_type* val, const st
 		}
 		else if (val->value_type == RX_BYTES_TYPE)
 		{
-			if (val->value.string_value.size == 0 && right->value.string_value.size == 0)
+			if (val->value.bytes_value.size == 0 && right->value.bytes_value.size == 0)
 			{
 				return 0;
 			}
@@ -757,7 +1046,32 @@ RX_COMMON_API int rx_compare_values(const struct typed_value_type* val, const st
 			}
 			else
 			{
-				if (val->value.bytes_value.size < right->value.string_value.size)
+				if (val->value.bytes_value.size < right->value.bytes_value.size)
+					return -1;
+				else // if (val->value.bytes_value.size > right->value.string_value.size)
+					return 1;
+			}
+		}
+
+		else if (val->value_type == RX_STRUCT_TYPE)
+		{
+			if (val->value.struct_value.size == 0 && right->value.struct_value.size == 0)
+			{
+				return 0;
+			}
+			else if (val->value.struct_value.size == right->value.struct_value.size)
+			{
+				for (size_t i = 0; i < right->value.struct_value.size; i++)
+				{
+					int ret = rx_compare_values(&val->value.struct_value.values[i], &right->value.struct_value.values[i]);
+					if (ret != 0)
+						return ret;
+				}
+				return 0;
+			}
+			else
+			{
+				if (val->value.struct_value.size < right->value.struct_value.size)
 					return -1;
 				else // if (val->value.bytes_value.size > right->value.string_value.size)
 					return 1;
@@ -1193,7 +1507,33 @@ int get_string_value(const union rx_value_union* val, rx_value_t type, size_t id
 			}
 			else
 			{
-				return RX_ERROR;
+
+				rx_packet_buffer buffer;
+				rx_init_packet_buffer(&buffer, 0x100, 0x00);
+				rx_push_to_packet(&buffer, "[", 1);
+				int first = 1;
+				for (size_t i = 0; i < val->array_value.size; i++)
+				{
+					string_value_struct temp;
+					if (RX_OK == get_string_value(&val->array_value.values[i], RX_SIMPLE_TYPE(type), -1, &temp))
+					{
+						if (first)
+							first = 0;
+						else
+							rx_push_to_packet(&buffer, ", ", 2);
+
+						const char* temp_str = rx_c_str(&temp);
+						if (temp_str == NULL)
+							rx_push_to_packet(&buffer, "null", 4);
+						else
+							rx_push_to_packet(&buffer, temp_str, strlen(temp_str));
+					}
+
+				}
+				rx_push_to_packet(&buffer, "]", 2);
+				auto ret = rx_init_string_value_struct(value, (const char*)buffer.buffer_ptr, -1);
+				rx_deinit_packet_buffer(&buffer);
+				return ret;
 			}
 		}
 		else
@@ -1269,7 +1609,33 @@ int get_string_value(const union rx_value_union* val, rx_value_t type, size_t id
 					ret = time_to_ISO8601(val->time_value, value);
 					return RX_OK;
 				case RX_STRUCT_TYPE:
-					ret = rx_init_string_value_struct(value, "{}", -1);
+					{
+						rx_packet_buffer buffer;
+						rx_init_packet_buffer(&buffer, 0x100, 0x00);
+						rx_push_to_packet(&buffer, "{", 1);
+						int first = 1;
+						for (size_t i = 0; i < val->struct_value.size; i++)
+						{
+							string_value_struct temp;
+							if (RX_OK == rx_get_string_value(&val->struct_value.values[i], -1, &temp))
+							{
+								if (first)
+									first = 0;
+								else
+									rx_push_to_packet(&buffer, ", ", 2);
+
+								const char* temp_str = rx_c_str(&temp);
+								if(temp_str ==NULL)
+									rx_push_to_packet(&buffer, "null", 4);
+								else
+									rx_push_to_packet(&buffer, temp_str, strlen(temp_str));
+							}
+
+						}
+						rx_push_to_packet(&buffer, "}", 2);
+						ret = rx_init_string_value_struct(value, (const char*)buffer.buffer_ptr, -1);
+						rx_deinit_packet_buffer(&buffer);
+					}
 					return RX_OK;
 				default:
 					ret = rx_init_string_value_struct(value, NULL, -1);

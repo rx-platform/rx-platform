@@ -65,7 +65,7 @@ rx_result register_variable::initialize_variable (runtime::runtime_init_context&
 
 rx_result register_variable::start_variable (runtime::runtime_start_context& ctx)
 {
-	rx_value value = ctx.variables.get_current_variable()->get_value(ctx.context);
+	rx_value value = ctx.get_current_variable_value();
 	value_ = rx_timed_value(value.to_simple(), value.get_time());
 	process_variable(ctx.context);
 	return true;

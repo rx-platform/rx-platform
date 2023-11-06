@@ -136,11 +136,11 @@ private:
 
       virtual void read_struct (string_view_type path, read_struct_data data) const = 0;
 
-      virtual void write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback) = 0;
+      virtual void write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback) = 0;
 
-      virtual void write_struct (string_view_type path, write_struct_data data) = 0;
+      virtual void write_struct (string_view_type path, bool test, write_struct_data data) = 0;
 
-      virtual void execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback) = 0;
+      virtual void execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback) = 0;
 
       virtual rx_result do_command (rx_object_command_t command_type) = 0;
 
@@ -152,9 +152,9 @@ private:
 
       virtual rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
-      virtual rx_result write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
+      virtual rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
-      virtual rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
+      virtual rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
       rx_result delete_item () const;
 

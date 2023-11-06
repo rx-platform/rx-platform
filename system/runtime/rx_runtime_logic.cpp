@@ -474,7 +474,7 @@ void program_data::process_program (runtime::runtime_process_context& ctx)
 
 // Class rx_platform::runtime::logic_blocks::method_data 
 
-method_data::method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var, const method_data& prototype)
+method_data::method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var, method_data&& prototype)
     : method_ptr(std::move(var))
     , item(std::move(rt))
     , inputs(prototype.inputs)

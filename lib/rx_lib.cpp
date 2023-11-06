@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -198,7 +198,6 @@ byte_string rx_to_std_bytes(const bytes_value_struct& str)
 byte_string rx_hexstr_to_bytes(const string_type& str)
 {
 	byte_string ret;
-	uint32_t size = 0;
 	uint32_t char_idx = 0;
 
 	while (str[char_idx] != '\0')
@@ -786,7 +785,7 @@ rx_node_id::rx_node_id(rx_node_id_struct right) noexcept
 	rx_move_node_id(&data_, &right);
 }
 
-rx_node_id::rx_node_id(const rx_node_id &right) 
+rx_node_id::rx_node_id(const rx_node_id &right)
 {
 	auto ret = rx_copy_node_id(&data_, &right.data_);
 	RX_ASSERT(ret==RX_OK);
@@ -1194,14 +1193,38 @@ rx_mode_type::rx_mode_type()
 {
 	raw_format = 0;
 }
-
+uint32_t rx_mode_type::create_origin(uint32_t from) const
+{
+	uint32_t ret = from;
+	if ((from & RX_ALWAYS_ORIGIN) == RX_ALWAYS_ORIGIN)
+	{
+		if (is_test())
+		{
+			if ((from & RX_TEST_ORIGIN) == 0)
+			{
+				ret |= RX_TEST_ORIGIN;
+			}
+		}
+		else //if (!is_test())
+		{
+			if ((from & RX_TEST_ORIGIN) == RX_TEST_ORIGIN)
+			{
+				ret &= (~RX_TEST_ORIGIN);
+			}
+		}
+	}
+	return ret;
+}
 bool rx_mode_type::can_callculate(uint32_t quality) const
 {
-	return (raw_format & RX_MODE_MASK_OFF) == 0;
+	return (raw_format & RX_MODE_MASK_OFF) == 0
+		&& (quality & RX_QUALITY_MASK) == RX_GOOD_QUALITY;
 }
 bool rx_mode_type::can_callculate(const values::rx_value& value) const
 {
-	return (raw_format & RX_MODE_MASK_OFF) == 0;
+	return (raw_format & RX_MODE_MASK_OFF) == 0
+		&& value.is_good()
+		&& value.is_test() == is_test();
 }
 bool rx_mode_type::is_on() const
 {
@@ -1243,7 +1266,7 @@ bool rx_mode_type::reset_test()
 	if (!is_off())
 	{
 		uint32_t old_stuff = raw_format;
-		raw_format = raw_format & (!RX_MODE_MASK_TEST);
+		raw_format = raw_format & (~RX_MODE_MASK_TEST);
 		return (old_stuff != raw_format);
 	}
 	return false;

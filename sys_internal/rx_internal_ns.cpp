@@ -125,9 +125,9 @@ void rx_item_implementation<TImpl>::read_value (const string_type& path, read_re
 }
 
 template <class TImpl>
-void rx_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
+void rx_item_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
-	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, std::move(val), std::move(callback), *impl_);
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, test, std::move(val), std::move(callback), *impl_);
 }
 
 template <class TImpl>
@@ -161,9 +161,9 @@ rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_h
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
-    return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, items, monitor, *impl_);
+    return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, test, items, monitor, *impl_);
 }
 
 template <class TImpl>
@@ -218,21 +218,21 @@ void rx_item_implementation<TImpl>::read_struct (string_view_type path, read_str
 }
 
 template <class TImpl>
-void rx_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
+void rx_item_implementation<TImpl>::write_struct (string_view_type path, bool test, write_struct_data data)
 {
-	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_struct(path, std::move(data), *impl_);
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_struct(path, test, std::move(data), *impl_);
 }
 
 template <class TImpl>
-void rx_item_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
 {
-	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_method(path, std::move(data), std::move(callback), *impl_);
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_method(path, test, std::move(data), std::move(callback), *impl_);
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
-	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_item(transaction_id, handle, data, monitor, *impl_);
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_item(transaction_id, test, handle, data, monitor, *impl_);
 }
 
 template <class TImpl>
@@ -321,7 +321,7 @@ void rx_meta_item_implementation<TImpl>::read_value (const string_type& path, re
 }
 
 template <class TImpl>
-void rx_meta_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
+void rx_meta_item_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
 	callback(0, RX_NOT_IMPLEMENTED);
 }
@@ -369,7 +369,7 @@ rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runt
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_meta_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
     return RX_NOT_IMPLEMENTED;
 }
@@ -426,19 +426,19 @@ void rx_meta_item_implementation<TImpl>::read_struct (string_view_type path, rea
 }
 
 template <class TImpl>
-void rx_meta_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
+void rx_meta_item_implementation<TImpl>::write_struct (string_view_type path, bool test, write_struct_data data)
 {
 	data.callback(0, RX_NOT_VALID_TYPE, std::vector<rx_result>());
 }
 
 template <class TImpl>
-void rx_meta_item_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_meta_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
 {
 	callback(0, RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_meta_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -528,7 +528,7 @@ void rx_other_implementation<TImpl>::read_value (const string_type& path, read_r
 }
 
 template <class TImpl>
-void rx_other_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
+void rx_other_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
 	callback(0, RX_NOT_IMPLEMENTED);
 }
@@ -576,7 +576,7 @@ rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_other_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
     return RX_NOT_IMPLEMENTED;
 }
@@ -624,19 +624,19 @@ void rx_other_implementation<TImpl>::read_struct (string_view_type path, read_st
 }
 
 template <class TImpl>
-void rx_other_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
+void rx_other_implementation<TImpl>::write_struct (string_view_type path, bool test, write_struct_data data)
 {
 	data.callback(0, RX_NOT_VALID_TYPE, std::vector<rx_result>());
 }
 
 template <class TImpl>
-void rx_other_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_other_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
 {
 	callback(0, RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_other_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -717,7 +717,7 @@ void rx_proxy_item_implementation<TImpl>::read_value (const string_type& path, r
 }
 
 template <class TImpl>
-void rx_proxy_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
+void rx_proxy_item_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
 }
 
@@ -764,7 +764,7 @@ rx_result rx_proxy_item_implementation<TImpl>::read_items (const std::vector<run
 }
 
 template <class TImpl>
-rx_result rx_proxy_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_proxy_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
   return RX_NOT_IMPLEMENTED;
 }
@@ -811,17 +811,17 @@ void rx_proxy_item_implementation<TImpl>::read_struct (string_view_type path, re
 }
 
 template <class TImpl>
-void rx_proxy_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
+void rx_proxy_item_implementation<TImpl>::write_struct (string_view_type path, bool test, write_struct_data data)
 {
 }
 
 template <class TImpl>
-void rx_proxy_item_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_proxy_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
 {
 }
 
 template <class TImpl>
-rx_result rx_proxy_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_proxy_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
   return RX_NOT_IMPLEMENTED;
 }
@@ -906,7 +906,7 @@ void rx_relation_item_implementation<TImpl>::read_value (const string_type& path
 }
 
 template <class TImpl>
-void rx_relation_item_implementation<TImpl>::write_value (const string_type& path, rx_simple_value&& val, write_result_callback_t callback)
+void rx_relation_item_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
 	runtime::algorithms::runtime_relation_algorithms::write_value(path, std::move(val), std::move(callback), *impl_);
 }
@@ -954,7 +954,7 @@ rx_result rx_relation_item_implementation<TImpl>::read_items (const std::vector<
 }
 
 template <class TImpl>
-rx_result rx_relation_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_relation_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -1002,19 +1002,19 @@ void rx_relation_item_implementation<TImpl>::read_struct (string_view_type path,
 }
 
 template <class TImpl>
-void rx_relation_item_implementation<TImpl>::write_struct (string_view_type path, write_struct_data data)
+void rx_relation_item_implementation<TImpl>::write_struct (string_view_type path, bool test, write_struct_data data)
 {
 	data.callback(0, RX_NOT_VALID_TYPE, std::vector<rx_result>());
 }
 
 template <class TImpl>
-void rx_relation_item_implementation<TImpl>::execute_method (const string_type& path, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_relation_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
 {
 	callback(0, RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
-rx_result rx_relation_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+rx_result rx_relation_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }

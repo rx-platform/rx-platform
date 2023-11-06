@@ -315,6 +315,7 @@ typedef std::vector<write_data_struct<structure::mapper_data> > mapper_writes_ty
 typedef std::vector<write_data_struct<structure::source_data> > source_writes_type;
 typedef std::vector<write_result_struct<structure::source_data> > source_results_type;
 typedef std::vector<write_result_struct<structure::variable_data> > variable_results_type;
+typedef std::vector<write_result_struct<structure::variable_block_data> > block_variable_results_type;
 
 typedef std::vector<method_execute_result_data> method_results_type;
 typedef std::vector<logic_blocks::program_data*> programs_type;
@@ -322,9 +323,19 @@ typedef std::vector<logic_blocks::program_data*> programs_type;
 typedef std::vector<remotes_data> remotes_data_type;
 
 typedef std::vector<structure::variable_data*> variables_type;
+typedef std::vector<structure::variable_block_data*> block_variables_type;
 typedef std::vector<structure::filter_data*> filters_type;
 typedef std::vector<structure::event_data*> events_type;
 typedef std::vector<structure::struct_data*> structs_type;
+
+struct variable_data_for_process_t
+{
+    variable_results_type* var_results;
+    variables_type* vars;
+
+    block_variable_results_type* block_results;
+    block_variables_type* block_vars;
+};
 
 
 
@@ -378,6 +389,10 @@ class runtime_process_context
 
       void variable_result_pending (write_result_struct<structure::variable_data> data);
 
+      void variable_pending (structure::variable_block_data* whose);
+
+      void variable_result_pending (write_result_struct<structure::variable_block_data> data);
+
       void method_result_pending (method_execute_result_data data);
 
       void program_pending (logic_blocks::program_data* whose);
@@ -402,7 +417,7 @@ class runtime_process_context
 
       source_writes_type& get_source_writes ();
 
-      std::pair<variable_results_type*, variables_type*> get_variables_for_process ();
+      variable_data_for_process_t get_variables_for_process ();
 
       bool should_process_status_change ();
 
@@ -443,6 +458,10 @@ class runtime_process_context
       void full_value_changed (structure::full_value_data* whose);
 
       security::security_guard_ptr get_security_guard ();
+
+      bool is_mine_value (const rx_value& from) const;
+
+      void value_changed (structure::value_data* whose);
 
 
       const rx_mode_type get_mode () const
@@ -538,6 +557,10 @@ class runtime_process_context
       double_collection<variables_type> variables_;
 
       double_collection<variable_results_type> variable_results_;
+
+      double_collection<block_variables_type> block_variables_;
+
+      double_collection<block_variable_results_type> block_variable_results_;
 
       double_collection<filters_type> filters_;
 

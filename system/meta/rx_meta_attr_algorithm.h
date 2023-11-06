@@ -106,6 +106,11 @@ class complex_data_algorithm
 
   private:
 
+      static rx_result construct_complex_attribute (const const_value_def& whose, construct_context& ctx);
+
+      static rx_result construct_complex_attribute (const simple_value_def& whose, construct_context& ctx);
+
+
 
 };
 
@@ -182,7 +187,7 @@ class data_blocks_algorithm
 
       static bool check_data_attribute (def_blocks::data_attribute& whose, type_check_context& ctx);
 
-      static rx_result construct_data_attribute (const def_blocks::data_attribute& whose, data_blocks_prototype& data, construct_context& ctx);
+      static rx_result construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, construct_context& ctx);
 
       static rx_result check_data_reference (const rx_item_reference& ref, ns::rx_directory_resolver& dirs);
 

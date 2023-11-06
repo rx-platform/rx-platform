@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -142,7 +142,7 @@ rx_result deinit_runtime<meta::object_types::domain_type>(rx_domain_ptr what
 	return domain_algorithms::deinit_runtime(what, std::move(callback));
 }
 
-// Class rx_internal::sys_runtime::algorithms::object_algorithms 
+// Class rx_internal::sys_runtime::algorithms::object_algorithms
 
 
 rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
@@ -203,7 +203,7 @@ rx_result object_algorithms::start_runtime (rx_object_ptr what, runtime::runtime
 
 rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_result_callback&& callback)
 {
-	rx_post_function_to(what->get_executer(), what, 
+	rx_post_function_to(what->get_executer(), what,
 		[](rx_object_ptr whose, rx_result_callback&& callback)
 		{
 			runtime::runtime_stop_context stop_ctx(whose->meta_info(),  &whose->get_context());
@@ -212,7 +212,7 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_result_callb
 			{
 				result = algorithms::delete_runtime_structure<object_type>(whose);
 				RUNTIME_LOG_TRACE("object_algorithms", 100, ("Stopped "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
-				rx_post_function_to(RX_DOMAIN_META, whose, 
+				rx_post_function_to(RX_DOMAIN_META, whose,
 					[](rx_object_ptr whose, rx_result_callback&& callback)
 					{
 						runtime::runtime_deinit_context deinit_ctx(whose->meta_info());
@@ -256,7 +256,7 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 		if (domain_id)
 		{
 			auto domain_ptr = model::platform_types_manager::instance().get_type_repository<domain_type>().get_runtime(domain_id.value());
-					
+
 			if (domain_ptr)
 			{
 				auto temp_ptr = domain_ptr.value();
@@ -274,7 +274,7 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 					std::ostringstream message;
 					message << "Unable to connect to domain "
 						<< !what->get_instance_data().get_data().domain_ref.is_null() ? what->get_instance_data().get_data().domain_ref.to_string() : RX_NULL_ITEM_NAME;
-					
+
 					RUNTIME_LOG_ERROR("object_algorithms", 900, message.str());
 					return rx_result(message.str());
 				}
@@ -283,7 +283,7 @@ rx_result object_algorithms::connect_domain (rx_object_ptr what)
 			{
 				RUNTIME_LOG_WARNING("object_algorithms", 900, "Domain Id is invalid, connecting object "s
 					+ what->meta_info().get_full_path() + " to unassigned domain.");
-			}				
+			}
 		}
 		else
 		{
@@ -336,7 +336,7 @@ rx_result object_algorithms::disconnect_domain (rx_object_ptr what)
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::domain_algorithms 
+// Class rx_internal::sys_runtime::algorithms::domain_algorithms
 
 
 rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
@@ -420,7 +420,7 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, rx_result_callb
 				for (const auto& error : result.errors())
 					RUNTIME_LOG_ERROR("domain_algorithms", 800, error.c_str());
 				RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error stopping "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
-				
+
 				callback(std::move(result));
 			}
 		}, what, std::move(callback));
@@ -528,7 +528,7 @@ rx_result domain_algorithms::disconnect_application (rx_domain_ptr what)
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::port_algorithms 
+// Class rx_internal::sys_runtime::algorithms::port_algorithms
 
 
 rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
@@ -718,7 +718,7 @@ rx_result port_algorithms::disconnect_application (rx_port_ptr what)
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::application_algorithms 
+// Class rx_internal::sys_runtime::algorithms::application_algorithms
 
 
 rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
@@ -728,6 +728,7 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 	if (it == platform_runtime_manager::instance().applications_.end())
 	{
 		auto insert_result = platform_runtime_manager::instance().applications_.emplace(what->meta_info().id, what);
+		RX_ASSERT(insert_result.second);
 		ret = what->get_instance_data().before_init_runtime(what, ctx);
 		if (ret)
 		{
@@ -843,7 +844,7 @@ rx_result application_algorithms::stop_runtime (rx_application_ptr what, runtime
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::relations_algorithms 
+// Class rx_internal::sys_runtime::algorithms::relations_algorithms
 
 
 rx_result relations_algorithms::init_runtime (rx_relation_ptr what, runtime::runtime_init_context& ctx)
@@ -872,7 +873,7 @@ rx_result relations_algorithms::stop_runtime (rx_relation_ptr what, runtime::run
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::shutdown_algorithms 
+// Class rx_internal::sys_runtime::algorithms::shutdown_algorithms
 
 
 void shutdown_algorithms::stop_applications (std::vector<rx_application_ptr> apps)
@@ -966,7 +967,7 @@ void shutdown_algorithms::deinit_objects (std::vector<rx_object_ptr> objects)
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::startup_algorithms 
+// Class rx_internal::sys_runtime::algorithms::startup_algorithms
 
 
 void startup_algorithms::start_applications (std::vector<rx_application_ptr> apps)

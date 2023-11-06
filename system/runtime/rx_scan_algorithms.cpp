@@ -71,22 +71,6 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     size_t lap_count = 0;
     do
     {
-        bool on = whose.tags_.common_tags_.on_;
-        bool my_on = whose.context_.mode_.is_on();
-        if (on != my_on)
-        {
-            if (on)
-            {
-                if (whose.context_.mode_.turn_on())
-                    whose.context_.status_change_pending();
-            }
-            else
-            {
-                if (whose.context_.mode_.turn_off())
-                    whose.context_.status_change_pending();
-            }
-
-        }
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // DEBUG SCAN SUPPPORT
         // ========================
@@ -303,6 +287,42 @@ void runtime_scan_algorithms<typeT>::process_status_change (typename typeT::RTyp
 {
     while (ctx.should_process_status_change())
     {
+
+        bool on = whose.tags_.common_tags_.on_;
+        bool test = whose.tags_.common_tags_.test_;
+        bool my_on = whose.context_.mode_.is_on();
+        bool my_test = whose.context_.mode_.is_test();
+        if (on != my_on)
+        {
+            if (on)
+            {
+                if (whose.context_.mode_.turn_on())
+                    whose.context_.status_change_pending();
+            }
+            else
+            {
+                if (whose.context_.mode_.turn_off())
+                    whose.context_.status_change_pending();
+            }
+
+        }
+        if (test != my_test)
+        {
+            if (test)
+            {
+                if (whose.context_.mode_.set_test())
+                    whose.context_.status_change_pending();
+            }
+            else
+            {
+                if (whose.context_.mode_.reset_test())
+                    whose.context_.status_change_pending();
+            }
+        }
+        ctx.set_binded_as(whose.tags_.common_tags_.on_handle_, ctx.mode_.is_on());
+        ctx.set_binded_as(whose.tags_.common_tags_.test_handle_, ctx.mode_.is_test());
+        ctx.set_binded_as(whose.tags_.common_tags_.blocked_handle_, ctx.mode_.is_blocked());
+        ctx.set_binded_as(whose.tags_.common_tags_.simulate_handle_, ctx.mode_.is_simulate());
         whose.tags_.connected_tags_.object_state_changed(&ctx);
         whose.tags_.item_->object_state_changed(&ctx);
     }
@@ -347,12 +367,21 @@ template <class typeT>
 void runtime_scan_algorithms<typeT>::process_variables (typename typeT::RType& whose, runtime_process_context& ctx)
 {
     auto to_process = ctx.get_variables_for_process();
-    while (!to_process.first->empty() || !to_process.second->empty())
+    while (!to_process.var_results->empty() 
+        || !to_process.vars->empty()
+        || !to_process.block_results->empty()
+        || !to_process.block_vars->empty())
     {
-        for (auto& one : *to_process.first)
+        for (auto& one : *to_process.var_results)
             one.whose->process_result(one.transaction_id, std::move(one.result));
 
-        for (auto& one : *to_process.second)
+        for (auto& one : *to_process.block_results)
+            one.whose->process_result(one.transaction_id, std::move(one.result));
+
+        for (auto& one : *to_process.vars)
+            one->process_runtime(&ctx);
+
+        for (auto& one : *to_process.block_vars)
             one->process_runtime(&ctx);
 
         to_process = ctx.get_variables_for_process();

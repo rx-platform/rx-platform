@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace rx_http_server {
 
 namespace http_displays {
 
-// Class rx_internal::rx_http_server::http_displays::rx_http_static_display 
+// Class rx_internal::rx_http_server::http_displays::rx_http_static_display
 
 rx_http_static_display::rx_http_static_display()
 {
@@ -105,7 +105,7 @@ rx_result rx_http_static_display::start_display (runtime::runtime_start_context&
 rx_result rx_http_static_display::stop_display (runtime::runtime_stop_context& ctx, const string_type& disp_path)
 {
 	auto result = disconnect_points(ctx, disp_path);
-	
+
 	return true;
 }
 
@@ -135,7 +135,7 @@ void rx_http_static_display::fill_contents (http_display_custom_content& content
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::http_displays_repository 
+// Class rx_internal::rx_http_server::http_displays::http_displays_repository
 
 http_displays_repository::http_displays_repository()
 {
@@ -204,7 +204,7 @@ rx_result_with<rx_http_display_base::smart_ptr> http_displays_repository::get_di
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::http_display_point 
+// Class rx_internal::rx_http_server::http_displays::http_display_point
 
 http_display_point::http_display_point()
       : str_value_("-")
@@ -239,7 +239,7 @@ const string_type& http_display_point::get_str_value () const
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::rx_http_display_base 
+// Class rx_internal::rx_http_server::http_displays::rx_http_display_base
 
 std::map<string_type, string_type> rx_http_display_base::globals_;
 
@@ -307,7 +307,6 @@ rx_result rx_http_display_base::parse_display_data (runtime::runtime_init_contex
 	html_data = preprocess_static(html_data, custom, ctx.meta);
 
 	// now handle dynamic data
-	size_t str_len = html_data.size();
 	size_t start_idx = html_data.find("<?rx");
 	while (start_idx != string_type::npos)
 	{
@@ -514,7 +513,7 @@ string_type rx_http_display_base::get_dynamic_content (const string_type& html_d
 		last_idx = one.end_idx;
 	}
 	ret_content += html_data.substr(last_idx);
-	
+
 	if (has_dynamic)
 	{
 
@@ -548,8 +547,8 @@ string_type rx_http_display_base::collect_json_data ()
 
 rx_result rx_http_display_base::handle_request (rx_platform::http::http_request& req, rx_platform::http::http_response& resp)
 {
-	
-	
+
+
 	auto result = handle_request_internal(req, resp);
 
 	if (result)
@@ -601,7 +600,7 @@ string_array rx_http_display_base::get_paths_to_register (runtime::runtime_proce
 	{
 		disp_name = disp_path.substr(idx + 1);
 		is_index = (disp_name == "index");
-	}	
+	}
 	registered_paths.push_back(disp_path);
 	if (is_index)
 		registered_paths.push_back(disp_path.substr(0, idx));
@@ -661,7 +660,7 @@ void rx_http_display_base::fill_globals ()
 		<< (int)(process / 1024ull)
 		<< "KiB \r\n";
 	/////////////////////////////////////////////////////////////////////////
-	out2 << "Page size: " << (int)rx_os_page_size() << " bytes";	
+	out2 << "Page size: " << (int)rx_os_page_size() << " bytes";
 	globals_.emplace("memory", out2.str());
 
 	hosting::hosts_type hosts;
@@ -683,7 +682,7 @@ const char* system_paths[] = {
 	"LoopCount",
 	"ProcessQueues"
 };
-// Class rx_internal::rx_http_server::http_displays::rx_http_standard_display 
+// Class rx_internal::rx_http_server::http_displays::rx_http_standard_display
 
 rx_http_standard_display::rx_http_standard_display()
 {
@@ -712,13 +711,13 @@ void rx_http_standard_display::fill_contents (http_display_custom_content& conte
 
 void rx_http_standard_display::fill_div (std::ostream& stream, const string_type& rt_name, const string_type& path, const data::runtime_values_data& data)
 {
-	
+
 	using child_type = data::runtime_values_data::child_type;
 	using array_child_type = data::runtime_values_data::array_child_type;
 
 	using value_type = data::runtime_values_data::value_type;
 	using array_value_type = data::runtime_values_data::array_value_type;
-	
+
 	if (!data.values.empty())
 	{
 		stream << "<div class=\"mainsm3\">\r\n";
@@ -754,7 +753,7 @@ void rx_http_standard_display::fill_div (std::ostream& stream, const string_type
 						<< "  </tr>\r\n";
 				}
 			}
-		}		
+		}
 		stream << "</table>\r\n</div>";
 	}
 	for (const auto& one : data.children)
@@ -797,10 +796,10 @@ void rx_http_standard_display::fill_div (std::ostream& stream, const string_type
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::http_display_custom_content 
+// Class rx_internal::rx_http_server::http_displays::http_display_custom_content
 
 
-// Class rx_internal::rx_http_server::http_displays::rx_http_simple_display 
+// Class rx_internal::rx_http_server::http_displays::rx_http_simple_display
 
 rx_http_simple_display::rx_http_simple_display()
 {
@@ -824,7 +823,7 @@ void rx_http_simple_display::fill_contents (http_display_custom_content& content
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::rx_http_main_display 
+// Class rx_internal::rx_http_server::http_displays::rx_http_main_display
 
 rx_http_main_display::rx_http_main_display()
 {

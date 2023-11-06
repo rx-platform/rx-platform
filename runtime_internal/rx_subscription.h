@@ -33,10 +33,10 @@
 
 
 
-// rx_operational
-#include "system/runtime/rx_operational.h"
 // rx_job
 #include "system/threads/rx_job.h"
+// rx_operational
+#include "system/runtime/rx_operational.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -342,7 +342,7 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
     friend class runtime_connection_data;
 
   public:
-      rx_subscription (rx_subscription_callback* callback);
+      rx_subscription (rx_subscription_callback* callback, rx_mode_type mode);
 
       ~rx_subscription();
 
@@ -414,6 +414,8 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
       std::unordered_set<size_t> to_process_;
 
       values_cache_type values_cache_;
+
+      rx_mode_type mode_;
 
 
     friend class subscription_execute_manager;

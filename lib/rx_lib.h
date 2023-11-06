@@ -62,6 +62,8 @@ string_type _implemented_func(const char* fname);
 #define RX_NOT_VALID_TYPE "Not valid for this type!"
 #define RX_NOT_VALID_DIRECTORY "Not valid namespace item!"
 #define RX_INVALID_STATE "Invalid state of the object!"
+#define RX_NOT_AN_ARRAY "Item is not an array."
+#define RX_OUT_OF_BOUNDS "Index is out of bounds of array."
 
 namespace rx
 {
@@ -515,6 +517,7 @@ struct rx_mode_type
 {
 	rx_mode_type();
 	uint32_t raw_format;
+	uint32_t create_origin(uint32_t from) const;
 	bool can_callculate(uint32_t quality) const;
 	bool can_callculate(const values::rx_value& value) const;
 	bool is_on() const;

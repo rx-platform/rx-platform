@@ -134,6 +134,7 @@ bool assign_value(typed_value_type& from, rx_time_struct value);
 bool assign_value(typed_value_type& from, rx_time value);
 bool assign_value(typed_value_type& from, const rx_uuid_t& value);
 bool assign_value(typed_value_type& from, const byte_string& value);
+bool assign_value(typed_value_type& from, const std::vector<rx_simple_value>& value);
 bool assign_value(typed_value_type& from, const std::vector<bool>& value);
 bool assign_value(typed_value_type& from, const std::vector<uint8_t>& value);
 bool assign_value(typed_value_type& from, const std::vector<uint16_t>& value);
@@ -146,6 +147,7 @@ bool assign_value(typed_value_type& from, const std::vector<int64_t>& value);
 bool assign_value(typed_value_type& from, const std::vector<float>& value);
 bool assign_value(typed_value_type& from, const std::vector<double>& value);
 bool assign_value(typed_value_type& from, const string_array& value);
+bool assign_value(typed_value_type& from, const std::vector<std::vector<rx_simple_value> >& value);
 
 
 
@@ -256,6 +258,10 @@ class rx_simple_value
       bool is_byte_string () const;
 
       byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
+
+      rx_simple_value operator [] (int index) const;
+
+      void assign_array (const std::vector<rx_simple_value>& from);
 
 
   protected:
@@ -416,6 +422,10 @@ public:
 
       uint32_t get_origin () const;
 
+      rx_simple_value operator [] (int index) const;
+
+      void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY);
+
 
   protected:
 
@@ -549,6 +559,10 @@ public:
       bool is_byte_string () const;
 
       byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
+
+      rx_simple_value operator [] (int index) const;
+
+      void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time());
 
 
   protected:

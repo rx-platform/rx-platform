@@ -53,9 +53,10 @@ namespace subscriptions {
 
 // Class rx_internal::sys_runtime::subscriptions::rx_subscription 
 
-rx_subscription::rx_subscription (rx_subscription_callback* callback)
+rx_subscription::rx_subscription (rx_subscription_callback* callback, rx_mode_type mode)
       : callback_(callback),
-        active_(false)
+        active_(false),
+        mode_(mode)
 {
 	target_ = rx_thread_context();
 }
@@ -366,6 +367,7 @@ void rx_subscription::items_changed (const std::vector<update_item>& items)
 				for (auto&& handle : it->second)
 				{
 					rx_value temp_val = one.value;
+					temp_val.set_origin(mode_.create_origin(temp_val.get_origin()));
 					temp_val.increment_signal_level();
 					if(active_)
 						pending_updates_.emplace_back(update_item{ std::forward<decltype(handle)>(handle), temp_val });
@@ -770,7 +772,7 @@ void subscription_execute_manager::process (rx_subscription& subs)
 				auto tag = subs.get_tag(one.handle);
 				if (tag && subs.connections_[idx].item)
 				{
-					result = subs.connections_[idx].item->execute_item(one.trans_id, tag->target_handle, one.data, subs.smart_this());
+					result = subs.connections_[idx].item->execute_item(one.trans_id,  subs.mode_.is_test(), tag->target_handle, one.data, subs.smart_this());
 				}
 				if (!result)
 				{
@@ -948,7 +950,7 @@ void subscription_write_manager::process (rx_subscription& subs)
 			auto& connection = subs.connections_[conns_it.first];
 			for (auto&& write : conns_it.second)
 			{
-				auto write_result = connection.item->write_items(write.first, std::move(write.second), subs.smart_this());
+				auto write_result = connection.item->write_items(write.first, subs.mode_.is_test(), std::move(write.second), subs.smart_this());
 			}
 		}
 	}

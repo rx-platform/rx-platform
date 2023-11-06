@@ -188,7 +188,14 @@ enum rx_attribute_type
     value_array_attribute_type = 16,
     variable_array_attribute_type = 17,
     struct_array_attribute_type = 18,
-    data_array_attribute_type = 19
+    data_array_attribute_type = 19,
+
+    const_data_attribute_type = 20,
+    value_data_attribute_type = 21,
+    variable_data_attribute_type = 22,
+    const_data_array_attribute_type = 23,
+    value_data_array_attribute_type = 24,
+    variable_data_array_attribute_type = 25,
 };
 struct runtime_item_attribute
 {

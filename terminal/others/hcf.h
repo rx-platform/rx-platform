@@ -30,6 +30,7 @@ public:
 		out << "\r\n\r\n" ANSI_COLOR_MAGENTA " Well this is just for fun...\r\n " ANSI_COLOR_RESET;
 		out << ANSI_COLOR_BOLD ANSI_COLOR_RED "/" ANSI_COLOR_YELLOW "/" ANSI_COLOR_GREEN "/" ANSI_COLOR_CYAN "/" ANSI_COLOR_RESET
 			<< "  sinclair ZX Spectrum!!!\r\n";
+		out << "\r\nSo, I will not Halt and Catch Fire, at least not now ;)  ...\r\n";
 
 		return true;
 	}
