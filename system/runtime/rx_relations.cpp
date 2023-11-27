@@ -1006,7 +1006,12 @@ rx_result relation_connections::execute_tag (runtime_handle_t item, execute_data
 		auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
 		pending_execute_tasks_.emplace(new_trans, task);
 		data.transaction_id = new_trans;
-		auto result = connector_->execute_tag(new_trans, data.test, item, std::move(data.data));
+		rx_result result;
+		if(std::holds_alternative<rx_simple_value>(data.data))
+			result = connector_->execute_tag(new_trans, data.test, item, std::move(std::get<rx_simple_value>(data.data)));
+		else if (std::holds_alternative<data::runtime_values_data>(data.data))
+				result = connector_->execute_tag(new_trans, data.test, item, std::move(std::get<data::runtime_values_data>(data.data)));
+
 		if (!result)
 			pending_execute_tasks_.erase(new_trans);
 
@@ -1187,6 +1192,16 @@ void relation_connections::items_changed (const std::vector<update_item>& items)
 			it->second->value = one.value;
 			algorithms::runtime_relation_algorithms::relation_value_change(it->second,one.value, context);
 		}
+	}
+}
+
+void relation_connections::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, values::rx_simple_value data)
+{
+	auto it = pending_execute_tasks_.find(transaction_id);
+	if (it != pending_execute_tasks_.end())
+	{
+		it->second->process_result(std::move(result), std::move(data));
+		pending_execute_tasks_.erase(it);
 	}
 }
 

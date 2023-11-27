@@ -111,7 +111,7 @@ public:
 class method_data 
 {
 
-    typedef std::unique_ptr<std::map<runtime_transaction_id_t, structure::execute_task*> > pending_tasks_type;
+    typedef std::unique_ptr<std::map<runtime_transaction_id_t, std::pair<bool, structure::execute_task*> > > pending_tasks_type;
 public:
     method_data() = default;
     ~method_data() = default;
@@ -144,7 +144,7 @@ public:
 
       rx_result execute (execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
 
-      void process_execute_result (runtime_transaction_id_t id, rx_result&& result, data::runtime_values_data data);
+      void process_execute_result (runtime_transaction_id_t id, rx_result&& result, values::rx_simple_value&& data);
 
 
       method_runtime_ptr method_ptr;

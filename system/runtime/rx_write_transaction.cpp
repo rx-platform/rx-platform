@@ -59,6 +59,10 @@ void write_item_transaction::execute_complete (runtime_transaction_id_t transact
 {
 }
 
+void write_item_transaction::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data)
+{
+}
+
 void write_item_transaction::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result)
 {
     callback_(signal_level, std::move(result));
@@ -80,10 +84,41 @@ void execute_method_transaction::items_changed (const std::vector<update_item>& 
 
 void execute_method_transaction::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data)
 {
+}
+
+void execute_method_transaction::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data)
+{
     callback_(signal_level, std::move(result), std::move(data));
 }
 
 void execute_method_transaction::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result)
+{
+}
+
+
+// Class rx_platform::runtime::algorithms::named_execute_method_transaction 
+
+named_execute_method_transaction::named_execute_method_transaction (named_execute_method_callback_t&& callback)
+      : callback_(std::move(callback))
+{
+}
+
+
+
+void named_execute_method_transaction::items_changed (const std::vector<update_item>& items)
+{
+}
+
+void named_execute_method_transaction::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data)
+{
+    callback_(signal_level, std::move(result), std::move(data));
+}
+
+void named_execute_method_transaction::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data)
+{
+}
+
+void named_execute_method_transaction::write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result)
 {
 }
 

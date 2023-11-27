@@ -854,6 +854,98 @@ public:
 };
 
 
+template <>
+struct owned_value<values::rx_simple_value, false>
+{
+    values::rx_simple_value val_;
+    runtime_handle_t handle_ = 0;
+    rx_process_context ctx_;
+
+    void internal_commit()
+    {
+        if (ctx_.is_binded() && handle_)// just in case both of them...
+        {
+            values::rx_simple_value temp(val_);
+            ctx_.set_value(handle_, std::move(temp));
+        }
+    }
+public:
+    owned_value() = default;
+    ~owned_value() = default;
+    owned_value(const owned_value&) = default;
+    owned_value(owned_value&&) = default;
+    owned_value& operator=(const owned_value&) = default;
+    owned_value& operator=(owned_value&&) = default;
+    rx_result bind(const string_type& path, rx_init_context& ctx)
+    {
+        runtime_ctx_ptr rt_ctx = 0;
+        auto result = ctx.bind_item(path.c_str(), &rt_ctx, nullptr);
+        if (result)
+        {
+            ctx_.bind(rt_ctx);
+            handle_ = result.move_value();
+            if (handle_)
+                internal_commit();
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    owned_value(const values::rx_simple_value& right)
+    {
+        val_ = right;
+    }
+    owned_value(values::rx_simple_value&& right)
+    {
+        val_ = std::move(right);
+    }
+    owned_value& operator=(const values::rx_simple_value& right)
+    {
+        if (ctx_.is_binded() && handle_)// just in case both of them...
+        {
+            if (val_ != right)
+            {
+                val_ = right;
+                internal_commit();
+            }
+        }
+        return *this;
+    }
+    owned_value& operator=(values::rx_simple_value&& right)
+    {
+        if (ctx_.is_binded() && handle_)// just in case both of them...
+        {
+            if (val_ != right)
+            {
+                val_ = std::move(right);
+                internal_commit();
+            }
+        }
+        return *this;
+    }
+    owned_value& operator+=(const values::rx_simple_value& right)
+    {
+        RX_ASSERT(false);
+        return *this;
+    }
+    owned_value& operator-=(const values::rx_simple_value& right)
+    {
+        RX_ASSERT(false);
+        return *this;
+    }
+    operator values::rx_simple_value() const
+    {
+        return val_;
+    }
+    void commit()
+    {
+        RX_ASSERT(false);
+    }
+};
+
+
 template <typename typeT, bool manual = false>
 struct remote_owned_value
 {

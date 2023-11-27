@@ -1600,14 +1600,24 @@ int get_string_value(const union rx_value_union* val, rx_value_t type, size_t id
 					return RX_ERROR;
 				case RX_BYTES_TYPE:
 					ret = bytes_to_str(&val->bytes_value, value);
-					return RX_OK;
+					return ret;
 				case RX_UUID_TYPE:
-					RX_ASSERT(0);// this should be done !!!
-					ret = rx_init_string_value_struct(value, NULL, -1);
-					return RX_OK;
+					{
+						char uuid_buff[0x50];
+#ifndef RX_VALUE_SIZE_16
+						ret = rx_uuid_to_string(val->uuid_value, uuid_buff);
+#else
+						ret = rx_uuid_to_string(&val->uuid_value, uuid_buff);
+#endif
+						if (ret == RX_OK)
+						{
+							ret = rx_init_string_value_struct(value, uuid_buff, -1);
+						}
+					}
+					return ret;
 				case RX_TIME_TYPE:
 					ret = time_to_ISO8601(val->time_value, value);
-					return RX_OK;
+					return ret;
 				case RX_STRUCT_TYPE:
 					{
 						rx_packet_buffer buffer;

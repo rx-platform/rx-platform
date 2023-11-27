@@ -33,24 +33,24 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
 class runtime_process_context;
-namespace tag_blocks {
-class binded_tags;
-} // namespace tag_blocks
-
 namespace logic_blocks {
 class method_data;
-
 } // namespace logic_blocks
+
+namespace tag_blocks {
+class binded_tags;
+
+} // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -80,6 +80,8 @@ class rx_tags_callback : public rx::pointers::reference_object
   public:
 
       virtual void items_changed (const std::vector<update_item>& items) = 0;
+
+      virtual void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data) = 0;
 
       virtual void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data) = 0;
 
@@ -151,6 +153,8 @@ class connected_tags
 
       rx_result execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data data, tags_callback_ptr monitor);
 
+      rx_result execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, values::rx_simple_value data, tags_callback_ptr monitor);
+
       rx_result disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor = tags_callback_ptr::null_ptr);
 
       bool process_runtime ();
@@ -183,6 +187,8 @@ class connected_tags
       rx_result internal_write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, rx_security_handle_t identity);
 
       rx_result internal_execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data args, tags_callback_ptr monitor, rx_security_handle_t identity);
+
+      rx_result internal_execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, values::rx_simple_value args, tags_callback_ptr monitor, rx_security_handle_t identity);
 
       connected_tags::relation_ptr get_parent_relation (const string_type& name);
 
@@ -380,6 +386,8 @@ class connected_execute_task : public structure::execute_task
   public:
       connected_execute_task (connected_tags* parent, tags_callback_ptr callback, runtime_transaction_id_t id, runtime_handle_t item);
 
+
+      void process_result (rx_result&& result, values::rx_simple_value&& data);
 
       void process_result (rx_result&& result, data::runtime_values_data&& data);
 

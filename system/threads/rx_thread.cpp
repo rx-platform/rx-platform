@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -321,7 +321,7 @@ void execute_job(void* arg)
 	pjob->release_unsafe_ptr();
 }
 
-// Class rx_platform::threads::thread 
+// Class rx_platform::threads::thread
 
 thread::thread (const string_type& name, rx_thread_handle_t rx_thread_id)
       : thread_id_(0),
@@ -378,7 +378,7 @@ void thread::deinitialize ()
 }
 
 
-// Class rx_platform::threads::job_thread 
+// Class rx_platform::threads::job_thread
 
 job_thread::job_thread()
 {
@@ -391,7 +391,7 @@ job_thread::~job_thread()
 
 
 
-// Class rx_platform::threads::physical_job_thread 
+// Class rx_platform::threads::physical_job_thread
 
 physical_job_thread::physical_job_thread (const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask)
       : has_job_(false),
@@ -411,7 +411,7 @@ uint32_t physical_job_thread::handler ()
 {
 	if (cpu_mask_)
 	{
-		auto ret = rx_thread_set_afinity(rx_current_thread(), cpu_mask_);
+		rx_thread_set_afinity(rx_current_thread(), cpu_mask_);
 	}
 	std::vector<job_ptr> queued;
 	bool exit = false;
@@ -500,7 +500,7 @@ void physical_job_thread::stop (uint32_t timeout)
 }
 
 
-// Class rx_platform::threads::dispatcher_pool 
+// Class rx_platform::threads::dispatcher_pool
 
 dispatcher_pool::dispatcher_pool (int count, const string_type& name, rx_thread_handle_t rx_thread_id, uint64_t cpu_mask)
       : name_(name),
@@ -546,7 +546,7 @@ int dispatcher_pool::get_CPU (rx_thread_handle_t domain) const
 }
 
 
-// Class rx_platform::threads::dispatcher_thread 
+// Class rx_platform::threads::dispatcher_thread
 
 dispatcher_thread::dispatcher_thread (const string_type& name, rx_thread_handle_t rx_thread_id, rx_kernel_dispather_t dispatcher)
   : thread(name,rx_thread_id)
@@ -572,7 +572,7 @@ uint32_t dispatcher_thread::handler ()
 }
 
 
-// Class rx_platform::threads::timer 
+// Class rx_platform::threads::timer
 
 timer::timer (const string_type& name, rx_thread_handle_t rx_thread_id)
       : wake_up_(false),

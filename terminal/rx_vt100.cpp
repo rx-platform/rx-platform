@@ -236,7 +236,11 @@ bool vt100_endpoint::char_received_normal (const char ch, bool eof, string_type&
 						auto query = std::make_shared<meta::queries::ns_suggetions_query>();
 						query->suggested_path = what;
 						api::rx_context ctx;
-						ctx.active_path = console_program_->get_current_directory();
+						{
+							std::scoped_lock _(lock_);
+							if(console_program_)
+								ctx.active_path = console_program_->get_current_directory();
+						}
 						ctx.object = smart_this();
 
 						rx_result_with_callback<api::query_result> callback(ctx.object,
@@ -500,8 +504,11 @@ bool vt100_endpoint::char_received_had_os (char ch, string_type& to_echo)
 				int w, h;
 				ss >> w;
 				ss >> h;
-				if (console_program_)
-					console_program_->set_terminal_size(w, h);
+				{
+					std::scoped_lock _(lock_);
+					if (console_program_)
+						console_program_->set_terminal_size(w, h);
+				}
 			}
 			os_command_.clear();
 		}
@@ -637,14 +644,6 @@ rx_protocol_result_t vt100_endpoint::received_function (rx_protocol_stack_endpoi
 	return result;
 }
 
-
-
-#define ANSI_CUR_SAVE_POS "\x1b[s"
-#define ANSI_CUR_RESTORE_POS "\x1b[u"
-
-#define ANSI_CUR_SAVE "\x1b" "7"
-#define ANSI_CUR_RESTORE "\x1b" "8"
-
 rx_protocol_result_t vt100_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
 {
 	vt100_endpoint* self = reinterpret_cast<vt100_endpoint*>(reference->user_data);
@@ -716,7 +715,11 @@ void vt100_endpoint::synchronized_cancel_command (security::security_context_ptr
 
 void vt100_endpoint::synchronized_do_command (const string_type& in_line, security::security_context_ptr ctx)
 {
-	// string end line
+	{
+		std::scoped_lock _(lock_);
+		if (!console_program_)
+			return;
+	}
 	string_type line(in_line);
 	while (!line.empty() && (*line.rbegin() == '\r' || *line.rbegin() == '\n'))
 		line.pop_back();
@@ -799,21 +802,25 @@ void vt100_endpoint::synchronized_do_command (const string_type& in_line, securi
 		out << msg;
 		process_result(true, out_buffer, memory::buffer_ptr::null_ptr, true);
 	}
-	else if (console_program_)
-	{
-		console_program_->do_command(line, ctx);
-	}
 	else
 	{
-		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
-		auto err_buffer = rx_create_reference< memory::std_buffer_type>();
-		std::ostream out(out_buffer.unsafe_ptr());
-		std::ostream err(err_buffer.unsafe_ptr());
-		err << "Error while parsing the line:"
-			<< line;
-		out << RX_NULL_ITEM_NAME;
-		out << "\r\n";
-		process_result(false, out_buffer, err_buffer, true);
+		std::scoped_lock _(lock_);
+		if (console_program_)
+		{
+			console_program_->do_command(line, ctx);
+		}
+		else
+		{
+			auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+			auto err_buffer = rx_create_reference< memory::std_buffer_type>();
+			std::ostream out(out_buffer.unsafe_ptr());
+			std::ostream err(err_buffer.unsafe_ptr());
+			err << "Error while parsing the line:"
+				<< line;
+			out << RX_NULL_ITEM_NAME;
+			out << "\r\n";
+			process_result(false, out_buffer, err_buffer, true);
+		}
 	}
 }
 
@@ -878,8 +885,11 @@ string_type vt100_endpoint::get_terminal_info ()
 
 void vt100_endpoint::get_prompt (string_type& prompt)
 {
-	if (console_program_)
-		console_program_->get_prompt(prompt);
+	{
+		std::scoped_lock _(lock_);
+		if (console_program_)
+			console_program_->get_prompt(prompt);
+	}
 	prompt += "\r\n" ANSI_RX_USER;
 	prompt += security::active_security()->get_full_name();
 	prompt += ":" ANSI_COLOR_RESET;
@@ -911,8 +921,14 @@ void vt100_endpoint::close_endpoint ()
 		pull_timer_->cancel();
 		pull_timer_ = rx_timer_ptr::null_ptr;
 	}
-	if (console_program_)
-		console_program_->reset();
+	{
+		std::scoped_lock _(lock_);
+		if (console_program_)
+		{
+			console_program_->reset();
+			console_program_ = console::console_runtime::smart_ptr::null_ptr;
+		}
+	}
 }
 
 

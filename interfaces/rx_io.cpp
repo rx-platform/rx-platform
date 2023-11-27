@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -34,6 +34,7 @@
 // rx_io
 #include "interfaces/rx_io.h"
 
+#include "terminal/rx_term_table.h"
 
 
 namespace rx_internal {
@@ -87,7 +88,7 @@ int dispatcher_connect_callback(void* data, uint32_t status, struct sockaddr* ad
 }
 
 
-// Class rx_internal::interfaces::io_endpoints::dispatcher_subscriber 
+// Class rx_internal::interfaces::io_endpoints::dispatcher_subscriber
 
 time_aware_subscribers_type dispatcher_subscriber::time_aware_subscribers_;
 
@@ -244,7 +245,7 @@ void dispatcher_subscriber::deinitialize ()
 }
 
 
-// Class rx_internal::interfaces::io_endpoints::net_command 
+// Class rx_internal::interfaces::io_endpoints::net_command
 
 net_command::net_command()
 	: terminal::commands::server_command("net")
@@ -288,13 +289,12 @@ bool net_command::do_eth_command (std::istream& in, std::ostream& out, std::ostr
 	if (res == RX_OK)
 	{
 		out << "total " << count << "\r\n";
+
+		rx_table_type table(count);
+
 		for (size_t i = 0; i < count; i++)
 		{
-			out
-				<< interfaces[i].index << "  "
-				<< interfaces[i].name << "  "
-				<< interfaces[i].description << " ";
-			bool first = true;
+
 			char buff[0x18];
 			sprintf(buff, "%02x-%02x-%02x-%02x-%02x-%02x",
 				(int)interfaces[i].mac_address[0],
@@ -304,12 +304,15 @@ bool net_command::do_eth_command (std::istream& in, std::ostream& out, std::ostr
 				(int)interfaces[i].mac_address[4],
 				(int)interfaces[i].mac_address[5]);
 
-			out << buff << "\r\n";
+			table[i].emplace_back(rx_table_cell_struct{ buff, ANSI_COLOR_YELLOW ANSI_COLOR_BOLD, ANSI_COLOR_RESET });
+			table[i].emplace_back(rx_table_cell_struct{ interfaces[i].name, ANSI_COLOR_YELLOW ANSI_COLOR_BOLD, ANSI_COLOR_RESET });
+			table[i].emplace_back(rx_table_cell_struct(interfaces[i].description));
+
 
 		}
+		rx_dump_table(table, out, false, false);
 		free(interfaces);
 	}
-	out << "Hello from listing an ethernet interfaces!\r\n";
 	return true;
 }
 

@@ -157,6 +157,31 @@ void rx_protocol_subscription::items_changed (const std::vector<update_item>& it
 	}
 }
 
+void rx_protocol_subscription::execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, values::rx_simple_value data)
+{
+	/*if (connection_)
+	{
+		auto notify_msg = std::make_unique<messages::subscription_messages::subscription_execute_done>();
+		notify_msg->request_id = 0;
+		notify_msg->subscription_id = data_.subscription_id;
+		notify_msg->transaction_id = transaction_id;
+		if (result)
+		{
+			notify_msg->result.first = 0;
+			notify_msg->result.second = "";
+		}
+		else
+		{
+			notify_msg->result.first = 119;
+			notify_msg->result.second = result.errors_line();
+		}
+
+		notify_msg->data = std::move(data);
+		connection_->data_processed(std::move(notify_msg));
+	}*/
+	RX_ASSERT(false);
+}
+
 void rx_protocol_subscription::execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
 {
 	if (connection_)

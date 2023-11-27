@@ -46,8 +46,8 @@
 
 namespace rx_internal {
 namespace rx_protocol {
-class rx_json_protocol_client_port;
 class rx_protocol_connection;
+class rx_json_protocol_client_port;
 
 } // namespace rx_protocol
 } // namespace rx_internal
@@ -143,6 +143,8 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
       rx_result update_subscription (subscription_data& data);
 
       void items_changed (const std::vector<update_item>& items);
+
+      void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, values::rx_simple_value data);
 
       void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 

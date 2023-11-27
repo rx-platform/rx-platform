@@ -99,6 +99,8 @@ class value_point_impl
 
       void write (rx_simple_value val, runtime_transaction_id_t id, data_controler* controler = nullptr);
 
+      void execute (values::rx_simple_value data, runtime_transaction_id_t id, data_controler* controler = nullptr);
+
       void execute (data::runtime_values_data data, runtime_transaction_id_t id, data_controler* controler = nullptr);
 
       rx_value calculate_local_var (const rx_value& val, char* token_buff);
@@ -111,9 +113,13 @@ class value_point_impl
 
       bool single_result_received (rx_result result, runtime_transaction_id_t id);
 
+      bool shared_execute_result_received (const rx_result& result, const values::rx_simple_value& data, runtime_transaction_id_t id);
+
+      bool single_execute_result_received (rx_result result, values::rx_simple_value&& data, runtime_transaction_id_t id);
+
       bool shared_execute_result_received (const rx_result& result, const data::runtime_values_data& data, runtime_transaction_id_t id);
 
-      bool single_execute_result_received (rx_result result, const data::runtime_values_data& data, runtime_transaction_id_t id);
+      bool single_execute_result_received (rx_result result, data::runtime_values_data&& data, runtime_transaction_id_t id);
 
 
       void set_context (rx_platform::runtime::runtime_process_context * value);
@@ -128,6 +134,8 @@ class value_point_impl
       virtual void value_changed (const rx_value& val) = 0;
 
       virtual void result_received (rx_result&& result, runtime_transaction_id_t id);
+
+      virtual void execute_result_received (rx_result&& result, const values::rx_simple_value& data, runtime_transaction_id_t id);
 
       virtual void execute_result_received (rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id);
 

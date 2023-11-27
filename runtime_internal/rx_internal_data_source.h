@@ -59,21 +59,25 @@ class internal_data_subscription : public subscriptions::rx_subscription_callbac
       internal_data_subscription (value_handle_extended handles, data_controler* controler, rx_mode_type mode);
 
 
-      void items_changed (const std::vector<update_item>& items);
-
-      void write_completed (runtime_transaction_id_t transaction_id, std::vector<write_result_item> results);
-
-      void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
-
       void add_item (const string_type& path, value_handle_extended& handle);
-
-      void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id);
-
-      void execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id);
 
       void remove_item (const value_handle_extended& handle);
 
+      void items_changed (const std::vector<update_item>& items);
+
+      void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id);
+
+      void write_completed (runtime_transaction_id_t transaction_id, std::vector<write_result_item> results);
+
+      void execute_item (const value_handle_extended& handle, values::rx_simple_value data, runtime_transaction_id_t id);
+
+      void execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id);
+
+      void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, values::rx_simple_value data);
+
       bool is_empty () const;
+
+      void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
 
   protected:
@@ -118,6 +122,8 @@ class internal_data_source : public data_source
       void add_item (const string_type& path, uint32_t rate, value_handle_extended& handle, rx_mode_type mode);
 
       void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id);
+
+      void execute_item (const value_handle_extended& handle, values::rx_simple_value data, runtime_transaction_id_t id);
 
       void execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id);
 

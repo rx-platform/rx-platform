@@ -481,7 +481,7 @@ method_data::method_data (structure::runtime_item::smart_ptr&& rt, method_runtim
     , outputs(prototype.outputs)
 {
     value.value.assign_static<uint8_t>(0);
-    pending_tasks_ = std::make_unique<std::map<runtime_transaction_id_t, structure::execute_task*> >();
+    pending_tasks_ = std::make_unique<std::map<runtime_transaction_id_t, std::pair<bool, structure::execute_task*> > >();
 }
 
 
@@ -645,9 +645,30 @@ rx_value method_data::get_value (runtime_process_context* ctx) const
 rx_result method_data::execute (execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
 {
 
-    data::runtime_values_data args;
+    rx_result result;
+    rx_simple_value to_send;
+    bool named = false;
 
-    rx_result result = inputs.create_safe_runtime_data(data.data, args);
+    if (std::holds_alternative<rx_simple_value>(data.data))
+    {
+        result = inputs.check_value(std::get<rx_simple_value>(data.data));
+        if (result)
+        {
+            to_send = std::move(std::get<rx_simple_value>(data.data));
+        }
+    }
+    else if (std::holds_alternative<data::runtime_values_data>(data.data))
+    {
+        structure::block_data args(inputs);
+        args.fill_data(std::get<data::runtime_values_data>(data.data));
+        result = args.collect_value(to_send, runtime_value_type::simple_runtime_value);
+        named = true;
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return RX_INTERNAL_ERROR;
+    }
     if (!result)
         return result;
 
@@ -655,7 +676,7 @@ rx_result method_data::execute (execute_data&& data, structure::execute_task* ta
     security::secured_scope _(data.identity);
 
     auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
-    pending_tasks_->emplace(new_trans, task);
+    pending_tasks_->emplace(new_trans, std::pair<bool, structure::execute_task*>{ named, task });
     data.transaction_id = new_trans;
     auto context = method_ptr->create_execution_context(std::move(data), ctx->get_security_guard());
 
@@ -665,7 +686,7 @@ rx_result method_data::execute (execute_data&& data, structure::execute_task* ta
         context->method_data_ = this;
         context->context_ = ctx;
         context->security_guard_ = ctx->get_security_guard();
-        result = method_ptr->execute(std::move(args), context);
+        result = method_ptr->execute(std::move(to_send), context);
     }
     else
     {
@@ -675,7 +696,7 @@ rx_result method_data::execute (execute_data&& data, structure::execute_task* ta
     return result;
 }
 
-void method_data::process_execute_result (runtime_transaction_id_t id, rx_result&& result, data::runtime_values_data data)
+void method_data::process_execute_result (runtime_transaction_id_t id, rx_result&& result, values::rx_simple_value&& data)
 {
     auto it = pending_tasks_->find(id);
     if (it != pending_tasks_->end())
@@ -683,19 +704,45 @@ void method_data::process_execute_result (runtime_transaction_id_t id, rx_result
         auto task = it->second;
         pending_tasks_->erase(it);
 
-        data::runtime_values_data out;
-        if (result)
+        if (task.second)
         {
-            rx_result temp_result = outputs.create_safe_runtime_data(data, out);
-            if (!temp_result)
+            if (task.first)
             {
-                temp_result.register_error("Error converting output parameters!");
-                RUNTIME_LOG_WARNING("method_data", 300, temp_result.errors_line());
-                result = std::move(temp_result);
+                data::runtime_values_data rt_data;
+                if (result)
+                {
+                    structure::block_data temp(outputs);
+                    rx_result temp_result = temp.fill_value(data);
+                    if (!temp_result)
+                    {
+                        temp_result.register_error("Error converting output parameters!");
+                        RUNTIME_LOG_WARNING("method_data", 300, temp_result.errors_line());
+                        result = std::move(temp_result);
+                    }
+                    else
+                    {
+                        temp.collect_data(rt_data, runtime_value_type::simple_runtime_value);
+                    }
+                }
+                task.second->process_result(std::move(result), std::move(rt_data));
+
+            }
+            else
+            {
+                if (result)
+                {
+                    rx_result temp_result = outputs.check_value(data);
+                    if (!temp_result)
+                    {
+                        temp_result.register_error("Error converting output parameters!");
+                        RUNTIME_LOG_WARNING("method_data", 300, temp_result.errors_line());
+                        result = std::move(temp_result);
+                    }
+                }
+
+                task.second->process_result(std::move(result), std::move(data));
             }
         }
-        if (task)
-            task->process_result(std::move(result), std::move(out));
     }
 }
 

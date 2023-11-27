@@ -99,7 +99,8 @@ struct write_struct_data
     runtime_value_type type;
 };
 
-typedef callback::rx_any_callback<uint32_t, rx_result, data::runtime_values_data> execute_method_callback_t;
+typedef callback::rx_any_callback<uint32_t, rx_result, values::rx_simple_value> execute_method_callback_t;
+typedef callback::rx_any_callback<uint32_t, rx_result, data::runtime_values_data> named_execute_method_callback_t;
 
 
 namespace ns {
@@ -140,7 +141,7 @@ private:
 
       virtual void write_struct (string_view_type path, bool test, write_struct_data data) = 0;
 
-      virtual void execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback) = 0;
+      virtual void execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback) = 0;
 
       virtual rx_result do_command (rx_object_command_t command_type) = 0;
 
@@ -155,6 +156,8 @@ private:
       virtual rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
       virtual rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
+
+      virtual rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
       rx_result delete_item () const;
 

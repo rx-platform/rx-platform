@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -51,7 +51,7 @@ namespace rx_internal {
 
 namespace internal_ns {
 
-// Parameterized Class rx_internal::internal_ns::rx_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_item_implementation
 
 template <class TImpl>
 rx_item_implementation<TImpl>::rx_item_implementation (TImpl impl)
@@ -224,13 +224,19 @@ void rx_item_implementation<TImpl>::write_struct (string_view_type path, bool te
 }
 
 template <class TImpl>
-void rx_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback)
 {
 	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_method(path, test, std::move(data), std::move(callback), *impl_);
 }
 
 template <class TImpl>
 rx_result rx_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_item(transaction_id, test, handle, data, monitor, *impl_);
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::execute_item(transaction_id, test, handle, data, monitor, *impl_);
 }
@@ -252,7 +258,7 @@ security::security_guard_ptr rx_item_implementation<TImpl>::get_security_guard (
 }
 
 
-// Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation
 
 template <class TImpl>
 rx_meta_item_implementation<TImpl>::rx_meta_item_implementation (TImpl impl)
@@ -432,13 +438,19 @@ void rx_meta_item_implementation<TImpl>::write_struct (string_view_type path, bo
 }
 
 template <class TImpl>
-void rx_meta_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_meta_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback)
 {
 	callback(0, RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -463,7 +475,7 @@ security::security_guard_ptr rx_meta_item_implementation<TImpl>::get_security_gu
 }
 
 
-// Parameterized Class rx_internal::internal_ns::rx_other_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_other_implementation
 
 template <class TImpl>
 rx_other_implementation<TImpl>::rx_other_implementation (TImpl impl)
@@ -630,13 +642,19 @@ void rx_other_implementation<TImpl>::write_struct (string_view_type path, bool t
 }
 
 template <class TImpl>
-void rx_other_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_other_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback)
 {
 	callback(0, RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
 rx_result rx_other_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -654,7 +672,7 @@ security::security_guard_ptr rx_other_implementation<TImpl>::get_security_guard 
 }
 
 
-// Parameterized Class rx_internal::internal_ns::rx_proxy_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_proxy_item_implementation
 
 template <class TImpl>
 rx_proxy_item_implementation<TImpl>::rx_proxy_item_implementation (TImpl impl)
@@ -816,12 +834,18 @@ void rx_proxy_item_implementation<TImpl>::write_struct (string_view_type path, b
 }
 
 template <class TImpl>
-void rx_proxy_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_proxy_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback)
 {
 }
 
 template <class TImpl>
 rx_result rx_proxy_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
   return RX_NOT_IMPLEMENTED;
 }
@@ -839,7 +863,7 @@ security::security_guard_ptr rx_proxy_item_implementation<TImpl>::get_security_g
 }
 
 
-// Parameterized Class rx_internal::internal_ns::rx_relation_item_implementation 
+// Parameterized Class rx_internal::internal_ns::rx_relation_item_implementation
 
 template <class TImpl>
 rx_relation_item_implementation<TImpl>::rx_relation_item_implementation (TImpl impl)
@@ -1008,13 +1032,19 @@ void rx_relation_item_implementation<TImpl>::write_struct (string_view_type path
 }
 
 template <class TImpl>
-void rx_relation_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback)
+void rx_relation_item_implementation<TImpl>::execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback)
 {
 	callback(0, RX_NOT_VALID_TYPE, data::runtime_values_data());
 }
 
 template <class TImpl>
 rx_result rx_relation_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+rx_result rx_relation_item_implementation<TImpl>::execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }

@@ -50,14 +50,37 @@ void rebuild_addresses()
 {
     ETH_interface* interfaces = nullptr;
     size_t count = 0;
+    HOST_LOG_INFO("ethernet", 200, "Listing ethernet adapters...");
     auto res = rx_list_eth_cards(&interfaces, &count);
     if (res == RX_OK)
     {
         local_mac.clear();
         for (size_t i = 0; i < count; i++)
         {
+            std::ostringstream ss;
+            ss << "Ethernet card detected: ";
+
+            for (int j = 0; j < MAC_ADDR_SIZE; j++)
+            {
+                if (j > 0)
+                    ss << '-';
+                char buff[0x04];
+                sprintf(buff, "%02x", (int)interfaces[i].mac_address[j]);
+                ss << buff;
+            }
+            ss << "; name:"
+                << interfaces[i].name
+                << " - "
+                << interfaces[i].description;
+
             local_mac.emplace(interfaces[i].name, byte_string((std::byte*)interfaces[i].mac_address, (std::byte*)interfaces[i].mac_address + MAC_ADDR_SIZE));
+            HOST_LOG_INFO("ethernet", 200, ss.str());
         }
+        HOST_LOG_INFO("ethernet", 200, "Ethernet adapters list done.");
+    }
+    else
+    {
+        HOST_LOG_ERROR("ethernet", 200, "Error listing ethernet adapters.");
     }
 }
 bool fill_mac_address_internal(const char* port, void* buff, bool first)

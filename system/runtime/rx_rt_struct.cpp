@@ -701,8 +701,16 @@ rx_result mapper_data::initialize_runtime (runtime::runtime_init_context& ctx)
 		return RX_INTERNAL_ERROR;
 	}
 	auto& var_val = get_variable_value();
-	mapped_value.value.convert_to(var_val.get_type());
-	mapper_ptr->value_type_ = mapped_value.value.get_type();
+	if (val_type == RX_NULL_TYPE)
+	{
+		mapped_value.value.convert_to(var_val.get_type());
+		mapper_ptr->value_type_ = mapped_value.value.get_type();
+
+	}
+	else
+	{
+		mapper_ptr->value_type_ = val_type;
+	}
 	mapper_ptr->container_ = this;
 	ctx.mappers.push_mapper(mapper_id, this);
 
@@ -752,7 +760,7 @@ rx_result mapper_data::stop_runtime (runtime::runtime_stop_context& ctx)
 
 void mapper_data::process_update (values::rx_value&& value)
 {
-	if (mapper_ptr)
+	if (mapper_ptr && context_)
 	{
 		if (value.is_null() && my_variable_.variable_ptr)
 			value = context_->adapt_value(get_variable_value());
@@ -913,7 +921,7 @@ void mapper_data::mapper_write_pending (write_data&& data)
 
 rx_value mapper_data::get_mapped_value () const
 {
-	if (my_variable_.variable_ptr)
+	if (my_variable_.variable_ptr && context_)
 	{
 		return context_->adapt_value(get_variable_value());
 	}
@@ -1233,7 +1241,7 @@ void source_data::process_update (values::rx_value&& value)
 void source_data::process_write (write_data&& data)
 {
 	RX_ASSERT(source_ptr);
-	if (source_ptr)
+	if (source_ptr && context_)
 	{
 		if (rx_is_debug_instance())
 		{
@@ -2136,11 +2144,45 @@ void block_data::fill_data (const data::runtime_values_data& data)
 					{
 						if (std::holds_alternative<std::vector<data::runtime_values_data> >(it->second))
 						{
+							auto& this_val = children[(one.index >> rt_type_shift)];
 							auto& childs = std::get<std::vector<data::runtime_values_data>>(it->second);
-							size_t dim = std::min<size_t>(childs.size(), children[(one.index >> rt_type_shift)].get_size());
-							for (size_t i = 0; i < dim; i++)
+							if (childs.empty())
 							{
-								children[one.index >> rt_type_shift].get_item((int)i)->fill_data(childs[i]);
+								RX_ASSERT(this_val.get_prototype());
+								auto one_block = *this_val.get_prototype();
+								this_val.declare_null_array(std::move(one_block));
+							}
+							else if ((int)childs.size() == this_val.get_size())
+							{
+								for (size_t i = 0; i < childs.size(); i++)
+								{
+									this_val.get_item((int)i)->fill_data(childs[i]);
+								}
+							}
+							else
+							{
+								const block_data* prototype = nullptr;
+								std::vector<block_data> temp;
+								for (int j = 0; j < (int)childs.size(); j++)
+								{
+									if (j < this_val.get_size())
+									{
+										this_val.get_item(j)->fill_data(childs[j]);
+										temp.push_back(*this_val.get_item(j));
+									}
+									else
+									{
+										if (prototype == nullptr)
+										{
+											RX_ASSERT(this_val.get_prototype());
+											prototype = this_val.get_prototype();
+										}
+										block_data one_block(*prototype);
+										one_block.fill_data(childs[j]);
+										temp.push_back(std::move(one_block));
+									}
+								}
+								this_val = std::move(temp);
 							}
 						}
 					}
@@ -2224,6 +2266,12 @@ rx_result block_data::fill_value (const values::rx_simple_value& data)
 		ret = fill_value_internal(data.c_ptr()->value_type, data.c_ptr()->value);
 		RX_ASSERT(ret);
 	}
+	return ret;
+}
+
+rx_result block_data::check_value (const values::rx_simple_value& data)
+{
+	rx_result ret = check_value(data.c_ptr()->value_type, data.c_ptr()->value);
 	return ret;
 }
 

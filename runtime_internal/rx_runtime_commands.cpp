@@ -667,7 +667,7 @@ bool execute_command::do_with_item (platform_item_ptr&& rt_item, string_type sub
 	out << "Start time: " << now.get_string() << "\r\n";
 	uint64_t us1 = rx_get_us_ticks();
 	auto rctx = ctx->create_api_context();
-	rt_item->execute_method(sub_item, false, std::move(rt_data), execute_method_callback_t(rctx.object, [us1, ctx, sub_item](uint32_t signal_level, rx_result result, data::runtime_values_data data)
+	rt_item->execute_method(sub_item, false, std::move(rt_data), named_execute_method_callback_t(rctx.object, [us1, ctx, sub_item](uint32_t signal_level, rx_result result, data::runtime_values_data data)
 		{
 			uint64_t us2 = rx_get_us_ticks() - us1;
 			auto& out = ctx->get_stdout();

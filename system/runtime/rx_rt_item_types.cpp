@@ -588,6 +588,17 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{
 		if ((one.index & rt_type_mask) == rt_const_index_type || (one.index & rt_type_mask) == rt_value_index_type)
 			continue;
+
+		if constexpr (has_block_data())
+		{
+			if ((one.index & rt_type_mask) == rt_value_data_index_type)
+			{
+				ret = initialize_runtime_arrayed(one.name, ctx, blocks.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
 		if constexpr (has_variables())
 		{
 			if((one.index & rt_type_mask) == rt_variable_index_type)
@@ -598,21 +609,21 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				continue;
 			}
 		}
-		if constexpr (has_structs())
+		if constexpr (has_variable_blocks_data())
 		{
-			if ((one.index & rt_type_mask) == rt_struct_index_type)
+			if ((one.index & rt_type_mask) == rt_variable_data_index_type)
 			{
-				ret = initialize_runtime_arrayed(one.name, ctx, structs.collection[one.index >> rt_type_shift]);
+				ret = initialize_runtime_arrayed(one.name, ctx, variable_blocks.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
 			}
 		}
-		if constexpr (has_sources())
+		if constexpr (has_structs())
 		{
-			if ((one.index & rt_type_mask) == rt_source_index_type)
+			if ((one.index & rt_type_mask) == rt_struct_index_type)
 			{
-				ret = initialize_runtime_plain(one.name, ctx, sources.collection[one.index >> rt_type_shift]);
+				ret = initialize_runtime_arrayed(one.name, ctx, structs.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
@@ -648,22 +659,11 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				continue;
 			}
 		}
-
-		if constexpr (has_block_data())
+		if constexpr (has_sources())
 		{
-			if ((one.index & rt_type_mask) == rt_value_data_index_type)
+			if ((one.index & rt_type_mask) == rt_source_index_type)
 			{
-				ret = initialize_runtime_arrayed(one.name, ctx, blocks.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
-		if constexpr (has_variable_blocks_data())
-		{
-			if ((one.index & rt_type_mask) == rt_variable_data_index_type)
-			{
-				ret = initialize_runtime_arrayed(one.name, ctx, variable_blocks.collection[one.index >> rt_type_shift]);
+				ret = initialize_runtime_plain(one.name, ctx, sources.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
@@ -695,51 +695,11 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{
 		if ((one.index & rt_type_mask) == rt_const_index_type || (one.index & rt_type_mask) == rt_value_index_type)
 			continue;
-		if constexpr (has_variables())
-		{
-			if ((one.index & rt_type_mask) == rt_variable_index_type)
-			{
-				ret = deinitialize_runtime_arrayed(ctx, variables.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
-		if constexpr (has_structs())
-		{
-			if ((one.index & rt_type_mask) == rt_struct_index_type)
-			{
-				ret = deinitialize_runtime_arrayed(ctx, structs.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
 		if constexpr (has_sources())
 		{
 			if ((one.index & rt_type_mask) == rt_source_index_type)
 			{
 				ret = deinitialize_runtime_plain(ctx, sources.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
-		if constexpr (has_mappers())
-		{
-			if ((one.index & rt_type_mask) == rt_mapper_index_type)
-			{
-				ret = deinitialize_runtime_plain(ctx, mappers.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
-		if constexpr (has_filters())
-		{
-			if ((one.index & rt_type_mask) == rt_filter_index_type)
-			{
-				ret = deinitialize_runtime_plain(ctx, filters.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
@@ -755,12 +715,31 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				continue;
 			}
 		}
-
-		if constexpr (has_block_data())
+		if constexpr (has_filters())
 		{
-			if ((one.index & rt_type_mask) == rt_value_data_index_type)
+			if ((one.index & rt_type_mask) == rt_filter_index_type)
 			{
-				ret = deinitialize_runtime_arrayed(ctx, blocks.collection[one.index >> rt_type_shift]);
+				ret = deinitialize_runtime_plain(ctx, filters.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
+		if constexpr (has_mappers())
+		{
+			if ((one.index & rt_type_mask) == rt_mapper_index_type)
+			{
+				ret = deinitialize_runtime_plain(ctx, mappers.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
+		if constexpr (has_structs())
+		{
+			if ((one.index & rt_type_mask) == rt_struct_index_type)
+			{
+				ret = deinitialize_runtime_arrayed(ctx, structs.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
@@ -771,6 +750,26 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			if ((one.index & rt_type_mask) == rt_variable_data_index_type)
 			{
 				ret = deinitialize_runtime_arrayed(ctx, variable_blocks.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
+		if constexpr (has_variables())
+		{
+			if ((one.index & rt_type_mask) == rt_variable_index_type)
+			{
+				ret = deinitialize_runtime_arrayed(ctx, variables.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
+		if constexpr (has_block_data())
+		{
+			if ((one.index & rt_type_mask) == rt_value_data_index_type)
+			{
+				ret = deinitialize_runtime_arrayed(ctx, blocks.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
@@ -788,6 +787,17 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{
 		if ((one.index & rt_type_mask) == rt_const_index_type || (one.index & rt_type_mask) == rt_value_index_type)
 			continue;
+
+		if constexpr (has_block_data())
+		{
+			if ((one.index & rt_type_mask) == rt_value_data_index_type)
+			{
+				ret = start_runtime_arrayed(one.name, ctx, blocks.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
 		if constexpr (has_variables())
 		{
 			if ((one.index & rt_type_mask) == rt_variable_index_type)
@@ -798,21 +808,21 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				continue;
 			}
 		}
-		if constexpr (has_structs())
+		if constexpr (has_variable_blocks_data())
 		{
-			if ((one.index & rt_type_mask) == rt_struct_index_type)
+			if ((one.index & rt_type_mask) == rt_variable_data_index_type)
 			{
-				ret = start_runtime_arrayed(one.name, ctx, structs.collection[one.index >> rt_type_shift]);
+				ret = start_runtime_arrayed(one.name, ctx, variable_blocks.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
 			}
 		}
-		if constexpr (has_sources())
+		if constexpr (has_structs())
 		{
-			if ((one.index & rt_type_mask) == rt_source_index_type)
+			if ((one.index & rt_type_mask) == rt_struct_index_type)
 			{
-				ret = start_runtime_plain(one.name, ctx, sources.collection[one.index >> rt_type_shift]);
+				ret = start_runtime_arrayed(one.name, ctx, structs.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
@@ -848,22 +858,11 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				continue;
 			}
 		}
-
-		if constexpr (has_block_data())
+		if constexpr (has_sources())
 		{
-			if ((one.index & rt_type_mask) == rt_value_data_index_type)
+			if ((one.index & rt_type_mask) == rt_source_index_type)
 			{
-				ret = start_runtime_arrayed(one.name, ctx, blocks.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
-		if constexpr (has_variable_blocks_data())
-		{
-			if ((one.index & rt_type_mask) == rt_variable_data_index_type)
-			{
-				ret = start_runtime_arrayed(one.name, ctx, variable_blocks.collection[one.index >> rt_type_shift]);
+				ret = start_runtime_plain(one.name, ctx, sources.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
@@ -881,51 +880,11 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 	{
 		if ((one.index & rt_type_mask) == rt_const_index_type || (one.index & rt_type_mask) == rt_value_index_type)
 			continue;
-		if constexpr (has_variables())
-		{
-			if ((one.index & rt_type_mask) == rt_variable_index_type)
-			{
-				ret = stop_runtime_arrayed(ctx, variables.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
-		if constexpr (has_structs())
-		{
-			if ((one.index & rt_type_mask) == rt_struct_index_type)
-			{
-				ret = stop_runtime_arrayed(ctx, structs.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
 		if constexpr (has_sources())
 		{
 			if ((one.index & rt_type_mask) == rt_source_index_type)
 			{
 				ret = stop_runtime_plain(ctx, sources.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
-		if constexpr (has_mappers())
-		{
-			if ((one.index & rt_type_mask) == rt_mapper_index_type)
-			{
-				ret = stop_runtime_plain(ctx, mappers.collection[one.index >> rt_type_shift]);
-				if (!ret)
-					return ret;
-				continue;
-			}
-		}
-		if constexpr (has_filters())
-		{
-			if ((one.index & rt_type_mask) == rt_filter_index_type)
-			{
-				ret = stop_runtime_plain(ctx, filters.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
@@ -941,12 +900,31 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				continue;
 			}
 		}
-
-		if constexpr (has_block_data())
+		if constexpr (has_filters())
 		{
-			if ((one.index & rt_type_mask) == rt_value_data_index_type)
+			if ((one.index & rt_type_mask) == rt_filter_index_type)
 			{
-				ret = stop_runtime_arrayed(ctx, blocks.collection[one.index >> rt_type_shift]);
+				ret = stop_runtime_plain(ctx, filters.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
+		if constexpr (has_mappers())
+		{
+			if ((one.index & rt_type_mask) == rt_mapper_index_type)
+			{
+				ret = stop_runtime_plain(ctx, mappers.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
+		if constexpr (has_structs())
+		{
+			if ((one.index & rt_type_mask) == rt_struct_index_type)
+			{
+				ret = stop_runtime_arrayed(ctx, structs.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;
@@ -957,6 +935,26 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			if ((one.index & rt_type_mask) == rt_variable_data_index_type)
 			{
 				ret = stop_runtime_arrayed(ctx, variable_blocks.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
+		if constexpr (has_variables())
+		{
+			if ((one.index & rt_type_mask) == rt_variable_index_type)
+			{
+				ret = stop_runtime_arrayed(ctx, variables.collection[one.index >> rt_type_shift]);
+				if (!ret)
+					return ret;
+				continue;
+			}
+		}
+		if constexpr (has_block_data())
+		{
+			if ((one.index & rt_type_mask) == rt_value_data_index_type)
+			{
+				ret = stop_runtime_arrayed(ctx, blocks.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
 				continue;

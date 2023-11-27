@@ -60,6 +60,8 @@ class write_item_transaction : public tag_blocks::rx_tags_callback
 
       void execute_complete (runtime_transaction_id_t transaction_id, uint32_t signal_level, runtime_handle_t item, rx_result result, data::runtime_values_data data);
 
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data);
+
       void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result);
 
       template<typename... FwdArgs>
@@ -93,6 +95,8 @@ class execute_method_transaction : public tag_blocks::rx_tags_callback
 
       void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data);
 
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data);
+
       void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result);
 
       template<typename... FwdArgs>
@@ -106,6 +110,42 @@ class execute_method_transaction : public tag_blocks::rx_tags_callback
 
 
       execute_method_callback_t callback_;
+
+
+};
+
+
+
+
+
+
+class named_execute_method_transaction : public tag_blocks::rx_tags_callback  
+{
+
+  public:
+      named_execute_method_transaction (named_execute_method_callback_t&& callback);
+
+
+      void items_changed (const std::vector<update_item>& items);
+
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data);
+
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data);
+
+      void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result);
+
+      template<typename... FwdArgs>
+      void operator () (FwdArgs&&... args)
+      {
+          this->callback_(std::forward<FwdArgs>(args)...);
+      }
+
+  protected:
+
+  private:
+
+
+      named_execute_method_callback_t callback_;
 
 
 };

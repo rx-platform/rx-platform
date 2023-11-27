@@ -126,11 +126,11 @@ class method_execution_context
       method_execution_context (execute_data data, security::security_guard_ptr guard);
 
 
-      void execution_complete (rx_result result, data::runtime_values_data data);
+      void execution_complete (rx_result result, values::rx_simple_value data);
 
       void execution_complete (rx_result result);
 
-      void execution_complete (data::runtime_values_data data);
+      void execution_complete (values::rx_simple_value data);
 
       security::security_guard_ptr get_security_guard ();
 
@@ -180,7 +180,7 @@ class method_runtime : public rx::pointers::reference_object
 
       virtual method_execution_context* create_execution_context (execute_data data, security::security_guard_ptr guard);
 
-      virtual rx_result execute (data::runtime_values_data args, method_execution_context* context);
+      virtual rx_result execute (values::rx_simple_value args, method_execution_context* context);
 
 
       string_type get_name () const

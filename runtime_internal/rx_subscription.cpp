@@ -392,6 +392,11 @@ void rx_subscription::items_changed (const std::vector<update_item>& items)
 	}
 }
 
+void rx_subscription::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data)
+{
+	execute_manager_.execute_complete(transaction_id, item, ++signal_level, std::move(result), std::move(data), *this);
+}
+
 void rx_subscription::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data)
 {
 	execute_manager_.execute_complete(transaction_id, item, ++signal_level, std::move(result), std::move(data), *this);
@@ -431,6 +436,11 @@ rx_subscription_tag* rx_subscription::get_tag (runtime_handle_t handle)
 rx_result rx_subscription::write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& result)
 {
 	return write_manager_.write_items(transaction_id, std::move(values), result, *this);
+}
+
+rx_result rx_subscription::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, values::rx_simple_value data)
+{
+	return execute_manager_.execute_item(transaction_id, handle, std::move(data), *this);
 }
 
 rx_result rx_subscription::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data)
@@ -698,7 +708,7 @@ std::vector<write_result_item> subscription_write_transaction::get_results ()
 // Class rx_internal::sys_runtime::subscriptions::subscription_execute_manager 
 
 
-rx_result subscription_execute_manager::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data, rx_subscription& subs)
+rx_result subscription_execute_manager::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, values::rx_simple_value data, rx_subscription& subs)
 {
 	runtime_transaction_id_t my_id = platform_runtime_manager::get_new_transaction_id();
 	rx_result result(true);
@@ -715,6 +725,61 @@ rx_result subscription_execute_manager::execute_item (runtime_transaction_id_t t
 			if (it != pending_executions_.end())
 			{
 				it->second.emplace_back(pending_execute_data{ my_id , handle, std::move(data), rx_security_context()});
+			}
+			else
+			{
+				auto ret_val = pending_executions_.emplace(target, pending_executions_type::mapped_type());
+				if (ret_val.second)
+				{
+					ret_val.first->second.emplace_back(pending_execute_data{ my_id , handle, std::move(data), rx_security_context() });
+				}
+			}
+		}
+		else
+		{
+			result = RX_NOT_CONNECTED;
+		}
+	}
+	else
+	{
+		result = "Invalid item handle";
+	}
+	if (result)
+	{
+		RX_ASSERT(!pending_executions_.empty());
+		if (!pending_executions_.empty())
+		{
+			execute_transactions_.emplace(my_id, execute_transaction_data{ transaction_id ,handle });
+			for (auto& one : pending_executions_)
+			{
+				rx_post_function_to(one.first, subs.smart_this(), [&subs]()
+					{
+						subs.execute_manager_.process(subs);
+					});
+			}
+		}
+	}
+
+	return result;
+}
+
+rx_result subscription_execute_manager::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data, rx_subscription& subs)
+{
+	runtime_transaction_id_t my_id = platform_runtime_manager::get_new_transaction_id();
+	rx_result result(true);
+
+	locks::auto_lock_t _(&subs.items_lock_);
+
+	auto connection = subs.get_connection(handle);
+	if (connection)
+	{
+		if (connection->item)
+		{
+			rx_thread_handle_t target = connection->item->get_executer();
+			auto it = pending_executions_.find(target);
+			if (it != pending_executions_.end())
+			{
+				it->second.emplace_back(pending_execute_data{ my_id , handle, std::move(data), rx_security_context() });
 			}
 			else
 			{
@@ -772,11 +837,18 @@ void subscription_execute_manager::process (rx_subscription& subs)
 				auto tag = subs.get_tag(one.handle);
 				if (tag && subs.connections_[idx].item)
 				{
-					result = subs.connections_[idx].item->execute_item(one.trans_id,  subs.mode_.is_test(), tag->target_handle, one.data, subs.smart_this());
+					if(std::holds_alternative<values::rx_simple_value>(one.data))
+						result = subs.connections_[idx].item->execute_item(one.trans_id,  subs.mode_.is_test()
+							, tag->target_handle, std::get<values::rx_simple_value>(one.data), subs.smart_this());
+					else if(std::holds_alternative<data::runtime_values_data>(one.data))
+						result = subs.connections_[idx].item->execute_item(one.trans_id, subs.mode_.is_test()
+							, tag->target_handle, std::get<data::runtime_values_data>(one.data), subs.smart_this());
+					else
+						RX_ASSERT(false);
 				}
 				if (!result)
 				{
-					execute_complete(one.trans_id, one.handle, 0, rx_result(RX_NOT_CONNECTED), data::runtime_values_data(), subs);
+					execute_complete(one.trans_id, one.handle, 0, rx_result(RX_NOT_CONNECTED), values::rx_simple_value(), subs);
 				}
 			}
 			thread_it->second.clear();
@@ -801,8 +873,32 @@ void subscription_execute_manager::process_results (rx_subscription& subs)
 	{
 		for (auto&& one : execute_results)
 		{
-			callback->execute_completed(one.trans_id, one.handle, std::move(one.result), std::move(one.data));
+			if (std::holds_alternative<rx_simple_value>(one.data))
+				callback->execute_completed(one.trans_id, one.handle, std::move(one.result)
+					, std::move(std::get<rx_simple_value>(one.data)));
+			else if (std::holds_alternative<data::runtime_values_data>(one.data))
+				callback->execute_completed(one.trans_id, one.handle, std::move(one.result)
+					, std::move(std::get<data::runtime_values_data>(one.data)));
+			else
+				RX_ASSERT(false);
 		}
+	}
+}
+
+void subscription_execute_manager::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data, rx_subscription& subs)
+{
+
+	printf("\r\n*****Execute completed za handle %x, trans %x\r\n", (int)item, (int)transaction_id);
+	locks::auto_lock_t _(&subs.items_lock_);
+	auto map_it = execute_transactions_.find(transaction_id);
+	if (map_it != execute_transactions_.end())
+	{
+		printf("\r\n*****Execute for send za handle %x, trans %x\r\n", (int)map_it->second.client_handle, (int)map_it->second.client_transaction_id);
+		pending_execute_results_.emplace_back(pending_execute_result{ map_it->second.client_transaction_id, map_it->second.client_handle, std::move(result), std::move(data) });
+		execute_transactions_.erase(map_it);
+		rx_post_function_to(subs.target_, subs.smart_this(), [](rx_subscription::smart_ptr whose) {
+				whose->execute_manager_.process_results(*whose);
+			}, subs.smart_this());
 	}
 }
 
@@ -818,7 +914,7 @@ void subscription_execute_manager::execute_complete (runtime_transaction_id_t tr
 		pending_execute_results_.emplace_back(pending_execute_result{ map_it->second.client_transaction_id, map_it->second.client_handle, std::move(result), std::move(data) });
 		execute_transactions_.erase(map_it);
 		rx_post_function_to(subs.target_, subs.smart_this(), [](rx_subscription::smart_ptr whose) {
-				whose->execute_manager_.process_results(*whose);
+			whose->execute_manager_.process_results(*whose);
 			}, subs.smart_this());
 	}
 }

@@ -145,9 +145,11 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       void write_struct (string_view_type path, bool test, write_struct_data data);
 
-      void execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback);
+      void execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
 
@@ -229,9 +231,11 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       void write_struct (string_view_type path, bool test, write_struct_data data);
 
-      void execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback);
+      void execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
 
@@ -313,9 +317,11 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       void write_struct (string_view_type path, bool test, write_struct_data data);
 
-      void execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback);
+      void execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
 
@@ -393,9 +399,11 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
 
       void write_struct (string_view_type path, bool test, write_struct_data data);
 
-      void execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback);
+      void execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
 
@@ -473,9 +481,11 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
 
       void write_struct (string_view_type path, bool test, write_struct_data data);
 
-      void execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback);
+      void execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value& data, runtime::tag_blocks::tags_callback_ptr monitor);
 
       byte_string get_definition_as_bytes () const;
 

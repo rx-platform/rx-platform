@@ -82,7 +82,12 @@ rx_result local_relation_connector::write_tag (runtime_transaction_id_t trans, b
     return item_ptr_->write_items(trans, test, std::move(args), monitor_);
 }
 
-rx_result local_relation_connector::execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data&& value)
+rx_result local_relation_connector::execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, values::rx_simple_value&& value)
+{
+    return item_ptr_->execute_item(trans, test, item, value, monitor_);
+}
+
+rx_result local_relation_connector::execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data value)
 {
     return item_ptr_->execute_item(trans, test, item, value, monitor_);
 }
@@ -105,6 +110,11 @@ void local_relation_connector::read_struct (string_view_type path, read_struct_d
 void local_relation_connector::items_changed (const std::vector<update_item>& items)
 {
     parent_->items_changed(items);
+}
+
+void local_relation_connector::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data)
+{
+    parent_->execute_complete(transaction_id, item, std::move(result), std::move(data));
 }
 
 void local_relation_connector::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data)
@@ -193,7 +203,21 @@ rx_result remote_relation_connector::write_tag (runtime_transaction_id_t trans, 
     }
 }
 
-rx_result remote_relation_connector::execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data&& value)
+rx_result remote_relation_connector::execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, values::rx_simple_value&& value)
+{
+    auto it = values_.find(item);
+    if (it != values_.end())
+    {
+        it->second->execute(std::move(value), trans);
+        return true;
+    }
+    else
+    {
+        return RX_INVALID_ARGUMENT;
+    }
+}
+
+rx_result remote_relation_connector::execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data value)
 {
     auto it = values_.find(item);
     if (it != values_.end())
@@ -298,7 +322,7 @@ void remote_relation_connector::result_received (runtime_handle_t handle, rx_res
     parent_->write_complete(id, handle, std::move(result));
 }
 
-void remote_relation_connector::execute_result_received (runtime_handle_t handle, rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id)
+void remote_relation_connector::execute_result_received (runtime_handle_t handle, rx_result&& result, const values::rx_simple_value& data, runtime_transaction_id_t id)
 {
     parent_->execute_complete(id, handle, std::move(result), data);
 }
@@ -324,7 +348,7 @@ void relation_value_point::result_received (rx_result&& result, runtime_transact
     connector_->result_received(handle_, std::move(result), id);
 }
 
-void relation_value_point::execute_result_received (rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id)
+void relation_value_point::execute_result_received (rx_result&& result, const values::rx_simple_value& data, runtime_transaction_id_t id)
 {
     connector_->execute_result_received(handle_, std::move(result), data, id);
 }

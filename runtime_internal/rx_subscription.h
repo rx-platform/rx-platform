@@ -33,10 +33,10 @@
 
 
 
-// rx_job
-#include "system/threads/rx_job.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
+// rx_job
+#include "system/threads/rx_job.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -108,6 +108,8 @@ class rx_subscription_callback
       virtual void items_changed (const std::vector<update_item>& items) = 0;
 
       virtual void write_completed (runtime_transaction_id_t transaction_id, std::vector<write_result_item> results) = 0;
+
+      virtual void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, values::rx_simple_value data) = 0;
 
       virtual void execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data) = 0;
 
@@ -222,17 +224,18 @@ class subscription_execute_manager
     {
         runtime_transaction_id_t trans_id;
         runtime_handle_t handle;
-        data::runtime_values_data data;
+        std::variant<values::rx_simple_value, data::runtime_values_data> data;
         rx_security_handle_t identity;
     };
     typedef std::map<rx_thread_handle_t, std::vector<pending_execute_data> > pending_executions_type;
+
 
     struct pending_execute_result
     {
         runtime_transaction_id_t trans_id;
         runtime_handle_t handle;
         rx_result result;
-        data::runtime_values_data data;
+        std::variant<values::rx_simple_value, data::runtime_values_data> data;
     };
     typedef std::vector<pending_execute_result> pending_execute_results_type;
 
@@ -246,11 +249,15 @@ class subscription_execute_manager
 
   public:
 
+      rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, values::rx_simple_value data, rx_subscription& subs);
+
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data, rx_subscription& subs);
 
       void process (rx_subscription& subs);
 
       void process_results (rx_subscription& subs);
+
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data, rx_subscription& subs);
 
       void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data, rx_subscription& subs);
 
@@ -357,11 +364,15 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
       void items_changed (const std::vector<update_item>& items);
 
+      void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data);
+
       void execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data);
 
       void write_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result&& result);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& result);
+
+      rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, values::rx_simple_value data);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data);
 

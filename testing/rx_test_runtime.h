@@ -144,10 +144,14 @@ basic testing subscription connect/disconnect.");
 				printf("Handle = %d  Value = %s\r\n", (int)one.handle, one.value.to_string().c_str());
 			}
 		}
-		void execute_completed(runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
+		void execute_completed(runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, values::rx_simple_value data)
 		{
 			printf("\r\n**********Transaction complete fired!!!\r\n");
 		}
+        void execute_completed(runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
+        {
+            printf("\r\n**********Transaction complete fired!!!\r\n");
+        }
         void write_completed(runtime_transaction_id_t transaction_id, std::vector<write_result_item> results)
         {
             printf("\r\n**********Write complete fired!!!\r\n");

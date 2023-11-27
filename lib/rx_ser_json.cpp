@@ -197,6 +197,9 @@ struct json_reader_data
 	}
 	bool internal_read_init_values(data::runtime_values_data& values, rapidjson::Value& val)
 	{
+		if (!val.IsObject())
+			return false;
+
 		for (auto it = val.MemberBegin(); it != val.MemberEnd(); it++)
 		{
 			rapidjson::Value& temp = it->value;
@@ -304,6 +307,19 @@ struct json_reader_data
 							arr.emplace_back(temp[i].GetString());
 						}
 						values.add_value_static(name, arr);
+					}
+					else if (elem.IsObject())
+					{
+						std::vector<data::runtime_values_data> arr;
+						arr.reserve(len);
+						for (decltype(len) i = 0; i < len; i++)
+						{
+							data::runtime_values_data temp_child;
+							if (!internal_read_init_values(temp_child, temp[i]))
+								return false;
+							arr.push_back(std::move(temp_child));
+						}
+						values.add_array_child(name, std::move(arr));
 					}
 				}
 				else

@@ -122,7 +122,7 @@ struct execute_result_data
     runtime_transaction_id_t transaction_id;
     runtime_handle_t item;
     rx_result result;
-    data::runtime_values_data data;
+    std::variant<values::rx_simple_value, data::runtime_values_data> data;
     uint32_t signal_level;
 };
 
@@ -131,7 +131,7 @@ struct execute_tag_data
     runtime_transaction_id_t transaction_id;
     runtime_handle_t item;
     bool test;
-    data::runtime_values_data data;
+    std::variant<values::rx_simple_value, data::runtime_values_data> data;
     tags_callback_ptr callback;
     rx_security_handle_t identity;
 };

@@ -354,8 +354,8 @@ variable_data_for_process_t runtime_process_context::get_variables_for_process (
 {
     locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::variables>())
-        return variable_data_for_process_t{ 
-        &variable_results_.get_and_swap() , 
+        return variable_data_for_process_t{
+        &variable_results_.get_and_swap() ,
         &variables_.get_and_swap(),
         &block_variable_results_.get_and_swap() ,
         &block_variables_.get_and_swap() };
@@ -579,7 +579,6 @@ security::security_guard_ptr runtime_process_context::get_security_guard ()
 bool runtime_process_context::is_mine_value (const rx_value& from) const
 {
     locks::auto_lock_t _(&const_cast<runtime_process_context*>(this)->context_lock_);
-    auto origin = from.get_origin();
     if (mode_.is_off())
     {
         return false;

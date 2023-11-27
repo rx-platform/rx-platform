@@ -44,8 +44,8 @@
 namespace rx_platform {
 namespace runtime {
 namespace structure {
-class filter_data;
 class source_data;
+class filter_data;
 
 } // namespace structure
 } // namespace runtime
@@ -828,6 +828,8 @@ class execute_task
       virtual ~execute_task();
 
 
+      virtual void process_result (rx_result&& result, values::rx_simple_value&& data) = 0;
+
       virtual void process_result (rx_result&& result, data::runtime_values_data&& data) = 0;
 
 
@@ -1044,6 +1046,8 @@ public:
       rx_result collect_value (values::rx_simple_value& data, runtime_value_type type) const;
 
       rx_result fill_value (const values::rx_simple_value& data);
+
+      rx_result check_value (const values::rx_simple_value& data);
 
       rx_result get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const;
 

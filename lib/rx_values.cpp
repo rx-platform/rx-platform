@@ -361,38 +361,10 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 				return ret;
 			}
 			return false;
-			/*{
-				byte_string temp;
-				reader.read_bytes(name, temp);
-				if (temp.empty())
-					return rx_init_bytes_value(&val, nullptr, 0);
-				else
-					return rx_init_bytes_value(&val, (uint8_t*)&temp[0], temp.size());
-			}*/
 		default:
 			RX_ASSERT(false);
 			// shouldn't happened
 		}
-		//std::vector<rx_value_union> temp_array;
-		//if (!reader.start_array(name))
-		//	return false;
-		//while (!reader.array_end())
-		//{
-		//	rx_value_union temp;
-		//	if (!deserialize_value(reader, temp, type & RX_STRIP_ARRAY_MASK, "val"))
-		//		return false;
-		//	temp_array.emplace_back(temp);
-		//}
-		//who.array_value.size = temp_array.size();
-		//if (!temp_array.empty())
-		//{
-		//	who.array_value.values = new rx_value_union[who.array_value.size];
-		//	memcpy(who.array_value.values, &temp_array[0], sizeof(rx_value_union) * who.array_value.size);
-		//}
-		//else
-		//{
-		//	who.array_value.values = nullptr;
-		//}
 	}
 	else
 	{
@@ -502,11 +474,20 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 		case RX_BYTES_TYPE:
 			{
 				byte_string temp;
-				reader.read_bytes(name, temp);
+				if (!reader.read_bytes(name, temp))
+					return false;
 				if(temp.empty())
 					return rx_init_bytes_value(&val, nullptr, 0);
 				else
 					return rx_init_bytes_value(&val, (uint8_t*)&temp[0], temp.size());
+			}
+			break;
+		case RX_UUID_TYPE:
+			{
+				rx_uuid_t temp{};
+				if (!reader.read_uuid(name, temp))
+					return false;
+				return rx_init_uuid_value(&val, &temp);
 			}
 			break;
 		case RX_STRUCT_TYPE:
@@ -597,7 +578,11 @@ bool serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_val
 			writer.write_time(name, who.time_value);
 			break;
 		case RX_UUID_TYPE:
+#ifndef RX_VALUE_SIZE_16
 			writer.write_uuid(name, *who.uuid_value);
+#else
+			writer.write_uuid(name, who.uuid_value);
+#endif
 			break;
 		case RX_BYTES_TYPE:
 			{
@@ -766,33 +751,46 @@ bool complex_value::parse_string(const string_type& str)
 	}
 	return true;
 }
+
+
+
 bool extract_value(const typed_value_type& from, const bool& default_value)
 {
-
 	if (from.value_type == RX_BOOL_TYPE)
 	{
 		return from.value.bool_value != 0;
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		bool ret;
 		if (rx_convert_value(&temp_val, RX_BOOL_TYPE))
-			return temp_val.value.bool_value != 0;
+			ret = temp_val.value.bool_value != 0;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
 int8_t extract_value(const typed_value_type& from, const int8_t& default_value)
 {
-
 	if (from.value_type == RX_INT8_TYPE)
 	{
 		return from.value.int8_value;
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		int8_t ret;
 		if (rx_convert_value(&temp_val, RX_INT8_TYPE))
-			return temp_val.value.int8_value;
+			ret = temp_val.value.int8_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -804,9 +802,15 @@ uint8_t extract_value(const typed_value_type& from, const uint8_t& default_value
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		uint8_t ret;
 		if (rx_convert_value(&temp_val, RX_UINT8_TYPE))
-			return temp_val.value.uint8_value;
+			ret = temp_val.value.uint8_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -818,9 +822,15 @@ int16_t extract_value(const typed_value_type& from, const int16_t& default_value
 	}
 	else
 	{
-		typed_value_type temp_val(from);
-		if (rx_convert_value(&temp_val, RX_INT64_TYPE))
-			return temp_val.value.int16_value;
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		int16_t ret;
+		if (rx_convert_value(&temp_val, RX_INT16_TYPE))
+			ret = temp_val.value.int16_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -832,9 +842,15 @@ uint16_t extract_value(const typed_value_type& from, const uint16_t& default_val
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		uint16_t ret;
 		if (rx_convert_value(&temp_val, RX_UINT16_TYPE))
-			return temp_val.value.uint16_value;
+			ret = temp_val.value.uint16_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -846,9 +862,15 @@ int32_t extract_value(const typed_value_type& from, const int32_t& default_value
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		int32_t ret;
 		if (rx_convert_value(&temp_val, RX_INT32_TYPE))
-			return temp_val.value.int32_value;
+			ret = temp_val.value.int32_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -860,9 +882,15 @@ uint32_t extract_value(const typed_value_type& from, const uint32_t& default_val
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		uint32_t ret;
 		if (rx_convert_value(&temp_val, RX_UINT32_TYPE))
-			return temp_val.value.uint32_value;
+			ret = temp_val.value.uint32_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -874,9 +902,15 @@ int64_t extract_value(const typed_value_type& from, const int64_t& default_value
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		int64_t ret;
 		if (rx_convert_value(&temp_val, RX_INT64_TYPE))
-			return temp_val.value.int64_value;
+			ret = temp_val.value.int64_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -888,9 +922,15 @@ uint64_t extract_value(const typed_value_type& from, const uint64_t& default_val
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		uint64_t ret;
 		if (rx_convert_value(&temp_val, RX_UINT64_TYPE))
-			return temp_val.value.uint64_value;
+			ret = temp_val.value.uint64_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -902,9 +942,15 @@ float extract_value(const typed_value_type& from, const float& default_value)
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		float ret;
 		if (rx_convert_value(&temp_val, RX_FLOAT_TYPE))
-			return temp_val.value.float_value;
+			ret = temp_val.value.float_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -916,9 +962,15 @@ double extract_value(const typed_value_type& from, const double& default_value)
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		double ret;
 		if (rx_convert_value(&temp_val, RX_DOUBLE_TYPE))
-			return temp_val.value.double_value;
+			ret = temp_val.value.double_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -933,9 +985,15 @@ string_type extract_value(const typed_value_type& from, const string_type& defau
 	}
 	else
 	{
-		typed_value_type temp_val(from);
-		if(rx_convert_value(&temp_val, RX_STRING_TYPE))
-			return extract_value(temp_val, default_value);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		string_type ret;
+		if (rx_convert_value(&temp_val, RX_STRING_TYPE))
+			ret = extract_value(temp_val, default_value);
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -956,24 +1014,17 @@ byte_string extract_value(const typed_value_type& from, const byte_string& defau
 	}
 	else
 	{
-		typed_value_type temp_val(from);
-		if (rx_convert_value(&temp_val, RX_STRING_TYPE))
-			return extract_value(temp_val, default_value);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		byte_string ret;
+		if (rx_convert_value(&temp_val, RX_BYTES_TYPE))
+			ret = extract_value(temp_val, default_value);
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
-	RX_ASSERT(false);
-	return byte_string();
-	/*if (from.get_value_type() == RX_BYTES_TYPE)
-	{
-		return *from.value_.value.bytes_value;
-	}
-	else
-	{
-		rx_value_storage temp_val(from);
-		if (temp_val.convert_to(RX_BYTES_TYPE))
-			return std::move(*temp_val.value_.value.bytes_value);
-	}
-	return default_value;*/
 }
 
 rx_time_struct extract_value(const typed_value_type& from, const rx_time_struct& default_value)
@@ -984,9 +1035,15 @@ rx_time_struct extract_value(const typed_value_type& from, const rx_time_struct&
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		rx_time_struct ret;
 		if (rx_convert_value(&temp_val, RX_TIME_TYPE))
-			return temp_val.value.time_value;
+			ret = temp_val.value.time_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -1003,15 +1060,19 @@ rx_uuid_t extract_value(const typed_value_type& from, const rx_uuid_t& default_v
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		rx_uuid_t ret;
 		if (rx_convert_value(&temp_val, RX_UUID_TYPE))
-		{
 #ifdef RX_VALUE_SIZE_16
-			return temp_val.value.uuid_value;
+			ret = temp_val.value.uuid_value;
 #else
-			return *temp_val.value.uuid_value;
+			ret = *temp_val.value.uuid_value;
 #endif
-		}
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
 	}
 	return default_value;
 }
@@ -1031,27 +1092,39 @@ string_array extract_value(const typed_value_type& from, const string_array& def
 			ret.reserve(from.value.array_value.size);
 			for (size_t i = 0; i < from.value.array_value.size; i++)
 			{
-				ret.emplace_back(rx_c_str(&from.value.array_value.values[i].string_value));
+				if (from.value.array_value.values[i].string_value.size > 0)
+					ret.emplace_back(rx_c_str(&from.value.array_value.values[i].string_value));
+				else
+					ret.emplace_back(string_type());
 			}
 		}
 		return ret;
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		string_array ret;
 		if (rx_convert_value(&temp_val, RX_STRING_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			string_array ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
 				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
 				{
-					ret.emplace_back(rx_c_str(&temp_val.value.array_value.values[i].string_value));
+					if (temp_val.value.array_value.values[i].string_value.size > 0)
+						ret.emplace_back(rx_c_str(&temp_val.value.array_value.values[i].string_value));
+					else
+						ret.emplace_back(string_type());
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1077,10 +1150,11 @@ std::vector<bool> extract_value(const typed_value_type& from, const std::vector<
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<bool> ret;
 		if (rx_convert_value(&temp_val, RX_BOOL_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<bool> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1089,8 +1163,13 @@ std::vector<bool> extract_value(const typed_value_type& from, const std::vector<
 					ret.push_back(temp_val.value.array_value.values[i].bool_value != 0 ? true : false);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1115,10 +1194,11 @@ std::vector<int8_t> extract_value(const typed_value_type& from, const std::vecto
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<int8_t> ret;
 		if (rx_convert_value(&temp_val, RX_INT8_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<int8_t> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1127,8 +1207,13 @@ std::vector<int8_t> extract_value(const typed_value_type& from, const std::vecto
 					ret.push_back(temp_val.value.array_value.values[i].int8_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1153,10 +1238,11 @@ std::vector<uint8_t> extract_value(const typed_value_type& from, const std::vect
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<uint8_t> ret;
 		if (rx_convert_value(&temp_val, RX_UINT8_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<uint8_t> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1165,8 +1251,13 @@ std::vector<uint8_t> extract_value(const typed_value_type& from, const std::vect
 					ret.push_back(temp_val.value.array_value.values[i].uint8_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1192,10 +1283,11 @@ std::vector<int16_t> extract_value(const typed_value_type& from, const std::vect
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<int16_t> ret;
 		if (rx_convert_value(&temp_val, RX_INT16_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<int16_t> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1204,8 +1296,13 @@ std::vector<int16_t> extract_value(const typed_value_type& from, const std::vect
 					ret.push_back(temp_val.value.array_value.values[i].int16_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1230,10 +1327,11 @@ std::vector<uint16_t> extract_value(const typed_value_type& from, const std::vec
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<uint16_t> ret;
 		if (rx_convert_value(&temp_val, RX_UINT16_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<uint16_t> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1242,8 +1340,13 @@ std::vector<uint16_t> extract_value(const typed_value_type& from, const std::vec
 					ret.push_back(temp_val.value.array_value.values[i].uint16_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1269,10 +1372,11 @@ std::vector<int32_t> extract_value(const typed_value_type& from, const std::vect
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<int32_t> ret;
 		if (rx_convert_value(&temp_val, RX_INT32_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<int32_t> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1281,8 +1385,13 @@ std::vector<int32_t> extract_value(const typed_value_type& from, const std::vect
 					ret.push_back(temp_val.value.array_value.values[i].int32_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1307,10 +1416,11 @@ std::vector<uint32_t> extract_value(const typed_value_type& from, const std::vec
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<uint32_t> ret;
 		if (rx_convert_value(&temp_val, RX_UINT32_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<uint32_t> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1319,8 +1429,13 @@ std::vector<uint32_t> extract_value(const typed_value_type& from, const std::vec
 					ret.push_back(temp_val.value.array_value.values[i].uint32_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1346,10 +1461,11 @@ std::vector<int64_t> extract_value(const typed_value_type& from, const std::vect
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<int64_t> ret;
 		if (rx_convert_value(&temp_val, RX_INT64_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<int64_t> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1358,8 +1474,13 @@ std::vector<int64_t> extract_value(const typed_value_type& from, const std::vect
 					ret.push_back(temp_val.value.array_value.values[i].int64_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1384,10 +1505,11 @@ std::vector<uint64_t> extract_value(const typed_value_type& from, const std::vec
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<uint64_t> ret;
 		if (rx_convert_value(&temp_val, RX_UINT64_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<uint64_t> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1396,8 +1518,13 @@ std::vector<uint64_t> extract_value(const typed_value_type& from, const std::vec
 					ret.push_back(temp_val.value.array_value.values[i].uint64_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1422,10 +1549,11 @@ std::vector<float> extract_value(const typed_value_type& from, const std::vector
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<float> ret;
 		if (rx_convert_value(&temp_val, RX_FLOAT_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<float> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1434,8 +1562,13 @@ std::vector<float> extract_value(const typed_value_type& from, const std::vector
 					ret.push_back(temp_val.value.array_value.values[i].float_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1460,10 +1593,11 @@ std::vector<double> extract_value(const typed_value_type& from, const std::vecto
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<double> ret;
 		if (rx_convert_value(&temp_val, RX_DOUBLE_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<double> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1472,7 +1606,11 @@ std::vector<double> extract_value(const typed_value_type& from, const std::vecto
 					ret.push_back(temp_val.value.array_value.values[i].double_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
+		}
+		else
+		{
+			ret = default_value;
 		}
 	}
 	return default_value;
@@ -1503,10 +1641,11 @@ std::vector<rx_time_struct> extract_value(const typed_value_type& from, const st
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<rx_time_struct> ret;
 		if (rx_convert_value(&temp_val, RX_TIME_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<rx_time_struct> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
@@ -1515,8 +1654,13 @@ std::vector<rx_time_struct> extract_value(const typed_value_type& from, const st
 					ret.push_back(temp_val.value.array_value.values[i].time_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }
@@ -1541,20 +1685,26 @@ std::vector<rx_time> extract_value(const typed_value_type& from, const std::vect
 	}
 	else
 	{
-		typed_value_type temp_val(from);
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<rx_time> ret;
 		if (rx_convert_value(&temp_val, RX_TIME_TYPE | RX_ARRAY_VALUE_MASK))
 		{
-			std::vector<rx_time> ret;
 			if (temp_val.value.array_value.size > 0)
 			{
 				ret.reserve(temp_val.value.array_value.size);
 				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
 				{
-					ret.push_back(temp_val.value.array_value.values[i].time_value);
+					ret.emplace_back(temp_val.value.array_value.values[i].time_value);
 				}
 			}
-			return ret;
+			rx_destroy_value(&temp_val);
 		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
 	}
 	return default_value;
 }

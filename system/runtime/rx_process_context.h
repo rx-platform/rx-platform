@@ -200,7 +200,7 @@ struct execute_data
 
       runtime_transaction_id_t transaction_id;
 
-      data::runtime_values_data data;
+      std::variant<values::rx_simple_value, data::runtime_values_data> data;
 
       bool test;
 
@@ -219,7 +219,7 @@ struct method_execute_result_data
 {
     logic_blocks::method_data* whose;
     rx_result result;
-    data::runtime_values_data data;
+    values::rx_simple_value data;
     runtime_transaction_id_t transaction_id;
     method_execute_result_data() = default;
     method_execute_result_data(method_execute_result_data&& right) noexcept

@@ -143,7 +143,7 @@ method_execution_context* method_runtime::create_execution_context (execute_data
 	return new method_execution_context(data, guard);
 }
 
-rx_result method_runtime::execute (data::runtime_values_data args, method_execution_context* context)
+rx_result method_runtime::execute (values::rx_simple_value args, method_execution_context* context)
 {
 	return "Undefined method type execution!";
 }
@@ -161,7 +161,7 @@ method_execution_context::method_execution_context (execute_data data, security:
 
 
 
-void method_execution_context::execution_complete (rx_result result, data::runtime_values_data data)
+void method_execution_context::execution_complete (rx_result result, values::rx_simple_value data)
 {
 	method_execute_result_data result_data;
 	result_data.result = std::move(result);
@@ -173,10 +173,10 @@ void method_execution_context::execution_complete (rx_result result, data::runti
 
 void method_execution_context::execution_complete (rx_result result)
 {
-	execution_complete(std::move(result), data::runtime_values_data());
+	execution_complete(std::move(result), values::rx_simple_value());
 }
 
-void method_execution_context::execution_complete (data::runtime_values_data data)
+void method_execution_context::execution_complete (values::rx_simple_value data)
 {
 	execution_complete(true, std::move(data));
 }

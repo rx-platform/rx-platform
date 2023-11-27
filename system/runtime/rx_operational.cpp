@@ -629,6 +629,8 @@ void binded_tags::add_callbacks (runtime_handle_t handle, binded_callback_t call
 				}
 			}
 			break;
+        default:
+            ;
 		}
 	}
 	else
@@ -677,6 +679,8 @@ rx_result binded_tags::do_write_callbacks (rt_value_ref ref, rx_simple_value& va
 				}
 			}
 			break;
+        default:
+            ;
 	}
 	return true;
 }
@@ -940,6 +944,13 @@ rx_result connected_tags::execute_tag (runtime_transaction_id_t trans_id, bool t
 	return true;
 }
 
+rx_result connected_tags::execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, values::rx_simple_value data, tags_callback_ptr monitor)
+{
+	execute_requests_.push_back({ trans_id, item, test, std::move(data), monitor,  security::active_security()->get_handle() });
+	context_->tag_writes_pending();
+	return true;
+}
+
 rx_result connected_tags::disconnect_tag (runtime_handle_t handle, tags_callback_ptr monitor)
 {
 	if (!handle)
@@ -971,7 +982,16 @@ bool connected_tags::process_runtime ()
 		{
 			auto monitor = one.first;
 			for (auto& item : one.second)
-				monitor->execute_complete(item.transaction_id, item.item, item.signal_level, std::move(item.result), std::move(item.data));
+			{
+				if (std::holds_alternative<rx_simple_value>(item.data))
+					monitor->execute_complete(item.transaction_id, item.item, item.signal_level
+						, std::move(item.result), std::move(std::get<rx_simple_value>(item.data)));
+				else if (std::holds_alternative<data::runtime_values_data>(item.data))
+					monitor->execute_complete(item.transaction_id, item.item, item.signal_level
+						, std::move(item.result), std::move(std::get<data::runtime_values_data>(item.data)));
+				else
+					RX_ASSERT(false);
+			}
 		}
 		execute_results_.clear();
 	}
@@ -981,7 +1001,7 @@ bool connected_tags::process_runtime ()
 		next_send_type next_send;
 		{
 			next_send = next_send_;
-			next_send_.clear();			
+			next_send_.clear();
 		}
 		for (auto& one : next_send)
 		{
@@ -1017,11 +1037,42 @@ bool connected_tags::process_transactions ()
 	{
 		for (auto& one : execute_requests_)
 		{
-			auto result = internal_execute_tag(one.transaction_id, one.test, one.item, std::move(one.data), one.callback, one.identity);
-			if (!result)
+			rx_result result;
+			if (std::holds_alternative<rx_simple_value>(one.data))
 			{
-				execute_results_[one.callback].emplace_back(execute_result_data{ one.transaction_id, one.item, std::move(result) });
-				context_->tag_updates_pending();
+				result = internal_execute_tag(one.transaction_id, one.test, one.item
+					, std::move(std::get<rx_simple_value>(one.data)), one.callback, one.identity);
+
+				if (!result)
+				{
+					execute_results_[one.callback].emplace_back(execute_result_data
+						{
+							one.transaction_id,
+							one.item,
+							std::move(result),
+							rx_simple_value() });
+					context_->tag_updates_pending();
+				}
+			}
+			else if (std::holds_alternative<data::runtime_values_data>(one.data))
+			{
+				result = internal_execute_tag(one.transaction_id, one.test, one.item
+					, std::move(std::get<data::runtime_values_data>(one.data)), one.callback, one.identity);
+
+				if (!result)
+				{
+					execute_results_[one.callback].emplace_back(execute_result_data
+						{
+							one.transaction_id,
+							one.item,
+							std::move(result),
+							data::runtime_values_data() });
+					context_->tag_updates_pending();
+				}
+			}
+			else
+			{
+				RX_ASSERT(false);
 			}
 		}
 		execute_requests_.clear();
@@ -1177,7 +1228,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 	}
 	else
 	{
-		
+
 		return "Invalid handle value!";
 	}
 	return true;
@@ -1190,6 +1241,49 @@ void connected_tags::execute_result_arrived (tags_callback_ptr whose, execute_re
 }
 
 rx_result connected_tags::internal_execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data args, tags_callback_ptr monitor, rx_security_handle_t identity)
+{
+	auto it = handles_map_.find(item);
+	if (it != handles_map_.end())
+	{
+		execute_data data;
+		data.transaction_id = trans_id;
+		data.data = std::move(args);
+		data.internal = false;
+		data.identity = identity;
+		switch (it->second.reference.ref_type)
+		{
+		case rt_value_ref_type::rt_const_value:
+		case rt_value_ref_type::rt_full_value:
+		case rt_value_ref_type::rt_value:
+		case rt_value_ref_type::rt_variable:
+		case rt_value_ref_type::rt_relation:
+			return "Unsupported!";
+		case rt_value_ref_type::rt_method:
+			{
+				auto result = it->second.reference.ref_value_ptr.method->execute(std::move(data)
+					, new connected_execute_task(this, monitor, trans_id, item), context_);
+				return result;
+			}
+		case rt_value_ref_type::rt_relation_value:
+			{
+				auto result = it->second.reference.ref_value_ptr.relation_value->execute(std::move(data)
+					, new connected_execute_task(this, monitor, trans_id, item), context_);
+				return result;
+			}
+		default:
+			RX_ASSERT(false);
+			return "Internal error";
+		}
+	}
+	else
+	{
+
+		return "Invalid handle value!";
+	}
+	return true;
+}
+
+rx_result connected_tags::internal_execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, values::rx_simple_value args, tags_callback_ptr monitor, rx_security_handle_t identity)
 {
 	auto it = handles_map_.find(item);
 	if (it != handles_map_.end())
@@ -1380,9 +1474,13 @@ connected_execute_task::connected_execute_task (connected_tags* parent, tags_cal
 
 
 
-void connected_execute_task::process_result (rx_result&& result, data::runtime_values_data&& data)
+void connected_execute_task::process_result (rx_result&& result, values::rx_simple_value&& data)
 {
 	parent_->execute_result_arrived(callback_, execute_result_data{ id_, item_, std::move(result), std::move(data) });
+}
+
+void connected_execute_task::process_result (rx_result&& result, data::runtime_values_data&& data)
+{
 }
 
 

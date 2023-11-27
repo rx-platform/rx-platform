@@ -394,6 +394,30 @@ std::vector<server_command_base_ptr> server_command_manager::get_internal_comman
 	return ret_commands;
 }
 
+template<typename T>
+void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, T t)
+{
+	values::rx_simple_value temp;
+	temp.assign_static(t);
+	vals.push_back(std::move(temp));
+}
+template<typename T, typename... Args>
+void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, T t, Args... args)
+{
+	values::rx_simple_value temp;
+	temp.assign_static(t);
+	vals.push_back(std::move(temp));
+	rx_create_value_static_internal(vals, std::forward<Args>(args)...);
+}
+template<typename... Args>
+rx_simple_value rx_create_value_static(Args... args)
+{
+	std::vector<values::rx_simple_value> vals;
+	rx_create_value_static_internal(vals, std::forward<Args>(args)...);
+	rx_simple_value ret;
+	ret.assign_static(vals);
+	return ret;
+}
 
 // Class rx_internal::terminal::commands::echo_server_command 
 
@@ -532,10 +556,8 @@ rx_result server_command::execute (data::runtime_values_data args, logic::method
 					out_str.assign(out_buffer->pbase(), out_buffer->get_size());
 				if (!err_buffer->empty())
 					err_str.assign(err_buffer->pbase(), err_buffer->get_size());
-				data::runtime_values_data out_result;
-				out_result.add_value_static("Out", out_str);
-				out_result.add_value_static("Err", err_str);
-				out_result.add_value_static("Result", result);
+				
+				rx_simple_value out_result = rx_create_value_static(out_str, err_str, result);
 				context->execution_complete(std::move(out_result));
 			}
 		}, context->get_security_guard());

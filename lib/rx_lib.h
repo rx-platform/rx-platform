@@ -51,7 +51,7 @@
 
 string_type _implemented_func(const char* fname);
 #define RX_NOT_IMPLEMENTED (_implemented_func(_rx_func_) + " not implemented")
-#define RX_INTERNAL_ERROR ("Internal error, something wen really wrong at "s + _implemented_func(_rx_func_))
+#define RX_INTERNAL_ERROR ("Internal error, something went really wrong at "s + _implemented_func(_rx_func_))
 #define RX_INVALID_ARGUMENT "Invalid argument."
 #define RX_INVALID_CONVERSION "Invalid conversion."
 #define RX_ERROR_STOPPED "Item is not running."

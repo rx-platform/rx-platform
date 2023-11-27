@@ -33,14 +33,14 @@
 
 
 
+// rx_ptr
+#include "lib/rx_ptr.h"
+// rx_console
+#include "terminal/rx_console.h"
 // dummy
 #include "dummy.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
-// rx_console
-#include "terminal/rx_console.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 
 
@@ -172,8 +172,9 @@ class vt100_endpoint : public rx::pointers::reference_object
 
       string_type os_command_;
 
-      rx_timer_ptr pull_timer_;
+      locks::slim_lock lock_;
 
+      rx_timer_ptr pull_timer_;
 };
 
 

@@ -93,9 +93,13 @@ class runtime_holder_algorithms
 
       static rx_result serialize_runtime_value (base_meta_writer& stream, runtime_value_type type, const typename typeT::RType& whose);
 
-      static void execute_method (const string_type& path, bool test, data::runtime_values_data data, execute_method_callback_t callback, typename typeT::RType& whose);
+      static void execute_method (const string_type& path, bool test, data::runtime_values_data data, named_execute_method_callback_t callback, typename typeT::RType& whose);
 
-      static rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data& data, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
+      static void execute_method (const string_type& path, bool test, values::rx_simple_value data, execute_method_callback_t callback, typename typeT::RType& whose);
+
+      static rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data data, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
+
+      static rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value data, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
 
 
   protected:

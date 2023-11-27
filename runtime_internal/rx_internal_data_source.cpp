@@ -82,6 +82,15 @@ void internal_data_source::write_item (const value_handle_extended& handle, rx_s
 	}
 }
 
+void internal_data_source::execute_item (const value_handle_extended& handle, values::rx_simple_value data, runtime_transaction_id_t id)
+{
+	auto it = subscriptions_.find(handle.subscription);
+	if (it != subscriptions_.end())
+	{
+		it->second.subscription->execute_item(handle, std::move(data), id);
+	}
+}
+
 void internal_data_source::execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id)
 {
 	auto it = subscriptions_.find(handle.subscription);
@@ -118,6 +127,22 @@ internal_data_subscription::internal_data_subscription (value_handle_extended ha
 
 
 
+void internal_data_subscription::add_item (const string_type& path, value_handle_extended& handle)
+{
+	std::vector<rx_result_with<runtime_handle_t> > results;
+	string_array items{path};
+	my_subscription_->connect_items(items, results);
+	if (!results.empty() && results[0] && results[0].value())
+		handle.item = results[0].value();
+}
+
+void internal_data_subscription::remove_item (const value_handle_extended& handle)
+{
+	std::vector<runtime_handle_t> handles{ handle.item };
+	std::vector<rx_result> results;
+	my_subscription_->disconnect_items(handles, results);
+}
+
 void internal_data_subscription::items_changed (const std::vector<update_item>& items)
 {
 	std::vector<std::pair<value_handle_type, rx_value> > values;
@@ -129,32 +154,6 @@ void internal_data_subscription::items_changed (const std::vector<update_item>& 
 		values.emplace_back(handles_.make_handle(), one.value);
 	}
 	controler_->items_changed(values);
-}
-
-void internal_data_subscription::write_completed (runtime_transaction_id_t transaction_id, std::vector<write_result_item> results)
-{
-	for (auto& one : results)
-	{
-		// we can reuse this one in a loop because we are changing only item handle value and reusing rest
-		handles_.item = one.handle;
-		controler_->result_received(handles_.make_handle(), std::move(one.result), transaction_id);
-	}
-}
-
-void internal_data_subscription::execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
-{
-	// we can reuse this one in a loop because we are changing only item handle value and reusing rest
-	handles_.item = item;
-	controler_->execute_result_received(handles_.make_handle(), std::move(result), std::move(data), transaction_id);
-}
-
-void internal_data_subscription::add_item (const string_type& path, value_handle_extended& handle)
-{
-	std::vector<rx_result_with<runtime_handle_t> > results;
-	string_array items{path};
-	my_subscription_->connect_items(items, results);
-	if (!results.empty() && results[0] && results[0].value())
-		handle.item = results[0].value();
 }
 
 void internal_data_subscription::write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id)
@@ -184,9 +183,31 @@ void internal_data_subscription::write_item (const value_handle_extended& handle
 	}
 }
 
-void internal_data_subscription::execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id)
+void internal_data_subscription::write_completed (runtime_transaction_id_t transaction_id, std::vector<write_result_item> results)
+{
+	for (auto& one : results)
+	{
+		// we can reuse this one in a loop because we are changing only item handle value and reusing rest
+		handles_.item = one.handle;
+		controler_->result_received(handles_.make_handle(), std::move(one.result), transaction_id);
+	}
+}
+
+void internal_data_subscription::execute_item (const value_handle_extended& handle, values::rx_simple_value data, runtime_transaction_id_t id)
 {
 	
+	auto result = my_subscription_->execute_item(id, handle.item, std::move(data));
+	if (id != 0)
+	{
+		if (!result)
+		{
+			controler_->execute_result_received(handle.make_handle(), std::move(result), values::rx_simple_value(), id);
+		}
+	}
+}
+
+void internal_data_subscription::execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id)
+{
 	auto result = my_subscription_->execute_item(id, handle.item, std::move(data));
 	if (id != 0)
 	{
@@ -197,16 +218,22 @@ void internal_data_subscription::execute_item (const value_handle_extended& hand
 	}
 }
 
-void internal_data_subscription::remove_item (const value_handle_extended& handle)
+void internal_data_subscription::execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, values::rx_simple_value data)
 {
-	std::vector<runtime_handle_t> handles{ handle.item };
-	std::vector<rx_result> results;
-	my_subscription_->disconnect_items(handles, results);
+	// we can reuse this one in a loop because we are changing only item handle value and reusing rest
+	handles_.item = item;
+	controler_->execute_result_received(handles_.make_handle(), std::move(result), std::move(data), transaction_id);
 }
 
 bool internal_data_subscription::is_empty () const
 {
 	return false;
+}
+
+void internal_data_subscription::execute_completed (runtime_transaction_id_t transaction_id, runtime_handle_t item, rx_result result, data::runtime_values_data data)
+{
+	handles_.item = item;
+	controler_->execute_result_received(handles_.make_handle(), std::move(result), std::move(data), transaction_id);
 }
 
 
