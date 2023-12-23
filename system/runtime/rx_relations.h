@@ -105,6 +105,8 @@ class relation_connector
 
       virtual rx_result write_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, rx_simple_value&& value) = 0;
 
+      virtual rx_result write_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data&& value) = 0;
+
       virtual rx_result execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, values::rx_simple_value&& value) = 0;
 
       virtual rx_result execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data value) = 0;
@@ -135,9 +137,9 @@ class relation_value_data
 
       rx_value get_value (runtime_process_context* ctx) const;
 
-      rx_result write_value (write_data&& data, structure::write_task* task, runtime_process_context* ctx);
+      rx_result write_value (context_write_data&& data, structure::write_task* task, runtime_process_context* ctx);
 
-      rx_result execute (execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+      rx_result execute (context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
 
 
       rx::values::rx_value value;
@@ -174,9 +176,9 @@ class relation_connections
 
       rx_result_with<relations::relation_value_data*> connect_tag (const string_type& path, runtime_handle_t handle);
 
-      rx_result write_tag (runtime_handle_t item, write_data&& data, structure::write_task* task, runtime_process_context* ctx);
+      rx_result write_tag (runtime_handle_t item, context_write_data&& data, structure::write_task* task, runtime_process_context* ctx);
 
-      rx_result execute_tag (runtime_handle_t item, execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+      rx_result execute_tag (runtime_handle_t item, context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
 
       void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
 

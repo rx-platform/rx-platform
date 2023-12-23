@@ -64,6 +64,9 @@ registered_plugins_type rx_dynamic_plugin::registered_plugins_;
 
 rx_dynamic_plugin::rx_dynamic_plugin (const string_type& lib_path)
       : module_(nullptr),
+        prxBindPlugin_(nullptr),
+        prxBindPlugin2_(nullptr),
+        prxBindPlugin3_(nullptr),
         prxGetPluginInfo_(nullptr),
         prxGetPluginInfo2_(nullptr),
         prxGetPluginName_(nullptr),
@@ -86,13 +89,17 @@ rx_dynamic_plugin::~rx_dynamic_plugin()
 
 rx_result rx_dynamic_plugin::bind_plugin ()
 {
-    if (prxBindPlugin2_ || prxBindPlugin_)
+    if (prxBindPlugin3_ || prxBindPlugin2_ || prxBindPlugin_)
     {
         uintptr_t plugin_id;
         uint32_t plugin_version;
-        rx_result ret = prxBindPlugin2_ != nullptr ?
-            prxBindPlugin2_(rx_platform::api::get_plugins_dynamic_api2(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id)
-            : prxBindPlugin_(rx_platform::api::get_plugins_dynamic_api(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id);
+        rx_result ret;
+        if (prxBindPlugin3_ != nullptr)
+            ret = prxBindPlugin3_(rx_platform::api::get_plugins_dynamic_api3(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id);
+        else if (prxBindPlugin2_ != nullptr)
+            ret = prxBindPlugin2_(rx_platform::api::get_plugins_dynamic_api2(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id);
+        else
+            ret = prxBindPlugin_(rx_platform::api::get_plugins_dynamic_api(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id);
 
         if (ret)
         {
@@ -120,6 +127,11 @@ rx_result rx_dynamic_plugin::load_plugin ()
     module_ = rx_load_library(lib_path_.c_str());
     if (module_)
     {
+        prxBindPlugin3_ = (rxBindPlugin3_t)rx_get_func_address(module_, "rxBindPlugin3");
+        if (prxBindPlugin3_)
+        {
+            return true;
+        }
         prxBindPlugin2_ = (rxBindPlugin2_t)rx_get_func_address(module_, "rxBindPlugin2");
         if (prxBindPlugin2_)
         {
@@ -179,7 +191,7 @@ rx_plugin_info rx_dynamic_plugin::get_plugin_info () const
 
 rx_result rx_dynamic_plugin::init_plugin ()
 {
-    if (prxBindPlugin_ || prxBindPlugin2_)
+    if (prxBindPlugin_ || prxBindPlugin2_ || prxBindPlugin3_)
     {
         if (prxInitPlugin_)
         {

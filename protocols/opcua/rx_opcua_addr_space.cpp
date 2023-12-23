@@ -119,6 +119,11 @@ void opcua_base_node_type::internal_read_attribute (attribute_id id, const strin
     value_storage.status_code = opcid_Bad_AttributeIdInvalid;
 }
 
+std::pair<opcua_result_t, runtime_transaction_id_t> opcua_base_node_type::execute (std::vector<variant_type> args, opcua_server_endpoint_ptr ep)
+{
+    return { opcid_Bad_MethodInvalid, 0 };
+}
+
 void opcua_base_node_type::browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const
 {
     std::set<rx_node_id> refIds;
@@ -164,7 +169,13 @@ void opcua_base_node_type::translate (const relative_path& path, browse_path_res
 {
     std::set<rx_node_id> refIds;
     if (!results.targets.empty() && results.targets.rbegin()->remaining_index >= path.elements.size())
+    {
+        uint32_t rem_index = (uint32_t)(-1);
+        for (auto& one : results.targets)
+            one.remaining_index = rem_index;
+        results.status_code = opcid_OK;
         return;
+    }
     size_t idx = 0;
     if (!results.targets.empty())
         idx = results.targets.rbegin()->remaining_index;
@@ -192,10 +203,11 @@ void opcua_base_node_type::translate (const relative_path& path, browse_path_res
             auto node_ptr = one.resolved_node.lock();
             if (node_ptr)
             {
-                if (!refIds.empty() && refIds.count(one.reference_id)
-                    && node_ptr->get_browse_name() == one_path.target_name)
+                if ((refIds.empty() || refIds.count(one.reference_id))
+                    && node_ptr->get_browse_name().name == one_path.target_name.name)
                 {
                     target_it->target_id = one.target_id;
+                    target_it->remaining_index = target_it->remaining_index + 1;
                     node_ptr->translate(path, results, ctx);
                     return;
                 }
@@ -209,8 +221,8 @@ void opcua_base_node_type::translate (const relative_path& path, browse_path_res
             auto node_ptr = one.resolved_node.lock();
             if (node_ptr)
             {
-                if (!refIds.empty() && refIds.count(one.reference_id)
-                    && node_ptr->get_browse_name() == one_path.target_name)
+                if ((refIds.empty() || refIds.count(one.reference_id))
+                    && node_ptr->get_browse_name().name == one_path.target_name.name)
                 {
                     target_it->target_id = one.target_id;
                     node_ptr->translate(path, results, ctx);
@@ -383,6 +395,11 @@ void opcua_property_node::internal_read_attribute (attribute_id id, const string
     opcua_variable_base_node::internal_read_attribute(id, range, encoding, value_storage, config_ts);
 }
 
+rx_node_id opcua_property_node::get_type_id () const
+{
+    return rx_node_id::opcua_standard_id(opcid_PropertyType);
+}
+
 
 // Class protocols::opcua::opcua_addr_space::opcua_variable_node 
 
@@ -479,6 +496,7 @@ bool node_references::disconnect_node_reference (std::shared_ptr<opcua_node_base
                 references.erase(it);
                 return true;
             }
+            it++;
         }
         return false;
     }
@@ -493,6 +511,7 @@ bool node_references::disconnect_node_reference (std::shared_ptr<opcua_node_base
                 inverse_references.erase(it);
                 return true;
             }
+            it++;
         }
         return false;
     }
@@ -529,16 +548,43 @@ rx_node_id opcua_object_node::get_type_id () const
 }
 
 
+// Class protocols::opcua::opcua_addr_space::opcua_method_node 
+
+opcua_method_node::opcua_method_node()
+      : executable(true),
+        user_executable(true)
+    , opcua_base_node_type(node_class_type::method)
+{
+}
+
+
+
+void opcua_method_node::internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const
+{
+    switch (id)
+    {
+    case attribute_id::executable:
+        value_storage.value = variant_type(executable);
+        value_storage.set_timestamp(timestamp_);
+        value_storage.status_code = opcid_OK;
+        break;
+    case attribute_id::user_executable:
+        value_storage.value = variant_type(user_executable);
+        value_storage.set_timestamp(timestamp_);
+        value_storage.status_code = opcid_OK;
+        break;
+    default:
+        value_storage.status_code = opcid_Bad_AttributeIdInvalid;
+    }
+}
+
+rx_node_id opcua_method_node::get_type_id () const
+{
+    return type_id;
+}
+
+
 } // namespace opcua_addr_space
 } // namespace opcua
 } // namespace protocols
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-    : reference_id{ data.ref_id, 0 }
-    , target_id{ data.target_id, 0 }
-
-#endif

@@ -106,10 +106,10 @@ extern "C"
     rx_result_struct c_deinit_mapper_stub(void* self);
     void c_mapped_value_changed_stub(void* self, struct full_value_type val, runtime_ctx_ptr ctx);
     void c_mapper_result_received_stub(void* self, rx_result_struct result, runtime_transaction_id_t id, runtime_ctx_ptr ctx);
+    void c_mapper_execute_result_received_stub(void* self, rx_result_struct result, runtime_transaction_id_t id, struct typed_value_type out_val, runtime_ctx_ptr ctx);
 
 
-
-    plugin_mapper_def_struct _g_mapper_def_
+    plugin_mapper_def_struct3 _g_mapper_def3_
     {
         c_get_code_info
         ,c_init_mapper_stub
@@ -119,6 +119,7 @@ extern "C"
 
         ,c_mapped_value_changed_stub
         ,c_mapper_result_received_stub
+        ,c_mapper_execute_result_received_stub
     };
 
 
@@ -153,6 +154,12 @@ extern "C"
         rx_platform_api::rx_process_context pctx;
         pctx.bind(ctx);
         self->mapper_result_received(result, id, pctx);
+    }
+    void c_mapper_execute_result_received(rx_platform_api::rx_mapper* self, rx_result_struct result, runtime_transaction_id_t id, struct typed_value_type out_val, runtime_ctx_ptr ctx)
+    {
+        rx_platform_api::rx_process_context pctx;
+        pctx.bind(ctx);
+        self->mapper_execute_result_received(result, out_val, id, pctx);
     }
 
 
@@ -284,7 +291,7 @@ rx_mapper::rx_mapper (bool read, bool write)
         impl_.io_data |= RX_IO_DATA_INPUT_MASK;
     if (read)
         impl_.io_data |= RX_IO_DATA_OUTPUT_MASK;
-    impl_.def = &_g_mapper_def_;
+    impl_.def = &_g_mapper_def3_;
     bind_as_shared(&impl_.anchor);
 }
 
@@ -331,6 +338,24 @@ void rx_mapper::mapper_write_pending (runtime_transaction_id_t id, bool test, rx
 void rx_mapper::map_current_value () const
 {
     impl_.host_def->map_current_value(impl_.host);
+}
+
+void rx_mapper::mapper_execute_pending (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val)
+{
+}
+
+void rx_mapper::mapper_execute_result_received (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id, rx_process_context& ctx)
+{
+}
+
+data::runtime_data_model rx_mapper::get_method_inputs ()
+{
+    return data::runtime_data_model();
+}
+
+data::runtime_data_model rx_mapper::get_method_outputs ()
+{
+    return data::runtime_data_model();
 }
 
 

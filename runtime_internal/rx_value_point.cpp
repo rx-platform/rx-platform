@@ -594,6 +594,52 @@ void value_point_impl::write (rx_simple_value val, runtime_transaction_id_t id, 
 	}
 }
 
+void value_point_impl::write (data::runtime_values_data val, runtime_transaction_id_t id, data_controler* controler)
+{
+	switch (state_)
+	{
+	case value_point_not_connected:
+		{
+			if (id)
+			{// we should callback the negative result
+				result_received(RX_NOT_CONNECTED, id);
+			}
+		}
+		break;
+	case value_point_connected:
+		{
+			if (id)
+			{// we should callback the negative result
+				result_received(RX_NOT_SUPPORTED, id);
+			}
+		}
+		break;
+	case value_point_connected_simple:
+		{
+			RX_ASSERT(tag_handles_.size() == 1);
+			if (tag_handles_.empty() && id)
+			{
+				result_received(RX_NOT_SUPPORTED, id);
+			}
+			else
+			{
+				runtime_transaction_id_t new_id = id ? platform_runtime_manager::get_new_transaction_id() : 0u;
+				if (id)
+				{
+					auto res = pending_transactions_.emplace(new_id, id);
+					RX_ASSERT(res.second);
+				}
+				if (!controler)
+					controler = data_controler::get_controler();
+				controler->write_item(tag_handles_.begin()->first, std::move(val), new_id);
+			}
+		}
+		break;
+	default:
+		RX_ASSERT(false);
+	}
+}
+
 void value_point_impl::execute (values::rx_simple_value data, runtime_transaction_id_t id, data_controler* controler)
 {
 	switch (state_)
@@ -903,6 +949,13 @@ void value_point_impl::calculate (char* token_buff)
 
 rx_value value_point_impl::internal_calculate (char* token_buff)
 {
+	if (context_ == nullptr)
+	{
+		rx_value res;
+		res.set_time(rx_time::now());
+		res.set_quality(RX_BAD_QUALITY_OFFLINE);
+		return res;
+	}
 	uint32_t quality = 0;
 	uint32_t origin = context_->get_mode().create_origin(RX_ALWAYS_ORIGIN);
 	uint32_t bad_quality = 0;

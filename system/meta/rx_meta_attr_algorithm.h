@@ -147,6 +147,34 @@ class filtered_data_algorithm
 
 
 
+class mapsrc_data_algorithm 
+{
+
+  public:
+
+      static rx_result serialize_complex_attribute (const mapsrc_data_type& whose, base_meta_writer& stream);
+
+      static rx_result deserialize_complex_attribute (mapsrc_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data);
+
+      static bool check_complex_attribute (mapsrc_data_type& whose, type_check_context& ctx);
+
+      static rx_result construct_complex_attribute (const mapsrc_data_type& whose, const names_cahce_type& names, construct_context& ctx);
+
+      static rx_result get_depends (const mapsrc_data_type& whose, dependencies_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class mapped_data_algorithm 
 {
 

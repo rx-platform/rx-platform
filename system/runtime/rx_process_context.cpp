@@ -58,6 +58,7 @@ block_variable_results_type g_empty_block_variable_results;
 programs_type g_empty_programs;
 owner_jobs_type g_empty_jobs;
 mapper_writes_type g_empty_mapper_writes;
+mapper_executes_type g_empty_mapper_executes;
 mapper_updates_type g_empty_mapper_updates;
 filters_type g_empty_filters;
 events_type g_empty_events;
@@ -207,6 +208,15 @@ void runtime_process_context::mapper_write_pending (write_data_struct<structure:
     mapper_inputs_.emplace_back(std::move(data));
 }
 
+void runtime_process_context::mapper_execute_pending (execute_data_struct<structure::mapper_data> data)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::mapper_inputs>();
+    mapper_executes_.emplace_back(std::move(data));
+}
+
 void runtime_process_context::tag_writes_pending ()
 {
     if (stopping_)
@@ -324,13 +334,13 @@ bool runtime_process_context::should_process_tag_writes ()
     return should_do_step<runtime_process_step::tag_inputs>();
 }
 
-mapper_writes_type& runtime_process_context::get_mapper_writes ()
+std::pair<mapper_writes_type*, mapper_executes_type*> runtime_process_context::get_mapper_inputs ()
 {
     locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::mapper_inputs>())
-        return mapper_inputs_.get_and_swap();
+        return { &mapper_inputs_.get_and_swap() , &mapper_executes_.get_and_swap() };
     else
-        return g_empty_mapper_writes;
+        return { &g_empty_mapper_writes, &g_empty_mapper_executes };
 }
 
 mapper_updates_type& runtime_process_context::get_mapper_updates ()
@@ -602,6 +612,11 @@ void runtime_process_context::value_changed (structure::value_data* whose)
     tags_.binded_value_change(whose, whose->get_value(this));
 }
 
+void runtime_process_context::method_changed (logic_blocks::method_data* whose)
+{
+    tags_.method_changed(whose, whose->get_value(this));
+}
+
 rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)
 {
     return ctx->set_value(handle, std::move(val));
@@ -612,10 +627,16 @@ rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t
 // Class rx_platform::runtime::context_job 
 
 
-// Class rx_platform::runtime::write_data 
+// Class rx_platform::runtime::context_write_data 
 
 
 // Class rx_platform::runtime::relation_subscriber 
+
+
+// Class rx_platform::runtime::context_execute_data 
+
+
+// Class rx_platform::runtime::write_data 
 
 
 // Class rx_platform::runtime::execute_data 

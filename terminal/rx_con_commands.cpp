@@ -269,7 +269,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 		table.back().emplace_back(rx_gate::instance().get_hal_version());
 	}
 	char buff[0x100];
-	sprintf(buff, "0x%0X - %u", rx_gate::instance().get_pid(), rx_gate::instance().get_pid());
+	sprintf(buff, " PID = 0x%0X(%u)", rx_gate::instance().get_pid(), rx_gate::instance().get_pid());
 
 	table.emplace_back(rx_row_type());
 	table.back().emplace_back("OS", col_prefix, ANSI_COLOR_RESET);

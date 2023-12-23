@@ -142,9 +142,23 @@ public:
 
       rx_value get_value (runtime_process_context* ctx) const;
 
-      rx_result execute (execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+      rx_result execute (context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+
+      void execution_complete (runtime_transaction_id_t id, rx_result&& result, values::rx_simple_value&& data);
 
       void process_execute_result (runtime_transaction_id_t id, rx_result&& result, values::rx_simple_value&& data);
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      data::runtime_data_model get_method_inputs ();
+
+      data::runtime_data_model get_method_outputs ();
 
 
       method_runtime_ptr method_ptr;
@@ -167,6 +181,9 @@ public:
 
 
       pending_tasks_type pending_tasks_;
+
+
+      runtime_process_context* context_;
 
 
 };

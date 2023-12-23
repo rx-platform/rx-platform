@@ -45,6 +45,15 @@ namespace http {
 // Class rx_platform::http::http_request 
 
 
+string_view_type http_request::get_content_as_string ()
+{
+	if (content.empty())
+		return string_view_type();
+	else
+		return string_view_type((const char*)&content[0], content.size());
+}
+
+
 // Class rx_platform::http::http_response 
 
 

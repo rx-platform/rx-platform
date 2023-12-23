@@ -595,6 +595,10 @@ RX_COMMON_API int rx_init_node_id_value(struct typed_value_type* val, const rx_n
 
 
 RX_COMMON_API int rx_init_string_array_value(struct typed_value_type* val, const char** data, size_t size);
+RX_COMMON_API int rx_init_uuid_array_value(struct typed_value_type* val, const rx_uuid_t* data, size_t count);
+RX_COMMON_API int rx_init_time_array_value(struct typed_value_type* val, const rx_time_struct* data, size_t count);
+
+RX_COMMON_API int rx_init_node_id_array_value(struct typed_value_type* val, const rx_node_id_struct* data, size_t count);
 
 RX_COMMON_API int rx_init_struct_array_value(struct typed_value_type* val, const struct_value_type* data, size_t count);
 RX_COMMON_API int rx_init_struct_array_value_with_ptrs(struct typed_value_type* val, const struct_value_type** data, size_t count);
@@ -626,6 +630,9 @@ RX_COMMON_API int rx_is_string_value(const struct typed_value_type* val);
 RX_COMMON_API int rx_is_bytes_value(const struct typed_value_type* val);
 RX_COMMON_API int rx_is_array_value(const struct typed_value_type* val);
 RX_COMMON_API int rx_get_array_size(const struct typed_value_type* val, size_t* size);
+RX_COMMON_API int rx_is_struct(const struct typed_value_type* val);
+RX_COMMON_API int rx_get_struct_size(const struct typed_value_type* val, size_t* size);
+RX_COMMON_API int rx_get_struct_value(size_t idx, struct typed_value_type* out_val, const struct typed_value_type* val);
 
 RX_COMMON_API int rx_get_float_value(const struct typed_value_type* val, size_t idx, double* value, rx_value_t* type);
 RX_COMMON_API int rx_get_complex_value(const struct typed_value_type* val, size_t idx, complex_value_struct* value);

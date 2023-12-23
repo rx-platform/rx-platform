@@ -37,14 +37,14 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
-// rx_def_blocks
-#include "system/meta/rx_def_blocks.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_meta_data
-#include "lib/rx_meta_data.h"
+// rx_def_blocks
+#include "system/meta/rx_def_blocks.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_meta_data
+#include "lib/rx_meta_data.h"
 
 #include "system/runtime/rx_rt_struct.h"
 #include "system/meta/rx_runtime_data.h"
@@ -242,7 +242,7 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
-      def_blocks::mapped_data_type mapping_data;
+      def_blocks::mapsrc_data_type mapping_data;
 
 
       static rx_item_type type_id;
@@ -291,7 +291,7 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
-      def_blocks::mapped_data_type mapping_data;
+      def_blocks::mapsrc_data_type mapping_data;
 
 
       static rx_item_type type_id;
@@ -342,7 +342,7 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
-      def_blocks::mapped_data_type mapping_data;
+      def_blocks::mapsrc_data_type mapping_data;
 
 
       static rx_item_type type_id;
@@ -391,7 +391,7 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
-      def_blocks::mapped_data_type mapping_data;
+      def_blocks::mapsrc_data_type mapping_data;
 
 
       static const rx_item_type type_id;

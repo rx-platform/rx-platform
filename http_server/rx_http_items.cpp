@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -47,7 +47,7 @@ namespace rx_internal {
 
 namespace rx_http_server {
 
-// Class rx_internal::rx_http_server::http_rx_item_handler
+// Class rx_internal::rx_http_server::http_rx_item_handler 
 
 
 rx_result http_rx_item_handler::handle_request (http_request& req, http_response& resp)
@@ -156,7 +156,7 @@ rx_result http_rx_item_handler::handle_request (http_request& req, http_response
 }
 
 
-// Class rx_internal::rx_http_server::http_json_object_reader
+// Class rx_internal::rx_http_server::http_json_object_reader 
 
 
 const char* http_json_object_reader::get_content_type ()
@@ -388,7 +388,7 @@ rx_result http_json_object_reader::recursive_list_directory (rx_directory_ptr it
 }
 
 
-// Class rx_internal::rx_http_server::http_object_writer
+// Class rx_internal::rx_http_server::http_object_writer 
 
 
 const char* http_object_writer::get_content_type ()
@@ -400,28 +400,79 @@ rx_result http_object_writer::do_with_item (string_view_type sub_item, rx_item_t
 {
 	string_type path(sub_item), str_val;
 	rx_reference_ptr anchor = req.whose;
-	rx_simple_value value;
 
-	if(path.empty())
+	if (path.empty())
 	{
 		return "Missing or empty <path> argument.";
 	}
-	auto it = req.params.find("val");
-	if (it != req.params.end())
+	
+
+	if (req.method == rx_http_method::post)
 	{
-		str_val = it->second;
+		string_type content(req.get_content_as_string());
+
+		serialization::json_reader reader;
+		if (reader.parse_data(content))
+		{
+			data::runtime_values_data vals;
+			if (reader.read_init_values(nullptr, vals))
+			{
+				auto us1 = rx_get_us_ticks();
+				item->write_value(path, false, std::move(vals), write_result_callback_t(anchor, [this, req = std::move(req), resp = std::move(resp), us1](uint32_t signal_level, rx_result&& result) mutable
+				{
+					uint64_t us2 = rx_get_us_ticks() - us1;
+					std::ostringstream ss;
+
+					resp.headers["Content-Type"] = get_content_type();
+					resp.result = 200;
+					ss << "{\n   \"level\": " << signal_level
+						<< ",\n   \"time\": " << us2 / 1000.0
+						<< ",\n   \"success\": ";
+
+					if (result)
+					{
+						ss << "true\n";
+					}
+					else
+					{
+						ss << "false,\n   \"error\": \"";
+						ss << result.errors_line();
+						ss << "\"\n";
+					}
+					ss << "}";
+					resp.set_string_content(ss.str());
+
+					if (req.whose)
+						http_server::instance().send_response(req, resp);
+
+				}));
+
+				return true;
+			}
+		}
+		return "Error parsing value";
+
 	}
-	if (str_val.empty())
+	else
 	{
-		return "Missing or empty <val> argument.";
-	}
-	value.parse(str_val);
-	if (value.is_null())
-	{
-		return "Unable to parse value string";
-	}
-	auto us1 = rx_get_us_ticks();
-	item->write_value(path, false, std::move(value), write_result_callback_t(anchor, [this, req = std::move(req), resp = std::move(resp), us1](uint32_t signal_level, rx_result&& result) mutable
+		rx_simple_value value;
+
+		auto it = req.params.find("val");
+		if (it != req.params.end())
+		{
+			str_val = it->second;
+		}
+		if (str_val.empty())
+		{
+			return "Missing or empty <val> argument.";
+		}
+		value.parse(str_val);
+		if (value.is_null())
+		{
+			return "Unable to parse value string";
+		}
+		auto us1 = rx_get_us_ticks();
+		item->write_value(path, false, std::move(value), write_result_callback_t(anchor, [this, req = std::move(req), resp = std::move(resp), us1](uint32_t signal_level, rx_result&& result) mutable
 		{
 			uint64_t us2 = rx_get_us_ticks() - us1;
 			std::ostringstream ss;
@@ -429,7 +480,7 @@ rx_result http_object_writer::do_with_item (string_view_type sub_item, rx_item_t
 			resp.headers["Content-Type"] = get_content_type();
 			resp.result = 200;
 			ss << "{\n   \"level\": " << signal_level
-				<< ",\n   \"time\": " << us2/1000.0
+				<< ",\n   \"time\": " << us2 / 1000.0
 				<< ",\n   \"success\": ";
 
 			if (result)
@@ -449,7 +500,8 @@ rx_result http_object_writer::do_with_item (string_view_type sub_item, rx_item_t
 				http_server::instance().send_response(req, resp);
 
 		}));
-	return true;
+		return true;
+	}
 }
 
 rx_result http_object_writer::do_with_directory (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, rx_directory_ptr item)
@@ -460,6 +512,91 @@ rx_result http_object_writer::do_with_directory (string_view_type sub_item, rx_i
 const char* http_object_writer::get_extension ()
 {
 	return "write";
+}
+
+
+// Class rx_internal::rx_http_server::http_json_object_executer 
+
+
+const char* http_json_object_executer::get_content_type ()
+{
+	return "application/json";
+}
+
+rx_result http_json_object_executer::do_with_item (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, platform_item_ptr item)
+{
+	string_type path(sub_item), str_val;
+	rx_reference_ptr anchor = req.whose;
+
+	if (path.empty())
+	{
+		return "Missing or empty <path> argument.";
+	}
+	if (req.method == rx_http_method::post)
+	{
+		string_type content(req.get_content_as_string());
+
+		serialization::json_reader reader;
+		if (reader.parse_data(content))
+		{
+			data::runtime_values_data vals;
+			if (reader.read_init_values(nullptr, vals))
+			{
+				auto us1 = rx_get_us_ticks();
+				item->execute_method(path, false, std::move(vals), named_execute_method_callback_t(anchor, [this, req = std::move(req), resp = std::move(resp), us1]
+				(uint32_t signal_level, rx_result&& result, data::runtime_values_data out_vals) mutable
+				{
+					uint64_t us2 = rx_get_us_ticks() - us1;
+					std::ostringstream ss;
+
+					serialization::json_writer writer;
+					writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+					writer.write_init_values(nullptr, out_vals);
+					writer.write_footer();
+					
+
+					resp.headers["Content-Type"] = get_content_type();
+					resp.result = 200;
+					ss << "{\n   \"level\": " << signal_level
+						<< ",\n   \"time\": " << us2 / 1000.0
+						<< ",\n   \"success\": ";
+
+					if (result)
+					{
+						ss << "true,\n";
+					}
+					else
+					{
+						ss << "false,\n   \"error\": \"";
+						ss << result.errors_line();
+						ss << "\",\n";
+					}
+					ss << "\t\"result\" : " << writer.get_string();
+					ss << "}";
+					resp.set_string_content(ss.str());
+
+					if (req.whose)
+						http_server::instance().send_response(req, resp);
+
+				}));
+
+				return true;
+			}
+		}
+		return "Error parsing value";
+
+	}
+	return RX_NOT_SUPPORTED;
+}
+
+rx_result http_json_object_executer::do_with_directory (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, rx_directory_ptr item)
+{
+	return RX_NOT_SUPPORTED;
+}
+
+const char* http_json_object_executer::get_extension ()
+{
+	return "exec";
 }
 
 

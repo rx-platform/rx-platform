@@ -49,13 +49,23 @@
 #define RX_CLASS_EVENT_BASE_ID 0x00000007
 #define RX_CLASS_SOURCE_BASE_NAME "SourceBase"
 #define RX_CLASS_SOURCE_BASE_ID 0x00000008
+
 #define RX_CLASS_MAPPER_BASE_NAME "MapperBase"
 #define RX_CLASS_MAPPER_BASE_ID 0x00000009
+#define RX_PARENT_MAPPER_TYPE_NAME "StructuralMapper"
+#define RX_PARENT_MAPPER_TYPE_ID 0xc000045
+#define RX_VARIABLE_MAPPER_TYPE_NAME "VariableMapper"
+#define RX_VARIABLE_MAPPER_TYPE_ID 0xc0000d3
+#define RX_METHOD_MAPPER_TYPE_NAME "MethodMapper"
+#define RX_METHOD_MAPPER_TYPE_ID 0xc0000d4
+#define RX_EVENT_MAPPER_TYPE_NAME "EventMapper"
+#define RX_EVENT_MAPPER_TYPE_ID 0xc0000da
+
 #define RX_CLASS_FILTER_BASE_NAME "FilterBase"
 #define RX_CLASS_FILTER_BASE_ID 0x0000000a
 
 
-#define RX_CLASS_METHOD_BASE_NAME "MethodBase"
+#define RX_CLASS_METHOD_BASE_NAME "AbstractMethod"
 #define RX_CLASS_METHOD_BASE_ID 0x00000013
 #define RX_CLASS_PROGRAM_BASE_NAME "ProgramBase"
 #define RX_CLASS_PROGRAM_BASE_ID 0x00000014
@@ -471,22 +481,26 @@
 
 #define RX_EXTERN_MAPPER_TYPE_NAME "ExternMapper"
 #define RX_EXTERN_MAPPER_TYPE_ID 0xc000033
-#define RX_PARENT_MAPPER_TYPE_NAME "ParentMapper"
-#define RX_PARENT_MAPPER_TYPE_ID 0xc000045
-#define RX_EXTERN_PARENT_MAPPER_TYPE_NAME "ExternParentMapper"
+#define RX_EXTERN_PARENT_MAPPER_TYPE_NAME "ExternStructuralMapper"
 #define RX_EXTERN_PARENT_MAPPER_TYPE_ID 0xc00004d
-#define RX_SYSTEM_MAPPER_TYPE_NAME "SystemMapper"
-#define RX_SYSTEM_MAPPER_TYPE_ID 0xc000046
+#define RX_EXTERN_METHOD_MAPPER_TYPE_NAME "ExternMethodMapper"
+#define RX_EXTERN_METHOD_MAPPER_TYPE_ID 0xc0000d5
+#define RX_EXTERN_EVENT_MAPPER_TYPE_NAME "ExternEventMapper"
+#define RX_EXTERN_EVENT_MAPPER_TYPE_ID 0xc0000db
+//#define RX_SYSTEM_MAPPER_TYPE_NAME "SystemMapper"
+//#define RX_SYSTEM_MAPPER_TYPE_ID 0xc000046
 #define RX_EXTERN_SOURCE_TYPE_NAME "ExternSource"
 #define RX_EXTERN_SOURCE_TYPE_ID 0xc000034
-#define RX_USER_SOURCE_TYPE_NAME "UserSource"
-#define RX_USER_SOURCE_TYPE_ID 0xc00004a
-#define RX_PARENT_SOURCE_TYPE_NAME "ParentSource"
+//#define RX_USER_SOURCE_TYPE_NAME "UserSource"
+//#define RX_USER_SOURCE_TYPE_ID 0xc00004a
+#define RX_PARENT_SOURCE_TYPE_NAME "StructuralSource"
 #define RX_PARENT_SOURCE_TYPE_ID 0xc000047
-#define RX_EXTERN_PARENT_SOURCE_TYPE_NAME "ExternParentSource"
+#define RX_VARIABLE_SOURCE_TYPE_NAME "VariableSource"
+#define RX_VARIABLE_SOURCE_TYPE_ID 0xc0000d9
+#define RX_EXTERN_PARENT_SOURCE_TYPE_NAME "ExternStructuralSource"
 #define RX_EXTERN_PARENT_SOURCE_TYPE_ID 0xc00004e
-#define RX_SYSTEM_SOURCE_TYPE_NAME "SystemSource"
-#define RX_SYSTEM_SOURCE_TYPE_ID 0xc000048
+//#define RX_SYSTEM_SOURCE_TYPE_NAME "SystemSource"
+//#define RX_SYSTEM_SOURCE_TYPE_ID 0xc000048
 #define RX_REGISTER_SOURCE_TYPE_NAME "RegisterSource"
 #define RX_REGISTER_SOURCE_TYPE_ID 0xc000035
 #define RX_REGISTER_VARIABLE_TYPE_NAME "RegisterVariable"
@@ -497,16 +511,34 @@
 
 #define RX_OPCUA_MAPPER_BASE_TYPE_NAME "OpcMapperBase"
 #define RX_OPCUA_MAPPER_BASE_TYPE_ID 0xc0000a1
-
 #define RX_OPCUA_SIMPLE_MAPPER_TYPE_NAME "OpcSimpleMapper"
 #define RX_OPCUA_SIMPLE_MAPPER_TYPE_ID 0xc0000a0
+
+#define RX_OPCUA_METHOD_MAPPER_BASE_TYPE_NAME "OpcMethodMapperBase"
+#define RX_OPCUA_METHOD_MAPPER_BASE_TYPE_ID 0xc0000d6
+#define RX_OPCUA_SIMPLE_METHOD_MAPPER_TYPE_NAME "OpcSimpleMethodMapper"
+#define RX_OPCUA_SIMPLE_METHOD_MAPPER_TYPE_ID 0xc0000d2
  
+
+#define RX_OPCUA_EVENT_MAPPER_BASE_TYPE_NAME "OpcEventMapperBase"
+#define RX_OPCUA_EVENT_MAPPER_BASE_TYPE_ID 0xc0000dc
+#define RX_OPCUA_SIMPLE_EVENT_MAPPER_TYPE_NAME "OpcSimpleEventMapper"
+#define RX_OPCUA_SIMPLE_EVENT_MAPPER_TYPE_ID 0xc0000dd
 
 #define RX_OPCUA_SOURCE_BASE_TYPE_NAME "OpcSourceBase"
 #define RX_OPCUA_SOURCE_BASE_TYPE_ID 0xc0000a5
-
 #define RX_OPCUA_SIMPLE_SOURCE_TYPE_NAME "OpcSimpleSource"
 #define RX_OPCUA_SIMPLE_SOURCE_TYPE_ID 0xc0000a6
+
+#define RX_OPCUA_METHOD_BASE_TYPE_NAME "OpcMethodBase"
+#define RX_OPCUA_METHOD_BASE_TYPE_ID 0xc0000d7
+#define RX_OPCUA_SIMPLE_METHOD_TYPE_NAME "OpcSimpleMethod"
+#define RX_OPCUA_SIMPLE_METHOD_TYPE_ID 0xc0000d8
+
+#define RX_OPCUA_EVENT_BASE_TYPE_NAME "OpcEventBase"
+#define RX_OPCUA_EVENT_BASE_TYPE_ID 0xc0000de
+#define RX_OPCUA_SIMPLE_EVENT_TYPE_NAME "OpcSimpleEvent"
+#define RX_OPCUA_SIMPLE_EVENT_TYPE_ID 0xc0000df
 
 #define RX_LINEAR_SCALING_FILTER_TYPE_NAME "LinearScaling"
 #define RX_LINEAR_SCALING_FILTER_TYPE_ID 0xc000039
@@ -648,7 +680,13 @@
 #define RX_PEER_STATUS_TYPE_NAME "PeerStatus"
 #define RX_PEER_STATUS_TYPE_ID 0xc0000b0
 
-// last is 0xc0000d1!!!! 
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+// last is 0xc0000df!!!! 
+//////////////////////////////////////////////
+//////////////////////////////////////////////
+//////////////////////////////////////////////
 
 
 //Main messages

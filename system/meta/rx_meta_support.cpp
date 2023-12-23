@@ -248,7 +248,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_stack().push_back(runtime_data_prototype());
 }
 
-runtime_data_prototype construct_context::pop_rt_name ()
+rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(*runtime_stack().rbegin());
@@ -1082,6 +1082,89 @@ rx_result runtime_data_prototype::add_value_block (const string_type& name, std:
 	}
 }
 
+rx_platform::meta::runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
+{
+	runtime_data_prototype ret;
+	for (auto& item : items)
+	{
+		size_t idx = (item.index >> rt_type_shift);
+		switch (item.index & rt_type_mask)
+		{
+		case rt_const_index_type:
+			{
+				members_index_type new_idx= static_cast<members_index_type>(ret.const_values.size());
+				ret.const_values.push_back(std::move(const_values[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_const_index_type });
+			}
+			break;
+		case rt_value_index_type:
+			{
+				members_index_type new_idx = static_cast<members_index_type>(ret.values.size());
+				ret.values.push_back(std::move(values[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_value_index_type });
+			}
+			break;
+		case rt_variable_index_type:
+			{
+				members_index_type new_idx = static_cast<members_index_type>(ret.variables.size());
+				ret.variables.push_back(std::move(variables[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_variable_index_type });
+			}
+			break;
+		case rt_struct_index_type:
+			{
+				members_index_type new_idx = static_cast<members_index_type>(ret.structs.size());
+				ret.structs.push_back(std::move(structs[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_struct_index_type });
+			}
+			break;
+		case rt_source_index_type:
+			{
+				members_index_type new_idx = static_cast<members_index_type>(ret.sources.size());
+				ret.sources.push_back(std::move(sources[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_source_index_type });
+			}
+			break;
+		case rt_mapper_index_type:
+			{
+				members_index_type new_idx = static_cast<members_index_type>(ret.mappers.size());
+				ret.mappers.push_back(std::move(mappers[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_mapper_index_type });
+			}
+			break;
+		case rt_filter_index_type:
+			{
+				members_index_type new_idx = static_cast<members_index_type>(ret.filters.size());
+				ret.filters.push_back(std::move(filters[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_filter_index_type });
+			}
+			break;
+		case rt_event_index_type:
+			{
+				members_index_type new_idx = static_cast<members_index_type>(ret.events.size());
+				ret.events.push_back(std::move(events[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_event_index_type });
+			}
+			break;
+		case rt_value_data_index_type:
+			{
+				members_index_type new_idx = static_cast<members_index_type>(ret.blocks.size());
+				ret.blocks.push_back(std::move(blocks[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_value_data_index_type });
+			}
+			break;
+		case rt_variable_data_index_type:
+			{
+				members_index_type new_idx = static_cast<members_index_type>(ret.variable_blocks.size());
+				ret.variable_blocks.push_back(std::move(variable_blocks[idx]));
+				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_variable_data_index_type });
+			}
+			break;
+		}
+	}
+	return ret;
+}
+
 template <class runtime_data_type>
 runtime_item::smart_ptr create_runtime_data_from_prototype(runtime_data_prototype& prototype)
 {
@@ -1111,8 +1194,10 @@ runtime_item::smart_ptr create_runtime_data_from_prototype(runtime_data_prototyp
 }
 
 
-runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype)
+runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& vprototype)
 {
+	runtime_data_prototype prototype = vprototype.strip_normalized_prototype();
+
 	uint_fast8_t effective_type = (prototype.variables.empty() ? rt_bit_none : rt_bit_has_variables)
 		| (prototype.structs.empty() ? rt_bit_none : rt_bit_has_structs)
 		| (prototype.sources.empty() ? rt_bit_none : rt_bit_has_sources)
@@ -1891,5 +1976,4 @@ rx_result config_part_container::deserialize (const string_type& name, base_meta
 
 } // namespace meta
 } // namespace rx_platform
-
 

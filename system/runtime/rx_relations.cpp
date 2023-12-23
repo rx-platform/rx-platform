@@ -927,7 +927,7 @@ rx_value relation_value_data::get_value (runtime_process_context* ctx) const
 		return value;
 }
 
-rx_result relation_value_data::write_value (write_data&& data, structure::write_task* task, runtime_process_context* ctx)
+rx_result relation_value_data::write_value (context_write_data&& data, structure::write_task* task, runtime_process_context* ctx)
 {
 	if (ctx->get_mode().is_off())
 		return "Runtime if in Off state!";
@@ -939,7 +939,7 @@ rx_result relation_value_data::write_value (write_data&& data, structure::write_
 	return parent->write_tag(handle, std::move(data), task, ctx);
 }
 
-rx_result relation_value_data::execute (execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
+rx_result relation_value_data::execute (context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
 {
 	security::secured_scope _(data.identity);
 	return parent->execute_tag(handle, std::move(data), task, ctx);
@@ -980,14 +980,21 @@ rx_result_with<relations::relation_value_data*> relation_connections::connect_ta
 	return emplace_result.get();
 }
 
-rx_result relation_connections::write_tag (runtime_handle_t item, write_data&& data, structure::write_task* task, runtime_process_context* ctx)
+rx_result relation_connections::write_tag (runtime_handle_t item, context_write_data&& data, structure::write_task* task, runtime_process_context* ctx)
 {
 	if (connector_)
 	{
 		auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
 		pending_tasks_.emplace(new_trans, task);
 		data.transaction_id = new_trans;
-		auto result = connector_->write_tag(new_trans, data.test, item, std::move(data.value));
+		rx_result result;
+		if (std::holds_alternative<rx_simple_value>(data.data))
+			result = connector_->write_tag(new_trans, data.test, item, std::get<rx_simple_value>(std::move(data.data)));
+		else if (std::holds_alternative<data::runtime_values_data>(data.data))
+			result = connector_->write_tag(new_trans, data.test, item, std::get<data::runtime_values_data>(std::move(data.data)));
+		else
+			result = RX_INTERNAL_ERROR;
+
 		if (!result)
 			pending_tasks_.erase(new_trans);
 
@@ -999,7 +1006,7 @@ rx_result relation_connections::write_tag (runtime_handle_t item, write_data&& d
 	}
 }
 
-rx_result relation_connections::execute_tag (runtime_handle_t item, execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
+rx_result relation_connections::execute_tag (runtime_handle_t item, context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
 {
 	if (connector_)
 	{
@@ -1010,7 +1017,9 @@ rx_result relation_connections::execute_tag (runtime_handle_t item, execute_data
 		if(std::holds_alternative<rx_simple_value>(data.data))
 			result = connector_->execute_tag(new_trans, data.test, item, std::move(std::get<rx_simple_value>(data.data)));
 		else if (std::holds_alternative<data::runtime_values_data>(data.data))
-				result = connector_->execute_tag(new_trans, data.test, item, std::move(std::get<data::runtime_values_data>(data.data)));
+			result = connector_->execute_tag(new_trans, data.test, item, std::move(std::get<data::runtime_values_data>(data.data)));
+		else
+			result = RX_INTERNAL_ERROR;
 
 		if (!result)
 			pending_execute_tasks_.erase(new_trans);

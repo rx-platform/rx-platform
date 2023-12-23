@@ -94,6 +94,7 @@ void assign_vunion(vunion_type& what, uint64_t val);
 void assign_vunion(vunion_type& what, rx_time_struct val);
 void assign_vunion(vunion_type& what, float val);
 void assign_vunion(vunion_type& what, double val);
+void assign_vunion(vunion_type& what, ua_extension* val);
 
 void assign_vunion(vunion_type& what, const string_type& val);
 
@@ -139,6 +140,8 @@ public:
 
 	variant_type(rx_time val);
 
+	variant_type(std::vector<std::unique_ptr<ua_extension> >& val);
+
 	~variant_type();
 
 	variant_type& operator=(const variant_type& right);
@@ -157,8 +160,10 @@ public:
 	void to_string(string_type& str);
 
 	bool from_rx_value(const values::rx_value& value, uint8_t hint = 0, uint16_t ns = 0);
+	bool from_rx_value(const values::rx_simple_value& value, uint8_t hint = 0, uint16_t ns = 0);
 
 	bool fill_rx_value(values::rx_value& value) const;
+	bool fill_rx_value(values::rx_simple_value& value) const;
 
 	const uint8_t get_type() const;
 

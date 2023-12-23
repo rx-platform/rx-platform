@@ -161,6 +161,20 @@ void data_controler::write_item (value_handle_type handle, rx_simple_value val, 
 	}
 }
 
+void data_controler::write_item (value_handle_type handle, data::runtime_values_data val, runtime_transaction_id_t id)
+{
+	auto ex_handle = value_handle_extended::fill_from_handle(handle);
+	auto it = sources_.find(ex_handle.source);
+	if (it != sources_.end())
+	{
+		it->second.source->write_item(ex_handle, std::move(val), id);
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
+}
+
 void data_controler::execute_item (value_handle_type handle, values::rx_simple_value data, runtime_transaction_id_t id)
 {
 	auto ex_handle = value_handle_extended::fill_from_handle(handle);

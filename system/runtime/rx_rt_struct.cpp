@@ -235,11 +235,6 @@ rx_result variable_data::write_value (write_data&& data, write_task* task, runti
 	return result;
 }
 
-rx_result variable_data::execute (execute_data&& data, execute_task* task, runtime_process_context* ctx)
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
 rx_result variable_data::internal_initialize_runtime (runtime::runtime_init_context& ctx, bool in_complex)
 {
 
@@ -684,21 +679,34 @@ rx_result mapper_data::initialize_runtime (runtime::runtime_init_context& ctx)
 	rx_value_t val_type=ctx.structure.get_current_item().get_local_as<rx_value_t>("ValueType", RX_NULL_TYPE);
 	if(val_type!= RX_NULL_TYPE)
 		mapped_value.value.convert_to(val_type);
-	auto cur_var = ctx.variables.get_current_variable();
-	if (cur_var.index() == 0)
+	if (ctx.method)
 	{
-		io_.set_complex(false);
-		my_variable_.variable_ptr = std::get<0>(cur_var);
+		io_.set_in_method(true);
+		my_owner_.method_ptr = ctx.method;
 	}
-	else if (cur_var.index() == 1)
+	else if (ctx.event)
 	{
-		io_.set_complex(true);
-		my_variable_.block_ptr = std::get<1>(cur_var);
+		io_.set_in_event(true);
+		my_owner_.event_ptr = ctx.event;
 	}
 	else
 	{
-		RX_ASSERT(false);// shouldn't happen
-		return RX_INTERNAL_ERROR;
+		auto cur_var = ctx.variables.get_current_variable();
+		if (cur_var.index() == 0)
+		{
+			io_.set_complex(false);
+			my_owner_.variable_ptr = std::get<0>(cur_var);
+		}
+		else if (cur_var.index() == 1)
+		{
+			io_.set_complex(true);
+			my_owner_.block_ptr = std::get<1>(cur_var);
+		}
+		else
+		{
+			RX_ASSERT(false);// shouldn't happen
+			return RX_INTERNAL_ERROR;
+		}
 	}
 	auto& var_val = get_variable_value();
 	if (val_type == RX_NULL_TYPE)
@@ -730,7 +738,7 @@ rx_result mapper_data::deinitialize_runtime (runtime::runtime_deinit_context& ct
 	if (result)
 		result = item->deinitialize_runtime(ctx);
 	mapper_ptr->container_ = nullptr;
-	my_variable_ = variable_owner_ptr();
+	my_owner_ = mapped_owner_ptr();
 	return result;
 }
 
@@ -760,9 +768,9 @@ rx_result mapper_data::stop_runtime (runtime::runtime_stop_context& ctx)
 
 void mapper_data::process_update (values::rx_value&& value)
 {
-	if (mapper_ptr && context_)
+	if (mapper_ptr && context_ && !io_.get_in_method() && !io_.get_in_event())
 	{
-		if (value.is_null() && my_variable_.variable_ptr)
+		if (value.is_null() && my_owner_.variable_ptr)
 			value = context_->adapt_value(get_variable_value());
 		rx_result result;
 		rx_simple_value prepared_value = value.to_simple();
@@ -803,81 +811,53 @@ void mapper_data::process_update (values::rx_value&& value)
 
 void mapper_data::process_write (write_data&& data)
 {
-	if (my_variable_.variable_ptr)
+	if (!io_.get_in_method() && !io_.get_in_event())
 	{
-		auto trans_id = data.transaction_id;
-		rx_value prepared_value = rx_value(std::move(data.value), rx_time());
-		if (!prepared_value.convert_to(get_variable_value().get_type()))
+		if (my_owner_.variable_ptr)
 		{
-			if (rx_is_debug_instance())
-			{
-				static string_type message;
-				static char* message_buffer = nullptr;
-				if (message.empty())
-				{
-					std::ostringstream ss;
-					ss << "Mapper "
-						<< full_path
-						<< " received write result for id:%08X - "
-						<< RX_INVALID_CONVERSION;
-					message = ss.str();
-					message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/];
-				}
-				sprintf(message_buffer, message.c_str(), trans_id);
-				RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
-			}
-			mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, trans_id, context_);
-		}
-		else
-		{
-			rx_result result;
-			auto& filters = item->get_filters();
-			if (!filters.empty())
-			{
-				for (auto& filter : filters)
-				{
-					if (filter.is_input())
-					{
-						result = filter.filter_input(prepared_value);
-						if (!result)
-							break;
-					}
-				}
-				if (!result)
-				{
-					result.register_error("Unable to filter output value.");
-				}
-			}
-			if (!result)
+			auto trans_id = data.transaction_id;
+			rx_value prepared_value = rx_value(std::move(data.value), rx_time());
+			if (!prepared_value.convert_to(get_variable_value().get_type()))
 			{
 				if (rx_is_debug_instance())
 				{
 					static string_type message;
-					char* message_buffer = nullptr;
+					static char* message_buffer = nullptr;
 					if (message.empty())
 					{
 						std::ostringstream ss;
 						ss << "Mapper "
 							<< full_path
-							<< " received write result for id:%08X - %s";
+							<< " received write result for id:%08X - "
+							<< RX_INVALID_CONVERSION;
 						message = ss.str();
+						message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/];
 					}
-					string_type error = result.errors_line();
-					message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
-					sprintf(message_buffer, message.c_str(), trans_id, error.c_str());
+					sprintf(message_buffer, message.c_str(), trans_id);
 					RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
-					delete[] message_buffer;
 				}
-				mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
+				mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, trans_id, context_);
 			}
 			else
 			{
-				auto task = new mapper_write_task(this, trans_id);
-				data.value = prepared_value.to_simple();
-				if(io_.get_complex())
-					result = my_variable_.block_ptr->write_value(std::move(data), task, context_);
-				else
-					result = my_variable_.variable_ptr->write_value(std::move(data), task, context_);
+				rx_result result;
+				auto& filters = item->get_filters();
+				if (!filters.empty())
+				{
+					for (auto& filter : filters)
+					{
+						if (filter.is_input())
+						{
+							result = filter.filter_input(prepared_value);
+							if (!result)
+								break;
+						}
+					}
+					if (!result)
+					{
+						result.register_error("Unable to filter output value.");
+					}
+				}
 				if (!result)
 				{
 					if (rx_is_debug_instance())
@@ -900,44 +880,160 @@ void mapper_data::process_write (write_data&& data)
 					}
 					mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
 				}
+				else
+				{
+					auto task = new mapper_write_task(this, trans_id);
+					data.value = prepared_value.to_simple();
+					if (io_.get_complex())
+						result = my_owner_.block_ptr->write_value(std::move(data), task, context_);
+					else
+						result = my_owner_.variable_ptr->write_value(std::move(data), task, context_);
+					if (!result)
+					{
+						if (rx_is_debug_instance())
+						{
+							static string_type message;
+							char* message_buffer = nullptr;
+							if (message.empty())
+							{
+								std::ostringstream ss;
+								ss << "Mapper "
+									<< full_path
+									<< " received write result for id:%08X - %s";
+								message = ss.str();
+							}
+							string_type error = result.errors_line();
+							message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
+							sprintf(message_buffer, message.c_str(), trans_id, error.c_str());
+							RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
+							delete[] message_buffer;
+						}
+						mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
+					}
+				}
 			}
 		}
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
+}
+
+void mapper_data::process_execute (execute_data&& data)
+{
+	if (io_.get_in_method())
+	{
+		if (my_owner_.method_ptr)
+		{
+			auto trans_id = data.transaction_id;
+			auto task = new mapper_execute_task(this, trans_id);
+			context_execute_data ctx_data;
+			ctx_data.data = std::move(data.value);
+			ctx_data.identity = data.identity;
+			ctx_data.internal = data.internal;
+			ctx_data.test = data.test;
+			ctx_data.transaction_id = trans_id;
+
+			auto result = my_owner_.method_ptr->execute(std::move(ctx_data), task, context_);
+			if (!result)
+			{
+				if (rx_is_debug_instance())
+				{
+					static string_type message;
+					char* message_buffer = nullptr;
+					if (message.empty())
+					{
+						std::ostringstream ss;
+						ss << "Mapper "
+							<< full_path
+							<< " received execute result for id:%08X - %s";
+						message = ss.str();
+					}
+					string_type error = result.errors_line();
+					message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
+					sprintf(message_buffer, message.c_str(), trans_id, error.c_str());
+					RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
+					delete[] message_buffer;
+				}
+				mapper_ptr->mapper_execute_result_received(std::move(result), values::rx_simple_value(), trans_id, context_);
+			}
+		}
+	}
+	else
+	{
+		RX_ASSERT(false);
 	}
 }
 
 void mapper_data::mapper_write_pending (write_data&& data)
 {
-	write_data_struct<mapper_data> reg_data;
-	reg_data.whose = this;
-	if (data.identity == 0)
+	if (!io_.get_in_method() && !io_.get_in_event())
 	{
-		data.identity = rx_security_context();
-	}
-	reg_data.data = std::move(data);
+		write_data_struct<mapper_data> reg_data;
+		reg_data.whose = this;
+		if (data.identity == 0)
+		{
+			data.identity = rx_security_context();
+		}
+		reg_data.data = std::move(data);
 
-	if (context_)
-		context_->mapper_write_pending(std::move(reg_data));
+		if (context_)
+			context_->mapper_write_pending(std::move(reg_data));
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
+}
+
+void mapper_data::mapper_execute_pending (execute_data&& data)
+{
+	if (io_.get_in_method())
+	{
+		execute_data_struct<mapper_data> reg_data;
+		reg_data.whose = this;
+		if (data.identity == 0)
+		{
+			data.identity = rx_security_context();
+		}
+		reg_data.data = std::move(data);
+
+		if (context_)
+			context_->mapper_execute_pending(std::move(reg_data));
+	}
 }
 
 rx_value mapper_data::get_mapped_value () const
 {
-	if (my_variable_.variable_ptr && context_)
+	if (!io_.get_in_method() && !io_.get_in_event())
 	{
-		return context_->adapt_value(get_variable_value());
+		if (my_owner_.variable_ptr && context_)
+		{
+			return context_->adapt_value(get_variable_value());
+		}
 	}
 	else
 	{
-		rx_value val;
-		val.set_time(rx_time::now());
-		val.set_quality(RX_BAD_QUALITY_OFFLINE);
-		return val;
+		if (my_owner_.method_ptr && context_)
+		{
+			return my_owner_.method_ptr->get_value(context_);
+		}
 	}
+
+	rx_value val;
+	val.set_time(rx_time::now());
+	val.set_quality(RX_BAD_QUALITY_OFFLINE);
+	return val;
 }
 
 rx_result mapper_data::value_changed (rx_value&& val)
 {
-	if (context_)
-		context_->mapper_update_pending({ this, std::move(val) });
+	if (!io_.get_in_method() && !io_.get_in_event())
+	{
+		if (context_)
+			context_->mapper_update_pending({ this, std::move(val) });
+	}
 	return true;
 }
 
@@ -983,6 +1079,63 @@ void mapper_data::process_write_result (rx_result&& result, runtime_transaction_
 			}
 		}
 		mapper_ptr->mapper_result_received(std::move(result), id, context_);
+	}
+}
+
+void mapper_data::process_event (values::rx_simple_value data)
+{
+	if (mapper_ptr)
+	{
+		if (rx_is_debug_instance())
+		{
+			static string_type message;
+			static char* message_buffer = nullptr;
+			if (message.empty())
+			{
+				std::ostringstream ss;
+				ss << "Mapper "
+					<< full_path
+					<< " received event";
+				message = ss.str() + " - OK";
+				message_buffer = new char[message.size() + 0x20/*This will hold digits and just a bit reserve*/];
+			}
+		}
+		mapper_ptr->mapped_event_fired(std::move(data), context_);
+	}
+}
+
+void mapper_data::process_execute_result (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id)
+{
+	if (mapper_ptr)
+	{
+		if (rx_is_debug_instance())
+		{
+			static string_type message;
+			static char* message_buffer = nullptr;
+			if (message.empty())
+			{
+				std::ostringstream ss;
+				ss << "Mapper "
+					<< full_path
+					<< " received execute result for id:%08X";
+				message = ss.str() + " - OK";
+				message_buffer = new char[message.size() + 0x20/*This will hold digits and just a bit reserve*/];
+			}
+			if (result)
+			{
+				sprintf(message_buffer, message.c_str(), id);
+				RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
+			}
+			else
+			{
+				string_type error = " - "s + result.errors_line();
+				char* error_message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
+				sprintf(error_message_buffer, (message + " - %s").c_str(), id, error.c_str());
+				RUNTIME_LOG_DEBUG("mapper_runtime", 500, error_message_buffer);
+				delete[] error_message_buffer;
+			}
+		}
+		mapper_ptr->mapper_execute_result_received(std::move(result), std::move(out_data), id, context_);
 	}
 }
 
@@ -1043,17 +1196,59 @@ void mapper_data::object_state_changed (runtime_process_context* ctx)
 const rx_value& mapper_data::get_variable_value () const
 {
 	static rx_value g_empty;
-	if (io_.get_complex())
+	if (!io_.get_in_method() && !io_.get_in_event())
 	{
-		if (my_variable_.block_ptr)
-			return my_variable_.block_ptr->variable.value;
+		if (io_.get_complex())
+		{
+			if (my_owner_.block_ptr)
+				return my_owner_.block_ptr->variable.value;
+		}
+		else
+		{
+			if (my_owner_.variable_ptr)
+				return my_owner_.variable_ptr->value;
+		}
+	}
+	return g_empty;
+}
+
+data::runtime_data_model mapper_data::get_method_inputs ()
+{
+	if (io_.get_in_method() && my_owner_.method_ptr)
+	{
+		return my_owner_.method_ptr->get_method_inputs();
 	}
 	else
 	{
-		if (my_variable_.variable_ptr)
-			return my_variable_.variable_ptr->value;
+		RX_ASSERT(false);
+		return data::runtime_data_model();
 	}
-	return g_empty;
+}
+
+data::runtime_data_model mapper_data::get_method_outputs ()
+{
+	if (io_.get_in_method() && my_owner_.method_ptr)
+	{
+		return my_owner_.method_ptr->get_method_outputs();
+	}
+	else
+	{
+		RX_ASSERT(false);
+		return data::runtime_data_model();
+	}
+}
+
+data::runtime_data_model mapper_data::get_event_arguments ()
+{
+	if (io_.get_in_event() && my_owner_.event_ptr)
+	{
+		return my_owner_.event_ptr->get_arguments();
+	}
+	else
+	{
+		RX_ASSERT(false);
+		return data::runtime_data_model();
+	}
 }
 
 
@@ -1428,11 +1623,20 @@ event_data::event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var, e
 void event_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
 	item->collect_data(data, type);
+	arguments.collect_data(data, type);
 }
 
 void event_data::fill_data (const data::runtime_values_data& data)
 {
 	item->fill_data(data);
+
+	auto child_it = data.children.find("Args");
+	if (child_it != data.children.end()
+		&& std::holds_alternative<data::runtime_values_data>(child_it->second))
+	{
+		const auto& simple_child = std::get<data::runtime_values_data>(child_it->second);
+		arguments.fill_data(simple_child);
+	}
 }
 
 rx_result event_data::collect_value (values::rx_simple_value& data, runtime_value_type type) const
@@ -1447,6 +1651,7 @@ rx_result event_data::fill_value (const values::rx_simple_value& data)
 
 rx_result event_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+	event_ptr->container_ = this;
 	ctx.structure.push_item(*item);
 	auto result = item->initialize_runtime(ctx);
 	if (result)
@@ -1462,6 +1667,7 @@ rx_result event_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx
 	{
 		result = item->deinitialize_runtime(ctx);
 	}
+	event_ptr->container_ = nullptr;
 	return result;
 }
 
@@ -1599,6 +1805,15 @@ rx_result event_data::get_local_value (string_view_type path, rx_simple_value& v
 void event_data::object_state_changed (runtime_process_context* ctx)
 {
 	item->object_state_changed(ctx);
+}
+
+data::runtime_data_model event_data::get_arguments ()
+{
+	return arguments.create_runtime_model();
+}
+
+void event_data::event_fired (rx_simple_value data)
+{
 }
 
 
@@ -2000,11 +2215,12 @@ void indirect_value_data::object_state_changed (runtime_process_context* ctx)
 		value.set_time(ctx->get_mode_time());
 }
 
-rx_result indirect_value_data::write_value (write_data&& data, runtime_process_context* ctx)
+rx_result indirect_value_data::write_value (context_write_data&& data, runtime_process_context* ctx)
 {
-	if (!data.value.convert_to(value.get_type()))
+	return RX_NOT_IMPLEMENTED;
+	/*if (!data.value.convert_to(value.get_type()))
 		return RX_INVALID_CONVERSION;
-	return true;
+	return true;*/
 }
 
 
@@ -2886,12 +3102,91 @@ rx_result block_data::create_safe_runtime_data (const data::runtime_values_data&
 				}
 				else
 				{
-					return RX_NOT_IMPLEMENTED;
+					std::vector<rx_simple_value> vals;
+					if (in.get_array_value(one.name, vals))
+					{
+						size_t dim = vals.size();
+						for (size_t i = 0; i < dim; i++)
+						{
+							values[one.index >> rt_type_shift].get_item((int)i)->set_value(std::move(vals[i]));
+						}
+					}
+					out.add_value(one.name, std::move(vals));
 				}
 			}
 			break;
 		case rt_data_index_type:
-			return RX_NOT_IMPLEMENTED;
+			{
+				if (!children[(one.index >> rt_type_shift)].is_array())
+				{
+					data::runtime_values_data temp;
+					auto it = in.children.find(one.name);
+					if (it != in.children.end())
+					{
+						if (std::holds_alternative<data::runtime_values_data>(it->second))
+						{
+							auto ret = children[one.index >> rt_type_shift].get_item()->create_safe_runtime_data(std::get< data::runtime_values_data>(it->second), temp);
+							if (!ret)
+								return ret;
+						}
+						out.add_child(one.name, std::move(temp));
+					}
+					else
+					{
+						return "Missing argument "s + one.name;
+					}
+				}
+				else
+				{
+					auto it = in.children.find(one.name);
+					if (it != in.children.end())
+					{
+						if (std::holds_alternative<std::vector<data::runtime_values_data> >(it->second))
+						{
+							auto& this_val = children[(one.index >> rt_type_shift)];
+							auto& childs = std::get<std::vector<data::runtime_values_data>>(it->second);
+							if (childs.empty())
+							{
+								RX_ASSERT(this_val.get_prototype());
+								auto one_block = *this_val.get_prototype();
+								this_val.declare_null_array(std::move(one_block));
+							}
+							else if ((int)childs.size() == this_val.get_size())
+							{
+								for (size_t i = 0; i < childs.size(); i++)
+								{
+									this_val.get_item((int)i)->fill_data(childs[i]);
+								}
+							}
+							else
+							{
+								const block_data* prototype = nullptr;
+								std::vector<block_data> temp;
+								for (int j = 0; j < (int)childs.size(); j++)
+								{
+									if (j < this_val.get_size())
+									{
+										this_val.get_item(j)->fill_data(childs[j]);
+										temp.push_back(*this_val.get_item(j));
+									}
+									else
+									{
+										if (prototype == nullptr)
+										{
+											RX_ASSERT(this_val.get_prototype());
+											prototype = this_val.get_prototype();
+										}
+										block_data one_block(*prototype);
+										one_block.fill_data(childs[j]);
+										temp.push_back(std::move(one_block));
+									}
+								}
+								this_val = std::move(temp);
+							}
+						}
+					}
+				}
+			}
 		default:
 			RX_ASSERT(false);
 			return RX_INTERNAL_ERROR;
@@ -3196,6 +3491,62 @@ rx_result block_data::fill_value_internal (rx_value_t val_type, const rx_value_u
 	return true;
 }
 
+data::runtime_data_model block_data::create_runtime_model ()
+{
+	data::runtime_data_model ret;
+	for (const auto& one : items)
+	{
+		auto element = std::make_unique<data::runtime_model_element>();
+		element->name = one.name;
+
+		switch (one.index & rt_type_mask)
+		{
+		case rt_const_index_type:
+			// simple value
+			{
+				auto& this_val = values[(one.index >> rt_type_shift)];
+				if (this_val.is_array())
+				{
+					std::vector<rx_simple_value> vals;
+					for (int i = 0; i < this_val.get_size(); i++)
+						vals.push_back(this_val.get_item(i)->value);
+					rx_simple_value temp;
+					temp.assign_array(vals);
+					element->value = std::move(temp);
+				}
+				else
+				{
+					element->value = this_val.get_item()->value;
+				}
+			}
+			break;
+		case rt_data_index_type:
+			{
+				auto& this_val = children[(one.index >> rt_type_shift)];
+				if (this_val.is_array())
+				{
+					std::vector<data::runtime_data_model> temp_array;
+
+					for (int i = 0; i < this_val.get_size(); i++)
+					{
+						temp_array.push_back(this_val.get_item(i)->create_runtime_model());
+					}
+					element->value = std::move(temp_array);
+				}
+				else
+				{
+					element->value = this_val.get_item()->create_runtime_model();
+				}
+			}
+			break;
+		default:
+			RX_ASSERT(false);
+		}
+		ret.elements.push_back(std::move(element));
+	}
+	return ret;
+}
+
 
 // Class rx_platform::runtime::structure::full_value_data 
 
@@ -3282,9 +3633,9 @@ rx_result value_block_data::initialize_runtime (runtime::runtime_init_context& c
 		if (ret)
 		{
 			struct_value.value = rx_timed_value(std::move(val), ctx.now);
-			ctx.bind_item(ctx.path.get_current_path(), tag_blocks::binded_callback_t(), [this](rx_simple_value& val, runtime::runtime_process_context* ctx)
+			ctx.bind_item(ctx.path.get_current_path(), tag_blocks::binded_callback_t(), [this](rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
 				{
-					return do_write_callback(val, ctx);
+					return do_write_callback(val, data, ctx);
 				});
 		}
 	}
@@ -3372,21 +3723,43 @@ block_data_references* value_block_data::get_tag_references ()
 	return tag_references_.get();
 }
 
-rx_result value_block_data::do_write_callback (rx_simple_value& val, runtime::runtime_process_context* ctx)
+rx_result value_block_data::do_write_callback (rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
 {
 	rx_result ret = struct_value.check_set_value(ctx, false, ctx->get_mode().is_test());
 	if (ret)
 	{
-		ret = block.fill_value(val);
-		if (ret)
+		if (data)
 		{
+			block_data temp = block;
+			temp.fill_data(*data);
 			rx_simple_value temp_val;
-			ret = block.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+			ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
 			if (ret)
 			{
-				if (tag_references_)
-					tag_references_->block_data_changed(block, ctx);
-				val = temp_val;
+				block = std::move(temp);
+				rx_simple_value temp_val;
+				ret = block.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+				if (ret)
+				{
+					if (tag_references_)
+						tag_references_->block_data_changed(block, ctx);
+					val = temp_val;
+				}
+			}
+		}
+		else
+		{
+			ret = block.fill_value(val);
+			if (ret)
+			{
+				rx_simple_value temp_val;
+				ret = block.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+				if (ret)
+				{
+					if (tag_references_)
+						tag_references_->block_data_changed(block, ctx);
+					val = temp_val;
+				}
 			}
 		}
 	}
@@ -3433,9 +3806,9 @@ rx_result variable_block_data::initialize_runtime (runtime::runtime_init_context
 	if (ret)
 	{
 		variable.value = rx_value(std::move(val), ctx.now);
-		ctx.bind_item(ctx.path.get_current_path(), tag_blocks::binded_callback_t(), [this](rx_simple_value& val, runtime::runtime_process_context* ctx)
+		ctx.bind_item(ctx.path.get_current_path(), tag_blocks::binded_callback_t(), [this](rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
 			{
-				return do_write_callback(val, ctx);
+				return do_write_callback(val, data, ctx);
 			});
 	}
 
@@ -3607,7 +3980,7 @@ variable_block_data_references* variable_block_data::get_tag_references ()
 	return tag_references_.get();
 }
 
-rx_result variable_block_data::do_write_callback (rx_simple_value& val, runtime::runtime_process_context* ctx)
+rx_result variable_block_data::do_write_callback (rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
 {
 	auto ret = block.fill_value(val);
 	if (ret)
@@ -3694,7 +4067,15 @@ rx_result block_data_references::get_value_ref (block_data& data, string_view_ty
 			return true;
 		}
 	}
-	return RX_INVALID_PATH;
+	// we didn't found it so add dummy reference just in case
+	std::unique_ptr<value_data> new_value = std::make_unique< value_data>();
+	new_value->value.set_time(ts);
+	new_value->value_opt[opt_is_constant] = true;
+	ref.ref_type = rt_value_ref_type::rt_value;
+	ref.ref_value_ptr.value = new_value.get();
+	references_.emplace(path, std::move(new_value));
+
+	return true;
 }
 
 void block_data_references::block_data_changed (const block_data& data, runtime::runtime_process_context* ctx)
@@ -3789,6 +4170,32 @@ void variable_block_data_references::block_data_changed (const block_data& data,
 //template class array_wrapper<struct_data>;
 //template class array_wrapper<variable_data>;
 //template class array_wrapper<block_data>;
+
+// Class rx_platform::runtime::structure::mapper_execute_task 
+
+mapper_execute_task::mapper_execute_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id)
+      : my_mapper_(my_mapper),
+        transaction_id_(trans_id)
+{
+}
+
+
+
+runtime_transaction_id_t mapper_execute_task::get_id () const
+{
+	return transaction_id_;
+}
+
+void mapper_execute_task::process_result (rx_result&& result, values::rx_simple_value&& data)
+{
+	my_mapper_->process_execute_result(std::move(result), std::move(data), transaction_id_);
+}
+
+void mapper_execute_task::process_result (rx_result&& result, data::runtime_values_data&& data)
+{
+	//my_mapper_->process_execute_result(std::move(result), std::move(data), transaction_id_);
+}
+
 
 } // namespace structure
 } // namespace runtime

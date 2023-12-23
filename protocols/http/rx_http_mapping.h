@@ -37,12 +37,12 @@
 #include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_http_server
 #include "http_server/rx_http_server.h"
 // rx_io_buffers
 #include "lib/rx_io_buffers.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/http_c/rx_http_c_impl.h"
@@ -103,7 +103,7 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
       static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
-      rx_protocol_result_t create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, phr_header* headers, size_t num_headers);
+      rx_protocol_result_t create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, phr_header* headers, size_t num_headers, std::byte* content_ptr, size_t content_max_size);
 
 
 
@@ -115,8 +115,6 @@ class rx_http_endpoint : public rx::pointers::reference_object
       rx_thread_handle_t executer_;
 
       runtime::items::port_runtime* port_;
-
-      bool upgraded_;
 
 
 };

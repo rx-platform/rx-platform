@@ -128,6 +128,7 @@ rx_result_struct c_stop_mapper(struct _rx_mapper_holder_stub* self);
 rx_result_struct c_deinit_mapper(struct _rx_mapper_holder_stub* self);
 void c_mapped_value_changed(struct _rx_mapper_holder_stub* self, struct full_value_type val, runtime_ctx_ptr ctx);
 void c_mapper_result_received(struct _rx_mapper_holder_stub* self, rx_result_struct result, runtime_transaction_id_t id, runtime_ctx_ptr ctx);
+void c_mapper_execute_result_received(struct _rx_mapper_holder_stub* self, rx_result_struct result, runtime_transaction_id_t id, struct typed_value_type out_val, runtime_ctx_ptr ctx);
 
 rx_result_struct c_init_mapper_stub(void* self, init_ctx_ptr ctx, uint8_t value_type)
 {
@@ -153,6 +154,10 @@ void c_mapped_value_changed_stub(void* self, struct full_value_type val, runtime
 void c_mapper_result_received_stub(void* self, rx_result_struct result, runtime_transaction_id_t id, runtime_ctx_ptr ctx)
 {
     c_mapper_result_received(self, result, id, ctx);
+}
+void c_mapper_execute_result_received_stub(void* self, rx_result_struct result, runtime_transaction_id_t id, struct typed_value_type out_val, runtime_ctx_ptr ctx)
+{
+    c_mapper_execute_result_received(self, result, id, out_val, ctx);
 }
 
 
@@ -298,6 +303,9 @@ rx_result_struct c_init_method(struct _rx_method_holder_stub* self, init_ctx_ptr
 rx_result_struct c_start_method(struct _rx_method_holder_stub* self, start_ctx_ptr ctx);
 rx_result_struct c_stop_method(struct _rx_method_holder_stub* self);
 rx_result_struct c_deinit_method(struct _rx_method_holder_stub* self);
+rx_result_struct c_execute_method(struct _rx_method_holder_stub* self
+    , runtime_transaction_id_t id, int test, rx_security_handle_t identity
+    , struct typed_value_type val, runtime_ctx_ptr ctx);
 
 rx_result_struct c_init_method_stub(void* self, init_ctx_ptr ctx)
 {
@@ -317,7 +325,12 @@ rx_result_struct c_deinit_method_stub(void* self)
     return c_deinit_method(self);
 }
 
-
+rx_result_struct c_execute_method_stub(void* self
+    , runtime_transaction_id_t id, int test, rx_security_handle_t identity
+    , struct typed_value_type val, runtime_ctx_ptr ctx)
+{
+    return c_execute_method(self, id, test, identity, val, ctx);
+}
 
 rx_result_struct c_init_program(struct _rx_program_holder_stub* self, init_ctx_ptr ctx);
 rx_result_struct c_start_program(struct _rx_program_holder_stub* self, start_ctx_ptr ctx);

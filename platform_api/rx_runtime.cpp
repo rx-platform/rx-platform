@@ -41,6 +41,7 @@
 
 rxRegisterSourceRuntime_t api_reg_source_func;
 rxRegisterMapperRuntime_t api_reg_mapper_func;
+rxRegisterMapperRuntime3_t api_reg_mapper3_func;
 rxRegisterFilterRuntime_t api_reg_filter_func;
 
 rxRegisterVariableRuntime_t api_reg_variable_func;
@@ -172,6 +173,12 @@ rx_result register_mapper_runtime(const rx_node_id& id, rx_mapper_constructor_t 
 {
     RX_ASSERT(api_reg_mapper_func != nullptr);
     auto ret = api_reg_mapper_func(get_rx_plugin(), id.c_ptr(), construct_func);
+    return ret;
+}
+rx_result register_mapper_runtime3(const rx_node_id& id, rx_mapper_constructor3_t construct_func)
+{
+    RX_ASSERT(api_reg_mapper3_func != nullptr);
+    auto ret = api_reg_mapper3_func(get_rx_plugin(), id.c_ptr(), construct_func);
     return ret;
 }
 rx_result register_filter_runtime(const rx_node_id& id, rx_filter_constructor_t construct_func)

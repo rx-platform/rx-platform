@@ -104,7 +104,7 @@ void platform_source::disconnect ()
 
 rx_result platform_source::source_write (write_data&& data, runtime_process_context* ctx)
 {
-    point_.write(data.value, data.transaction_id);
+    point_.write(std::move(data.value), data.transaction_id);
     return true;
 }
 

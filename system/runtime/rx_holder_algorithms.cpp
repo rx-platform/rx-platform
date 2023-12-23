@@ -40,6 +40,7 @@
 #include "rx_process_context.h"
 #include "system/runtime/rx_blocks.h"
 #include "lib/rx_ser_json.h"
+#include "system/runtime/rx_event_blocks.h"
 
 
 namespace rx_platform {
@@ -104,6 +105,18 @@ void runtime_holder_algorithms<typeT>::fire_job (typename typeT::RType& whose)
             executer->append(whose.my_job_ptr_);
         }
     }
+}
+
+template <class typeT>
+rx_result runtime_holder_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
+{
+    std::vector<rx_result> results;
+    for (const auto& item : items)
+    {
+        auto result = whose.tags_.connected_tags_.write_tag(transaction_id, test, item.first, data::runtime_values_data(item.second), monitor);
+        results.emplace_back(std::move(result));
+    }
+    return true;
 }
 
 template <class typeT>
@@ -377,12 +390,32 @@ void runtime_holder_algorithms<typeT>::read_value (const string_type& path, read
 }
 
 template <class typeT>
+void runtime_holder_algorithms<typeT>::write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback, typename typeT::RType& whose)
+{
+    auto connect_result = whose.tags_.connected_tags_.connect_tag(path, *whose.tags_.item_);
+    if (!connect_result)
+    {
+        connect_result.register_error("Error connecting to item "s + path);
+        callback(0, connect_result.errors());
+        return;
+    }
+    auto transaction_ptr = rx_create_reference<write_item_transaction>(std::move(callback));
+    auto result = whose.tags_.connected_tags_.write_tag(1, test, connect_result.value(), std::move(val), transaction_ptr);
+    if (!result)
+    {
+        whose.tags_.connected_tags_.disconnect_tag(connect_result.value());
+        (*transaction_ptr)(0, std::move(result));
+        return;
+    }
+}
+
+template <class typeT>
 void runtime_holder_algorithms<typeT>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback, typename typeT::RType& whose)
 {
     auto connect_result = whose.tags_.connected_tags_.connect_tag(path, *whose.tags_.item_);
     if (!connect_result)
     {
-        connect_result.register_error("Error writing to item "s + path);
+        connect_result.register_error("Error connecting to item "s + path);
         callback(0, connect_result.errors());
         return;
     }
@@ -513,6 +546,18 @@ rx_result runtime_holder_algorithms<typeT>::execute_item (runtime_transaction_id
 {
     auto result = whose.tags_.connected_tags_.execute_tag(transaction_id, test, handle, data, monitor);
     return result;
+}
+
+template <class typeT>
+rx_result_with<runtime_handle_t> runtime_holder_algorithms<typeT>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor, typename typeT::RType& whose)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+template <class typeT>
+rx_result runtime_holder_algorithms<typeT>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor, typename typeT::RType& whose)
+{
+    return RX_NOT_IMPLEMENTED;
 }
 
 template <>

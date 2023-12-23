@@ -572,7 +572,14 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 		else
 		{
 			result = init_storage("usr", config.storage.user_storage_reference);
-			get_user_storage();
+			if (!result)
+			{
+				result.register_error("Error initializing user storage:"s + result.errors_line());
+			}
+			else
+			{
+				get_user_storage();
+			}
 		}
 		if (result)
 		{
@@ -638,16 +645,18 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 		result.register_error("Error initializing system storage!");
 	}
 
-	get_test_storage();
+	if (result)
+	{
+		get_test_storage();
 
-	std::vector<rx_roles_storage_item_ptr> storage_roles;
+		std::vector<rx_roles_storage_item_ptr> storage_roles;
 
-	for (auto& one : storages_.registered_connections)
-		one.second->list_storage_roles(storage_roles);
-	result = rx_internal::rx_security::platform_security::instance().initialize_roles(std::move(storage_roles));
-	if (!result)
-		return result;
-
+		for (auto& one : storages_.registered_connections)
+			one.second->list_storage_roles(storage_roles);
+		result = rx_internal::rx_security::platform_security::instance().initialize_roles(std::move(storage_roles));
+		if (!result)
+			return result;
+	}
 	return result;
 }
 

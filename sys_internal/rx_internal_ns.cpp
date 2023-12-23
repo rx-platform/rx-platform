@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -45,13 +45,14 @@
 #include "system/runtime/rx_holder_algorithms.h"
 #include "model/rx_model_algorithms.h"
 #include "lib/rx_ser_bin.h"
+#include "system/runtime/rx_event_blocks.h"
 
 
 namespace rx_internal {
 
 namespace internal_ns {
 
-// Parameterized Class rx_internal::internal_ns::rx_item_implementation
+// Parameterized Class rx_internal::internal_ns::rx_item_implementation 
 
 template <class TImpl>
 rx_item_implementation<TImpl>::rx_item_implementation (TImpl impl)
@@ -125,6 +126,12 @@ void rx_item_implementation<TImpl>::read_value (const string_type& path, read_re
 }
 
 template <class TImpl>
+void rx_item_implementation<TImpl>::write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback)
+{
+	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, test, std::move(val), std::move(callback), *impl_);
+}
+
+template <class TImpl>
 void rx_item_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
 	runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_value(path, test, std::move(val), std::move(callback), *impl_);
@@ -158,6 +165,12 @@ template <class TImpl>
 rx_result rx_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::read_items(items, monitor, *impl_);
+}
+
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::write_items(transaction_id, test, items, monitor, *impl_);
 }
 
 template <class TImpl>
@@ -257,8 +270,20 @@ security::security_guard_ptr rx_item_implementation<TImpl>::get_security_guard (
 	return impl_->get_security_guard();
 }
 
+template <class TImpl>
+rx_result_with<runtime_handle_t> rx_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::connect_events(filter, monitor, *impl_);
+}
 
-// Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::disconnect_events(hndl, monitor, *impl_);
+}
+
+
+// Parameterized Class rx_internal::internal_ns::rx_meta_item_implementation 
 
 template <class TImpl>
 rx_meta_item_implementation<TImpl>::rx_meta_item_implementation (TImpl impl)
@@ -327,6 +352,11 @@ void rx_meta_item_implementation<TImpl>::read_value (const string_type& path, re
 }
 
 template <class TImpl>
+void rx_meta_item_implementation<TImpl>::write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback)
+{
+}
+
+template <class TImpl>
 void rx_meta_item_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
 	callback(0, RX_NOT_IMPLEMENTED);
@@ -370,6 +400,12 @@ std::vector<rx_result> rx_meta_item_implementation<TImpl>::disconnect_items (con
 
 template <class TImpl>
 rx_result rx_meta_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -474,8 +510,20 @@ security::security_guard_ptr rx_meta_item_implementation<TImpl>::get_security_gu
 	return impl_->security_guard;
 }
 
+template <class TImpl>
+rx_result_with<runtime_handle_t> rx_meta_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
 
-// Parameterized Class rx_internal::internal_ns::rx_other_implementation
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+
+// Parameterized Class rx_internal::internal_ns::rx_other_implementation 
 
 template <class TImpl>
 rx_other_implementation<TImpl>::rx_other_implementation (TImpl impl)
@@ -540,6 +588,11 @@ void rx_other_implementation<TImpl>::read_value (const string_type& path, read_r
 }
 
 template <class TImpl>
+void rx_other_implementation<TImpl>::write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback)
+{
+}
+
+template <class TImpl>
 void rx_other_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
 	callback(0, RX_NOT_IMPLEMENTED);
@@ -583,6 +636,12 @@ std::vector<rx_result> rx_other_implementation<TImpl>::disconnect_items (const s
 
 template <class TImpl>
 rx_result rx_other_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -671,8 +730,20 @@ security::security_guard_ptr rx_other_implementation<TImpl>::get_security_guard 
 	return impl_->get_security_guard();
 }
 
+template <class TImpl>
+rx_result_with<runtime_handle_t> rx_other_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
 
-// Parameterized Class rx_internal::internal_ns::rx_proxy_item_implementation
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+
+// Parameterized Class rx_internal::internal_ns::rx_proxy_item_implementation 
 
 template <class TImpl>
 rx_proxy_item_implementation<TImpl>::rx_proxy_item_implementation (TImpl impl)
@@ -735,6 +806,11 @@ void rx_proxy_item_implementation<TImpl>::read_value (const string_type& path, r
 }
 
 template <class TImpl>
+void rx_proxy_item_implementation<TImpl>::write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback)
+{
+}
+
+template <class TImpl>
 void rx_proxy_item_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
 }
@@ -777,6 +853,12 @@ std::vector<rx_result> rx_proxy_item_implementation<TImpl>::disconnect_items (co
 
 template <class TImpl>
 rx_result rx_proxy_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
   return RX_NOT_IMPLEMENTED;
 }
@@ -862,8 +944,20 @@ security::security_guard_ptr rx_proxy_item_implementation<TImpl>::get_security_g
 	return impl_->get_security_guard();
 }
 
+template <class TImpl>
+rx_result_with<runtime_handle_t> rx_proxy_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return RX_NOT_IMPLEMENTED;
+}
 
-// Parameterized Class rx_internal::internal_ns::rx_relation_item_implementation
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+
+// Parameterized Class rx_internal::internal_ns::rx_relation_item_implementation 
 
 template <class TImpl>
 rx_relation_item_implementation<TImpl>::rx_relation_item_implementation (TImpl impl)
@@ -930,6 +1024,11 @@ void rx_relation_item_implementation<TImpl>::read_value (const string_type& path
 }
 
 template <class TImpl>
+void rx_relation_item_implementation<TImpl>::write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback)
+{
+}
+
+template <class TImpl>
 void rx_relation_item_implementation<TImpl>::write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback)
 {
 	runtime::algorithms::runtime_relation_algorithms::write_value(path, std::move(val), std::move(callback), *impl_);
@@ -973,6 +1072,12 @@ std::vector<rx_result> rx_relation_item_implementation<TImpl>::disconnect_items 
 
 template <class TImpl>
 rx_result rx_relation_item_implementation<TImpl>::read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+rx_result rx_relation_item_implementation<TImpl>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -1059,6 +1164,18 @@ template <class TImpl>
 security::security_guard_ptr rx_relation_item_implementation<TImpl>::get_security_guard ()
 {
 	return impl_->get_security_guard();
+}
+
+template <class TImpl>
+rx_result_with<runtime_handle_t> rx_relation_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+rx_result rx_relation_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return RX_NOT_VALID_TYPE;
 }
 
 

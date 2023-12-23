@@ -71,6 +71,8 @@ class data_source
 
       virtual void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id) = 0;
 
+      virtual void write_item (const value_handle_extended& handle, data::runtime_values_data val, runtime_transaction_id_t id) = 0;
+
       virtual void execute_item (const value_handle_extended& handle, values::rx_simple_value data, runtime_transaction_id_t id) = 0;
 
       virtual void execute_item (const value_handle_extended& handle, data::runtime_values_data data, runtime_transaction_id_t id) = 0;
@@ -164,6 +166,8 @@ class data_controler
       value_handle_type add_item (const string_type& path, uint32_t rate, rx_mode_type mode);
 
       void write_item (value_handle_type handle, rx_simple_value val, runtime_transaction_id_t id);
+
+      void write_item (value_handle_type handle, data::runtime_values_data val, runtime_transaction_id_t id);
 
       void execute_item (value_handle_type handle, values::rx_simple_value data, runtime_transaction_id_t id);
 

@@ -40,37 +40,11 @@ namespace protocols {
 
 namespace rx_http {
 
-// Class protocols::rx_http::rx_http_port 
-
-rx_http_port::rx_http_port()
-{
-	construct_func = [this]()
-	{
-		auto rt = rx_create_reference<rx_http_endpoint>(this);
-		auto entry = rt->bind_endpoint([this](int64_t count)
-			{
-			},
-			[this](int64_t count)
-			{
-			});
-		return construct_func_type::result_type{ entry, rt };
-	};
-}
-
-
-
-void rx_http_port::stack_assembled ()
-{
-	auto result = listen(nullptr, nullptr);
-}
-
-
 // Class protocols::rx_http::rx_http_endpoint 
 
 rx_http_endpoint::rx_http_endpoint (runtime::items::port_runtime* port)
       : executer_(-1),
-        port_(port),
-        upgraded_(false)
+        port_(port)
 {
 	HTTP_LOG_DEBUG("rx_http_endpoint", 200, "HTTP communication server endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
@@ -107,7 +81,10 @@ rx_protocol_result_t rx_http_endpoint::received_function (rx_protocol_stack_endp
 			&minor_version, headers, &num_headers, prevbuflen);
 		if (pret > 0)
 		{
-			result = self->create_and_forward_request(method, method_len, path, path_len, headers, num_headers);
+			size_t parsed = pret;
+			std::byte* content_ptr = (std::byte*)self->receive_buffer_.buffer_ptr + parsed;
+			size_t content_max = self->receive_buffer_.size - parsed;
+			result = self->create_and_forward_request(method, method_len, path, path_len, headers, num_headers, content_ptr, content_max);
 			
 			rx_reinit_packet_buffer(&self->receive_buffer_);
 		}
@@ -161,7 +138,7 @@ void rx_http_endpoint::close_endpoint ()
 	port_ = nullptr;
 }
 
-rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, phr_header* headers, size_t num_headers)
+rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, phr_header* headers, size_t num_headers, std::byte* content_ptr, size_t content_max_size)
 {
 	http_request request;
 	if (method_len == 3)
@@ -251,6 +228,7 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 				request.params[param_name] = string_type(&path[idx_start], idx - idx_start);
 		}
 	}
+	size_t content_len = 0;
 	for (size_t i = 0; i < num_headers; i++)
 	{
 		string_type name;
@@ -259,7 +237,16 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 			name.assign(headers[i].name, headers[i].name_len);
 		if (headers[i].value_len > 0)
 			val.assign(headers[i].value, headers[i].value_len);
+		if (name == "Content-Length")
+		{
+			std::from_chars(headers[i].value, headers[i].value + headers[i].value_len, content_len);
+		}
 		request.headers.emplace(std::move(name), std::move(val));
+	}
+
+	if (content_len > 0 && content_max_size > 0)
+	{
+		request.content = byte_string(content_ptr, content_ptr + std::min(content_len, content_max_size));
 	}
 
 	request.whose = smart_this();
@@ -312,6 +299,31 @@ rx_result rx_http_endpoint::send_response (http_response response)
 		return "Error sending packet:"s + rx_protocol_error_message(proto_result);
 	}
 	return true;
+}
+
+
+// Class protocols::rx_http::rx_http_port 
+
+rx_http_port::rx_http_port()
+{
+	construct_func = [this]()
+	{
+		auto rt = rx_create_reference<rx_http_endpoint>(this);
+		auto entry = rt->bind_endpoint([this](int64_t count)
+			{
+			},
+			[this](int64_t count)
+			{
+			});
+		return construct_func_type::result_type{ entry, rt };
+	};
+}
+
+
+
+void rx_http_port::stack_assembled ()
+{
+	auto result = listen(nullptr, nullptr);
 }
 
 

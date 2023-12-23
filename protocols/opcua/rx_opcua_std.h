@@ -106,6 +106,8 @@ protected:
 
       std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep);
 
+      std::pair<opcua_result_t, runtime_transaction_id_t> execute (std::vector<variant_type> args, opcua_server_endpoint_ptr ep);
+
       void browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const;
 
       void translate (const relative_path& path, browse_path_result& results, opcua_browse_context* ctx) const;
@@ -223,6 +225,8 @@ class opcua_std_address_space : public opcua_address_space_base
 
       std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (const rx_node_id& node_id, attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep);
 
+      std::pair<opcua_result_t, runtime_transaction_id_t> execute (const rx_node_id& node_id, const rx_node_id& method_id, std::vector<variant_type> args, opcua_server_endpoint_ptr ep);
+
       void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const;
 
       void translate (const std::vector<browse_path>& browse_paths, std::vector<browse_path_result>& results, opcua_address_space_base* root) const;
@@ -236,6 +240,8 @@ class opcua_std_address_space : public opcua_address_space_base
       const locks::rw_slim_lock* get_lock () const;
 
       std::shared_ptr<opcua_node_base> connect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse);
+
+      bool disconnect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse);
 
       opcua_result_t register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val);
 

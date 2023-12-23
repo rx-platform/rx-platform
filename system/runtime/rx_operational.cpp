@@ -133,7 +133,7 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 				write_data data;
 				data.internal = true;
 				data.transaction_id = 0;
-				data.value = val;
+				data.value = std::move(val);
 				data.test = ctx->get_mode().is_test();
 				auto result = it_handles->second.ref_value_ptr.variable->write_value(std::move(data), nullptr, ctx);
 				return result;
@@ -639,7 +639,7 @@ void binded_tags::add_callbacks (runtime_handle_t handle, binded_callback_t call
 	}
 }
 
-rx_result binded_tags::do_write_callbacks (rt_value_ref ref, rx_simple_value& value, runtime_process_context* ctx)
+rx_result binded_tags::do_write_callbacks (rt_value_ref ref, rx_simple_value& value, data::runtime_values_data* data, runtime_process_context* ctx)
 {
 	switch (ref.ref_type)
 	{
@@ -653,7 +653,7 @@ rx_result binded_tags::do_write_callbacks (rt_value_ref ref, rx_simple_value& va
 					rx_result ret;
 					for (auto& cb : *it->second.write_callabcks)
 					{
-						ret = cb(value, ctx);
+						ret = cb(value, data, ctx);
 						if (!ret)
 							return ret;
 					}
@@ -671,7 +671,7 @@ rx_result binded_tags::do_write_callbacks (rt_value_ref ref, rx_simple_value& va
 						rx_result ret;
 						for (auto& cb : *it->second.write_callabcks)
 						{
-							ret = cb(value, ctx);
+							ret = cb(value, data, ctx);
 							if (!ret)
 								return ret;
 						}
@@ -683,6 +683,18 @@ rx_result binded_tags::do_write_callbacks (rt_value_ref ref, rx_simple_value& va
             ;
 	}
 	return true;
+}
+
+void binded_tags::method_changed (logic_blocks::method_data* whose, const rx_value& val)
+{
+	auto it = methods_.find(whose);
+	if (it != methods_.end())
+	{
+		for (auto& one : it->second.update_callabcks)
+		{
+			one(val);
+		}
+	}
 }
 
 
@@ -930,6 +942,13 @@ rx_result connected_tags::read_tag (runtime_handle_t item, tags_callback_ptr mon
 	return true;
 }
 
+rx_result connected_tags::write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data value, tags_callback_ptr monitor)
+{
+	write_requests_.push_back({ trans_id, item, test, std::move(value), monitor, rx_security_context() });
+	context_->tag_writes_pending();
+	return true;
+}
+
 rx_result connected_tags::write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor)
 {
 	write_requests_.push_back({ trans_id, item, test, std::move(value), monitor, rx_security_context() });
@@ -1024,7 +1043,11 @@ bool connected_tags::process_transactions ()
 	{
 		for (auto& one : write_requests_)
 		{
-			auto result = internal_write_tag(one.transaction_id, one.test, one.item, std::move(one.value), one.callback, one.identity);
+			rx_result result;
+			if(std::holds_alternative<rx_simple_value>(one.data))
+				result = internal_write_tag(one.transaction_id, one.test, one.item, std::get<rx_simple_value>(std::move(one.data)), one.callback, one.identity);
+			else
+				result = internal_write_tag(one.transaction_id, one.test, one.item, std::get<data::runtime_values_data>(std::move(one.data)), one.callback, one.identity);
 			if (!result)
 			{
 				write_results_[one.callback].emplace_back(write_result_data{ one.transaction_id, one.item, std::move(result) });
@@ -1151,17 +1174,11 @@ void connected_tags::write_result_arrived (tags_callback_ptr whose, write_result
 	context_->tag_updates_pending();
 }
 
-rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, rx_security_handle_t identity)
+rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data value, tags_callback_ptr monitor, rx_security_handle_t identity)
 {
 	auto it = handles_map_.find(item);
 	if (it != handles_map_.end())
 	{
-		write_data data;
-		data.transaction_id = trans_id;
-		data.value = std::move(value);
-		data.internal = false;
-		data.identity = identity;
-		data.test = test;
 		switch (it->second.reference.ref_type)
 		{
 		case rt_value_ref_type::rt_const_value:
@@ -1171,9 +1188,133 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 		case rt_value_ref_type::rt_value:
 			{
 				bool changed = false;
-				auto result = binded_->do_write_callbacks(it->second.reference, data.value, context_);
+				rx_simple_value val;
+				auto result = binded_->do_write_callbacks(it->second.reference, val, &value, context_);
 				if (result)
 				{
+					if (val.is_null())
+					{
+						val = value.get_value("val");
+					}
+					if(val.is_null())
+					{
+						result = "Conversion from data to value not implemented";
+					}
+					else
+					{
+						write_data data;
+						data.transaction_id = trans_id;
+						data.internal = false;
+						data.identity = identity;
+						data.test = test;
+						data.value = std::move(val);
+						result = it->second.reference.ref_value_ptr.value->write_value(std::move(data), context_, changed);
+						if (result && changed)
+						{
+							auto val = it->second.reference.ref_value_ptr.value->get_value(context_);
+							for (const auto& one : it->second.monitors)
+								next_send_[one].insert_or_assign(item, val);
+							if (binded_)
+								binded_->value_change(it->second.reference.ref_value_ptr.value, val);
+							context_->tag_updates_pending();
+						};
+					}
+				}
+				write_results_[monitor].emplace_back(write_result_data{ trans_id, item, std::move(result) });
+				return result;
+			}
+		case rt_value_ref_type::rt_variable:
+			{
+
+				if (context_->get_mode().is_off())
+					return "Runtime if in Off state!";
+				if (test != context_->get_mode().is_test())
+					return "Test mode mismatch!";
+
+				rx_simple_value val;
+				auto result = binded_->do_write_callbacks(it->second.reference, val, &value, context_);
+				if (result)
+				{
+					if (val.is_null())
+					{
+						val = value.get_value("val");
+					}
+					if (val.is_null())
+					{
+						result = "Conversion from data to value not implemented";
+					}
+					if (val.is_null())
+					{
+						result = "Conversion from data to value not implemented";
+					}
+					else
+					{
+						write_data data;
+						data.transaction_id = trans_id;
+						data.internal = false;
+						data.identity = identity;
+						data.test = test;
+						data.value = std::move(val);
+						result = it->second.reference.ref_value_ptr.variable->write_value(std::move(data)
+							, new connected_write_task(this, monitor, trans_id, item), context_);
+					}
+				}
+				return result;
+			}
+		case rt_value_ref_type::rt_relation:
+			{
+				return RX_NOT_SUPPORTED;
+			}
+		case rt_value_ref_type::rt_relation_value:
+			{
+				context_write_data data;
+				data.transaction_id = trans_id;
+				data.internal = false;
+				data.identity = identity;
+				data.test = test;
+				data.data = std::move(value);
+
+				auto result = it->second.reference.ref_value_ptr.relation_value->write_value(std::move(data)
+					, new connected_write_task(this, monitor, trans_id, item), context_);
+				return result;
+			}
+		default:
+			RX_ASSERT(false);
+			return "Internal error";
+		}
+	}
+	else
+	{
+
+		return "Invalid handle value!";
+	}
+	return true;
+}
+
+rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, rx_security_handle_t identity)
+{
+	auto it = handles_map_.find(item);
+	if (it != handles_map_.end())
+	{
+		switch (it->second.reference.ref_type)
+		{
+		case rt_value_ref_type::rt_const_value:
+		case rt_value_ref_type::rt_full_value:
+		case rt_value_ref_type::rt_method:
+			return "Unsupported!";
+		case rt_value_ref_type::rt_value:
+			{
+				bool changed = false;
+				auto result = binded_->do_write_callbacks(it->second.reference, value, nullptr, context_);
+				if (result)
+				{
+					write_data data;
+					data.transaction_id = trans_id;
+					data.value = std::move(value);
+					data.internal = false;
+					data.identity = identity;
+					data.test = test;
+
 					result = it->second.reference.ref_value_ptr.value->write_value(std::move(data), context_, changed);
 					if (result && changed)
 					{
@@ -1192,11 +1333,18 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 			{
 				if (context_->get_mode().is_off())
 					return "Runtime if in Off state!";
-				if (data.test != context_->get_mode().is_test())
+				if (test != context_->get_mode().is_test())
 					return "Test mode mismatch!";
-				auto result = binded_->do_write_callbacks(it->second.reference, data.value, context_);
+				auto result = binded_->do_write_callbacks(it->second.reference, value, nullptr, context_);
 				if (result)
 				{
+					write_data data;
+					data.transaction_id = trans_id;
+					data.value = std::move(value);
+					data.internal = false;
+					data.identity = identity;
+					data.test = test;
+
 					result = it->second.reference.ref_value_ptr.variable->write_value(std::move(data)
 						, new connected_write_task(this, monitor, trans_id, item), context_);
 				}
@@ -1204,6 +1352,13 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 			}
 		case rt_value_ref_type::rt_relation:
 			{
+				write_data data;
+				data.transaction_id = trans_id;
+				data.value = std::move(value);
+				data.internal = false;
+				data.identity = identity;
+				data.test = test;
+
 				auto result = it->second.reference.ref_value_ptr.relation->write_value(std::move(data), context_);
 				if (result)
 				{
@@ -1217,6 +1372,13 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 			}
 		case rt_value_ref_type::rt_relation_value:
 			{
+				context_write_data data;
+				data.transaction_id = trans_id;
+				data.data = std::move(value);
+				data.internal = false;
+				data.identity = identity;
+				data.test = test;
+
 				auto result = it->second.reference.ref_value_ptr.relation_value->write_value(std::move(data)
 					, new connected_write_task(this, monitor, trans_id, item), context_);
 				return result;
@@ -1245,7 +1407,7 @@ rx_result connected_tags::internal_execute_tag (runtime_transaction_id_t trans_i
 	auto it = handles_map_.find(item);
 	if (it != handles_map_.end())
 	{
-		execute_data data;
+		context_execute_data data;
 		data.transaction_id = trans_id;
 		data.data = std::move(args);
 		data.internal = false;
@@ -1288,7 +1450,7 @@ rx_result connected_tags::internal_execute_tag (runtime_transaction_id_t trans_i
 	auto it = handles_map_.find(item);
 	if (it != handles_map_.end())
 	{
-		execute_data data;
+		context_execute_data data;
 		data.transaction_id = trans_id;
 		data.data = std::move(args);
 		data.internal = false;
@@ -1435,6 +1597,27 @@ void connected_tags::object_state_changed (runtime_process_context* ctx)
 	}
 }
 
+void connected_tags::method_changed (logic_blocks::method_data* whose, const rx_value& val)
+{
+	auto it = methods_.find(whose);
+	if (it != methods_.end())
+	{
+		auto handle = it->second;
+		auto it_data = handles_map_.find(handle);
+		if (it_data != handles_map_.end())
+		{
+			if (!it_data->second.monitors.empty())
+			{
+				for (auto& one : it_data->second.monitors)
+				{
+					next_send_[one].insert_or_assign(handle, val);
+				}
+			}
+		}
+	}
+	context_->tag_updates_pending();
+}
+
 
 // Class rx_platform::runtime::tag_blocks::connected_write_task 
 
@@ -1481,6 +1664,7 @@ void connected_execute_task::process_result (rx_result&& result, values::rx_simp
 
 void connected_execute_task::process_result (rx_result&& result, data::runtime_values_data&& data)
 {
+	parent_->execute_result_arrived(callback_, execute_result_data{ id_, item_, std::move(result), std::move(data) });
 }
 
 

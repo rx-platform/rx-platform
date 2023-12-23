@@ -33,10 +33,10 @@
 
 
 
-// rx_write_transaction
-#include "system/runtime/rx_write_transaction.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
+// rx_write_transaction
+#include "system/runtime/rx_write_transaction.h"
 
 
 
@@ -63,6 +63,8 @@ class runtime_holder_algorithms
 
       static void fire_job (typename typeT::RType& whose);
 
+      static rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
+
       static rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
 
       static std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
@@ -85,6 +87,8 @@ class runtime_holder_algorithms
 
       static void read_value (const string_type& path, read_result_callback_t callback, const typename typeT::RType& whose);
 
+      static void write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback, typename typeT::RType& whose);
+
       static void write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback, typename typeT::RType& whose);
 
       static void read_struct (string_view_type path, read_struct_data data, const typename typeT::RType& whose);
@@ -100,6 +104,10 @@ class runtime_holder_algorithms
       static rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, data::runtime_values_data data, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
 
       static rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value data, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
+
+      static rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor, typename typeT::RType& whose);
+
+      static rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor, typename typeT::RType& whose);
 
 
   protected:

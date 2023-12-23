@@ -347,12 +347,16 @@ void runtime_scan_algorithms<typeT>::process_source_inputs (typename typeT::RTyp
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_mapper_inputs (typename typeT::RType& whose, runtime_process_context& ctx)
 {
-    auto mapper_writes = &ctx.get_mapper_writes();
-    while (!mapper_writes->empty())
+    auto to_process = ctx.get_mapper_inputs();
+    while (!to_process.first->empty() || !to_process.second->empty())
     {
-        for (auto& one : *mapper_writes)
+        for (auto& one : *to_process.first)
             one.whose->process_write(std::move(one.data));
-        mapper_writes = &ctx.get_mapper_writes();
+
+        for (auto& one : *to_process.second)
+            one.whose->process_execute(std::move(one.data));
+
+        to_process = ctx.get_mapper_inputs();
     }
 }
 

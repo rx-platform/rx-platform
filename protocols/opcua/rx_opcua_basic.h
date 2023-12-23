@@ -51,6 +51,7 @@
 namespace protocols {
 namespace opcua {
 namespace opcua_basic_server {
+class opcua_basic_method_mapper;
 class opcua_basic_mapper;
 class opcua_basic_server_port;
 
@@ -200,10 +201,50 @@ class opcua_basic_folder_node : public opcua_addr_space::opcua_object_node
 
 
 
+class opcua_basic_method_node : public opcua_addr_space::opcua_method_node  
+{
+
+  public:
+      opcua_basic_method_node();
+
+      ~opcua_basic_method_node();
+
+
+      std::pair<opcua_result_t, runtime_transaction_id_t> execute (std::vector<variant_type> args, opcua_server_endpoint_ptr ep);
+
+
+      const string_type& get_path () const
+      {
+        return path_;
+      }
+
+
+
+  protected:
+
+  private:
+
+
+      rx_reference<opcua_basic_method_mapper> mapper_;
+
+
+      string_type path_;
+
+
+    friend class opcua_basic_method_mapper;
+};
+
+
+
+
+
+
 class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_base  
 {
     typedef std::map<rx_node_id, std::shared_ptr<opcua_basic_node> > variable_nodes_type;
+    typedef std::map<rx_node_id, std::shared_ptr<opcua_method_node> >method_nodes_type;
     typedef std::map<rx_node_id, std::shared_ptr<opcua_basic_folder_node> > folder_nodes_type;
+    typedef std::map<rx_node_id, std::shared_ptr<opcua_property_node> > argument_nodes_type;
     typedef std::map<rx_node_id, std::set<opcua_subscriptions::opcua_monitored_value*> > value_monitors_type;
 
   public:
@@ -216,9 +257,15 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
 
       rx_result unregister_node (std::shared_ptr<opcua_basic_node> what);
 
+      rx_result register_node (std::shared_ptr<opcua_basic_method_node> what, std::shared_ptr<opcua_property_node> input_args, std::shared_ptr<opcua_property_node> output_args);
+
+      rx_result unregister_node (std::shared_ptr<opcua_basic_method_node> what);
+
       void read_attributes (const std::vector<read_value_id>& to_read, std::vector<data_value>& values) const;
 
       std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (const rx_node_id& node_id, attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep);
+
+      std::pair<opcua_result_t, runtime_transaction_id_t> execute (const rx_node_id& node_id, const rx_node_id& method_id, std::vector<variant_type> args, opcua_server_endpoint_ptr ep);
 
       void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const;
 
@@ -234,6 +281,8 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
 
       std::shared_ptr<opcua_node_base> connect_node_reference (std::shared_ptr<opcua_node_base> node, const opcua_addr_space::reference_data& ref_data, bool inverse);
 
+      bool disconnect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse);
+
       opcua_result_t register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val);
 
       opcua_result_t unregister_value_monitor (opcua_subscriptions::opcua_monitored_value* who);
@@ -245,6 +294,12 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
 
       rx_node_id get_folder_node (const string_type& folder_path, const rx_node_id& parent_id);
 
+      std::shared_ptr<opcua_base_node_type> get_node (const rx_node_id& id);
+
+      const std::shared_ptr<opcua_base_node_type> get_node (const rx_node_id& id) const;
+
+      std::shared_ptr<opcua_variable_base_node> get_valued_node (const rx_node_id& id);
+
 
 
       opcua_addr_space::opcua_address_space_base *parent_;
@@ -254,6 +309,10 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
       folder_nodes_type folder_nodes_;
 
       value_monitors_type value_monitors_;
+
+      method_nodes_type method_nodes_;
+
+      argument_nodes_type argument_nodes_;
 
 
       locks::slim_lock ns_lock_;
@@ -270,7 +329,7 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
 
 class opcua_basic_server_port : public opcua_basic_server_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 5, 0, "\
+    DECLARE_CODE_INFO("rx", 0, 6, 0, "\
 Basic OPC UA protocol port class. Basic implementation OPC UA binary protocol core with simple mapping.");
 
     DECLARE_REFERENCE_PTR(opcua_basic_server_port);
@@ -302,6 +361,10 @@ Basic OPC UA protocol port class. Basic implementation OPC UA binary protocol co
       rx_result register_node (std::shared_ptr<opcua_basic_node> node);
 
       rx_result unregister_node (std::shared_ptr<opcua_basic_node> node);
+
+      rx_result register_node (std::shared_ptr<opcua_basic_method_node> node, std::shared_ptr<opcua_property_node> input_args, std::shared_ptr<opcua_property_node> output_args);
+
+      rx_result unregister_node (std::shared_ptr<opcua_basic_method_node> node);
 
       rx_result start_runtime (runtime::runtime_start_context& ctx);
 
@@ -391,6 +454,59 @@ Implementation of OPC UA Basic Mapper");
       locks::slim_lock transactions_lock_;
 
       write_transactions_type write_transactions_;
+
+
+};
+
+
+
+
+
+
+
+class opcua_basic_method_mapper : public opcua_basic_mapper_base  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Implementation of OPC UA Basic Method Mapper");
+
+    DECLARE_REFERENCE_PTR(opcua_basic_method_mapper);
+
+
+    typedef std::map<runtime_transaction_id_t, opcua_server_endpoint_ptr> execute_transactions_type;
+
+  public:
+      opcua_basic_method_mapper();
+
+      ~opcua_basic_method_mapper();
+
+
+      rx_result initialize_mapper (runtime::runtime_init_context& ctx);
+
+      void port_connected (port_ptr_t port);
+
+      void port_disconnected (port_ptr_t port);
+
+      std::pair<opcua_result_t, runtime_transaction_id_t> execute (std::vector<variant_type> args, opcua_server_endpoint_ptr ep);
+
+
+  protected:
+
+  private:
+
+      void mapper_execute_result_received (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id, runtime::runtime_process_context* ctx);
+
+
+
+      std::shared_ptr<opcua_basic_method_node> node_;
+
+      std::shared_ptr<opcua_addr_space::opcua_property_node> outputs_node_;
+
+      std::shared_ptr<opcua_addr_space::opcua_property_node> inputs_node_;
+
+
+      locks::slim_lock transactions_lock_;
+
+      execute_transactions_type execute_transactions_;
 
 
 };

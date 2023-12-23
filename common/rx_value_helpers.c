@@ -147,6 +147,38 @@ RX_COMMON_API int rx_get_array_size(const struct typed_value_type* val, size_t* 
 	}
 }
 
+RX_COMMON_API int rx_is_struct(const struct typed_value_type* val)
+{
+	return (val->value_type == RX_STRUCT_TYPE);
+}
+RX_COMMON_API int rx_get_struct_size(const struct typed_value_type* val, size_t* size)
+{
+	if (val->value_type == RX_STRUCT_TYPE)
+	{
+		*size = val->value.struct_value.size;
+		return RX_OK;
+	}
+	else
+	{
+		*size = RX_INVALID_INDEX_VALUE;
+		return RX_ERROR;
+	}
+}
+
+RX_COMMON_API int rx_get_struct_value(size_t idx, struct typed_value_type* out_val, const struct typed_value_type* val)
+{
+	if (val->value_type == RX_STRUCT_TYPE
+		&& idx < val->value.struct_value.size)
+	{
+		*out_val = val->value.struct_value.values[idx];
+		return RX_OK;
+	}
+	else
+	{
+		return RX_ERROR;
+	}
+}
+
 
 void assign_value(union rx_value_union* left, const union rx_value_union* right, rx_value_t type)
 {
@@ -399,6 +431,68 @@ RX_COMMON_API int rx_init_string_array_value(struct typed_value_type* val, const
 		for (int i = 0; i < size; i++)
 		{
 			rx_init_string_value_struct(&val->value.array_value.values[i].string_value, data[i], -1);
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+
+RX_COMMON_API int rx_init_uuid_array_value(struct typed_value_type* val, const rx_uuid_t* data, size_t count)
+{
+	val->value_type = RX_UUID_TYPE | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = malloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+#ifndef RX_VALUE_SIZE_16
+			val->value.array_value.values[i].uuid_value = malloc(sizeof(rx_uuid_t));
+			*val->value.array_value.values[i].uuid_value = data[i];
+#else
+			val->value.array_value.values[i].uuid_value = data[i];
+#endif
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+RX_COMMON_API int rx_init_time_array_value(struct typed_value_type* val, const rx_time_struct* data, size_t count)
+{
+	val->value_type = RX_TIME_TYPE | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = malloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+			val->value.array_value.values[i].time_value = data[i];
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+
+RX_COMMON_API int rx_init_node_id_array_value(struct typed_value_type* val, const rx_node_id_struct* data, size_t count)
+{
+	val->value_type = RX_UUID_TYPE | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = malloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+			val->value.array_value.values[i].node_id_value = malloc(sizeof(rx_node_id_struct));
+			rx_copy_node_id(val->value.array_value.values[i].node_id_value, &data[i]);
 		}
 	}
 	else

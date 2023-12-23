@@ -46,9 +46,6 @@
 #include <assert.h>
 #include <mstcpip.h>
 
-
-
-
 typedef DWORD(__stdcall * 
 	NtSetInformationProcess_t)(
 	IN HANDLE               ProcessHandle,
@@ -318,7 +315,6 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug)
 
 
 	DWORD err = 0;
-
 	HMODULE hLib = LoadLibraryEx(L"ntdll.dll",NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 	//HMODULE hLib = GetModuleHandle(L"ntdll.dl");
 

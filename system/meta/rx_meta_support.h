@@ -71,10 +71,10 @@ rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data);
 
 }// namespace rx_platform
 
-// rx_rt_item_types
-#include "system/runtime/rx_rt_item_types.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
+// rx_rt_item_types
+#include "system/runtime/rx_rt_item_types.h"
 
 
 
@@ -136,6 +136,8 @@ class runtime_data_prototype
       rx_result add_value_block (const string_type& name, runtime::structure::value_block_data&& value, rx_node_id id);
 
       rx_result add_value_block (const string_type& name, std::vector<runtime::structure::value_block_data> value, rx_node_id id);
+
+      runtime_data_prototype strip_normalized_prototype ();
 
 
       items_type items;
@@ -564,7 +566,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      runtime_data_prototype pop_rt_name ();
+      rx_platform::meta::runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 
@@ -719,5 +721,3 @@ runtime::structure::runtime_item::smart_ptr create_runtime_data(runtime_data_pro
 
 
 #endif
-
-

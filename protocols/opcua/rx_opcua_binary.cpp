@@ -457,9 +457,11 @@ void ua_binary_istream::deserialize_vunion(uint8_t type, vunion_type& vu)
 		break;
 	case opcid_Structure:
 		{
-			auto ret_ptr = deserialize_extension<ua_extension>([](const rx_node_id& id) {
+			auto ret_ptr = deserialize_extension<ua_extension>([](const rx_node_id& id) -> opcua_extension_ptr  {
 				if (id.is_null())
 					return std::make_unique<ua_extension>();
+				else if(id.is_opc() && id.get_numeric() == opcid_Argument)
+					return std::make_unique<ua_argument>();
 				else
 					return opcua_extension_ptr();
 				});

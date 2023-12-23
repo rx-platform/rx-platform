@@ -122,6 +122,8 @@ class rx_mapper : public rx_runtime
 
       virtual void mapper_result_received (rx_result&& result, runtime_transaction_id_t id, rx_process_context& ctx);
 
+      virtual void mapper_execute_result_received (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id, rx_process_context& ctx);
+
 
       rx_value_t get_value_type () const;
 
@@ -132,30 +134,50 @@ class rx_mapper : public rx_runtime
 
       void map_current_value () const;
 
+      void mapper_execute_pending (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val);
+
+      data::runtime_data_model get_method_inputs ();
+
+      data::runtime_data_model get_method_outputs ();
+
 
   private:
 
 
-      plugin_mapper_runtime_struct impl_;
+      plugin_mapper_runtime_struct3 impl_;
 
       rx_value_t value_type_;
 
       template<class T>
       friend rx_result register_mapper_runtime(const rx_node_id& id);
+      friend rx_result register_mapper_runtime3(const rx_node_id& id);
       friend rx_result_struct(::c_init_mapper)(rx_platform_api::rx_mapper* self, init_ctx_ptr ctx, uint8_t value_type);
       friend rx_result_struct(::c_start_mapper)(rx_platform_api::rx_mapper* self, start_ctx_ptr ctx);
 };
 
 rx_result register_mapper_runtime(const rx_node_id& id, rx_mapper_constructor_t construct_func);
+rx_result register_mapper_runtime3(const rx_node_id& id, rx_mapper_constructor3_t construct_func);
 template<class T>
 rx_result register_mapper_runtime(const rx_node_id& id)
 {
-    auto constr_lambda = []() -> plugin_mapper_runtime_struct_t*
+    if (rx_get_plugin_bind_version() >= 3)
     {
-        T* temp = new T;
-        return &temp->impl_;
-    };
-    return register_mapper_runtime(id, constr_lambda);
+        auto constr_lambda = []() -> plugin_mapper_runtime_struct3_t*
+        {
+            T* temp = new T;
+            return &temp->impl_;
+        };
+        return register_mapper_runtime3(id, constr_lambda);
+    }
+    else
+    {
+        auto constr_lambda = []() -> plugin_mapper_runtime_struct_t*
+        {
+            T* temp = new T;
+            return (plugin_mapper_runtime_struct_t*)&temp->impl_;
+        };
+        return register_mapper_runtime(id, constr_lambda);
+    }
 }
 
 

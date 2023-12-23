@@ -50,6 +50,7 @@ extern string_type api_plugin_root;
 
 extern rxRegisterSourceRuntime_t api_reg_source_func;
 extern rxRegisterMapperRuntime_t api_reg_mapper_func;
+extern rxRegisterMapperRuntime3_t api_reg_mapper3_func;
 extern rxRegisterFilterRuntime_t api_reg_filter_func;
 
 extern rxRegisterStructRuntime_t api_reg_struct_func;
@@ -90,7 +91,7 @@ extern rxCtxSetRemotePending_t api_set_remote_pending_func;
 extern rxRegisterStorageType_t api_reg_storage_func;
 
 
-const platform_api2* g_api;
+const platform_api3* g_api;
 
 
 
@@ -116,6 +117,46 @@ intptr_t set_rx_plugin(intptr_t what)
 	RX_ASSERT(prev == 0);
 	return prev;
 }
+void copy_rt_to_rt3(const platform_runtime_api* src, platform_runtime_api3* dest)
+{
+
+	dest->prxRegisterSourceRuntime = src->prxRegisterSourceRuntime;
+	dest->prxRegisterMapperRuntime = src->prxRegisterMapperRuntime;
+	dest->prxRegisterFilterRuntime = src->prxRegisterFilterRuntime;
+	dest->prxRegisterStructRuntime = src->prxRegisterStructRuntime;
+	dest->prxRegisterVariableRuntime = src->prxRegisterVariableRuntime;
+	dest->prxRegisterEventRuntime = src->prxRegisterEventRuntime;
+
+	dest->prxRegisterMethodRuntime = src->prxRegisterMethodRuntime;
+	dest->prxRegisterProgramRuntime = src->prxRegisterProgramRuntime;
+	dest->prxRegisterDisplayRuntime = src->prxRegisterDisplayRuntime;
+
+	dest->prxRegisterObjectRuntime = src->prxRegisterObjectRuntime;
+	dest->prxRegisterApplicationRuntime = src->prxRegisterApplicationRuntime;
+	dest->prxRegisterDomainRuntime = src->prxRegisterDomainRuntime;
+	dest->prxRegisterPortRuntime = src->prxRegisterPortRuntime;
+
+	dest->prxRegisterRelationRuntime = src->prxRegisterRelationRuntime;
+
+	dest->prxInitCtxBindItem = src->prxInitCtxBindItem;
+	dest->prxInitCtxGetCurrentPath = src->prxInitCtxGetCurrentPath;
+	dest->prxInitCtxGetLocalValue = src->prxInitCtxGetLocalValue;
+	dest->prxInitCtxSetLocalValue = src->prxInitCtxSetLocalValue;
+	dest->prxInitCtxGetMappingValues = src->prxInitCtxGetMappingValues;
+	dest->prxInitCtxGetSourceValues = src->prxInitCtxGetSourceValues;
+	dest->prxInitCtxGetItemMeta = src->prxInitCtxGetItemMeta;
+
+	dest->prxStartCtxGetCurrentPath = src->prxStartCtxGetCurrentPath;
+	dest->prxStartCtxCreateTimer = src->prxStartCtxCreateTimer;
+	dest->prxStartCtxGetLocalValue = src->prxStartCtxGetLocalValue;
+	dest->prxStartCtxSetLocalValue = src->prxStartCtxSetLocalValue;
+	dest->prxStartCtxSubscribeRelation = src->prxStartCtxSubscribeRelation;
+
+	dest->prxCtxGetValue = src->prxCtxGetValue;
+	dest->prxCtxSetValue = src->prxCtxSetValue;
+	dest->prxCtxSetRemotePending = src->prxCtxSetRemotePending;
+}
+
 
 namespace
 {
@@ -128,7 +169,7 @@ uint32_t _g_stream_version_ = RX_CURRENT_SERIALIZE_VERSION;
 }
 
 
-rx_result_struct rx_bind_plugin(const platform_api2* api, uint32_t host_stream_version, uint32_t* plugin_stream_version)
+rx_result_struct rx_bind_plugin(const platform_api3* api, uint32_t host_stream_version, uint32_t* plugin_stream_version)
 {
 	_g_stream_version_ = std::min(host_stream_version, _g_stream_version_);
 	*plugin_stream_version = _g_stream_version_;
@@ -165,6 +206,7 @@ rx_result_struct rx_bind_plugin(const platform_api2* api, uint32_t host_stream_v
 
 	api_reg_source_func = api->runtime.prxRegisterSourceRuntime;
 	api_reg_mapper_func = api->runtime.prxRegisterMapperRuntime;
+	api_reg_mapper3_func = api->runtime.prxRegisterMapperRuntime3;
 	api_reg_filter_func = api->runtime.prxRegisterFilterRuntime;
 
 	api_reg_struct_func = api->runtime.prxRegisterStructRuntime;
@@ -259,6 +301,13 @@ rx_result_struct rx_build_plugin(rx_platform_plugin* plugin, const char* root)
 	rx_result_struct ret = plugin->build_plugin().move();
 	api_plugin_root.clear();
 	return ret;
+}
+extern "C" {
+	extern uint32_t g_bind_version;
+}
+uint32_t rx_get_plugin_bind_version()
+{
+	return g_bind_version;
 }
 
 // Class rx_platform_api::rx_platform_plugin 

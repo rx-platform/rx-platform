@@ -277,7 +277,7 @@ opcua_anonymus_identity_token::opcua_anonymus_identity_token()
 }
 opcua_extension_ptr opcua_anonymus_identity_token::make_copy()
 {
-	auto ret = std::make_unique< opcua_anonymus_identity_token>();
+	auto ret = std::make_unique<opcua_anonymus_identity_token>();
 	return ret;
 }
 void opcua_anonymus_identity_token::internal_serialize_extension(binary::ua_binary_ostream& stream) const

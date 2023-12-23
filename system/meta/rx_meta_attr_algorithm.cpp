@@ -1563,10 +1563,10 @@ rx_result filtered_data_algorithm::get_depends (const filtered_data_type& whose,
 }
 
 
-// Class rx_platform::meta::meta_algorithm::mapped_data_algorithm 
+// Class rx_platform::meta::meta_algorithm::mapsrc_data_algorithm 
 
 
-rx_result mapped_data_algorithm::serialize_complex_attribute (const mapped_data_type& whose, base_meta_writer& stream)
+rx_result mapsrc_data_algorithm::serialize_complex_attribute (const mapsrc_data_type& whose, base_meta_writer& stream)
 {
 	if (!stream.start_array("sources", whose.sources_.size()))
 		return stream.get_error();
@@ -1597,7 +1597,7 @@ rx_result mapped_data_algorithm::serialize_complex_attribute (const mapped_data_
 	return true;
 }
 
-rx_result mapped_data_algorithm::deserialize_complex_attribute (mapped_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
+rx_result mapsrc_data_algorithm::deserialize_complex_attribute (mapsrc_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
 {
 	if (!stream.start_array("sources"))
 		return stream.get_error();
@@ -1644,7 +1644,7 @@ rx_result mapped_data_algorithm::deserialize_complex_attribute (mapped_data_type
 	return true;
 }
 
-bool mapped_data_algorithm::check_complex_attribute (mapped_data_type& whose, type_check_context& ctx)
+bool mapsrc_data_algorithm::check_complex_attribute (mapsrc_data_type& whose, type_check_context& ctx)
 {
 	bool ret = true;
 	for (auto& one : whose.sources_)
@@ -1654,7 +1654,7 @@ bool mapped_data_algorithm::check_complex_attribute (mapped_data_type& whose, ty
 	return ret;
 }
 
-rx_result mapped_data_algorithm::construct_complex_attribute (const mapped_data_type& whose, const names_cahce_type& names, construct_context& ctx)
+rx_result mapsrc_data_algorithm::construct_complex_attribute (const mapsrc_data_type& whose, const names_cahce_type& names, construct_context& ctx)
 {
 	for (const auto& one : names)
 	{
@@ -1687,7 +1687,7 @@ rx_result mapped_data_algorithm::construct_complex_attribute (const mapped_data_
 	return true;
 }
 
-rx_result mapped_data_algorithm::get_depends (const mapped_data_type& whose, dependencies_context& ctx)
+rx_result mapsrc_data_algorithm::get_depends (const mapsrc_data_type& whose, dependencies_context& ctx)
 {
 	for (const auto& one : whose.mappers_)
 	{
@@ -1705,6 +1705,105 @@ rx_result mapped_data_algorithm::get_depends (const mapped_data_type& whose, dep
 		if (!ret)
 		{
 			ret.register_error("Unable to resolve source "s + one.get_target().to_string() + "!");
+			return ret.errors();
+		}
+		ctx.cache.emplace(ret.move_value());
+	}
+	return true;
+}
+
+
+// Class rx_platform::meta::meta_algorithm::mapped_data_algorithm 
+
+
+rx_result mapped_data_algorithm::serialize_complex_attribute (const mapped_data_type& whose, base_meta_writer& stream)
+{
+	if (stream.get_version() >= RX_METHOD_MAPPERS_VERSION)
+	{
+		if (!stream.start_array("mappers", whose.mappers_.size()))
+			return stream.get_error();
+		for (const auto& one : whose.mappers_)
+		{
+			if (!stream.start_object("item"))
+				return stream.get_error();
+			if (!mapper_attribute::AlgorithmType::serialize_complex_attribute(one, stream))
+				return stream.get_error();
+			if (!stream.end_object())
+				return stream.get_error();
+		}
+		if (!stream.end_array())
+			return stream.get_error();
+	}
+	return true;
+}
+
+rx_result mapped_data_algorithm::deserialize_complex_attribute (mapped_data_type& whose, base_meta_reader& stream, complex_data_type& complex_data)
+{
+	if (stream.get_version() >= RX_METHOD_MAPPERS_VERSION)
+	{
+		if (!stream.start_array("mappers"))
+			return stream.get_error();
+		while (!stream.array_end())
+		{
+			if (!stream.start_object("item"))
+				return stream.get_error();
+
+			mapper_attribute temp;
+			if (!mapper_attribute::AlgorithmType::deserialize_complex_attribute(temp, stream))
+				return stream.get_error();
+			auto ret = complex_data.check_name(temp.get_name(), (static_cast<int>(whose.mappers_.size() | complex_data_type::mappings_mask)));
+			if (ret)
+			{
+				whose.mappers_.emplace_back(std::move(temp));
+			}
+			else
+				return ret;
+
+			if (!stream.end_object())
+				return stream.get_error();
+		}
+	}
+	return true;
+}
+
+bool mapped_data_algorithm::check_complex_attribute (mapped_data_type& whose, type_check_context& ctx)
+{
+	bool ret = true;
+	for (auto& one : whose.mappers_)
+		ret &= mapper_attribute::AlgorithmType::check_complex_attribute(one, ctx);
+	return ret;
+}
+
+rx_result mapped_data_algorithm::construct_complex_attribute (const mapped_data_type& whose, const names_cahce_type& names, construct_context& ctx)
+{
+	for (const auto& one : names)
+	{
+		switch (one.second & complex_data_type::type_mask)
+		{
+			// mappers
+		case complex_data_type::mappings_mask:
+			{
+				rx_result ret = mapper_attribute::AlgorithmType::construct_complex_attribute(whose.mappers_[one.second & complex_data_type::index_mask], ctx);
+				if (!ret)
+				{
+					ret.register_error("Unable to create mapper "s + one.first + "!");
+					return ret;
+				}
+				break;
+			}
+		}
+	}
+	return true;
+}
+
+rx_result mapped_data_algorithm::get_depends (const mapped_data_type& whose, dependencies_context& ctx)
+{
+	for (const auto& one : whose.mappers_)
+	{
+		auto ret = rx_internal::model::algorithms::resolve_reference(one.get_target(), ctx.directories);
+		if (!ret)
+		{
+			ret.register_error("Unable to resolve mapper "s + one.get_target().to_string() + "!");
 			return ret.errors();
 		}
 		ctx.cache.emplace(ret.move_value());

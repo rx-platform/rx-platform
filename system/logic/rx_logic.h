@@ -118,12 +118,14 @@ typedef program_runtime::smart_ptr program_runtime_ptr;
 
 
 
-class method_execution_context 
+class method_execution_context1 
 {
     friend class runtime::logic_blocks::method_data;
 
   public:
-      method_execution_context (execute_data data, security::security_guard_ptr guard);
+      method_execution_context1 (runtime::execute_data data, security::security_guard_ptr guard);
+
+      virtual ~method_execution_context1();
 
 
       void execution_complete (rx_result result, values::rx_simple_value data);
@@ -167,7 +169,9 @@ class method_runtime : public rx::pointers::reference_object
 
       method_runtime (const string_type& name, const rx_node_id& id);
 
-      ~method_runtime();
+      method_runtime (lock_reference_struct* extern_data);
+
+      virtual ~method_runtime();
 
 
       virtual rx_result initialize_runtime (runtime::runtime_init_context& ctx);
@@ -178,9 +182,7 @@ class method_runtime : public rx::pointers::reference_object
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      virtual method_execution_context* create_execution_context (execute_data data, security::security_guard_ptr guard);
-
-      virtual rx_result execute (values::rx_simple_value args, method_execution_context* context);
+      virtual rx_result execute (execute_data data, runtime::runtime_process_context* ctx);
 
 
       string_type get_name () const
@@ -190,14 +192,21 @@ class method_runtime : public rx::pointers::reference_object
 
 
 
+      static string_type type_name;
+
+
   protected:
+
+      void execute_result_received (rx_simple_value out_val, rx_result&& result, runtime_transaction_id_t id);
+
 
   private:
 
 
       string_type name_;
 
-
+      friend class runtime::logic_blocks::method_data;
+      runtime::logic_blocks::method_data* container_;
 };
 
 typedef method_runtime::smart_ptr method_runtime_ptr;
@@ -274,6 +283,50 @@ class program_context
 
 
       security::security_guard_ptr security_guard_;
+
+
+};
+
+
+
+
+
+
+class extern_method_runtime : public method_runtime  
+{
+    DECLARE_REFERENCE_PTR(extern_method_runtime);
+
+  public:
+      extern_method_runtime (plugin_method_runtime_struct* impl);
+
+      ~extern_method_runtime();
+
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
+      rx_result execute (execute_data data, runtime::runtime_process_context* ctx);
+
+      void start_timer (runtime_handle_t handle, uint32_t period);
+
+      void suspend_timer (runtime_handle_t handle);
+
+      void destroy_timer (runtime_handle_t handle);
+
+      void method_result (rx_result&& result, runtime_transaction_id_t id, rx_simple_value out_vals);
+
+
+  protected:
+
+  private:
+
+
+      plugin_method_runtime_struct* impl_;
 
 
 };

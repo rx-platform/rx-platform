@@ -438,6 +438,11 @@ rx_result rx_subscription::write_items (runtime_transaction_id_t transaction_id,
 	return write_manager_.write_items(transaction_id, std::move(values), result, *this);
 }
 
+rx_result rx_subscription::write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >&& values, std::vector<rx_result>& result)
+{
+	return write_manager_.write_items(transaction_id, std::move(values), result, *this);
+}
+
 rx_result rx_subscription::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, values::rx_simple_value data)
 {
 	return execute_manager_.execute_item(transaction_id, handle, std::move(data), *this);
@@ -823,7 +828,6 @@ void subscription_execute_manager::process (rx_subscription& subs)
 	locks::auto_lock_t _(&subs.items_lock_);
 	auto thread_it = pending_executions_.find(rx_thread_context());
 
-	printf("\r\n*** Usao u funkciju\r\n");
 	if (thread_it != pending_executions_.end())
 	{
 		if (!thread_it->second.empty())
@@ -888,12 +892,12 @@ void subscription_execute_manager::process_results (rx_subscription& subs)
 void subscription_execute_manager::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data, rx_subscription& subs)
 {
 
-	printf("\r\n*****Execute completed za handle %x, trans %x\r\n", (int)item, (int)transaction_id);
+	printf("\r\n*****Execute completed for handle %x, trans %x\r\n", (int)item, (int)transaction_id);
 	locks::auto_lock_t _(&subs.items_lock_);
 	auto map_it = execute_transactions_.find(transaction_id);
 	if (map_it != execute_transactions_.end())
 	{
-		printf("\r\n*****Execute for send za handle %x, trans %x\r\n", (int)map_it->second.client_handle, (int)map_it->second.client_transaction_id);
+		printf("\r\n*****Execute for send for handle %x, trans %x\r\n", (int)map_it->second.client_handle, (int)map_it->second.client_transaction_id);
 		pending_execute_results_.emplace_back(pending_execute_result{ map_it->second.client_transaction_id, map_it->second.client_handle, std::move(result), std::move(data) });
 		execute_transactions_.erase(map_it);
 		rx_post_function_to(subs.target_, subs.smart_this(), [](rx_subscription::smart_ptr whose) {
@@ -905,12 +909,12 @@ void subscription_execute_manager::execute_complete (runtime_transaction_id_t tr
 void subscription_execute_manager::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data, rx_subscription& subs)
 {
 
-	printf("\r\n*****Execute completed za handle %x, trans %x\r\n", (int)item, (int)transaction_id);
+	printf("\r\n*****Execute completed for handle %x, trans %x\r\n", (int)item, (int)transaction_id);
 	locks::auto_lock_t _(&subs.items_lock_);
 	auto map_it = execute_transactions_.find(transaction_id);
 	if (map_it != execute_transactions_.end())
 	{
-		printf("\r\n*****Execute for send za handle %x, trans %x\r\n", (int)map_it->second.client_handle, (int)map_it->second.client_transaction_id);
+		printf("\r\n*****Execute for send name handle %x, trans %x\r\n", (int)map_it->second.client_handle, (int)map_it->second.client_transaction_id);
 		pending_execute_results_.emplace_back(pending_execute_result{ map_it->second.client_transaction_id, map_it->second.client_handle, std::move(result), std::move(data) });
 		execute_transactions_.erase(map_it);
 		rx_post_function_to(subs.target_, subs.smart_this(), [](rx_subscription::smart_ptr whose) {
@@ -992,9 +996,79 @@ rx_result subscription_write_manager::write_items (runtime_transaction_id_t tran
 	return total_result;
 }
 
+rx_result subscription_write_manager::write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >&& values, std::vector<rx_result>& result, rx_subscription& subs)
+{
+	subscription_write_transaction transaction;
+	transaction.client_transaction_id = transaction_id;
+	runtime_transaction_id_t master_id = platform_runtime_manager::get_new_transaction_id();
+	rx_result total_result(true);
+
+	result.reserve(values.size());
+	subs.items_lock_.lock();
+	for (auto&& one : values)
+	{
+		auto connection = subs.get_connection(one.first);
+		auto tag = subs.get_tag(one.first);
+		if (connection && tag)
+		{
+			if (connection->item)
+			{
+				auto single_trans_id = transaction.add_write(master_id, transactions_map_, one.first);
+				rx_thread_handle_t target = connection->item->get_executer();
+				auto it = pending_writes_.find(target);
+				if (it != pending_writes_.end())
+				{
+					it->second.emplace_back(pending_write_data{ single_trans_id , one.first, std::move(one.second) });
+				}
+				else
+				{
+					auto ret_val = pending_writes_.emplace(target, pending_writes_type::mapped_type());
+					if (ret_val.second)
+					{
+						ret_val.first->second.emplace_back(pending_write_data{ single_trans_id , one.first, std::move(one.second) });
+					}
+				}
+				result.emplace_back(true);
+			}
+			else
+			{
+				result.emplace_back(RX_NOT_CONNECTED);
+			}
+		}
+		else
+		{
+			string_type err_msg = "Invalid item handle";
+			result.emplace_back(err_msg);
+		}
+	}
+	if (!transaction.is_done())
+	{
+		write_transactions_.emplace(master_id, std::move(transaction));
+		RX_ASSERT(!pending_writes_.empty());
+		if (!pending_writes_.empty())
+		{
+			for (auto& one : pending_writes_)
+			{
+				rx_post_function_to(one.first, subs.smart_this(), [&subs]()
+					{
+						subs.write_manager_.process(subs);
+					});
+			}
+		}
+	}
+	else
+	{
+		total_result = "Invalid item handles";
+	}
+	subs.items_lock_.unlock();
+
+	return total_result;
+}
+
 void subscription_write_manager::process (rx_subscription& subs)
 {
-	std::map<size_t, std::map<runtime_transaction_id_t, std::vector<std::pair<runtime_handle_t, rx_simple_value> > > > writes;
+	std::map<size_t, std::map<runtime_transaction_id_t, std::vector<std::pair<runtime_handle_t, rx_simple_value> > > > value_writes;
+	std::map<size_t, std::map<runtime_transaction_id_t, std::vector<std::pair<runtime_handle_t, data::runtime_values_data> > > > data_writes;
 	locks::auto_lock_t _(&subs.items_lock_);
 	auto thread_it = pending_writes_.find(rx_thread_context());
 	if (thread_it != pending_writes_.end())
@@ -1003,50 +1077,105 @@ void subscription_write_manager::process (rx_subscription& subs)
 		{
 			for (auto&& one : thread_it->second)
 			{
-				size_t idx = ((one.handle >> 16) & 0xffff);
-				if (idx >= subs.connections_.size() || subs.connections_[idx].path.empty())
-					continue;
-				auto tag = subs.get_tag(one.handle);
-				if (tag)
+				if (std::holds_alternative< rx_simple_value>(one.value))
 				{
-					auto it = writes.find(idx);
-					if (it != writes.end())
+					size_t idx = ((one.handle >> 16) & 0xffff);
+					if (idx >= subs.connections_.size() || subs.connections_[idx].path.empty())
+						continue;
+					auto tag = subs.get_tag(one.handle);
+					if (tag)
 					{
-						RX_ASSERT(subs.connections_[idx].item);
-						auto it_trans = it->second.find(one.trans_id);
-						if (it_trans != it->second.end())
+						auto it = value_writes.find(idx);
+						if (it != value_writes.end())
 						{
-							it_trans->second.emplace_back(tag->target_handle, std::move(one.value));
+							RX_ASSERT(subs.connections_[idx].item);
+							auto it_trans = it->second.find(one.trans_id);
+							if (it_trans != it->second.end())
+							{
+								it_trans->second.emplace_back(tag->target_handle, std::get<rx_simple_value>(std::move(one.value)));
+							}
+							else
+							{
+								std::vector<std::pair<runtime_handle_t, rx_simple_value> > new_vector;
+								new_vector.emplace_back(tag->target_handle, std::get<rx_simple_value>(std::move(one.value)));
+								it->second.emplace(one.trans_id, std::move(new_vector));
+							}
 						}
 						else
 						{
+							std::map<runtime_transaction_id_t, std::vector<std::pair<runtime_handle_t, rx_simple_value> > > new_map;
 							std::vector<std::pair<runtime_handle_t, rx_simple_value> > new_vector;
-							new_vector.emplace_back(tag->target_handle, std::move(one.value));
-							it->second.emplace(one.trans_id, std::move(new_vector));
+							new_vector.emplace_back(tag->target_handle, std::get<rx_simple_value>(std::move(one.value)));
+							new_map.emplace(one.trans_id, std::move(new_vector));
+							value_writes.emplace(idx, std::move(new_map));
 						}
 					}
 					else
 					{
-						std::map<runtime_transaction_id_t, std::vector<std::pair<runtime_handle_t, rx_simple_value> > > new_map;
-						std::vector<std::pair<runtime_handle_t, rx_simple_value> > new_vector;
-						new_vector.emplace_back(tag->target_handle, std::move(one.value));
-						new_map.emplace(one.trans_id, std::move(new_vector));
-						writes.emplace(idx, std::move(new_map));
+						write_complete(one.trans_id, one.handle, 0, rx_result("Invalid item handle."), subs);
 					}
 				}
-				else
+				else //if (std::holds_alternative<data::runtime_values_data>(one.value))
 				{
-					write_complete(one.trans_id, one.handle, 0, rx_result("Invalid item handle."), subs);
+					size_t idx = ((one.handle >> 16) & 0xffff);
+					if (idx >= subs.connections_.size() || subs.connections_[idx].path.empty())
+						continue;
+					auto tag = subs.get_tag(one.handle);
+					if (tag)
+					{
+						auto it = data_writes.find(idx);
+						if (it != data_writes.end())
+						{
+							RX_ASSERT(subs.connections_[idx].item);
+							auto it_trans = it->second.find(one.trans_id);
+							if (it_trans != it->second.end())
+							{
+								it_trans->second.emplace_back(tag->target_handle, std::get<data::runtime_values_data>(std::move(one.value)));
+							}
+							else
+							{
+								std::vector<std::pair<runtime_handle_t, data::runtime_values_data> > new_vector;
+								new_vector.emplace_back(tag->target_handle, std::get<data::runtime_values_data>(std::move(one.value)));
+								it->second.emplace(one.trans_id, std::move(new_vector));
+							}
+						}
+						else
+						{
+							std::map<runtime_transaction_id_t, std::vector<std::pair<runtime_handle_t, data::runtime_values_data> > > new_map;
+							std::vector<std::pair<runtime_handle_t, data::runtime_values_data> > new_vector;
+							new_vector.emplace_back(tag->target_handle, std::get<data::runtime_values_data>(std::move(one.value)));
+							new_map.emplace(one.trans_id, std::move(new_vector));
+							data_writes.emplace(idx, std::move(new_map));
+						}
+					}
+					else
+					{
+						write_complete(one.trans_id, one.handle, 0, rx_result("Invalid item handle."), subs);
+					}
 				}
 			}
 		}
 		thread_it->second.clear();
-		for (auto& conns_it : writes)
+		if (!value_writes.empty())
 		{
-			auto& connection = subs.connections_[conns_it.first];
-			for (auto&& write : conns_it.second)
+			for (auto& conns_it : value_writes)
 			{
-				auto write_result = connection.item->write_items(write.first, subs.mode_.is_test(), std::move(write.second), subs.smart_this());
+				auto& connection = subs.connections_[conns_it.first];
+				for (auto&& write : conns_it.second)
+				{
+					auto write_result = connection.item->write_items(write.first, subs.mode_.is_test(), std::move(write.second), subs.smart_this());
+				}
+			}
+		}
+		if (!data_writes.empty())
+		{
+			for (auto& conns_it : data_writes)
+			{
+				auto& connection = subs.connections_[conns_it.first];
+				for (auto&& write : conns_it.second)
+				{
+					auto write_result = connection.item->write_items(write.first, subs.mode_.is_test(), std::move(write.second), subs.smart_this());
+				}
 			}
 		}
 	}
@@ -1100,6 +1229,161 @@ void subscription_write_manager::write_complete (runtime_transaction_id_t transa
 		}
 	}
 }
+
+
+// Class rx_internal::sys_runtime::subscriptions::rx_event_subscription 
+
+rx_event_subscription::rx_event_subscription (rx_event_subscription_callback* callback, rx_mode_type mode)
+      : callback_(callback),
+        active_(false),
+        mode_(mode)
+{
+	target_ = rx_thread_context();
+}
+
+
+
+void rx_event_subscription::activate ()
+{
+	if (!active_)
+	{
+		active_ = true;
+		timer_ = rx_create_periodic_function(100u, smart_this()
+			, [this]() { process_subscription(); });
+	}
+}
+
+void rx_event_subscription::deactivate ()
+{
+	if (active_)
+	{
+		active_ = false;
+		timer_->cancel();
+		timer_ = rx_timer_ptr::null_ptr;
+	}
+}
+
+rx_result_with<runtime_handle_t> rx_event_subscription::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+{
+	// OutputDebugStringA("****************Something to connect\r\n");
+	for (const auto& one : filter.paths)
+	{		
+		runtime_handle_t new_id = 0;
+		string_type object_path;
+		string_type item_path;
+		rx_split_item_path(one, object_path, item_path);
+		auto it = connection_paths_.find(object_path);
+		if (it != connection_paths_.end())
+		{
+			RX_ASSERT(it->second < connections_.size());
+			// create runtime handle from connections size and connection tags size + 1 (to have zero as invalid)
+			new_id = (runtime_handle_t)(it->second << 16);
+
+			rx_subscription_tag tag;
+			tag.path = item_path;
+			tag.ref_count = 1;
+			tag.sampling_rate = 0;
+			tag.target_handle = 0;
+
+			new_id = connections_[it->second].add_tag(std::move(tag), new_id);
+
+			to_process_.emplace(it->second);
+		}
+		else
+		{
+			size_t idx = connections_.size();
+			// create runtime handle from connections size + 1 (to have zero as invalid)
+			new_id = (runtime_handle_t)(idx << 16);
+
+			runtime_connection_data temp;
+			temp.path = object_path;
+			temp.connecting = false;
+
+			rx_subscription_tag tag;
+			tag.path = item_path;
+			tag.ref_count = 1;
+			tag.sampling_rate = 0;
+			tag.target_handle = 0;
+
+			new_id = temp.add_tag(std::move(tag), new_id);
+
+			connections_.emplace_back(std::move(temp));
+			connection_paths_.emplace(object_path, idx);
+
+			to_retrieve_.emplace(idx);
+			to_process_.emplace(idx);
+		}
+		items_lock_.unlock();
+
+		if (new_id)
+		{
+			return new_id;
+		}
+		else
+		{
+			return "Something really gone wrong here!!!";
+		}
+	}
+	return true;
+}
+
+rx_result rx_event_subscription::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+void rx_event_subscription::process_subscription (bool posted)
+{
+}
+
+
+// Class rx_internal::sys_runtime::subscriptions::rx_event_subscription_callback 
+
+rx_event_subscription_callback::~rx_event_subscription_callback()
+{
+}
+
+
+
+void rx_event_subscription_callback::event_fired (const simple_event_item& data)
+{
+}
+
+void rx_event_subscription_callback::event_fired (const data_event_item& data)
+{
+}
+
+
+// Class rx_internal::sys_runtime::subscriptions::runtime_event_connection_data 
+
+
+rx_subscription_filter* runtime_event_connection_data::get_filter (runtime_handle_t handle)
+{
+	return nullptr;
+}
+
+bool runtime_event_connection_data::remove_filter (runtime_handle_t handle)
+{
+	return false;
+}
+
+runtime_handle_t runtime_event_connection_data::add_filter (rx_subscription_filter& filter, runtime_handle_t connection_handle)
+{
+	return 0;
+}
+
+bool runtime_event_connection_data::process_connection (const rx_time& ts, rx_subscription_ptr whose)
+{
+	return false;
+}
+
+bool runtime_event_connection_data::connection_dead ()
+{
+	return false;
+}
+
+
+// Class rx_internal::sys_runtime::subscriptions::rx_subscription_filter 
 
 
 } // namespace subscriptions

@@ -166,6 +166,8 @@ class rx_dynamic_plugin : public rx_plugin_base
 
       rxBindPlugin2_t prxBindPlugin2_;
 
+      rxBindPlugin3_t prxBindPlugin3_;
+
       rxGetPluginInfo_t prxGetPluginInfo_;
 
       rxGetPluginInfo2_t prxGetPluginInfo2_;

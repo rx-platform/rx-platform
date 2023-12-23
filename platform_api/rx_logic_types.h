@@ -62,8 +62,13 @@ class rx_method : public rx_runtime
 
       virtual rx_result deinitialize_method ();
 
+      virtual rx_result method_execute (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val, rx_process_context& ctx) = 0;
+
       static constexpr rx_item_type type_id = rx_item_type::rx_method_type;
   protected:
+
+      void execute_result_received (rx_result&& result, runtime_transaction_id_t id, rx_simple_value val);
+
 
   private:
 

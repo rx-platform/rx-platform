@@ -198,6 +198,10 @@ void server_command_manager::register_internal_commands ()
 		RX_OPCUA_SIMPLE_MAPPER_TYPE_ID, [] {
 			return rx_create_reference<protocols::opcua::opcua_basic_server::opcua_basic_mapper>();
 		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().register_constructor(
+		RX_OPCUA_SIMPLE_METHOD_MAPPER_TYPE_ID, [] {
+			return rx_create_reference<protocols::opcua::opcua_basic_server::opcua_basic_method_mapper>();
+		});
 
 	// opc client
 	result = rx_internal::model::register_internal_constructor<port_type, protocols::opcua::opcua_basic_client::opcua_basic_client_port>(
@@ -394,31 +398,6 @@ std::vector<server_command_base_ptr> server_command_manager::get_internal_comman
 	return ret_commands;
 }
 
-template<typename T>
-void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, T t)
-{
-	values::rx_simple_value temp;
-	temp.assign_static(t);
-	vals.push_back(std::move(temp));
-}
-template<typename T, typename... Args>
-void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, T t, Args... args)
-{
-	values::rx_simple_value temp;
-	temp.assign_static(t);
-	vals.push_back(std::move(temp));
-	rx_create_value_static_internal(vals, std::forward<Args>(args)...);
-}
-template<typename... Args>
-rx_simple_value rx_create_value_static(Args... args)
-{
-	std::vector<values::rx_simple_value> vals;
-	rx_create_value_static_internal(vals, std::forward<Args>(args)...);
-	rx_simple_value ret;
-	ret.assign_static(vals);
-	return ret;
-}
-
 // Class rx_internal::terminal::commands::echo_server_command 
 
 echo_server_command::echo_server_command()
@@ -541,28 +520,36 @@ void server_command::register_suggestions (const string_type& line, suggestions_
 {
 }
 
-rx_result server_command::execute (data::runtime_values_data args, logic::method_execution_context* context)
+rx_result server_command::execute (execute_data data, runtime::runtime_process_context* ctx)
 {
-	string_type line = this->get_console_name() + " " +  args.get_value_static("In", ""s);
-	
-	rx_reference<console::console_runtime> console_program = rx_create_reference<console::console_runtime>(rx_thread_context(),
-		[context](bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
-		{
-			if (done)
+	if (data.value.is_struct() && data.value.struct_size() == 1)
+	{
+		string_type arg = data.value[0].extract_static<string_type>("");
+		string_type line = this->get_console_name() + " " + arg;
+
+		rx_reference<console::console_runtime> console_program = rx_create_reference<console::console_runtime>(rx_thread_context(),
+			[this, data](bool result, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, bool done)
 			{
-				string_type out_str;
-				string_type err_str;
-				if (!out_buffer->empty())
-					out_str.assign(out_buffer->pbase(), out_buffer->get_size());
-				if (!err_buffer->empty())
-					err_str.assign(err_buffer->pbase(), err_buffer->get_size());
-				
-				rx_simple_value out_result = rx_create_value_static(out_str, err_str, result);
-				context->execution_complete(std::move(out_result));
-			}
-		}, context->get_security_guard());
-	console_program->do_command(line, security::active_security());
-	return true;
+				if (done)
+				{
+					string_type out_str;
+					string_type err_str;
+					if (!out_buffer->empty())
+						out_str.assign(out_buffer->pbase(), out_buffer->get_size());
+					if (!err_buffer->empty())
+						err_str.assign(err_buffer->pbase(), err_buffer->get_size());
+
+					rx_simple_value out_result = rx_create_value_static(out_str, err_str, result);
+					this->execute_result_received(std::move(out_result), result, data.transaction_id);
+				}
+			}, ctx->get_security_guard());
+		console_program->do_command(line, security::active_security());
+		return true;
+	}
+	else
+	{
+		return RX_INVALID_ARGUMENT;
+	}
 }
 
 

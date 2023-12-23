@@ -521,6 +521,66 @@ string_view_type runtime_values_data::extract_index (string_view_type name, int&
 }
 
 
+// Class rx::data::runtime_data_model 
+
+
+byte_string runtime_data_model::serialize () const
+{
+	return byte_string();
+}
+
+rx::data::runtime_data_model runtime_data_model::deserialize (byte_string& data)
+{
+	return runtime_data_model();
+}
+
+
+// Class rx::data::runtime_model_element 
+
+
+bool runtime_model_element::is_value () const
+{
+	return std::holds_alternative<rx_simple_value>(value);
+}
+
+bool runtime_model_element::is_complex () const
+{
+	return std::holds_alternative<runtime_data_model>(value);
+}
+
+bool runtime_model_element::is_complex_array () const
+{
+	return std::holds_alternative<std::vector<runtime_data_model> >(value);
+}
+
+const values::rx_simple_value& runtime_model_element::get_value () const
+{
+	static rx_simple_value g_empty;
+	if (is_value())
+		return std::get<rx_simple_value>(value);
+	else
+		return g_empty;
+}
+
+const runtime_data_model& runtime_model_element::get_complex () const
+{
+	static runtime_data_model g_empty;
+	if (is_complex())
+		return std::get<runtime_data_model>(value);
+	else
+		return g_empty;
+}
+
+const std::vector<runtime_data_model>& runtime_model_element::get_complex_array () const
+{
+	static std::vector<runtime_data_model> g_empty;
+	if (is_value())
+		return std::get<std::vector<runtime_data_model>>(value);
+	else
+		return g_empty;
+}
+
+
 } // namespace data
 } // namespace rx
 

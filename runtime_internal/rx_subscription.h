@@ -33,6 +33,8 @@
 
 
 
+// rx_event_blocks
+#include "system/runtime/rx_event_blocks.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_job
@@ -288,7 +290,7 @@ class subscription_write_manager
     {
         runtime_transaction_id_t trans_id;
         runtime_handle_t handle;
-        rx_simple_value value;
+        std::variant<rx_simple_value, data::runtime_values_data> value;
     };
     typedef std::map<rx_thread_handle_t, std::vector<pending_write_data> > pending_writes_type;
     typedef std::vector<std::pair<runtime_transaction_id_t, std::vector<write_result_item> > > pending_write_results_type;
@@ -299,6 +301,8 @@ class subscription_write_manager
   public:
 
       rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& result, rx_subscription& subs);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >&& values, std::vector<rx_result>& result, rx_subscription& subs);
 
       void process (rx_subscription& subs);
 
@@ -372,6 +376,8 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
       rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& result);
 
+      rx_result write_items (runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >&& values, std::vector<rx_result>& result);
+
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, values::rx_simple_value data);
 
       rx_result execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data);
@@ -431,6 +437,158 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
     friend class subscription_execute_manager;
     friend class subscription_write_manager;
+};
+
+
+
+
+
+
+class rx_event_subscription_callback 
+{
+
+  public:
+      virtual ~rx_event_subscription_callback();
+
+
+      virtual void event_fired (const simple_event_item& data);
+
+      virtual void event_fired (const data_event_item& data);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_subscription_filter 
+{
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class runtime_event_connection_data 
+{
+
+  public:
+
+      rx_subscription_filter* get_filter (runtime_handle_t handle);
+
+      bool remove_filter (runtime_handle_t handle);
+
+      runtime_handle_t add_filter (rx_subscription_filter& filter, runtime_handle_t connection_handle);
+
+      bool process_connection (const rx_time& ts, rx_subscription_ptr whose);
+
+      bool connection_dead ();
+
+
+      rx_time last_checked;
+
+      string_type path;
+
+      platform_item_ptr item;
+
+      bool connecting;
+
+
+  protected:
+
+  private:
+
+
+      filters_type filters_;
+
+
+      std::vector<size_t> empty_slots_;
+
+      string_array to_connect_;
+
+      std::vector<size_t> connect_indexes_;
+
+
+};
+
+
+
+
+
+
+class rx_event_subscription : public rx_platform::runtime::event_blocks::rx_events_callback  
+{
+    DECLARE_REFERENCE_PTR(rx_event_subscription);
+
+
+    typedef std::vector<runtime_connection_data> connections_type;
+    typedef std::map<string_type, size_t> connection_paths_type;
+    typedef std::map<rx_thread_handle_t, std::vector<size_t> > connection_attempts_type;
+    static constexpr uint32_t timer_period_ = 1000;
+
+    typedef std::vector<update_item> pending_updates_type;
+
+    friend class runtime_connection_data;
+
+  public:
+      rx_event_subscription (rx_event_subscription_callback* callback, rx_mode_type mode);
+
+
+      void activate ();
+
+      void deactivate ();
+
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
+
+
+  protected:
+
+  private:
+
+      void process_subscription (bool posted = false);
+
+
+
+      rx_reference<rx_platform::jobs::periodic_job> timer_;
+
+      connections_type connections_;
+
+      rx_event_subscription_callback *callback_;
+
+
+      rx_thread_handle_t target_;
+
+      locks::slim_lock items_lock_;
+
+      std::atomic<bool> active_;
+
+      rx_mode_type mode_;
+
+      std::unordered_set<size_t> to_retrieve_;
+
+      std::unordered_set<size_t> to_process_;
+
+      connection_paths_type connection_paths_;
+
+
 };
 
 

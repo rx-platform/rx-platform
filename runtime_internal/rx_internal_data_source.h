@@ -67,6 +67,8 @@ class internal_data_subscription : public subscriptions::rx_subscription_callbac
 
       void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id);
 
+      void write_item (const value_handle_extended& handle, data::runtime_values_data val, runtime_transaction_id_t id);
+
       void write_completed (runtime_transaction_id_t transaction_id, std::vector<write_result_item> results);
 
       void execute_item (const value_handle_extended& handle, values::rx_simple_value data, runtime_transaction_id_t id);
@@ -122,6 +124,8 @@ class internal_data_source : public data_source
       void add_item (const string_type& path, uint32_t rate, value_handle_extended& handle, rx_mode_type mode);
 
       void write_item (const value_handle_extended& handle, rx_simple_value val, runtime_transaction_id_t id);
+
+      void write_item (const value_handle_extended& handle, data::runtime_values_data val, runtime_transaction_id_t id);
 
       void execute_item (const value_handle_extended& handle, values::rx_simple_value data, runtime_transaction_id_t id);
 

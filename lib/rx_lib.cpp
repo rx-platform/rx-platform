@@ -808,7 +808,7 @@ rx_node_id::rx_node_id(const char* id, uint16_t namesp)
 	if(ret!=RX_OK)
         rx_init_null_node_id(&data_);
 }
-rx_node_id::rx_node_id(rx_uuid_t& id, uint16_t namesp)
+rx_node_id::rx_node_id(const rx_uuid_t& id, uint16_t namesp)
 {
 	auto ret = rx_init_uuid_node_id(&data_, &id, namesp);
 	RX_ASSERT(ret==RX_OK);

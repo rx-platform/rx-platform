@@ -207,14 +207,18 @@ template <class typeT>
 class runtime_scan_algorithms;
 class runtime_relation_algorithms;
 }
-
+namespace event_blocks
+{
+class rx_events_callback;
+typedef rx_reference<rx_events_callback> events_callback_ptr;
+}
 
 namespace tag_blocks
 {
 class rx_tags_callback;
 typedef rx_reference<rx_tags_callback> tags_callback_ptr;
 typedef std::function<void(const rx_value&)> binded_callback_t;
-typedef std::function<rx_result(rx_simple_value&, runtime_process_context*)> write_callback_t;
+typedef std::function<rx_result(rx_simple_value&, data::runtime_values_data* data, runtime_process_context*)> write_callback_t;
 }
 using tag_blocks::tags_callback_ptr;
 

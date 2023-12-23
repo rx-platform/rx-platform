@@ -82,10 +82,10 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 					return false;
 				while (!reader.array_end())
 				{
-					uint8_t temp;
-					if (!reader.read_byte(name, temp))
+					int8_t temp;
+					if (!reader.read_sbyte(name, temp))
 						return false;
-					arr.emplace_back((int8_t)temp);
+					arr.emplace_back(temp);
 				}
 				if (arr.empty())
 					ret = rx_init_int8_array_value(&val, nullptr, 0) == RX_OK;
@@ -264,6 +264,49 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 					ret = rx_init_double_array_value(&val, &arr[0], arr.size()) == RX_OK;
 				return ret;
 			}
+		case RX_COMPLEX_TYPE:
+			{
+				bool ret;
+				std::vector<complex_value_struct> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					complex_value_struct temp{};
+					if (!reader.read_double("Real", temp.real))
+						return false;
+					if (!reader.read_double("Imag", temp.imag))
+						return false;
+					arr.push_back(temp);
+				}
+				if (arr.empty())
+					ret = rx_init_complex_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_complex_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+			break;
+		case RX_UUID_TYPE:
+			{
+				bool ret;
+				std::vector<rx_uuid_t> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					rx_uuid_t temp{};
+					if (!reader.read_uuid(name, temp))
+						return false;
+					arr.push_back(temp);
+					return rx_init_uuid_value(&val, &temp);
+				}
+				if (arr.empty())
+					ret = rx_init_uuid_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_uuid_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
+			break;
 		case RX_NODE_ID_TYPE:
 			RX_ASSERT(false);//not implemented
 			return false;
@@ -382,8 +425,8 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 			}
 		case RX_INT8_TYPE:
 			{
-				uint8_t temp;
-				if (!reader.read_byte(name, temp))
+				int8_t temp;
+				if (!reader.read_sbyte(name, temp))
 					return false;
 				return rx_init_int8_value(&val, (int8_t)temp) == RX_OK;
 			}
@@ -490,6 +533,20 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 				return rx_init_uuid_value(&val, &temp);
 			}
 			break;
+		case RX_COMPLEX_TYPE:
+			{
+				complex_value_struct temp{};
+				if (!reader.start_object(name))
+					return false;
+				if (!reader.read_double("Real", temp.real))
+					return false;
+				if (!reader.read_double("Imag", temp.imag))
+					return false;
+				if (!reader.end_object())
+					return false;
+				return rx_init_complex_value(&val, temp);
+			}
+			break;
 		case RX_STRUCT_TYPE:
 			{
 				reader.start_array(name);
@@ -542,7 +599,7 @@ bool serialize_value(base_meta_writer& writer, const rx_value_union& who, rx_val
 			writer.write_bool(name, who.bool_value);
 			break;
 		case RX_INT8_TYPE:
-			writer.write_byte(name, who.int8_value);
+			writer.write_sbyte(name, who.int8_value);
 			break;
 		case RX_UINT8_TYPE:
 			writer.write_byte(name, who.uint8_value);
@@ -2074,7 +2131,8 @@ void rx_value::dump_to_stream (std::ostream& out) const
 {
 	rx_string_wrapper str;
 	rx_get_string_value(&data_.value, -1, &str);
-	out << str.to_string_view();
+	if(str.empty())
+		out << str.c_str();
 	rx_time temp(data_.time);
 	out << " [" << temp.get_string() << "] ";
 	string_type q;
@@ -2276,7 +2334,7 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	}
 }
 
-rx_simple_value rx_value::to_simple () const
+rx::values::rx_simple_value rx_value::to_simple () const
 {
     return rx_simple_value(&data_.value);
 }
@@ -2376,9 +2434,9 @@ uint32_t rx_value::get_origin () const
 	return data_.origin & RX_ORIGIN_MASK;
 }
 
-rx_simple_value rx_value::operator [] (int index) const
+rx::values::rx_simple_value rx_value::operator [] (int index) const
 {
-	/*if (is_array())
+	if (is_array())
 	{
 		if (index < 0 || (size_t)index >= array_size())
 		{
@@ -2386,14 +2444,29 @@ rx_simple_value rx_value::operator [] (int index) const
 			return rx_simple_value();
 		}
 		rx_simple_value ret;
-		if (RX_OK != rx_get_array_value(index, &ret.data_, &data_))
+		if (RX_OK != rx_get_array_value(index, &ret.data_, &data_.value))
 		{
 			RX_ASSERT(false);
 			return rx_simple_value();
 		}
 		return ret;
 	}
-	else*/
+	else if (is_struct())
+	{
+		if (index < 0 || (size_t)index >= struct_size())
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		rx_simple_value ret;
+		if (RX_OK != rx_get_struct_value(index, &ret.data_, &data_.value))
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		return ret;
+	}
+	else
 	{
 		RX_ASSERT(false);
 		return rx_simple_value();
@@ -2402,6 +2475,37 @@ rx_simple_value rx_value::operator [] (int index) const
 
 void rx_value::assign_array (const std::vector<rx_simple_value>& from, rx_time ts, uint32_t quality)
 {
+	if (from.empty())
+		return;
+	rx_value_t type = from[0].data_.value_type;
+	for (const auto& val : from)
+	{
+		if (val.data_.value_type != type)
+			return;
+	}
+	std::vector<const rx_value_union*> data(from.size());
+	int idx = 0;
+	for (const auto& val : from)
+	{
+		data[idx++] = &val.data_.value;
+	}
+	rx_destroy_value(&data_.value);
+	rx_init_array_value_with_ptrs(&data_.value, type, &data[0], data.size());
+}
+
+bool rx_value::is_struct () const
+{
+	return rx_is_struct(&data_.value);
+}
+
+size_t rx_value::struct_size () const
+{
+	size_t ret = 0;
+	int ret_val = rx_get_struct_size(&data_.value, &ret);
+	if (ret_val)
+		return ret;
+	else
+		throw std::invalid_argument("Value is not an array");
 }
 
 
@@ -2595,7 +2699,8 @@ void rx_simple_value::dump_to_stream (std::ostream& out) const
 {
 	rx_string_wrapper str;
 	rx_get_string_value(&data_, -1, &str);
-	out << str.to_string_view();
+	if(!str.empty())
+		out << str.c_str();
 }
 
 void rx_simple_value::get_value (values::rx_value& val, rx_time ts, const rx_mode_type& mode) const
@@ -2780,7 +2885,7 @@ byte_string rx_simple_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx_simple_value rx_simple_value::operator [] (int index) const
+rx::values::rx_simple_value rx_simple_value::operator [] (int index) const
 {
 	if (is_array())
 	{
@@ -2791,6 +2896,21 @@ rx_simple_value rx_simple_value::operator [] (int index) const
 		}
 		rx_simple_value ret;
 		if(RX_OK!=rx_get_array_value(index, &ret.data_, &data_))
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		return ret;
+	}
+	else if (is_struct())
+	{
+		if (index < 0 || (size_t)index >= struct_size())
+		{
+			RX_ASSERT(false);
+			return rx_simple_value();
+		}
+		rx_simple_value ret;
+		if (RX_OK != rx_get_struct_value(index, &ret.data_, &data_))
 		{
 			RX_ASSERT(false);
 			return rx_simple_value();
@@ -2822,6 +2942,21 @@ void rx_simple_value::assign_array (const std::vector<rx_simple_value>& from)
 	}
 	rx_destroy_value(&data_);
 	rx_init_array_value_with_ptrs(&data_, type, &data[0], data.size());
+}
+
+bool rx_simple_value::is_struct () const
+{
+	return rx_is_struct(&data_);
+}
+
+size_t rx_simple_value::struct_size () const
+{
+	size_t ret = 0;
+	int ret_val = rx_get_struct_size(&data_, &ret);
+	if (ret_val)
+		return ret;
+	else
+		throw std::invalid_argument("Value is not an array");
 }
 
 rx_simple_value::rx_simple_value()
@@ -2962,7 +3097,8 @@ void rx_timed_value::dump_to_stream (std::ostream& out) const
 {
 	rx_string_wrapper str;
 	rx_get_string_value(&data_.value, -1, &str);
-	out << str.to_string_view();
+	if(!str.empty())
+		out << str.c_str();
 	out << " [" << rx_time(data_.time).get_string() << "]";
 }
 
@@ -3144,7 +3280,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx_simple_value rx_timed_value::to_simple () const
+rx::values::rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(&data_.value);
 }
@@ -3167,7 +3303,7 @@ byte_string rx_timed_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx_simple_value rx_timed_value::operator [] (int index) const
+rx::values::rx_simple_value rx_timed_value::operator [] (int index) const
 {
 	/*if (is_array())
 	{
@@ -3193,6 +3329,37 @@ rx_simple_value rx_timed_value::operator [] (int index) const
 
 void rx_timed_value::assign_array (const std::vector<rx_simple_value>& from, rx_time ts)
 {
+	if (from.empty())
+		return;
+	rx_value_t type = from[0].data_.value_type;
+	for (const auto& val : from)
+	{
+		if (val.data_.value_type != type)
+			return;
+	}
+	std::vector<const rx_value_union*> data(from.size());
+	int idx = 0;
+	for (const auto& val : from)
+	{
+		data[idx++] = &val.data_.value;
+	}
+	rx_destroy_value(&data_.value);
+	rx_init_array_value_with_ptrs(&data_.value, type, &data[0], data.size());
+}
+
+bool rx_timed_value::is_struct () const
+{
+	return rx_is_struct(&data_.value);
+}
+
+size_t rx_timed_value::struct_size () const
+{
+	size_t ret = 0;
+	int ret_val = rx_get_struct_size(&data_.value, &ret);
+	if (ret_val)
+		return ret;
+	else
+		throw std::invalid_argument("Value is not an array");
 }
 
 

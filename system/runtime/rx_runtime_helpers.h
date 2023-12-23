@@ -56,9 +56,6 @@ class rx_directory_resolver;
 
 namespace runtime {
 namespace structure {
-class source_data;
-class mapper_data;
-class variable_data;
 class runtime_item;
 } // namespace structure
 
@@ -66,16 +63,22 @@ namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
 
-class runtime_process_context;
 namespace relations {
 class relations_holder;
 } // namespace relations
 
 class relation_subscriber;
+class runtime_process_context;
 namespace tag_blocks {
 class binded_tags;
-
 } // namespace tag_blocks
+
+namespace structure {
+class source_data;
+class mapper_data;
+class variable_data;
+
+} // namespace structure
 } // namespace runtime
 } // namespace rx_platform
 
@@ -92,6 +95,23 @@ struct update_item
     runtime_handle_t handle;
     rx_value value;
 };
+
+
+struct simple_event_item
+{    
+    rx_simple_value value;
+    string_type event_id;
+    rx_time ts;
+};
+
+
+struct data_event_item
+{
+    data::runtime_values_data data;
+    string_type event_id;
+    rx_time ts;
+};
+
 
 struct write_result_item
 {
@@ -112,7 +132,7 @@ struct write_tag_data
     runtime_transaction_id_t transaction_id;
     runtime_handle_t item;
     bool test;
-    rx_simple_value value;
+    std::variant<values::rx_simple_value, data::runtime_values_data> data;
     tags_callback_ptr callback;
     rx_security_handle_t identity;
 };
@@ -157,6 +177,14 @@ class io_capabilities
       void set_complex (bool val);
 
       bool get_complex () const;
+
+      void set_in_method (bool val);
+
+      bool get_in_method () const;
+
+      void set_in_event (bool val);
+
+      bool get_in_event () const;
 
 
   protected:
@@ -343,6 +371,8 @@ struct runtime_start_context
       threads::job_thread* queue;
 
       const_callbacks_type const_callbacks;
+
+      logic_blocks::method_data *method;
 
   public:
       template<typename funcT, typename... Args>
@@ -536,6 +566,10 @@ struct runtime_init_context
       rx_item_type item_type;
 
       const_callbacks_type const_callbacks;
+
+      logic_blocks::method_data *method;
+
+      structure::event_data *event;
 
   public:
       template<typename T>

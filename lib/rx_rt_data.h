@@ -36,6 +36,14 @@
 // rx_values
 #include "lib/rx_values.h"
 
+namespace rx {
+namespace data {
+class runtime_model_element;
+
+} // namespace data
+} // namespace rx
+
+
 using namespace rx;
 using namespace rx::values;
 
@@ -109,6 +117,72 @@ public:
 
       string_view_type extract_index (string_view_type name, int& idx) const;
 
+
+
+};
+
+
+
+
+
+
+
+class runtime_data_model 
+{
+    typedef std::vector<std::unique_ptr<runtime_model_element> > elements_type;
+
+  public:
+
+      byte_string serialize () const;
+
+      static runtime_data_model deserialize (byte_string& data);
+
+
+      elements_type elements;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class runtime_model_element 
+{
+    typedef std::variant<values::rx_simple_value, runtime_data_model, std::vector<runtime_data_model> > model_value_type;
+
+  public:
+
+      bool is_value () const;
+
+      bool is_complex () const;
+
+      bool is_complex_array () const;
+
+      const values::rx_simple_value& get_value () const;
+
+      const runtime_data_model& get_complex () const;
+
+      const std::vector<runtime_data_model>& get_complex_array () const;
+
+
+      string_type name;
+
+      string_type description;
+
+      model_value_type value;
+
+
+  protected:
+
+  private:
 
 
 };

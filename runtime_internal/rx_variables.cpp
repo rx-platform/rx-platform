@@ -78,6 +78,7 @@ rx_value register_variable::get_variable_input (runtime_process_context* ctx, ru
 
 rx_result register_variable::variable_write (write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources)
 {
+	
 	value_ = rx_timed_value(std::move(data.value), rx_time::now());
 	if (persist_)
 		ctx->runtime_dirty();

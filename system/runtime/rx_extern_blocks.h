@@ -51,6 +51,7 @@ namespace blocks {
 
 
 
+template <typename implT>
 class extern_source_runtime : public source_runtime  
 {
     DECLARE_CODE_INFO("rx", 1, 0, 0, "\
@@ -61,7 +62,7 @@ Extern Source. Source implementation for externally defined source.");
     typedef std::vector<rx_timer_ptr> timers_type;
 
   public:
-      extern_source_runtime (plugin_source_runtime_struct* impl);
+      extern_source_runtime (implT* impl);
 
       ~extern_source_runtime();
 
@@ -97,7 +98,7 @@ Extern Source. Source implementation for externally defined source.");
 
 
 
-      plugin_source_runtime_struct* impl_;
+      implT* impl_;
 
 
 };
@@ -107,11 +108,12 @@ Extern Source. Source implementation for externally defined source.");
 
 
 
+template <typename implT>
 class extern_mapper_runtime : public mapper_runtime  
 {
 
   public:
-      extern_mapper_runtime (plugin_mapper_runtime_struct* impl);
+      extern_mapper_runtime (implT* impl);
 
       ~extern_mapper_runtime();
 
@@ -132,7 +134,13 @@ class extern_mapper_runtime : public mapper_runtime
 
       rx_result mapper_write (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val);
 
+      rx_result mapper_execute (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val);
+
       void extern_map_current_value () const;
+
+      byte_string extern_get_method_inputs ();
+
+      byte_string extern_get_method_outputs ();
 
 
   protected:
@@ -147,9 +155,11 @@ class extern_mapper_runtime : public mapper_runtime
 
       void mapper_result_received (rx_result&& result, runtime_transaction_id_t id, runtime_process_context* ctx);
 
+      void mapper_execute_result_received (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id, runtime_process_context* ctx);
 
 
-      plugin_mapper_runtime_struct* impl_;
+
+      implT* impl_;
 
 
 };
@@ -270,6 +280,10 @@ class extern_event_runtime : public event_runtime
       void suspend_timer (runtime_handle_t handle);
 
       void destroy_timer (runtime_handle_t handle);
+
+      byte_string extern_get_arguments ();
+
+      void extern_event_fired (rx_simple_value data);
 
 
   protected:

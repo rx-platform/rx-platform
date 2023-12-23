@@ -39,6 +39,7 @@
 #include "rx_abi.h"
 #include "rx_general.h"
 #include "lib/rx_values.h"
+#include "lib/rx_rt_data.h"
 #include "lib/rx_lock.h"
 
 using namespace rx;

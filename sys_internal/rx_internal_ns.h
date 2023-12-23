@@ -115,6 +115,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
 
+      void write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback);
+
       void write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback);
 
       rx_result do_command (rx_object_command_t command_type);
@@ -126,6 +128,8 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -154,6 +158,10 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
       byte_string get_definition_as_bytes () const;
 
       security::security_guard_ptr get_security_guard ();
+
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
 
 
   protected:
@@ -201,6 +209,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
 
+      void write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback);
+
       void write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback);
 
       rx_result do_command (rx_object_command_t command_type);
@@ -212,6 +222,8 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -240,6 +252,10 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
       byte_string get_definition_as_bytes () const;
 
       security::security_guard_ptr get_security_guard ();
+
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
 
 
   protected:
@@ -287,6 +303,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
 
+      void write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback);
+
       void write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback);
 
       rx_result do_command (rx_object_command_t command_type);
@@ -298,6 +316,8 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -326,6 +346,10 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
       byte_string get_definition_as_bytes () const;
 
       security::security_guard_ptr get_security_guard ();
+
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
 
 
   protected:
@@ -369,6 +393,8 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
 
+      void write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback);
+
       void write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback);
 
       rx_result do_command (rx_object_command_t command_type);
@@ -380,6 +406,8 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -408,6 +436,10 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
       byte_string get_definition_as_bytes () const;
 
       security::security_guard_ptr get_security_guard ();
+
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
 
 
   protected:
@@ -451,6 +483,8 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
 
+      void write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback);
+
       void write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback);
 
       rx_result do_command (rx_object_command_t command_type);
@@ -462,6 +496,8 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
       std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor);
+
+      rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
       rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor);
 
@@ -490,6 +526,10 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
       byte_string get_definition_as_bytes () const;
 
       security::security_guard_ptr get_security_guard ();
+
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
 
 
   protected:

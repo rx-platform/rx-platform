@@ -111,6 +111,7 @@ class event_blocks_algorithm;
 class data_blocks_algorithm; 
 class method_blocks_algorithm;
 class data_types_algorithm;
+class mapsrc_data_algorithm;
 }
 
 }
@@ -933,17 +934,17 @@ class source_attribute
 
 
 
-class mapped_data_type 
+class mapsrc_data_type 
 {
     typedef std::vector<source_attribute> sources_type;
 	typedef std::vector<mapper_attribute> mappers_type;
 
-    friend class rx_platform::meta::meta_algorithm::mapped_data_algorithm;
+    friend class rx_platform::meta::meta_algorithm::mapsrc_data_algorithm;
 
   public:
-      mapped_data_type();
+      mapsrc_data_type();
 
-      ~mapped_data_type();
+      ~mapsrc_data_type();
 
 
       rx_result register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
@@ -1418,6 +1419,36 @@ class data_type_def
       names_cahce_type names_cache_;
 
       string_type description_;
+
+
+};
+
+
+
+
+
+
+class mapped_data_type 
+{
+    typedef std::vector<mapper_attribute> mappers_type;
+
+    friend class rx_platform::meta::meta_algorithm::mapped_data_algorithm;
+
+  public:
+      mapped_data_type();
+
+      ~mapped_data_type();
+
+
+      rx_result register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data);
+
+
+  protected:
+
+  private:
+
+
+      mappers_type mappers_;
 
 
 };

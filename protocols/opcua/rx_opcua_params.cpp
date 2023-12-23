@@ -68,6 +68,46 @@ void ua_extension::internal_deserialize_extension(binary::ua_binary_istream& str
 
 }
 
+ua_argument::ua_argument()
+	: ua_extension(rx_node_id::opcua_standard_id(opcid_Argument)
+		, rx_node_id::opcua_standard_id(opcid_Argument_Encoding_DefaultBinary)
+		, rx_node_id::opcua_standard_id(opcid_Argument_Encoding_DefaultXml))
+		, value_rank(-1)
+{
+}
+
+opcua_extension_ptr ua_argument::make_copy()
+{
+	auto ret = std::make_unique<ua_argument>();
+
+	ret->name = name;
+	ret->data_type = data_type;
+	ret->value_rank = value_rank;
+	ret->array_dimensions = array_dimensions;
+	ret->description = description;
+
+	return ret;
+}
+
+
+void ua_argument::internal_serialize_extension(binary::ua_binary_ostream& stream) const
+{
+	stream << name;
+	stream << data_type;
+	stream << value_rank;
+	stream << array_dimensions;
+	stream << description;
+}
+void ua_argument::internal_deserialize_extension(binary::ua_binary_istream& stream)
+{
+	stream >> name;
+	stream >> data_type;
+	stream >> value_rank;
+	stream >> array_dimensions;
+	stream >> description;
+}
+
+
 void opcua_view_description::serialize(binary::ua_binary_ostream& stream) const
 {
 	stream << view_id;
@@ -413,6 +453,38 @@ void write_value::deserialize(binary::ua_binary_istream& stream)
 	stream >> range;
 	stream >> value;
 }
+
+
+
+void execute_value::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream << node_id;
+	stream << method_id;
+	stream << arguments;
+}
+void execute_value::deserialize(binary::ua_binary_istream& stream)
+{
+	stream >> node_id;
+	stream >> method_id;
+	stream >> arguments;
+}
+
+
+void execute_result::serialize(binary::ua_binary_ostream& stream) const
+{
+	stream << status_code;
+	stream << input_arguments_result;
+	stream<< inputs_diagnostics_info;
+	stream << out_arguments;
+}
+void execute_result::deserialize(binary::ua_binary_istream& stream)
+{
+	stream >> status_code;
+	stream >> input_arguments_result;
+	stream >> inputs_diagnostics_info;
+	stream >> out_arguments;
+}
+
 
 
 void diagnostic_info::fill_diagnostics_strings(string_array& strings, uint32_t mask) const

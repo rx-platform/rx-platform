@@ -40,6 +40,7 @@
 #include "rx_opcua_view.h"
 #include "rx_monitoreditem_set.h"
 #include "rx_opcua_subs_set.h"
+#include "rx_method_set.h"
 
 #include "rx_opcua_identifiers.h"
 using namespace protocols::opcua::ids;
@@ -177,6 +178,10 @@ void opcua_requests_repository::init_requests ()
 	register_request(std::move(ptr));
 	ptr = std::make_unique<opcua_subscription::opcua_delete_subs_request>();
 	register_request(std::move(ptr));
+	// method service set
+	ptr = std::make_unique<opcua_method::opcua_call_request>();
+	register_request(std::move(ptr));
+
 }
 
 rx_result opcua_requests_repository::register_request (opcua_request_ptr req)

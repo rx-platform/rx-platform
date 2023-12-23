@@ -90,6 +90,26 @@ bool io_capabilities::get_complex () const
 	return settings_.test(2);
 }
 
+void io_capabilities::set_in_method (bool val)
+{
+	settings_[3] = val;
+}
+
+bool io_capabilities::get_in_method () const
+{
+	return settings_.test(3);
+}
+
+void io_capabilities::set_in_event (bool val)
+{
+	settings_[4] = val;
+}
+
+bool io_capabilities::get_in_event () const
+{
+	return settings_.test(4);
+}
+
 
 // Class rx_platform::runtime::runtime_deinit_context 
 
@@ -108,7 +128,9 @@ runtime_init_context::runtime_init_context (structure::runtime_item& root, const
         meta(meta),
         directories(directories),
         now(rx_time::now()),
-        item_type(type)
+        item_type(type),
+        method(nullptr),
+        event(nullptr)
     , structure(root)
     , tags(binded)
 {
@@ -213,7 +235,8 @@ runtime_start_context::runtime_start_context (structure::runtime_item& root, run
         directories(directories),
         now(rx_time::now()),
         simulation(false),
-        queue(jobs_queue)
+        queue(jobs_queue),
+        method(nullptr)
     , structure(root)
 {
 }

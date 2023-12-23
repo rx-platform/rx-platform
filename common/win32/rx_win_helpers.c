@@ -39,6 +39,7 @@
 int rx_hd_timer = 1;
 
 
+
 typedef DWORD(__stdcall*
 	NtSetInformationProcess_t)(
 		IN HANDLE               ProcessHandle,
@@ -392,7 +393,6 @@ RX_COMMON_API void rx_rw_slim_lock_create(prw_slim_lock_t plock)
 }
 RX_COMMON_API void rx_rw_slim_lock_destroy(prw_slim_lock_t plock)
 {
-	// nothing to do on windows, strange but jebi ga
 }
 RX_COMMON_API void rx_rw_slim_lock_aquire_reader(prw_slim_lock_t plock)
 {

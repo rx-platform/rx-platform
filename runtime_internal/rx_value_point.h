@@ -99,6 +99,8 @@ class value_point_impl
 
       void write (rx_simple_value val, runtime_transaction_id_t id, data_controler* controler = nullptr);
 
+      void write (data::runtime_values_data val, runtime_transaction_id_t id, data_controler* controler = nullptr);
+
       void execute (values::rx_simple_value data, runtime_transaction_id_t id, data_controler* controler = nullptr);
 
       void execute (data::runtime_values_data data, runtime_transaction_id_t id, data_controler* controler = nullptr);

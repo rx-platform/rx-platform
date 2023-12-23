@@ -118,6 +118,8 @@ class local_relation_connector : public rx_platform::runtime::relations::relatio
 
       rx_result write_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, rx_simple_value&& value);
 
+      rx_result write_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data&& value);
+
       rx_result execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, values::rx_simple_value&& value);
 
       rx_result execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data value);
@@ -209,6 +211,8 @@ class remote_relation_connector : public rx_platform::runtime::relations::relati
       rx_result disconnect_items (const std::vector<runtime_handle_t>& items);
 
       rx_result write_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, rx_simple_value&& value);
+
+      rx_result write_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, data::runtime_values_data&& value);
 
       rx_result execute_tag (runtime_transaction_id_t trans, bool test, runtime_handle_t item, values::rx_simple_value&& value);
 

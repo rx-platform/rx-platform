@@ -49,6 +49,33 @@ namespace requests {
 
 namespace opcua_attributes {
 
+// Class protocols::opcua::requests::opcua_attributes::opcua_read_response 
+
+opcua_read_response::opcua_read_response (const opcua_request_base& req)
+	: opcua_response_base(req)
+{
+}
+
+
+
+rx_node_id opcua_read_response::get_binary_response_id ()
+{
+	return rx_node_id::opcua_standard_id(opcid_ReadResponse_Encoding_DefaultBinary);
+}
+
+opcua_response_ptr opcua_read_response::create_empty () const
+{
+	return std::make_unique<opcua_read_response>();
+}
+
+rx_result opcua_read_response::serialize_binary (binary::ua_binary_ostream& stream) const
+{
+	stream << results;
+	stream << diagnostics_info;
+	return true;
+}
+
+
 // Class protocols::opcua::requests::opcua_attributes::opcua_read_request 
 
 
@@ -85,33 +112,6 @@ opcua_response_ptr opcua_read_request::do_job (opcua_server_endpoint_ptr ep)
 	addr_space->read_attributes(to_read, ret_ptr->results);
 
 	return ret_ptr;
-}
-
-
-// Class protocols::opcua::requests::opcua_attributes::opcua_read_response 
-
-opcua_read_response::opcua_read_response (const opcua_request_base& req)
-	: opcua_response_base(req)
-{
-}
-
-
-
-rx_node_id opcua_read_response::get_binary_response_id ()
-{
-	return rx_node_id::opcua_standard_id(opcid_ReadResponse_Encoding_DefaultBinary);
-}
-
-opcua_response_ptr opcua_read_response::create_empty () const
-{
-	return std::make_unique<opcua_read_response>();
-}
-
-rx_result opcua_read_response::serialize_binary (binary::ua_binary_ostream& stream) const
-{
-	stream << results;
-	stream << diagnostics_info;
-	return true;
 }
 
 

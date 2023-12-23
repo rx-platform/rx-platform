@@ -139,7 +139,7 @@ void opcua_server_endpoint_base::queue_write_request (opcua_write_request_ptr re
 	data.results.assign(count, { 0, opcid_RxPending });
 
 	write_request_data* active_data;
-	
+
 	locks::auto_lock_t _(&transactions_lock_);
 
 	auto it = write_requests_.begin();
@@ -181,7 +181,7 @@ void opcua_server_endpoint_base::queue_write_request (opcua_write_request_ptr re
 		active_data->request_ptr.reset();
 		for (size_t i = 0; i < count; i++)
 		{
-			resp_ptr->results.push_back(active_data->results[i].second);
+			resp_ptr->results.push_back(active_data->results[i].first);
 		}
 		send_response(std::move(resp_ptr));
 	}
@@ -216,6 +216,127 @@ void opcua_server_endpoint_base::write_response (opcua_result_t status, runtime_
 								for (size_t i = 0; i < count; i++)
 								{
 									resp_ptr->results.push_back(data.results[i].second);
+								}
+								send_response(std::move(resp_ptr));
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void opcua_server_endpoint_base::queue_execute_request (opcua_execute_request_ptr req)
+{
+	execute_request_data data;
+	size_t count = req->to_execute.size();
+	data.pending_count = count;
+	data.results.reserve(count);
+	for(size_t i=0; i<count; i++)
+	{
+        execute_result temp;
+        temp.status_code = opcid_RxPending;
+        data.results.emplace_back( 0, std::move(temp));
+	}
+
+	execute_request_data* active_data;
+
+	locks::auto_lock_t _(&transactions_lock_);
+
+	auto it = execute_requests_.begin();
+	size_t trans_idx = 0;
+	while (it != execute_requests_.end() && it->request_ptr)
+	{
+		it++;
+		trans_idx++;
+	}
+	if (it == execute_requests_.end())
+	{
+		active_data = &execute_requests_.emplace_back(std::move(data));
+	}
+	else
+	{
+		*it = std::move(data);
+		active_data = &(*it);
+	}
+	active_data->request_ptr = std::move(req);
+	smart_ptr ep = smart_this();
+	for (size_t i = 0; i < count; i++)
+	{
+		auto& execute_ref = active_data->request_ptr->to_execute[i];
+		auto res = address_space_->execute(execute_ref.node_id, execute_ref.method_id, execute_ref.arguments, ep);
+		if (!res.second)
+		{
+			active_data->results[i].first = res.first;
+			active_data->results[i].second.status_code = res.second;
+			active_data->pending_count--;
+		}
+		else
+		{
+			active_data->results[i].first = res.second;
+			execute_cache_.emplace(res.second, trans_idx);
+		}
+	}
+	if (active_data->pending_count == 0)
+	{// everything done
+		auto resp_ptr = std::make_unique<requests::opcua_method::opcua_call_response>(*active_data->request_ptr);
+		active_data->request_ptr.reset();
+		for (size_t i = 0; i < count; i++)
+		{
+			execute_result temp;
+			temp.status_code = active_data->results[i].first;
+			resp_ptr->results.push_back(std::move(temp));
+		}
+		send_response(std::move(resp_ptr));
+	}
+}
+
+void opcua_server_endpoint_base::execute_response (opcua_result_t status, rx_simple_value out_data, runtime_transaction_id_t trans_id)
+{
+	locks::auto_lock_t _(&transactions_lock_);
+	auto it = execute_cache_.find(trans_id);
+	if (it != execute_cache_.end())
+	{
+		size_t idx = it->second;
+		execute_cache_.erase(it);
+		if (idx < execute_requests_.size())
+		{
+			execute_request_data& data = execute_requests_[idx];
+			if (data.request_ptr)
+			{
+				size_t count = data.request_ptr->to_execute.size();
+				for (size_t i = 0; i < count; i++)
+				{
+					if (data.results[i].first == trans_id)
+					{
+						if (data.results[i].second.status_code == opcid_RxPending)
+						{
+							data.results[i].second.status_code = status;
+							if (out_data.is_struct())
+							{
+								std::vector<variant_type> out_args;
+								for (int i = 0; i < (int)out_data.struct_size(); i++)
+								{
+									if (out_data[i].is_array() || out_data[i].is_struct())
+									{
+										RX_ASSERT(false);
+										return;
+									}
+									variant_type temp_var;
+									temp_var.from_rx_value(out_data[i]);
+									out_args.push_back(std::move(temp_var));
+								}
+								data.results[i].second.out_arguments = std::move(out_args);
+							}
+							data.pending_count--;
+							if (data.pending_count == 0)
+							{// everything done
+								auto resp_ptr = std::make_unique<requests::opcua_method::opcua_call_response>(*data.request_ptr);
+								data.request_ptr.reset();
+								for (size_t i = 0; i < count; i++)
+								{
+									resp_ptr->results.push_back(std::move(data.results[i].second));
 								}
 								send_response(std::move(resp_ptr));
 							}

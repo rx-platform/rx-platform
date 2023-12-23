@@ -66,6 +66,7 @@ namespace api
 void bind_plugins_dynamic_api();
 const platform_api_t* get_plugins_dynamic_api();
 const platform_api2_t* get_plugins_dynamic_api2();
+const platform_api3_t* get_plugins_dynamic_api3();
 
 struct query_result_detail
 {

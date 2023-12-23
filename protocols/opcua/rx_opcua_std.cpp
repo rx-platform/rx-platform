@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -54,7 +54,7 @@ struct std_nodes_comparator
 };
 
 
-// Class protocols::opcua::opcua_addr_space::opcua_std_address_space 
+// Class protocols::opcua::opcua_addr_space::opcua_std_address_space
 
 opcua_std_address_space::opcua_std_address_space()
       : config_ts_(rx_time::now())
@@ -120,6 +120,12 @@ std::pair<opcua_result_t, runtime_transaction_id_t> opcua_std_address_space::wri
             }
         }
     }
+    return result;
+}
+
+std::pair<opcua_result_t, runtime_transaction_id_t> opcua_std_address_space::execute (const rx_node_id& node_id, const rx_node_id& method_id, std::vector<variant_type> args, opcua_server_endpoint_ptr ep)
+{
+    std::pair<opcua_result_t, runtime_transaction_id_t> result = { opcid_Bad_NodeIdUnknown, 0 };
     return result;
 }
 
@@ -260,6 +266,27 @@ std::shared_ptr<opcua_node_base> opcua_std_address_space::connect_node_reference
     return nullptr;
 }
 
+bool opcua_std_address_space::disconnect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse)
+{
+    if (ref_data.target_id.is_null() || !ref_data.target_id.is_opc())
+        return false;
+    auto it = get_by_id(ref_data.target_id.get_numeric());
+    if (it != registered_nodes_.end())
+    {
+        if (!(*it)->references_.disconnect_node_reference(node, ref_data, inverse))
+            return false;
+        return true;
+    }
+    auto it_val = get_valued_by_id(ref_data.target_id.get_numeric());
+    if (it_val != registered_valued_nodes_.end())
+    {
+        if (!(*it_val)->references_.disconnect_node_reference(node, ref_data, inverse))
+            return false;
+        return true;
+    }
+    return false;
+}
+
 opcua_result_t opcua_std_address_space::register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val)
 {
     return opcid_Bad_NotSupported;
@@ -307,7 +334,7 @@ opcua_std_address_space::registered_valued_nodes_type::iterator opcua_std_addres
 }
 
 
-// Class protocols::opcua::opcua_addr_space::opcua_std_node 
+// Class protocols::opcua::opcua_addr_space::opcua_std_node
 
 opcua_std_node::opcua_std_node()
     : node_class(node_class_type::node),
@@ -412,7 +439,10 @@ void opcua_std_node::read_attribute (attribute_id id, const string_type& range, 
                         value_storage.status_code = opcid_OK;
                         break;
                     case attribute_id::inverse_name:
-                        value_storage.value = variant_type(inverse_name);
+                        if(inverse_name)
+                            value_storage.value = variant_type(localized_text{ inverse_name });
+                        else
+                            value_storage.value = variant_type(localized_text{});
                         value_storage.set_timestamp(config_ts);
                         value_storage.status_code = opcid_OK;
                         break;
@@ -495,6 +525,15 @@ std::pair<opcua_result_t, runtime_transaction_id_t> opcua_std_node::write_attrib
     return { opcid_Bad_NotWritable, 0 };
 }
 
+std::pair<opcua_result_t, runtime_transaction_id_t> opcua_std_node::execute (std::vector<variant_type> args, opcua_server_endpoint_ptr ep)
+{
+    if(this->node_class==node_class_type::method)
+        return { opcid_Bad_MethodInvalid/*opcid_Bad_NotExecutable* is what should be
+                                        but i don't have a constant value*/, 0};
+    else
+        return { opcid_Bad_MethodInvalid, 0 };
+}
+
 void opcua_std_node::browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const
 {
     std::set<rx_node_id> refIds;
@@ -511,7 +550,7 @@ void opcua_std_node::browse (const opcua_browse_description& to_browse, browse_r
         {
             auto node_ptr = one.resolved_node.lock();
             if (node_ptr
-                && (to_browse.node_class_mask==0 
+                && (to_browse.node_class_mask==0
                     || ((uint32_t)node_ptr->get_node_class() & to_browse.node_class_mask) != 0))
             {
                 if(!refIds.empty() && refIds.count(one.reference_id))
@@ -649,7 +688,7 @@ void opcua_std_node::resolve_std_references (const opcua_std_node_argument_t& da
 }
 
 
-// Class protocols::opcua::opcua_addr_space::opcua_std_valued_node 
+// Class protocols::opcua::opcua_addr_space::opcua_std_valued_node
 
 opcua_std_valued_node::opcua_std_valued_node()
     : data_type_id(0),
@@ -669,7 +708,7 @@ opcua_std_valued_node::opcua_std_valued_node (opcua_std_valued_node_argument_t a
 
 void opcua_std_valued_node::read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const
 {
-       
+
     switch (id)
     {
     case attribute_id::value:

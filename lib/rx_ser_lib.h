@@ -58,8 +58,9 @@ using namespace rx;
 #define RX_STRUCT_LEVEL_VERSION     0x20001
 #define RX_CONST_OPTS_VERSION       0x20002
 #define RX_MODE_CONTEXT_VERSION     0x20003
+#define RX_METHOD_MAPPERS_VERSION   0x20004
 
-#define RX_CURRENT_SERIALIZE_VERSION RX_MODE_CONTEXT_VERSION
+#define RX_CURRENT_SERIALIZE_VERSION RX_METHOD_MAPPERS_VERSION
 
 //////////////////////////////////////////////////
 // streaming constants from header
@@ -127,6 +128,8 @@ public:
       virtual bool end_object () = 0;
 
       virtual bool write_byte (const char* name, uint8_t val) = 0;
+
+      virtual bool write_sbyte (const char* name, int8_t val) = 0;
 
       virtual bool write_value (const char* name, const rx_value& val) = 0;
 
@@ -219,6 +222,8 @@ class base_meta_reader
       virtual bool end_object () = 0;
 
       virtual bool read_byte (const char* name, uint8_t& val) = 0;
+
+      virtual bool read_sbyte (const char* name, int8_t& val) = 0;
 
       virtual bool read_value (const char* name, rx_value& val) = 0;
 

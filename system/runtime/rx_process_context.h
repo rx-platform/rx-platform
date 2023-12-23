@@ -114,6 +114,107 @@ class process_context_job : public context_job
 
 
 
+struct context_write_data 
+{
+
+
+      bool internal;
+
+      runtime_transaction_id_t transaction_id;
+
+      std::variant<values::rx_simple_value, data::runtime_values_data> data;
+
+      bool test;
+
+      rx_security_handle_t identity;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class relation_subscriber 
+{
+
+  public:
+
+      virtual void relation_connected (const string_type& name, const platform_item_ptr& item) = 0;
+
+      virtual void relation_disconnected (const string_type& name) = 0;
+
+      virtual ~relation_subscriber() = default;
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct context_execute_data 
+{
+
+
+      bool internal;
+
+      runtime_transaction_id_t transaction_id;
+
+      std::variant<values::rx_simple_value, data::runtime_values_data> data;
+
+      bool test;
+
+      rx_security_handle_t identity;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+struct method_execute_result_data
+{
+    logic_blocks::method_data* whose;
+    rx_result result;
+    values::rx_simple_value data;
+    runtime_transaction_id_t transaction_id;
+    method_execute_result_data() = default;
+    method_execute_result_data(method_execute_result_data&& right) noexcept
+    {
+        whose = right.whose;
+        result = std::move(right.result);
+        data = std::move(right.data);
+        transaction_id = right.transaction_id;
+    }
+    method_execute_result_data& operator=(method_execute_result_data&& right) noexcept
+    {
+        whose = right.whose;
+        result = std::move(right.result);
+        data = std::move(right.data);
+        transaction_id = right.transaction_id;
+        return *this;
+    }
+};
+
+
+
+
+
 struct write_data 
 {
 
@@ -170,28 +271,6 @@ struct write_result_struct
 
 
 
-class relation_subscriber 
-{
-
-  public:
-
-      virtual void relation_connected (const string_type& name, const platform_item_ptr& item) = 0;
-
-      virtual void relation_disconnected (const string_type& name) = 0;
-
-      virtual ~relation_subscriber() = default;
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 struct execute_data 
 {
 
@@ -200,7 +279,7 @@ struct execute_data
 
       runtime_transaction_id_t transaction_id;
 
-      std::variant<values::rx_simple_value, data::runtime_values_data> data;
+      rx_simple_value value;
 
       bool test;
 
@@ -215,25 +294,30 @@ struct execute_data
 
 };
 
-struct method_execute_result_data
+template<class T>
+struct execute_data_struct
 {
-    logic_blocks::method_data* whose;
+    T* whose;
+    execute_data data;
+};
+
+template<class T>
+struct execute_result_struct
+{
+    T* whose;
     rx_result result;
-    values::rx_simple_value data;
     runtime_transaction_id_t transaction_id;
-    method_execute_result_data() = default;
-    method_execute_result_data(method_execute_result_data&& right) noexcept
+    execute_result_struct() = default;
+    execute_result_struct(execute_result_struct&& right) noexcept
     {
         whose = right.whose;
         result = std::move(right.result);
-        data = std::move(right.data);
         transaction_id = right.transaction_id;
     }
-    method_execute_result_data& operator=(method_execute_result_data&& right) noexcept
+    execute_result_struct& operator=(execute_result_struct&& right) noexcept
     {
         whose = right.whose;
         result = std::move(right.result);
-        data = std::move(right.data);
         transaction_id = right.transaction_id;
         return *this;
     }
@@ -312,6 +396,7 @@ typedef std::vector<job_ptr> owner_jobs_type;
 typedef std::vector<update_data_struct<structure::mapper_data> > mapper_updates_type;
 typedef std::vector<update_data_struct<structure::source_data> > source_updates_type;
 typedef std::vector<write_data_struct<structure::mapper_data> > mapper_writes_type;
+typedef std::vector<execute_data_struct<structure::mapper_data> > mapper_executes_type;
 typedef std::vector<write_data_struct<structure::source_data> > source_writes_type;
 typedef std::vector<write_result_struct<structure::source_data> > source_results_type;
 typedef std::vector<write_result_struct<structure::variable_data> > variable_results_type;
@@ -383,6 +468,8 @@ class runtime_process_context
 
       void mapper_write_pending (write_data_struct<structure::mapper_data> data);
 
+      void mapper_execute_pending (execute_data_struct<structure::mapper_data> data);
+
       void tag_writes_pending ();
 
       void variable_pending (structure::variable_data* whose);
@@ -411,7 +498,7 @@ class runtime_process_context
 
       bool should_process_tag_writes ();
 
-      mapper_writes_type& get_mapper_writes ();
+      std::pair<mapper_writes_type*, mapper_executes_type*> get_mapper_inputs ();
 
       mapper_updates_type& get_mapper_updates ();
 
@@ -462,6 +549,8 @@ class runtime_process_context
       bool is_mine_value (const rx_value& from) const;
 
       void value_changed (structure::value_data* whose);
+
+      void method_changed (logic_blocks::method_data* whose);
 
 
       const rx_mode_type get_mode () const
@@ -543,6 +632,8 @@ class runtime_process_context
       fire_callback_func_t fire_callback_;
 
       double_collection<mapper_writes_type> mapper_inputs_;
+
+      double_collection<mapper_executes_type> mapper_executes_;
 
       double_collection<mapper_updates_type> mapper_outputs_;
 

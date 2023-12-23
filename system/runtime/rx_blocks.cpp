@@ -253,6 +253,30 @@ void mapper_runtime::mapper_write_pending (write_data&& data)
     }
 }
 
+void mapper_runtime::mapper_execute_pending (execute_data&& data)
+{
+    if (container_)
+    {
+        if (rx_is_debug_instance())
+        {
+            static string_type message;
+            static char* message_buffer = nullptr;
+            if (message.empty())
+            {
+                std::ostringstream ss;
+                ss << "Mapper "
+                    << container_->full_path
+                    << " started execute with id:%08X";
+                message = ss.str();
+                message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/];
+            }
+            sprintf(message_buffer, message.c_str(), data.transaction_id);
+            RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
+        }
+        container_->mapper_execute_pending(std::move(data));
+    }
+}
+
 void mapper_runtime::map_current_value () const
 {
     if (container_)
@@ -269,9 +293,43 @@ void mapper_runtime::mapper_result_received (rx_result&& result, runtime_transac
 {
 }
 
+void mapper_runtime::mapped_event_fired (rx_value&& val, runtime_process_context* ctx)
+{
+}
+
+void mapper_runtime::mapper_execute_result_received (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id, runtime_process_context* ctx)
+{
+}
+
 std::vector<rx_simple_value> mapper_runtime::get_mapping_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const
 {
     return ctx.mappers.get_mapping_values(id, path);
+}
+
+data::runtime_data_model mapper_runtime::get_method_inputs ()
+{
+    if (container_)
+    {
+        return container_->get_method_inputs();
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return data::runtime_data_model();
+    }
+}
+
+data::runtime_data_model mapper_runtime::get_method_outputs ()
+{
+    if (container_)
+    {
+        return container_->get_method_outputs();
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return data::runtime_data_model();
+    }
 }
 
 
@@ -395,9 +453,18 @@ void source_runtime::source_result_received (rx_result&& result, runtime_transac
     }
 }
 
+void source_runtime::source_execute_result_received (rx_simple_value out_val, rx_result&& result, runtime_transaction_id_t id)
+{
+}
+
 rx_result source_runtime::source_write (write_data&& data, runtime_process_context* ctx)
 {
-    return RX_NOT_IMPLEMENTED;
+    return RX_NOT_SUPPORTED;
+}
+
+rx_result source_runtime::source_execute (execute_data&& data, runtime_process_context* ctx)
+{
+    return RX_NOT_SUPPORTED;
 }
 
 std::vector<rx_simple_value> source_runtime::get_source_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const
@@ -550,6 +617,13 @@ rx_result variable_runtime::variable_write (write_data&& data, runtime_process_c
 string_type event_runtime::type_name = RX_CPP_EVENT_TYPE_NAME;
 
 event_runtime::event_runtime()
+      : container_(nullptr)
+{
+}
+
+event_runtime::event_runtime (lock_reference_struct* extern_data)
+      : container_(nullptr)
+    , reference_object(extern_data)
 {
 }
 
@@ -584,6 +658,31 @@ rx_result event_runtime::stop_event (runtime::runtime_stop_context& ctx)
 rx_result event_runtime::deinitialize_event (runtime::runtime_deinit_context& ctx)
 {
 	return true;
+}
+
+void event_runtime::event_fired (rx_simple_value data)
+{
+    if(container_)
+    {
+        container_->event_fired(std::move(data));
+    }
+    else
+    {
+        RX_ASSERT(false);
+    }
+}
+
+data::runtime_data_model event_runtime::get_arguemnts ()
+{
+    if (container_)
+    {
+        return container_->get_arguments();
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return data::runtime_data_model();
+    }
 }
 
 

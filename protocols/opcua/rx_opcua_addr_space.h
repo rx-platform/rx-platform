@@ -39,14 +39,14 @@ using namespace protocols::opcua::common;
 
 namespace protocols {
 namespace opcua {
-namespace opcua_subscriptions {
-class opcua_monitored_value;
-} // namespace opcua_subscriptions
-
 namespace opcua_addr_space {
 class node_references;
-
 } // namespace opcua_addr_space
+
+namespace opcua_subscriptions {
+class opcua_monitored_value;
+
+} // namespace opcua_subscriptions
 } // namespace opcua
 } // namespace protocols
 
@@ -82,6 +82,8 @@ class opcua_node_base
       virtual void read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value, const rx_time& config_ts) const = 0;
 
       virtual std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep) = 0;
+
+      virtual std::pair<opcua_result_t, runtime_transaction_id_t> execute (std::vector<variant_type> args, opcua_server_endpoint_ptr ep) = 0;
 
       virtual void browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const = 0;
 
@@ -163,6 +165,8 @@ class opcua_address_space_base
 
       virtual std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (const rx_node_id& node_id, attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep) = 0;
 
+      virtual std::pair<opcua_result_t, runtime_transaction_id_t> execute (const rx_node_id& node_id, const rx_node_id& method_id, std::vector<variant_type> args, opcua_server_endpoint_ptr ep) = 0;
+
       virtual void browse (const opcua_view_description& view, const std::vector<opcua_browse_description>& to_browse, std::vector<browse_result_internal>& results) const = 0;
 
       virtual void translate (const std::vector<browse_path>& browse_paths, std::vector<browse_path_result>& results, opcua_address_space_base* root) const = 0;
@@ -176,6 +180,8 @@ class opcua_address_space_base
       virtual const locks::rw_slim_lock* get_lock () const = 0;
 
       virtual std::shared_ptr<opcua_node_base> connect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse) = 0;
+
+      virtual bool disconnect_node_reference (std::shared_ptr<opcua_node_base> node, const reference_data& ref_data, bool inverse) = 0;
 
       virtual opcua_result_t register_value_monitor (opcua_subscriptions::opcua_monitored_value* who, data_value& val) = 0;
 
@@ -241,6 +247,8 @@ class opcua_base_node_type : public opcua_node_base
       void read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
 
       std::pair<opcua_result_t, runtime_transaction_id_t> write_attribute (attribute_id id, const string_type& range, const data_value& value, opcua_server_endpoint_ptr ep);
+
+      std::pair<opcua_result_t, runtime_transaction_id_t> execute (std::vector<variant_type> args, opcua_server_endpoint_ptr ep);
 
       void browse (const opcua_browse_description& to_browse, browse_result_internal& result, opcua_browse_context* ctx) const;
 
@@ -383,6 +391,9 @@ class opcua_property_node : public opcua_variable_base_node
       opcua_property_node();
 
 
+      rx_node_id get_type_id () const;
+
+
   protected:
 
       void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
@@ -437,6 +448,38 @@ class opcua_object_node : public opcua_base_node_type
 
 
       uint8_t event_notifier;
+
+      rx_node_id type_id;
+
+
+  protected:
+
+      void internal_read_attribute (attribute_id id, const string_type& range, const string_type& encoding, data_value& value_storage, const rx_time& config_ts) const;
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class opcua_method_node : public opcua_base_node_type  
+{
+
+  public:
+      opcua_method_node();
+
+
+      rx_node_id get_type_id () const;
+
+
+      bool executable;
+
+      bool user_executable;
 
       rx_node_id type_id;
 

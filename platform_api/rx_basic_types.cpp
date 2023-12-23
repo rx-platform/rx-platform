@@ -274,6 +274,15 @@ rx_result rx_event::deinitialize_event ()
     return true;
 }
 
+void rx_event::event_fired (rx_simple_value data)
+{
+}
+
+data::runtime_data_model rx_event::get_arguemnts ()
+{
+    return data::runtime_data_model();
+}
+
 
 } // namespace rx_platform_api
 

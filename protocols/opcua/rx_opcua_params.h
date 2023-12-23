@@ -315,6 +315,25 @@ private:
 
 };
 
+class ua_argument : public ua_extension
+{
+public:
+	ua_argument();
+
+	opcua_extension_ptr make_copy();
+
+	string_type name;
+	rx_node_id data_type;
+	int32_t value_rank;
+	std::vector<uint32_t> array_dimensions;
+	localized_text description;
+
+private:
+	void internal_serialize_extension(binary::ua_binary_ostream& stream) const;
+	void internal_deserialize_extension(binary::ua_binary_istream& stream);
+
+};
+
 
 struct application_description
 {
@@ -383,6 +402,28 @@ struct write_value
 	attribute_id attr_id;
 	numeric_range range;
 	data_value value;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
+
+struct execute_value
+{
+	rx_node_id node_id;
+	rx_node_id method_id;
+	std::vector<variant_type> arguments;
+
+	void serialize(binary::ua_binary_ostream& stream) const;
+	void deserialize(binary::ua_binary_istream& stream);
+};
+
+
+struct execute_result
+{
+	opcua_result_t status_code;
+	std::vector<opcua_result_t> input_arguments_result;
+	std::vector<diagnostic_info> inputs_diagnostics_info;
+	std::vector<variant_type> out_arguments;
 
 	void serialize(binary::ua_binary_ostream& stream) const;
 	void deserialize(binary::ua_binary_istream& stream);

@@ -88,6 +88,8 @@ public:
 
       rx::meta_data meta_info;
 
+      def_blocks::mapped_data_type mapping_data;
+
 
       static rx_item_type type_id;
 
@@ -269,7 +271,7 @@ public:
 
       def_blocks::complex_data_type complex_data;
 
-      def_blocks::mapped_data_type mapping_data;
+      def_blocks::mapsrc_data_type mapping_data;
 
       rx::meta_data meta_info;
 
@@ -321,7 +323,7 @@ public:
 
       def_blocks::variable_data_type variable_data;
 
-      def_blocks::mapped_data_type mapping_data;
+      def_blocks::mapsrc_data_type mapping_data;
 
       def_blocks::complex_data_type complex_data;
 
@@ -419,6 +421,8 @@ public:
       def_blocks::complex_data_type complex_data;
 
       rx::meta_data meta_info;
+
+      def_blocks::mapped_data_type mapping_data;
 
 
       static rx_item_type type_id;

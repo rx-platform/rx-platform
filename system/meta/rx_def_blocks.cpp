@@ -395,20 +395,20 @@ filter_attribute::filter_attribute (const string_type& name, const string_type& 
 
 
 
-// Class rx_platform::meta::def_blocks::mapped_data_type 
+// Class rx_platform::meta::def_blocks::mapsrc_data_type 
 
-mapped_data_type::mapped_data_type()
+mapsrc_data_type::mapsrc_data_type()
 {
 }
 
 
-mapped_data_type::~mapped_data_type()
+mapsrc_data_type::~mapsrc_data_type()
 {
 }
 
 
 
-rx_result mapped_data_type::register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+rx_result mapsrc_data_type::register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
 {
 	auto ret = complex_data.check_name(name, (static_cast<int>(mappers_.size() | complex_data_type::mappings_mask)));
 	if(ret)
@@ -418,7 +418,7 @@ rx_result mapped_data_type::register_mapper (const string_type& name, const rx_n
 	return ret;
 }
 
-rx_result mapped_data_type::register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+rx_result mapsrc_data_type::register_source (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
 {
 	auto ret = complex_data.check_name(name, (static_cast<int>(sources_.size() | complex_data_type::sources_mask)));
 	if (ret)
@@ -955,6 +955,30 @@ rx_simple_value data_value_def::get_value () const
 std::vector<values::rx_simple_value> data_value_def::get_values () const
 {
 	return values_;
+}
+
+
+// Class rx_platform::meta::def_blocks::mapped_data_type 
+
+mapped_data_type::mapped_data_type()
+{
+}
+
+
+mapped_data_type::~mapped_data_type()
+{
+}
+
+
+
+rx_result mapped_data_type::register_mapper (const string_type& name, const rx_node_id& id, complex_data_type& complex_data)
+{
+	auto ret = complex_data.check_name(name, (static_cast<int>(mappers_.size() | complex_data_type::mappings_mask)));
+	if (ret)
+	{
+		mappers_.emplace_back(name, id);
+	}
+	return ret;
 }
 
 

@@ -86,29 +86,24 @@ rx_result logic_holder::initialize_logic (runtime::runtime_init_context& ctx)
     rx_result ret(true);
     for (auto& one : runtime_programs_)
     {
+        ctx.path.push_to_path(one.name);
+
         ret = one.item->initialize_runtime(ctx);
         if (!ret)
             return ret;
-
         ret = one.program_ptr->initialize_runtime(ctx);
         if (!ret)
             return ret;
-
+        ctx.path.pop_from_path();
         one.context = one.program_ptr->create_program_context(nullptr, ctx.context->get_security_guard());
     }
     for (auto& one : runtime_methods_)
     {
-        ctx.structure.push_item(*one.item);
-
-        ret = one.item->initialize_runtime(ctx);
+        ctx.path.push_to_path(one.name);
+        ret = one.initialize_runtime(ctx);
         if (!ret)
             return ret;
-        
-        ret = one.method_ptr->initialize_runtime(ctx);
-        if (!ret)
-            return ret;
-
-        ctx.structure.pop_item();
+        ctx.path.pop_from_path();
     }
     return ret;
 }
@@ -126,9 +121,7 @@ rx_result logic_holder::deinitialize_logic (runtime::runtime_deinit_context& ctx
     }
     for (auto& one : runtime_methods_)
     {
-        ret = one.item->deinitialize_runtime(ctx);
-        if (ret)
-            ret = one.method_ptr->deinitialize_runtime(ctx);
+        ret = one.deinitialize_runtime(ctx);
         if (!ret)
             return ret;
     }
@@ -148,9 +141,7 @@ rx_result logic_holder::start_logic (runtime::runtime_start_context& ctx)
     }
     for (auto& one : runtime_methods_)
     {
-        ret = one.item->start_runtime(ctx);
-        if (ret)
-            ret = one.method_ptr->start_runtime(ctx);
+        ret = one.start_runtime(ctx);
         if (!ret)
             return ret;
     }
@@ -170,9 +161,7 @@ rx_result logic_holder::stop_logic (runtime::runtime_stop_context& ctx)
     }
     for (auto& one : runtime_methods_)
     {
-        ret = one.item->stop_runtime(ctx);
-        if (ret)
-            ret = one.method_ptr->stop_runtime(ctx);
+        ret = one.stop_runtime(ctx);
         if (!ret)
             return ret;
     }
@@ -475,12 +464,13 @@ void program_data::process_program (runtime::runtime_process_context& ctx)
 // Class rx_platform::runtime::logic_blocks::method_data 
 
 method_data::method_data (structure::runtime_item::smart_ptr&& rt, method_runtime_ptr&& var, method_data&& prototype)
-    : method_ptr(std::move(var))
+      : context_(nullptr)
+    , method_ptr(std::move(var))
     , item(std::move(rt))
     , inputs(prototype.inputs)
     , outputs(prototype.outputs)
 {
-    value.value.assign_static<uint8_t>(0);
+    value.value.assign_static<int32_t>(0);
     pending_tasks_ = std::make_unique<std::map<runtime_transaction_id_t, std::pair<bool, structure::execute_task*> > >();
 }
 
@@ -489,11 +479,31 @@ method_data::method_data (structure::runtime_item::smart_ptr&& rt, method_runtim
 void method_data::fill_data (const data::runtime_values_data& data)
 {
     item->fill_data(data);
+    auto child_it = data.children.find("In");
+    if (child_it!= data.children.end()
+        && std::holds_alternative<data::runtime_values_data>(child_it->second))
+    {
+        const auto& simple_child = std::get<data::runtime_values_data>(child_it->second);
+        inputs.fill_data(simple_child);
+    }
+    child_it = data.children.find("Out");
+    if (child_it != data.children.end()
+        && std::holds_alternative<data::runtime_values_data>(child_it->second))
+    {
+        auto& simple_child = std::get<data::runtime_values_data>(child_it->second);
+        outputs.fill_data(simple_child);
+    }
 }
 
 void method_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
     item->collect_data(data, type);
+    data::runtime_values_data child_inputs;
+    data::runtime_values_data child_outputs;
+    inputs.collect_data(child_inputs, type);
+    outputs.collect_data(child_outputs, type);
+    data.add_child("In", std::move(child_inputs));
+    data.add_child("Out", std::move(child_outputs));
 }
 
 rx_result method_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx)
@@ -642,7 +652,7 @@ rx_value method_data::get_value (runtime_process_context* ctx) const
     }
 }
 
-rx_result method_data::execute (execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
+rx_result method_data::execute (context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
 {
 
     rx_result result;
@@ -675,29 +685,61 @@ rx_result method_data::execute (execute_data&& data, structure::execute_task* ta
 
     security::secured_scope _(data.identity);
 
+
     auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
+
+    execute_data send_data;
+    send_data.test = data.test;
+    send_data.identity = data.identity;
+    send_data.internal = data.internal;
+    send_data.transaction_id = new_trans;
+    send_data.value = std::move(to_send);
+
     pending_tasks_->emplace(new_trans, std::pair<bool, structure::execute_task*>{ named, task });
-    data.transaction_id = new_trans;
-    auto context = method_ptr->create_execution_context(std::move(data), ctx->get_security_guard());
 
 
-    if (context)
+    result = method_ptr->execute(std::move(send_data), ctx);
+    if (!result)
     {
-        context->method_data_ = this;
-        context->context_ = ctx;
-        context->security_guard_ = ctx->get_security_guard();
-        result = method_ptr->execute(std::move(to_send), context);
+        pending_tasks_->erase(new_trans);
     }
     else
     {
-        result = "Unexpected error, not execute context created!";
+        int32_t val = 0;
+        val = value.simple_get_value().extract_static<int32_t>(val);
+        val++;
+        value.value.assign_static(val);
+        value.value.set_time(ctx->now);
+        context_->method_changed(this);
     }
 
     return result;
 }
 
+void method_data::execution_complete (runtime_transaction_id_t id, rx_result&& result, values::rx_simple_value&& data)
+{
+    if (context_)
+    {
+
+        method_execute_result_data result_data;
+        result_data.result = std::move(result);
+        result_data.transaction_id = id;
+        result_data.data = std::move(data);
+        result_data.whose = this;
+        context_->method_result_pending(std::move(result_data));
+    }
+}
+
 void method_data::process_execute_result (runtime_transaction_id_t id, rx_result&& result, values::rx_simple_value&& data)
 {
+
+    int32_t val = 0;
+    val = value.simple_get_value().extract_static<int32_t>(val);
+    val--;
+    value.value.assign_static(val);
+    value.value.set_time(rx_time::now());
+    context_->method_changed(this);
+
     auto it = pending_tasks_->find(id);
     if (it != pending_tasks_->end())
     {
@@ -744,6 +786,105 @@ void method_data::process_execute_result (runtime_transaction_id_t id, rx_result
             }
         }
     }
+}
+
+rx_result method_data::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+    ctx.structure.push_item(*item);
+    ctx.method = this;
+    method_ptr->container_ = this;
+
+    auto ret = item->initialize_runtime(ctx);
+    if (!ret)
+        return ret;
+    ret = inputs.initialize_runtime(ctx);
+    if (!ret)
+        return ret;
+    ret = outputs.initialize_runtime(ctx);
+    if (!ret)
+        return ret;
+
+    ret = method_ptr->initialize_runtime(ctx);
+    if (!ret)
+        return ret;
+
+    ctx.method = nullptr;
+    ctx.structure.pop_item();
+
+    return true;
+}
+
+rx_result method_data::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+    auto result = method_ptr->deinitialize_runtime(ctx);
+    if (result)
+    {
+        result = item->deinitialize_runtime(ctx);
+        if (result)
+        {
+            result = inputs.deinitialize_runtime(ctx);
+            if (result)
+                result = outputs.deinitialize_runtime(ctx);
+        }
+    }
+    method_ptr->container_ = nullptr;
+
+    return result;
+}
+
+rx_result method_data::start_runtime (runtime::runtime_start_context& ctx)
+{
+    context_ = ctx.context;
+    ctx.structure.push_item(*item);
+    ctx.method = this;
+
+    value.value.set_time(ctx.now);
+
+    auto result = item->start_runtime(ctx);
+    if (result)
+    {
+        if (result)
+        {
+            result = inputs.start_runtime(ctx);
+            if (result)
+            {
+                result = outputs.start_runtime(ctx);
+            }
+        }
+    }
+    if(result)
+        result = method_ptr->start_runtime(ctx);
+
+    ctx.method = nullptr;
+    ctx.structure.pop_item();
+    return result;
+}
+
+rx_result method_data::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+    auto result = method_ptr->stop_runtime(ctx);
+    if (result)
+    {
+        result = item->stop_runtime(ctx);
+        if (result)
+        {
+            result = inputs.stop_runtime(ctx);
+            if (result)
+                result = outputs.stop_runtime(ctx);
+        }
+    }
+    context_ = nullptr;
+    return result;
+}
+
+data::runtime_data_model method_data::get_method_inputs ()
+{
+    return inputs.create_runtime_model();
+}
+
+data::runtime_data_model method_data::get_method_outputs ()
+{
+    return outputs.create_runtime_model();
 }
 
 

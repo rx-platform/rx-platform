@@ -171,9 +171,15 @@ mapper runtime. basic implementation of an mapper runtime");
 
       void mapper_write_pending (write_data&& data);
 
+      void mapper_execute_pending (execute_data&& data);
+
       void map_current_value () const;
 
       std::vector<rx_simple_value> get_mapping_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const;
+
+      data::runtime_data_model get_method_inputs ();
+
+      data::runtime_data_model get_method_outputs ();
 
 
       rx_value_t get_value_type () const;
@@ -243,6 +249,10 @@ mapper runtime. basic implementation of an mapper runtime");
 
       virtual void mapper_result_received (rx_result&& result, runtime_transaction_id_t id, runtime_process_context* ctx);
 
+      virtual void mapped_event_fired (rx_value&& val, runtime_process_context* ctx);
+
+      virtual void mapper_execute_result_received (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id, runtime_process_context* ctx);
+
 
 
       structure::mapper_data* container_;
@@ -296,6 +306,8 @@ source runtime. basic implementation of an source runtime");
       rx_result source_value_changed (rx_value&& val);
 
       void source_result_received (rx_result&& result, runtime_transaction_id_t id);
+
+      void source_execute_result_received (rx_simple_value out_val, rx_result&& result, runtime_transaction_id_t id);
 
       std::vector<rx_simple_value> get_source_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const;
 
@@ -363,6 +375,8 @@ source runtime. basic implementation of an source runtime");
       virtual bool supports_output () const;
 
       virtual rx_result source_write (write_data&& data, runtime_process_context* ctx);
+
+      virtual rx_result source_execute (execute_data&& data, runtime_process_context* ctx);
 
 
 
@@ -482,6 +496,8 @@ event runtime. basic implementation of an event runtime");
   public:
       event_runtime();
 
+      event_runtime (lock_reference_struct* extern_data);
+
       virtual ~event_runtime();
 
 
@@ -501,7 +517,15 @@ event runtime. basic implementation of an event runtime");
 
   protected:
 
+      void event_fired (rx_simple_value data);
+
+      data::runtime_data_model get_arguemnts ();
+
+
   private:
+
+
+      structure::event_data* container_;
 
 
 };

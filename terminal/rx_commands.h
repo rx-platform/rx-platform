@@ -136,7 +136,7 @@ class server_command : public rx_platform::logic::method_runtime
 
       virtual void register_suggestions (const string_type& line, suggestions_type& suggestions);
 
-      rx_result execute (data::runtime_values_data args, logic::method_execution_context* context);
+      rx_result execute (execute_data data, runtime::runtime_process_context* ctx);
 
 
       const string_type& get_console_name () const

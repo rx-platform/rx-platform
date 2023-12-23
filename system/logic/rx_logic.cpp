@@ -38,6 +38,46 @@
 #include "sys_internal/rx_internal_ns.h"
 
 
+
+extern "C"
+{
+
+	void c_method_start_timer(void* whose, runtime_handle_t timer, uint32_t period)
+	{
+		rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
+		self->start_timer(timer, period);
+	}
+	void c_method_suspend_timer(void* whose, runtime_handle_t timer)
+	{
+		rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
+		self->suspend_timer(timer);
+	}
+	void c_method_destroy_timer(void* whose, runtime_handle_t timer)
+	{
+		rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
+		self->destroy_timer(timer);
+	}
+
+	void c_method_result(void* whose, rx_result_struct result, runtime_transaction_id_t id, struct typed_value_type out_val)
+	{
+		rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
+		self->method_result(result, id, out_val);
+	}
+
+	host_method_def_struct _g_method_def_
+	{
+		{
+			nullptr
+			, nullptr
+			, c_method_start_timer
+			, c_method_suspend_timer
+			, c_method_destroy_timer
+		},
+		c_method_result
+	};
+}
+
+
 namespace rx_platform {
 
 namespace logic {
@@ -103,11 +143,18 @@ rx_result program_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 
 // Class rx_platform::logic::method_runtime 
 
+string_type method_runtime::type_name = RX_CPP_METHOD_TYPE_NAME;
+
 method_runtime::method_runtime()
 {
 }
 
 method_runtime::method_runtime (const string_type& name, const rx_node_id& id)
+{
+}
+
+method_runtime::method_runtime (lock_reference_struct* extern_data)
+	: reference_object(extern_data)
 {
 }
 
@@ -138,20 +185,23 @@ rx_result method_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 	return true;
 }
 
-method_execution_context* method_runtime::create_execution_context (execute_data data, security::security_guard_ptr guard)
-{
-	return new method_execution_context(data, guard);
-}
-
-rx_result method_runtime::execute (values::rx_simple_value args, method_execution_context* context)
+rx_result method_runtime::execute (execute_data data, runtime::runtime_process_context* ctx)
 {
 	return "Undefined method type execution!";
 }
 
+void method_runtime::execute_result_received (rx_simple_value out_val, rx_result&& result, runtime_transaction_id_t id)
+{
+	if (container_)
+	{
+		container_->execution_complete(id, std::move(result), std::move(out_val));
+	}
+}
 
-// Class rx_platform::logic::method_execution_context 
 
-method_execution_context::method_execution_context (execute_data data, security::security_guard_ptr guard)
+// Class rx_platform::logic::method_execution_context1 
+
+method_execution_context1::method_execution_context1 (runtime::execute_data data, security::security_guard_ptr guard)
       : data_(data),
         context_(nullptr),
         method_data_(nullptr),
@@ -160,8 +210,13 @@ method_execution_context::method_execution_context (execute_data data, security:
 }
 
 
+method_execution_context1::~method_execution_context1()
+{
+}
 
-void method_execution_context::execution_complete (rx_result result, values::rx_simple_value data)
+
+
+void method_execution_context1::execution_complete (rx_result result, values::rx_simple_value data)
 {
 	method_execute_result_data result_data;
 	result_data.result = std::move(result);
@@ -171,17 +226,17 @@ void method_execution_context::execution_complete (rx_result result, values::rx_
 	context_->method_result_pending(std::move(result_data));
 }
 
-void method_execution_context::execution_complete (rx_result result)
+void method_execution_context1::execution_complete (rx_result result)
 {
 	execution_complete(std::move(result), values::rx_simple_value());
 }
 
-void method_execution_context::execution_complete (values::rx_simple_value data)
+void method_execution_context1::execution_complete (values::rx_simple_value data)
 {
 	execution_complete(true, std::move(data));
 }
 
-security::security_guard_ptr method_execution_context::get_security_guard ()
+security::security_guard_ptr method_execution_context1::get_security_guard ()
 {
 	return security_guard_;
 }
@@ -249,6 +304,69 @@ bool program_context::schedule_scan (uint32_t interval)
 security::security_guard_ptr program_context::get_security_guard ()
 {
 	return security_guard_;
+}
+
+
+// Class rx_platform::logic::extern_method_runtime 
+
+extern_method_runtime::extern_method_runtime (plugin_method_runtime_struct* impl)
+      : impl_(impl)
+	, method_runtime(&impl->anchor)
+{
+	impl_->host = this;
+	impl_->host_def = &_g_method_def_;
+}
+
+
+extern_method_runtime::~extern_method_runtime()
+{
+}
+
+
+
+rx_result extern_method_runtime::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	return impl_->def->init_method(impl_->anchor.target, &ctx);
+}
+
+rx_result extern_method_runtime::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+	return impl_->def->deinit_method(impl_->anchor.target);
+}
+
+rx_result extern_method_runtime::start_runtime (runtime::runtime_start_context& ctx)
+{
+	return impl_->def->start_method(impl_->anchor.target, &ctx);
+}
+
+rx_result extern_method_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	return impl_->def->stop_method(impl_->anchor.target);
+}
+
+rx_result extern_method_runtime::execute (execute_data data, runtime::runtime_process_context* ctx)
+{
+	return impl_->def->execute_method(impl_->anchor.target, data.transaction_id, data.test ? 1 : 0, data.identity, data.value.move(), ctx);
+}
+
+void extern_method_runtime::start_timer (runtime_handle_t handle, uint32_t period)
+{
+	rx_platform::extern_timers::instance().start_timer(handle, period);
+}
+
+void extern_method_runtime::suspend_timer (runtime_handle_t handle)
+{
+	rx_platform::extern_timers::instance().suspend_timer(handle);
+}
+
+void extern_method_runtime::destroy_timer (runtime_handle_t handle)
+{
+	rx_platform::extern_timers::instance().destroy_timer(handle);
+}
+
+void extern_method_runtime::method_result (rx_result&& result, runtime_transaction_id_t id, rx_simple_value out_vals)
+{
+	this->execute_result_received(std::move(out_vals), std::move(result), id);
 }
 
 

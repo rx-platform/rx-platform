@@ -263,6 +263,12 @@ class rx_simple_value
 
       void assign_array (const std::vector<rx_simple_value>& from);
 
+      bool is_struct () const;
+
+      size_t struct_size () const;
+
+      friend class rx_timed_value;
+      friend class rx_value;
 
   protected:
 
@@ -392,7 +398,7 @@ public:
 
       bool compare (const rx_value& right, time_compare_type time_compare) const;
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       void set_substituted ();
 
@@ -422,9 +428,13 @@ public:
 
       uint32_t get_origin () const;
 
-      rx_simple_value operator [] (int index) const;
+      rx::values::rx_simple_value operator [] (int index) const;
 
       void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY);
+
+      bool is_struct () const;
+
+      size_t struct_size () const;
 
 
   protected:
@@ -554,15 +564,19 @@ public:
 
       bool compare (const rx_timed_value& right, time_compare_type time_compare) const;
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool is_byte_string () const;
 
       byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
 
-      rx_simple_value operator [] (int index) const;
+      rx::values::rx_simple_value operator [] (int index) const;
 
       void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time());
+
+      bool is_struct () const;
+
+      size_t struct_size () const;
 
 
   protected:
@@ -599,6 +613,32 @@ class rx_value_holder
 
 namespace rx
 {
+
+template<typename T>
+void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, T t)
+{
+    values::rx_simple_value temp;
+    temp.assign_static(t);
+    vals.push_back(std::move(temp));
+}
+template<typename T, typename... Args>
+void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, T t, Args... args)
+{
+    values::rx_simple_value temp;
+    temp.assign_static(t);
+    vals.push_back(std::move(temp));
+    rx_create_value_static_internal(vals, std::forward<Args>(args)...);
+}
+template<typename... Args>
+values::rx_simple_value rx_create_value_static(Args... args)
+{
+    std::vector<values::rx_simple_value> vals;
+    rx_create_value_static_internal(vals, std::forward<Args>(args)...);
+    values::rx_simple_value ret;
+    ret.assign_static(vals);
+    return ret;
+}
+
 void fill_quality_string(values::rx_value val, string_type& q);
 namespace values
 {

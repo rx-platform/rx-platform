@@ -841,6 +841,37 @@ bool json_reader::read_byte (const char* name, uint8_t& val)
 	return false;
 }
 
+bool json_reader::read_sbyte (const char* name, int8_t& val)
+{
+	int idx = 0;
+	rapidjson::Value& object = data_->get_current_value(idx);
+	if (idx < 0)
+	{
+		if (object.HasMember(name))
+		{
+			rapidjson::Value& temp = object[name];
+			if (temp.IsInt())
+			{
+				val = (int8_t)temp.GetInt();
+				return true;
+			}
+		}
+	}
+	else
+	{
+		if (object.IsArray() && (int)object.GetArray().Size() > idx)
+		{
+			rapidjson::Value& temp = object[idx];
+			if (temp.IsInt())
+			{
+				val = (int8_t)temp.GetInt();
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 bool json_reader::read_value (const char* name, rx_value& val)
 {
 	return val.deserialize(name, *this);
@@ -1098,6 +1129,8 @@ string_type json_reader::get_error () const
 			else
 				ss << '.';
 			ss << one.name;
+			if (one.index > 0)
+				ss << "[" << one.index - 1 << "]";
 		}
 	}
 	ss << "]";
@@ -1419,10 +1452,19 @@ bool json_writer_type<writerT>::end_object ()
 template <class writerT>
 bool json_writer_type<writerT>::write_byte (const char* name, uint8_t val)
 {
-
 	if (!is_current_array())
 		data_->writer.Key(name);
 	data_->writer.Uint(val);
+
+	return true;
+}
+
+template <class writerT>
+bool json_writer_type<writerT>::write_sbyte (const char* name, int8_t val)
+{
+	if (!is_current_array())
+		data_->writer.Key(name);
+	data_->writer.Int(val);
 
 	return true;
 }

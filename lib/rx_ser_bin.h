@@ -33,10 +33,10 @@
 
 
 
-// rx_ser_lib
-#include "lib/rx_ser_lib.h"
 // rx_mem
 #include "lib/rx_mem.h"
+// rx_ser_lib
+#include "lib/rx_ser_lib.h"
 
 #define RX_BINARY_SERIALIZATION_TYPE "rx-bin"
 using rx::memory::byte_order_type;
@@ -99,6 +99,8 @@ class binary_reader : public base_meta_reader
       bool end_object ();
 
       bool read_byte (const char* name, uint8_t& val);
+
+      bool read_sbyte (const char* name, int8_t& val);
 
       bool read_value (const char* name, rx_value& val);
 
@@ -193,6 +195,8 @@ class binary_writer : public base_meta_writer
       bool write_uint (const char* name, uint32_t val);
 
       bool write_byte (const char* name, uint8_t val);
+
+      bool write_sbyte (const char* name, int8_t val);
 
       bool write_value (const char* name, const rx_value& val);
 
@@ -527,6 +531,14 @@ template <typename allocT, bool swap_bytes>
 bool binary_reader<allocT,swap_bytes>::read_byte (const char* name, uint8_t& val)
 {
     if(!buffer_.read_data(val))
+        return false;
+    return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_sbyte (const char* name, int8_t& val)
+{
+    if (!buffer_.read_data(val))
         return false;
     return true;
 }
@@ -941,6 +953,14 @@ template <typename allocT, bool swap_bytes>
 bool binary_writer<allocT,swap_bytes>::write_byte (const char* name, uint8_t val)
 {
     if(!buffer_.push_data(val))
+        return false;
+    return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_writer<allocT,swap_bytes>::write_sbyte (const char* name, int8_t val)
+{
+    if (!buffer_.push_data(val))
         return false;
     return true;
 }

@@ -350,7 +350,7 @@ extern "C" {
 	{
 		auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
 			id, [construct_data] {
-				return rx_create_reference<runtime::blocks::extern_source_runtime>(construct_data.constructor());
+				return rx_create_reference<runtime::blocks::extern_source_runtime<plugin_source_runtime_struct> >(construct_data.constructor());
 			});
 		return result.move();
 
@@ -359,7 +359,18 @@ extern "C" {
 	{
 		auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().register_constructor(
 			id, [construct_func] {
-				return rx_create_reference<runtime::blocks::extern_mapper_runtime>(construct_func());
+
+				auto construct_result = construct_func();
+
+				return rx_create_reference<runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct> >(construct_func());
+			});
+		return result.move();
+	}
+	RX_PLATFORM_API rx_result_struct rxRegisterMapperRuntime3(uintptr_t plugin, const rx_node_id_struct* id, rx_mapper_constructor3_t construct_func)
+	{
+		auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().register_constructor(
+			id, [construct_func] {
+				return rx_create_reference<runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct3> >(construct_func());
 			});
 		return result.move();
 	}
@@ -401,12 +412,11 @@ extern "C" {
 
 	RX_PLATFORM_API rx_result_struct rxRegisterMethodRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_method_constructor_t construct_func)
 	{
-		return rx_result(RX_NOT_IMPLEMENTED).move();
-		/*auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<method_type>().register_constructor(
+		auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<method_type>().register_constructor(
 			id, [construct_func] {
-				return rx_create_reference<runtime::blocks::extern_method_runtime>(construct_func());
+				return rx_create_reference<logic::extern_method_runtime>(construct_func());
 			});
-		return result.move();*/
+		return result.move();
 	}
 	RX_PLATFORM_API rx_result_struct rxRegisterProgramRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_program_constructor_t construct_func)
 	{
@@ -817,6 +827,7 @@ namespace rx_platform
 {
 platform_api g_api;
 platform_api2 g_api2;
+platform_api3 g_api3;
 
 namespace api
 {
@@ -911,6 +922,53 @@ void bind_plugins_dynamic_api()
 	g_api2.runtime.prxCtxSetRemotePending = rxCtxSetRemotePending;
 
 	g_api2.storage.prxRegisterStorageType = rxRegisterStorageType;
+
+
+	g_api3.general.pWriteLog = rxWriteLog;
+	g_api3.general.pRegisterItem = rxRegisterItem;
+	g_api3.general.prxRegisterRuntimeItem = rxRegisterRuntimeItem;
+
+	g_api3.general.prxLockRuntimeManager = rxLockRuntimeManager;
+	g_api3.general.prxUnlockRuntimeManager = rxUnlockRuntimeManager;
+
+	g_api3.runtime.prxRegisterSourceRuntime = rxRegisterSourceRuntime;
+	g_api3.runtime.prxRegisterMapperRuntime = rxRegisterMapperRuntime;
+	g_api3.runtime.prxRegisterMapperRuntime3 = rxRegisterMapperRuntime3;
+	g_api3.runtime.prxRegisterFilterRuntime = rxRegisterFilterRuntime;
+	g_api3.runtime.prxRegisterStructRuntime = rxRegisterStructRuntime;
+	g_api3.runtime.prxRegisterVariableRuntime = rxRegisterVariableRuntime;
+	g_api3.runtime.prxRegisterEventRuntime = rxRegisterEventRuntime;
+
+	g_api3.runtime.prxRegisterMethodRuntime = rxRegisterMethodRuntime;
+	g_api3.runtime.prxRegisterDisplayRuntime = rxRegisterDisplayRuntime;
+	g_api3.runtime.prxRegisterProgramRuntime = rxRegisterProgramRuntime;
+
+	g_api3.runtime.prxRegisterObjectRuntime = rxRegisterObjectRuntime;
+	g_api3.runtime.prxRegisterDomainRuntime = rxRegisterDomainRuntime;
+	g_api3.runtime.prxRegisterApplicationRuntime = rxRegisterApplicationRuntime;
+	g_api3.runtime.prxRegisterPortRuntime = rxRegisterPortRuntime;
+
+	g_api3.runtime.prxRegisterRelationRuntime = rxRegisterRelationRuntime;
+
+	g_api3.runtime.prxInitCtxBindItem = rxInitCtxBindItem;
+	g_api3.runtime.prxInitCtxGetCurrentPath = rxInitCtxGetCurrentPath;
+	g_api3.runtime.prxInitCtxGetLocalValue = rxInitCtxGetLocalValue;
+	g_api3.runtime.prxInitCtxSetLocalValue = rxInitCtxSetLocalValue;
+	g_api3.runtime.prxInitCtxGetMappingValues = rxInitCtxGetMappingValues;
+	g_api3.runtime.prxInitCtxGetSourceValues = rxInitCtxGetSourceValues;
+	g_api3.runtime.prxInitCtxGetItemMeta = rxInitCtxGetItemMeta;
+
+
+	g_api3.runtime.prxStartCtxGetCurrentPath = rxStartCtxGetCurrentPath;
+	g_api3.runtime.prxStartCtxCreateTimer = rxStartCtxCreateTimer;
+	g_api3.runtime.prxStartCtxGetLocalValue = rxStartCtxGetLocalValue;
+	g_api3.runtime.prxStartCtxSubscribeRelation = rxStartCtxSubscribeRelation;
+
+	g_api3.runtime.prxCtxGetValue = rxCtxGetValue;
+	g_api3.runtime.prxCtxSetValue = rxCtxSetValue;
+	g_api3.runtime.prxCtxSetRemotePending = rxCtxSetRemotePending;
+
+	g_api3.storage.prxRegisterStorageType = rxRegisterStorageType;
 }
 
 const platform_api_t* get_plugins_dynamic_api()
@@ -924,6 +982,14 @@ const platform_api2_t* get_plugins_dynamic_api2()
 {
 	return &g_api2;
 }
+
+
+
+const platform_api3_t* get_plugins_dynamic_api3()
+{
+	return &g_api3;
+}
+
 
 } // api
 } // rx_platform

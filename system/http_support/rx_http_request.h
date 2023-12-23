@@ -72,6 +72,9 @@ struct http_request
 {
 
 
+      string_view_type get_content_as_string ();
+
+
       rx_http_endpoint_ptr whose;
 
       rx_http_method method;
@@ -85,6 +88,8 @@ struct http_request
       rx_acceptable_types_type acceptable_types;
 
       rx_http_params_type params;
+
+      byte_string content;
 
   public:
 

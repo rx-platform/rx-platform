@@ -103,6 +103,12 @@ typedef callback::rx_any_callback<uint32_t, rx_result, values::rx_simple_value> 
 typedef callback::rx_any_callback<uint32_t, rx_result, data::runtime_values_data> named_execute_method_callback_t;
 
 
+struct event_filter
+{
+    string_array paths;
+};
+
+
 namespace ns {
 
 
@@ -137,6 +143,8 @@ private:
 
       virtual void read_struct (string_view_type path, read_struct_data data) const = 0;
 
+      virtual void write_value (const string_type& path, bool test, data::runtime_values_data val, write_result_callback_t callback) = 0;
+
       virtual void write_value (const string_type& path, bool test, rx_simple_value&& val, write_result_callback_t callback) = 0;
 
       virtual void write_struct (string_view_type path, bool test, write_struct_data data) = 0;
@@ -152,6 +160,8 @@ private:
       virtual std::vector<rx_result> disconnect_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
       virtual rx_result read_items (const std::vector<runtime_handle_t>& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
+
+      virtual rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
       virtual rx_result write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor) = 0;
 
@@ -176,6 +186,10 @@ private:
       virtual rx_platform_item::smart_ptr clone () const = 0;
 
       virtual security::security_guard_ptr get_security_guard () = 0;
+
+      virtual rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor) = 0;
+
+      virtual rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor) = 0;
 
 
   protected:

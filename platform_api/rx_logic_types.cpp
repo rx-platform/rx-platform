@@ -54,6 +54,9 @@ extern "C"
     rx_result_struct c_start_method_stub(void* self, start_ctx_ptr ctx);
     rx_result_struct c_stop_method_stub(void* self);
     rx_result_struct c_deinit_method_stub(void* self);
+    rx_result_struct c_execute_method_stub(void* self
+        , runtime_transaction_id_t id, int test, rx_security_handle_t identity
+        , struct typed_value_type val, runtime_ctx_ptr ctx);
 
 
     plugin_method_def_struct _g_method_def_
@@ -63,6 +66,7 @@ extern "C"
         ,c_start_method_stub
         ,c_stop_method_stub
         ,c_deinit_method_stub
+        , c_execute_method_stub
     };
 
 
@@ -86,6 +90,14 @@ extern "C"
         return self->deinitialize_method().move();
     }
 
+    rx_result_struct c_execute_method(rx_platform_api::rx_method* self
+        , runtime_transaction_id_t id, int test, rx_security_handle_t identity
+        , struct typed_value_type val, runtime_ctx_ptr ctx)
+    {
+        rx_platform_api::rx_process_context pctx;
+        pctx.bind(ctx);
+        return self->method_execute(id, test, identity, std::move(val), pctx).move();
+    }
 
 
     rx_result_struct c_init_program_stub(void* self, init_ctx_ptr ctx);
@@ -198,6 +210,11 @@ rx_result rx_method::stop_method ()
 rx_result rx_method::deinitialize_method ()
 {
 	return true;
+}
+
+void rx_method::execute_result_received (rx_result&& result, runtime_transaction_id_t id, rx_simple_value val)
+{
+    impl_.host_def->method_executed(impl_.host, result.move(), id, val.move());
 }
 
 

@@ -149,6 +149,8 @@ class connected_tags
 
       rx_result read_tag (runtime_handle_t item, tags_callback_ptr monitor);
 
+      rx_result write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data value, tags_callback_ptr monitor);
+
       rx_result write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor);
 
       rx_result execute_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data data, tags_callback_ptr monitor);
@@ -177,12 +179,16 @@ class connected_tags
 
       void object_state_changed (runtime_process_context* ctx);
 
+      void method_changed (logic_blocks::method_data* whose, const rx_value& val);
+
 
   protected:
 
   private:
 
       rx_result_with<runtime_handle_t> connect_tag_from_relations (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor);
+
+      rx_result internal_write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data value, tags_callback_ptr monitor, rx_security_handle_t identity);
 
       rx_result internal_write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, rx_security_handle_t identity);
 
@@ -253,6 +259,7 @@ class binded_tags
         runtime_handle_t handle = 0;
         std::vector<binded_callback_t> update_callabcks;
         std::unique_ptr<std::vector<write_callback_t> > write_callabcks;
+        
     };
 	typedef std::map<structure::const_value_data*, runtime_handle_t> const_values_type;
 	typedef std::map<structure::value_data*, callback_data_t> values_type;
@@ -293,7 +300,9 @@ class binded_tags
 
       void runtime_started (runtime_start_context& ctx);
 
-      rx_result do_write_callbacks (rt_value_ref ref, rx_simple_value& value, runtime_process_context* ctx);
+      rx_result do_write_callbacks (rt_value_ref ref, rx_simple_value& value, data::runtime_values_data* data, runtime_process_context* ctx);
+
+      void method_changed (logic_blocks::method_data* whose, const rx_value& val);
 
 	  template<typename T>
 	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)

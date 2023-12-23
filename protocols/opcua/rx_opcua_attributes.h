@@ -52,6 +52,37 @@ namespace opcua_attributes {
 
 
 
+class opcua_read_response : public opcua_response_base  
+{
+
+  public:
+      opcua_read_response (const opcua_request_base& req);
+
+
+      rx_node_id get_binary_response_id ();
+
+      opcua_response_ptr create_empty () const;
+
+      rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
+
+
+      std::vector<data_value> results;
+
+      std::vector<diagnostic_info> diagnostics_info;
+
+      opcua_read_response() = default;
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 class opcua_read_request : public opcua_request_base  
 {
 
@@ -73,37 +104,6 @@ class opcua_read_request : public opcua_request_base
       std::vector<read_value_id> to_read;
 
 
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class opcua_read_response : public opcua_response_base  
-{
-
-  public:
-      opcua_read_response (const opcua_request_base& req);
-
-
-      rx_node_id get_binary_response_id ();
-
-      opcua_response_ptr create_empty () const;
-
-      rx_result serialize_binary (binary::ua_binary_ostream& stream) const;
-
-
-      std::vector<data_value> results;
-
-      std::vector<diagnostic_info> diagnostics_info;
-
-      opcua_read_response() = default;
   protected:
 
   private:

@@ -90,6 +90,8 @@ class json_reader : public base_meta_reader
 
       bool read_byte (const char* name, uint8_t& val);
 
+      bool read_sbyte (const char* name, int8_t& val);
+
       bool read_value (const char* name, rx_value& val);
 
       bool read_int64 (const char* name, int64_t& val);
@@ -178,6 +180,8 @@ class json_writer_type : public base_meta_writer
       bool end_object ();
 
       bool write_byte (const char* name, uint8_t val);
+
+      bool write_sbyte (const char* name, int8_t val);
 
       bool write_value (const char* name, const rx_value& val);
 

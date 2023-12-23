@@ -162,6 +162,11 @@ void assign_vunion(vunion_type& what, double val)
 	what.d_val = val;
 }
 
+void assign_vunion(vunion_type& what, ua_extension* val)
+{
+	what.ext_val = val;
+}
+
 
 void assign_vunion(vunion_type& what, const string_type& val)
 {
@@ -402,6 +407,107 @@ uint8_t assign_vunion(vunion_type& what, const values::rx_value& value, uint8_t 
 		}
 	}
 }
+
+uint8_t assign_vunion(vunion_type& what, const values::rx_simple_value& value, uint8_t hint, uint16_t ns = 0)
+{
+	if (hint == opcid_BaseDataType)
+	{
+		variant_type temp;
+		temp.from_rx_value(value);
+		assign_vunion(what, temp);
+		return opcid_BaseDataType;
+	}
+	else
+	{
+		switch (value.get_type())
+		{
+		case RX_BOOL_TYPE:
+			assign_vunion(what, value.extract_static<bool>(false));
+			return opcid_Boolean;
+		case RX_INT8_TYPE:
+			assign_vunion(what, value.extract_static<int8_t>(0));
+			return opcid_SByte;
+		case RX_UINT8_TYPE:
+			assign_vunion(what, value.extract_static<uint8_t>(0));
+			return opcid_Byte;
+		case RX_INT16_TYPE:
+			assign_vunion(what, value.extract_static<int16_t>(0));
+			return opcid_Int16;
+		case RX_UINT16_TYPE:
+			assign_vunion(what, value.extract_static<uint16_t>(0));
+			return opcid_UInt16;
+		case RX_INT32_TYPE:
+			assign_vunion(what, value.extract_static<int32_t>(0));
+			return opcid_Int32;
+		case RX_UINT32_TYPE:
+			assign_vunion(what, value.extract_static<uint32_t>(0));
+			if (hint == opcid_StatusCode)
+				return opcid_StatusCode;
+			else
+				return opcid_UInt32;
+		case RX_INT64_TYPE:
+			assign_vunion(what, value.extract_static<int64_t>(0));
+			return opcid_Int64;
+		case RX_UINT64_TYPE:
+			assign_vunion(what, value.extract_static<uint64_t>(0));
+			return opcid_UInt64;
+		case RX_FLOAT_TYPE:
+			assign_vunion(what, value.extract_static<float>(0));
+			return opcid_Float;
+		case RX_DOUBLE_TYPE:
+			assign_vunion(what, value.extract_static<double>(0));
+			return opcid_Double;
+		case RX_COMPLEX_TYPE:
+			assign_vunion(what, value.extract_static<double>(0));
+			return opcid_Double;
+		case RX_STRING_TYPE:
+			{
+				switch (hint)
+				{
+				case opcid_XmlElement:
+					assign_vunion(what, value.extract_static<string_type>(""));
+					return opcid_XmlElement;
+				case opcid_LocalizedText:
+					assign_vunion(what, localized_text{ value.extract_static<string_type>("") });
+					return opcid_LocalizedText;
+				case opcid_QualifiedName:
+					assign_vunion(what, qualified_name{ ns, value.extract_static<string_type>("") });
+					return opcid_LocalizedText;
+				default:
+					assign_vunion(what, value.extract_static<string_type>(""));
+					return opcid_String;
+				}
+			}
+			break;
+		case RX_TIME_TYPE:
+			assign_vunion(what, value.extract_static<rx_time_struct>(rx_time::null_time().c_data()));
+			return opcid_DateTime;
+		case RX_UUID_TYPE:
+			assign_vunion(what, value.extract_static<rx_uuid>(rx_uuid::null_uuid()));
+			return opcid_Guid;
+		case RX_BYTES_TYPE:
+			assign_vunion(what, value.extract_static<byte_string>(byte_string()));
+			return opcid_ByteString;
+		case RX_STRUCT_TYPE:
+			RX_ASSERT(false);
+			return false;
+		case RX_TYPE_TYPE:
+			RX_ASSERT(false);
+			return false;
+		case RX_NODE_ID_TYPE:
+			assign_vunion(what, value.extract_static<rx_node_id>(rx_node_id()));
+			if (hint == opcid_ExpandedNodeId)
+				return opcid_ExpandedNodeId;
+			else
+				return opcid_NodeId;
+		case RX_STRING_TYPE | RX_ARRAY_VALUE_MASK:
+			assign_vunion(what, value.extract_static<string_array>(string_array()));
+			return opcid_String;
+		default:
+			return opcid_Null;
+		}
+	}
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -515,6 +621,24 @@ variant_type::variant_type(const string_array& val)
 		for (int i = 0; i < array_len_; i++)
 		{
 			assign_vunion(union_.array_val[i], val[i]);
+		}
+	}
+	else
+	{
+		union_.array_val = nullptr;
+	}
+}
+variant_type::variant_type(std::vector<std::unique_ptr<ua_extension> >& val)
+	: type_(opcid_Structure),
+	array_len_((int)val.size())
+{
+
+	if (array_len_)
+	{
+		union_.array_val = new vunion_type[array_len_];
+		for (int i = 0; i < array_len_; i++)
+		{
+			assign_vunion(union_.array_val[i], val[i].release());
 		}
 	}
 	else
@@ -1095,6 +1219,102 @@ bool variant_type::fill_rx_value(values::rx_value& value) const
 	return true;
 }
 
+
+bool variant_type::fill_rx_value(values::rx_simple_value& value) const
+{
+	switch (type_)
+	{
+	case opcid_Null:
+		value = values::rx_simple_value();
+		break;
+	case opcid_Boolean:
+		value.assign_static(union_.b_val);
+		break;
+	case opcid_SByte:
+		value.assign_static(union_.sc_val);
+		break;
+	case opcid_Byte:
+		value.assign_static(union_.c_val);
+		break;
+	case opcid_Int16:
+		value.assign_static(union_.sw_val);
+		break;
+	case opcid_UInt16:
+		value.assign_static(union_.w_val);
+		break;
+	case opcid_Int32:
+		value.assign_static(union_.sdw_val);
+		break;
+	case opcid_UInt32:
+		value.assign_static(union_.dw_val);
+		break;
+	case opcid_Int64:
+		value.assign_static(union_.sqw_val);
+		break;
+	case opcid_UInt64:
+		value.assign_static(union_.qw_val);
+		break;
+	case opcid_Float:
+		value.assign_static(union_.f_val);
+		break;
+	case opcid_Double:
+		value.assign_static(union_.d_val);
+		break;
+	case opcid_String:
+		value.assign_static(*union_.str_val);
+		break;
+	case opcid_DateTime:
+		value.assign_static(union_.ft_val);
+		break;
+	case opcid_Guid:
+		value.assign_static(*union_.guid_val);
+		break;
+	case opcid_ByteString:
+		value.assign_static(*union_.bstr_val);
+		break;
+	case opcid_XmlElement:
+		value.assign_static(*union_.str_val);
+		break;
+	case opcid_NodeId:
+		{
+			string_type temp;
+			union_.node_val->to_string(temp);
+			value.assign_static(*union_.node_val);
+		}
+		break;
+	case opcid_ExpandedNodeId:
+		{
+			string_type temp;
+			union_.node_val->to_string(temp);
+			value.assign_static(*union_.node_val);
+		}
+		break;
+	case opcid_StatusCode:
+		value.assign_static(union_.dw_val);
+		break;
+	case opcid_QualifiedName:
+		value.assign_static(union_.qname_val->name);
+		break;
+	case opcid_LocalizedText:
+		value.assign_static(union_.ltext_val->text);
+		break;
+	case opcid_Structure:
+		return false;
+		value.assign_static("Struct");
+		break;
+	case opcid_DataValue:
+		union_.data_val->value.fill_rx_value(value);
+		break;
+	case opcid_BaseDataType:
+		union_.var_val->fill_rx_value(value);
+		break;
+	case opcid_DiagnosticInfo:
+		return false;
+		value.assign_static("Diagnostics");
+		break;
+	}
+	return true;
+}
 /*
 
 #define RX_SIMPLE_VALUE_MASK	0x1f
@@ -1113,6 +1333,23 @@ bool variant_type::fill_rx_value(values::rx_value& value) const
 */
 
 bool variant_type::from_rx_value(const values::rx_value& value, uint8_t hint, uint16_t ns)
+{
+	clear();
+
+	if (value.is_array())
+	{
+		array_len_ = (int)value.array_size();
+		type_ = assign_vunion(union_, value, hint, ns);
+
+	}
+	else
+	{
+		type_ = assign_vunion(union_, value, hint, ns);
+	}
+	return true;
+}
+
+bool variant_type::from_rx_value(const values::rx_simple_value& value, uint8_t hint, uint16_t ns)
 {
 	clear();
 

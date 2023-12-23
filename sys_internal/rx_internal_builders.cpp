@@ -1591,12 +1591,62 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 	auto dir_result = ns::rx_directory_cache::instance().get_directory(full_path);
 	if (dir_result)
 	{
-		auto dir = dir_result;
+		auto dir = dir_result; 
+		
+
 		// base mappers and sources
 		auto map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_VARIABLE_MAPPER_TYPE_NAME
+			, RX_VARIABLE_MAPPER_TYPE_ID
+			, RX_CLASS_MAPPER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_METHOD_MAPPER_TYPE_NAME
+			, RX_METHOD_MAPPER_TYPE_ID
+			, RX_CLASS_MAPPER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_EVENT_MAPPER_TYPE_NAME
+			, RX_EVENT_MAPPER_TYPE_ID
+			, RX_CLASS_MAPPER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
 			RX_EXTERN_MAPPER_TYPE_NAME
 			, RX_EXTERN_MAPPER_TYPE_ID
-			, RX_CLASS_MAPPER_BASE_ID
+			, RX_VARIABLE_MAPPER_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static("Port", "");
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_EXTERN_METHOD_MAPPER_TYPE_NAME
+			, RX_EXTERN_METHOD_MAPPER_TYPE_ID
+			, RX_METHOD_MAPPER_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static("Port", "");
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_EXTERN_EVENT_MAPPER_TYPE_NAME
+			, RX_EXTERN_EVENT_MAPPER_TYPE_ID
+			, RX_EVENT_MAPPER_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -1622,32 +1672,42 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		map->complex_data.register_const_value_static("Port", "");
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
-		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+		/*map = create_type<basic_types::mapper_type>(meta::type_creation_data{
 			RX_SYSTEM_MAPPER_TYPE_NAME
 			, RX_SYSTEM_MAPPER_TYPE_ID
-			, RX_CLASS_MAPPER_BASE_ID
+			, RX_VARIABLE_MAPPER_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);*/
 
 		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_VARIABLE_SOURCE_TYPE_NAME
+			, RX_VARIABLE_SOURCE_TYPE_ID
+			, RX_CLASS_SOURCE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_EXTERN_SOURCE_TYPE_NAME
 			, RX_EXTERN_SOURCE_TYPE_ID
-			, RX_CLASS_SOURCE_BASE_ID
+			, RX_VARIABLE_SOURCE_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		src->complex_data.register_const_value_static("Port", "");
 		add_simple_type_to_configuration<source_type>(dir, src, true);
-		src = create_type<basic_types::source_type>(meta::type_creation_data{
+		/*src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_USER_SOURCE_TYPE_NAME
 			, RX_USER_SOURCE_TYPE_ID
 			, RX_CLASS_SOURCE_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		add_simple_type_to_configuration<source_type>(dir, src, true);
+		add_simple_type_to_configuration<source_type>(dir, src, true);*/
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_PARENT_SOURCE_TYPE_NAME
@@ -1672,26 +1732,26 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_PLATFORM_SOURCE_TYPE_NAME
 			, RX_PLATFORM_SOURCE_TYPE_ID
-			, RX_CLASS_SOURCE_BASE_ID
+			, RX_VARIABLE_SOURCE_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
 		src->complex_data.register_simple_value_static("Path", "", false, true);
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
-		src = create_type<basic_types::source_type>(meta::type_creation_data{
+		/*src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_SYSTEM_SOURCE_TYPE_NAME
 			, RX_SYSTEM_SOURCE_TYPE_ID
 			, RX_CLASS_SOURCE_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		add_simple_type_to_configuration<source_type>(dir, src, false);
+		add_simple_type_to_configuration<source_type>(dir, src, false);*/
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_REGISTER_SOURCE_TYPE_NAME
 			, RX_REGISTER_SOURCE_TYPE_ID
-			, RX_CLASS_SOURCE_BASE_ID
+			, RX_VARIABLE_SOURCE_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2307,7 +2367,7 @@ rx_result simulation_types_builder::do_build (configuration_data_t& config)
 		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_SIMULATION_SOURCE_TYPE_NAME
 			, RX_SIMULATION_SOURCE_TYPE_ID
-			, RX_CLASS_SOURCE_BASE_ID
+			, RX_VARIABLE_SOURCE_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2675,7 +2735,6 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		map->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
 		build_basic_type<basic_types::mapper_type>(dir, map);
 		auto evnt = create_type<basic_types::event_type>(meta::type_creation_data{
 			RX_CLASS_EVENT_BASE_NAME
@@ -2700,7 +2759,6 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_const_value_static<uint8_t>("ValueType", 0);
 		build_basic_type<basic_types::source_type>(dir, src);
 
 		auto met = create_type<basic_types::method_type>(meta::type_creation_data{
@@ -2997,11 +3055,29 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
-
 		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
 			RX_OPCUA_SIMPLE_MAPPER_TYPE_NAME
 			, RX_OPCUA_SIMPLE_MAPPER_TYPE_ID
 			, RX_OPCUA_MAPPER_BASE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		map->complex_data.register_const_value_static("SimplePath", "");
+		map->complex_data.register_const_value_static<uint32_t>("NumericId", 0);
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_OPCUA_METHOD_MAPPER_BASE_TYPE_NAME
+			, RX_OPCUA_METHOD_MAPPER_BASE_TYPE_ID
+			, RX_EXTERN_METHOD_MAPPER_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<mapper_type>(dir, map, true);
+		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
+			RX_OPCUA_SIMPLE_METHOD_MAPPER_TYPE_NAME
+			, RX_OPCUA_SIMPLE_METHOD_MAPPER_TYPE_ID
+			, RX_OPCUA_METHOD_MAPPER_BASE_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -3019,7 +3095,6 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		add_simple_type_to_configuration<source_type>(dir, src, true);
-
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
 			RX_OPCUA_SIMPLE_SOURCE_TYPE_NAME
 			, RX_OPCUA_SIMPLE_SOURCE_TYPE_ID
@@ -3032,6 +3107,48 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 		src->complex_data.register_const_value_static<uint32_t>("NumericId", 0);
 		src->complex_data.register_const_value_static<uint8_t>("AttrId", 0xd);
 		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+		// methods
+		auto met = create_type<basic_types::method_type>(meta::type_creation_data{
+			RX_OPCUA_METHOD_BASE_TYPE_NAME
+			, RX_OPCUA_METHOD_BASE_TYPE_ID
+			, RX_CLASS_METHOD_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<method_type>(dir, met, true);
+		met = create_type<basic_types::method_type>(meta::type_creation_data{
+			RX_OPCUA_SIMPLE_METHOD_TYPE_NAME
+			, RX_OPCUA_SIMPLE_METHOD_TYPE_ID
+			, RX_OPCUA_METHOD_BASE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		met->complex_data.register_const_value_static("Namespace", 2);
+		met->complex_data.register_const_value_static("SimplePath", "");
+		met->complex_data.register_const_value_static<uint32_t>("NumericId", 0);
+		add_simple_type_to_configuration<method_type>(dir, met, true);
+
+		// events
+		auto ev = create_type<basic_types::event_type>(meta::type_creation_data{
+			RX_OPCUA_EVENT_BASE_TYPE_NAME
+			, RX_OPCUA_EVENT_BASE_TYPE_ID
+			, RX_CLASS_EVENT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_simple_type_to_configuration<event_type>(dir, ev, true);
+		ev = create_type<basic_types::event_type>(meta::type_creation_data{
+			RX_OPCUA_SIMPLE_EVENT_TYPE_NAME
+			, RX_OPCUA_SIMPLE_EVENT_TYPE_ID
+			, RX_OPCUA_EVENT_BASE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		ev->complex_data.register_const_value_static("Namespace", 2);
+		ev->complex_data.register_const_value_static("SimplePath", "");
+		ev->complex_data.register_const_value_static<uint32_t>("NumericId", 0);
+		add_simple_type_to_configuration<event_type>(dir, ev, true);
 
 
 

@@ -1937,7 +1937,7 @@ rx_result_with<create_runtime_result<relation_type> > relations_type_repository:
 		return type_result.errors();
 
 	relation_type::smart_ptr relation_type_ptr = type_result.move_value();
-	auto ret = create_relation_runtime(relation_type_ptr, data, dirs);
+	rx_result_with<create_runtime_result<relation_type> > ret = create_relation_runtime(relation_type_ptr, data, dirs);
 	if (!ret)
 		return ret;
 

@@ -82,6 +82,15 @@ void internal_data_source::write_item (const value_handle_extended& handle, rx_s
 	}
 }
 
+void internal_data_source::write_item (const value_handle_extended& handle, data::runtime_values_data val, runtime_transaction_id_t id)
+{
+	auto it = subscriptions_.find(handle.subscription);
+	if (it != subscriptions_.end())
+	{
+		it->second.subscription->write_item(handle, std::move(val), id);
+	}
+}
+
 void internal_data_source::execute_item (const value_handle_extended& handle, values::rx_simple_value data, runtime_transaction_id_t id)
 {
 	auto it = subscriptions_.find(handle.subscription);
@@ -173,6 +182,33 @@ void internal_data_subscription::write_item (const value_handle_extended& handle
 			if (!results.empty())
 			{
 				if(!results[0])
+					controler_->result_received(handle.make_handle(), std::move(results[0]), id);
+			}
+			else
+			{
+				controler_->result_received(handle.make_handle(), "Unexpected error", id);
+			}
+		}
+	}
+}
+
+void internal_data_subscription::write_item (const value_handle_extended& handle, data::runtime_values_data val, runtime_transaction_id_t id)
+{
+	std::vector<std::pair<runtime_handle_t, data::runtime_values_data> > temp{ {handle.item, std::move(val)} };
+	std::vector<rx_result> results;
+	auto result = my_subscription_->write_items(id, std::move(temp), results);
+	if (id != 0)
+	{
+		if (!result)
+		{
+			controler_->result_received(handle.make_handle(), std::move(result), id);
+		}
+		else
+		{
+			RX_ASSERT(results.size() == 1);
+			if (!results.empty())
+			{
+				if (!results[0])
 					controler_->result_received(handle.make_handle(), std::move(results[0]), id);
 			}
 			else

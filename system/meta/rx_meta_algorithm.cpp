@@ -433,7 +433,7 @@ rx_result basic_types_algorithm<variable_type>::serialize_type(const variable_ty
 	ret = variable_data_algorithm::serialize_complex_attribute(whose.variable_data, stream);
 	if (!ret)
 		return ret;
-	ret = mapped_data_algorithm::serialize_complex_attribute(whose.mapping_data, stream);
+	ret = mapsrc_data_algorithm::serialize_complex_attribute(whose.mapping_data, stream);
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
@@ -453,7 +453,7 @@ rx_result basic_types_algorithm<struct_type>::serialize_type(const struct_type& 
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
-	ret = mapped_data_algorithm::serialize_complex_attribute(whose.mapping_data, stream);
+	ret = mapsrc_data_algorithm::serialize_complex_attribute(whose.mapping_data, stream);
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
@@ -522,6 +522,12 @@ rx_result basic_types_algorithm<event_type>::serialize_type(const event_type& wh
 		if (!stream.write_item_reference("args", whose.arguments))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_METHOD_MAPPERS_VERSION)
+	{
+		ret = mapped_data_algorithm::serialize_complex_attribute(whose.mapping_data, stream);
+		if (!ret)
+			return ret;
+	}
 	if (!stream.end_object())
 		return stream.get_error();
 	return true;
@@ -549,6 +555,12 @@ rx_result basic_types_algorithm<method_type>::serialize_type(const method_type& 
 		if (!stream.write_item_reference("out", whose.outputs))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_METHOD_MAPPERS_VERSION)
+	{
+		ret = mapped_data_algorithm::serialize_complex_attribute(whose.mapping_data, stream);
+		if (!ret)
+			return ret;
+	}
 	if (!stream.end_object())
 		return stream.get_error();
 	return true;
@@ -565,7 +577,7 @@ rx_result basic_types_algorithm<variable_type>::deserialize_type(variable_type& 
 	ret = variable_data_algorithm::deserialize_complex_attribute(whose.variable_data, stream, whose.complex_data);
 	if (!ret)
 		return ret;
-	ret = mapped_data_algorithm::deserialize_complex_attribute(whose.mapping_data, stream, whose.complex_data);
+	ret = mapsrc_data_algorithm::deserialize_complex_attribute(whose.mapping_data, stream, whose.complex_data);
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
@@ -581,7 +593,7 @@ rx_result basic_types_algorithm<struct_type>::deserialize_type(struct_type& whos
 	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
-	ret = mapped_data_algorithm::deserialize_complex_attribute(whose.mapping_data, stream, whose.complex_data);
+	ret = mapsrc_data_algorithm::deserialize_complex_attribute(whose.mapping_data, stream, whose.complex_data);
 	if (!ret)
 		return ret;
 	if (!stream.end_object())
@@ -635,6 +647,12 @@ rx_result basic_types_algorithm<event_type>::deserialize_type(event_type& whose,
 		if (!stream.read_item_reference("args", whose.arguments))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_METHOD_MAPPERS_VERSION)
+	{
+		ret = mapped_data_algorithm::deserialize_complex_attribute(whose.mapping_data, stream, whose.complex_data);
+		if (!ret)
+			return ret;
+	}
 	if (!stream.end_object())
 		return stream.get_error();
 	return true;
@@ -657,6 +675,12 @@ rx_result basic_types_algorithm<method_type>::deserialize_type(method_type& whos
 		if (!stream.read_item_reference("out", whose.outputs))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_METHOD_MAPPERS_VERSION)
+	{
+		ret = mapped_data_algorithm::deserialize_complex_attribute(whose.mapping_data, stream,whose.complex_data);
+		if (!ret)
+			return ret;
+	}
 	if (!stream.end_object())
 		return stream.get_error();
 	return true;
@@ -668,7 +692,7 @@ bool basic_types_algorithm<variable_type>::check_type(variable_type& whose, type
 	type_check_source _(whose.meta_info.get_full_path(), &ctx);
 	auto ret = complex_data_algorithm::check_complex_attribute(whose.complex_data, ctx);
 	ret = ret && variable_data_algorithm::check_complex_attribute(whose.variable_data, ctx);
-	ret = ret && mapped_data_algorithm::check_complex_attribute(whose.mapping_data, ctx);
+	ret = ret && mapsrc_data_algorithm::check_complex_attribute(whose.mapping_data, ctx);
 	return ret;
 }
 template <>
@@ -676,7 +700,7 @@ bool basic_types_algorithm<struct_type>::check_type(struct_type& whose, type_che
 {
 	type_check_source _(whose.meta_info.get_full_path(), &ctx);
 	auto ret = complex_data_algorithm::check_complex_attribute(whose.complex_data, ctx);
-	ret = ret && mapped_data_algorithm::check_complex_attribute(whose.mapping_data, ctx);
+	ret = ret && mapsrc_data_algorithm::check_complex_attribute(whose.mapping_data, ctx);
 	return ret;
 }
 
@@ -711,6 +735,7 @@ bool basic_types_algorithm<event_type>::check_type(event_type& whose, type_check
 			ctx.add_error("Unable to resolve arguments data type.", RX_ITEM_NOT_FOUND, rx_medium_severity, result.errors());
 		}
 		ret = ret && result;
+		ret = ret && mapped_data_algorithm::check_complex_attribute(whose.mapping_data, ctx);
 	}
 	return ret;
 }
@@ -735,6 +760,7 @@ bool basic_types_algorithm<method_type>::check_type(method_type& whose, type_che
 			ctx.add_error("Unable to resolve outputs data type.", RX_ITEM_NOT_FOUND, rx_medium_severity, result.errors());
 		}
 		ret = ret && result;
+		ret = ret && mapped_data_algorithm::check_complex_attribute(whose.mapping_data, ctx);
 	}
 	return ret;
 }
@@ -749,7 +775,7 @@ rx_result basic_types_algorithm<variable_type>::construct(const variable_type& w
 	{
 		ret = variable_data_algorithm::construct_complex_attribute(whose.variable_data, whose.complex_data.get_names_cache() , ctx);
 		if (ret)
-			ret = mapped_data_algorithm::construct_complex_attribute(whose.mapping_data, whose.complex_data.get_names_cache(), ctx);
+			ret = mapsrc_data_algorithm::construct_complex_attribute(whose.mapping_data, whose.complex_data.get_names_cache(), ctx);
 	}
 	return ret;
 }
@@ -759,7 +785,7 @@ rx_result basic_types_algorithm<struct_type>::construct(const struct_type& whose
 {
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	if (ret)
-		ret = mapped_data_algorithm::construct_complex_attribute(whose.mapping_data, whose.complex_data.get_names_cache(), ctx);
+		ret = mapsrc_data_algorithm::construct_complex_attribute(whose.mapping_data, whose.complex_data.get_names_cache(), ctx);
 
 	return ret;
 }
@@ -795,18 +821,22 @@ rx_result basic_types_algorithm<event_type>::construct(const event_type& whose, 
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	if (ret)
 	{
-		if (prototype.arguments.values.empty() && prototype.arguments.children.empty() &&  !whose.arguments.is_null())
+		auto ret = mapped_data_algorithm::construct_complex_attribute(whose.mapping_data, whose.complex_data.get_names_cache(), ctx);
+		if (ret)
 		{
-			block_data data_proto;
-			data_attribute attr;
-			if (whose.arguments.is_node_id())
-				attr = std::move(data_attribute("Args", whose.arguments.get_node_id()));
-			else
-				attr = std::move(data_attribute("Args", whose.arguments.get_path()));
-			
-			ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
-			if (ret)
-				prototype.arguments = std::move(data_proto);
+			if (prototype.arguments.values.empty() && prototype.arguments.children.empty() && !whose.arguments.is_null())
+			{
+				block_data data_proto;
+				data_attribute attr;
+				if (whose.arguments.is_node_id())
+					attr = std::move(data_attribute("Args", whose.arguments.get_node_id()));
+				else
+					attr = std::move(data_attribute("Args", whose.arguments.get_path()));
+
+				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
+				if (ret)
+					prototype.arguments = std::move(data_proto);
+			}
 		}
 	}
 	return ret;
@@ -819,31 +849,35 @@ rx_result basic_types_algorithm<method_type>::construct(const method_type& whose
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	if (ret)
 	{
-		if (prototype.inputs.values.empty() && prototype.inputs.children.empty() && !whose.inputs.is_null())
+		auto ret = mapped_data_algorithm::construct_complex_attribute(whose.mapping_data, whose.complex_data.get_names_cache(), ctx);
+		if (ret)
 		{
-			block_data data_proto;
-			data_attribute attr;
-			if (whose.inputs.is_node_id())
-				attr = std::move(data_attribute("In", whose.inputs.get_node_id()));
-			else
-				attr = std::move(data_attribute("In", whose.inputs.get_path()));
+			if (prototype.inputs.values.empty() && prototype.inputs.children.empty() && !whose.inputs.is_null())
+			{
+				block_data data_proto;
+				data_attribute attr;
+				if (whose.inputs.is_node_id())
+					attr = std::move(data_attribute("In", whose.inputs.get_node_id()));
+				else
+					attr = std::move(data_attribute("In", whose.inputs.get_path()));
 
-			ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
-			if (ret)
-				prototype.inputs = std::move(data_proto);
-		}
-		if (prototype.outputs.values.empty() && prototype.outputs.children.empty() && !whose.outputs.is_null())
-		{
-			block_data data_proto;
-			data_attribute attr;
-			if (whose.outputs.is_node_id())
-				attr = std::move(data_attribute("Out", whose.outputs.get_node_id()));
-			else
-				attr = std::move(data_attribute("Out", whose.outputs.get_path()));
+				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
+				if (ret)
+					prototype.inputs = std::move(data_proto);
+			}
+			if (prototype.outputs.values.empty() && prototype.outputs.children.empty() && !whose.outputs.is_null())
+			{
+				block_data data_proto;
+				data_attribute attr;
+				if (whose.outputs.is_node_id())
+					attr = std::move(data_attribute("Out", whose.outputs.get_node_id()));
+				else
+					attr = std::move(data_attribute("Out", whose.outputs.get_path()));
 
-			ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
-			if (ret)
-				prototype.outputs = std::move(data_proto);
+				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
+				if (ret)
+					prototype.outputs = std::move(data_proto);
+			}
 		}
 	}
 	return ret;
@@ -859,7 +893,7 @@ rx_result basic_types_algorithm<variable_type>::get_depends(const variable_type&
 	{
 		ret = variable_data_algorithm::get_depends(whose.variable_data, ctx);
 		if(ret)
-			ret = mapped_data_algorithm::get_depends(whose.mapping_data, ctx);
+			ret = mapsrc_data_algorithm::get_depends(whose.mapping_data, ctx);
 	}
 	return ret;
 }
@@ -869,7 +903,7 @@ rx_result basic_types_algorithm<struct_type>::get_depends(const struct_type& who
 	ctx.directories.add_paths({ whose.meta_info.path });
 	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
 	if (ret)
-		ret = mapped_data_algorithm::get_depends(whose.mapping_data, ctx);
+		ret = mapsrc_data_algorithm::get_depends(whose.mapping_data, ctx);
 	return ret;
 }
 
@@ -898,12 +932,16 @@ rx_result basic_types_algorithm<event_type>::get_depends(const event_type& whose
 {
 	ctx.directories.add_paths({ whose.meta_info.path });
 	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
-	if (ret && !whose.arguments.is_null())
+	if (ret)
 	{
-		auto res = rx_internal::model::algorithms::resolve_reference(whose.arguments, ctx.directories);
-		if(res)
-			ctx.cache.emplace(res.move_value());
+		if (ret && !whose.arguments.is_null())
+		{
+			auto res = rx_internal::model::algorithms::resolve_reference(whose.arguments, ctx.directories);
+			if (res)
+				ctx.cache.emplace(res.move_value());
 
+		}
+		ret = mapped_data_algorithm::get_depends(whose.mapping_data, ctx);
 	}
 	return ret;
 }
@@ -929,6 +967,8 @@ rx_result basic_types_algorithm<method_type>::get_depends(const method_type& who
 			if (res)
 				ctx.cache.emplace(res.move_value());
 		}
+		ret = mapped_data_algorithm::get_depends(whose.mapping_data, ctx);
+
 	}
 	return ret;
 }
@@ -960,7 +1000,7 @@ rx_result object_types_algorithm<typeT>::serialize_type (const typeT& whose, bas
 	auto ret = complex_data_algorithm::serialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
-	ret = mapped_data_algorithm::serialize_complex_attribute(whose.mapping_data, stream);
+	ret = mapsrc_data_algorithm::serialize_complex_attribute(whose.mapping_data, stream);
 	if (!ret)
 		return ret;
 	ret = object_data_algorithm<typeT>::serialize_object_data(whose.object_data, stream);
@@ -979,7 +1019,7 @@ rx_result object_types_algorithm<typeT>::deserialize_type (typeT& whose, base_me
 	auto ret = complex_data_algorithm::deserialize_complex_attribute(whose.complex_data, stream);
 	if (!ret)
 		return ret;
-	ret = mapped_data_algorithm::deserialize_complex_attribute(whose.mapping_data, stream, whose.complex_data);
+	ret = mapsrc_data_algorithm::deserialize_complex_attribute(whose.mapping_data, stream, whose.complex_data);
 	if (!ret)
 		return ret;
 	// object data
@@ -997,7 +1037,7 @@ bool object_types_algorithm<typeT>::check_type (typeT& whose, type_check_context
 {
 	type_check_source _(whose.meta_info.get_full_path(), &ctx);
 	auto ret = complex_data_algorithm::check_complex_attribute(whose.complex_data, ctx);
-	ret = ret && mapped_data_algorithm::check_complex_attribute(whose.mapping_data, ctx);
+	ret = ret && mapsrc_data_algorithm::check_complex_attribute(whose.mapping_data, ctx);
 	ret = ret && object_data_algorithm<typeT>::check_object_data(whose.object_data, ctx);
 	return ret;
 }
@@ -1009,7 +1049,7 @@ rx_result object_types_algorithm<typeT>::construct_runtime (const typeT& whose, 
 	auto ret = complex_data_algorithm::construct_complex_attribute(whose.complex_data, ctx);
 	if (ret)
 	{
-		ret  = mapped_data_algorithm::construct_complex_attribute(whose.mapping_data, whose.complex_data.get_names_cache(), ctx);
+		ret  = mapsrc_data_algorithm::construct_complex_attribute(whose.mapping_data, whose.complex_data.get_names_cache(), ctx);
 		if (ret)
 		{
 			ret = object_data_algorithm<typeT>::construct_object_data(whose.object_data, what, whose.complex_data.get_names_cache(), ctx);
@@ -1025,7 +1065,11 @@ rx_result object_types_algorithm<typeT>::get_depends (const typeT& whose, depend
 	auto ret = complex_data_algorithm::get_depends(whose.complex_data, ctx);
 	if (ret)
 	{
-		ret = object_data_algorithm<typeT>::get_depends(whose.object_data, ctx);
+		ret = mapsrc_data_algorithm::get_depends(whose.mapping_data,ctx);
+		if (ret)
+		{
+			ret = object_data_algorithm<typeT>::get_depends(whose.object_data, ctx);
+		}
 	}
 	return ret;
 }
