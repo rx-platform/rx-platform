@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_ns_commands.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -601,64 +601,3 @@ bool clone_command::do_console_command (std::istream& in, std::ostream& out, std
 } // namespace internal_ns
 } // namespace rx_internal
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	if (in.eof())
-	{// dump here
-		string_type filter;
-		auto current_directory = ns::rx_directory_cache::instance().get_directory(ctx->get_current_directory());
-
-		platform_directories_type dirs{ current_directory };
-		platform_items_type items;
-		current_directory->list_content(dirs, items, filter);
-
-		size_t count = dirs.size() + items.size();
-
-		rx_row_type row;
-		row.reserve(count);
-
-		for (auto& one : dirs)
-		{
-			row.emplace_back(one->meta_info().name, ANSI_RX_DIR_COLOR, ANSI_COLOR_RESET);
-		}
-		for (auto& one : items)
-		{
-			if (one.is_type())
-				row.emplace_back(one.get_meta().name, ANSI_RX_TYPE_COLOR, ANSI_COLOR_RESET);
-			else if (one.is_object())
-			{
-				switch (one.get_type())
-				{
-				case rx_item_type::rx_application:
-					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_APP_COLOR, ANSI_COLOR_RESET });
-					break;
-				case rx_item_type::rx_domain:
-					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_DOMAIN_COLOR, ANSI_COLOR_RESET });
-					break;
-				case rx_item_type::rx_port:
-					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_PORT_COLOR, ANSI_COLOR_RESET });
-					break;
-				case rx_item_type::rx_object:
-					row.emplace_back(rx_table_cell_struct{ one.get_meta().name, ANSI_RX_OBJECT_COLOR, ANSI_COLOR_RESET });
-					break;
-				default:
-					row.emplace_back(one.get_meta().name, ANSI_COLOR_BOLD, ANSI_COLOR_RESET);
-				}
-			}
-			else
-				row.emplace_back(one.get_meta().name, ANSI_RX_DATA_COLOR, ANSI_COLOR_RESET);
-
-		}
-		rx_dump_large_row(row, out, ctx->get_terminal_width());
-		return true;
-
-	}
-	else
-	{
-		return list_command::do_console_command(in, out, err, ctx);
-	}
-
-#endif

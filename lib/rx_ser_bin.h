@@ -4,7 +4,7 @@
 *
 *  lib\rx_ser_bin.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_mem
-#include "lib/rx_mem.h"
 // rx_ser_lib
 #include "lib/rx_ser_lib.h"
+// rx_mem
+#include "lib/rx_mem.h"
 
 #define RX_BINARY_SERIALIZATION_TYPE "rx-bin"
 using rx::memory::byte_order_type;

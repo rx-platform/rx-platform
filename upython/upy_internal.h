@@ -4,7 +4,7 @@
 *
 *  upython\upy_internal.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,10 +35,10 @@
 
 #ifdef UPYTHON_SUPPORT
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace python {

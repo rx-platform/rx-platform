@@ -4,27 +4,27 @@
 *
 *  storage\rx_file_internals.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -42,7 +42,7 @@ namespace storage {
 
 namespace files {
 
-// Class storage::files::rx_json_file
+// Class storage::files::rx_json_file 
 
 
 base_meta_reader& rx_json_file::read_stream ()
@@ -115,7 +115,7 @@ rx_result rx_json_file::get_data (string_type& data)
 }
 
 
-// Class storage::files::rx_binary_file
+// Class storage::files::rx_binary_file 
 
 
 base_meta_reader& rx_binary_file::read_stream ()
@@ -185,7 +185,7 @@ rx_result rx_binary_file::get_data (byte_string& data)
 }
 
 
-// Class storage::files::rx_runtime_file
+// Class storage::files::rx_runtime_file 
 
 
 rx_result rx_runtime_file::open (const string_type& file_name)
@@ -194,7 +194,7 @@ rx_result rx_runtime_file::open (const string_type& file_name)
 }
 
 
-// Class storage::files::rx_simple_file
+// Class storage::files::rx_simple_file 
 
 
 rx_result rx_simple_file::open_for_read (const string_type& file_path)

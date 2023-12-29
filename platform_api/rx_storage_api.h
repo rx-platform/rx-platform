@@ -4,7 +4,7 @@
 *
 *  D:\RX\Native\Source\platform_api\rx_storage_api.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -80,6 +80,8 @@ class rx_storage_base : public rx::pointers::reference_object
       virtual rx_result initialize_storage (const string_type& reference, const string_type& name);
 
       virtual rx_result deinitialize_storage ();
+
+      void list_storage ();
 
 
   protected:

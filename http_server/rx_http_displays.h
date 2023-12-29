@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_displays.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -169,13 +169,13 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
       char points_buffer_[0x200];
 
-      remote_owned_value<int64_t> req_;
+      async_owned_value<int64_t> req_;
 
-      remote_owned_value<int64_t> failed_;
+      async_owned_value<int64_t> failed_;
 
-      remote_owned_value<float> max_req_time_;
+      async_owned_value<float> max_req_time_;
 
-      remote_owned_value<float> last_req_time_;
+      async_owned_value<float> last_req_time_;
 
       static std::map<string_type, string_type> globals_;
 

@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_ethernet.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,12 @@
 
 
 
+// dummy
+#include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
-// dummy
-#include "dummy.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
 

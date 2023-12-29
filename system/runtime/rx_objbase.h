@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_objbase.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,16 +36,16 @@
 #include "system/server/rx_server.h"
 #include "lib/rx_io_addr.h"
 
-// rx_ptr
-#include "lib/rx_ptr.h"
+// dummy
+#include "dummy.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 // rx_meta_data
 #include "lib/rx_meta_data.h"
-// dummy
-#include "dummy.h"
 // rx_io_buffers
 #include "lib/rx_io_buffers.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace security {

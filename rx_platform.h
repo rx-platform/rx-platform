@@ -51,7 +51,7 @@
 
 #define RX_LICENSE_MESSAGE "\
 \r\n\
-Copyright (c) 2023 ENSACO Solutions doo\r\n\r\n\
+Copyright (c) 2024 ENSACO Solutions doo\r\n\r\n\
 This program comes with ABSOLUTELY NO WARRANTY.\r\n\
 This is free software, and you are welcome to redistribute it\r\n\
 under certain conditions; type <license> for details.\r\n\

@@ -4,7 +4,7 @@
 *
 *  protocols\mqtt\mqtt_subscription.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // mqtt_base
 #include "protocols/mqtt/mqtt_base.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -156,7 +156,7 @@ class sessions_cache
 
       void notify_publish (const mqtt_common::mqtt_publish_data& data);
 
-      protocols::mqtt::mqtt_topics::session_request_result session_request (mqtt_common::mqtt_connection_data& data);
+      session_request_result session_request (mqtt_common::mqtt_connection_data& data);
 
 
       uint16_t max_session_expiry;

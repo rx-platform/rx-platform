@@ -4,7 +4,7 @@
 *
 *  protocols\http\rx_web_socket_mapping.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -94,7 +94,7 @@ class rx_web_socket_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< protocols::rx_http::rx_web_socket_endpoint  > rx_web_socket_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< rx_web_socket_endpoint  > rx_web_socket_port_base;
 
 
 

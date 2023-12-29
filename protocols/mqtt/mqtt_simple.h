@@ -4,7 +4,7 @@
 *
 *  protocols\mqtt\mqtt_simple.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -238,11 +238,11 @@ MQTT client/publisher simple port. Implementation of MQTT client/publisher simpl
 
       publish_cahce_type publish_cache_;
 
-      remote_owned_value<bool> connected_;
+      async_owned_value<bool> connected_;
 
-      remote_owned_value<uint64_t> published_;
+      async_owned_value<uint64_t> published_;
 
-      remote_owned_value<uint64_t> received_;
+      async_owned_value<uint64_t> received_;
 
 
 };
@@ -253,7 +253,7 @@ MQTT client/publisher simple port. Implementation of MQTT client/publisher simpl
 
 
 
-typedef rx_platform::runtime::blocks::blocks_templates::extern_mapper_impl< protocols::mqtt::mqtt_simple::mqtt_simple_client_port  > mqtt_simple_mapper_base;
+typedef rx_platform::runtime::blocks::blocks_templates::extern_mapper_impl< mqtt_simple_client_port  > mqtt_simple_mapper_base;
 
 
 
@@ -333,7 +333,7 @@ class mqtt_json_mapper : public mqtt_simple_mapper
 
 
 
-typedef rx_platform::runtime::blocks::blocks_templates::extern_source_impl< protocols::mqtt::mqtt_simple::mqtt_simple_client_port  > mqtt_simple_source_base;
+typedef rx_platform::runtime::blocks::blocks_templates::extern_source_impl< mqtt_simple_client_port  > mqtt_simple_source_base;
 
 
 

@@ -4,7 +4,7 @@
 *
 *  protocols\mqtt\mqtt_subscription.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -83,7 +83,7 @@ void sessions_cache::notify_publish (const mqtt_common::mqtt_publish_data& data)
     }
 }
 
-protocols::mqtt::mqtt_topics::session_request_result sessions_cache::session_request (mqtt_common::mqtt_connection_data& data)
+session_request_result sessions_cache::session_request (mqtt_common::mqtt_connection_data& data)
 {
     string_type session_id = data.client_identifier;
     if (session_id.empty())

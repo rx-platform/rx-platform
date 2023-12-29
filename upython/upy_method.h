@@ -4,7 +4,7 @@
 *
 *  upython\upy_method.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -53,11 +53,11 @@ namespace python {
 
 
 
-class upy_method_execution_context : public logic::method_execution_context  
+class upy_method_execution_context : public logic::method_execution_context1  
 {
 
   public:
-      upy_method_execution_context (execute_data data, const string_type& func_name);
+      upy_method_execution_context (context_execute_data data, const string_type& func_name);
 
 
       string_type get_eval_code () const;
@@ -115,7 +115,7 @@ MicroPython method script. Currently testing on Win32 only.");
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      virtual logic::method_execution_context* create_execution_context (execute_data data);
+      virtual logic::method_execution_context* create_execution_context (context_execute_data data);
 
       virtual rx_result execute (data::runtime_values_data args, logic::method_execution_context* context);
 

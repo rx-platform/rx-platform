@@ -4,7 +4,7 @@
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 2
 #define RX_HAL_MINOR_VERSION 0
-#define RX_HAL_BUILD_NUMBER 0
+#define RX_HAL_BUILD_NUMBER 1
 
 /*********************************************************************************
 
@@ -46,4 +46,5 @@
 1.4.0 first functional ethernet version
 1.4.1 added rx_file_get_time_from_path, included creation time for files
 2.0.0 added TLS to platform
+2.0.1 Included Build Minor in OS info
 *********************************************************************************/

@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_operational.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -37,6 +37,8 @@
 #include "system/runtime/rx_relations.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -108,10 +110,10 @@ class connected_tags
 	typedef std::map<structure::value_data*, runtime_handle_t> values_type;
     typedef std::map<structure::full_value_data*, runtime_handle_t> full_values_type;
     typedef std::map<logic_blocks::method_data*, runtime_handle_t> methods_type;
-    typedef std::map<structure::indirect_value_data*, runtime_handle_t> indirect_values_type;
 	typedef std::map<structure::variable_data*, runtime_handle_t> variables_type;
     typedef std::map<relation_ptr, runtime_handle_t> relations_type;
     typedef std::map<relations::relation_value_data*, runtime_handle_t> relation_values_type;
+
 
 	typedef std::function<void(std::vector<update_item> items)> callback_function_t;
 	struct one_tag_data
@@ -208,8 +210,6 @@ class connected_tags
 
       runtime_process_context *context_;
 
-      indirect_values_type indirect_values_;
-
       relation_values_type relation_values_;
 
       binded_tags *binded_;
@@ -268,6 +268,8 @@ class binded_tags
     typedef std::map<structure::variable_data*, callback_data_t>variables_type;
 	typedef std::map<runtime_handle_t, rt_value_ref> handles_map_type;
 
+    typedef std::map<runtime_handle_t, std::unique_ptr<rx_internal::sys_runtime::data_source::callback_value_point> > connected_values_type;
+
   public:
       binded_tags();
 
@@ -281,6 +283,12 @@ class binded_tags
       rx_result_with<runtime_handle_t> bind_item (const string_type& path, runtime_init_context& ctx, binded_callback_t callback);
 
       rx_result_with<runtime_handle_t> bind_item_with_write (const string_type& path, runtime_init_context& ctx, binded_callback_t callback, write_callback_t write_callback);
+
+      rx_result_with<runtime_handle_t> connect_item (const string_type& path, uint32_t rate, runtime_init_context& ctx, binded_callback_t callback);
+
+      rx_result write_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id);
+
+      rx_result execute_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id);
 
       rx_result set_item (const string_type& path, rx_simple_value&& what, runtime_init_context& ctx);
 
@@ -343,6 +351,8 @@ class binded_tags
       methods_type methods_;
 
       variables_type variables_;
+
+      connected_values_type connected_values_;
 
 
       handles_map_type handles_map_;

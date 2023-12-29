@@ -4,7 +4,7 @@
 *
 *  host\rx_pipe.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,12 +35,12 @@
 
 #include "system/server/rx_server.h"
 
+// rx_host
+#include "system/hosting/rx_host.h"
 // rx_log
 #include "system/server/rx_log.h"
 // rx_anonymus_pipes
 #include "host/rx_anonymus_pipes.h"
-// rx_host
-#include "system/hosting/rx_host.h"
 
 #define RX_PIPE_BUFFER_SIZE 0x10000 //64 KiB for pipes
 

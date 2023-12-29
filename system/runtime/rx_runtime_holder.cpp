@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_holder.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,6 +32,8 @@
 
 #include "system/meta/rx_obj_types.h"
 
+// rx_event_blocks
+#include "system/runtime/rx_event_blocks.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
 

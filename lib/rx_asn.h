@@ -4,7 +4,7 @@
 *
 *  lib\rx_asn.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -322,7 +322,6 @@ class rx_asn_out_stream
           write_explicit(val, create_stream_simple_type());
           return *this;
       }
-
   protected:
 
   private:

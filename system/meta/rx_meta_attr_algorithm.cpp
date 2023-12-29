@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_attr_algorithm.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -1871,25 +1871,7 @@ bool data_blocks_algorithm::check_data_attribute (def_blocks::data_attribute& wh
 
 rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, construct_context& ctx)
 {
-	rx_node_id target;
-	auto resolve_result = rx_internal::model::algorithms::resolve_data_type_reference(whose.target_, ctx.get_directories());
-	if (!resolve_result)
-	{
-		rx_result ret(resolve_result.errors());
-		ret.register_error("Unable to resolve attribute");
-		return ret;
-	}
-	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.name_, ctx, ctx.get_directories());
-	if (temp)
-	{
-		data = std::move(temp.value().runtime);
-		return true;
-	}
-	else
-	{
-		return temp.errors();
-	}
+	return construct_data_block(whose.target_, whose.name_, data, ctx);
 }
 
 rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& ref, ns::rx_directory_resolver& dirs)
@@ -1905,6 +1887,29 @@ rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& 
 		return target.errors();
 	else
 		return true;
+}
+
+rx_result data_blocks_algorithm::construct_data_block (const rx_item_reference& whose, const string_type& name, runtime::structure::block_data& data, construct_context& ctx)
+{
+	rx_node_id target;
+	auto resolve_result = rx_internal::model::algorithms::resolve_data_type_reference(whose, ctx.get_directories());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target = resolve_result.value();
+	auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, name, ctx, ctx.get_directories());
+	if (temp)
+	{
+		data = std::move(temp.value().runtime);
+		return true;
+	}
+	else
+	{
+		return temp.errors();
+	}
 }
 
 
@@ -2138,6 +2143,22 @@ rx_result method_blocks_algorithm::construct_complex_attribute (const def_blocks
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::method_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
+
+		if (!whose.inputs_.is_null())
+		{
+			auto result = data_blocks_algorithm::construct_data_block(whose.inputs_, "In", temp.value().inputs, ctx);
+			if (!result)
+			{
+				result.register_error("Unable to resolve inputs data type"s + whose.inputs_.to_string());				
+			}
+		}if (!whose.outputs_.is_null())
+		{
+			auto result = data_blocks_algorithm::construct_data_block(whose.outputs_, "In", temp.value().outputs, ctx);
+			if (!result)
+			{
+				result.register_error("Unable to resolve outputs data type"s + whose.outputs_.to_string());
+			}
+		}
 		ctx.end_method(temp.move_value());
 		return true;
 	}

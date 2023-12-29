@@ -4,7 +4,7 @@
 *
 *  first_plugin\first_ports.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -47,7 +47,7 @@ class first_transport_port;
 
 using rx_platform_api::local_value;
 using rx_platform_api::owned_value;
-using rx_platform_api::remote_owned_value;
+using rx_platform_api::async_owned_value;
 
 
 
@@ -295,7 +295,7 @@ First Client Port. Client Port implementation in test plugin.");
 
       local_value<string_type> command;
 
-      remote_owned_value<string_type> response;
+      async_owned_value<string_type> response;
 
 
   protected:

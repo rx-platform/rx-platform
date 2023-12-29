@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_operational.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -402,6 +402,44 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item_with_write (const string
 	ctx.binded_tags.emplace(revisied_path, handle);
 
 	return handle;
+}
+
+rx_result_with<runtime_handle_t> binded_tags::connect_item (const string_type& path, uint32_t rate, runtime_init_context& ctx, binded_callback_t callback)
+{
+	auto handle= ctx.get_new_handle();
+	auto pt = std::make_unique<rx_internal::sys_runtime::data_source::callback_value_point>(callback);
+	pt->set_context(ctx.context);
+	pt->connect(path, rate);
+	connected_values_.emplace(handle, std::move(pt));
+	return handle;
+}
+
+rx_result binded_tags::write_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id)
+{
+	auto it = connected_values_.find(handle);
+	if (it != connected_values_.end())
+	{
+		it->second->write(std::move(val), trans_id);
+		return true;
+	}
+	else
+	{
+		return "Invalid Handle value!";
+	}
+}
+
+rx_result binded_tags::execute_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id)
+{
+	auto it = connected_values_.find(handle);
+	if (it != connected_values_.end())
+	{
+		it->second->execute(std::move(val), trans_id);
+		return true;
+	}
+	else
+	{
+		return "Invalid Handle value!";
+	}
 }
 
 rx_result binded_tags::set_item (const string_type& path, rx_simple_value&& what, runtime_init_context& ctx)

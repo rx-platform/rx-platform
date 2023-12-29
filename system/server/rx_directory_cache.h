@@ -4,7 +4,7 @@
 *
 *  system\server\rx_directory_cache.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_ns_resolver
-#include "system/server/rx_ns_resolver.h"
 // rx_ns
 #include "system/server/rx_ns.h"
+// rx_ns_resolver
+#include "system/server/rx_ns_resolver.h"
 
 
 

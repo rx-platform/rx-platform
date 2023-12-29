@@ -4,7 +4,7 @@
 *
 *  host\rx_headless_host.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_thread
-#include "system/threads/rx_thread.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 
 #include "system/server/rx_server.h"
 using rx_platform::hosting::hosts_type;

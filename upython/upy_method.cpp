@@ -4,7 +4,7 @@
 *
 *  upython\upy_method.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -82,7 +82,7 @@ rx_result upy_method::stop_runtime (runtime::runtime_stop_context& ctx)
     return true;
 }
 
-logic::method_execution_context* upy_method::create_execution_context (execute_data data)
+logic::method_execution_context* upy_method::create_execution_context (context_execute_data data)
 {
     return new upy_method_execution_context(data, "funkcija");
 }
@@ -132,7 +132,7 @@ rx_result upy_method::execute (data::runtime_values_data args, logic::method_exe
 
 // Class rx_platform::python::upy_method_execution_context 
 
-upy_method_execution_context::upy_method_execution_context (execute_data data, const string_type& func_name)
+upy_method_execution_context::upy_method_execution_context (context_execute_data data, const string_type& func_name)
       : func_name_(func_name)
     , id_(data.transaction_id)
     , logic::method_execution_context(data)

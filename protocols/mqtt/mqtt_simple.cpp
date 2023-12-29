@@ -4,27 +4,27 @@
 *
 *  protocols\mqtt\mqtt_simple.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -58,7 +58,7 @@ rx_protocol_result_t mqtt_check_header(uint8_t* header, size_t* size)
 }
 
 
-// Class protocols::mqtt::mqtt_simple::mqtt_json_mapper
+// Class protocols::mqtt::mqtt_simple::mqtt_json_mapper 
 
 mqtt_json_mapper::mqtt_json_mapper()
 {
@@ -114,7 +114,7 @@ void mqtt_json_mapper::update_publish_from_value (rx_value&& val, mqtt_common::m
 }
 
 
-// Class protocols::mqtt::mqtt_simple::mqtt_json_source
+// Class protocols::mqtt::mqtt_simple::mqtt_json_source 
 
 mqtt_json_source::mqtt_json_source()
 {
@@ -175,7 +175,7 @@ rx_result mqtt_json_source::initialize_source (runtime::runtime_init_context& ct
 }
 
 
-// Class protocols::mqtt::mqtt_simple::mqtt_simple_client_endpoint
+// Class protocols::mqtt::mqtt_simple::mqtt_simple_client_endpoint 
 
 mqtt_simple_client_endpoint::mqtt_simple_client_endpoint (mqtt_simple_client_port_ptr port, rx_timer_ptr timer)
       : port_(port)
@@ -500,7 +500,7 @@ uint16_t mqtt_simple_client_endpoint::send_transaction_result (mqtt_common::mqtt
 }
 
 
-// Class protocols::mqtt::mqtt_simple::mqtt_simple_client_port
+// Class protocols::mqtt::mqtt_simple::mqtt_simple_client_port 
 
 std::map<rx_node_id, mqtt_simple_client_port::smart_ptr> mqtt_simple_client_port::runtime_instances;
 
@@ -874,7 +874,7 @@ const mqtt_common::mqtt_connection_data& mqtt_simple_client_port::get_connection
 }
 
 
-// Class protocols::mqtt::mqtt_simple::mqtt_simple_mapper
+// Class protocols::mqtt::mqtt_simple::mqtt_simple_mapper 
 
 mqtt_simple_mapper::mqtt_simple_mapper()
       : qos_(mqtt_qos_level::Level0),
@@ -932,7 +932,7 @@ void mqtt_simple_mapper::mapper_result_received (rx_result&& result, runtime_tra
 }
 
 
-// Class protocols::mqtt::mqtt_simple::mqtt_simple_source
+// Class protocols::mqtt::mqtt_simple::mqtt_simple_source 
 
 mqtt_simple_source::mqtt_simple_source()
       : qos_(mqtt_qos_level::Level0),

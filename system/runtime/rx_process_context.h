@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_process_context.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -326,7 +326,7 @@ struct execute_result_struct
 enum class runtime_process_step : uint_fast8_t
 {
     idle = 0,
-    remote_updates = 1,
+    async_values = 1,
     status_change = 2,
     source_inputs = 3,
     mapper_inputs = 4,
@@ -350,7 +350,7 @@ struct update_data_struct
     values::rx_value value;
 };
 
-struct remotes_data
+struct async_data
 {
     runtime_handle_t handle;
     values::rx_simple_value value;
@@ -405,7 +405,7 @@ typedef std::vector<write_result_struct<structure::variable_block_data> > block_
 typedef std::vector<method_execute_result_data> method_results_type;
 typedef std::vector<logic_blocks::program_data*> programs_type;
 
-typedef std::vector<remotes_data> remotes_data_type;
+typedef std::vector<async_data> async_values_type;
 
 typedef std::vector<structure::variable_data*> variables_type;
 typedef std::vector<structure::variable_block_data*> block_variables_type;
@@ -436,6 +436,7 @@ class runtime_process_context
     friend class algorithms::runtime_relation_algorithms;
 
     typedef std::function<void()> fire_callback_func_t;
+
     //typedef std::vector<context_value_point*> points_type;
 
   public:
@@ -458,7 +459,7 @@ class runtime_process_context
 
       bool should_repeat ();
 
-      void from_remote_pending (remotes_data data);
+      void async_value_pending (async_data data);
 
       void status_change_pending ();
 
@@ -540,7 +541,7 @@ class runtime_process_context
 
       bool should_save ();
 
-      remotes_data_type& get_from_remote ();
+      async_values_type& get_async_values ();
 
       void full_value_changed (structure::full_value_data* whose);
 
@@ -551,6 +552,10 @@ class runtime_process_context
       void value_changed (structure::value_data* whose);
 
       void method_changed (logic_blocks::method_data* whose);
+
+      rx_result write_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id);
+
+      rx_result execute_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id);
 
 
       const rx_mode_type get_mode () const
@@ -604,12 +609,12 @@ class runtime_process_context
           auto result = this->set_value(handle, std::move(temp_val));
       }
       template<typename valT>
-      void set_remote_binded_as(runtime_handle_t handle, valT&& value)
+      void set_async_binded_as(runtime_handle_t handle, valT&& value)
       {
-          remotes_data data;
+          async_data data;
           data.handle = handle;
           data.value.assign_static<valT>(std::forward<valT>(value));
-          this->from_remote_pending(std::move(data));
+          this->async_value_pending(std::move(data));
       }
       template<typename funcT, typename... Args>
       void send_own(funcT&& func, Args... args)
@@ -673,7 +678,7 @@ class runtime_process_context
 
       std::atomic<bool> serialize_value_;
 
-      double_collection<remotes_data_type> from_remote_;
+      double_collection<async_values_type> async_values_;
 
       bool stopping_;
 

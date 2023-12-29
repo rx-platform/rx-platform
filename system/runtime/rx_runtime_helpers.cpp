@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -161,6 +161,14 @@ rx_result runtime_init_context::set_item (const string_type& path, rx_simple_val
 rx_result runtime_init_context::get_item (const string_type& path, rx_simple_value& val)
 {
 	return tags->get_item(path, val, *this);
+}
+
+rx_result_with<runtime_handle_t> runtime_init_context::connect_item (const string_type& path, uint32_t rate, tag_blocks::binded_callback_t callback)
+{
+	if(!path.empty() && path[0]=='.')
+		return tags->connect_item("."s + path, rate, *this, callback);
+		
+	return tags->connect_item(path, rate, *this, callback);
 }
 
 

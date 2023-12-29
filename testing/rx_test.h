@@ -4,7 +4,7 @@
 *
 *  testing\rx_test.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -37,10 +37,10 @@
 #include "terminal/rx_con_programs.h"
 // rx_commands
 #include "terminal/rx_commands.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_meta_data
 #include "lib/rx_meta_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace testing {
 class test_case;

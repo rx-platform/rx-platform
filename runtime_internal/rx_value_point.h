@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_value_point.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -124,6 +124,7 @@ class value_point_impl
       bool single_execute_result_received (rx_result result, data::runtime_values_data&& data, runtime_transaction_id_t id);
 
 
+      const rx_platform::runtime::runtime_process_context * get_context () const;
       void set_context (rx_platform::runtime::runtime_process_context * value);
 
 
@@ -192,6 +193,38 @@ class value_point_impl
       string_type expression_;
 
       pending_transactions_type pending_transactions_;
+
+
+};
+
+
+
+
+
+
+class callback_value_point : public value_point_impl  
+{
+    typedef std::function<void(const values::rx_value&)> callback_t;
+
+  public:
+      callback_value_point (callback_t callback);
+
+
+  protected:
+
+  private:
+
+      void value_changed (const rx_value& val);
+
+      void result_received (rx_result&& result, runtime_transaction_id_t id);
+
+      void execute_result_received (rx_result&& result, const values::rx_simple_value& data, runtime_transaction_id_t id);
+
+      void execute_result_received (rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id);
+
+
+
+      callback_t callback_;
 
 
 };

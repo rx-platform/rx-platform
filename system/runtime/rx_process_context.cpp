@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_process_context.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -46,7 +46,7 @@ namespace rx_platform {
 namespace runtime {
 namespace
 {
-remotes_data_type g_empty_remotes;
+async_values_type g_empty_async_values;
 variables_type g_empty_variables;
 block_variables_type g_empty_block_variables;
 structs_type g_empty_structs;
@@ -116,7 +116,7 @@ runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binde
 rx_result runtime_process_context::init_context ()
 {
     now = rx_time::now();
-    current_step_ = runtime_process_step::remote_updates;
+    current_step_ = runtime_process_step::async_values;
     return true;
 }
 
@@ -164,13 +164,13 @@ bool runtime_process_context::should_repeat ()
     return ret;
 }
 
-void runtime_process_context::from_remote_pending (remotes_data data)
+void runtime_process_context::async_value_pending (async_data data)
 {
     locks::auto_lock_t _(&context_lock_);
     if (stopping_)
         return;
-    turn_on_pending<runtime_process_step::remote_updates>();
-    from_remote_.emplace_back(std::move(data));
+    turn_on_pending<runtime_process_step::async_values>();
+    async_values_.emplace_back(std::move(data));
 }
 
 void runtime_process_context::status_change_pending ()
@@ -566,14 +566,14 @@ bool runtime_process_context::should_save ()
     return serialize_value_.exchange(false);
 }
 
-remotes_data_type& runtime_process_context::get_from_remote ()
+async_values_type& runtime_process_context::get_async_values ()
 {
     locks::auto_lock_t _(&context_lock_);
-    RX_ASSERT(current_step_ == runtime_process_step::remote_updates);
-    if (should_do_step<runtime_process_step::remote_updates>())
-        return from_remote_.get_and_swap();
+    RX_ASSERT(current_step_ == runtime_process_step::async_values);
+    if (should_do_step<runtime_process_step::async_values>())
+        return async_values_.get_and_swap();
     else
-        return g_empty_remotes;
+        return g_empty_async_values;
 }
 
 void runtime_process_context::full_value_changed (structure::full_value_data* whose)
@@ -615,6 +615,16 @@ void runtime_process_context::value_changed (structure::value_data* whose)
 void runtime_process_context::method_changed (logic_blocks::method_data* whose)
 {
     tags_.method_changed(whose, whose->get_value(this));
+}
+
+rx_result runtime_process_context::write_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id)
+{
+    return binded_.write_connected(handle, std::move(val), trans_id);
+}
+
+rx_result runtime_process_context::execute_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id)
+{
+    return binded_.execute_connected(handle, std::move(val), trans_id);
 }
 
 rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)

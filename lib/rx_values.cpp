@@ -4,7 +4,7 @@
 *
 *  lib\rx_values.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -272,10 +272,14 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 					return false;
 				while (!reader.array_end())
 				{
+					if (!reader.start_object(name))
+						return false;
 					complex_value_struct temp{};
 					if (!reader.read_double("Real", temp.real))
 						return false;
 					if (!reader.read_double("Imag", temp.imag))
+						return false;
+					if (!reader.end_object())
 						return false;
 					arr.push_back(temp);
 				}
@@ -298,7 +302,6 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 					if (!reader.read_uuid(name, temp))
 						return false;
 					arr.push_back(temp);
-					return rx_init_uuid_value(&val, &temp);
 				}
 				if (arr.empty())
 					ret = rx_init_uuid_array_value(&val, nullptr, 0) == RX_OK;
@@ -307,15 +310,32 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 				return ret;
 			}
 			break;
-		case RX_NODE_ID_TYPE:
-			RX_ASSERT(false);//not implemented
-			return false;
-			/*{
-				rx_node_id temp;
-				if (!reader.read_id(name, temp))
+		case RX_NODE_ID_TYPE: 
+			{
+				bool ret;
+				std::vector<rx_node_id_struct> arr;
+				if (!reader.start_array(name))
 					return false;
-				return rx_init_node_id_value(&val, temp.c_ptr()) == RX_OK;
-			}*/
+				while (!reader.array_end())
+				{
+					rx_node_id temp;
+					if (!reader.read_id(name, temp))
+						return false;
+					arr.push_back(temp.move());
+				}
+				if (arr.empty())
+				{
+					ret = rx_init_node_id_array_value(&val, nullptr, 0) == RX_OK;
+				}
+				else
+				{
+					ret = rx_init_node_id_array_value(&val, &arr[0], arr.size()) == RX_OK;
+					// clean values
+					for (auto& one : arr)
+						rx_destory_node_id(&one);
+				}
+				return ret;
+			}
 		case RX_STRING_TYPE:
 			{
 				bool ret;
@@ -344,17 +364,56 @@ bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const ch
 				return ret;
 			}
 		case RX_TIME_TYPE:
-			RX_ASSERT(false);//not implemented
-			return false;
-			/*{
-				rx_time temp;
-				if (!reader.read_time(name, temp))
+			{
+				bool ret;
+				std::vector<rx_time_struct> arr;
+				if (!reader.start_array(name))
 					return false;
-				return rx_init_time_value(&val, temp) == RX_OK;
-			}*/
+				while (!reader.array_end())
+				{
+					rx_time_struct temp{};
+					if (!reader.read_time(name, temp))
+						return false;
+					arr.push_back(temp);
+				}
+				if (arr.empty())
+					ret = rx_init_time_array_value(&val, nullptr, 0) == RX_OK;
+				else
+					ret = rx_init_time_array_value(&val, &arr[0], arr.size()) == RX_OK;
+				return ret;
+			}
 		case RX_BYTES_TYPE:
-			RX_ASSERT(false);//not implemented
-			break;
+			{
+				bool ret;
+				std::vector<byte_string> arr;
+				if (!reader.start_array(name))
+					return false;
+				while (!reader.array_end())
+				{
+					byte_string temp{};
+					if (!reader.read_bytes(name, temp))
+						return false;
+					arr.push_back(temp);
+				}
+				if (arr.empty())
+				{
+					ret = rx_init_bytes_array_value(&val, nullptr, nullptr, 0) == RX_OK;
+				}
+				else
+				{
+					std::vector<const uint8_t*> data;
+					std::vector<size_t> sizes;
+					data.reserve(arr.size());
+					sizes.reserve(arr.size());
+					for (auto& one : arr)
+					{
+						data.push_back((uint8_t*)&one[0]);
+						sizes.push_back(one.size());
+					}
+					ret = rx_init_bytes_array_value(&val, &data[0], &sizes[0], arr.size()) == RX_OK;
+				}
+				return ret;
+			}
 		case RX_STRUCT_TYPE:
 			{
 				bool ret;
@@ -2334,7 +2393,7 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	}
 }
 
-rx::values::rx_simple_value rx_value::to_simple () const
+rx_simple_value rx_value::to_simple () const
 {
     return rx_simple_value(&data_.value);
 }
@@ -2434,7 +2493,7 @@ uint32_t rx_value::get_origin () const
 	return data_.origin & RX_ORIGIN_MASK;
 }
 
-rx::values::rx_simple_value rx_value::operator [] (int index) const
+rx_simple_value rx_value::operator [] (int index) const
 {
 	if (is_array())
 	{
@@ -2885,7 +2944,7 @@ byte_string rx_simple_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx::values::rx_simple_value rx_simple_value::operator [] (int index) const
+rx_simple_value rx_simple_value::operator [] (int index) const
 {
 	if (is_array())
 	{
@@ -3280,7 +3339,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx::values::rx_simple_value rx_timed_value::to_simple () const
+rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(&data_.value);
 }
@@ -3303,7 +3362,7 @@ byte_string rx_timed_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx::values::rx_simple_value rx_timed_value::operator [] (int index) const
+rx_simple_value rx_timed_value::operator [] (int index) const
 {
 	/*if (is_array())
 	{

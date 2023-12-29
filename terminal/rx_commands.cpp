@@ -4,7 +4,7 @@
 *
 *  terminal\rx_commands.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -397,6 +397,7 @@ std::vector<server_command_base_ptr> server_command_manager::get_internal_comman
 
 	return ret_commands;
 }
+
 
 // Class rx_internal::terminal::commands::echo_server_command 
 

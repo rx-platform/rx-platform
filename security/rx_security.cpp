@@ -4,7 +4,7 @@
 *
 *  security\rx_security.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -412,12 +412,3 @@ rx_result unathorized_security_context::deserialize (base_meta_reader& stream)
 } // namespace security
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	: access_mask_(rx_security_null)
-	, extended_mask_(rx_security_ext_null)
-
-#endif

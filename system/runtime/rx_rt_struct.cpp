@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_rt_struct.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -2190,40 +2190,6 @@ rx_result value_data::check_set_value (runtime_process_context* ctx, bool intern
 // Class rx_platform::runtime::structure::runtime_item 
 
 
-// Class rx_platform::runtime::structure::indirect_value_data 
-
-string_type indirect_value_data::type_name = RX_INDIRECT_VALUE_TYPE_NAME;
-
-
-rx_value indirect_value_data::get_value (runtime_process_context* ctx) const
-{
-	return ctx->adapt_value(value);
-}
-
-void indirect_value_data::set_value (rx_simple_value&& val, const rx_time& time)
-{
-	if (val.convert_to(value.get_type()))
-	{
-		default_value_ = val;
-		value = rx_timed_value(std::move(val), time);
-	}
-}
-
-void indirect_value_data::object_state_changed (runtime_process_context* ctx)
-{
-	if (ctx->get_mode_time() > value.get_time())
-		value.set_time(ctx->get_mode_time());
-}
-
-rx_result indirect_value_data::write_value (context_write_data&& data, runtime_process_context* ctx)
-{
-	return RX_NOT_IMPLEMENTED;
-	/*if (!data.value.convert_to(value.get_type()))
-		return RX_INVALID_CONVERSION;
-	return true;*/
-}
-
-
 // Class rx_platform::runtime::structure::write_task 
 
 write_task::~write_task()
@@ -4200,4 +4166,6 @@ void mapper_execute_task::process_result (rx_result&& result, data::runtime_valu
 } // namespace structure
 } // namespace runtime
 } // namespace rx_platform
+
+
 

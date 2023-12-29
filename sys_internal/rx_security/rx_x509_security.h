@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_security\rx_x509_security.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,12 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_platform_security
 #include "sys_internal/rx_security/rx_platform_security.h"
 // rx_security
 #include "security/rx_security.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 

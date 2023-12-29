@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_server.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,14 +33,14 @@
 
 
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_method_set
 #include "protocols/opcua/rx_method_set.h"
 // rx_opcua_subscriptions
 #include "protocols/opcua/rx_opcua_subscriptions.h"
 // rx_opcua_attributes
 #include "protocols/opcua/rx_opcua_attributes.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "rx_opcua_params.h"
 using namespace protocols::opcua::common;

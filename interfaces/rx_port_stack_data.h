@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_port_stack_data.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -68,7 +68,7 @@ class port_active_map
       void close_all_endpoints ();
 
 
-      remote_owned_value<int16_t> active_endpoints;
+      async_owned_value<int16_t> active_endpoints;
 
 
   protected:
@@ -110,9 +110,9 @@ class port_buffers
 
       size_t buffer_discard_size;
 
-      remote_owned_value<uint32_t> buffer_count;
+      async_owned_value<uint32_t> buffer_count;
 
-      remote_owned_value<int64_t> discard_buffer_count;
+      async_owned_value<int64_t> discard_buffer_count;
 
 
   protected:
@@ -186,7 +186,7 @@ class port_passive_map
       bool empty () const;
 
 
-      remote_owned_value<bool> stack_binded;
+      async_owned_value<bool> stack_binded;
 
       rx_port_ptr bind_port;
 

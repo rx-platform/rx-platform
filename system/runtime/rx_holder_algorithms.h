@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_holder_algorithms.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_runtime_holder
-#include "system/runtime/rx_runtime_holder.h"
 // rx_write_transaction
 #include "system/runtime/rx_write_transaction.h"
+// rx_runtime_holder
+#include "system/runtime/rx_runtime_holder.h"
 
 
 

@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_full_duplex_packet.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -324,7 +324,7 @@ protected:
 
       std::atomic<current_port_state> state_;
 
-      remote_local_value<uint32_t> session_timeout_;
+      async_local_value<uint32_t> session_timeout_;
 
 
 };

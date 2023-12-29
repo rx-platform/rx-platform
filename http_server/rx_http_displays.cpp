@@ -4,27 +4,27 @@
 *
 *  http_server\rx_http_displays.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace rx_http_server {
 
 namespace http_displays {
 
-// Class rx_internal::rx_http_server::http_displays::rx_http_static_display
+// Class rx_internal::rx_http_server::http_displays::rx_http_static_display 
 
 rx_http_static_display::rx_http_static_display()
 {
@@ -135,7 +135,7 @@ void rx_http_static_display::fill_contents (http_display_custom_content& content
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::http_displays_repository
+// Class rx_internal::rx_http_server::http_displays::http_displays_repository 
 
 http_displays_repository::http_displays_repository()
 {
@@ -204,7 +204,7 @@ rx_result_with<rx_http_display_base::smart_ptr> http_displays_repository::get_di
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::http_display_point
+// Class rx_internal::rx_http_server::http_displays::http_display_point 
 
 http_display_point::http_display_point()
       : str_value_("-")
@@ -239,7 +239,7 @@ const string_type& http_display_point::get_str_value () const
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::rx_http_display_base
+// Class rx_internal::rx_http_server::http_displays::rx_http_display_base 
 
 std::map<string_type, string_type> rx_http_display_base::globals_;
 
@@ -682,7 +682,7 @@ const char* system_paths[] = {
 	"LoopCount",
 	"ProcessQueues"
 };
-// Class rx_internal::rx_http_server::http_displays::rx_http_standard_display
+// Class rx_internal::rx_http_server::http_displays::rx_http_standard_display 
 
 rx_http_standard_display::rx_http_standard_display()
 {
@@ -796,10 +796,10 @@ void rx_http_standard_display::fill_div (std::ostream& stream, const string_type
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::http_display_custom_content
+// Class rx_internal::rx_http_server::http_displays::http_display_custom_content 
 
 
-// Class rx_internal::rx_http_server::http_displays::rx_http_simple_display
+// Class rx_internal::rx_http_server::http_displays::rx_http_simple_display 
 
 rx_http_simple_display::rx_http_simple_display()
 {
@@ -823,7 +823,7 @@ void rx_http_simple_display::fill_contents (http_display_custom_content& content
 }
 
 
-// Class rx_internal::rx_http_server::http_displays::rx_http_main_display
+// Class rx_internal::rx_http_server::http_displays::rx_http_main_display 
 
 rx_http_main_display::rx_http_main_display()
 {

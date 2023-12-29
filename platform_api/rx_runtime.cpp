@@ -4,7 +4,7 @@
 *
 *  D:\RX\Native\Source\platform_api\rx_runtime.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -59,6 +59,7 @@ rxInitCtxSetLocalValue_t api_init_set_local_value;
 rxInitCtxGetMappingValues_t api_get_mapping_values;
 rxInitCtxGetSourceValues_t api_get_source_values;
 rxInitCtxGetItemMeta_t api_item_meta;
+rxInitCtxConnectItem_t api_connect_item_func;
 
 rxStartCtxGetCurrentPath_t api_start_get_current_path;
 rxStartCtxCreateTimer_t api_start_ctx_create_timer;
@@ -68,7 +69,9 @@ rxStartCtxSubscribeRelation_t api_subscribe_relation;
 
 rxCtxGetValue_t api_get_value_func;
 rxCtxSetValue_t api_set_value_func;
-rxCtxSetRemotePending_t api_set_remote_pending_func;
+rxCtxWriteConnected_t api_write_connected_func;
+rxCtxExecuteConnected_t api_execute_connected_func;
+rxCtxSetAsyncPending_t api_set_async_pending_func;
 
 
 extern "C"
@@ -290,6 +293,18 @@ rx_result_with<runtime_handle_t> rx_init_context::bind_item (const char* path, r
 {
     runtime_handle_t handle = 0;
     rx_result result = api_bind_item_func(impl_, path, &handle, rt_ctx, callback);
+    if (result)
+        return handle;
+    else
+        return result.errors();
+}
+
+rx_result_with<runtime_handle_t> rx_init_context::connect_item (const char* path, uint32_t rate, runtime_ctx_ptr* rt_ctx, connect_callback_data* callback)
+{
+    if (api_connect_item_func == nullptr)
+        return RX_NOT_SUPPORTED;
+    runtime_handle_t handle = 0;
+    rx_result result = api_connect_item_func(impl_, path, rate, &handle, rt_ctx, callback);
     if (result)
         return handle;
     else
@@ -537,9 +552,23 @@ rx_result rx_process_context::set_value (runtime_handle_t handle, values::rx_sim
     return api_set_value_func(impl_, handle, val.move());
 }
 
-void rx_process_context::set_remote_pending (runtime_handle_t handle, values::rx_simple_value&& val)
+rx_result rx_process_context::write_connected (runtime_handle_t handle, values::rx_simple_value&& val, runtime_transaction_id_t trans_id)
 {
-    return api_set_remote_pending_func(impl_, handle, val.move());
+    if (api_write_connected_func == nullptr)
+        return RX_NOT_SUPPORTED;
+    return api_write_connected_func(impl_, handle, val.move(), trans_id);
+}
+
+rx_result rx_process_context::execute_connected (runtime_handle_t handle, values::rx_simple_value&& val, runtime_transaction_id_t trans_id)
+{
+    if (api_execute_connected_func == nullptr)
+        return RX_NOT_SUPPORTED;
+    return api_execute_connected_func(impl_, handle, val.move(), trans_id);
+}
+
+void rx_process_context::set_async_pending (runtime_handle_t handle, values::rx_simple_value&& val)
+{
+    return api_set_async_pending_func(impl_, handle, val.move());
 }
 
 

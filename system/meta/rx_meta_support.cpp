@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_support.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -248,7 +248,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_stack().push_back(runtime_data_prototype());
 }
 
-rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
+runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(*runtime_stack().rbegin());
@@ -1082,7 +1082,7 @@ rx_result runtime_data_prototype::add_value_block (const string_type& name, std:
 	}
 }
 
-rx_platform::meta::runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
+runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
 {
 	runtime_data_prototype ret;
 	for (auto& item : items)

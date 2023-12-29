@@ -4,7 +4,7 @@
 *
 *  D:\RX\Native\Source\platform_api\rx_storage_api.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -114,6 +114,10 @@ rx_result rx_storage_base::initialize_storage (const string_type& reference, con
 rx_result rx_storage_base::deinitialize_storage ()
 {
     return true;
+}
+
+void rx_storage_base::list_storage ()
+{
 }
 
 void rx_storage_base::bind_runtime (void* target)

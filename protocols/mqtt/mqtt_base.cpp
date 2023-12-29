@@ -4,27 +4,27 @@
 *
 *  protocols\mqtt\mqtt_base.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -122,7 +122,7 @@ bool write_multibyte_size(int32_t size, io::rx_io_buffer& buffer)
     return true;
 }
 
-// Class protocols::mqtt::mqtt_common::mqtt_transaction
+// Class protocols::mqtt::mqtt_common::mqtt_transaction 
 
 mqtt_transaction::mqtt_transaction()
     : timeout_(0)
@@ -154,7 +154,7 @@ void mqtt_transaction::set_trans_id (uint16_t value)
 }
 
 
-// Class protocols::mqtt::mqtt_common::mqtt_subscribe_transaction
+// Class protocols::mqtt::mqtt_common::mqtt_subscribe_transaction 
 
 mqtt_subscribe_transaction::mqtt_subscribe_transaction()
       : done_(false)
@@ -476,7 +476,7 @@ void mqtt_subscribe_transaction::set_result_string (const string_type& value)
 }
 
 
-// Class protocols::mqtt::mqtt_common::mqtt_publish_transaction
+// Class protocols::mqtt::mqtt_common::mqtt_publish_transaction 
 
 mqtt_publish_transaction::mqtt_publish_transaction (mqtt_publish_data data, uint16_t id, uint32_t timeout)
     : step_(0)
@@ -670,7 +670,7 @@ bool mqtt_publish_transaction::is_done () const
 }
 
 
-// Class protocols::mqtt::mqtt_common::mqtt_publish_data
+// Class protocols::mqtt::mqtt_common::mqtt_publish_data 
 
 mqtt_publish_data::mqtt_publish_data()
       : qos(mqtt_qos_level::Level0),
@@ -1034,7 +1034,7 @@ rx_result mqtt_publish_data::serialize (uint8_t& ctrl, io::rx_io_buffer& buff, m
 }
 
 
-// Class protocols::mqtt::mqtt_common::mqtt_connect_transaction
+// Class protocols::mqtt::mqtt_common::mqtt_connect_transaction 
 
 mqtt_connect_transaction::mqtt_connect_transaction()
     : result_received_(false)
@@ -2143,7 +2143,7 @@ void mqtt_connect_transaction::set_result_string (const string_type& value)
 }
 
 
-// Class protocols::mqtt::mqtt_common::mqtt_connection_data
+// Class protocols::mqtt::mqtt_common::mqtt_connection_data 
 
 mqtt_connection_data::mqtt_connection_data()
       : new_session(false),
@@ -2164,7 +2164,7 @@ mqtt_connection_data::mqtt_connection_data()
 
 
 
-// Class protocols::mqtt::mqtt_common::mqtt_ping_transaction
+// Class protocols::mqtt::mqtt_common::mqtt_ping_transaction 
 
 mqtt_ping_transaction::mqtt_ping_transaction (uint32_t timeout)
       : done_(false)
@@ -2202,7 +2202,7 @@ bool mqtt_ping_transaction::is_done () const
 }
 
 
-// Class protocols::mqtt::mqtt_common::mqtt_subscribe_data
+// Class protocols::mqtt::mqtt_common::mqtt_subscribe_data 
 
 mqtt_subscribe_data::mqtt_subscribe_data()
       : qos(mqtt_qos_level::Level0),
@@ -2215,7 +2215,7 @@ mqtt_subscribe_data::mqtt_subscribe_data()
 
 
 
-// Class protocols::mqtt::mqtt_common::mqtt_packet_decoder
+// Class protocols::mqtt::mqtt_common::mqtt_packet_decoder 
 
 mqtt_packet_decoder::mqtt_packet_decoder()
       : expected_(0),
@@ -2348,7 +2348,7 @@ void mqtt_packet_decoder::init_decoder (callback_type callback)
 }
 
 
-// Class protocols::mqtt::mqtt_common::mqtt_unsubscribe_transaction
+// Class protocols::mqtt::mqtt_common::mqtt_unsubscribe_transaction 
 
 mqtt_unsubscribe_transaction::mqtt_unsubscribe_transaction()
       : done_(false)
@@ -2471,10 +2471,3 @@ void mqtt_unsubscribe_transaction::set_result_string (const string_type& value)
 } // namespace mqtt
 } // namespace protocols
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-
-#endif

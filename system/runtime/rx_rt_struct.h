@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_rt_struct.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -480,43 +480,6 @@ public:
       runtime_process_context* context_;
 
       variable_owner_ptr my_variable_;
-
-
-};
-
-
-
-
-
-
-class indirect_value_data 
-{
-
-  public:
-
-      rx_value get_value (runtime_process_context* ctx) const;
-
-      void set_value (rx_simple_value&& val, const rx_time& time);
-
-      void object_state_changed (runtime_process_context* ctx);
-
-      rx_result write_value (context_write_data&& data, runtime_process_context* ctx);
-
-
-      rx::values::rx_timed_value value;
-
-
-      static string_type type_name;
-
-      bool read_only;
-
-
-  protected:
-
-  private:
-
-
-      rx::values::rx_simple_value default_value_;
 
 
 };

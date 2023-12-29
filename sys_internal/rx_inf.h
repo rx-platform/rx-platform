@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_inf.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -113,13 +113,13 @@ used for I/O pool and general pool\r\n\
 
       int threads_count_;
 
-      remote_owned_value<double> last_proc_time_;
+      async_owned_value<double> last_proc_time_;
 
-      remote_owned_value<double> max_proc_time_;
+      async_owned_value<double> max_proc_time_;
 
-      remote_owned_value<uint32_t> queue_size_;
+      async_owned_value<uint32_t> queue_size_;
 
-      remote_owned_value<uint32_t> max_queue_size_;
+      async_owned_value<uint32_t> max_queue_size_;
 
 
 };
@@ -210,13 +210,13 @@ thread pool resources\r\n\
 
       uint32_t end_cpu_;
 
-      remote_owned_value<double> last_proc_time_;
+      async_owned_value<double> last_proc_time_;
 
-      remote_owned_value<double> max_proc_time_;
+      async_owned_value<double> max_proc_time_;
 
-      remote_owned_value<uint32_t> queue_size_;
+      async_owned_value<uint32_t> queue_size_;
 
-      remote_owned_value<uint32_t> max_queue_size_;
+      async_owned_value<uint32_t> max_queue_size_;
 
 
 };
@@ -267,13 +267,13 @@ used for special executer types\r\n\
       sys_runtime::data_source::data_controler *data_controler_;
 
 
-      remote_owned_value<double> last_proc_time_;
+      async_owned_value<double> last_proc_time_;
 
-      remote_owned_value<double> max_proc_time_;
+      async_owned_value<double> max_proc_time_;
 
-      remote_owned_value<uint32_t> queue_size_;
+      async_owned_value<uint32_t> queue_size_;
 
-      remote_owned_value<uint32_t> max_queue_size_;
+      async_owned_value<uint32_t> max_queue_size_;
 
 
 };

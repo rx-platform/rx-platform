@@ -4,7 +4,7 @@
 *
 *  discovery\rx_discovery_main.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -274,9 +274,9 @@ Peer connection object implementation");
       rx_reference<peer_connection> connection_;
 
 
-      remote_owned_value<bool> online_;
+      async_owned_value<bool> online_;
 
-      remote_owned_value<string_type> stream_version_;
+      async_owned_value<string_type> stream_version_;
 
 
     friend class peer_connection;

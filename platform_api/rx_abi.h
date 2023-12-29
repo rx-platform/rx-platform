@@ -229,8 +229,25 @@ extern "C" {
 		bind_callback_t callback;
 
 	} bind_callback_data;
+
+	typedef void(*write_callback_t)(void* target, runtime_transaction_id_t trans_id, rx_result_struct result);
+	typedef void(*execute_callback_t)(void* target, struct typed_value_type output, runtime_transaction_id_t trans_id, rx_result_struct result);
+
+	typedef struct connect_callback_data_t
+	{
+		void* target;
+		bind_callback_t callback;
+		write_callback_t write_callback;
+		execute_callback_t execute_callback;
+
+	} connect_callback_data;
+
+	
 	RX_PLATFORM_API rx_result_struct rxInitCtxBindItem(init_ctx_ptr ctx, const char* path, runtime_handle_t* handle, runtime_ctx_ptr* rt_ctx, bind_callback_data* callback);
 	typedef rx_result_struct(*rxInitCtxBindItem_t)(init_ctx_ptr ctx, const char* path, runtime_handle_t* handle, runtime_ctx_ptr* rt_ctx, bind_callback_data* callback);
+
+	RX_PLATFORM_API rx_result_struct rxInitCtxConnectItem(init_ctx_ptr ctx, const char* path, uint32_t rate, runtime_handle_t* handle, runtime_ctx_ptr* rt_ctx, connect_callback_data* callback);
+	typedef rx_result_struct(*rxInitCtxConnectItem_t)(init_ctx_ptr ctx, const char* path, uint32_t rate, runtime_handle_t* handle, runtime_ctx_ptr* rt_ctx, connect_callback_data* callback);
 
 	RX_PLATFORM_API const char* rxInitCtxGetCurrentPath(init_ctx_ptr ctx);
 	typedef const char* (*rxInitCtxGetCurrentPath_t)(init_ctx_ptr ctx);
@@ -280,8 +297,18 @@ extern "C" {
 	RX_PLATFORM_API rx_result_struct rxCtxSetValue(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
 	typedef rx_result_struct(*rxCtxSetValue_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
 
+	RX_PLATFORM_API rx_result_struct rxCtxWriteConnected(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id);
+	typedef rx_result_struct(*rxCtxWriteConnected_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, runtime_transaction_id_t trans_id);
+
+	RX_PLATFORM_API rx_result_struct rxCtxExecuteConnected(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id);
+	typedef rx_result_struct(*rxCtxExecuteConnected_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, runtime_transaction_id_t trans_id);
+
+
 	RX_PLATFORM_API void rxCtxSetRemotePending(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
 	typedef void(*rxCtxSetRemotePending_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
+
+	RX_PLATFORM_API void rxCtxSetAsyncPending(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
+	typedef void(*rxCtxSetAsyncPending_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
 
 
 	typedef void(*relation_subscriber_connected_callback_t)(void* target, const char* name, const rx_node_id_struct* id);
@@ -377,7 +404,11 @@ extern "C" {
 
 		rxCtxGetValue_t prxCtxGetValue;
 		rxCtxSetValue_t prxCtxSetValue;
-		rxCtxSetRemotePending_t prxCtxSetRemotePending;
+		rxCtxSetAsyncPending_t prxCtxSetAsyncPending;
+
+		rxInitCtxConnectItem_t prxInitCtxConnectItem;
+		rxCtxWriteConnected_t prxCtxWriteConnected;
+		rxCtxExecuteConnected_t prxCtxExecuteConnected;
 
 	} platform_runtime_api3;
 

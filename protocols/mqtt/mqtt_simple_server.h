@@ -4,7 +4,7 @@
 *
 *  protocols\mqtt\mqtt_simple_server.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,12 +34,12 @@
 
 #include "mqtt_base.h"
 
-// rx_blocks_templates
-#include "system/runtime/rx_blocks_templates.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
+// rx_blocks_templates
+#include "system/runtime/rx_blocks_templates.h"
 // mqtt_subscription
 #include "protocols/mqtt/mqtt_subscription.h"
 // mqtt_topics
@@ -230,7 +230,7 @@ MQTT Broker simple port. Implementation of MQTT Broker simple JSON protocol.");
 
 
 
-typedef rx_platform::runtime::blocks::blocks_templates::extern_source_impl< protocols::mqtt::mqtt_simple::mqtt_simple_server_port  > mqtt_simple_broker_source_base;
+typedef rx_platform::runtime::blocks::blocks_templates::extern_source_impl< mqtt_simple_server_port  > mqtt_simple_broker_source_base;
 
 
 
@@ -301,7 +301,7 @@ class mqtt_json_broker_source : public mqtt_simple_broker_source
 
 
 
-typedef rx_platform::runtime::blocks::blocks_templates::extern_mapper_impl< protocols::mqtt::mqtt_simple::mqtt_simple_server_port  > mqtt_simple_broker_mapper_base;
+typedef rx_platform::runtime::blocks::blocks_templates::extern_mapper_impl< mqtt_simple_server_port  > mqtt_simple_broker_mapper_base;
 
 
 

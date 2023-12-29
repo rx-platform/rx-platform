@@ -4,27 +4,27 @@
 *
 *  system\threads\rx_job.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -51,7 +51,7 @@ namespace rx_platform {
 
 namespace jobs {
 
-// Class rx_platform::jobs::job
+// Class rx_platform::jobs::job 
 
 job::job()
       : canceled_(false)
@@ -111,7 +111,7 @@ void job::post_process_job ()
 }
 
 
-// Class rx_platform::jobs::timer_job
+// Class rx_platform::jobs::timer_job 
 
 timer_job::timer_job()
       : next_(0x0),
@@ -178,7 +178,7 @@ void timer_job::process_wrapper1 ()
 }
 
 
-// Class rx_platform::jobs::post_period_job
+// Class rx_platform::jobs::post_period_job 
 
 post_period_job::post_period_job()
 {
@@ -222,7 +222,7 @@ void post_period_job::start (uint32_t period)
 }
 
 
-// Class rx_platform::jobs::periodic_job
+// Class rx_platform::jobs::periodic_job 
 
 periodic_job::periodic_job()
 {
@@ -287,10 +287,10 @@ void periodic_job::suspend ()
 }
 
 
-// Parameterized Class rx_platform::jobs::args_job
+// Parameterized Class rx_platform::jobs::args_job 
 
 
-// Parameterized Class rx_platform::jobs::remote_args_job
+// Parameterized Class rx_platform::jobs::remote_args_job 
 
 
 } // namespace jobs

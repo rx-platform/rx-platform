@@ -4,7 +4,7 @@
 *
 *  system\server\rx_server.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -67,10 +67,7 @@ rx_gate::rx_gate()
       : host_(nullptr),
         started_(rx_time::now()),
         pid_(0),
-        security_guard_(rx_create_reference<security::security_guard>(
-			security::rx_security_read_access
-			| security::rx_security_delete_access
-			, "@gate")),
+        security_guard_(rx_create_reference<security::security_guard>(security::rx_security_read_access, "@gate")),
         shutting_down_(false),
         platform_status_(rx_platform_status::initializing)
 {

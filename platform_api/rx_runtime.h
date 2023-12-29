@@ -4,7 +4,7 @@
 *
 *  D:\RX\Native\Source\platform_api\rx_runtime.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -189,7 +189,11 @@ class rx_process_context
 
       rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
 
-      void set_remote_pending (runtime_handle_t handle, values::rx_simple_value&& val);
+      rx_result write_connected (runtime_handle_t handle, values::rx_simple_value&& val, runtime_transaction_id_t trans_id);
+
+      rx_result execute_connected (runtime_handle_t handle, values::rx_simple_value&& val, runtime_transaction_id_t trans_id);
+
+      void set_async_pending (runtime_handle_t handle, values::rx_simple_value&& val);
 
       rx_process_context(const rx_process_context&) = delete;
       rx_process_context(rx_process_context&&) = delete;
@@ -216,11 +220,11 @@ class rx_process_context
       }
 
       template<typename valT>
-      void set_remote_binded_as(runtime_handle_t handle, valT&& value)
+      void set_async_binded_as(runtime_handle_t handle, valT&& value)
       {
           rx_simple_value val;
           val.assign_static<valT>(std::forward<valT>(value));
-          this->set_remote_pending(handle, std::move(val));
+          this->set_async_pending(handle, std::move(val));
       }
   protected:
 
@@ -244,6 +248,8 @@ class rx_init_context
   public:
 
       rx_result_with<runtime_handle_t> bind_item (const char* path, runtime_ctx_ptr* rt_ctx, bind_callback_data* callback);
+
+      rx_result_with<runtime_handle_t> connect_item (const char* path, uint32_t rate, runtime_ctx_ptr* rt_ctx, connect_callback_data* callback);
 
       const char* get_current_path ();
 
@@ -568,7 +574,7 @@ class rx_runtime : public rx::pointers::reference_object
       friend rx_result_struct(::c_init_filter)(rx_platform_api::rx_filter* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_mapper)(rx_platform_api::rx_mapper* self, init_ctx_ptr ctx, uint8_t value_type);
 
-      friend rx_result_struct(::c_init_struct)(rx_platform_api::rx_struct* self, init_ctx_ptr ctx); 
+      friend rx_result_struct(::c_init_struct)(rx_platform_api::rx_struct* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_variable)(rx_platform_api::rx_variable* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_event)(rx_platform_api::rx_event* self, init_ctx_ptr ctx);
 
@@ -666,6 +672,80 @@ class rx_relation_subscriber
 
 namespace rx_platform_api
 {
+
+
+template <typename typeT>
+struct connected_value
+{
+    using callback_t = std::function<void(const typeT&, bool valid)>;
+    callback_t callback_;
+    typeT value_;
+    bool valid_ = false;
+    runtime_handle_t handle_ = 0;
+    rx_process_context ctx_;
+    connect_callback_data_t callback_data_{ };
+public:
+    connected_value() = default;
+    ~connected_value() = default;
+    connected_value(const connected_value&) = delete;
+    connected_value(connected_value&&) = delete;
+    connected_value& operator=(const connected_value&) = delete;
+    connected_value& operator=(connected_value&&) = delete;
+    rx_result bind(const string_type& path, rx_init_context& ctx, callback_t callback = callback_t())
+    {
+
+        callback_data_.target = this;
+        callback_data_.write_callback = nullptr;
+        callback_data_.execute_callback = nullptr;
+        callback_data_.callback = [](void* target, const struct full_value_type* val)
+        {
+            connected_value* self = (connected_value*)target;
+            rx_value local_val(val);
+            self->value_ = local_val.extract_static(self->value_);
+            self->valid_ = local_val.is_good();
+            if (self->callback_)
+            {
+                self->callback_(self->value_, self->valid_);
+            }
+        };
+
+        callback_ = callback;
+        runtime_ctx_ptr rt_ctx = 0;
+        auto result = ctx.connect_item(path.c_str(), 200, &rt_ctx, &callback_data_);
+        if (result)
+        {
+            ctx_.bind(rt_ctx);
+            handle_ = result.move_value();
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    connected_value(const typeT& right)
+    {
+        value_ = right;
+    }
+    connected_value(typeT&& right)
+    {
+        value_ = std::move(right);
+    }
+    connected_value& operator=(typeT right)
+    {
+        if (ctx_.is_binded() && handle_)// just in case both of them...
+        {
+            values::rx_simple_value temp_val;
+            temp_val.assign_static<typeT>(std::forward<typeT>(right));
+            ctx_.write_connected(handle_, std::move(temp_val), 1);
+        }
+        return *this;
+    }
+    operator typeT() const
+    {
+        return value_;
+    }
+};
 
 template <typename typeT>
 struct local_value
@@ -948,7 +1028,7 @@ public:
 
 
 template <typename typeT, bool manual = false>
-struct remote_owned_value
+struct async_owned_value
 {
     typeT val_;
     runtime_handle_t handle_ = 0;
@@ -959,16 +1039,16 @@ struct remote_owned_value
         if (ctx_.is_binded() && handle_)// just in case both of them...
         {
             typeT temp(val_);
-            ctx_.set_remote_binded_as<typeT>(handle_, std::move(temp));
+            ctx_.set_async_binded_as<typeT>(handle_, std::move(temp));
         }
     }
 public:
-    remote_owned_value() = default;
-    ~remote_owned_value() = default;
-    remote_owned_value(const remote_owned_value&) = default;
-    remote_owned_value(remote_owned_value&&) = default;
-    remote_owned_value& operator=(const remote_owned_value&) = default;
-    remote_owned_value& operator=(remote_owned_value&&) = default;
+    async_owned_value() = default;
+    ~async_owned_value() = default;
+    async_owned_value(const async_owned_value&) = default;
+    async_owned_value(async_owned_value&&) = default;
+    async_owned_value& operator=(const async_owned_value&) = default;
+    async_owned_value& operator=(async_owned_value&&) = default;
     rx_result bind(const string_type& path, rx_init_context& ctx)
     {
         runtime_ctx_ptr rt_ctx = 0;
@@ -986,15 +1066,15 @@ public:
             return result.errors();
         }
     }
-    remote_owned_value(const typeT& right)
+    async_owned_value(const typeT& right)
     {
         val_ = right;
     }
-    remote_owned_value(typeT&& right)
+    async_owned_value(typeT&& right)
     {
         val_ = std::move(right);
     }
-    remote_owned_value& operator=(const typeT& right)
+    async_owned_value& operator=(const typeT& right)
     {
         if (ctx_.is_binded() && handle_)// just in case both of them...
         {
@@ -1009,7 +1089,7 @@ public:
         }
         return *this;
     }
-    remote_owned_value& operator=(typeT&& right)
+    async_owned_value& operator=(typeT&& right)
     {
         if (ctx_.is_binded() && handle_)// just in case both of them...
         {
@@ -1024,7 +1104,7 @@ public:
         }
         return *this;
     }
-    remote_owned_value& operator+=(const typeT& right)
+    async_owned_value& operator+=(const typeT& right)
     {
         if (ctx_.is_binded() && handle_)// just in case both of them...
         {
@@ -1036,7 +1116,7 @@ public:
         }
         return *this;
     }
-    remote_owned_value& operator-=(const typeT& right)
+    async_owned_value& operator-=(const typeT& right)
     {
         if (ctx_.is_binded() && handle_)// just in case both of them...
         {
@@ -1067,7 +1147,7 @@ public:
 
 
 template <typename typeT, typename lockT = locks::slim_lock>
-struct remote_local_value
+struct async_local_value
 {
     using callback_t = std::function<void(const typeT&)>;
     callback_t callback_;
@@ -1077,18 +1157,18 @@ struct remote_local_value
     rx_process_context ctx_;
     bind_callback_data callback_data_;
 public:
-    remote_local_value() = default;
-    ~remote_local_value() = default;
-    remote_local_value(const remote_local_value&) = delete;
-    remote_local_value(remote_local_value&&) = default;
-    remote_local_value& operator=(const remote_local_value&) = delete;
-    remote_local_value& operator=(remote_local_value&&) = default;
+    async_local_value() = default;
+    ~async_local_value() = default;
+    async_local_value(const async_local_value&) = delete;
+    async_local_value(async_local_value&&) = default;
+    async_local_value& operator=(const async_local_value&) = delete;
+    async_local_value& operator=(async_local_value&&) = default;
     rx_result bind(const string_type& path, rx_init_context& ctx, callback_t callback = callback_t())
     {
         callback_data_.target = this;
         callback_data_.callback = [](void* target, const struct full_value_type* val)
         {
-            remote_local_value* self = (remote_local_value*)target;
+            async_local_value* self = (async_local_value*)target;
             rx_value local_val(val);
             {
                 locks::auto_lock_t<lockT> _(&self->lock_);
@@ -1115,20 +1195,20 @@ public:
             return result.errors();
         }
     }
-    remote_local_value(const typeT& right)
+    async_local_value(const typeT& right)
     {
         value_ = right;
     }
-    remote_local_value(typeT&& right)
+    async_local_value(typeT&& right)
     {
         value_ = std::move(right);
     }
-    remote_local_value& operator=(typeT right)
+    async_local_value& operator=(typeT right)
     {
         if (ctx_.is_binded() && handle_)// just in case both of them...
         {
             typeT temp(right);
-            ctx_.set_remote_binded_as<typeT>(handle_, std::move(temp));
+            ctx_.set_async_binded_as<typeT>(handle_, std::move(temp));
         }
         return this;
     }

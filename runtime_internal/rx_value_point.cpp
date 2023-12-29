@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_value_point.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -1804,9 +1804,42 @@ void value_point_impl::get_expression (rx_value& result, char* tok)
 }
 
 
+const rx_platform::runtime::runtime_process_context * value_point_impl::get_context () const
+{
+  return context_;
+}
+
 void value_point_impl::set_context (rx_platform::runtime::runtime_process_context * value)
 {
   context_ = value;
+}
+
+
+// Class rx_internal::sys_runtime::data_source::callback_value_point 
+
+callback_value_point::callback_value_point (callback_t callback)
+      : callback_(callback)
+{
+}
+
+
+
+void callback_value_point::value_changed (const rx_value& val)
+{
+	if(callback_)
+		callback_(val);
+}
+
+void callback_value_point::result_received (rx_result&& result, runtime_transaction_id_t id)
+{
+}
+
+void callback_value_point::execute_result_received (rx_result&& result, const values::rx_simple_value& data, runtime_transaction_id_t id)
+{
+}
+
+void callback_value_point::execute_result_received (rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id)
+{
 }
 
 

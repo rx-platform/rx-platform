@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_write_transaction.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -139,7 +139,6 @@ class named_execute_method_transaction : public tag_blocks::rx_tags_callback
       {
           this->callback_(std::forward<FwdArgs>(args)...);
       }
-
   protected:
 
   private:

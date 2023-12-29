@@ -4,7 +4,7 @@
 *
 *  D:\RX\Native\Source\platform_api\rx_var_types.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -150,7 +150,6 @@ class rx_mapper : public rx_runtime
 
       template<class T>
       friend rx_result register_mapper_runtime(const rx_node_id& id);
-      friend rx_result register_mapper_runtime3(const rx_node_id& id);
       friend rx_result_struct(::c_init_mapper)(rx_platform_api::rx_mapper* self, init_ctx_ptr ctx, uint8_t value_type);
       friend rx_result_struct(::c_start_mapper)(rx_platform_api::rx_mapper* self, start_ctx_ptr ctx);
 };

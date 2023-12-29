@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_extern_blocks.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -397,7 +397,6 @@ void extern_source_runtime<implT>::destroy_timer (runtime_handle_t handle)
 }
 
 template class extern_source_runtime<plugin_source_runtime_struct>;
-
 // Parameterized Class rx_platform::runtime::blocks::extern_mapper_runtime 
 
 template <typename implT>

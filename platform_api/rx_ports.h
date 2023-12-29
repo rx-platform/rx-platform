@@ -4,7 +4,7 @@
 *
 *  D:\RX\Native\Source\platform_api\rx_ports.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -264,9 +264,9 @@ public:
 
       active_endpoints_type active_endpoints_;
 
-      remote_owned_value<int64_t> received_;
+      async_owned_value<int64_t> received_;
 
-      remote_owned_value<int64_t> sent_;
+      async_owned_value<int64_t> sent_;
 
 
 };
@@ -336,29 +336,29 @@ public:
 
       rx_reference<endpointT> active_endpoint_;
 
-      remote_owned_value<bool> online_;
+      async_owned_value<bool> online_;
 
-      remote_owned_value<float> read_time_;
+      async_owned_value<float> read_time_;
 
-      remote_owned_value<float> write_time_;
+      async_owned_value<float> write_time_;
 
-      remote_owned_value<float> max_read_time_;
+      async_owned_value<float> max_read_time_;
 
-      remote_owned_value<float> max_write_time_;
+      async_owned_value<float> max_write_time_;
 
-      remote_owned_value<int64_t> read_count_;
+      async_owned_value<int64_t> read_count_;
 
-      remote_owned_value<int64_t> write_count_;
+      async_owned_value<int64_t> write_count_;
 
-      remote_owned_value<int64_t> failed_read_count_;
+      async_owned_value<int64_t> failed_read_count_;
 
-      remote_owned_value<int64_t> failed_write_count_;
+      async_owned_value<int64_t> failed_write_count_;
 
-      remote_owned_value<int32_t> queue_size_;
+      async_owned_value<int32_t> queue_size_;
 
-      remote_owned_value<int64_t> received_;
+      async_owned_value<int64_t> received_;
 
-      remote_owned_value<int64_t> sent_;
+      async_owned_value<int64_t> sent_;
 
 
 };
@@ -423,9 +423,9 @@ public:
 
       active_endpoints_type active_endpoints_;
 
-      remote_owned_value<int64_t> received_;
+      async_owned_value<int64_t> received_;
 
-      remote_owned_value<int64_t> sent_;
+      async_owned_value<int64_t> sent_;
 
 
 };
@@ -492,9 +492,9 @@ public:
 
       active_endpoints_type active_endpoints_;
 
-      remote_owned_value<int64_t> received_;
+      async_owned_value<int64_t> received_;
 
-      remote_owned_value<int64_t> sent_;
+      async_owned_value<int64_t> sent_;
 
 
 };

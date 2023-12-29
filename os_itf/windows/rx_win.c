@@ -586,7 +586,7 @@ BOOL GetOsVersion(RTL_OSVERSIONINFOEXW* pk_OsVer)
 }
 
 // determine version with file version of ntdll.dll?!?
-BOOL GetOsVersionFromSystemFile(RTL_OSVERSIONINFOEXW* os)
+BOOL GetOsVersionFromSystemFile(RTL_OSVERSIONINFOEXW* os, int* build_minor)
 {
 
 	const char* fname = "ntdll.dll";
@@ -598,6 +598,23 @@ BOOL GetOsVersionFromSystemFile(RTL_OSVERSIONINFOEXW* os)
 	if (ret)
 	{
 		os->wProductType = IsWindowsServer() ? VER_NT_SERVER : VER_NT_WORKSTATION;
+	}
+	HKEY da_key = 0;
+	auto res = RegOpenKey(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", &da_key);
+	if (res == ERROR_SUCCESS)
+	{
+		DWORD data;
+		DWORD type = REG_DWORD;
+		DWORD size = (DWORD)(sizeof(data));
+		res = RegQueryValueExA(da_key, "UBR", NULL, &type, (LPBYTE)(&data), &size);
+		if (res == ERROR_SUCCESS)
+		{
+			*build_minor = (int)data;
+		}
+		else
+		{
+			*build_minor = -1;
+		}
 	}
 	return ret;
 
@@ -623,6 +640,8 @@ BOOL GetOsVersionFromSystemFile(RTL_OSVERSIONINFOEXW* os)
 		os->dwMinorVersion = ver.dwFileVersionMS & 0xffff;
 		os->dwBuildNumber = ver.dwFileVersionLS >> 16;
 
+		uint32_t build_minor = ver.dwFileVersionLS & 0xffff;
+
 
 		free(pVersionInfo);
 
@@ -635,10 +654,11 @@ BOOL GetOsVersionFromSystemFile(RTL_OSVERSIONINFOEXW* os)
 void rx_collect_system_info(char* buffer, size_t buffer_size)
 {
 	RTL_OSVERSIONINFOEXW os;
+	int build_minor = -1;
 	os.dwOSVersionInfoSize = sizeof(os);
 	ZeroMemory(&os, sizeof(os));
 	uint32_t err = 0;
-	if (!GetOsVersionFromSystemFile(&os))
+	if (!GetOsVersionFromSystemFile(&os, &build_minor))
 		err = GetLastError();
 
 	BOOL is_server = (os.wProductType != VER_NT_WORKSTATION);
@@ -666,18 +686,37 @@ void rx_collect_system_info(char* buffer, size_t buffer_size)
 		break;
 	}
 
-	if (has_sp)
+	if (build_minor >= 0)
 	{
-		sprintf(buffer, "Windows %s %d.%d.%d + %S %d.%d [%s] ", is_server ? "Server" : "Workstation",
-			(int)os.dwMajorVersion, (int)os.dwMinorVersion, (int)os.dwBuildNumber,
-			os.szCSDVersion, (int)os.wServicePackMajor, (int)os.wServicePackMinor
-			, model);
+		if (has_sp)
+		{
+			sprintf(buffer, "Windows %s %d.%d.%d.%d + %S %d.%d [%s] ", is_server ? "Server" : "Workstation",
+				(int)os.dwMajorVersion, (int)os.dwMinorVersion, (int)os.dwBuildNumber, build_minor,
+				os.szCSDVersion, (int)os.wServicePackMajor, (int)os.wServicePackMinor
+				, model);
+		}
+		else
+		{
+			sprintf(buffer, "Windows %s %d.%d.%d.%d [%s]", is_server ? "Server" : "Workstation",
+				(int)os.dwMajorVersion, (int)os.dwMinorVersion, (int)os.dwBuildNumber, build_minor
+				, model);
+		}
 	}
 	else
 	{
-		sprintf(buffer, "Windows %s %d.%d.%d [%s]", is_server ? "Server" : "Workstation",
-			(int)os.dwMajorVersion, (int)os.dwMinorVersion, (int)os.dwBuildNumber
-			, model);
+		if (has_sp)
+		{
+			sprintf(buffer, "Windows %s %d.%d.%d + %S %d.%d [%s] ", is_server ? "Server" : "Workstation",
+				(int)os.dwMajorVersion, (int)os.dwMinorVersion, (int)os.dwBuildNumber,
+				os.szCSDVersion, (int)os.wServicePackMajor, (int)os.wServicePackMinor
+				, model);
+		}
+		else
+		{
+			sprintf(buffer, "Windows %s %d.%d.%d [%s]", is_server ? "Server" : "Workstation",
+				(int)os.dwMajorVersion, (int)os.dwMinorVersion, (int)os.dwBuildNumber
+				, model);
+		}
 	}
 
 }

@@ -598,6 +598,8 @@ RX_COMMON_API int rx_init_string_array_value(struct typed_value_type* val, const
 RX_COMMON_API int rx_init_uuid_array_value(struct typed_value_type* val, const rx_uuid_t* data, size_t count);
 RX_COMMON_API int rx_init_time_array_value(struct typed_value_type* val, const rx_time_struct* data, size_t count);
 
+RX_COMMON_API int rx_init_bytes_array_value(struct typed_value_type* val, const uint8_t** data, const size_t* sizes, size_t count);
+
 RX_COMMON_API int rx_init_node_id_array_value(struct typed_value_type* val, const rx_node_id_struct* data, size_t count);
 
 RX_COMMON_API int rx_init_struct_array_value(struct typed_value_type* val, const struct_value_type* data, size_t count);

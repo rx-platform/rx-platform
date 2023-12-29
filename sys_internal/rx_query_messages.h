@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_query_messages.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,10 +35,10 @@
 
 // rx_queries
 #include "system/meta/rx_queries.h"
-// rx_meta_data
-#include "lib/rx_meta_data.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
+// rx_meta_data
+#include "lib/rx_meta_data.h"
 
 
 

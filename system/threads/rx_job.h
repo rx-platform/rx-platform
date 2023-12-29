@@ -4,7 +4,7 @@
 *
 *  system\threads\rx_job.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,15 +34,15 @@
 
 #include "lib/rx_lock.h"
 
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_func_to_go
 #include "lib/rx_func_to_go.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace threads {
-class job_thread;
 class timer;
+class job_thread;
 
 } // namespace threads
 } // namespace rx_platform

@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_attr_algorithm.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -218,6 +218,8 @@ class data_blocks_algorithm
       static rx_result construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, construct_context& ctx);
 
       static rx_result check_data_reference (const rx_item_reference& ref, ns::rx_directory_resolver& dirs);
+
+      static rx_result construct_data_block (const rx_item_reference& whose, const string_type& name, runtime::structure::block_data& data, construct_context& ctx);
 
 
   protected:

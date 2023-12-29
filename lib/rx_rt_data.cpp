@@ -4,7 +4,7 @@
 *
 *  lib\rx_rt_data.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -529,7 +529,7 @@ byte_string runtime_data_model::serialize () const
 	return byte_string();
 }
 
-rx::data::runtime_data_model runtime_data_model::deserialize (byte_string& data)
+runtime_data_model runtime_data_model::deserialize (byte_string& data)
 {
 	return runtime_data_model();
 }

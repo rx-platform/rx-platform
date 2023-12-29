@@ -63,12 +63,7 @@ rx_result register_runtime()
     else if constexpr (T::type_id == rx_item_type::rx_source_type)
         return register_source_runtime<T>(T::type_node_id);
     else if constexpr (T::type_id == rx_item_type::rx_mapper_type)
-    {
-        if(rx_get_plugin_bind_version()>=3)
-            return register_mapper_runtime3<T>(T::type_node_id);
-        else
             return register_mapper_runtime<T>(T::type_node_id);
-    }
     else if constexpr (T::type_id == rx_item_type::rx_filter_type)
         return register_filter_runtime<T>(T::type_node_id);
 

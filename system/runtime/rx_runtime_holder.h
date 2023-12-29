@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_holder.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -58,6 +58,16 @@
 #include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+
+namespace rx_platform {
+namespace runtime {
+namespace event_blocks {
+class runtime_events;
+
+} // namespace event_blocks
+} // namespace runtime
+} // namespace rx_platform
+
 
 #include "system/meta/rx_obj_types.h"
 #include "runtime_internal/rx_runtime_instance.h"
@@ -236,6 +246,8 @@ public:
       display_blocks::displays_holder displays_;
 
       tag_blocks::tags_holder tags_;
+
+      std::unique_ptr<event_blocks::runtime_events> events_;
 
 
       meta_data meta_info_;

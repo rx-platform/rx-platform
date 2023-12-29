@@ -4,27 +4,27 @@
 *
 *  model\rx_model_algorithms.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -954,7 +954,7 @@ std::vector<rx_result_with<platform_item_ptr> > get_working_runtimes(const rx_no
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class rx_internal::model::algorithms::types_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::types_model_algorithm 
 
 
 template <class typeT>
@@ -1085,7 +1085,7 @@ rx_result_with<check_type_result> types_model_algorithm<typeT>::check_type_sync 
 }
 
 
-// Parameterized Class rx_internal::model::algorithms::simple_types_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::simple_types_model_algorithm 
 
 
 template <class typeT>
@@ -1205,7 +1205,7 @@ rx_result_with<check_type_result> simple_types_model_algorithm<typeT>::check_typ
 }
 
 
-// Parameterized Class rx_internal::model::algorithms::runtime_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::runtime_model_algorithm 
 
 
 template <class typeT>
@@ -1533,7 +1533,7 @@ void runtime_model_algorithm<typeT>::update_runtime_with_depends_sync (instanceT
 }
 
 
-// Class rx_internal::model::algorithms::relation_types_algorithm
+// Class rx_internal::model::algorithms::relation_types_algorithm 
 
 
 void relation_types_algorithm::get_type (const rx_item_reference& item_reference, rx_result_with_callback<typename relation_type::smart_ptr>&& callback)
@@ -1666,7 +1666,7 @@ template class runtime_model_algorithm<object_type>;
 template class runtime_model_algorithm<port_type>;
 template class runtime_model_algorithm<domain_type>;
 template class runtime_model_algorithm<application_type>;
-// Class rx_internal::model::algorithms::data_types_model_algorithm
+// Class rx_internal::model::algorithms::data_types_model_algorithm 
 
 
 void data_types_model_algorithm::get_type (const rx_item_reference& item_reference, rx_result_with_callback<typename data_type::smart_ptr>&& callback)
@@ -1755,7 +1755,7 @@ rx_result_with<check_type_result> data_types_model_algorithm::check_type_sync (c
 }
 
 
-// Class rx_internal::model::algorithms::transaction_algorithm
+// Class rx_internal::model::algorithms::transaction_algorithm 
 
 
 rx_result_with<api::query_result> transaction_algorithm::get_dependents (rx_item_reference item, string_view_type dir)

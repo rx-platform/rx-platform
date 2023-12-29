@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_types.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,10 +35,10 @@
 
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_meta_data
 #include "lib/rx_meta_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "system/meta/rx_meta_support.h"
 using rx_platform::meta::construct_context;

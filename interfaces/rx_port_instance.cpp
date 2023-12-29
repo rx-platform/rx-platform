@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_port_instance.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -255,15 +255,3 @@ namespace port_stack {
 } // namespace interfaces
 } // namespace rx_internal
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-    auto sec_result = identity_.create_context(meta.get_full_path(), rx_gate::instance().get_instance_name(), data_.identity);
-    if (sec_result)
-        return sec_result.value();
-    else
-        return security::unauthorized_context();
-
-#endif

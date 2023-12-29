@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_simulation.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -85,5 +85,4 @@ rx_result local_register_source::start_source (runtime::runtime_start_context& c
 } // namespace simulation
 } // namespace sys_runtime
 } // namespace rx_internal
-
 

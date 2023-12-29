@@ -4,27 +4,27 @@
 *
 *  runtime_internal\rx_runtime_algorithms.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -142,7 +142,7 @@ rx_result deinit_runtime<meta::object_types::domain_type>(rx_domain_ptr what
 	return domain_algorithms::deinit_runtime(what, std::move(callback));
 }
 
-// Class rx_internal::sys_runtime::algorithms::object_algorithms
+// Class rx_internal::sys_runtime::algorithms::object_algorithms 
 
 
 rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
@@ -336,7 +336,7 @@ rx_result object_algorithms::disconnect_domain (rx_object_ptr what)
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::domain_algorithms
+// Class rx_internal::sys_runtime::algorithms::domain_algorithms 
 
 
 rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
@@ -528,7 +528,7 @@ rx_result domain_algorithms::disconnect_application (rx_domain_ptr what)
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::port_algorithms
+// Class rx_internal::sys_runtime::algorithms::port_algorithms 
 
 
 rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
@@ -718,7 +718,7 @@ rx_result port_algorithms::disconnect_application (rx_port_ptr what)
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::application_algorithms
+// Class rx_internal::sys_runtime::algorithms::application_algorithms 
 
 
 rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
@@ -844,7 +844,7 @@ rx_result application_algorithms::stop_runtime (rx_application_ptr what, runtime
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::relations_algorithms
+// Class rx_internal::sys_runtime::algorithms::relations_algorithms 
 
 
 rx_result relations_algorithms::init_runtime (rx_relation_ptr what, runtime::runtime_init_context& ctx)
@@ -873,7 +873,7 @@ rx_result relations_algorithms::stop_runtime (rx_relation_ptr what, runtime::run
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::shutdown_algorithms
+// Class rx_internal::sys_runtime::algorithms::shutdown_algorithms 
 
 
 void shutdown_algorithms::stop_applications (std::vector<rx_application_ptr> apps)
@@ -967,7 +967,7 @@ void shutdown_algorithms::deinit_objects (std::vector<rx_object_ptr> objects)
 }
 
 
-// Class rx_internal::sys_runtime::algorithms::startup_algorithms
+// Class rx_internal::sys_runtime::algorithms::startup_algorithms 
 
 
 void startup_algorithms::start_applications (std::vector<rx_application_ptr> apps)

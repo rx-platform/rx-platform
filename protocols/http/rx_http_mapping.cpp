@@ -4,7 +4,7 @@
 *
 *  protocols\http\rx_http_mapping.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -84,7 +84,31 @@ rx_protocol_result_t rx_http_endpoint::received_function (rx_protocol_stack_endp
 			size_t parsed = pret;
 			std::byte* content_ptr = (std::byte*)self->receive_buffer_.buffer_ptr + parsed;
 			size_t content_max = self->receive_buffer_.size - parsed;
-			result = self->create_and_forward_request(method, method_len, path, path_len, headers, num_headers, content_ptr, content_max);
+			string_type path_conv;
+			path_conv.reserve(path_len);			
+			char conv_buffer[0x3];
+			conv_buffer[2] = '\0';
+			size_t idx = 0;
+			while (idx < path_len)
+			{
+				if (path[idx] != '%')
+				{
+					path_conv.push_back(path[idx]);
+				}
+				else
+				{
+					idx++;
+					conv_buffer[0] = path[idx];
+					idx++;
+					conv_buffer[1] = path[idx];
+					char* end = nullptr;
+					char enc = (char)strtol(conv_buffer, &end, 16);
+					if(enc)
+						path_conv.push_back(enc);
+				}
+				idx++;
+			}
+			result = self->create_and_forward_request(method, method_len, path_conv.c_str(), path_conv.size(), headers, num_headers, content_ptr, content_max);
 			
 			rx_reinit_packet_buffer(&self->receive_buffer_);
 		}

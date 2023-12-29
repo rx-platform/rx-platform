@@ -4,7 +4,7 @@
 *
 *  protocols\tls\rx_tls_mapping.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -142,7 +142,7 @@ class tls_transport_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< protocols::rx_tls::tls_transport_endpoint  > tls_transport_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< tls_transport_endpoint  > tls_transport_port_base;
 
 
 

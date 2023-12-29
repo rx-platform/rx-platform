@@ -4,7 +4,7 @@
 *
 *  system\server\rx_log.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,14 +36,14 @@
 
 typedef std::function<void(void)> log_callback_func_t;
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_lock
-#include "lib/rx_lock.h"
 // rx_job
 #include "system/threads/rx_job.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
+// rx_lock
+#include "lib/rx_lock.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 

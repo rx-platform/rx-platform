@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_rt_item_types.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -93,7 +93,6 @@ public:
     }
     typedef const_size_vector<array_wrapper<const_value_data> > const_values_type;
     typedef const_size_vector< array_wrapper<value_data> > values_type;
-    typedef const_size_vector<indirect_value_data> indirect_values_type;
 
 
     typedef const_size_vector<index_data> items_type;
@@ -176,9 +175,6 @@ public:
   protected:
 
   private:
-
-
-      indirect_values_type indirect_values_;
 
 
 };

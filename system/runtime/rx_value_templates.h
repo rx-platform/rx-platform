@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -40,6 +40,97 @@ namespace rx_platform
 {
 namespace runtime
 {
+
+
+template <typename typeT>
+struct connected_value
+{
+    using callback_t = std::function<void(const typeT&, bool valid)>;
+    callback_t callback_;
+    typeT value_;
+    typeT bad_value_;
+    bool valid_ = false;
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+public:
+    connected_value() = default;
+    ~connected_value() = default;
+    connected_value(const connected_value&) = default;
+    connected_value(connected_value&&) = default;
+    connected_value& operator=(const connected_value&) = default;
+    connected_value& operator=(connected_value&&) = default;
+    rx_result bind(const string_type& path, runtime_init_context& ctx, callback_t callback = callback_t())
+    {
+        callback_ = callback;
+        auto result = ctx.connect_item(path, [this](const rx_value& val)
+            {
+                if (ctx_->is_mine_value(val))
+                {
+                    if (val.is_good())
+                    {
+                        value_ = val.extract_static(value_);
+                        valid_ = true;
+                    }
+                    else
+                    {
+                        if (value_ == bad_value_)
+                            return; // we already had it!, skip the callback
+
+                        value_ = bad_value_;
+                        valid_ = false;
+                    }
+                    if (callback_)
+                    {
+                        callback_(value_, valid_);
+                    }
+                }
+            });
+        if (result)
+        {
+            ctx_ = ctx.context;
+            handle_ = result.move_value();
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    connected_value(const typeT& right)
+    {
+        bad_value_ = right;
+        value_ = right;
+    }
+    connected_value(typeT&& right)
+    {
+        bad_value_ = right;
+        value_ = std::move(right);
+    }
+    connected_value(const typeT& right, const typeT& bad_value)
+    {
+        bad_value_ = bad_value;
+        value_ = right;
+    }
+    connected_value(typeT&& right, typeT&& bad_value)
+    {
+        value_ = std::move(right);
+        bad_value_ = std::move(bad_value);
+    }
+    connected_value& operator=(typeT right)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            values::rx_simple_value temp_val;
+            temp_val.assign_static<typeT>(std::forward<typeT>(right));
+            ctx_->write_connected(handle_, std::move(temp_val), 1);
+        }
+        return *this;
+    }
+    operator typeT() const
+    {
+        return value_;
+    }
+};
 
 template <typename typeT>
 struct local_value
@@ -62,7 +153,7 @@ public:
         callback_ = callback;
         auto result = ctx.bind_item(path, [this](const rx_value& val)
             {
-                
+
                 if (ctx_->is_mine_value(val))
                 {
                     if (val.is_good())
@@ -247,7 +338,7 @@ public:
 };
 
 template <typename typeT, bool manual = false>
-struct remote_owned_value
+struct async_owned_value
 {
     typeT val_;
     runtime_handle_t handle_ = 0;
@@ -258,16 +349,16 @@ struct remote_owned_value
         if (ctx_ && handle_)// just in case both of them...
         {
             typeT temp(val_);
-            ctx_->set_remote_binded_as<typeT>(handle_, std::move(temp));
+            ctx_->set_async_binded_as<typeT>(handle_, std::move(temp));
         }
     }
 public:
-    remote_owned_value() = default;
-    ~remote_owned_value() = default;
-    remote_owned_value(const remote_owned_value&) = default;
-    remote_owned_value(remote_owned_value&&) = default;
-    remote_owned_value& operator=(const remote_owned_value&) = default;
-    remote_owned_value& operator=(remote_owned_value&&) = default;
+    async_owned_value() = default;
+    ~async_owned_value() = default;
+    async_owned_value(const async_owned_value&) = default;
+    async_owned_value(async_owned_value&&) = default;
+    async_owned_value& operator=(const async_owned_value&) = default;
+    async_owned_value& operator=(async_owned_value&&) = default;
     rx_result bind(const string_type& path, runtime_init_context& ctx)
     {
         auto result = ctx.bind_item(path, runtime::tag_blocks::binded_callback_t());
@@ -284,15 +375,15 @@ public:
             return result.errors();
         }
     }
-    remote_owned_value(const typeT& right)
+    async_owned_value(const typeT& right)
     {
         val_ = right;
     }
-    remote_owned_value(typeT&& right)
+    async_owned_value(typeT&& right)
     {
         val_ = std::move(right);
     }
-    remote_owned_value& operator=(const typeT& right)
+    async_owned_value& operator=(const typeT& right)
     {
         if (ctx_ && handle_)// just in case both of them...
         {
@@ -307,7 +398,7 @@ public:
         }
         return *this;
     }
-    remote_owned_value& operator=(typeT&& right)
+    async_owned_value& operator=(typeT&& right)
     {
         if (ctx_ && handle_)// just in case both of them...
         {
@@ -322,7 +413,7 @@ public:
         }
         return *this;
     }
-    remote_owned_value& operator+=(const typeT& right)
+    async_owned_value& operator+=(const typeT& right)
     {
         if (ctx_ && handle_)// just in case both of them...
         {
@@ -334,7 +425,7 @@ public:
         }
         return *this;
     }
-    remote_owned_value& operator-=(const typeT& right)
+    async_owned_value& operator-=(const typeT& right)
     {
         if (ctx_ && handle_)// just in case both of them...
         {
@@ -365,7 +456,7 @@ public:
 
 
 template <typename typeT, typename lockT = locks::slim_lock>
-struct remote_local_value
+struct async_local_value
 {
     using callback_t = std::function<void(const typeT&)>;
     callback_t callback_;
@@ -375,12 +466,12 @@ struct remote_local_value
     runtime_handle_t handle_ = 0;
     runtime_process_context* ctx_ = nullptr;
 public:
-    remote_local_value() = default;
-    ~remote_local_value() = default;
-    remote_local_value(const remote_local_value&) = delete;
-    remote_local_value(remote_local_value&&) = default;
-    remote_local_value& operator=(const remote_local_value&) = delete;
-    remote_local_value& operator=(remote_local_value&&) = default;
+    async_local_value() = default;
+    ~async_local_value() = default;
+    async_local_value(const async_local_value&) = delete;
+    async_local_value(async_local_value&&) = default;
+    async_local_value& operator=(const async_local_value&) = delete;
+    async_local_value& operator=(async_local_value&&) = default;
     rx_result bind(const string_type& path, runtime_init_context& ctx, callback_t callback = callback_t())
     {
         auto result = ctx.bind_item(path, [this](const rx_value& val)
@@ -422,33 +513,33 @@ public:
         }
     }
 
-    remote_local_value(const typeT& right)
+    async_local_value(const typeT& right)
     {
         bad_value_ = right;
         value_ = right;
     }
-    remote_local_value(typeT&& right)
+    async_local_value(typeT&& right)
     {
         bad_value_ = right;
         value_ = std::move(right);
     }
-    remote_local_value(const typeT& right, const typeT& bad_value)
+    async_local_value(const typeT& right, const typeT& bad_value)
     {
 
         bad_value_ = bad_value;
         value_ = right;
     }
-    remote_local_value(typeT&& right, typeT&& bad_value)
+    async_local_value(typeT&& right, typeT&& bad_value)
     {
         bad_value_ = std::move(bad_value);
         value_ = std::move(right);
     }
-    remote_local_value& operator=(typeT right)
+    async_local_value& operator=(typeT right)
     {
         if (ctx_ && handle_)// just in case both of them...
         {
             typeT temp(right);
-            ctx_->set_remote_binded_as<typeT>(handle_, std::move(temp));
+            ctx_->set_async_binded_as<typeT>(handle_, std::move(temp));
         }
         return this;
     }

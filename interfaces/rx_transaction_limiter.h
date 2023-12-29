@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_transaction_limiter.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,12 +34,12 @@
 
 #include "lib/rx_const_size_vector.h"
 
+// dummy
+#include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
-// dummy
-#include "dummy.h"
 // rx_io_buffers
 #include "lib/rx_io_buffers.h"
 // rx_io_addr
@@ -259,17 +259,17 @@ Use limit value 1 for enabling half-duplex connection, or 0 for no limit.");
   private:
 
 
-      remote_local_value<int> limit_;
+      async_local_value<int> limit_;
 
-      remote_local_value<bool> ignore_zeros_;
+      async_local_value<bool> ignore_zeros_;
 
-      remote_local_value<bool> use_packet_id_;
+      async_local_value<bool> use_packet_id_;
 
-      remote_local_value<uint32_t> read_timeout_;
+      async_local_value<uint32_t> read_timeout_;
 
-      remote_local_value<uint32_t> write_timeout_;
+      async_local_value<uint32_t> write_timeout_;
 
-      remote_owned_value<int32_t> queue_size_;
+      async_owned_value<int32_t> queue_size_;
 
 
 };

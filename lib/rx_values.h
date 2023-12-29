@@ -4,7 +4,7 @@
 *
 *  lib\rx_values.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -269,7 +269,6 @@ class rx_simple_value
 
       friend class rx_timed_value;
       friend class rx_value;
-
   protected:
 
   private:
@@ -398,7 +397,7 @@ public:
 
       bool compare (const rx_value& right, time_compare_type time_compare) const;
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       void set_substituted ();
 
@@ -428,7 +427,7 @@ public:
 
       uint32_t get_origin () const;
 
-      rx::values::rx_simple_value operator [] (int index) const;
+      rx_simple_value operator [] (int index) const;
 
       void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY);
 
@@ -564,13 +563,13 @@ public:
 
       bool compare (const rx_timed_value& right, time_compare_type time_compare) const;
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       bool is_byte_string () const;
 
       byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
 
-      rx::values::rx_simple_value operator [] (int index) const;
+      rx_simple_value operator [] (int index) const;
 
       void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time());
 

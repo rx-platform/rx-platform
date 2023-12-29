@@ -4,27 +4,27 @@
 *
 *  api\rx_platform_api.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -655,6 +655,27 @@ extern "C" {
 			return rx_result(result.errors()).move();
 		}
 	}
+
+	RX_PLATFORM_API rx_result_struct rxInitCtxConnectItem(init_ctx_ptr ctx, const char* path, uint32_t rate, runtime_handle_t* handle, runtime_ctx_ptr* rt_ctx, connect_callback_data* callback)
+	{
+		runtime::runtime_init_context* self = (runtime::runtime_init_context*)ctx;
+		*rt_ctx = self->context;
+		auto result = self->connect_item(path,  rate
+			, callback ? [callback](const rx_value& val)
+			{
+				callback->callback(callback->target, val.c_ptr());
+			} : runtime::tag_blocks::binded_callback_t());
+		if (result)
+		{
+			*handle = result.value();
+			return rx_result(true).move();
+		}
+		else
+		{
+			*handle = 0;
+			return rx_result(result.errors()).move();
+		}
+	}
 	RX_PLATFORM_API const char* rxInitCtxGetCurrentPath(init_ctx_ptr ctx)
 	{
 		runtime::runtime_init_context* self = (runtime::runtime_init_context*)ctx;
@@ -749,13 +770,35 @@ extern "C" {
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
 		return self->set_value(handle, values::rx_simple_value(val)).move();
 	}
+
+	RX_PLATFORM_API rx_result_struct rxCtxWriteConnected(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id)
+	{
+		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
+		return self->write_connected(handle, values::rx_simple_value(va), trans_id).move();
+	}
+
+	RX_PLATFORM_API rx_result_struct rxCtxExecuteConnected(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id)
+	{
+		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
+		return self->execute_connected(handle, values::rx_simple_value(va), trans_id).move();
+	}
+
 	RX_PLATFORM_API void rxCtxSetRemotePending(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val)
 	{
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
-		runtime::remotes_data data;
+		runtime::async_data data;
 		data.handle = handle;
 		data.value = values::rx_simple_value(val);
-		self->from_remote_pending(std::move(data));
+		self->async_value_pending(std::move(data));
+
+	}
+	RX_PLATFORM_API void rxCtxSetAsyncPending(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val)
+	{
+		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
+		runtime::async_data data;
+		data.handle = handle;
+		data.value = values::rx_simple_value(val);
+		self->async_value_pending(std::move(data));
 
 	}
 	RX_PLATFORM_API const char* rxStartCtxGetCurrentPath(start_ctx_ptr ctx)
@@ -966,7 +1009,7 @@ void bind_plugins_dynamic_api()
 
 	g_api3.runtime.prxCtxGetValue = rxCtxGetValue;
 	g_api3.runtime.prxCtxSetValue = rxCtxSetValue;
-	g_api3.runtime.prxCtxSetRemotePending = rxCtxSetRemotePending;
+	g_api3.runtime.prxCtxSetAsyncPending = rxCtxSetAsyncPending;
 
 	g_api3.storage.prxRegisterStorageType = rxRegisterStorageType;
 }
@@ -997,7 +1040,7 @@ const platform_api3_t* get_plugins_dynamic_api3()
 
 namespace rx_platform {
 
-// Class rx_platform::extern_timer_job
+// Class rx_platform::extern_timer_job 
 
 extern_timer_job::extern_timer_job (plugin_job_struct* extern_data)
       : anchor_(&extern_data->anchor),
@@ -1013,7 +1056,7 @@ void extern_timer_job::process ()
 }
 
 
-// Class rx_platform::extern_timers
+// Class rx_platform::extern_timers 
 
 
 extern_timers& extern_timers::instance ()
@@ -1120,7 +1163,7 @@ void extern_timers::destroy_timer (runtime_handle_t handle)
 }
 
 
-// Class rx_platform::extern_job
+// Class rx_platform::extern_job 
 
 extern_job::extern_job (plugin_job_struct* extern_data)
       : extern_data_(extern_data),
@@ -1136,7 +1179,7 @@ void extern_job::process ()
 }
 
 
-// Class rx_platform::extern_period_job
+// Class rx_platform::extern_period_job 
 
 extern_period_job::extern_period_job (plugin_job_struct* extern_data)
       : anchor_(&extern_data->anchor),

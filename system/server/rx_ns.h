@@ -4,7 +4,7 @@
 *
 *  system\server\rx_ns.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,12 +36,12 @@
 #include "system/rx_platform_typedefs.h"
 #include "system/server/rx_platform_item.h"
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_meta_data
-#include "lib/rx_meta_data.h"
 // rx_storage
 #include "system/storage_base/rx_storage.h"
+// rx_meta_data
+#include "lib/rx_meta_data.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 

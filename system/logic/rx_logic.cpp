@@ -4,7 +4,7 @@
 *
 *  system\logic\rx_logic.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -187,7 +187,7 @@ rx_result method_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
 
 rx_result method_runtime::execute (execute_data data, runtime::runtime_process_context* ctx)
 {
-	return "Undefined method type execution!";
+	return "Abstract method execution!";
 }
 
 void method_runtime::execute_result_received (rx_simple_value out_val, rx_result&& result, runtime_transaction_id_t id)

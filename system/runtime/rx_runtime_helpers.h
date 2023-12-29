@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -50,6 +50,13 @@ using namespace rx::values;
 
 
 namespace rx_platform {
+namespace runtime {
+namespace structure {
+class mapper_data;
+class variable_data;
+} // namespace structure
+} // namespace runtime
+
 namespace ns {
 class rx_directory_resolver;
 } // namespace ns
@@ -57,6 +64,7 @@ class rx_directory_resolver;
 namespace runtime {
 namespace structure {
 class runtime_item;
+class source_data;
 } // namespace structure
 
 namespace algorithms {
@@ -71,14 +79,8 @@ class relation_subscriber;
 class runtime_process_context;
 namespace tag_blocks {
 class binded_tags;
+
 } // namespace tag_blocks
-
-namespace structure {
-class source_data;
-class mapper_data;
-class variable_data;
-
-} // namespace structure
 } // namespace runtime
 } // namespace rx_platform
 
@@ -536,6 +538,8 @@ struct runtime_init_context
       rx_result set_item (const string_type& path, rx_simple_value&& value);
 
       rx_result get_item (const string_type& path, rx_simple_value& val);
+
+      rx_result_with<runtime_handle_t> connect_item (const string_type& path, uint32_t rate, tag_blocks::binded_callback_t callback);
 
 
       runtime_path_resolver path;

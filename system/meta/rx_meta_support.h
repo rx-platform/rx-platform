@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_support.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -71,10 +71,10 @@ rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data);
 
 }// namespace rx_platform
 
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
 // rx_rt_item_types
 #include "system/runtime/rx_rt_item_types.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 
 
 
@@ -566,7 +566,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      rx_platform::meta::runtime_data_prototype pop_rt_name ();
+      runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 

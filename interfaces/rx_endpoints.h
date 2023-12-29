@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_endpoints.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -44,10 +44,10 @@
 #define ITF_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Interface",src,lvl,msg)
 #define ITF_LOG_TRACE(src,lvl,msg) RX_TRACE("Interface",src,lvl,msg)
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // dummy
 #include "dummy.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 #include "system/hosting/rx_host.h"
 #include "system/server/rx_server.h"

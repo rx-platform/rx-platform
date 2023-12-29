@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_filters.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -450,7 +450,7 @@ Implementation of cumulative speed filter.\r\n\
 
       rx_timer_ptr timer_;
 
-      runtime::remote_local_value<uint32_t> period_;
+      runtime::local_value<uint32_t> period_;
 
 
 };

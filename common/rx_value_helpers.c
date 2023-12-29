@@ -439,6 +439,24 @@ RX_COMMON_API int rx_init_string_array_value(struct typed_value_type* val, const
 	}
 	return RX_OK;
 }
+RX_COMMON_API int rx_init_bytes_array_value(struct typed_value_type* val, const uint8_t** data, const size_t* sizes, size_t count)
+{
+	val->value_type = RX_BYTES_TYPE | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = malloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+			rx_init_bytes_value_struct(&val->value.array_value.values[i].bytes_value, data[i], sizes[i]);
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
 
 RX_COMMON_API int rx_init_uuid_array_value(struct typed_value_type* val, const rx_uuid_t* data, size_t count)
 {
@@ -484,7 +502,7 @@ RX_COMMON_API int rx_init_time_array_value(struct typed_value_type* val, const r
 
 RX_COMMON_API int rx_init_node_id_array_value(struct typed_value_type* val, const rx_node_id_struct* data, size_t count)
 {
-	val->value_type = RX_UUID_TYPE | RX_ARRAY_VALUE_MASK;
+	val->value_type = RX_NODE_ID_TYPE | RX_ARRAY_VALUE_MASK;
 	val->value.array_value.size = count;
 	if (count)
 	{

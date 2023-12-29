@@ -4,7 +4,7 @@
 *
 *  first_plugin\first_plugin.h
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -434,6 +434,7 @@ First Singleton. Singleton implementation in test plugin.");
       rx_result deinitialize_object ();
 
       static first_singleton::smart_ptr instance ();
+
 
   protected:
 

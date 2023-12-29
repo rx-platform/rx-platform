@@ -4,27 +4,27 @@
 *
 *  model\rx_meta_internals.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -55,7 +55,7 @@ namespace
 std::unique_ptr<platform_types_manager> g_platform_types_instance;
 }
 
-// Class rx_internal::model::platform_types_manager
+// Class rx_internal::model::platform_types_manager 
 
 platform_types_manager::platform_types_manager()
 {
@@ -181,7 +181,7 @@ transactions::dependency_cache& platform_types_manager::get_dependecies_cache ()
 }
 
 
-// Class rx_internal::model::relations_hash_data
+// Class rx_internal::model::relations_hash_data 
 
 relations_hash_data::relations_hash_data()
 {
@@ -359,7 +359,7 @@ void relations_hash_data::deinitialize ()
 }
 
 
-// Parameterized Class rx_internal::model::types_repository
+// Parameterized Class rx_internal::model::types_repository 
 
 template <class typeT>
 types_repository<typeT>::types_repository()
@@ -1109,7 +1109,7 @@ bool types_repository<typeT>::is_instanced_from (rx_node_id id, rx_node_id base_
 }
 
 
-// Class rx_internal::model::inheritance_hash
+// Class rx_internal::model::inheritance_hash 
 
 inheritance_hash::inheritance_hash()
 {
@@ -1304,7 +1304,7 @@ bool inheritance_hash::is_derived_from (rx_node_id id, rx_node_id base_id) const
 }
 
 
-// Class rx_internal::model::instance_hash
+// Class rx_internal::model::instance_hash 
 
 instance_hash::instance_hash()
 {
@@ -1390,7 +1390,7 @@ void instance_hash::deinitialize ()
 }
 
 
-// Parameterized Class rx_internal::model::simple_types_repository
+// Parameterized Class rx_internal::model::simple_types_repository 
 
 template <class typeT>
 simple_types_repository<typeT>::simple_types_repository()
@@ -1775,7 +1775,7 @@ rx_result simple_types_repository<typeT>::register_peer_type (rx_reference<disco
 }
 
 
-// Class rx_internal::model::types_resolver
+// Class rx_internal::model::types_resolver 
 
 
 rx_result types_resolver::add_id (const rx_node_id& id, rx_item_type type, const meta_data& data)
@@ -1866,7 +1866,7 @@ void types_resolver::deinitialize ()
 }
 
 
-// Class rx_internal::model::relations_type_repository
+// Class rx_internal::model::relations_type_repository 
 
 relations_type_repository::relations_type_repository()
 {
@@ -2256,7 +2256,7 @@ bool relations_type_repository::is_derived_from (rx_node_id id, rx_node_id base_
 }
 
 
-// Class rx_internal::model::data_type_repository
+// Class rx_internal::model::data_type_repository 
 
 data_type_repository::data_type_repository()
 {

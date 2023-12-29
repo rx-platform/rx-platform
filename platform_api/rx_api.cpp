@@ -4,7 +4,7 @@
 *
 *  D:\RX\Native\Source\platform_api\rx_api.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -85,7 +85,10 @@ extern rxStartCtxSubscribeRelation_t api_subscribe_relation;
 
 extern rxCtxGetValue_t api_get_value_func;
 extern rxCtxSetValue_t api_set_value_func;
-extern rxCtxSetRemotePending_t api_set_remote_pending_func;
+extern rxCtxSetAsyncPending_t api_set_async_pending_func;
+
+extern rxCtxWriteConnected_t api_write_connected_func;
+extern rxCtxExecuteConnected_t api_execute_connected_func;
 
 
 extern rxRegisterStorageType_t api_reg_storage_func;
@@ -154,7 +157,7 @@ void copy_rt_to_rt3(const platform_runtime_api* src, platform_runtime_api3* dest
 
 	dest->prxCtxGetValue = src->prxCtxGetValue;
 	dest->prxCtxSetValue = src->prxCtxSetValue;
-	dest->prxCtxSetRemotePending = src->prxCtxSetRemotePending;
+	dest->prxCtxSetAsyncPending = src->prxCtxSetRemotePending;
 }
 
 
@@ -241,7 +244,9 @@ rx_result_struct rx_bind_plugin(const platform_api3* api, uint32_t host_stream_v
 
 	api_get_value_func = api->runtime.prxCtxGetValue;
 	api_set_value_func = api->runtime.prxCtxSetValue;
-	api_set_remote_pending_func = api->runtime.prxCtxSetRemotePending;
+	api_write_connected_func = api->runtime.prxCtxWriteConnected;
+	api_execute_connected_func = api->runtime.prxCtxExecuteConnected;
+	api_set_async_pending_func = api->runtime.prxCtxSetAsyncPending;
 
 	api_reg_storage_func = api->storage.prxRegisterStorageType;
 

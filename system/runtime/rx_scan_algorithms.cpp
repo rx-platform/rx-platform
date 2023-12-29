@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_scan_algorithms.cpp
 *
-*  Copyright (c) 2020-2023 ENSACO Solutions doo
+*  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -188,7 +188,7 @@ void runtime_scan_algorithms<typeT>::check_context (typename typeT::RType& whose
         ret += ctx.events_.full_size();
         ret += ctx.structs_.full_size();
         ret += ctx.owns_.full_size();
-        ret += ctx.from_remote_.full_size();
+        ret += ctx.async_values_.full_size();
     }
     RX_ASSERT(ret < 0x10000);
     whose.tags_.common_tags_.queues_size_.commit();
@@ -273,12 +273,12 @@ void runtime_scan_algorithms<typeT>::process_debug_scan (typename typeT::RType& 
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_from_remotes (typename typeT::RType& whose, runtime_process_context& ctx)
 {
-    auto remote_updates = &ctx.get_from_remote();
-    while (!remote_updates->empty())
+    auto async_values = &ctx.get_async_values();
+    while (!async_values->empty())
     {
-        for (auto& one : *remote_updates)
+        for (auto& one : *async_values)
             ctx.set_value(one.handle, std::move(one.value));
-        remote_updates = &ctx.get_from_remote();
+        async_values = &ctx.get_async_values();
     }
 }
 
