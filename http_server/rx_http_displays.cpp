@@ -704,7 +704,7 @@ void rx_http_standard_display::fill_contents (http_display_custom_content& conte
 {
 	std::ostringstream stream;
 	data::runtime_values_data data;
-	ctx.structure.get_root().collect_data(data, runtime_value_type::simple_runtime_value);
+	ctx.structure.get_root().collect_data("", data, runtime_value_type::simple_runtime_value);
 	fill_div(stream, ctx.meta.name, "", data);
 	content.mapped_content["main"] = stream.str();
 }
@@ -845,7 +845,7 @@ void rx_http_main_display::fill_contents (http_display_custom_content& content, 
 {
 	std::ostringstream stream;
 	data::runtime_values_data data;
-	ctx.structure.get_root().collect_data(data, runtime_value_type::simple_runtime_value);
+	ctx.structure.get_root().collect_data("", data, runtime_value_type::simple_runtime_value);
 
 	const auto& plugins = plugins::plugins_manager::instance().get_plugins();
 	for (const auto& one : plugins)

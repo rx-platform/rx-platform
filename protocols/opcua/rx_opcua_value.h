@@ -132,6 +132,7 @@ public:
 	variant_type(double val);
 
 	variant_type(const string_array& val);
+	variant_type(const std::vector<uint32_t>& val);
 
 	variant_type(const qualified_name& val);
 	variant_type(const localized_text& val);
@@ -173,7 +174,7 @@ public:
 
 	void set_default(uint8_t type, int value_rank, const const_size_vector<uint32_t>& dimensions);
 
-	static uint32_t get_opc_type_from_rx_type(rx_value_t valType);
+	static uint32_t get_opc_type_from_rx_type(rx_value_t valType, int32_t& rank);
 
 private:
 	void copy_from(const variant_type& right);

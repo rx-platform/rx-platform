@@ -276,7 +276,7 @@ void rx_relation::relation_disconnected (rx_node_id from, rx_node_id to)
 
 rx_relation::smart_ptr rx_relation::make_target_relation ()
 {
-    return smart_ptr::null_ptr;
+    return rx_create_reference<rx_relation>();
 }
 
 

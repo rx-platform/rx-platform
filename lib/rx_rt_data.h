@@ -117,6 +117,8 @@ public:
 
       string_view_type extract_index (string_view_type name, int& idx) const;
 
+      bool get_complex_value (rx_simple_value& val) const;
+
 
 
 };

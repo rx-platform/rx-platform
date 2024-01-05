@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -60,13 +60,13 @@ runtime_variables_type g_empty_variables;
 
 
 
-void collect_data_const(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<const_value_data>& item);
-void collect_data_value(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper <value_data>& item);
-void collect_data_variable(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<variable_data>& item);
+rx_result collect_data_const(const string_type& name, int array_idx, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<const_value_data>& item);
+rx_result collect_data_value(const string_type& name, int array_idx, data::runtime_values_data& data, runtime_value_type type, const array_wrapper <value_data>& item);
+rx_result collect_data_variable(string_view_type name, int array_idx, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<variable_data>& item);
 template<typename T>
-void collect_data_arrayed(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<T>& item);
+rx_result collect_data_arrayed(string_view_type name, int array_idx, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<T>& item);
 template<typename T>
-void collect_data_plain(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const T& item);
+rx_result collect_data_plain(string_view_type name, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const T& item);
 
 void fill_data_const(const string_type& name, const data::runtime_values_data& data, array_wrapper<const_value_data>& item);
 void fill_data_value(const string_type& name, const data::runtime_values_data& data, array_wrapper<value_data>& item);
@@ -159,7 +159,7 @@ template<typename T>
 const runtime_item* get_child_item_plain(int array_idx, string_view_type path, const T& item);
 
 
-// Parameterized Class rx_platform::runtime::structure::runtime_data 
+// Parameterized Class rx_platform::runtime::structure::runtime_data
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class blocks_type, class variable_blocks_type, uint_fast8_t type_id>
 runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,blocks_type,variable_blocks_type,type_id>::~runtime_data()
@@ -169,91 +169,166 @@ runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,
 
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class blocks_type, class variable_blocks_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,blocks_type,variable_blocks_type,type_id>::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,blocks_type,variable_blocks_type,type_id>::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	for (const auto& one : items)
+	if (path.empty())
 	{
-		if (!one.name.empty() && one.name[0] == '_' && type == runtime_value_type::simple_runtime_value)
-			continue;
-		uint_fast16_t index = one.index & rt_type_mask;
-		switch (index)
+		for (const auto& one : items)
 		{
-		case rt_const_index_type:
-			// const value
-			collect_data_const(one.name, data, type, const_values[(one.index >> rt_type_shift)]);
-			break;
-		case rt_value_index_type:
-			// simple value
-			collect_data_value(one.name, data, type, values[(one.index >> rt_type_shift)]);
-			break;
-		default:
+			if (!one.name.empty() && one.name[0] == '_' && type == runtime_value_type::simple_runtime_value)
+				continue;
+			uint_fast16_t index = one.index & rt_type_mask;
+			switch (index)
 			{
-				if constexpr (has_variables())
+			case rt_const_index_type:
+				// const value
+				collect_data_const(one.name, -1, data, type, const_values[(one.index >> rt_type_shift)]);
+				break;
+			case rt_value_index_type:
+				// simple value
+				collect_data_value(one.name, -1, data, type, values[(one.index >> rt_type_shift)]);
+				break;
+			default:
 				{
-					if (index == rt_variable_index_type)
+					if constexpr (has_variables())
 					{
-						collect_data_variable(one.name, data, type, variables.collection[(one.index >> rt_type_shift)]);
-						continue;
+						if (index == rt_variable_index_type)
+						{
+							collect_data_variable(one.name, -1, "", data, type, variables.collection[(one.index >> rt_type_shift)]);
+							continue;
+						}
 					}
-				}
-				if constexpr (has_structs())
-				{
-					if (index == rt_struct_index_type)
+					if constexpr (has_structs())
 					{
-						collect_data_arrayed(one.name, data, type, structs.collection[(one.index >> rt_type_shift)]);
-						continue;
+						if (index == rt_struct_index_type)
+						{
+							collect_data_arrayed(one.name, -1, "", data, type, structs.collection[(one.index >> rt_type_shift)]);
+							continue;
+						}
 					}
-				}
-				if constexpr (has_sources())
-				{
-					if (index == rt_source_index_type)
+					if constexpr (has_sources())
 					{
-						collect_data_plain(one.name, data, type, sources.collection[(one.index >> rt_type_shift)]);
-						continue;
+						if (index == rt_source_index_type)
+						{
+							collect_data_plain(one.name, "", data, type, sources.collection[(one.index >> rt_type_shift)]);
+							continue;
+						}
 					}
-				}
-				if constexpr (has_mappers())
-				{
-					if (index == rt_mapper_index_type)
+					if constexpr (has_mappers())
 					{
-						collect_data_plain(one.name, data, type, mappers.collection[(one.index >> rt_type_shift)]);
-						continue;
+						if (index == rt_mapper_index_type)
+						{
+							collect_data_plain(one.name, "", data, type, mappers.collection[(one.index >> rt_type_shift)]);
+							continue;
+						}
 					}
-				}
-				if constexpr (has_filters())
-				{
-					if (index == rt_filter_index_type)
+					if constexpr (has_filters())
 					{
-						collect_data_plain(one.name, data, type, filters.collection[(one.index >> rt_type_shift)]);
-						continue;
+						if (index == rt_filter_index_type)
+						{
+							collect_data_plain(one.name, "", data, type, filters.collection[(one.index >> rt_type_shift)]);
+							continue;
+						}
 					}
-				}
-				if constexpr (has_events())
-				{
-					if (index == rt_event_index_type)
+					if constexpr (has_events())
 					{
-						collect_data_plain(one.name, data, type, events.collection[(one.index >> rt_type_shift)]);
-						continue;
+						if (index == rt_event_index_type)
+						{
+							collect_data_plain(one.name, "", data, type, events.collection[(one.index >> rt_type_shift)]);
+							continue;
+						}
 					}
-				}
-				if constexpr (has_block_data())
-				{
-					if (index == rt_value_data_index_type)
+					if constexpr (has_block_data())
 					{
-						collect_data_arrayed(one.name, data, type, blocks.collection[(one.index >> rt_type_shift)]);
-						continue;
+						if (index == rt_value_data_index_type)
+						{
+							collect_data_arrayed(one.name, -1, "", data, type, blocks.collection[(one.index >> rt_type_shift)]);
+							continue;
+						}
 					}
-				}
-				if constexpr (has_variable_blocks_data())
-				{
-					if (index == rt_variable_data_index_type)
+					if constexpr (has_variable_blocks_data())
 					{
-						collect_data_arrayed(one.name, data, type, variable_blocks.collection[(one.index >> rt_type_shift)]);
-						continue;
+						if (index == rt_variable_data_index_type)
+						{
+							collect_data_arrayed(one.name, -1, "", data, type, variable_blocks.collection[(one.index >> rt_type_shift)]);
+							continue;
+						}
 					}
 				}
 			}
 		}
+		return true;
+	}
+	else
+	{
+		string_view_type mine;
+		string_view_type bellow;
+		int array_idx = -1;
+		auto idx = internal_split_get_index(path, mine, bellow, array_idx, items);
+		if (idx)
+		{
+			uint_fast16_t index = idx & rt_type_mask;
+			switch (index)
+			{
+			case rt_const_index_type:
+				if(bellow.empty())
+                {
+                    return collect_data_const("val", array_idx, data, type, const_values[(idx >> rt_type_shift)]);
+                }
+			case rt_value_index_type:
+				if (bellow.empty())
+                {
+                    return collect_data_value("val", array_idx, data, type, values[(idx >> rt_type_shift)]);
+                }
+			default:
+				if constexpr (has_variables())
+				{
+					if (index == rt_variable_index_type)
+					{
+						if (bellow.empty())
+							return collect_data_variable("val", array_idx, "", data, type, variables.collection[(idx >> rt_type_shift)]);
+						else
+							return collect_data_variable(mine, array_idx, bellow, data, type, variables.collection[(idx >> rt_type_shift)]);
+                    }
+				}
+				if constexpr (has_structs())
+				{
+					if (index == rt_struct_index_type)
+						return collect_data_arrayed(mine, array_idx, bellow, data, type, structs.collection[(idx >> rt_type_shift)]);
+				}
+				if constexpr (has_sources())
+				{
+					if (index == rt_source_index_type)
+						return collect_data_plain(mine, bellow, data, type, sources.collection[(idx >> rt_type_shift)]);
+				}
+				if constexpr (has_mappers())
+				{
+					if (index == rt_mapper_index_type)
+						return collect_data_plain(mine, bellow, data, type, mappers.collection[(idx >> rt_type_shift)]);
+				}
+				if constexpr (has_filters())
+				{
+					if (index == rt_filter_index_type)
+						return collect_data_plain(mine, bellow, data, type, filters.collection[(idx >> rt_type_shift)]);
+				}
+				if constexpr (has_events())
+				{
+					if (index == rt_event_index_type)
+						return collect_data_plain(mine, bellow, data, type, events.collection[(idx >> rt_type_shift)]);
+				}
+				if constexpr (has_block_data())
+				{
+					if (index == rt_value_data_index_type)
+						return collect_data_arrayed(mine, array_idx, bellow, data, type, blocks.collection[(idx >> rt_type_shift)]);
+				}
+				if constexpr (has_variable_blocks_data())
+				{
+					if (index == rt_variable_data_index_type)
+						return collect_data_arrayed(mine, array_idx, bellow, data, type, variable_blocks.collection[(idx >> rt_type_shift)]);
+				}
+			}
+		}
+		return RX_INVALID_PATH;
 	}
 }
 
@@ -375,7 +450,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 						collect_value_variable(my_values, type, variables.collection[(one.index >> rt_type_shift)]);
 						continue;
 					}
-				}				
+				}
 				if constexpr (has_structs())
 				{
 					if (index == rt_struct_index_type)
@@ -384,7 +459,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 						continue;
 					}
 				}
-				
+
 				if constexpr (has_sources())
 				{
 					if (index == rt_source_index_type)
@@ -552,7 +627,7 @@ void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 	{
 		object_state_changed_plain(ctx, filters.collection);
 	}
-	
+
 	object_state_changed_arrayed(ctx, values);
 
 	if constexpr (has_block_data())
@@ -1000,7 +1075,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				{
 					if (index == rt_struct_index_type)
 						return get_value_ref_arrayed<struct_data>(array_idx, bellow, path, ref, is_var, structs.collection[(idx >> rt_type_shift)]);
-				}				
+				}
 				if constexpr (has_sources())
 				{
 					if (index == rt_source_index_type)
@@ -1219,6 +1294,7 @@ const runtime_item* runtime_data<variables_type,structs_type,sources_type,mapper
 			uint_fast16_t index = idx & rt_type_mask;
 			if constexpr (has_variables())
 			{
+				if(index == rt_variable_index_type && !bellow.empty())
 				if (index == rt_variable_index_type)
 					return get_child_item_variable(array_idx, bellow, variables.collection[(idx >> rt_type_shift)]);
 			}
@@ -1432,16 +1508,6 @@ bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 		return internal_get_index(path.substr(0, idx), array_idx, items) != 0;
 	}
 	return false;
-}
-
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class blocks_type, class variable_blocks_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,blocks_type,variable_blocks_type,type_id>::read_struct (string_view_type path, read_struct_data data) const
-{
-}
-
-template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class blocks_type, class variable_blocks_type, uint_fast8_t type_id>
-void runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,blocks_type,variable_blocks_type,type_id>::write_struct (string_view_type path, write_struct_data data)
-{
 }
 
 

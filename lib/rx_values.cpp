@@ -1733,7 +1733,60 @@ std::vector<double> extract_value(const typed_value_type& from, const std::vecto
 }
 std::vector<byte_string> extract_value(const typed_value_type& from, const std::vector<byte_string>& default_value)
 {
-	RX_ASSERT(false);
+	if (from.value_type == RX_BYTES_TYPE)
+	{
+		size_t size = 0;
+		const std::byte* ptr = (std::byte*)rx_c_ptr(&from.value.bytes_value, &size);
+		if(ptr)
+			return std::vector<byte_string>{byte_string(ptr, ptr + size)};
+		else
+			return std::vector<byte_string>();
+	}
+	else if (from.value_type == (RX_BYTES_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<byte_string> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				size_t size = 0;
+				const std::byte* ptr = (std::byte*)rx_c_ptr(&from.value.array_value.values[i].bytes_value, &size);
+				if (ptr)
+					ret.push_back(byte_string(ptr, ptr + size));
+				else
+					ret.push_back(byte_string());
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<byte_string> ret;
+		if (rx_convert_value(&temp_val, RX_BYTES_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					size_t size = 0;
+					const std::byte* ptr = (std::byte*)rx_c_ptr(&temp_val.value.array_value.values[i].bytes_value, &size);
+					if (ptr)
+						ret.push_back(byte_string(ptr, ptr + size));
+					else
+						ret.push_back(byte_string());
+				}
+			}
+			rx_destroy_value(&temp_val);
+		}
+		else
+		{
+			ret = default_value;
+		}
+	}
 	return default_value;
 }
 std::vector<rx_time_struct> extract_value(const typed_value_type& from, const std::vector<rx_time_struct>& default_value)
@@ -1824,12 +1877,139 @@ std::vector<rx_time> extract_value(const typed_value_type& from, const std::vect
 	}
 	return default_value;
 }
-std::vector<rx_uuid_t> extract_value(const typed_value_type& from, const std::vector<rx_uuid_t>& default_value)
+std::vector<rx_node_id> extract_value(const typed_value_type& from, const std::vector<rx_node_id>& default_value)
 {
-	RX_ASSERT(false);
+	if (from.value_type == RX_NODE_ID_TYPE)
+	{
+		return std::vector<rx_node_id>{ from.value.node_id_value };
+	}
+	else if (from.value_type == (RX_NODE_ID_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<rx_node_id> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.emplace_back(*from.value.array_value.values[i].node_id_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<rx_node_id> ret;
+		if (rx_convert_value(&temp_val, RX_NODE_ID_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.emplace_back(*temp_val.value.array_value.values[i].node_id_value);
+				}
+			}
+			rx_destroy_value(&temp_val);
+		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
+	}
+	return default_value;
+}
+std::vector<rx_uuid> extract_value(const typed_value_type& from, const std::vector<rx_uuid>& default_value)
+{
+	if (from.value_type == RX_UUID_TYPE)
+	{
+		return std::vector<rx_uuid>{ *from.value.uuid_value };
+	}
+	else if (from.value_type == (RX_UUID_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<rx_uuid> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.emplace_back(*from.value.array_value.values[i].uuid_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<rx_uuid> ret;
+		if (rx_convert_value(&temp_val, RX_UUID_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.emplace_back(*temp_val.value.array_value.values[i].uuid_value);
+				}
+			}
+			rx_destroy_value(&temp_val);
+		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
+	}
 	return default_value;
 }
 
+std::vector<rx_uuid_t> extract_value(const typed_value_type& from, const std::vector<rx_uuid_t>& default_value)
+{
+	if (from.value_type == RX_UUID_TYPE)
+	{
+		return std::vector<rx_uuid_t>{ *from.value.uuid_value };
+	}
+	else if (from.value_type == (RX_UUID_TYPE | RX_ARRAY_VALUE_MASK))
+	{
+		std::vector<rx_uuid_t> ret;
+		if (from.value.array_value.size > 0)
+		{
+			ret.reserve(from.value.array_value.size);
+			for (size_t i = 0; i < from.value.array_value.size; i++)
+			{
+				ret.emplace_back(*from.value.array_value.values[i].uuid_value);
+			}
+		}
+		return ret;
+	}
+	else
+	{
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		std::vector<rx_uuid_t> ret;
+		if (rx_convert_value(&temp_val, RX_UUID_TYPE | RX_ARRAY_VALUE_MASK))
+		{
+			if (temp_val.value.array_value.size > 0)
+			{
+				ret.reserve(temp_val.value.array_value.size);
+				for (size_t i = 0; i < temp_val.value.array_value.size; i++)
+				{
+					ret.emplace_back(*temp_val.value.array_value.values[i].uuid_value);
+				}
+			}
+			rx_destroy_value(&temp_val);
+		}
+		else
+		{
+			ret = default_value;
+		}
+		return ret;
+	}
+	return default_value;
+}
 
 
 bool assign_value(typed_value_type& from, bool value)
@@ -2013,6 +2193,89 @@ bool assign_value(typed_value_type& from, const std::vector<double>& value)
 		return rx_init_double_array_value(&from, NULL, 0);
 	else
 		return rx_init_double_array_value(&from, &value[0], value.size());
+}
+
+bool assign_value(typed_value_type& from, const std::vector<rx_time_struct>& value)
+{
+	if (value.empty())
+		return rx_init_time_array_value(&from, NULL, 0);
+	else
+		return rx_init_time_array_value(&from, &value[0], value.size());
+}
+
+bool assign_value(typed_value_type& from, const std::vector<rx_time>& value)
+{
+	if (value.empty())
+	{
+		return rx_init_time_array_value(&from, NULL, 0);
+	}
+	else
+	{
+		std::vector<rx_time_struct> temp;
+		temp.reserve(value.size());
+		for (const auto& one : value)
+			temp.push_back(one.c_data());
+		return rx_init_time_array_value(&from, &temp[0], temp.size());
+	}
+}
+bool assign_value(typed_value_type& from, const std::vector<rx_uuid_t>& value)
+{
+	if (value.empty())
+		return rx_init_uuid_array_value(&from, NULL, 0);
+	else
+		return rx_init_uuid_array_value(&from, &value[0], value.size());
+}
+bool assign_value(typed_value_type& from, const std::vector<rx_uuid>& value)
+{
+	if (value.empty())
+		return rx_init_time_array_value(&from, NULL, 0);
+	else
+		return rx_init_uuid_array_value(&from, &value[0], value.size());
+}
+
+bool assign_value(typed_value_type& from, const std::vector<byte_string>& value)
+{
+	if (value.empty())
+	{
+		return rx_init_bytes_array_value(&from, NULL, 0, 0);
+	}
+	else
+	{
+		std::vector<const uint8_t*> vals;
+		std::vector<size_t> sizes;
+		vals.reserve(value.size());
+		sizes.reserve(value.size());
+		for (auto& one : value)
+		{
+			if (one.empty())
+			{
+				vals.push_back(nullptr);
+				sizes.push_back(0);
+			}
+			else
+			{
+				vals.push_back((uint8_t*)&one[0]);
+				sizes.push_back(one.size());
+			}
+		}
+		return rx_init_bytes_array_value(&from, &vals[0], &sizes[0], value.size());
+	}
+}
+
+bool assign_value(typed_value_type& from, const std::vector<rx_node_id>& value)
+{
+	if (value.empty())
+		return rx_init_node_id_array_value(&from, NULL, 0);
+	else
+	{
+		std::vector<rx_node_id_struct> vals;
+		vals.reserve(value.size());
+		for (auto& one : value)
+		{
+			vals.push_back(*one.c_ptr());
+		}
+		return rx_init_node_id_array_value(&from, &vals[0], value.size());
+	}
 }
 
 bool assign_value(typed_value_type& from, const string_array& value)

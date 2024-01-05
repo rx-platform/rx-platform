@@ -886,7 +886,9 @@ rx_result opcua_basic_mapper::initialize_mapper (runtime::runtime_init_context& 
 	node_->display_name = name;
 	node_->path_ = path;
 	node_->type_id = rx_node_id::opcua_standard_id(opcid_BaseDataVariableType);
-	node_->data_type = rx_node_id::opcua_standard_id(variant_type::get_opc_type_from_rx_type(get_value_type()));
+	node_->data_type = rx_node_id::opcua_standard_id(variant_type::get_opc_type_from_rx_type(get_value_type(), node_->value_rank));
+	if (node_->value_rank == 1)
+		node_->array_dimenstions.push_back(0);
 	node_->references.references.emplace_back(rx_node_id::opcua_standard_id(opcid_HasTypeDefinition), node_->type_id);
 
 	return true;
@@ -1056,11 +1058,7 @@ rx_result opcua_basic_method_mapper::initialize_mapper (runtime::runtime_init_co
 		{
 			auto temp_arg = std::make_unique<ua_argument>();
 			temp_arg->name = one_arg->name;
-			temp_arg->data_type = rx_node_id::opcua_standard_id(variant_type::get_opc_type_from_rx_type(one_arg->get_value().get_type()));
-			if (one_arg->get_value().is_array())
-			{
-				temp_arg->value_rank = (int)one_arg->get_value().array_size();
-			}
+			temp_arg->data_type = rx_node_id::opcua_standard_id(variant_type::get_opc_type_from_rx_type(one_arg->get_value().get_type(), temp_arg->value_rank));
 			temp_args.push_back(std::move(temp_arg));
 		}
 	}
@@ -1085,11 +1083,7 @@ rx_result opcua_basic_method_mapper::initialize_mapper (runtime::runtime_init_co
 		{
 			auto temp_arg = std::make_unique<ua_argument>();
 			temp_arg->name = one_arg->name;
-			temp_arg->data_type = rx_node_id::opcua_standard_id(variant_type::get_opc_type_from_rx_type(one_arg->get_value().get_type()));
-			if (one_arg->get_value().is_array())
-			{
-				temp_arg->value_rank = (int)one_arg->get_value().array_size();
-			}
+			temp_arg->data_type = rx_node_id::opcua_standard_id(variant_type::get_opc_type_from_rx_type(one_arg->get_value().get_type(), temp_arg->value_rank));
 			temp_args.push_back(std::move(temp_arg));
 		}
 	}

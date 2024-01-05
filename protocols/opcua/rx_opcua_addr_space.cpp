@@ -300,11 +300,12 @@ void opcua_variable_base_node::internal_read_attribute (attribute_id id, const s
         value_storage.status_code = opcid_OK;
         break;
     case attribute_id::array_dimensions:
-        //RX_ASSERT(false);
-        value_storage.status_code = opcid_Bad_AttributeIdInvalid;
-        //value.value = variant_type(array_dimenstions);
-        //value.source_ts = timestamp_;
-        //return opcid_OK;
+        if (value_rank > 0)
+        {
+            value_storage.value = variant_type(array_dimenstions);
+        }
+        value_storage.set_timestamp(timestamp_);
+        value_storage.status_code = opcid_OK;
         break;
     case attribute_id::access_level:
         value_storage.value = variant_type((uint8_t)access_level);

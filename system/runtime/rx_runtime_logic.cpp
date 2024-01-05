@@ -379,8 +379,8 @@ rx_result logic_holder::get_struct_value (string_view_type item, string_view_typ
     {
         if (one.name == item)
         {
-            item_ptr = one.item->get_child_item(path);
-            break;
+            one.item->collect_data(path, data, type);
+            return true;
         }
     }
     if (!item_ptr)
@@ -389,19 +389,12 @@ rx_result logic_holder::get_struct_value (string_view_type item, string_view_typ
         {
             if (one.name == item)
             {
-                item_ptr = one.item->get_child_item(path);
+                one.item->collect_data(path, data, type);
+                return true;
             }
         }
     }
-    if (item_ptr)
-    {
-        item_ptr->collect_data(data, type);
-        return true;
-    }
-    else
-    {
-        return "Invalid path";
-    }
+    return "Invalid path";
 }
 
 void logic_holder::set_methods (std::vector<method_data> data)
@@ -432,7 +425,7 @@ void program_data::fill_data (const data::runtime_values_data& data)
 
 void program_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-    item->collect_data(data, type);
+    item->collect_data("", data, type);
 }
 
 rx_result program_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx)
@@ -497,11 +490,11 @@ void method_data::fill_data (const data::runtime_values_data& data)
 
 void method_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-    item->collect_data(data, type);
+    item->collect_data("", data, type);
     data::runtime_values_data child_inputs;
     data::runtime_values_data child_outputs;
-    inputs.collect_data(child_inputs, type);
-    outputs.collect_data(child_outputs, type);
+    inputs.collect_data("", child_inputs, type);
+    outputs.collect_data("", child_outputs, type);
     data.add_child("In", std::move(child_inputs));
     data.add_child("Out", std::move(child_outputs));
 }
@@ -763,7 +756,7 @@ void method_data::process_execute_result (runtime_transaction_id_t id, rx_result
                     }
                     else
                     {
-                        temp.collect_data(rt_data, runtime_value_type::simple_runtime_value);
+                        temp.collect_data("", rt_data, runtime_value_type::simple_runtime_value);
                     }
                 }
                 task.second->process_result(std::move(result), std::move(rt_data));

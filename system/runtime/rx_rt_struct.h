@@ -249,7 +249,7 @@ class runtime_item
 
   public:
 
-      virtual void collect_data (data::runtime_values_data& data, runtime_value_type type) const = 0;
+      virtual rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const = 0;
 
       virtual void fill_data (const data::runtime_values_data& data) = 0;
 
@@ -290,10 +290,6 @@ class runtime_item
       virtual rx_result get_local_value (string_view_type path, rx_simple_value& val) const = 0;
 
       virtual bool is_this_yours (string_view_type path) const = 0;
-
-      virtual void read_struct (string_view_type path, read_struct_data data) const = 0;
-
-      virtual void write_struct (string_view_type path, write_struct_data data) = 0;
 
 	  template<typename T>
 	  T get_local_as(const string_type& path, const T& default_value)
@@ -343,7 +339,7 @@ class struct_data
       struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var, const struct_data& prototype);
 
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 
@@ -418,7 +414,7 @@ public:
       filter_data (runtime_item::smart_ptr&& rt, filter_runtime_ptr&& var, const filter_data& prototype);
 
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 
@@ -536,7 +532,7 @@ class variable_data
       variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var, const variable_data& prototype);
 
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 
@@ -576,6 +572,8 @@ class variable_data
 
       void object_state_changed (runtime_process_context* ctx);
 
+      void internal_object_state_changed (runtime_process_context* ctx, bool in_complex);
+
       rx_simple_value simple_get_value () const;
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
@@ -589,6 +587,8 @@ class variable_data
       bool prepare_value (rx_value& prepared_value, runtime_process_context* ctx);
 
       void update_prepared (rx_value prepared_value, runtime_process_context* ctx);
+
+      rx_result check_set_value (runtime_process_context* ctx, bool internal, bool test);
 
 
       rx::values::rx_value value;
@@ -674,7 +674,7 @@ public:
       mapper_data (runtime_item::smart_ptr&& rt, mapper_runtime_ptr&& var, const mapper_data& prototype);
 
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 
@@ -797,7 +797,7 @@ class source_data
       source_data (runtime_item::smart_ptr&& rt, source_runtime_ptr&& var, const source_data& prototype);
 
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 
@@ -1019,7 +1019,7 @@ public:
 
   public:
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 
@@ -1139,7 +1139,7 @@ public:
       event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var, event_data&& prototype);
 
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 
@@ -1240,7 +1240,7 @@ public:
 
   public:
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 
@@ -1346,7 +1346,7 @@ public:
 
   public:
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 

@@ -208,21 +208,21 @@ struct json_reader_data
 			{
 				values.add_value_static(name, temp.GetBool());
 			}
-			else if (temp.IsInt())
-			{
-				values.add_value_static(name, temp.GetInt());
-			}
 			else if (temp.IsUint())
 			{
 				values.add_value_static(name, temp.GetUint());
 			}
-			else if (temp.IsInt64())
+			else if (temp.IsInt())
 			{
-				values.add_value_static(name, temp.GetInt64());
+				values.add_value_static(name, temp.GetInt());
 			}
 			else if (temp.IsUint64())
 			{
 				values.add_value_static(name, temp.GetUint64());
+			}
+			else if (temp.IsInt64())
+			{
+				values.add_value_static(name, temp.GetInt64());
 			}
 			else if (temp.IsDouble())
 			{
@@ -237,8 +237,79 @@ struct json_reader_data
 				auto len = temp.Size();
 				if (len > 0)
 				{
-					auto& elem = temp[0];
-					if (elem.IsBool())
+					bool is_bool = true;
+					for (decltype(len) i = 0; i < len; i++)
+					{
+						if (!temp[i].IsBool())
+						{
+							is_bool = false;
+							break;
+						}
+					}
+					bool is_uint = true;
+					for (decltype(len) i = 0; i < len; i++)
+					{
+						if (!temp[i].IsUint())
+						{
+							is_uint = false;
+							break;
+						}
+					}
+					bool is_int = true;
+					for (decltype(len) i = 0; i < len; i++)
+					{
+						if (!temp[i].IsInt())
+						{
+							is_int = false;
+							break;
+						}
+					}
+					bool is_uint64 = true;
+					for (decltype(len) i = 0; i < len; i++)
+					{
+						if (!temp[i].IsUint64())
+						{
+							is_uint64 = false;
+							break;
+						}
+					}
+					bool is_int64 = true;
+					for (decltype(len) i = 0; i < len; i++)
+					{
+						if (!temp[i].IsInt64())
+						{
+							is_int64 = false;
+							break;
+						}
+					}
+					bool is_float = true;
+					for (decltype(len) i = 0; i < len; i++)
+					{
+						if (!temp[i].IsDouble())
+						{
+							is_float = false;
+							break;
+						}
+					}
+					bool is_string = true;
+					for (decltype(len) i = 0; i < len; i++)
+					{
+						if (!temp[i].IsString())
+						{
+							is_string = false;
+							break;
+						}
+					}
+					bool is_object = true;
+					for (decltype(len) i = 0; i < len; i++)
+					{
+						if (!temp[i].IsObject())
+						{
+							is_object = false;
+							break;
+						}
+					}
+					if (is_bool)
 					{
 						std::vector<bool> arr;
 						arr.reserve(len);
@@ -248,17 +319,7 @@ struct json_reader_data
 						}
 						values.add_value_static(name, arr);
 					}
-					else if (elem.IsInt())
-					{
-						std::vector<int> arr;
-						arr.reserve(len);
-						for (decltype(len) i = 0; i < len; i++)
-						{
-							arr.push_back(temp[i].GetInt());
-						}
-						values.add_value_static(name, arr);
-					}
-					else if (elem.IsUint())
+					else if (is_uint)
 					{
 						std::vector<unsigned int> arr;
 						arr.reserve(len);
@@ -268,17 +329,17 @@ struct json_reader_data
 						}
 						values.add_value_static(name, arr);
 					}
-					else if (elem.IsInt64())
+					else if (is_int)
 					{
-						std::vector<int64_t> arr;
+						std::vector<int> arr;
 						arr.reserve(len);
 						for (decltype(len) i = 0; i < len; i++)
 						{
-							arr.push_back(temp[i].GetInt64());
+							arr.push_back(temp[i].GetInt());
 						}
 						values.add_value_static(name, arr);
 					}
-					else if (elem.IsUint64())
+					else if (is_uint64)
 					{
 						std::vector<uint64_t> arr;
 						arr.reserve(len);
@@ -288,7 +349,17 @@ struct json_reader_data
 						}
 						values.add_value_static(name, arr);
 					}
-					else if (elem.IsDouble())
+					else if (is_int64)
+					{
+						std::vector<int64_t> arr;
+						arr.reserve(len);
+						for (decltype(len) i = 0; i < len; i++)
+						{
+							arr.push_back(temp[i].GetInt64());
+						}
+						values.add_value_static(name, arr);
+					}
+					else if (is_float)
 					{
 						std::vector<double> arr;
 						arr.reserve(len);
@@ -298,7 +369,7 @@ struct json_reader_data
 						}
 						values.add_value_static(name, arr);
 					}
-					else if (elem.IsString())
+					else if (is_string)
 					{
 						std::vector<string_type> arr;
 						arr.reserve(len);
@@ -308,7 +379,7 @@ struct json_reader_data
 						}
 						values.add_value_static(name, arr);
 					}
-					else if (elem.IsObject())
+					else if (is_object)
 					{
 						std::vector<data::runtime_values_data> arr;
 						arr.reserve(len);

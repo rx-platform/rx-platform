@@ -56,13 +56,7 @@ rx_result tags_holder::get_value (string_view_type path, rx_value& val, runtime_
 
 rx_result tags_holder::get_struct_value (string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const
 {
-	const structure::runtime_item* item = nullptr;
-	if(!path.empty())
-		item = item_->get_child_item(path);
-	if (!item)
-		return "Invalid path";
-	item->collect_data(data, type);
-	return true;
+	return item_->collect_data(path, data, type);
 }
 
 void tags_holder::fill_data (const data::runtime_values_data& data, runtime_process_context* ctx)
@@ -72,7 +66,7 @@ void tags_holder::fill_data (const data::runtime_values_data& data, runtime_proc
 
 void tags_holder::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-	item_->collect_data(data, type);
+	item_->collect_data("", data, type);
 }
 
 rx_result tags_holder::browse (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx)

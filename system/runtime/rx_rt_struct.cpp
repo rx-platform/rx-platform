@@ -100,12 +100,15 @@ variable_data::variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr
 
 
 
-void variable_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result variable_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	if (type != runtime_value_type::persistent_runtime_value
-		|| value_opt[runtime::structure::value_opt_persistent])
-		data.add_value(RX_DEFAULT_VARIABLE_NAME, value.to_simple());
-	item->collect_data(data, type);
+	if (path.empty())
+	{
+		if (type != runtime_value_type::persistent_runtime_value
+			|| value_opt[runtime::structure::value_opt_persistent])
+			data.add_value(RX_DEFAULT_VARIABLE_NAME, value.to_simple());
+	}
+	return item->collect_data(path, data, type);
 }
 
 void variable_data::fill_data (const data::runtime_values_data& data)
@@ -275,11 +278,13 @@ rx_result variable_data::internal_start_runtime (runtime::runtime_start_context&
 	auto result = item->start_runtime(ctx);
 	if (result)
 		result = variable_ptr->start_variable(ctx);
-	process_runtime(ctx.context);
 	if (!in_complex)
+	{
+		process_runtime(ctx.context);
 		ctx.variables.pop_variable();
+	}
 	ctx.structure.pop_item();
-	if (result)
+	if (result && !in_complex)
 	{
 		auto& mappers = item->get_mappers();
 		if (!mappers.empty())
@@ -411,8 +416,13 @@ void variable_data::variable_result_pending (runtime_process_context* ctx, rx_re
 
 void variable_data::object_state_changed (runtime_process_context* ctx)
 {
-	item->object_state_changed(ctx);
+	internal_object_state_changed(ctx, false);
 	ctx->variable_pending(this);
+}
+
+void variable_data::internal_object_state_changed (runtime_process_context* ctx, bool in_complex)
+{
+	item->object_state_changed(ctx);
 }
 
 rx_simple_value variable_data::simple_get_value () const
@@ -526,6 +536,26 @@ void variable_data::update_prepared (rx_value prepared_value, runtime_process_co
 	}
 }
 
+rx_result variable_data::check_set_value (runtime_process_context* ctx, bool internal, bool test)
+{
+	if (value_opt[runtime::structure::opt_is_constant])
+	{
+		return RX_NOT_SUPPORTED;
+	}
+	if (value_opt[runtime::structure::value_opt_readonly] && !internal)
+	{
+		return RX_ACCESS_DENIED;
+	}
+	if (!value_opt[runtime::structure::opt_state_ignorant])
+	{
+		if (ctx->get_mode().is_off())
+			return "Runtime if in Off state!";
+		if (test != ctx->get_mode().is_test())
+			return "Test mode mismatch!";
+	}
+	return true;
+}
+
 
 // Class rx_platform::runtime::structure::struct_data 
 
@@ -543,9 +573,9 @@ struct_data::struct_data (runtime_item::smart_ptr&& rt, struct_runtime_ptr&& var
 
 
 
-void struct_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result struct_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data, type);
+	return item->collect_data(path, data, type);
 }
 
 void struct_data::fill_data (const data::runtime_values_data& data)
@@ -652,9 +682,9 @@ mapper_data::mapper_data (runtime_item::smart_ptr&& rt, mapper_runtime_ptr&& var
 
 
 
-void mapper_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result mapper_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data, type);
+	return item->collect_data("", data, type);
 }
 
 void mapper_data::fill_data (const data::runtime_values_data& data)
@@ -1270,9 +1300,9 @@ source_data::source_data (runtime_item::smart_ptr&& rt, source_runtime_ptr&& var
 
 
 
-void source_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result source_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data, type);
+	return item->collect_data("", data, type);
 }
 
 void source_data::fill_data (const data::runtime_values_data& data)
@@ -1620,10 +1650,11 @@ event_data::event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var, e
 
 
 
-void event_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result event_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data, type);
-	arguments.collect_data(data, type);
+	if(path.empty())
+		arguments.collect_data("", data, type);
+	return item->collect_data(path, data, type);
 }
 
 void event_data::fill_data (const data::runtime_values_data& data)
@@ -1835,9 +1866,9 @@ filter_data::filter_data (runtime_item::smart_ptr&& rt, filter_runtime_ptr&& var
 
 
 
-void filter_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result filter_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	item->collect_data(data, type);
+	return item->collect_data("", data, type);
 }
 
 void filter_data::fill_data (const data::runtime_values_data& data)
@@ -2222,12 +2253,14 @@ runtime_transaction_id_t mapper_write_task::get_id () const
 // Class rx_platform::runtime::structure::block_data 
 
 
-void block_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result block_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	for (const auto& one : items)
+	if (path.empty())
 	{
-		switch (one.index & rt_type_mask)
+		for (const auto& one : items)
 		{
+			switch (one.index & rt_type_mask)
+			{
 			case rt_const_index_type:
 				// simple value
 				{
@@ -2254,7 +2287,7 @@ void block_data::collect_data (data::runtime_values_data& data, runtime_value_ty
 						for (int i = 0; i < this_val.get_size(); i++)
 						{
 							data::runtime_values_data child_data;
-							this_val.get_item(i)->collect_data(child_data, type);
+							this_val.get_item(i)->collect_data("", child_data, type);
 							if (!child_data.empty())
 								childs.push_back(std::move(child_data));
 						}
@@ -2263,7 +2296,7 @@ void block_data::collect_data (data::runtime_values_data& data, runtime_value_ty
 					else
 					{
 						data::runtime_values_data child_data;
-						this_val.get_item()->collect_data(child_data, type);
+						this_val.get_item()->collect_data("", child_data, type);
 						if (!child_data.empty())
 							data.add_child(one.name, std::move(child_data));
 					}
@@ -2271,7 +2304,15 @@ void block_data::collect_data (data::runtime_values_data& data, runtime_value_ty
 				break;
 			default:
 				RX_ASSERT(false);
+				return RX_INTERNAL_ERROR;
+			}
 		}
+		return true;
+	}
+	else
+	{
+		RX_ASSERT(false);
+		return RX_NOT_IMPLEMENTED;
 	}
 }
 
@@ -2465,7 +2506,7 @@ rx_result block_data::get_value (string_view_type path, rx_value& val, runtime_p
 		serialization::json_writer writer;
 		writer.write_header(STREAMING_TYPE_MESSAGE, 0);
 		data::runtime_values_data data;
-		collect_data(data, runtime_value_type::simple_runtime_value);
+		collect_data("", data, runtime_value_type::simple_runtime_value);
 		if (!writer.write_init_values(nullptr, data))
 		{
 			result = "Error writing values to the stream";
@@ -3557,16 +3598,24 @@ execute_task::~execute_task()
 string_type value_block_data::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
 
-void value_block_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result value_block_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	if (type != runtime_value_type::persistent_runtime_value)
+	if (path.empty())
 	{
-		block.collect_data(data, type);
+		if (type != runtime_value_type::persistent_runtime_value)
+		{
+			block.collect_data("", data, type);
+		}
+		else
+		{
+			if (!struct_value.value_opt[opt_is_constant] && struct_value.value_opt[runtime::structure::value_opt_persistent])
+				block.collect_data(path, data, type);
+		}
+		return true;
 	}
 	else
 	{
-		if (!struct_value.value_opt[opt_is_constant] && struct_value.value_opt[runtime::structure::value_opt_persistent])
-			block.collect_data(data, type);
+		return block.collect_data(path, data, type);
 	}
 }
 
@@ -3738,11 +3787,22 @@ rx_result value_block_data::do_write_callback (rx_simple_value& val, data::runti
 string_type variable_block_data::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
 
-void variable_block_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+rx_result variable_block_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	block.collect_data(data, type);
-	if (type != runtime_value_type::simple_runtime_value)
-		variable.collect_data(data, type);
+	if (path.empty())
+	{
+		block.collect_data(path, data, type);
+		if (type != runtime_value_type::simple_runtime_value)
+			variable.collect_data(path, data, type);
+		return true;
+	}
+	else
+	{
+		if (block.is_this_yours(path))
+			return block.collect_data(path, data, type);
+		else
+			return variable.collect_data(path, data, type);
+	}
 }
 
 void variable_block_data::fill_data (const data::runtime_values_data& data)
@@ -3823,6 +3883,9 @@ rx_result variable_block_data::start_runtime (runtime::runtime_start_context& ct
 		return result;
 
 	ctx.variables.pop_variable();
+
+	if (result)
+		process_runtime(ctx.context);
 
 	return true;
 }
@@ -3936,7 +3999,8 @@ rx_result variable_block_data::set_value (rx_simple_value&& val)
 void variable_block_data::object_state_changed (runtime_process_context* ctx)
 {
 	block.object_state_changed(ctx);
-	variable.object_state_changed(ctx);
+	variable.internal_object_state_changed(ctx, true);
+	ctx->variable_pending(this);
 }
 
 variable_block_data_references* variable_block_data::get_tag_references ()
@@ -3948,14 +4012,30 @@ variable_block_data_references* variable_block_data::get_tag_references ()
 
 rx_result variable_block_data::do_write_callback (rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
 {
-	auto ret = block.fill_value(val);
+	rx_result ret = variable.check_set_value(ctx, false, ctx->get_mode().is_test());
 	if (ret)
 	{
-		rx_simple_value temp_val;
-		ret = block.collect_value(temp_val, runtime_value_type::simple_runtime_value);
-		if (ret)
+		if (data)
 		{
-			val = temp_val;
+			block_data temp = block;
+			temp.fill_data(*data);
+			rx_simple_value temp_val;
+			ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+			if (ret)
+			{
+				val = std::move(temp_val);
+			}
+		}
+		else
+		{
+			block_data temp = block;
+			temp.fill_value(val);
+			rx_simple_value temp_val;
+			ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+			if (ret)
+			{
+				val = std::move(temp_val);
+			}
 		}
 	}
 	return ret;
@@ -4166,6 +4246,4 @@ void mapper_execute_task::process_result (rx_result&& result, data::runtime_valu
 } // namespace structure
 } // namespace runtime
 } // namespace rx_platform
-
-
 

@@ -74,7 +74,7 @@ class extern_object_runtime : public object_runtime
 
       rx_result stop_runtime (runtime_stop_context& ctx);
 
-      void fill_code_info (std::ostream& info, const string_type& name);
+      void fill_code_info (std::ostream& info, const string_type& name) const;
 
 
   protected:

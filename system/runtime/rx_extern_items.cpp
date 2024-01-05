@@ -360,7 +360,7 @@ rx_result extern_object_runtime::stop_runtime (runtime_stop_context& ctx)
     return impl_->def->stop_object(impl_->anchor.target);
 }
 
-void extern_object_runtime::fill_code_info (std::ostream& info, const string_type& name)
+void extern_object_runtime::fill_code_info (std::ostream& info, const string_type& name) const
 {
     string_value_struct data;
     impl_->def->code_info(impl_->anchor.target, name.c_str(), &data);

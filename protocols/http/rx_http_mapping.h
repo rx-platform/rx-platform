@@ -54,6 +54,7 @@ using namespace rx_platform::http;
 namespace protocols {
 
 namespace rx_http {
+class rx_http_port;
 
 
 
@@ -65,7 +66,7 @@ class rx_http_endpoint : public rx::pointers::reference_object
     DECLARE_REFERENCE_PTR(rx_http_endpoint);
 
   public:
-      rx_http_endpoint (runtime::items::port_runtime* port);
+      rx_http_endpoint (rx_reference<rx_http_port> port);
 
       ~rx_http_endpoint();
 
@@ -88,7 +89,7 @@ class rx_http_endpoint : public rx::pointers::reference_object
       }
 
 
-      runtime::items::port_runtime* get_port ()
+      rx_reference<rx_http_port> get_port ()
       {
         return port_;
       }
@@ -103,7 +104,9 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
       static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
-      rx_protocol_result_t create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, phr_header* headers, size_t num_headers, std::byte* content_ptr, size_t content_max_size);
+      rx_protocol_result_t create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, size_t num_headers, std::byte* content_ptr, size_t content_max_size);
+
+      void send_current_request ();
 
 
 
@@ -114,7 +117,15 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
       rx_thread_handle_t executer_;
 
-      runtime::items::port_runtime* port_;
+      rx_reference<rx_http_port> port_;
+
+      locks::slim_lock port_lock_;
+
+      size_t content_left_;
+
+      http_request prepared_request_;
+
+      phr_header headers_buffer_[0x80];
 
 
 };
@@ -125,7 +136,7 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_http_endpoint  > rx_http_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< protocols::rx_http::rx_http_endpoint  > rx_http_port_base;
 
 
 

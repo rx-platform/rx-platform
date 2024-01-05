@@ -1007,7 +1007,14 @@ RX_COMMON_API int rx_compare_values(const struct typed_value_type* val, const st
 						}
 						else if (val->value.array_value.values[i].bytes_value.size == right->value.array_value.values[i].bytes_value.size)
 						{
-							int temp_ret = memcmp(val->value.array_value.values[i].bytes_value.value, right->value.array_value.values[i].bytes_value.value, val->value.bytes_value.size);
+
+							size_t right_count = 0;
+							const uint8_t* right_ptr = rx_c_ptr(&right->value.array_value.values[i].bytes_value, &right_count);
+							size_t left_count = 0;
+							const uint8_t* left_ptr = rx_c_ptr(&val->value.array_value.values[i].bytes_value, &left_count);
+							RX_ASSERT(right_count == left_count);
+
+							int temp_ret = memcmp(left_ptr, right_ptr, min(right_count, left_count));
 							if (temp_ret != 0)
 								return temp_ret;
 						}
@@ -1154,7 +1161,13 @@ RX_COMMON_API int rx_compare_values(const struct typed_value_type* val, const st
 			}
 			else if (val->value.bytes_value.size == right->value.bytes_value.size)
 			{
-				return memcmp(val->value.bytes_value.value, right->value.bytes_value.value, val->value.bytes_value.size);
+				size_t right_count = 0;
+				const uint8_t* right_ptr = rx_c_ptr(&right->value.bytes_value, &right_count);
+				size_t left_count = 0;
+				const uint8_t* left_ptr = rx_c_ptr(&val->value.bytes_value, &left_count);
+				RX_ASSERT(right_count == left_count);
+
+				return memcmp(left_ptr, right_ptr, min(right_count, left_count));
 			}
 			else
 			{
@@ -1199,12 +1212,16 @@ RX_COMMON_API int rx_compare_values(const struct typed_value_type* val, const st
 			else
 				return 1;
 		}
+		else if (val->value_type == RX_NODE_ID_TYPE)
+		{
+			return rx_compare_node_ids(val->value.node_id_value, right->value.node_id_value);
+		}
 		else if (val->value_type == RX_UUID_TYPE)
 		{
 #ifndef RX_VALUE_SIZE_16
-			return memcmp(val->value.uuid_value, right->value.uuid_value, sizeof(rx_uuid_t)) == 0;
+			return memcmp(val->value.uuid_value, right->value.uuid_value, sizeof(rx_uuid_t));
 #else
-			return memcmp(&val->value.uuid_value, &right->value.uuid_value, sizeof(rx_uuid_t)) == 0;
+			return memcmp(&val->value.uuid_value, &right->value.uuid_value, sizeof(rx_uuid_t));
 #endif
 		}
 	}

@@ -114,6 +114,8 @@ std::vector<byte_string> extract_value(const typed_value_type& from, const std::
 std::vector<rx_time_struct> extract_value(const typed_value_type& from, const std::vector<rx_time_struct>& default_value);
 std::vector<rx_time> extract_value(const typed_value_type& from, const std::vector<rx_time>& default_value);
 std::vector<rx_uuid_t> extract_value(const typed_value_type& from, const std::vector<rx_uuid_t>& default_value);
+std::vector<rx_uuid> extract_value(const typed_value_type& from, const std::vector<rx_uuid>& default_value);
+std::vector<rx_node_id> extract_value(const typed_value_type& from, const std::vector<rx_node_id>& default_value);
 
 bool assign_value(typed_value_type& from, bool value);;
 bool assign_value(typed_value_type& from, int8_t value);
@@ -146,6 +148,12 @@ bool assign_value(typed_value_type& from, const std::vector<int32_t>& value);
 bool assign_value(typed_value_type& from, const std::vector<int64_t>& value);
 bool assign_value(typed_value_type& from, const std::vector<float>& value);
 bool assign_value(typed_value_type& from, const std::vector<double>& value);
+bool assign_value(typed_value_type& from, const std::vector<rx_time_struct>& value);
+bool assign_value(typed_value_type& from, const std::vector<rx_time>& value);
+bool assign_value(typed_value_type& from, const std::vector<rx_uuid_t>& value);
+bool assign_value(typed_value_type& from, const std::vector<rx_uuid>& value);
+bool assign_value(typed_value_type& from, const std::vector<byte_string>& value);
+bool assign_value(typed_value_type& from, const std::vector<rx_node_id>& value);
 bool assign_value(typed_value_type& from, const string_array& value);
 bool assign_value(typed_value_type& from, const std::vector<std::vector<rx_simple_value> >& value);
 

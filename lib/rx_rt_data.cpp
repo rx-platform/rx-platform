@@ -389,6 +389,54 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 					return std::get<array_value_type>(val_it->second)[idx];
 
 			}
+			else
+			{
+				auto child_it= children.find(string_type(basic_path));
+				if (child_it != children.end())
+				{
+					if (array_idx == -1)
+					{
+						if (std::holds_alternative<child_type>(child_it->second))
+						{
+							auto& child = std::get<child_type>(child_it->second);
+							rx_simple_value temp;
+							if (child.get_complex_value(temp))
+								return temp;
+						}
+						else if (std::holds_alternative<array_child_type>(child_it->second))
+						{
+							auto& child = std::get<array_child_type>(child_it->second);
+							typed_value_type temp_val;
+							if (child.empty())
+							{
+								rx_init_complex_array_value(&temp_val, nullptr, 0);
+							}
+							else
+							{
+								std::vector<complex_value_struct> data;
+								data.reserve(child.size());
+								for (const auto& one_child : child)
+								{
+									rx_simple_value temp;
+									if (!one_child.get_complex_value(temp))
+										return rx_simple_value();
+									data.push_back(temp.get_complex());
+								}
+								rx_init_complex_array_value(&temp_val, &data[0], data.size());
+							}
+							return rx_simple_value(temp_val);
+						}
+					}
+					else if(std::holds_alternative<array_child_type>(child_it->second)
+						&& (size_t)array_idx < std::get<array_child_type>(child_it->second).size())
+					{
+						auto& child = std::get<array_child_type>(child_it->second);
+						rx_simple_value temp;
+						if (child[array_idx].get_complex_value(temp))
+							return temp;
+					}
+				}
+			}
 		}
 	}
 	else
@@ -518,6 +566,35 @@ string_view_type runtime_values_data::extract_index (string_view_type name, int&
 		ret = name;
 	}
 	return ret;
+}
+
+bool runtime_values_data::get_complex_value (rx_simple_value& val) const
+{
+	if (values.size() == 2 && children.size() == 0)
+	{
+		auto it_real = values.find("Real");
+		if (it_real != values.end() 
+			&& std::holds_alternative<value_type>(it_real->second)
+			&& std::get<value_type>(it_real->second).is_numeric())
+		{
+			auto it_imag = values.find("Imag");
+			if (it_imag != values.end() 
+				&& std::holds_alternative<value_type>(it_imag->second)
+				&& std::get<value_type>(it_imag->second).is_numeric())
+			{
+				double rval = std::get<value_type>(it_real->second).get_float();
+				double ival = std::get<value_type>(it_imag->second).get_float();
+				complex_value_struct str{ rval, ival };
+				typed_value_type temp;
+				if (RX_OK == rx_init_complex_value(&temp, str))
+				{
+					val = rx_simple_value(temp);
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 

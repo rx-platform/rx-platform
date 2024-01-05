@@ -222,6 +222,10 @@ bool extern_mapper_impl<portT>::internal_port_connected (const platform_item_ptr
             map_current_value();
             return true;
         }
+        else
+        {
+            RX_ASSERT(false);
+        }
     }
     return false;
 }

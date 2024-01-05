@@ -101,7 +101,7 @@ public:
       ~runtime_data();
 
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       void fill_data (const data::runtime_values_data& data);
 
@@ -142,10 +142,6 @@ public:
       rx_result get_local_value (string_view_type path, rx_simple_value& val) const;
 
       bool is_this_yours (string_view_type path) const;
-
-      void read_struct (string_view_type path, read_struct_data data) const;
-
-      void write_struct (string_view_type path, write_struct_data data);
 
 
       variables_type variables;

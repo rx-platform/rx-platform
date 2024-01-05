@@ -286,19 +286,11 @@ rx_result displays_holder::get_struct_value (string_view_type item, string_view_
     {
         if (one.name == item)
         {
-            item_ptr = one.item->get_child_item(path);
-            break;
+            one.item->collect_data(path, data, type);
+            return true;
         }
     }
-    if (item_ptr)
-    {
-        item_ptr->collect_data(data, type);
-        return true;
-    }
-    else
-    {
-        return "Invalid path";
-    }
+    return "Invalid path";
 }
 
 void displays_holder::set_displays (std::vector<display_data> data)
@@ -324,7 +316,7 @@ void display_data::fill_data (const data::runtime_values_data& data)
 
 void display_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-    item->collect_data(data, type);
+    item->collect_data("", data, type);
 }
 
 rx_result display_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx)

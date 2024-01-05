@@ -1849,12 +1849,14 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					complex_value_struct* temp = what->complex_value;
-					int ret = complex_to_str(temp, &what->string_value);
-					if (ret)
+					string_value_struct temp_str;
+					int ret = complex_to_str(temp, &temp_str);
+					if (ret == RX_OK)
+					{
 						free(what->complex_value);
-					else
-						what->complex_value = temp;// leave unchanged
-					return RX_OK;
+						what->string_value = temp_str;
+					}
+					return ret;
 				}
 			case RX_UUID_TYPE:
 				{
@@ -1926,8 +1928,17 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 				return RX_ERROR;
 			case RX_STRING_TYPE:
 				{
-					// TODO node id to string
-					RX_ASSERT(0);
+					const char* str = rx_c_str(&what->string_value);
+					rx_node_id_struct temp;
+					auto ret = rx_node_id_from_string(&temp, str);
+					if (ret == RX_OK)
+					{
+						rx_destory_string_value_struct(&what->string_value);
+						what->node_id_value = malloc(sizeof(rx_node_id_struct));
+						*what->node_id_value = temp;
+						rx_move_node_id(what->node_id_value, &temp);
+						return RX_OK;
+					}
 					return RX_ERROR;
 				}
 			case RX_BYTES_TYPE:

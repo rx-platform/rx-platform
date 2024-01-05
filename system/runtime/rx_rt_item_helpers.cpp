@@ -41,136 +41,254 @@ namespace structure {
 template class array_wrapper<block_data>;
 template class array_wrapper<const_value_data>;
 
-void collect_data_const(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<const_value_data>& item)
+rx_result collect_data_const(const string_type& name, int array_idx, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<const_value_data>& item)
 {
 	if (type != runtime_value_type::persistent_runtime_value)
 	{
 		if (!item.is_array())
 		{
+			if (array_idx >= 0)
+				return RX_INVALID_PATH;
 			data.add_value(name, item.get_item()->value);
 		}
 		else
 		{
-			std::vector<rx_simple_value> temp_vals;
-			temp_vals.reserve(item.get_size());
-			for (int i = 0; i < item.get_size(); i++)
+			if (array_idx < 0)
 			{
-				temp_vals.push_back(item.get_item(i)->value);
+				std::vector<rx_simple_value> temp_vals;
+				temp_vals.reserve(item.get_size());
+				for (int i = 0; i < item.get_size(); i++)
+				{
+					temp_vals.push_back(item.get_item(i)->value);
+				}
+				data.add_value(name, std::move(temp_vals));
 			}
-			data.add_value(name, std::move(temp_vals));
+			else
+			{
+
+				if (array_idx > (int)item.get_size())
+					return RX_INVALID_PATH;
+
+				data.add_value(name, item.get_item(array_idx)->value);
+			}
 		}
 	}
+	return true;
 }
-void collect_data_value(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper <value_data>& item)
+rx_result collect_data_value(const string_type& name, int array_idx, data::runtime_values_data& data, runtime_value_type type, const array_wrapper <value_data>& item)
 {
 	if (!item.is_array())
 	{
+		if (array_idx >= 0)
+			return RX_INVALID_PATH;
+
 		if (type != runtime_value_type::persistent_runtime_value
 			|| item.get_item()->value_opt[runtime::structure::value_opt_persistent])
 			data.add_value(name, item.get_item()->value.to_simple());
 	}
 	else
 	{
-		std::vector<rx_simple_value> temp_vals;
-		temp_vals.reserve(item.get_size());
-		for (int i = 0; i < item.get_size(); i++)
-		{
-			if (type != runtime_value_type::persistent_runtime_value
-				|| item.get_item(i)->value_opt[runtime::structure::value_opt_persistent])
-				temp_vals.push_back(item.get_item(i)->value.to_simple());
-		}
-		data.add_value(name, std::move(temp_vals));
-	}
-}
-void collect_data_variable(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<variable_data>& item)
-{
-	if (!item.is_array())
-	{
-		if (type == runtime_value_type::simple_runtime_value)
-		{
-			data.add_value(name, item.get_item()->value.to_simple());
-		}
-		else
-		{
-			data::runtime_values_data child_data;
-			item.get_item()->collect_data(child_data, type);
-			if (!child_data.empty())
-				data.add_child(name, std::move(child_data));
-		}
-	}
-	else
-	{
-		if (type == runtime_value_type::simple_runtime_value)
+		if (array_idx < 0)
 		{
 			std::vector<rx_simple_value> temp_vals;
 			temp_vals.reserve(item.get_size());
 			for (int i = 0; i < item.get_size(); i++)
 			{
-				temp_vals.push_back(item.get_item(i)->value.to_simple());
+				if (type != runtime_value_type::persistent_runtime_value
+					|| item.get_item(i)->value_opt[runtime::structure::value_opt_persistent])
+					temp_vals.push_back(item.get_item(i)->value.to_simple());
 			}
 			data.add_value(name, std::move(temp_vals));
 		}
 		else
 		{
-			std::vector<data::runtime_values_data> childs;
-			childs.reserve(item.get_size());
-			for (int i = 0; i < item.get_size(); i++)
-			{
-				data::runtime_values_data child_data;
-				item.get_item(i)->collect_data(child_data, type);
-				if (!child_data.empty())
-					childs.push_back(std::move(child_data));
-			}
-			if (!childs.empty())
-				data.add_array_child(name, std::move(childs));
+
+			if (array_idx >= (int)item.get_size())
+				return RX_OUT_OF_BOUNDS;
+
+			data.add_value(name, item.get_item(array_idx)->value.to_simple());
 		}
 	}
+	return true;
 }
-template<typename T>
-void collect_data_arrayed(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<T>& item)
+rx_result collect_data_variable(string_view_type name, int array_idx, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<variable_data>& item)
 {
-	if (!item.is_array())
+	if (bellow.empty())
 	{
-		data::runtime_values_data child_data;
-		item.get_item()->collect_data(child_data, type);
-		if (!child_data.empty())
-			data.add_child(name, std::move(child_data));
+		if (!item.is_array())
+		{
+			if (array_idx >= 0)
+				return RX_INVALID_PATH;
+
+			if (type == runtime_value_type::simple_runtime_value)
+			{
+				data.add_value(string_type(name), item.get_item()->value.to_simple());
+			}
+			else
+			{
+				data::runtime_values_data child_data;
+				item.get_item()->collect_data("", child_data, type);
+				if (!child_data.empty())
+					data.add_child(string_type(name), std::move(child_data));
+			}
+		}
+		else
+		{
+			if (array_idx < 0)
+			{
+				if (type == runtime_value_type::simple_runtime_value)
+				{
+					std::vector<rx_simple_value> temp_vals;
+					temp_vals.reserve(item.get_size());
+					for (int i = 0; i < item.get_size(); i++)
+					{
+						temp_vals.push_back(item.get_item(i)->value.to_simple());
+					}
+					data.add_value(string_type(name), std::move(temp_vals));
+				}
+				else
+				{
+					std::vector<data::runtime_values_data> childs;
+					childs.reserve(item.get_size());
+					for (int i = 0; i < item.get_size(); i++)
+					{
+						data::runtime_values_data child_data;
+						item.get_item(i)->collect_data("", child_data, type);
+						if (!child_data.empty())
+							childs.push_back(std::move(child_data));
+					}
+					if (!childs.empty())
+						data.add_array_child(string_type(name), std::move(childs));
+				}
+			}
+			else
+			{
+				if (array_idx >= (int)item.get_size())
+					return RX_OUT_OF_BOUNDS;
+
+				if (type == runtime_value_type::simple_runtime_value)
+				{
+					data.add_value(string_type(name), item.get_item(array_idx)->value.to_simple());
+				}
+				else
+				{
+					data::runtime_values_data child_data;
+					item.get_item(array_idx)->collect_data("", child_data, type);
+					if (!child_data.empty())
+						data.add_child(string_type(name), std::move(child_data));
+				}
+			}
+		}
+		return true;
 	}
 	else
 	{
-		std::vector<data::runtime_values_data> childs;
-		childs.reserve(item.get_size());
-		for (int i = 0; i < item.get_size(); i++)
+		if (!item.is_array())
 		{
-			data::runtime_values_data child_data;
-			item.get_item(i)->collect_data(child_data, type);
-			if (!child_data.empty())
-				childs.push_back(std::move(child_data));
+			if (array_idx >= 0)
+				return RX_INVALID_PATH;
+
+			return item.get_item()->collect_data(bellow, data, type);
 		}
-		if (!childs.empty())
-			data.add_array_child(name, std::move(childs));
+		else
+		{
+			if (array_idx >= (int)item.get_size())
+				return RX_OUT_OF_BOUNDS;
+
+			return item.get_item(array_idx)->collect_data(bellow, data, type);
+		}
 	}
 }
-template void collect_data_arrayed<struct_data>(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<struct_data>& item);
-template void collect_data_arrayed<value_block_data>(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<value_block_data>& item);
-template void collect_data_arrayed<variable_block_data>(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<variable_block_data>& item);
+template<typename T>
+rx_result collect_data_arrayed(string_view_type name, int array_idx, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<T>& item)
+{
+	if (bellow.empty())
+	{
+		if (!item.is_array())
+		{
+			if (array_idx >= 0)
+				return RX_INVALID_PATH;
+
+			data::runtime_values_data child_data;
+			item.get_item()->collect_data("", child_data, type);
+			if (!child_data.empty())
+				data.add_child(string_type(name), std::move(child_data));
+		}
+		else
+		{
+			if (array_idx < 0)
+			{
+				std::vector<data::runtime_values_data> childs;
+				childs.reserve(item.get_size());
+				for (int i = 0; i < item.get_size(); i++)
+				{
+					data::runtime_values_data child_data;
+					item.get_item(i)->collect_data("", child_data, type);
+					if (!child_data.empty())
+						childs.push_back(std::move(child_data));
+				}
+				if (!childs.empty())
+					data.add_array_child(string_type(name), std::move(childs));
+			}
+			else
+			{
+				if (array_idx >= (int)item.get_size())
+					return RX_OUT_OF_BOUNDS;
+
+				data::runtime_values_data child_data;
+				item.get_item(array_idx)->collect_data("", child_data, type);
+				if (!child_data.empty())
+					data.add_child(string_type(name), std::move(child_data));
+			}
+		}
+		return true;
+	}
+	else
+	{
+		if (!item.is_array())
+		{
+			if (array_idx >= 0)
+				return RX_INVALID_PATH;
+
+			return item.get_item()->collect_data(bellow, data, type);
+		}
+		else
+		{
+			if (array_idx >= (int)item.get_size())
+				return RX_OUT_OF_BOUNDS;
+
+			return item.get_item(array_idx)->collect_data(bellow, data, type);
+		}
+	}
+}
+template rx_result collect_data_arrayed<struct_data>(string_view_type name, int array_idx, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<struct_data>& item);
+template rx_result collect_data_arrayed<value_block_data>(string_view_type name, int array_idx, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<value_block_data>& item);
+template rx_result collect_data_arrayed<variable_block_data>(string_view_type name, int array_idx, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const array_wrapper<variable_block_data>& item);
 
 template<typename T>
-void collect_data_plain(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const T& item)
+rx_result collect_data_plain(string_view_type name, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const T& item)
 {
-	if (type == runtime_value_type::persistent_runtime_value ||
-		(type & T::runtime_type_ref) == T::runtime_type_ref)
+	if (bellow.empty())
 	{
-		data::runtime_values_data child_data;
-		item.collect_data(child_data, type);
-		if (!child_data.empty())
-			data.add_child(name, std::move(child_data));
+		if (type == runtime_value_type::persistent_runtime_value ||
+			(type & T::runtime_type_ref) == T::runtime_type_ref)
+		{
+			data::runtime_values_data child_data;
+			item.collect_data("", child_data, type);
+			if (!child_data.empty())
+				data.add_child(string_type(name), std::move(child_data));
+		}
+		return true;
+	}
+	else
+	{
+		return item.collect_data(bellow, data, type);
 	}
 }
-template void collect_data_plain<source_data>(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const source_data& item);
-template void collect_data_plain<mapper_data>(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const mapper_data& item);
-template void collect_data_plain<filter_data>(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const filter_data& item);
-template void collect_data_plain<event_data>(const string_type& name, data::runtime_values_data& data, runtime_value_type type, const event_data& item);
+template rx_result collect_data_plain<source_data>(string_view_type name, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const source_data& item);
+template rx_result collect_data_plain<mapper_data>(string_view_type name, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const mapper_data& item);
+template rx_result collect_data_plain<filter_data>(string_view_type name, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const filter_data& item);
+template rx_result collect_data_plain<event_data>(string_view_type name, string_view_type bellow, data::runtime_values_data& data, runtime_value_type type, const event_data& item);
 
 
 void fill_data_const(const string_type& name, const data::runtime_values_data& data, array_wrapper<const_value_data>& item)

@@ -318,6 +318,8 @@ rx_result const_value_def::deserialize_definition (base_meta_reader& stream)
 					return stream.get_error();
 				values_.push_back(std::move(temp));
 			}
+			if (values_.size() != (size_t)array_size_)
+				return false;
 		}
 	}
     else
@@ -516,6 +518,9 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream) cons
 			}
 			if (!stream.end_array())
 				return stream.get_error();
+
+			if (values_.size() != (size_t)array_size_)
+				return false;
 		}
 	}
 	else

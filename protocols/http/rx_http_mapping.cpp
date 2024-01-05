@@ -39,12 +39,47 @@
 namespace protocols {
 
 namespace rx_http {
+string_type rx_url_decode(const char* path, size_t path_len)
+{
+	string_type path_conv;
+	path_conv.reserve(path_len);
+	char conv_buffer[0x3];
+	conv_buffer[2] = '\0';
+	size_t idx = 0;
+	while (idx < path_len)
+	{
+		if (path[idx] != '%')
+		{
+			path_conv.push_back(path[idx]);
+		}
+		else
+		{
+			idx++;
+			if (idx < path_len)
+			{
+				conv_buffer[0] = path[idx];
+				idx++;
+				if (idx < path_len)
+				{
+					conv_buffer[1] = path[idx];
+					char* end = nullptr;
+					char enc = (char)strtol(conv_buffer, &end, 16);
+					if (enc)
+						path_conv.push_back(enc);
+				}
+			}
+		}
+		idx++;
+	}
+	return path_conv;
+}
 
 // Class protocols::rx_http::rx_http_endpoint 
 
-rx_http_endpoint::rx_http_endpoint (runtime::items::port_runtime* port)
+rx_http_endpoint::rx_http_endpoint (rx_reference<rx_http_port> port)
       : executer_(-1),
-        port_(port)
+        port_(port),
+        content_left_(0)
 {
 	HTTP_LOG_DEBUG("rx_http_endpoint", 200, "HTTP communication server endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
@@ -67,83 +102,84 @@ rx_protocol_result_t rx_http_endpoint::received_function (rx_protocol_stack_endp
 
 	const char* method, * path;
 	int pret, minor_version;
-	struct phr_header headers[100];
 	size_t buflen = 0, prevbuflen = 0, method_len, path_len, num_headers;
+	const char* buffer_to_read = nullptr;
 	rx_protocol_result_t result;
 
-	prevbuflen = self->receive_buffer_.size;
-	result = rx_push_to_packet(&self->receive_buffer_, packet.buffer->buffer_ptr, packet.buffer->size);
-	if (result == RX_PROTOCOL_OK)
+	if (self->content_left_ > 0)
 	{
-		buflen = self->receive_buffer_.size;
-		num_headers = sizeof(headers) / sizeof(headers[0]);
-		pret = phr_parse_request((const char*)(self->receive_buffer_.buffer_ptr), buflen, &method, &method_len, &path, &path_len,
-			&minor_version, headers, &num_headers, prevbuflen);
-		if (pret > 0)
+		if (packet.buffer->size < self->content_left_)
 		{
-			size_t parsed = pret;
-			std::byte* content_ptr = (std::byte*)self->receive_buffer_.buffer_ptr + parsed;
-			size_t content_max = self->receive_buffer_.size - parsed;
-			string_type path_conv;
-			path_conv.reserve(path_len);			
-			char conv_buffer[0x3];
-			conv_buffer[2] = '\0';
-			size_t idx = 0;
-			while (idx < path_len)
-			{
-				if (path[idx] != '%')
-				{
-					path_conv.push_back(path[idx]);
-				}
-				else
-				{
-					idx++;
-					conv_buffer[0] = path[idx];
-					idx++;
-					conv_buffer[1] = path[idx];
-					char* end = nullptr;
-					char enc = (char)strtol(conv_buffer, &end, 16);
-					if(enc)
-						path_conv.push_back(enc);
-				}
-				idx++;
-			}
-			result = self->create_and_forward_request(method, method_len, path_conv.c_str(), path_conv.size(), headers, num_headers, content_ptr, content_max);
-			
-			rx_reinit_packet_buffer(&self->receive_buffer_);
+			// we need to read even more data!!!!
+			self->prepared_request_.content.insert(self->prepared_request_.content.end(), (const std::byte*)packet.buffer->buffer_ptr, (const std::byte*)packet.buffer->buffer_ptr + packet.buffer->size);
+			self->content_left_ -= packet.buffer->size;
+
+			return RX_PROTOCOL_OK;
 		}
-		else if (pret == -1)
-			result = RX_PROTOCOL_PARSING_ERROR;
+		else if (packet.buffer->size == self->content_left_)
+		{
+			// we readed everything
+			self->prepared_request_.content.insert(self->prepared_request_.content.end(), (const std::byte*)packet.buffer->buffer_ptr, (const std::byte*)packet.buffer->buffer_ptr + self->content_left_);
+			self->content_left_ = 0;
+			self->send_current_request();
+
+			rx_reinit_packet_buffer(&self->receive_buffer_);
+
+			return RX_PROTOCOL_OK;
+		}
 		else
-			result = RX_PROTOCOL_COLLECT_ERROR;
-		/* request is incomplete, continue the loop */
-		//RX_ASSERT(pret == -2);
-	//	if (buflen == sizeof(buf))
-	//		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+		{
+			RX_ASSERT(packet.buffer->size > self->content_left_);
+			// we readed everything and even more
+			self->prepared_request_.content.insert(self->prepared_request_.content.end(), (const std::byte*)packet.buffer->buffer_ptr, (const std::byte*)packet.buffer->buffer_ptr + self->content_left_);
+			self->content_left_ = 0;
+			self->send_current_request();
+
+			rx_reinit_packet_buffer(&self->receive_buffer_);
+
+			result = rx_push_to_packet(&self->receive_buffer_
+				, packet.buffer->buffer_ptr + self->content_left_
+				, packet.buffer->size - self->content_left_);
+			if (result != RX_PROTOCOL_OK)
+				return result;
+
+			buflen = self->receive_buffer_.size;
+			buffer_to_read = (const char*)(self->receive_buffer_.buffer_ptr);
+
+			return RX_PROTOCOL_OK;
+		}
 	}
-	/*if (result == RX_PROTOCOL_OK)
+	else
 	{
-		char* msg = "Jeee stiglo mi je";
+		prevbuflen = self->receive_buffer_.size;
 
-		std::ostringstream ss;
-		ss << "HTTP/1.1 200 OK\r\n";
-		ss << "Connection: Keep-Alive\r\n";
-		ss << "Server: perica.com\r\n";
-		ss << "Content-Type: text\r\n";
-		ss << "Content-Length: " << strlen(msg) << "\r\n";
-		ss << "Keep-Alive: timeout=8\r\n";
-		ss << "Server : {rx-platform}\r\n";
-		ss << "\r\n";
-		ss << msg;
+		result = rx_push_to_packet(&self->receive_buffer_, packet.buffer->buffer_ptr, packet.buffer->size);
+		if (result != RX_PROTOCOL_OK)
+			return result;
 
-		string_type pack_text(ss.str());
+		buflen = self->receive_buffer_.size;
+		buffer_to_read = (const char*)(self->receive_buffer_.buffer_ptr);
+	}
+	num_headers = sizeof(self->headers_buffer_) / sizeof(self->headers_buffer_[0]);
+	pret = phr_parse_request(buffer_to_read, buflen, &method, &method_len, &path, &path_len,
+		&minor_version, self->headers_buffer_, &num_headers, prevbuflen);
+	if (pret > 0)
+	{
+		size_t parsed = pret;
+		std::byte* content_ptr = (std::byte*)buffer_to_read + parsed;
+		size_t content_max = self->receive_buffer_.size - parsed;
+		string_type path_conv = rx_url_decode(path, path_len);
+		result = self->create_and_forward_request(method, method_len, path_conv.c_str(), path_conv.size(), num_headers, content_ptr, content_max);
 
-		rx_packet_buffer buffer;
-		rx_init_packet_buffer(&buffer, pack_text.size(), nullptr);
-		rx_push_to_packet(&buffer, pack_text.c_str(), pack_text.size());
-		send_protocol_packet ret_packet = rx_create_send_packet(0, &buffer, 0, 0);
-		auto result = rx_move_packet_down(&self->stack_entry_, ret_packet);
-	}*/
+		rx_reinit_packet_buffer(&self->receive_buffer_);
+	}
+	else if (pret == -2)// request is incomplete
+		result = RX_PROTOCOL_OK;
+	else if (pret == -1)
+		result = RX_PROTOCOL_PARSING_ERROR;
+	else
+		result = RX_PROTOCOL_COLLECT_ERROR;
+
 	return result;
 }
 
@@ -159,10 +195,11 @@ rx_protocol_stack_endpoint* rx_http_endpoint::bind_endpoint (std::function<void(
 
 void rx_http_endpoint::close_endpoint ()
 {
-	port_ = nullptr;
+	std::scoped_lock _(port_lock_);
+	port_=rx_reference<rx_http_port>::null_ptr;
 }
 
-rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, phr_header* headers, size_t num_headers, std::byte* content_ptr, size_t content_max_size)
+rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, size_t num_headers, std::byte* content_ptr, size_t content_max_size)
 {
 	http_request request;
 	if (method_len == 3)
@@ -257,13 +294,13 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 	{
 		string_type name;
 		string_type val;
-		if (headers[i].name_len > 0)
-			name.assign(headers[i].name, headers[i].name_len);
-		if (headers[i].value_len > 0)
-			val.assign(headers[i].value, headers[i].value_len);
+		if (headers_buffer_[i].name_len > 0)
+			name.assign(headers_buffer_[i].name, headers_buffer_[i].name_len);
+		if (headers_buffer_[i].value_len > 0)
+			val.assign(headers_buffer_[i].value, headers_buffer_[i].value_len);
 		if (name == "Content-Length")
 		{
-			std::from_chars(headers[i].value, headers[i].value + headers[i].value_len, content_len);
+			std::from_chars(headers_buffer_[i].value, headers_buffer_[i].value + headers_buffer_[i].value_len, content_len);
 		}
 		request.headers.emplace(std::move(name), std::move(val));
 	}
@@ -273,18 +310,34 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 		request.content = byte_string(content_ptr, content_ptr + std::min(content_len, content_max_size));
 	}
 
-	request.whose = smart_this();
-	port_->send_function([](http_request&& request)
-		{
-			auto result = rx_internal::rx_http_server::http_server::instance().handle_request(request);
+	if (content_len > content_max_size)
+	{
+		prepared_request_ = std::move(request);
+		content_left_ = content_len - content_max_size;
+		return RX_PROTOCOL_OK;
+	}
 
-		}, std::move(request));
+	request.whose = smart_this();
+	std::scoped_lock(port_lock_);
+	if (port_)
+	{
+		port_->send_function([](http_request&& request)
+			{
+				auto result = rx_internal::rx_http_server::http_server::instance().handle_request(request);
+
+			}, std::move(request));
+	}
 	return RX_PROTOCOL_OK;
 }
 
 rx_result rx_http_endpoint::send_response (http_response response)
 {
-	if (port_ == nullptr)
+	rx_reference<rx_http_port> temp_port;
+	{
+		std::scoped_lock(port_lock_);
+		temp_port = port_;
+	}
+	if (!temp_port)
 		return "Already closed!";
 
 	std::ostringstream ss;
@@ -300,7 +353,7 @@ rx_result rx_http_endpoint::send_response (http_response response)
 
 	string_type pack_text(ss.str());
 
-	auto buffer = port_->alloc_io_buffer();
+	auto buffer = temp_port->alloc_io_buffer();
 	if (!buffer)
 	{
 		buffer.register_error("Out of memory");
@@ -317,12 +370,29 @@ rx_result rx_http_endpoint::send_response (http_response response)
 	}
 	send_protocol_packet ret_packet = rx_create_send_packet(0, &buffer.value(), 0, 0);
 	auto proto_result = rx_move_packet_down(&stack_entry_, ret_packet);
-	port_->release_io_buffer(buffer.move_value());
+	temp_port->release_io_buffer(buffer.move_value());
 	if (proto_result != RX_PROTOCOL_OK)
 	{
 		return "Error sending packet:"s + rx_protocol_error_message(proto_result);
 	}
 	return true;
+}
+
+void rx_http_endpoint::send_current_request ()
+{
+	prepared_request_.whose = smart_this();
+	{
+		std::scoped_lock(port_lock_);
+		if (port_)
+		{
+			port_->send_function([](http_request&& request)
+				{
+					auto result = rx_internal::rx_http_server::http_server::instance().handle_request(request);
+
+				}, std::move(prepared_request_));
+		}
+	}
+	prepared_request_ = http_request();
 }
 
 
@@ -332,7 +402,7 @@ rx_http_port::rx_http_port()
 {
 	construct_func = [this]()
 	{
-		auto rt = rx_create_reference<rx_http_endpoint>(this);
+		auto rt = rx_create_reference<rx_http_endpoint>(smart_this());
 		auto entry = rt->bind_endpoint([this](int64_t count)
 			{
 			},

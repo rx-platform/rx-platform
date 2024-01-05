@@ -128,7 +128,7 @@ class runtime_cache
 
       platform_item_ptr get_item (const rx_node_id& id);
 
-      void remove_from_cache (platform_item_ptr&& item);
+      std::function<void(const rx_node_id&)> remove_from_cache (platform_item_ptr&& item);
 
       void add_functions (const rx_node_id& id, const std::function<void(const rx_node_id&)>& register_f, const std::function<void(const rx_node_id&)>& deleter_f);
 

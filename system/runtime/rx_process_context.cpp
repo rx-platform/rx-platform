@@ -226,6 +226,7 @@ void runtime_process_context::tag_writes_pending ()
 
 void runtime_process_context::variable_pending (structure::variable_data* whose)
 {
+    RX_ASSERT(whose->value.get_type() != RX_STRUCT_TYPE);
     locks::auto_lock_t _(&context_lock_);
     if (stopping_)
         return;

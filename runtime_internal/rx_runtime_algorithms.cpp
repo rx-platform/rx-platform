@@ -238,12 +238,14 @@ rx_result object_algorithms::deinit_runtime (rx_object_ptr what, rx_result_callb
 
 rx_result object_algorithms::stop_runtime (rx_object_ptr what, runtime::runtime_stop_context& ctx)
 {
-	platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
+	auto deleter = platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
 		ret = what->get_instance_data().after_stop_runtime(what, ctx);
 	}
+	if (deleter)
+		deleter(what->meta_info().id);
 	return ret;
 }
 
@@ -430,12 +432,14 @@ rx_result domain_algorithms::deinit_runtime (rx_domain_ptr what, rx_result_callb
 
 rx_result domain_algorithms::stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx)
 {
-	platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
+	auto deleter = platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
 		what->get_instance_data().after_stop_runtime(what, ctx);
 	}
+	if (deleter)
+		deleter(what->meta_info().id);
 	return ret;
 }
 
@@ -620,12 +624,14 @@ rx_result port_algorithms::deinit_runtime (rx_port_ptr what, rx_result_callback&
 
 rx_result port_algorithms::stop_runtime (rx_port_ptr what, runtime::runtime_stop_context& ctx)
 {
-	platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
+	auto deleter = platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
 		what->get_instance_data().after_stop_runtime(what, ctx);
 	}
+	if (deleter)
+		deleter(what->meta_info().id);
 	return ret;
 }
 
@@ -834,12 +840,14 @@ rx_result application_algorithms::deinit_runtime (rx_application_ptr what, rx_re
 
 rx_result application_algorithms::stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx)
 {
-	platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
+	auto deleter = platform_runtime_manager::instance().get_cache().remove_from_cache(what->get_item_ptr());
 	auto ret = what->stop_runtime(ctx);
 	if (ret)
 	{
 		what->get_instance_data().after_stop_runtime(what, ctx);
 	}
+	if (deleter)
+		deleter(what->meta_info().id);
 	return ret;
 }
 

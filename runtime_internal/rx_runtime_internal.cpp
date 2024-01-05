@@ -347,10 +347,11 @@ platform_item_ptr runtime_cache::get_item (const rx_node_id& id)
 		return platform_item_ptr();
 }
 
-void runtime_cache::remove_from_cache (platform_item_ptr&& item)
+std::function<void(const rx_node_id&)> runtime_cache::remove_from_cache (platform_item_ptr&& item)
 {
 	using subs_list_t = std::vector< std::pair<runtime::resolvers::runtime_subscriber*, rx_reference_ptr> >;
 	std::map<rx_thread_handle_t, subs_list_t> to_send;
+	std::function<void(const rx_node_id&)> ret_func;
 	string_type name = item->get_name();
 	rx_node_id id = item->meta_info().id;
 	{
@@ -382,7 +383,7 @@ void runtime_cache::remove_from_cache (platform_item_ptr&& item)
 		if (it_id != id_cache_.end())
 		{
 			if (it_id->second.deleter_f)
-				it_id->second.deleter_f(item->meta_info().id);
+				ret_func = it_id->second.deleter_f;
 			id_cache_.erase(it_id);
 		}
 		collect_subscribers(id, name, to_send);
@@ -405,6 +406,7 @@ void runtime_cache::remove_from_cache (platform_item_ptr&& item)
 			}
 		}
 	}
+	return ret_func;
 }
 
 void runtime_cache::add_functions (const rx_node_id& id, const std::function<void(const rx_node_id&)>& register_f, const std::function<void(const rx_node_id&)>& deleter_f)
