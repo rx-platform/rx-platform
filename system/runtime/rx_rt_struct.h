@@ -1171,7 +1171,7 @@ public:
 
       data::runtime_data_model get_arguments ();
 
-      void event_fired (rx_simple_value data);
+      void event_fired (event_fired_data&& data);
 
 
       block_data arguments;
@@ -1187,6 +1187,9 @@ public:
   protected:
 
   private:
+
+
+      runtime_process_context* context_;
 
 
 };

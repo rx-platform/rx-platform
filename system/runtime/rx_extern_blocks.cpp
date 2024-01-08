@@ -271,14 +271,13 @@ extern "C"
         rx_platform::runtime::blocks::extern_event_runtime* self = (rx_platform::runtime::blocks::extern_event_runtime*)whose;
         self->destroy_timer(timer);
     }
-    void c_event_fired(void* whose, struct typed_value_type val, runtime_ctx_ptr ctx)
+    void c_event_fired(void* whose, runtime_transaction_id_t id, int test, rx_security_handle_t identity, struct timed_value_type data)
     {
         rx_platform::runtime::blocks::extern_event_runtime* self = (rx_platform::runtime::blocks::extern_event_runtime*)whose;
-        self->extern_event_fired(val);
+        self->extern_event_fired(id, test, identity, data);
     }
     void c_event_get_model(void* whose, struct bytes_value_struct_t* data)
     {
-
     }
 
 
@@ -749,9 +748,15 @@ byte_string extern_event_runtime::extern_get_arguments ()
     return byte_string();
 }
 
-void extern_event_runtime::extern_event_fired (rx_simple_value data)
+void extern_event_runtime::extern_event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data)
 {
-    event_fired(std::move(data));
+    event_fired_data ev_data;
+    ev_data.identity = identity;
+    ev_data.internal = false;
+    ev_data.test = test;
+    ev_data.transaction_id = id;
+    ev_data.value = std::move(data);
+    event_fired(std::move(ev_data));
 }
 
 

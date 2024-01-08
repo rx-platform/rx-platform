@@ -269,7 +269,7 @@ rx_result common_runtime_tags::initialize_runtime (runtime_init_context& ctx)
 	simulate_handle_ = result.move_value();
 	simulate_ = ctx.context->get_binded_as(simulate_handle_, false);
 
-	bind_result = queues_size_.bind("_Object.ProcessQueues", ctx);
+	bind_result = queues_size_.bind("_Object.ProcessSlots", ctx);
 
 	if (!bind_result)
 		return bind_result;

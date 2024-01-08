@@ -1075,10 +1075,21 @@ RX_COMMON_API int rx_compare_values(const struct typed_value_type* val, const st
 					for (size_t i = 0; i < count_right; i++)
 					{
 #ifndef RX_VALUE_SIZE_16
-						int temp_ret = memcmp(val->value.array_value.values[i].uuid_value, right->value.array_value.values[i].uuid_value, sizeof(rx_uuid_t)) == 0;
+						int temp_ret = memcmp(val->value.array_value.values[i].uuid_value, right->value.array_value.values[i].uuid_value, sizeof(rx_uuid_t));
 #else
-						int temp_ret = memcmp(&val->value.array_value.values[i].uuid_value, &right->value.array_value.values[i].uuid_value, sizeof(rx_uuid_t)) == 0;
+						int temp_ret = memcmp(&val->value.array_value.values[i].uuid_value, &right->value.array_value.values[i].uuid_value, sizeof(rx_uuid_t));
 #endif
+						if (temp_ret != 0)
+							return temp_ret;
+					}
+					return 0;
+				}
+				else if (RX_SIMPLE_TYPE(val->value_type) == RX_NODE_ID_TYPE)
+				{
+					for (size_t i = 0; i < count_right; i++)
+					{
+						int temp_ret = rx_compare_node_ids(val->value.array_value.values[i].node_id_value
+							, right->value.array_value.values[i].node_id_value);
 						if (temp_ret != 0)
 							return temp_ret;
 					}

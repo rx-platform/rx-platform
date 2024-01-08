@@ -166,84 +166,145 @@ const char* http_json_object_reader::get_content_type ()
 
 rx_result http_json_object_reader::do_with_item (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, platform_item_ptr item)
 {
-	read_struct_data read_data;
-	rx_reference_ptr anchor = req.whose;
-
-	runtime_value_type val_type = runtime_value_type::simple_runtime_value;
-	if (req.params.count("_full"))
-		val_type = runtime_value_type::full_runtime_value;
-	if (req.params.count("_persist"))
-		val_type = runtime_value_type::persistent_runtime_value;
-
-	read_data.callback = read_struct_callback_t(anchor, [this, req = std::move(req), resp = std::move(resp)](rx_result result, data::runtime_values_data data) mutable
+	if (req.method == rx_http_method::post)
 	{
-		if (req.params.count("_pretty") > 0)
+		string_type path(sub_item), str_val;
+		rx_reference_ptr anchor = req.whose;
+
+		if (path.empty())
 		{
-			serialization::pretty_json_writer writer;
-			if (result)
+			return "Missing or empty <path> argument.";
+		}
+
+		string_type content(req.get_content_as_string());
+
+		serialization::json_reader reader;
+		if (reader.parse_data(content))
+		{
+			data::runtime_values_data vals;
+			if (reader.read_init_values(nullptr, vals))
 			{
-				writer.write_header(STREAMING_TYPE_MESSAGE, 0);
-				if (writer.write_init_values(nullptr, data))
+				auto us1 = rx_get_us_ticks();
+				item->write_value(path, false, std::move(vals), write_result_callback_t(anchor, [this, req = std::move(req), resp = std::move(resp), us1](uint32_t signal_level, rx_result&& result) mutable
 				{
-					result = writer.write_footer();
+					uint64_t us2 = rx_get_us_ticks() - us1;
+					std::ostringstream ss;
+
+					resp.headers["Content-Type"] = get_content_type();
+					resp.result = 200;
+					ss << "{\n   \"level\": " << signal_level
+						<< ",\n   \"time\": " << us2 / 1000.0
+						<< ",\n   \"success\": ";
+
+					if (result)
+					{
+						ss << "true\n";
+					}
+					else
+					{
+						ss << "false,\n   \"error\": \"";
+						ss << result.errors_line();
+						ss << "\"\n";
+					}
+					ss << "}";
+					resp.set_string_content(ss.str());
+
+					if (req.whose)
+						http_server::instance().send_response(req, resp);
+
+				}));
+
+				return true;
+			}
+		}
+		return "Error parsing value";
+
+	}
+	else if (req.method == rx_http_method::get)
+	{
+		read_struct_data read_data;
+		rx_reference_ptr anchor = req.whose;
+
+		runtime_value_type val_type = runtime_value_type::simple_runtime_value;
+		if (req.params.count("_full"))
+			val_type = runtime_value_type::full_runtime_value;
+		if (req.params.count("_persist"))
+			val_type = runtime_value_type::persistent_runtime_value;
+
+		read_data.callback = read_struct_callback_t(anchor, [this, req = std::move(req), resp = std::move(resp)](rx_result result, data::runtime_values_data data) mutable
+		{
+			if (req.params.count("_pretty") > 0)
+			{
+				serialization::pretty_json_writer writer;
+				if (result)
+				{
+					writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+					if (writer.write_init_values(nullptr, data))
+					{
+						result = writer.write_footer();
+					}
+					else
+					{
+						result = writer.get_error();
+					}
+				}
+				if (result)
+				{
+
+					resp.headers["Content-Type"] = get_content_type();
+					resp.result = 200;
+					resp.set_string_content(writer.get_string());
 				}
 				else
 				{
-					result = writer.get_error();
+					resp.headers["Content-Type"] = "text/plain";
+					resp.result = 501;
+					resp.set_string_content(result.errors_line());
 				}
-			}
-			if (result)
-			{
-
-				resp.headers["Content-Type"] = get_content_type();
-				resp.result = 200;
-				resp.set_string_content(writer.get_string());
 			}
 			else
 			{
-				resp.headers["Content-Type"] = "text/plain";
-				resp.result = 501;
-				resp.set_string_content(result.errors_line());
-			}
-		}
-		else
-		{
-			serialization::json_writer writer;
-			if (result)
-			{
-				writer.write_header(STREAMING_TYPE_MESSAGE, 0);
-				if (writer.write_init_values(nullptr, data))
+				serialization::json_writer writer;
+				if (result)
 				{
-					result = writer.write_footer();
+					writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+					if (writer.write_init_values(nullptr, data))
+					{
+						result = writer.write_footer();
+					}
+					else
+					{
+						result = writer.get_error();
+					}
+				}
+				if (result)
+				{
+
+					resp.headers["Content-Type"] = get_content_type();
+					resp.result = 200;
+					resp.set_string_content(writer.get_string());
 				}
 				else
 				{
-					result = writer.get_error();
+					resp.headers["Content-Type"] = "text/plain";
+					resp.result = 501;
+					resp.set_string_content(result.errors_line());
 				}
 			}
-			if (result)
-			{
-
-				resp.headers["Content-Type"] = get_content_type();
-				resp.result = 200;
-				resp.set_string_content(writer.get_string());
-			}
-			else
-			{
-				resp.headers["Content-Type"] = "text/plain";
-				resp.result = 501;
-				resp.set_string_content(result.errors_line());
-			}
-		}
 
 
-		if (req.whose)
-			http_server::instance().send_response(req, resp);
-	});
+			if (req.whose)
+				http_server::instance().send_response(req, resp);
+		});
 
-	read_data.type = val_type;
-	item->read_struct(sub_item, std::move(read_data));
-	return true;
+		read_data.type = val_type;
+		item->read_struct(sub_item, std::move(read_data));
+		return true;
+	}
+	else
+	{
+		return "Method not supported";
+	}
 }
 
 rx_result http_json_object_reader::do_with_directory (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, rx_directory_ptr item)

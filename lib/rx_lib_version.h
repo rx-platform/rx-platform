@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 3
 #define RX_LIB_MINOR_VERSION 2
-#define RX_LIB_BUILD_NUMBER 2
+#define RX_LIB_BUILD_NUMBER 3
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -70,5 +70,6 @@
 // version 3.2.0 added struct reading support
 // version 3.2.1 corrected deserialization of time, uuid, node id and bytes array
 // version 3.2.2 corrected deserialization array regarding type
+// version 3.2.3 added string_view to runtime data interface
 
 

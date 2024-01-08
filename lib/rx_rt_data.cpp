@@ -44,7 +44,7 @@ namespace data {
 // Class rx::data::runtime_values_data 
 
 
-void runtime_values_data::add_value (const string_type& name, const rx_simple_value& value)
+void runtime_values_data::add_value (string_view_type name, const rx_simple_value& value)
 {
 	if (name.empty())
 		return;
@@ -56,10 +56,10 @@ void runtime_values_data::add_value (const string_type& name, const rx_simple_va
 	}
 	else
 	{
-		string_type my_path = name.substr(0, idx);
+		string_view_type my_path = name.substr(0, idx);
 		int array_idx = -1;
 		my_path = extract_index(my_path, array_idx);
-		auto child_it = children.find(my_path);
+		auto child_it = children.find(static_cast<string_type>(my_path));
 		if (child_it != children.end())
 		{
 			if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))
@@ -81,22 +81,22 @@ void runtime_values_data::add_value (const string_type& name, const rx_simple_va
 	}
 }
 
-void runtime_values_data::add_value (const string_type& name, rx_simple_value&& value)
+void runtime_values_data::add_value (string_view_type name, rx_simple_value&& value)
 {
 	if (name.empty())
 		return;
 	auto idx = name.find(".");
 
-	if (idx == string_type::npos)
+	if (idx == string_view_type::npos)
 	{// our value
 		values.insert(std::make_pair(name, std::move(value)));
 	}
 	else
 	{
-		string_type my_path = name.substr(0, idx);
+		string_view_type my_path = name.substr(0, idx);
 		int array_idx = -1;
 		my_path = extract_index(my_path, array_idx);
-		auto child_it = children.find(my_path);
+		auto child_it = children.find(static_cast<string_type>(my_path));
 		if (child_it != children.end())
 		{
 			if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))
@@ -118,22 +118,22 @@ void runtime_values_data::add_value (const string_type& name, rx_simple_value&& 
 	}
 }
 
-void runtime_values_data::add_value (const string_type& name, std::vector<rx_simple_value> value)
+void runtime_values_data::add_value (string_view_type name, std::vector<rx_simple_value> value)
 {
 	if (name.empty())
 		return;
 	auto idx = name.find(".");
 
-	if (idx == string_type::npos)
+	if (idx == string_view_type::npos)
 	{// our value
 		values.insert(std::make_pair(name, std::move(value)));
 	}
 	else
 	{
-		string_type my_path = name.substr(0, idx);
+		string_view_type my_path = name.substr(0, idx);
 		int array_idx = -1;
 		my_path = extract_index(my_path, array_idx);
-		auto child_it = children.find(my_path);
+		auto child_it = children.find(static_cast<string_type>(my_path));
 		if (child_it != children.end())
 		{
 			if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))
@@ -155,13 +155,13 @@ void runtime_values_data::add_value (const string_type& name, std::vector<rx_sim
 	}
 }
 
-runtime_values_data* runtime_values_data::add_child (const string_type& name)
+runtime_values_data* runtime_values_data::add_child (string_view_type name)
 {
 	auto idx = name.find(".");
 
 	if (idx == string_type::npos)
 	{// our value
-		auto child_it = children.find(string_type(name));
+		auto child_it = children.find(static_cast<string_type>(name));
 		if (child_it != children.end())
 		{
 			child_it->second = runtime_values_data();
@@ -174,10 +174,10 @@ runtime_values_data* runtime_values_data::add_child (const string_type& name)
 	}
 	else
 	{
-		string_type my_path = name.substr(0, idx);
+		string_view_type my_path = name.substr(0, idx);
 		int array_idx = -1;
 		my_path = extract_index(my_path, array_idx);
-		auto child_it = children.find(my_path);
+		auto child_it = children.find(static_cast<string_type>(my_path));
 		if (child_it != children.end())
 		{
 			if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))
@@ -209,13 +209,13 @@ runtime_values_data* runtime_values_data::add_child (const string_type& name)
 	return nullptr;
 }
 
-void runtime_values_data::add_child (const string_type& name, runtime_values_data&& data)
+void runtime_values_data::add_child (string_view_type name, runtime_values_data&& data)
 {
 	auto idx = name.find(".");
 
 	if (idx == string_type::npos)
 	{// our value
-		auto child_it = children.find(string_type(name));
+		auto child_it = children.find(static_cast<string_type>(name));
 		if (child_it != children.end())
 		{
 			child_it->second = std::move(data);
@@ -227,10 +227,10 @@ void runtime_values_data::add_child (const string_type& name, runtime_values_dat
 	}
 	else
 	{
-		string_type my_path = name.substr(0, idx);
+		string_view_type my_path = name.substr(0, idx);
 		int array_idx = -1;
 		my_path = extract_index(my_path, array_idx);
-		auto child_it = children.find(my_path);
+		auto child_it = children.find(static_cast<string_type>(my_path));
 		if (child_it != children.end())
 		{
 			if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))
@@ -261,13 +261,13 @@ void runtime_values_data::add_child (const string_type& name, runtime_values_dat
 	}
 }
 
-std::vector<runtime_values_data>* runtime_values_data::add_array_child (const string_type& name, size_t size)
+std::vector<runtime_values_data>* runtime_values_data::add_array_child (string_view_type name, size_t size)
 {
 	auto idx = name.find(".");
 
 	if (idx == string_type::npos)
 	{// our value
-		auto child_it = children.find(string_type(name));
+		auto child_it = children.find(static_cast<string_type>(name));
 		if (child_it != children.end())
 		{
 			child_it->second = array_child_type(size);
@@ -280,10 +280,10 @@ std::vector<runtime_values_data>* runtime_values_data::add_array_child (const st
 	}
 	else
 	{
-		string_type my_path = name.substr(0, idx);
+		string_view_type my_path = name.substr(0, idx);
 		int array_idx = -1;
 		my_path = extract_index(my_path, array_idx);
-		auto child_it = children.find(my_path);
+		auto child_it = children.find(static_cast<string_type>(my_path));
 		if (child_it != children.end())
 		{
 			if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))
@@ -300,13 +300,13 @@ std::vector<runtime_values_data>* runtime_values_data::add_array_child (const st
 		{
 			if (array_idx < 0)
 			{
-				auto vals = add_child(string_type(my_path));
+				auto vals = add_child(static_cast<string_type>(my_path));
 				if (vals)
 					return vals->add_array_child(name.substr(idx + 1), size);
 			}
 			else
 			{
-				auto vals = add_array_child(string_type(my_path), idx + 1);
+				auto vals = add_array_child(static_cast<string_type>(my_path), idx + 1);
 				if (vals)
 					return vals->at(array_idx).add_array_child(name.substr(idx + 1), size);
 			}
@@ -315,13 +315,13 @@ std::vector<runtime_values_data>* runtime_values_data::add_array_child (const st
 	return nullptr;
 }
 
-void runtime_values_data::add_array_child (const string_type& name, std::vector<runtime_values_data> data)
+void runtime_values_data::add_array_child (string_view_type name, std::vector<runtime_values_data> data)
 {
 	auto idx = name.find(".");
 
 	if (idx == string_type::npos)
 	{// our value
-		auto child_it = children.find(string_type(name));
+		auto child_it = children.find(static_cast<string_type>(name));
 		if (child_it != children.end())
 		{
 			child_it->second = array_child_type(std::move(data));
@@ -333,10 +333,10 @@ void runtime_values_data::add_array_child (const string_type& name, std::vector<
 	}
 	else
 	{
-		string_type my_path = name.substr(0, idx);
+		string_view_type my_path = string_type(name.substr(0, idx));
 		int array_idx = -1;
 		my_path = extract_index(my_path, array_idx);
-		auto child_it = children.find(my_path);
+		auto child_it = children.find(static_cast<string_type>(my_path));
 		if (child_it != children.end())
 		{
 			if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))
@@ -353,13 +353,13 @@ void runtime_values_data::add_array_child (const string_type& name, std::vector<
 		{
 			if (array_idx < 0)
 			{
-				auto vals = add_child(string_type(my_path));
+				auto vals = add_child(static_cast<string_type>(my_path));
 				if (vals)
 					vals->add_array_child(name.substr(idx + 1), std::move(data));
 			}
 			else
 			{
-				auto vals = add_array_child(string_type(my_path), idx + 1);
+				auto vals = add_array_child(static_cast<string_type>(my_path), idx + 1);
 				if (vals)
 					vals->at(array_idx).add_array_child(name.substr(idx + 1), std::move(data));
 			}
@@ -367,19 +367,19 @@ void runtime_values_data::add_array_child (const string_type& name, std::vector<
 	}
 }
 
-rx_simple_value runtime_values_data::get_value (const string_type& path) const
+rx_simple_value runtime_values_data::get_value (string_view_type path) const
 {
 	if (path.empty())
 		return rx_simple_value();
 	auto idx = path.find(".");
 
-	if (idx == string_type::npos)
+	if (idx == string_view_type::npos)
 	{// our value
 		int array_idx = -1;
 		string_view_type basic_path = extract_index(path, array_idx);
 		if (!basic_path.empty())
 		{
-			auto val_it = values.find(string_type(basic_path));
+			auto val_it = values.find(static_cast<string_type>(basic_path));
 			if (val_it != values.end())
 			{
 				if (array_idx < 0 && std::holds_alternative<value_type>(val_it->second))
@@ -391,7 +391,7 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 			}
 			else
 			{
-				auto child_it= children.find(string_type(basic_path));
+				auto child_it= children.find(static_cast<string_type>(basic_path));
 				if (child_it != children.end())
 				{
 					if (array_idx == -1)
@@ -442,11 +442,11 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 	else
 	{
 		int array_idx = -1;
-		string_type mine = path.substr(0, idx);
+		string_view_type mine = path.substr(0, idx);
 		string_view_type basic_path = extract_index(mine, array_idx);
 		if (!basic_path.empty())
 		{
-			auto child_it = children.find(string_type(basic_path));
+			auto child_it = children.find(static_cast<string_type>(basic_path));
 			if (child_it != children.end())
 			{
 				if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))
@@ -464,19 +464,19 @@ rx_simple_value runtime_values_data::get_value (const string_type& path) const
 	return rx_simple_value();
 }
 
-bool runtime_values_data::get_array_value (const string_type& path, std::vector<rx_simple_value>& val) const
+bool runtime_values_data::get_array_value (string_view_type path, std::vector<rx_simple_value>& val) const
 {
 	if (path.empty())
 		return false;
 	auto idx = path.find(".");
 
-	if (idx == string_type::npos)
+	if (idx == string_view_type::npos)
 	{// our value
 		int array_idx = -1;
 		string_view_type basic_path = extract_index(path, array_idx);
 		if (!basic_path.empty())
 		{
-			auto val_it = values.find(string_type(basic_path));
+			auto val_it = values.find(static_cast<string_type>(basic_path));
 			if (val_it != values.end())
 			{
 				if (array_idx < 0 && std::holds_alternative<array_value_type>(val_it->second))
@@ -504,11 +504,11 @@ bool runtime_values_data::get_array_value (const string_type& path, std::vector<
 	else
 	{
 		int array_idx = -1;
-		string_type mine = path.substr(0, idx);
+		string_view_type mine = path.substr(0, idx);
 		string_view_type basic_path = extract_index(mine, array_idx);
 		if (!basic_path.empty())
 		{
-			auto child_it = children.find(string_type(basic_path));
+			auto child_it = children.find(static_cast<string_type>(basic_path));
 			if (child_it != children.end())
 			{
 				if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))

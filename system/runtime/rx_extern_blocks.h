@@ -283,7 +283,7 @@ class extern_event_runtime : public event_runtime
 
       byte_string extern_get_arguments ();
 
-      void extern_event_fired (rx_simple_value data);
+      void extern_event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data);
 
 
   protected:

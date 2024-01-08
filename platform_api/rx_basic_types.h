@@ -161,7 +161,7 @@ class rx_event : public rx_runtime
       static constexpr rx_item_type type_id = rx_item_type::rx_event_type;
   protected:
 
-      void event_fired (rx_simple_value data);
+      void event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data);
 
       data::runtime_data_model get_arguemnts ();
 

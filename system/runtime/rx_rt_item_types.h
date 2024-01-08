@@ -2817,6 +2817,8 @@ typedef runtime_data<
 //*********************************************************************************************************
 
 
+members_index_type internal_split_get_index(string_view_type path, string_view_type& mine, string_view_type& bellow, int& idx, const const_size_vector<index_data>& items);
+
 
 } // namespace structure
 } // namespace runtime

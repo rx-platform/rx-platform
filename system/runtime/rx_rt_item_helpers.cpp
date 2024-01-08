@@ -122,14 +122,21 @@ rx_result collect_data_variable(string_view_type name, int array_idx, string_vie
 
 			if (type == runtime_value_type::simple_runtime_value)
 			{
-				data.add_value(string_type(name), item.get_item()->value.to_simple());
+				data.add_value(name.empty() ? "val" : name, item.get_item()->value.to_simple());
 			}
 			else
 			{
-				data::runtime_values_data child_data;
-				item.get_item()->collect_data("", child_data, type);
-				if (!child_data.empty())
-					data.add_child(string_type(name), std::move(child_data));
+				if (name.empty())
+				{
+					item.get_item()->collect_data("", data, type);
+				}
+				else
+				{
+					data::runtime_values_data child_data;
+					item.get_item()->collect_data("", child_data, type);
+					if (!child_data.empty())
+						data.add_child(name, std::move(child_data));
+				}
 			}
 		}
 		else
@@ -144,7 +151,7 @@ rx_result collect_data_variable(string_view_type name, int array_idx, string_vie
 					{
 						temp_vals.push_back(item.get_item(i)->value.to_simple());
 					}
-					data.add_value(string_type(name), std::move(temp_vals));
+					data.add_value(name.empty() ? "val" : name, std::move(temp_vals));
 				}
 				else
 				{
@@ -158,7 +165,7 @@ rx_result collect_data_variable(string_view_type name, int array_idx, string_vie
 							childs.push_back(std::move(child_data));
 					}
 					if (!childs.empty())
-						data.add_array_child(string_type(name), std::move(childs));
+						data.add_array_child(name.empty() ? "val" : name, std::move(childs));
 				}
 			}
 			else
@@ -168,14 +175,21 @@ rx_result collect_data_variable(string_view_type name, int array_idx, string_vie
 
 				if (type == runtime_value_type::simple_runtime_value)
 				{
-					data.add_value(string_type(name), item.get_item(array_idx)->value.to_simple());
+					data.add_value(name.empty() ? "val" : name, item.get_item(array_idx)->value.to_simple());
 				}
 				else
 				{
-					data::runtime_values_data child_data;
-					item.get_item(array_idx)->collect_data("", child_data, type);
-					if (!child_data.empty())
-						data.add_child(string_type(name), std::move(child_data));
+					if (name.empty())
+					{
+						item.get_item(array_idx)->collect_data("", data, type);
+					}
+					else
+					{
+						data::runtime_values_data child_data;
+						item.get_item(array_idx)->collect_data("", child_data, type);
+						if (!child_data.empty())
+							data.add_child(name, std::move(child_data));
+					}
 				}
 			}
 		}
@@ -210,14 +224,24 @@ rx_result collect_data_arrayed(string_view_type name, int array_idx, string_view
 				return RX_INVALID_PATH;
 
 			data::runtime_values_data child_data;
-			item.get_item()->collect_data("", child_data, type);
-			if (!child_data.empty())
-				data.add_child(string_type(name), std::move(child_data));
+			if (name.empty())
+			{
+				item.get_item()->collect_data("", data, type);
+			}
+			else
+			{
+				item.get_item()->collect_data("", child_data, type);
+				if (!child_data.empty())
+					data.add_child(name, std::move(child_data));
+			}
 		}
 		else
 		{
 			if (array_idx < 0)
 			{
+				if (name.empty())
+					return RX_INVALID_PATH;
+
 				std::vector<data::runtime_values_data> childs;
 				childs.reserve(item.get_size());
 				for (int i = 0; i < item.get_size(); i++)
@@ -228,17 +252,23 @@ rx_result collect_data_arrayed(string_view_type name, int array_idx, string_view
 						childs.push_back(std::move(child_data));
 				}
 				if (!childs.empty())
-					data.add_array_child(string_type(name), std::move(childs));
+					data.add_array_child(name, std::move(childs));
 			}
 			else
 			{
 				if (array_idx >= (int)item.get_size())
 					return RX_OUT_OF_BOUNDS;
-
-				data::runtime_values_data child_data;
-				item.get_item(array_idx)->collect_data("", child_data, type);
-				if (!child_data.empty())
-					data.add_child(string_type(name), std::move(child_data));
+				if (name.empty())
+				{
+					item.get_item(array_idx)->collect_data("", data, type);
+				}
+				else
+				{
+					data::runtime_values_data child_data;
+					item.get_item(array_idx)->collect_data("", child_data, type);
+					if (!child_data.empty())
+						data.add_child(name, std::move(child_data));
+				}
 			}
 		}
 		return true;
@@ -276,7 +306,7 @@ rx_result collect_data_plain(string_view_type name, string_view_type bellow, dat
 			data::runtime_values_data child_data;
 			item.collect_data("", child_data, type);
 			if (!child_data.empty())
-				data.add_child(string_type(name), std::move(child_data));
+				data.add_child(name, std::move(child_data));
 		}
 		return true;
 	}

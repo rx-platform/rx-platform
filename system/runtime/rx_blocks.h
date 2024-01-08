@@ -517,7 +517,7 @@ event runtime. basic implementation of an event runtime");
 
   protected:
 
-      void event_fired (rx_simple_value data);
+      void event_fired (event_fired_data&& data);
 
       data::runtime_data_model get_arguemnts ();
 

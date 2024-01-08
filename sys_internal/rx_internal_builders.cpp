@@ -841,7 +841,7 @@ void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, st
 	what->complex_data.register_simple_value_static("LastScanTime", 0.0, true, false);
 	what->complex_data.register_simple_value_static<uint32_t>("LoopCount", 0, true, false);
 	what->complex_data.register_simple_value_static("MaxScanTime", 0.0, true, false);
-	what->complex_data.register_simple_value_static<uint32_t>("ProcessQueues", 0, true, false);
+	what->complex_data.register_simple_value_static<uint32_t>("ProcessSlots", 0, true, false);
 	what->complex_data.register_simple_value_static("On", true, false, true);
 	what->complex_data.register_simple_value_static("Test", false, false, true);
 	what->complex_data.register_simple_value_static("Blocked", false, false, true);

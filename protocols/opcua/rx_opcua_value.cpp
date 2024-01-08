@@ -498,7 +498,7 @@ uint8_t assign_vunion(vunion_type& what, const values::rx_value& value, uint8_t 
 				assign_vunion(what, value.extract_static<byte_string>(byte_string()));
 				return opcid_ByteString;
 			case RX_STRUCT_TYPE:
-				RX_ASSERT(false);
+				//RX_ASSERT(false);
 				return false;
 			case RX_TYPE_TYPE:
 				RX_ASSERT(false);

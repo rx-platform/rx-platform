@@ -660,7 +660,7 @@ rx_result event_runtime::deinitialize_event (runtime::runtime_deinit_context& ct
 	return true;
 }
 
-void event_runtime::event_fired (rx_simple_value data)
+void event_runtime::event_fired (event_fired_data&& data)
 {
     if(container_)
     {

@@ -414,8 +414,12 @@ void runtime_scan_algorithms<typeT>::process_events (typename typeT::RType& whos
     auto events = &ctx.get_events_for_process();
     while (!events->empty())
     {
-        for (auto& one : *events)
-            one->process_runtime(&ctx);
+        // no event processing yet!!!!
+        // don't know how?
+        RX_ASSERT(false);
+        //for (auto& one : *events)
+        //    one->process_runtime(&ctx);
+
         events = &ctx.get_events_for_process();
     }
 }

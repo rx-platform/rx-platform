@@ -323,6 +323,42 @@ struct execute_result_struct
     }
 };
 
+
+
+
+
+struct event_fired_data 
+{
+
+
+      bool internal;
+
+      runtime_transaction_id_t transaction_id;
+
+      rx_timed_value value;
+
+      bool test;
+
+      rx_security_handle_t identity;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+template<class T>
+struct event_fired_struct
+{
+    T* whose;
+    event_fired_data data;
+};
+
+
 enum class runtime_process_step : uint_fast8_t
 {
     idle = 0,
@@ -410,7 +446,7 @@ typedef std::vector<async_data> async_values_type;
 typedef std::vector<structure::variable_data*> variables_type;
 typedef std::vector<structure::variable_block_data*> block_variables_type;
 typedef std::vector<structure::filter_data*> filters_type;
-typedef std::vector<structure::event_data*> events_type;
+typedef std::vector<event_fired_struct<structure::event_data> > events_type;
 typedef std::vector<structure::struct_data*> structs_type;
 
 struct variable_data_for_process_t
@@ -515,7 +551,7 @@ class runtime_process_context
 
       void variable_value_changed (structure::variable_data* whose, const values::rx_value& val);
 
-      void event_pending (structure::event_data* whose);
+      void event_pending (event_fired_struct<structure::event_data> data);
 
       events_type& get_events_for_process ();
 

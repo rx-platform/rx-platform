@@ -71,23 +71,23 @@ public:
 
   public:
 
-      void add_value (const string_type& name, const rx_simple_value& value);
+      void add_value (string_view_type name, const rx_simple_value& value);
 
-      void add_value (const string_type& name, rx_simple_value&& value);
+      void add_value (string_view_type name, rx_simple_value&& value);
 
-      void add_value (const string_type& name, std::vector<rx_simple_value> value);
+      void add_value (string_view_type name, std::vector<rx_simple_value> value);
 
-      runtime_values_data* add_child (const string_type& name);
+      runtime_values_data* add_child (string_view_type name);
 
-      void add_child (const string_type& name, runtime_values_data&& data);
+      void add_child (string_view_type name, runtime_values_data&& data);
 
-      std::vector<runtime_values_data>* add_array_child (const string_type& name, size_t size);
+      std::vector<runtime_values_data>* add_array_child (string_view_type name, size_t size);
 
-      void add_array_child (const string_type& name, std::vector<runtime_values_data> data);
+      void add_array_child (string_view_type name, std::vector<runtime_values_data> data);
 
-      rx_simple_value get_value (const string_type& path) const;
+      rx_simple_value get_value (string_view_type path) const;
 
-      bool get_array_value (const string_type& path, std::vector<rx_simple_value>& val) const;
+      bool get_array_value (string_view_type path, std::vector<rx_simple_value>& val) const;
 
       bool empty () const;
 

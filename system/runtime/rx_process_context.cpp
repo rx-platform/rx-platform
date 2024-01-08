@@ -406,8 +406,13 @@ void runtime_process_context::variable_value_changed (structure::variable_data* 
     tags_.variable_change(whose, std::move(adapted_val));
 }
 
-void runtime_process_context::event_pending (structure::event_data* whose)
+void runtime_process_context::event_pending (event_fired_struct<structure::event_data> data)
 {
+    locks::auto_lock_t _(&context_lock_);
+    if (stopping_)
+        return;
+    turn_on_pending<runtime_process_step::events>();
+    events_.emplace_back(std::move(data));
 }
 
 events_type& runtime_process_context::get_events_for_process ()
@@ -651,6 +656,9 @@ rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t
 
 
 // Class rx_platform::runtime::execute_data 
+
+
+// Class rx_platform::runtime::event_fired_data 
 
 
 } // namespace runtime

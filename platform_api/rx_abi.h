@@ -555,7 +555,8 @@ extern "C" {
 	typedef void(*rx_mapped_value_changed_t)(void* whose, struct full_value_type val, runtime_ctx_ptr ctx);
 	typedef void(*rx_mapper_result_received_t)(void* whose, rx_result_struct result, runtime_transaction_id_t id, runtime_ctx_ptr ctx);
 	typedef void(*rx_mapper_execute_result_received_t)(void* whose, rx_result_struct result, runtime_transaction_id_t id, struct typed_value_type out_val, runtime_ctx_ptr ctx);
-	typedef void(*rx_mapper_event_fired_t)(void* whose, struct typed_value_type val, runtime_ctx_ptr ctx);
+	typedef void(*rx_mapper_event_fired_t)(void* whose, runtime_transaction_id_t id, int test
+		, rx_security_handle_t identity, struct timed_value_type data, runtime_ctx_ptr ctx);
 
 	typedef struct plugin_mapper_def_struct_t
 	{
@@ -777,7 +778,8 @@ extern "C" {
 
 	} plugin_event_def_struct;
 
-	typedef void(*rx_event_fired_t)(void* whose, struct typed_value_type val, runtime_ctx_ptr ctx);
+	typedef void(*rx_event_fired_t)(void* whose, runtime_transaction_id_t id, int test
+		, rx_security_handle_t identity, struct timed_value_type data);
 	typedef void(*rx_event_get_model_t)(void* whose, struct bytes_value_struct_t* data);
 
 	typedef struct host_event_def_struct_t

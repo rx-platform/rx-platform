@@ -680,7 +680,7 @@ const char* system_paths[] = {
 	"LastScanTime",
 	"MaxScanTime",
 	"LoopCount",
-	"ProcessQueues"
+	"ProcessSlots"
 };
 // Class rx_internal::rx_http_server::http_displays::rx_http_standard_display 
 

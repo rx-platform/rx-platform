@@ -274,8 +274,9 @@ rx_result rx_event::deinitialize_event ()
     return true;
 }
 
-void rx_event::event_fired (rx_simple_value data)
+void rx_event::event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data)
 {
+    impl_.host_def->event_fired(impl_.host, id, test ? 1 : 0, identity, data.move());
 }
 
 data::runtime_data_model rx_event::get_arguemnts ()

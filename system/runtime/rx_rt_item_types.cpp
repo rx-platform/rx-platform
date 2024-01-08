@@ -86,7 +86,7 @@ void collect_value_plain(std::vector<values::rx_simple_value>& data, runtime_val
 
 string_view_type extract_index(string_view_type name, int& idx);
 members_index_type internal_get_index(string_view_type name, int& idx, const const_size_vector<index_data>& items);
-members_index_type internal_split_get_index(string_view_type path, string_view_type& mine, string_view_type& bellow, int& idx, const const_size_vector<index_data>& items);
+
 bool is_value_index(members_index_type idx);
 bool is_complex_index(members_index_type idx);
 
@@ -286,7 +286,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 					if (index == rt_variable_index_type)
 					{
 						if (bellow.empty())
-							return collect_data_variable("val", array_idx, "", data, type, variables.collection[(idx >> rt_type_shift)]);
+							return collect_data_variable("", array_idx, "", data, type, variables.collection[(idx >> rt_type_shift)]);
 						else
 							return collect_data_variable(mine, array_idx, bellow, data, type, variables.collection[(idx >> rt_type_shift)]);
                     }
@@ -294,7 +294,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				if constexpr (has_structs())
 				{
 					if (index == rt_struct_index_type)
-						return collect_data_arrayed(mine, array_idx, bellow, data, type, structs.collection[(idx >> rt_type_shift)]);
+						return collect_data_arrayed("", array_idx, bellow, data, type, structs.collection[(idx >> rt_type_shift)]);
 				}
 				if constexpr (has_sources())
 				{
@@ -319,12 +319,12 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				if constexpr (has_block_data())
 				{
 					if (index == rt_value_data_index_type)
-						return collect_data_arrayed(mine, array_idx, bellow, data, type, blocks.collection[(idx >> rt_type_shift)]);
+						return collect_data_arrayed("", array_idx, bellow, data, type, blocks.collection[(idx >> rt_type_shift)]);
 				}
 				if constexpr (has_variable_blocks_data())
 				{
 					if (index == rt_variable_data_index_type)
-						return collect_data_arrayed(mine, array_idx, bellow, data, type, variable_blocks.collection[(idx >> rt_type_shift)]);
+						return collect_data_arrayed("", array_idx, bellow, data, type, variable_blocks.collection[(idx >> rt_type_shift)]);
 				}
 			}
 		}
