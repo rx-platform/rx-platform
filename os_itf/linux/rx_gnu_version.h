@@ -3,7 +3,7 @@
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 2
 #define RX_HAL_MINOR_VERSION 0
-#define RX_HAL_BUILD_NUMBER 1
+#define RX_HAL_BUILD_NUMBER 2
 
 /*********************************************************************************
 
@@ -34,5 +34,6 @@
 1.2.3 corrected fd 0 error
 1.3.0 added FIFO_SCHED
 2.0.0 added TLS to platform
+2.0.2 resolved year 2038 _TIME_BITS 64
 
 *********************************************************************************/

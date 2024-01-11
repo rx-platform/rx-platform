@@ -174,16 +174,25 @@ rx_protocol_result_t tcp_client_endpoint::send_function (rx_protocol_stack_endpo
     }
     if (self->my_port_ && temp_socket)
     {
-        auto io_buffer = self->my_port_->get_buffer();
-        io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
-        bool ret = temp_socket->write(io_buffer);
-        if (!ret)
-            self->my_port_->release_buffer(io_buffer);
-        if (ret)
+        uint8_t* buff = packet.buffer->buffer_ptr;
+        size_t count = packet.buffer->size;
+        size_t sent = 0;
+        while (sent < count)
         {
-            self->my_port_->status.sent_packet(packet.buffer->size);
+            size_t chunk_size = std::min<size_t>(count - sent, 0x10000);
+            auto io_buffer = self->my_port_->get_buffer();
+            io_buffer->push_data(&buff[sent], chunk_size);
+            bool ret = temp_socket->write(io_buffer);
+            if (!ret)
+            {
+                self->my_port_->release_buffer(io_buffer);
+                return RX_PROTOCOL_COLLECT_ERROR;
+            }
+            self->my_port_->status.sent_packet(chunk_size);
+            sent += chunk_size;
         }
-        return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
+        return RX_PROTOCOL_OK;
+
     }
     else
     {

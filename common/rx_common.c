@@ -160,7 +160,10 @@ RX_COMMON_API int rx_copy_string_value(string_value_struct* dest, const string_v
 RX_COMMON_API void rx_destory_string_value_struct(string_value_struct* data)
 {
 	if (data->size > sizeof(data->value))
+	{
+		RX_ASSERT(data->value);
 		free(data->value);
+	}
 	memzero(data, sizeof(string_value_struct));
 }
 RX_COMMON_API int rx_init_bytes_value_struct(bytes_value_struct* data, const uint8_t* bytes, size_t len)

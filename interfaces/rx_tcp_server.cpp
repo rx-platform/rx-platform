@@ -124,15 +124,39 @@ rx_result tcp_server_endpoint::close ()
 {
     if (tcp_socket_)
     {
-        auto temp_ptr = tcp_socket_;
-        tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
-        temp_ptr->disconnect();
+        socket_holder_t::smart_ptr temp_socket;
+        {
+            locks::auto_lock_t _(&state_lock_);
+            temp_socket = tcp_socket_;
+            if (tcp_socket_)
+            {
+                tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+            }
+        }
+        if (temp_socket)
+        {
+            temp_socket->disconnect();
+        }
     }
     return true;
 }
 
 void tcp_server_endpoint::disconnected (rx_security_handle_t identity)
 {
+    socket_holder_t::smart_ptr temp_socket;
+    {
+        locks::auto_lock_t _(&state_lock_);
+        temp_socket = tcp_socket_;
+        tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
+    }
+    if (temp_socket)
+    {
+        tcp_socket_ = socket_ptr::null_ptr;
+        rx_session session = rx_create_session(&remote_address_, &local_address_, 0, 0, nullptr);
+        rx_notify_disconnected(&stack_endpoint_, &session, 0);
+        rx_close(&stack_endpoint_, 0);
+    }
+
     std::ostringstream ss;
     ss << "Client from IP4:"
         << remote_address_.to_string()
@@ -140,13 +164,6 @@ void tcp_server_endpoint::disconnected (rx_security_handle_t identity)
         << local_address_.to_string()
         << ".";
     ITF_LOG_TRACE("tcp_server_port", 500, ss.str());
-    if (tcp_socket_)
-    {
-        tcp_socket_ = socket_ptr::null_ptr;
-        rx_session session = rx_create_session(&remote_address_, &local_address_, 0, 0, nullptr);
-        rx_notify_disconnected(&stack_endpoint_, &session, 0);
-        rx_close(&stack_endpoint_, 0);
-    }
 }
 
 bool tcp_server_endpoint::readed (const void* data, size_t count, rx_security_handle_t identity)
@@ -183,18 +200,31 @@ bool tcp_server_endpoint::readed (const void* data, size_t count, rx_security_ha
 rx_protocol_result_t tcp_server_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
     tcp_server_endpoint* self = reinterpret_cast<tcp_server_endpoint*>(reference->user_data);
-    if (self->my_port_ && self->tcp_socket_)
+    socket_holder_t::smart_ptr temp_socket;
     {
-        auto io_buffer = self->my_port_->get_buffer();
-        io_buffer->push_data(packet.buffer->buffer_ptr, packet.buffer->size);
-        bool ret = self->tcp_socket_->write(io_buffer);
-        if (!ret)
-            self->my_port_->release_buffer(io_buffer);
-        if (ret)
+        locks::auto_lock_t _(&self->state_lock_);
+        temp_socket = self->tcp_socket_;
+    }
+    if (self->my_port_ && temp_socket)
+    {
+        uint8_t* buff = packet.buffer->buffer_ptr;
+        size_t count = packet.buffer->size;
+        size_t sent = 0;
+        while (sent < count)
         {
-            self->my_port_->status.sent_packet(packet.buffer->size);
+            size_t chunk_size = std::min<size_t>(count - sent, 0x10000);
+            auto io_buffer = self->my_port_->get_buffer();
+            io_buffer->push_data(&buff[sent], chunk_size);
+            bool ret = temp_socket->write(io_buffer);
+            if (!ret)
+            {
+                self->my_port_->release_buffer(io_buffer);
+                return RX_PROTOCOL_COLLECT_ERROR;
+            }
+            self->my_port_->status.sent_packet(chunk_size);
+            sent += chunk_size;            
         }
-        return ret ? RX_PROTOCOL_OK : RX_PROTOCOL_COLLECT_ERROR;
+        return RX_PROTOCOL_OK;
     }
     else
     {

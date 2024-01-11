@@ -736,6 +736,8 @@ public:
 
       data::runtime_data_model get_event_arguments ();
 
+      data::runtime_data_model get_data_type ();
+
 
       full_value_data mapped_value;
 
@@ -846,6 +848,8 @@ class source_data
       void object_state_changed (runtime_process_context* ctx);
 
       const rx_value& get_variable_value () const;
+
+      data::runtime_data_model get_data_type ();
 
 
       full_value_data input_value;

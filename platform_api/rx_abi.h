@@ -535,6 +535,20 @@ extern "C" {
 
 	} host_source_def_struct;
 
+	typedef void(*rx_source_get_method_model_t)(void* whose, struct bytes_value_struct_t* data);
+
+	typedef struct host_source_def_struct4_t
+	{
+		host_runtime_def_struct runtime;
+
+		rx_update_source_t update_source;
+		rx_result_update_source_t result_update_source;
+
+		rx_source_get_method_model_t source_data_model;
+
+
+	} host_source_def_struct4;
+
 	typedef struct plugin_source_runtime_struct_t
 	{
 		lock_reference_struct anchor;
@@ -544,6 +558,16 @@ extern "C" {
 		uint32_t io_data;
 
 	} plugin_source_runtime_struct;
+
+	typedef struct plugin_source_runtime_struct4_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_source_def_struct* def;
+		host_source_def_struct4* host_def;
+		uint32_t io_data;
+
+	} plugin_source_runtime_struct4;
 
 	// Mapper ABI interface
 	//!!! IMPORTANT rx_value_t is fast_uint8, so we have to convert
@@ -623,6 +647,23 @@ extern "C" {
 
 	} host_mapper_def_struct3;
 
+	
+	typedef struct host_mapper_def_struct4_t
+	{
+		host_runtime_def_struct runtime;
+
+		rx_mapper_write_pending_t mapper_write_pending;
+		rx_mapper_map_current_t map_current_value;
+		rx_mapper_execute_pending_t mapper_execute_pending;
+
+		rx_mapper_get_method_model_t mapper_get_method_inputs;
+		rx_mapper_get_method_model_t mapper_get_method_outputs;
+		rx_mapper_get_method_model_t mapper_get_event_arguments;
+		rx_mapper_get_method_model_t mapper_data_model;
+
+
+	} host_mapper_def_struct4;
+
 	typedef struct plugin_mapper_runtime_struct_t
 	{
 		lock_reference_struct anchor;
@@ -642,6 +683,16 @@ extern "C" {
 		uint32_t io_data;
 
 	} plugin_mapper_runtime_struct3;
+
+	typedef struct plugin_mapper_runtime_struct4_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_mapper_def_struct3* def;
+		host_mapper_def_struct4* host_def;
+		uint32_t io_data;
+
+	} plugin_mapper_runtime_struct4;
 
 	// Filter ABI interface
 	typedef rx_result_struct(*rx_init_filter_t)(void* whose, init_ctx_ptr ctx);

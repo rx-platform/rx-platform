@@ -78,6 +78,50 @@ extern "C"
     };
 
 
+    rx_result_struct c_update_source4(void* whose, full_value_type val)
+    {
+        rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>* self 
+            = (rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>*)whose;
+        return self->update_source(rx_value(val)).move();
+    }
+    void c_result_update_source4(void* whose, rx_result_struct result, runtime_transaction_id_t id)
+    {
+        rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>* self 
+            = (rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>*)whose;
+        self->result_update_source(result, id);
+    }
+    void c_source_start_timer4(void* whose, runtime_handle_t timer, uint32_t period)
+    {
+        rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>* self 
+            = (rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>*)whose;
+        self->start_timer(timer, period);
+    }
+    void c_source_suspend_timer4(void* whose, runtime_handle_t timer)
+    {
+        rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>* self 
+            = (rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>*)whose;
+        self->suspend_timer(timer);
+    }
+    void c_source_destroy_timer4(void* whose, runtime_handle_t timer)
+    {
+        rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>* self 
+            = (rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>*)whose;
+        self->destroy_timer(timer);
+    }
+
+    host_source_def_struct _g_source_def4_
+    {
+        {
+            nullptr
+            , nullptr
+            , c_source_start_timer4
+            , c_source_suspend_timer4
+            , c_source_destroy_timer4
+        }
+        , c_update_source4
+        , c_result_update_source4
+    };
+
     rx_result_struct c_mapper_write_pending(void* whose
         , runtime_transaction_id_t id, int test, rx_security_handle_t identity, typed_value_type val)
     {
@@ -191,6 +235,101 @@ extern "C"
         , c_mapper_execute_pending3
         , c_mapper_get_method_inputs_model3
         , c_mapper_get_method_outputs_model3
+    };
+
+
+    rx_result_struct c_mapper_write_pending4(void* whose
+        , runtime_transaction_id_t id, int test, rx_security_handle_t identity, typed_value_type val)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+        return self->mapper_write(id, test != 0, identity, rx_simple_value(val)).move();
+    }
+    void c_mapper_map_current4(void* whose)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+        self->extern_map_current_value();
+    }
+    void c_mapper_start_timer4(void* whose, runtime_handle_t timer, uint32_t period)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+        self->start_timer(timer, period);
+    }
+    void c_mapper_suspend_timer4(void* whose, runtime_handle_t timer)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+        self->suspend_timer(timer);
+    }
+    void c_mapper_destroy_timer4(void* whose, runtime_handle_t timer)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+        self->destroy_timer(timer);
+    }
+    rx_result_struct c_mapper_execute_pending4(void* whose
+        , runtime_transaction_id_t id, int test, rx_security_handle_t identity, struct typed_value_type val)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+        return self->mapper_execute(id, test != 0, identity, rx_simple_value(val)).move();
+    }
+
+    void c_mapper_get_method_inputs_model4(void* whose, struct bytes_value_struct_t* data)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+
+        byte_string buff = self->extern_get_method_inputs();
+        rx_init_bytes_value_struct(data, (const uint8_t*)(&buff[0]), buff.size());
+    }
+
+    void c_mapper_get_method_outputs_model4(void* whose, struct bytes_value_struct_t* data)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+
+        byte_string buff = self->extern_get_method_outputs();
+        rx_init_bytes_value_struct(data, (const uint8_t*)(&buff[0]), buff.size());
+    }
+
+
+    void c_mapper_get_event_arguments4(void* whose, struct bytes_value_struct_t* data)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+
+        byte_string buff = self->extern_get_event_arguments();
+        rx_init_bytes_value_struct(data, (const uint8_t*)(&buff[0]), buff.size());
+    }
+
+    void c_mapper_get_mapper_data_model4(void* whose, struct bytes_value_struct_t* data)
+    {
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
+            (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
+
+        byte_string buff = self->extern_get_data_type();
+        rx_init_bytes_value_struct(data, (const uint8_t*)(&buff[0]), buff.size());
+
+    }
+
+    host_mapper_def_struct4 _g_mapper_def4_
+    {
+        {
+            nullptr
+            , nullptr
+            , c_mapper_start_timer4
+            , c_mapper_suspend_timer4
+            , c_mapper_destroy_timer4
+        }
+        , c_mapper_write_pending4
+        , c_mapper_map_current4
+        , c_mapper_execute_pending4
+        , c_mapper_get_method_inputs_model4
+        , c_mapper_get_method_outputs_model4
+        , c_mapper_get_mapper_data_model4
     };
 
     rx_result_struct c_filter_changed(void* whose)
@@ -395,6 +534,12 @@ void extern_source_runtime<implT>::destroy_timer (runtime_handle_t handle)
     rx_platform::extern_timers::instance().destroy_timer(handle);
 }
 
+template <typename implT>
+byte_string extern_source_runtime<implT>::extern_get_data_type ()
+{
+    return byte_string();
+}
+
 template class extern_source_runtime<plugin_source_runtime_struct>;
 // Parameterized Class rx_platform::runtime::blocks::extern_mapper_runtime 
 
@@ -528,6 +673,18 @@ byte_string extern_mapper_runtime<implT>::extern_get_method_outputs ()
     return byte_string();
 }
 
+template <typename implT>
+byte_string extern_mapper_runtime<implT>::extern_get_event_arguments ()
+{
+    return byte_string();
+}
+
+template <typename implT>
+byte_string extern_mapper_runtime<implT>::extern_get_data_type ()
+{
+    return byte_string();
+}
+
 
 template <>
 extern_mapper_runtime<plugin_mapper_runtime_struct_t>::extern_mapper_runtime(plugin_mapper_runtime_struct_t* impl)
@@ -545,6 +702,15 @@ extern_mapper_runtime<plugin_mapper_runtime_struct3_t>::extern_mapper_runtime(pl
 {
     impl_->host = this;
     impl_->host_def = &_g_mapper_def3_;
+}
+
+template <>
+extern_mapper_runtime<plugin_mapper_runtime_struct4_t>::extern_mapper_runtime(plugin_mapper_runtime_struct4_t* impl)
+    : impl_(impl)
+    , mapper_runtime(&impl->anchor)
+{
+    impl_->host = this;
+    impl_->host_def = &_g_mapper_def4_;
 }
 
 

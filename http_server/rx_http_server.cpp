@@ -159,7 +159,11 @@ void http_server::send_response (http_request& request, http_response response)
 		cached_items_.emplace(request.path, response);
 	}
 	HTTP_LOG_DEBUG("http_server", 100, "Sending HTTP response "s + response.result_string + " for "s + request.path);
-	request.whose->send_response(std::move(response));
+	auto ret = request.whose->send_response(std::move(response));
+	if (!ret)
+	{
+		HTTP_LOG_ERROR("http_server", 100, "Error Sending HTTP response "s + ret.errors_line() + " for "s + request.path);
+	}
 }
 
 string_type http_server::get_server_info ()

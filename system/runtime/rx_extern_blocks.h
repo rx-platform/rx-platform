@@ -85,6 +85,8 @@ Extern Source. Source implementation for externally defined source.");
 
       void destroy_timer (runtime_handle_t handle);
 
+      byte_string extern_get_data_type ();
+
 
   protected:
 
@@ -141,6 +143,10 @@ class extern_mapper_runtime : public mapper_runtime
       byte_string extern_get_method_inputs ();
 
       byte_string extern_get_method_outputs ();
+
+      byte_string extern_get_event_arguments ();
+
+      byte_string extern_get_data_type ();
 
 
   protected:

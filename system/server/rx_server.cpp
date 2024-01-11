@@ -365,27 +365,6 @@ string_type rx_gate::resolve_ethernet_alias (const string_type& what) const
 	return io_manager_->resolve_ethernet_alias(what);
 }
 
-template <class typeT>
-rx_result rx_gate::register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
-{
-	if (platform_status_ == rx_platform_status::initializing)
-		return rx_internal::model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
-	else
-		return "Wrong platform status for constructor registration!";
-}
 
-template <class typeT>
-rx_result rx_gate::register_constructor_internal(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f)
-{
-	if (platform_status_ == rx_platform_status::initializing)
-		return rx_internal::model::platform_types_manager::instance().get_type_repository<typeT>().register_constructor(id, f);
-	else
-		return "Wrong platform status for constructor registration!";
-}
-
-template rx_result rx_gate::register_constructor<object_type>(const rx_node_id& id, std::function<object_type::RImplPtr()> f);
-template rx_result rx_gate::register_constructor<port_type>(const rx_node_id& id, std::function<port_type::RImplPtr()> f);
-template rx_result rx_gate::register_constructor<domain_type>(const rx_node_id& id, std::function<domain_type::RImplPtr()> f);
-template rx_result rx_gate::register_constructor<application_type>(const rx_node_id& id, std::function<application_type::RImplPtr()> f);
 } // namespace rx_platform
 

@@ -1283,6 +1283,19 @@ data::runtime_data_model mapper_data::get_event_arguments ()
 	}
 }
 
+data::runtime_data_model mapper_data::get_data_type ()
+{
+	if (io_.get_complex() && my_owner_.block_ptr)
+	{
+		return my_owner_.block_ptr->block.create_runtime_model();
+	}
+	else
+	{
+		RX_ASSERT(false);
+		return data::runtime_data_model();
+	}
+}
+
 
 // Class rx_platform::runtime::structure::source_data 
 
@@ -1632,6 +1645,19 @@ const rx_value& source_data::get_variable_value () const
 			return my_variable_.variable_ptr->value;
 	}
 	return g_empty;
+}
+
+data::runtime_data_model source_data::get_data_type ()
+{
+	if (io_.get_complex() && my_variable_.block_ptr)
+	{
+		return my_variable_.block_ptr->block.create_runtime_model();
+	}
+	else
+	{
+		RX_ASSERT(false);
+		return data::runtime_data_model();
+	}
 }
 
 

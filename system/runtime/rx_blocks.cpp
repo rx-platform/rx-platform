@@ -332,6 +332,32 @@ data::runtime_data_model mapper_runtime::get_method_outputs ()
     }
 }
 
+data::runtime_data_model mapper_runtime::get_event_arguments ()
+{
+    if (container_)
+    {
+        return container_->get_event_arguments();
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return data::runtime_data_model();
+    }
+}
+
+data::runtime_data_model mapper_runtime::get_data_type ()
+{
+    if (container_)
+    {
+        return container_->get_data_type();
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return data::runtime_data_model();
+    }
+}
+
 
 rx_value_t mapper_runtime::get_value_type () const
 {
@@ -470,6 +496,19 @@ rx_result source_runtime::source_execute (execute_data&& data, runtime_process_c
 std::vector<rx_simple_value> source_runtime::get_source_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const
 {
     return ctx.sources.get_source_values(id, path);
+}
+
+data::runtime_data_model source_runtime::get_data_type ()
+{
+    if (container_)
+    {
+        return container_->get_data_type();
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return data::runtime_data_model();
+    }
 }
 
 

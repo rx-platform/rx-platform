@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -54,7 +54,7 @@ namespace rx {
 
 namespace asn {
 
-// Class rx::asn::oid_t 
+// Class rx::asn::oid_t
 
 oid_t::oid_t()
       : heap_storage_(NULL)
@@ -302,7 +302,7 @@ void oid_t::clear ()
 }
 
 
-// Class rx::asn::rx_asn_in_stream 
+// Class rx::asn::rx_asn_in_stream
 
 rx_asn_in_stream::rx_asn_in_stream (io::rx_const_io_buffer* buffer)
       : buffer_(buffer),
@@ -1075,7 +1075,7 @@ void rx_asn_in_stream::read_explicit (int64_t& val)
 }
 
 
-// Class rx::asn::rx_asn_out_stream 
+// Class rx::asn::rx_asn_out_stream
 
 rx_asn_out_stream::rx_asn_out_stream (io::rx_io_buffer* buffer, bool fixed)
       : buffer_(buffer)

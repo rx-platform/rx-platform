@@ -32,7 +32,16 @@
 #define rx_linux_h 1
 
 
-#define GNU_SOURCE
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#if UINTPTR_MAX == 0xffffffff
+#ifndef _TIME_BITS
+#define _TIME_BITS 64
+#define _FILE_OFFSET_BITS 64
+#endif
+#endif
 
 
 

@@ -329,7 +329,7 @@ class opcua_simple_address_space : public opcua_addr_space::opcua_address_space_
 
 class opcua_basic_server_port : public opcua_basic_server_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 6, 0, "\
+    DECLARE_CODE_INFO("rx", 0, 7, 0, "\
 Basic OPC UA protocol port class. Basic implementation OPC UA binary protocol core with simple mapping.");
 
     DECLARE_REFERENCE_PTR(opcua_basic_server_port);

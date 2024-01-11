@@ -181,6 +181,10 @@ mapper runtime. basic implementation of an mapper runtime");
 
       data::runtime_data_model get_method_outputs ();
 
+      data::runtime_data_model get_event_arguments ();
+
+      data::runtime_data_model get_data_type ();
+
 
       rx_value_t get_value_type () const;
 
@@ -310,6 +314,8 @@ source runtime. basic implementation of an source runtime");
       void source_execute_result_received (rx_simple_value out_val, rx_result&& result, runtime_transaction_id_t id);
 
       std::vector<rx_simple_value> get_source_values (runtime::runtime_init_context& ctx, const rx_node_id& id, const string_type& path) const;
+
+      data::runtime_data_model get_data_type ();
 
 
       rx_value_t get_value_type () const;

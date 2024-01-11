@@ -41,6 +41,7 @@ int is_delim(char c)
 
 double complex_amplitude_helper(const complex_value_struct* val);
 void destroy_union_value(union rx_value_union* who, rx_value_t type);
+void assign_value(union rx_value_union* left, const union rx_value_union* right, rx_value_t type);
 
 int strmultiequal(const char* str, const char* vals[], size_t vals_count, int* help_buffer)
 {
@@ -2010,13 +2011,52 @@ RX_COMMON_API int rx_convert_value(struct typed_value_type* val, rx_value_t type
 	}
 	else if (target_is_array && current_is_array)
 	{// both are arrays convert individual items
-		for (size_t i = 0; i < val->value.array_value.size; i++)
+		union rx_value_union static_temp[0x10];
+		union rx_value_union* temp;
+		if (val->value.array_value.size > 0)
 		{
-			if (!convert_union(&val->value.array_value.values[i], val->value_type & RX_STRIP_ARRAY_MASK, type & RX_STRIP_ARRAY_MASK))
-				return RX_ERROR;
+			int ret = RX_OK;
+			if (val->value.array_value.size > sizeof(static_temp) / sizeof(static_temp[0]))
+				temp = malloc(val->value.array_value.size * sizeof(union rx_value_union));
+			else
+				temp = static_temp;
+			size_t i = 0;
+			for (i = 0; i < val->value.array_value.size; i++)
+			{
+				assign_value(&temp[i], &val->value.array_value.values[i], val->value_type & RX_STRIP_ARRAY_MASK);
+				if (!convert_union(&temp[i], val->value_type & RX_STRIP_ARRAY_MASK, type & RX_STRIP_ARRAY_MASK))
+				{
+					ret = RX_ERROR;
+					break;
+				}
+			}
+			if (ret == RX_OK)
+			{
+				// everything is OK so destroy previous and assign new ones
+				for (int j = 0; j < val->value.array_value.size; j++)
+				{
+					destroy_union_value(&val->value.array_value.values[j], val->value_type & RX_STRIP_ARRAY_MASK);
+					val->value.array_value.values[j] = temp[j];
+				}
+				val->value_type = type;
+			}
+			else if(i > 0)
+			{
+				for (int j = 0; j < i; j++)
+				{
+					destroy_union_value(&temp[j], type & RX_STRIP_ARRAY_MASK);
+				}
+			}
+			if (val->value.array_value.size > sizeof(static_temp) / sizeof(static_temp[0]))
+				free(temp);
+
+			return ret;
 		}
-		val->value_type = type;
-		return RX_OK;
+		else
+		{
+			val->value_type = type;
+			return RX_OK;
+		}
 	}
 	else if (!target_is_array && current_is_array)
 	{// from array to simple value

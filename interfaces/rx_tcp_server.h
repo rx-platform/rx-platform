@@ -145,6 +145,8 @@ class tcp_server_endpoint
 
       security::security_context_ptr identity_;
 
+      locks::slim_lock state_lock_;
+
 
 };
 
@@ -154,7 +156,7 @@ class tcp_server_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< tcp_server_endpoint  > tcp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< rx_internal::interfaces::ip_endpoints::tcp_server_endpoint  > tcp_server_base;
 
 
 
@@ -163,7 +165,7 @@ typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< tcp_s
 
 class tcp_server_port : public tcp_server_base  
 {
-    DECLARE_CODE_INFO("rx", 1, 1, 0, "\
+    DECLARE_CODE_INFO("rx", 1, 2, 0, "\
 TCP Server port class. implementation of an TCP/IP4 server side, listen, accept, clients list...");
 
     DECLARE_REFERENCE_PTR(tcp_server_port);

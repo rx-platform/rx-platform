@@ -291,8 +291,6 @@ class rx_gate
 
 
 
-	  template <class typeT>
-	  rx_result register_constructor(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
   protected:
 
   private:
@@ -300,8 +298,7 @@ class rx_gate
 
       ~rx_gate();
 
-      template <class typeT>
-      rx_result register_constructor_internal(const rx_node_id& id, std::function<typename typeT::RImplPtr()> f);
+
 
       hosting::rx_platform_host *host_;
 
