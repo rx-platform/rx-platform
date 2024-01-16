@@ -255,11 +255,11 @@ void log_object::deinitialize ()
 	g_object = nullptr;
 }
 
-rx_result log_object::start (bool test, size_t log_cache_size, int priority)
+rx_result log_object::start (bool test, std::vector<log_subscriber::smart_ptr>& subscribers, int priority)
 {
-	if (log_cache_size)
+	for(auto one : subscribers)
 	{
-		register_subscriber(rx_create_reference<cache_log_subscriber>(log_cache_size));
+		register_subscriber(one);
 	}
 	const char* line = "Log started!";
 	LOG_CODE_PREFIX
@@ -507,6 +507,52 @@ rx_result cache_log_subscriber::read_log (const log_query_type& query, log_event
 string_type cache_log_subscriber::get_name () const
 {
 	return CACHE_LOG_NAME;
+}
+
+
+// Class rx_platform::log::file_log_subscriber 
+
+file_log_subscriber::file_log_subscriber (const string_type& path, log_event_type level)
+      : level_(level),
+        path_(path),
+        file_(nullptr)
+{
+	file_ = fopen(path.c_str(), "wb");
+}
+
+
+file_log_subscriber::~file_log_subscriber()
+{
+	if (file_)
+		fclose(file_);
+}
+
+
+
+void file_log_subscriber::log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when)
+{
+	if (file_ && event_type >= level_)
+	{
+		char buff[STACK_LOG_SIZE];
+
+		int ret = snprintf(buff, STACK_LOG_SIZE, "%s %s@%s \t%s \t%s:%s\r\n",
+			when.get_string().c_str(),
+			event_type_to_string(event_type),
+			library.c_str(),
+			user.c_str(),
+			source.c_str(),
+			message.c_str());
+		if (ret < STACK_LOG_SIZE)
+		{
+			fwrite(buff, ret, 1, file_);
+			fflush(file_);
+		}
+	}
+}
+
+string_type file_log_subscriber::get_name () const
+{
+	return "file";
 }
 
 

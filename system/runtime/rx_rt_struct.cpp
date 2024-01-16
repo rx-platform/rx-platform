@@ -88,14 +88,12 @@ string_type variable_data::type_name = RX_CPP_VARIABLE_TYPE_NAME;
 
 variable_data::variable_data()
 {
-	pending_tasks_ = std::make_unique< std::map<runtime_transaction_id_t, write_task*> >();
 }
 
 variable_data::variable_data (runtime_item::smart_ptr&& rt, variable_runtime_ptr&& var, const variable_data& prototype)
 	: item(std::move(rt))
 	, variable_ptr(std::move(var))
 {
-	pending_tasks_ = std::make_unique< std::map<runtime_transaction_id_t, write_task*> >();
 }
 
 
@@ -168,19 +166,12 @@ rx_result variable_data::write_value (write_data&& data, write_task* task, runti
 
 	if (rx_is_debug_instance())
 	{
-		static string_type message;
-		static char* message_buffer = nullptr;
-		if (message.empty() || message_buffer == nullptr)
-		{
-			std::ostringstream ss;
-			ss << "Variable "
-				<< full_path
-				<< " received write request with id:%08X";
-			message = ss.str();
-			message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/];
-		}
-		sprintf(message_buffer, message.c_str(), data.transaction_id);
-		RUNTIME_LOG_DEBUG("variable_runtime", 500, message_buffer);
+		std::ostringstream ss;
+		ss << "Variable "
+			<< full_path
+			<< " received write request with id:"
+			<< data.transaction_id;
+		RUNTIME_LOG_DEBUG("variable_data", 500, ss.str());
 	}
 
 	rx_result result;
@@ -207,32 +198,21 @@ rx_result variable_data::write_value (write_data&& data, write_task* task, runti
 			}
 		}
 		auto& sources = item->get_sources();
-		auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
-		pending_tasks_->emplace(new_trans, task);
-		data.transaction_id = new_trans;
-		result = variable_ptr->variable_write(std::move(data), ctx, sources);
-		if (!result)
-			pending_tasks_->erase(new_trans);
+		result = variable_ptr->variable_write(std::move(data), task, ctx, sources);
 	}
 	if (!result)
 	{
 		if (rx_is_debug_instance())
 		{
-			static string_type message;
-			char* message_buffer = nullptr;
-			if (message.empty())
-			{
-				std::ostringstream ss;
-				ss << "Variable "
-					<< full_path
-					<< " received write result for id:%08X - %s";
-				message = ss.str();
-			}
-			string_type error = result.errors_line();
-			message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
-			sprintf(message_buffer, message.c_str(), data.transaction_id, error.c_str());
-			RUNTIME_LOG_DEBUG("variable_runtime", 500, message_buffer);
-			delete[] message_buffer;
+			
+			std::ostringstream ss;
+			ss << "Variable "
+				<< full_path
+				<< " returned write result for id:"
+				<< data.transaction_id
+				<< " - " << result.errors_line();
+
+			RUNTIME_LOG_DEBUG("variable_data", 500, ss.str());
 		}
 	}
 	return result;
@@ -322,42 +302,7 @@ void variable_data::process_runtime (runtime_process_context* ctx)
 
 void variable_data::process_result (runtime_transaction_id_t id, rx_result&& result)
 {
-	auto it = pending_tasks_->find(id);
-	if (it != pending_tasks_->end())
-	{
-		if (it->second)
-		{
-			if (rx_is_debug_instance())
-			{
-				static string_type message;
-				static char* message_buffer = nullptr;
-				if (message.empty())
-				{
-					std::ostringstream ss;
-					ss << "Variable "
-						<< full_path
-						<< " received write result for id:%08X - %s";
-					message = ss.str();
-					message_buffer = new char[message.size() + 0x20/*This will hold digits and just a bit reserve*/];
-				}
-				if (result)
-				{
-					sprintf(message_buffer, message.c_str(), it->second->get_id(), "OK");
-					RUNTIME_LOG_DEBUG("variable_runtime", 500, message_buffer);
-				}
-				else
-				{
-					string_type error = result.errors_line();
-					char* error_message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
-					sprintf(error_message_buffer, message.c_str(), it->second->get_id(), error.c_str());
-					RUNTIME_LOG_DEBUG("variable_runtime", 500, error_message_buffer);
-					delete[] error_message_buffer;
-				}
-			}
-			it->second->process_result(std::move(result));
-		}
-		pending_tasks_->erase(it);
-	}
+	variable_ptr->process_result(id, std::move(result));
 }
 
 rx_result variable_data::get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const
@@ -452,9 +397,17 @@ rx_result variable_data::stop_runtime (runtime::runtime_stop_context& ctx)
 
 bool variable_data::prepare_value (rx_value& prepared_value, runtime_process_context* ctx)
 {
-	auto& sources = item->get_sources();
+	std::vector<rx_value> sources;
 
-	prepared_value = variable_ptr->get_variable_input(ctx, sources);
+	auto& sources_data = item->get_sources();
+	for (auto& source : sources_data)
+	{
+		if (source.is_input())
+		{
+			sources.emplace_back(source.get_current_value());
+		}
+	}
+	prepared_value = variable_ptr->get_variable_input(ctx, std::move(sources));
 	if (prepared_value.get_time().is_null())
 		return false;
 
@@ -554,6 +507,25 @@ rx_result variable_data::check_set_value (runtime_process_context* ctx, bool int
 			return "Test mode mismatch!";
 	}
 	return true;
+}
+
+void variable_data::send_write_result (write_task* task, rx_result result)
+{
+	if (rx_is_debug_instance())
+	{
+		std::ostringstream ss;
+		ss << "Variable "
+			<< full_path
+			<< " sending write result for id:"
+			<< task->get_id() << " - ";
+		if (result)
+			ss << "OK";
+		else
+			ss << result.errors_line();
+
+		RUNTIME_LOG_DEBUG("variable_runtime", 500, ss.str());
+	}
+	task->process_result(std::move(result));
 }
 
 
@@ -851,20 +823,13 @@ void mapper_data::process_write (write_data&& data)
 			{
 				if (rx_is_debug_instance())
 				{
-					static string_type message;
-					static char* message_buffer = nullptr;
-					if (message.empty())
-					{
-						std::ostringstream ss;
-						ss << "Mapper "
-							<< full_path
-							<< " received write result for id:%08X - "
-							<< RX_INVALID_CONVERSION;
-						message = ss.str();
-						message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/];
-					}
-					sprintf(message_buffer, message.c_str(), trans_id);
-					RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
+					std::ostringstream ss;
+					ss << "Mapper "
+						<< full_path
+						<< " sending write result for id:"
+						<< trans_id << " - " RX_INVALID_CONVERSION;
+
+					RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 				}
 				mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, trans_id, context_);
 			}
@@ -892,21 +857,14 @@ void mapper_data::process_write (write_data&& data)
 				{
 					if (rx_is_debug_instance())
 					{
-						static string_type message;
-						char* message_buffer = nullptr;
-						if (message.empty())
-						{
-							std::ostringstream ss;
-							ss << "Mapper "
-								<< full_path
-								<< " received write result for id:%08X - %s";
-							message = ss.str();
-						}
-						string_type error = result.errors_line();
-						message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
-						sprintf(message_buffer, message.c_str(), trans_id, error.c_str());
-						RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
-						delete[] message_buffer;
+						std::ostringstream ss;
+						ss << "Mapper "
+							<< full_path
+							<< " sent write result for id:"
+							<< trans_id 
+							<< " - " << result.errors_line();
+
+						RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 					}
 					mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
 				}
@@ -922,21 +880,13 @@ void mapper_data::process_write (write_data&& data)
 					{
 						if (rx_is_debug_instance())
 						{
-							static string_type message;
-							char* message_buffer = nullptr;
-							if (message.empty())
-							{
-								std::ostringstream ss;
-								ss << "Mapper "
-									<< full_path
-									<< " received write result for id:%08X - %s";
-								message = ss.str();
-							}
-							string_type error = result.errors_line();
-							message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
-							sprintf(message_buffer, message.c_str(), trans_id, error.c_str());
-							RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
-							delete[] message_buffer;
+							std::ostringstream ss;
+							ss << "Mapper "
+								<< full_path
+								<< " sending write result for id:"
+								<< trans_id << " - " << result.errors_line();
+								
+							RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 						}
 						mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
 					}
@@ -970,21 +920,12 @@ void mapper_data::process_execute (execute_data&& data)
 			{
 				if (rx_is_debug_instance())
 				{
-					static string_type message;
-					char* message_buffer = nullptr;
-					if (message.empty())
-					{
-						std::ostringstream ss;
-						ss << "Mapper "
-							<< full_path
-							<< " received execute result for id:%08X - %s";
-						message = ss.str();
-					}
-					string_type error = result.errors_line();
-					message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
-					sprintf(message_buffer, message.c_str(), trans_id, error.c_str());
-					RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
-					delete[] message_buffer;
+					std::ostringstream ss;
+					ss << "Mapper "
+						<< full_path
+						<< " sending execute result for id:"
+						<< trans_id << " - " << result.errors_line();
+					RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 				}
 				mapper_ptr->mapper_execute_result_received(std::move(result), values::rx_simple_value(), trans_id, context_);
 			}
@@ -1083,30 +1024,16 @@ void mapper_data::process_write_result (rx_result&& result, runtime_transaction_
 	{
 		if (rx_is_debug_instance())
 		{
-			static string_type message;
-			static char* message_buffer = nullptr;
-			if (message.empty())
-			{
-				std::ostringstream ss;
-				ss << "Mapper "
-					<< full_path
-					<< " received write result for id:%08X";
-				message = ss.str() + " - OK";
-				message_buffer = new char[message.size() + 0x20/*This will hold digits and just a bit reserve*/];
-			}
+			std::ostringstream ss;
+			ss << "Mapper "
+				<< full_path
+				<< " received sending result for id:"
+				<< id << " - ";
 			if (result)
-			{
-				sprintf(message_buffer, message.c_str(), id);
-				RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
-			}
+				ss << "OK";
 			else
-			{
-				string_type error = " - "s + result.errors_line();
-				char* error_message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
-				sprintf(error_message_buffer, (message + " - %s").c_str(), id, error.c_str());
-				RUNTIME_LOG_DEBUG("mapper_runtime", 500, error_message_buffer);
-				delete[] error_message_buffer;
-			}
+				ss << result.errors_line();
+			RUNTIME_LOG_DEBUG("mapper_runtime", 500, ss.str());
 		}
 		mapper_ptr->mapper_result_received(std::move(result), id, context_);
 	}
@@ -1118,19 +1045,12 @@ void mapper_data::process_event (values::rx_simple_value data)
 	{
 		if (rx_is_debug_instance())
 		{
-			static string_type message;
-			static char* message_buffer = nullptr;
-			if (message.empty())
-			{
-				std::ostringstream ss;
-				ss << "Mapper "
-					<< full_path
-					<< " received event";
-				message = ss.str() + " - OK";
-				message_buffer = new char[message.size() + 0x20/*This will hold digits and just a bit reserve*/];
-			}
-			sprintf(message_buffer, message.c_str());
-			RUNTIME_LOG_DEBUG("mapper_data", 500, message_buffer);
+			std::ostringstream ss;
+			ss << "Mapper "
+				<< full_path
+				<< " received event";
+
+			RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 		}
 		mapper_ptr->mapped_event_fired(std::move(data), context_);
 	}
@@ -1142,30 +1062,16 @@ void mapper_data::process_execute_result (rx_result&& result, values::rx_simple_
 	{
 		if (rx_is_debug_instance())
 		{
-			static string_type message;
-			static char* message_buffer = nullptr;
-			if (message.empty())
-			{
-				std::ostringstream ss;
-				ss << "Mapper "
-					<< full_path
-					<< " received execute result for id:%08X";
-				message = ss.str() + " - OK";
-				message_buffer = new char[message.size() + 0x20/*This will hold digits and just a bit reserve*/];
-			}
+			std::ostringstream ss;
+			ss << "Mapper "
+				<< full_path
+				<< " received execute result for id:"
+				<< id << " - ";
 			if (result)
-			{
-				sprintf(message_buffer, message.c_str(), id);
-				RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
-			}
+				ss << "OK";
 			else
-			{
-				string_type error = " - "s + result.errors_line();
-				char* error_message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
-				sprintf(error_message_buffer, (message + " - %s").c_str(), id, error.c_str());
-				RUNTIME_LOG_DEBUG("mapper_runtime", 500, error_message_buffer);
-				delete[] error_message_buffer;
-			}
+				ss << result.errors_line();
+			RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 		}
 		mapper_ptr->mapper_execute_result_received(std::move(result), std::move(out_data), id, context_);
 	}
@@ -1485,19 +1391,12 @@ void source_data::process_write (write_data&& data)
 	{
 		if (rx_is_debug_instance())
 		{
-			static string_type message;
-			static char* message_buffer = nullptr;
-			if (message.empty() || message_buffer == nullptr)
-			{
-				std::ostringstream ss;
-				ss << "Source "
-					<< full_path
-					<< " received write request with id:%08X";
-				message = ss.str();
-				message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/];
-			}
-			sprintf(message_buffer, message.c_str(), data.transaction_id);
-			RUNTIME_LOG_DEBUG("source_runtime", 500, message_buffer);
+			std::ostringstream ss;
+			ss << "Source "
+				<< full_path
+				<< " received write request with id:"
+				<< data.transaction_id;
+			RUNTIME_LOG_DEBUG("source_data", 500, ss.str());
 		}
 		rx_result result;
 		auto& filters = item->get_filters();
@@ -1523,8 +1422,6 @@ void source_data::process_write (write_data&& data)
 		}
 		if (!result)
 			source_result_pending(std::move(result), data.transaction_id);
-
-
 	}
 }
 
@@ -1553,6 +1450,21 @@ void source_data::source_result_pending (rx_result&& result, runtime_transaction
 {
 	if (context_)
 	{
+
+		if (rx_is_debug_instance())
+		{
+			std::ostringstream ss;
+			ss << "Source "
+				<< full_path
+				<< " sending write result id:"
+				<< id << " - ";
+			if (result)
+				ss << "OK";
+			else
+				ss << result.errors_line();
+			RUNTIME_LOG_DEBUG("source_data", 500, ss.str());
+		}
+
 		write_result_struct<structure::source_data> data;
 		data.whose = this;
 		data.transaction_id = id;
@@ -2260,14 +2172,6 @@ rx_result value_data::check_set_value (runtime_process_context* ctx, bool intern
 
 
 // Class rx_platform::runtime::structure::runtime_item 
-
-
-// Class rx_platform::runtime::structure::write_task 
-
-write_task::~write_task()
-{
-}
-
 
 
 // Class rx_platform::runtime::structure::mapper_write_task 
@@ -4411,6 +4315,14 @@ void mapper_execute_task::process_result (rx_result&& result, data::runtime_valu
 {
 	//my_mapper_->process_execute_result(std::move(result), std::move(data), transaction_id_);
 }
+
+
+// Class rx_platform::runtime::structure::write_task 
+
+write_task::~write_task()
+{
+}
+
 
 
 } // namespace structure

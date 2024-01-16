@@ -36,6 +36,7 @@
 // rx_win32_service
 #include "win32_hosts/rx_win32_service.h"
 
+#include "system/server//rx_file_helpers.h"
 
 
 namespace win32 {
@@ -417,6 +418,25 @@ string_type win32_service_host::get_default_user_storage () const
 		return temp;
 	}
 	return "";
+}
+
+string_type win32_service_host::get_default_log_directory () const
+{
+	char buff[MAX_PATH];
+	DWORD size = sizeof(buff);
+	string_type ret;
+	if (GetEnvironmentVariableA("ProgramData", buff, size))
+	{
+		if (buff[0] == '"')
+		{
+			ret = rx::rx_combine_paths(&buff[1], "rx-platform/log/rx-service");
+		}
+		else
+		{
+			ret = rx::rx_combine_paths(buff, "rx-platform/log/rx-service");
+		}
+	}
+	return ret;
 }
 
 

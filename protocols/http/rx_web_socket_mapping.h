@@ -35,6 +35,8 @@
 
 // dummy
 #include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
 
@@ -117,6 +119,9 @@ Web Socket port. Implementation of Web Socket transport.");
       virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
 
       void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
+
+
+      rx_platform::runtime::io_types::simple_port_status status;
 
 
   protected:

@@ -57,6 +57,7 @@
 #include "interfaces/rx_full_duplex_packet.h"
 #include "interfaces/rx_transaction_limiter.h"
 #include "interfaces/rx_stxetx.h"
+#include "interfaces/rx_size_limiter.h"
 #include "protocols/opcua/rx_opcua_resources.h"
 
 
@@ -212,6 +213,10 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configurat
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 			RX_TRANS_LIMITER_TYPE_ID, [] {
 				return rx_create_reference<rx_internal::interfaces::ports_lib::transaction_limiter_port>();
+			});;
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_SIZE_LIMITER_TYPE_ID, [] {
+				return rx_create_reference<rx_internal::interfaces::ports_lib::size_limiter_port>();
 			});
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 			RX_LISTENER_TO_INITIATOR_PORT_TYPE_ID, [] {

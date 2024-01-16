@@ -299,7 +299,7 @@ class variable_type : public rx::pointers::reference_object
 	DECLARE_CODE_INFO("rx", 0, 5, 1, "\
 implementation of variable type");
 public:
-    static constexpr bool has_default_constructor = true;
+    static constexpr bool has_default_constructor = false;
 	typedef runtime::structure::variable_data RDataType;
 	typedef runtime::blocks::variable_runtime RType;
 	typedef runtime::variable_runtime_ptr RTypePtr;

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -359,9 +359,6 @@ extern "C" {
 	{
 		auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().register_constructor(
 			id, [construct_func] {
-
-				auto construct_result = construct_func();
-
 				return rx_create_reference<runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct> >(construct_func());
 			});
 		return result.move();
@@ -1040,7 +1037,7 @@ const platform_api3_t* get_plugins_dynamic_api3()
 
 namespace rx_platform {
 
-// Class rx_platform::extern_timer_job 
+// Class rx_platform::extern_timer_job
 
 extern_timer_job::extern_timer_job (plugin_job_struct* extern_data)
       : anchor_(&extern_data->anchor),
@@ -1056,7 +1053,7 @@ void extern_timer_job::process ()
 }
 
 
-// Class rx_platform::extern_timers 
+// Class rx_platform::extern_timers
 
 
 extern_timers& extern_timers::instance ()
@@ -1163,7 +1160,7 @@ void extern_timers::destroy_timer (runtime_handle_t handle)
 }
 
 
-// Class rx_platform::extern_job 
+// Class rx_platform::extern_job
 
 extern_job::extern_job (plugin_job_struct* extern_data)
       : extern_data_(extern_data),
@@ -1179,7 +1176,7 @@ void extern_job::process ()
 }
 
 
-// Class rx_platform::extern_period_job 
+// Class rx_platform::extern_period_job
 
 extern_period_job::extern_period_job (plugin_job_struct* extern_data)
       : anchor_(&extern_data->anchor),

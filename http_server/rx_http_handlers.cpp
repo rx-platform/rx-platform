@@ -37,6 +37,7 @@
 #include "http_server/rx_http_server.h"
 #include "rx_http_items.h"
 #include "system/server/rx_file_helpers.h"
+#include "rx_http_query.h"
 
 
 namespace rx_internal {
@@ -54,6 +55,7 @@ rx_result http_handlers_repository::initialize (hosting::rx_platform_host* host,
 
 void http_handlers_repository::register_standard_handlers ()
 {
+	// standard file handlers
 	std::unique_ptr<http_handler> handler_ptr = std::make_unique<png_file_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<html_file_handler>();
@@ -62,14 +64,27 @@ void http_handlers_repository::register_standard_handlers ()
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<js_file_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
-	handler_ptr = std::make_unique<http_json_object_reader>();
-	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
-	handler_ptr = std::make_unique<http_object_writer>();
-	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
-	handler_ptr = std::make_unique<http_json_object_executer>();
-	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	
+	// excluded object handlers (moved to enterprise)
+	//handler_ptr = std::make_unique<http_json_object_reader>();
+	//handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	//handler_ptr = std::make_unique<http_object_writer>();
+	//handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	//handler_ptr = std::make_unique<http_json_object_executer>();
+	//handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+
+	// display handlers
 	handler_ptr = std::make_unique<http_display_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+
+	// enterprise interfaces
+	auto ent_itfs = enterprise::enterprise_manager::instance().list_interfaces();
+	for (const auto& one : ent_itfs)
+	{
+		handler_ptr = std::make_unique<http_enterprise_handler>(one);
+		if (handler_ptr->get_extension())
+			handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	}
 }
 
 http_handler* http_handlers_repository::get_handler (const string_type& ext)

@@ -119,24 +119,7 @@ class mapsrc_data_algorithm;
 namespace runtime
 {
 
-namespace blocks
-{
-class struct_runtime;
-class variable_runtime;
-class event_runtime;
-class filter_runtime;
-class mapper_runtime;
-class source_runtime;
 
-}
-
-namespace logic_blocks
-{
-
-class program_data;
-class method_data;
-
-}
 
 namespace display_blocks
 {

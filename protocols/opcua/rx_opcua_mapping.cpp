@@ -65,7 +65,7 @@ namespace opcua_transport {
 
 // Class protocols::opcua::opcua_transport::opcua_transport_endpoint 
 
-opcua_transport_endpoint::opcua_transport_endpoint (runtime::items::port_runtime* port)
+opcua_transport_endpoint::opcua_transport_endpoint (opcua_transport_port* port)
       : port_(port)
 {
     OPCUA_LOG_DEBUG("opcua_transport_endpoint", 200, "OPC UA server endpoint created.");
@@ -86,26 +86,23 @@ opcua_transport_endpoint::~opcua_transport_endpoint()
 
 
 
-rx_protocol_stack_endpoint* opcua_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+rx_protocol_stack_endpoint* opcua_transport_endpoint::bind ()
 {
-    sent_func_ = sent_func;
-    received_func_ = received_func;
     return &stack_entry;
 }
 
 rx_protocol_result_t opcua_transport_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
     opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference->user_data);
-    self->received_func_((int64_t)rx_get_packet_available_data(packet.buffer));
+    self->port_->status.received_packet();
     return opcua_bin_bytes_received(reference, packet);
 }
 
 rx_protocol_result_t opcua_transport_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
+    opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference->user_data);
+    self->port_->status.sent_packet();
     return rx_move_packet_down(reference, packet);
-    /*opcua_transport_endpoint* self = reinterpret_cast<opcua_transport_endpoint*>(reference->user_data);
-    self->sent_func_((int64_t)rx_get_packet_usable_data(packet.buffer));
-    return opcua_bin_bytes_send(reference, packet);*/
 }
 
 
@@ -118,21 +115,23 @@ opcua_transport_port::opcua_transport_port()
     construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
     {
         auto rt = std::make_unique<opcua_transport_endpoint>(this);
-        auto entry = rt->bind([this](int64_t count)
-            {
-            },
-            [this](int64_t count)
-            {
-            });
+        auto entry = rt->bind();
         return construct_func_type::result_type{ entry, std::move(rt) };
     };
 }
 
 
 
+rx_result opcua_transport_port::initialize_runtime (runtime_init_context& ctx)
+{
+    auto result = status.initialize(ctx);
+    return result;
+}
+
+
 // Class protocols::opcua::opcua_transport::opcua_client_transport_endpoint 
 
-opcua_client_transport_endpoint::opcua_client_transport_endpoint (runtime::items::port_runtime* port)
+opcua_client_transport_endpoint::opcua_client_transport_endpoint (opcua_client_transport_port* port)
       : port_(port)
 {
     OPCUA_LOG_DEBUG("opcua_client_transport_endpoint", 200, "OPC UA client endpoint created.");
@@ -155,22 +154,22 @@ opcua_client_transport_endpoint::~opcua_client_transport_endpoint()
 
 
 
-rx_protocol_stack_endpoint* opcua_client_transport_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+rx_protocol_stack_endpoint* opcua_client_transport_endpoint::bind ()
 {
-    sent_func_ = sent_func;
-    received_func_ = received_func;
     return &stack_entry;
 }
 
 rx_protocol_result_t opcua_client_transport_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
     opcua_client_transport_endpoint* self = reinterpret_cast<opcua_client_transport_endpoint*>(reference->user_data);
-    self->received_func_((int64_t)rx_get_packet_available_data(packet.buffer));
+    self->port_->status.received_packet();
     return opcua_bin_bytes_received(reference, packet);
 }
 
 rx_protocol_result_t opcua_client_transport_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
+    opcua_client_transport_endpoint* self = reinterpret_cast<opcua_client_transport_endpoint*>(reference->user_data);
+    self->port_->status.sent_packet();
     return rx_move_packet_down(reference, packet);
 }
 
@@ -206,16 +205,18 @@ opcua_client_transport_port::opcua_client_transport_port()
                 rt->endpoint_url = (const char*)temp_char;
             }
         }
-        auto entry = rt->bind([this](int64_t count)
-            {
-            },
-            [this](int64_t count)
-            {
-            });
+        auto entry = rt->bind();
         return construct_func_type::result_type{ entry, std::move(rt) };
     };
 }
 
+
+
+rx_result opcua_client_transport_port::initialize_runtime (runtime_init_context& ctx)
+{
+    auto result = status.initialize(ctx);
+    return result;
+}
 
 
 } // namespace opcua_transport

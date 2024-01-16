@@ -231,8 +231,6 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.opcua_port = atoi(row.second.c_str());
 		else if (row.first == "rx.port" && config.other.rx_port == 0)
 			config.other.rx_port = atoi(row.second.c_str());
-		else if (row.first == "other.logs" && config.management.logs_directory.empty())
-			config.management.logs_directory = row.second;
 		else if (row.first == "processor.realtime" && !config.processor.real_time && get_bool_value(row.second))
 			config.processor.real_time = true;
 		else if (row.first == "processor.nohdtimer" && !config.processor.no_hd_timer && get_bool_value(row.second))
@@ -243,6 +241,13 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.user_storages.emplace(row);
 		else if (row.first.size() > 6 && row.first.substr(0, 4) == "sys.")
 			config.system_storages.emplace(row);
+
+		else if (row.first == "log.level" && config.log.log_level < 0)
+			config.log.log_level = atoi(row.second.c_str());
+		else if (row.first == "log.cachesize" && config.log.cache_size == 0)
+			config.log.cache_size = atoi(row.second.c_str());
+		else if (row.first == "log.directory" && config.log.directory.empty())
+			config.log.directory = row.second;
 	}
 }
 }
@@ -374,6 +379,12 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 		if (config.other.http_path.empty())
 			config.other.http_path = host_directories_.http;
 
+		if (config.log.log_level < 0 || config.log.log_level>5)
+			config.log.log_level = 1;
+
+		if (config.log.directory.empty())
+			config.log.directory = get_default_log_directory();
+
 		manuals_path_ = config.other.manuals_path;
 
 		return true;
@@ -468,8 +479,6 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
 		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
 		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.meta_configuration.plugin))
-		("log-test", "Test log at startup", cxxopts::value<bool>(config.management.test_log))
-		("l,logs", "Location of the log files", cxxopts::value<string_type>(config.management.logs_directory))
 		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
 		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
 		("py-path", "Location of the micropython files", cxxopts::value<string_type>(config.other.py_path))
@@ -477,6 +486,11 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 
 		("rx-port", "TCP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.other.rx_port))
 		("security", "Default security provider for {rx-platform}", cxxopts::value<string_type>(config.other.rx_security))
+
+		("log-test", "Test log at startup", cxxopts::value<bool>(config.log.test_log))
+		("log-size", "Log size for in process log cache", cxxopts::value<uint32_t>(config.log.cache_size))
+		("l,log-dir", "Log directory for file logging", cxxopts::value<string_type>(config.log.directory))
+		("log-level", "Log level for for file logging", cxxopts::value<int32_t>(config.log.log_level))
 
 		("debug" , "Force debugging options thorough the platform", cxxopts::value<bool>(config.management.debug))
 		("v,version", "Displays platform version")
@@ -1008,6 +1022,35 @@ rx_result rx_platform_host::register_storage_type (const string_type& prefix, st
 	storages_.storage_types.emplace(prefix, what);
 	
 	return true;
+}
+
+rx_result rx_platform_host::start_log (rx_platform::configuration_data_t& config)
+{
+	std::vector<log::log_subscriber::smart_ptr> subscribers;
+	subscribers.push_back(rx_create_reference< log::cache_log_subscriber>(config.log.cache_size));
+	if (!config.log.directory.empty())
+	{
+		string_type file_path;
+		char last = *config.log.directory.rbegin();
+		if (last == '/' || last == '\\')
+		{
+			file_path = config.log.directory.substr(0, config.log.directory.size() - 1);
+		}
+		else
+		{
+			file_path = config.log.directory;
+		}
+		file_path += "/runtime_log.log";
+		subscribers.push_back(rx_create_reference<log::file_log_subscriber>(file_path, (log::log_event_type)config.log.log_level));
+	}
+	auto ret = rx_platform::log::log_object::instance().start(config.log.test_log, subscribers);
+	return ret;
+}
+
+string_type rx_platform_host::get_default_log_directory () const
+{
+  return "";
+
 }
 
 

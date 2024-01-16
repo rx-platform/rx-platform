@@ -1081,8 +1081,8 @@ rx_protocol_result_t opcua_bin_sec_none_bytes_send(struct rx_protocol_stack_endp
 			header->message_type[2] = 'G';
 			header->message_size = (uint32_t)rx_get_packet_usable_data(&my_buffer);
 			// security header
-			sec_header->channel_id = 0;
-			sec_header->token_id = 0;
+			sec_header->channel_id = transport->channel_id;
+			sec_header->token_id = transport->token_id;
 			// sequence header
 			sequence_header->request_id = packet.id;
 			sequence_header->sequence_number = transport->current_sequence_id;

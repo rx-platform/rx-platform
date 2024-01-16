@@ -55,6 +55,7 @@
 #include "http_server/rx_http_server.h"
 #include "upython/upython.h"
 #include "discovery/rx_discovery_main.h"
+#include "enterprise/rx_enterprise.h"
 
 
 namespace rx_platform {
@@ -67,7 +68,7 @@ rx_gate::rx_gate()
       : host_(nullptr),
         started_(rx_time::now()),
         pid_(0),
-        security_guard_(rx_create_reference<security::security_guard>(security::rx_security_read_access, "@gate")),
+        security_guard_(rx_create_reference<security::security_guard>(security::rx_security_read_access | security::rx_security_delete_access, "@gate")),
         shutting_down_(false),
         platform_status_(rx_platform_status::initializing)
 {
@@ -148,42 +149,50 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 		result = io_manager_->initialize(host, data);
 		if (result)
 		{
-
-			result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
+			result = rx_internal::enterprise::enterprise_manager::instance().init_interfaces(data);
 			if (!result)
 			{
-				result.register_error("Error initializing http server!");
-				rx_internal::rx_http_server::http_server::instance().deinitialize();
+				result.register_error("Error initializing enterprise manager!");
+				rx_internal::enterprise::enterprise_manager::instance().deinit_interfaces();
 			}
 			else
 			{
-				auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data);
-
-				if (build_result)
+				result = rx_internal::rx_http_server::http_server::instance().initialize(host, data);
+				if (!result)
 				{
-					for (auto one : scripts_)
-						one.second->initialize();
-
-					result = rx_internal::discovery::discovery_manager::instance().initialize(host, data);
-					if (result)
-					{
-						result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
-						if (!result)
-						{
-							result.register_error("Error initializing platform types manager!");
-						}
-					}
-					if (!result)
-					{
-						result.register_error("Error initializing discovery manager!");
-					}
-
-
+					result.register_error("Error initializing http server!");
+					rx_internal::rx_http_server::http_server::instance().deinitialize();
 				}
 				else
 				{
-					result = build_result.errors();
-					result.register_error("Error building platform!");
+					auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data);
+
+					if (build_result)
+					{
+						for (auto one : scripts_)
+							one.second->initialize();
+
+						result = rx_internal::discovery::discovery_manager::instance().initialize(host, data);
+						if (result)
+						{
+							result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
+							if (!result)
+							{
+								result.register_error("Error initializing platform types manager!");
+							}
+						}
+						if (!result)
+						{
+							result.register_error("Error initializing discovery manager!");
+						}
+
+
+					}
+					else
+					{
+						result = build_result.errors();
+						result.register_error("Error building platform!");
+					}
 				}
 			}
 			if (!result)
@@ -222,6 +231,8 @@ rx_result rx_gate::deinitialize ()
 		one.second->deinitialize();
 
 	rx_internal::rx_http_server::http_server::instance().deinitialize();
+
+	rx_internal::enterprise::enterprise_manager::instance().deinit_interfaces();
 
 	rx_internal::model::platform_types_manager::instance().deinitialize();
 

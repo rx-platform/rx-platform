@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -74,7 +74,7 @@ string_type rx_url_decode(const char* path, size_t path_len)
 	return path_conv;
 }
 
-// Class protocols::rx_http::rx_http_endpoint 
+// Class protocols::rx_http::rx_http_endpoint
 
 rx_http_endpoint::rx_http_endpoint (rx_reference<rx_http_port> port)
       : executer_(-1),
@@ -99,7 +99,7 @@ rx_http_endpoint::~rx_http_endpoint()
 rx_protocol_result_t rx_http_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
 	rx_http_endpoint* self = reinterpret_cast<rx_http_endpoint*>(reference->user_data);
-
+	self->port_->status.received_packet();
 	const char* method, * path;
 	int pret, minor_version;
 	size_t buflen = 0, prevbuflen = 0, method_len, path_len, num_headers;
@@ -168,8 +168,7 @@ rx_protocol_result_t rx_http_endpoint::received_function (rx_protocol_stack_endp
 		size_t parsed = pret;
 		std::byte* content_ptr = (std::byte*)buffer_to_read + parsed;
 		size_t content_max = self->receive_buffer_.size - parsed;
-		string_type path_conv = rx_url_decode(path, path_len);
-		result = self->create_and_forward_request(method, method_len, path_conv.c_str(), path_conv.size(), num_headers, content_ptr, content_max);
+		result = self->create_and_forward_request(method, method_len, path, path_len, num_headers, content_ptr, content_max);
 
 		rx_reinit_packet_buffer(&self->receive_buffer_);
 	}
@@ -230,7 +229,7 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 			break;
 		str_path += path[idx];
 	}
-	request.path = str_path;
+	request.path = rx_url_decode(str_path.c_str(), str_path.size());
 	idx++;
 	if (idx < path_len)
 	{
@@ -244,8 +243,8 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 				{
 					if (idx_start == idx)
 						break;
-				
-					param_name.assign(&path[idx_start], idx - idx_start);
+
+					param_name = rx_url_decode(&path[idx_start], idx - idx_start);
 					idx++;
 					idx_start = idx;
 				}
@@ -254,7 +253,7 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 					if (idx_start == idx)
 						break;
 
-					request.params[string_type(&path[idx_start], idx - idx_start)] = "";
+					request.params[rx_url_decode(&path[idx_start], idx - idx_start)] = "";
 					param_name.clear();
 					idx++;
 					idx_start = idx;
@@ -267,7 +266,7 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 					if (idx_start == idx)
 						request.params[param_name] = "";
 					else
-						request.params[param_name] = string_type(&path[idx_start], idx - idx_start);
+						request.params[param_name] = rx_url_decode(&path[idx_start], idx - idx_start);
 					idx++;
 					idx_start = idx;
 					param_name.clear();
@@ -278,7 +277,7 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 		{
 			if (idx_start < idx)
 			{
-				request.params[string_type(&path[idx_start], idx - idx_start)] = "";
+				request.params[rx_url_decode(&path[idx_start], idx - idx_start)] = "";
 			}
 		}
 		else
@@ -286,7 +285,7 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 			if (idx_start == idx)
 				request.params[param_name] = "";
 			else
-				request.params[param_name] = string_type(&path[idx_start], idx - idx_start);
+				request.params[param_name] = rx_url_decode(&path[idx_start], idx - idx_start);
 		}
 	}
 	size_t content_len = 0;
@@ -375,6 +374,10 @@ rx_result rx_http_endpoint::send_response (http_response response)
 	{
 		return "Error sending packet:"s + rx_protocol_error_message(proto_result);
 	}
+	else
+	{
+		port_->status.sent_packet();
+	}
 	return true;
 }
 
@@ -382,7 +385,7 @@ void rx_http_endpoint::send_current_request ()
 {
 	prepared_request_.whose = smart_this();
 	{
-		std::scoped_lock(port_lock_);
+		std::scoped_lock _(port_lock_);
 		if (port_)
 		{
 			port_->send_function([](http_request&& request)
@@ -396,7 +399,7 @@ void rx_http_endpoint::send_current_request ()
 }
 
 
-// Class protocols::rx_http::rx_http_port 
+// Class protocols::rx_http::rx_http_port
 
 rx_http_port::rx_http_port()
 {
@@ -418,6 +421,13 @@ rx_http_port::rx_http_port()
 void rx_http_port::stack_assembled ()
 {
 	auto result = listen(nullptr, nullptr);
+}
+
+rx_result rx_http_port::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+	auto result = status.initialize(ctx);
+
+	return result;
 }
 
 

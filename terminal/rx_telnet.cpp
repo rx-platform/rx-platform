@@ -342,7 +342,7 @@ telnet_transport_port::telnet_transport_port()
 telnet_transport_endpoint::telnet_transport_endpoint (runtime::items::port_runtime* port)
       : port_(port)
 {
-	CONSOLE_LOG_TRACE("telnet_transport", 900, "Telnet Transport endpoint created.");
+	CONSOLE_LOG_DEBUG("telnet_transport", 900, "Telnet Transport endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.received_function = &telnet_transport_endpoint::received_function;
 	stack_entry_.connected_function = &telnet_transport_endpoint::connected_function;
@@ -351,7 +351,7 @@ telnet_transport_endpoint::telnet_transport_endpoint (runtime::items::port_runti
 
 telnet_transport_endpoint::~telnet_transport_endpoint()
 {
-	CONSOLE_LOG_TRACE("telnet_transport", 900, "Telnet Transport endpoint destroyed.");
+	CONSOLE_LOG_DEBUG("telnet_transport", 900, "Telnet Transport endpoint destroyed.");
 }
 
 

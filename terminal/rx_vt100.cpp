@@ -109,7 +109,7 @@ vt100_endpoint::vt100_endpoint (runtime::items::port_runtime* port, security::se
         send_echo(to_echo),
         port_(port)
 {
-	CONSOLE_LOG_TRACE("vt100_endpoint", 900, "VT-100 Endpoint created.");
+	CONSOLE_LOG_DEBUG("vt100_endpoint", 900, "VT-100 Endpoint created.");
 	rx_init_stack_entry(&stack_entry, this);
 	stack_entry.received_function = &vt100_endpoint::received_function;
 	stack_entry.connected_function = &vt100_endpoint::connected_function;
@@ -124,7 +124,7 @@ vt100_endpoint::vt100_endpoint (runtime::items::port_runtime* port, security::se
 
 vt100_endpoint::~vt100_endpoint()
 {
-	CONSOLE_LOG_TRACE("vt100_endpoint", 900, "VT-100 Endpoint destroyed.");
+	CONSOLE_LOG_DEBUG("vt100_endpoint", 900, "VT-100 Endpoint destroyed.");
 	if (pull_timer_)
 		pull_timer_->cancel();
 }

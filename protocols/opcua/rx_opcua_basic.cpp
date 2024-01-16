@@ -90,24 +90,27 @@ void opcua_basic_server_port::stack_assembled ()
 
 rx_result opcua_basic_server_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	string_type app_uri = ctx.get_item_static("Options.AppUri", ""s);
-	string_type app_name = ctx.get_item_static("Options.AppName", ""s);
-	string_type app_bind = ctx.get_item_static("Bind.Endpoint", ""s);
+	auto result = status.initialize(ctx);
+	if (result)
+	{
+		string_type app_uri = ctx.get_item_static("Options.AppUri", ""s);
+		string_type app_name = ctx.get_item_static("Options.AppName", ""s);
+		string_type app_bind = ctx.get_item_static("Bind.Endpoint", ""s);
 
 
-	if (app_uri.empty())
-		app_uri = app_bind.c_str();;
+		if (app_uri.empty())
+			app_uri = app_bind.c_str();;
 
-	if (app_name.empty())
-		app_name = app_uri;
+		if (app_name.empty())
+			app_name = app_uri;
 
 
-	application_description_ = opcua_server_endpoint_base::fill_application_description(app_uri, app_name, app_bind, "BasicServer");
+		application_description_ = opcua_server_endpoint_base::fill_application_description(app_uri, app_name, app_bind, "BasicServer");
 
-	auto result = opcua_addr_space::build_standard_address_space(std_address_space, application_description_.application_uri, app_uri, "BasicServer");
-	if (!result)
-		return result;
-
+		result = opcua_addr_space::build_standard_address_space(std_address_space, application_description_.application_uri, app_uri, "BasicServer");
+		if (!result)
+			return result;
+	}
 	return result;
 }
 
@@ -189,6 +192,7 @@ opcua_basic_server_endpoint::~opcua_basic_server_endpoint()
 rx_protocol_result_t opcua_basic_server_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
 	opcua_basic_server_endpoint* me = (opcua_basic_server_endpoint*)reference->user_data;
+	me->port_->status.received_packet();
 	io::rx_const_io_buffer received(packet.buffer);
 
 	rx_node_id msg_id;
@@ -255,6 +259,10 @@ rx_result opcua_basic_server_endpoint::send_response (requests::opcua_response_p
 				if (protocol_result != RX_PROTOCOL_OK)
 				{
 					result = rx_protocol_error_message(protocol_result);
+				}
+				else
+				{
+					port_->status.sent_packet();
 				}
 			}
 		}

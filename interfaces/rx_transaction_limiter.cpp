@@ -85,7 +85,7 @@ limiter_endpoint::~limiter_endpoint()
 
 
 
-rx_protocol_stack_endpoint* limiter_endpoint::bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func)
+rx_protocol_stack_endpoint* limiter_endpoint::bind ()
 {
     timer_ = port_->create_timer_function([this]()
         {
@@ -543,12 +543,7 @@ transaction_limiter_port::transaction_limiter_port()
     construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
     {
         auto rt = std::make_unique<limiter_endpoint>(this);
-        auto entry = rt->bind([this](int64_t count)
-            {
-            },
-            [this](int64_t count)
-            {
-            });
+        auto entry = rt->bind();
         return construct_func_type::result_type{ entry, std::move(rt) };
     };
 }

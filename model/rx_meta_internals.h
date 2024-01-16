@@ -492,8 +492,13 @@ public:
 	typedef typename typeT::smart_ptr Tptr;
 	typedef rx_result_with<Tptr> TdefRes;
 
+    struct type_data_t
+    {
+        Tptr type_ptr;
+        rx_node_id super_type;
+    };
     typedef typename std::map<rx_node_id, rx_reference<discovery::peer_item> > registered_peer_types_type;
-	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
+	typedef typename std::map<rx_node_id, type_data_t> registered_types_type;
     typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
@@ -619,7 +624,7 @@ class types_resolver
 
       rx_item_type get_item_data (const rx_node_id& id, meta_data& data) const;
 
-      rx_result update_id (const rx_node_id& id);
+      rx_result update_id (const rx_node_id& id, const meta_data& data);
 
       void deinitialize ();
 
@@ -669,9 +674,14 @@ public:
 		runtime_state state;
 	};
 
+    struct type_data_t
+    {
+        Tptr type_ptr;
+        rx_node_id super_type;
+    };
     typedef typename std::map<rx_node_id, rx_reference<discovery::peer_item> > registered_peer_types_type;
 	typedef typename std::map<rx_node_id, runtime_data_t> registered_objects_type;
-	typedef typename std::map<rx_node_id, Tptr> registered_types_type;
+	typedef typename std::map<rx_node_id, type_data_t> registered_types_type;
     //typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
     typedef typename std::map<rx_node_id, std::function<constructed_data_t<rx_relation_impl_ptr>(const rx_node_id&)> > constructors_type;
 
@@ -748,8 +758,13 @@ public:
     typedef typename data_type::smart_ptr Tptr;
     typedef rx_result_with<Tptr> TdefRes;
 
+    struct type_data_t
+    {
+        Tptr type_ptr;
+        rx_node_id super_type;
+    };
     typedef typename std::map<rx_node_id, rx_reference<discovery::peer_item> > registered_peer_types_type;
-    typedef typename std::map<rx_node_id, Tptr> registered_types_type;
+    typedef typename std::map<rx_node_id, type_data_t> registered_types_type;
 
   public:
       data_type_repository();

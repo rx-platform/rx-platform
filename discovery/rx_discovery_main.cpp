@@ -109,7 +109,7 @@ std::vector<peer_endpoint> discovery_manager::get_peers ()
 {
 	std::vector<peer_endpoint> ret;
 #ifdef _DEBUG
-//	ret.emplace_back("ensaco", io::ip4_address("192.168.9.20", 31420), "rx-platform/*");
+	ret.emplace_back("ensaco", io::ip4_address("192.168.9.20", 31420), "rx-platform/*");
 #else
 #endif
 	return ret;

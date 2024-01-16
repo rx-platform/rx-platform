@@ -129,14 +129,18 @@ rx_result opcua_sec_none_port::initialize_runtime (runtime::runtime_init_context
     auto result = opcua_sec_none_base::initialize_runtime(ctx);
     if (result)
     {
-        registered_endpoint_data data;
+        result = status.initialize(ctx);
+        if (result)
+        {
+            registered_endpoint_data data;
 
-        data.security_mode = security_mode_t::none;
-        data.policy_uri = "http://opcfoundation.org/UA/SecurityPolicy#None";
-        data.security_level = 0;
-        data.transport_profile_uri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary";
+            data.security_mode = security_mode_t::none;
+            data.policy_uri = "http://opcfoundation.org/UA/SecurityPolicy#None";
+            data.security_level = 0;
+            data.transport_profile_uri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary";
 
-        opcua_resources_repository::instance().register_endpoint(ctx.meta.get_full_path(), data);
+            opcua_resources_repository::instance().register_endpoint(ctx.meta.get_full_path(), data);
+        }
     }
     return result;
 }
@@ -196,6 +200,13 @@ void opcua_sec_none_client_port::extract_bind_address (const data::runtime_value
             remote_addr = &addr;
         }
     }
+}
+
+rx_result opcua_sec_none_client_port::initialize_runtime (runtime_init_context& ctx)
+{
+    auto result = status.initialize(ctx);
+    
+    return result;
 }
 
 

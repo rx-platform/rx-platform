@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  gnu_hosts\rx_gnu_daemon.h
+*  enterprise\rx_json_ent.h
 *
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,70 +28,56 @@
 ****************************************************************************/
 
 
-#ifndef rx_gnu_daemon_h
-#define rx_gnu_daemon_h 1
+#ifndef rx_json_ent_h
+#define rx_json_ent_h 1
 
 
 
-// rx_gnu_headless
-#include "gnu_hosts/rx_gnu_headless.h"
-// rx_lock
-#include "lib/rx_lock.h"
-
-#include "gnu_hosts/rx_gnu_file_sys.h"
+// rx_ent_alg
+#include "enterprise/rx_ent_alg.h"
 
 
-namespace gnu {
 
+namespace rx_internal {
+
+namespace enterprise {
 
 
 
 
-class gnu_daemon_host : public gnu_headless_host  
+
+class json_enterprise_interface : public std_enterprise_interface  
 {
 
   public:
-      gnu_daemon_host (const std::vector<storage_base::rx_platform_storage_type*>& storages);
+      json_enterprise_interface();
 
-      ~gnu_daemon_host();
+      ~json_enterprise_interface();
 
 
-      int daemon_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins);
+      void sync_read (uint64_t trans_id, platform_item_ptr item, string_view_type sub_path, const enterprise_args_t& args, rx_reference_ptr anchor);
 
-      void get_host_info (string_array& hosts);
+      void sync_write (uint64_t trans_id, platform_item_ptr item, string_view_type sub_path, string_view_type data, const enterprise_args_t& args, rx_reference_ptr anchor);
 
-      string_type get_host_name ();
+      void sync_execute (uint64_t trans_id, platform_item_ptr item, string_view_type sub_path, string_view_type data, const enterprise_args_t& args, rx_reference_ptr anchor);
 
-      bool shutdown (const string_type& msg);
+      string_type create_error_response (int code, string_type message);
 
-      string_type get_default_user_storage () const;
+      string_view_type get_content_type ();
 
-      string_type get_default_log_directory () const;
+      string_view_type get_name ();
 
 
   protected:
 
-      static string_type get_gnu_daemon_host_info ();
-
-      void add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config);
-
-
   private:
-
-      int headless_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins);
-
-
-
-      rx::locks::event stop_;
-
-
-      bool is_daemon_;
 
 
 };
 
 
-} // namespace gnu
+} // namespace enterprise
+} // namespace rx_internal
 
 
 

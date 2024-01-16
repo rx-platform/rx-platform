@@ -162,7 +162,7 @@ class log_object : public rx::locks::lockable
 
       void deinitialize ();
 
-      rx_result start (bool test, size_t log_cache_size = 0x400, int priority = RX_PRIORITY_IDLE);
+      rx_result start (bool test, std::vector<log_subscriber::smart_ptr>& subscribers, int priority = RX_PRIORITY_IDLE);
 
       bool read_log (const string_type& log, const log_query_type& query, std::function<void(rx_result_with<log_events_type>&&)> callback);
 
@@ -305,6 +305,39 @@ class cache_log_subscriber : public log_subscriber
       size_t current_size_;
 
       locks::lockable cache_lock_;
+
+
+};
+
+
+
+
+
+
+class file_log_subscriber : public log_subscriber  
+{
+
+  public:
+      file_log_subscriber (const string_type& path, log_event_type level = log_event_type::trace);
+
+      ~file_log_subscriber();
+
+
+      void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when);
+
+      string_type get_name () const;
+
+
+  protected:
+
+  private:
+
+
+      log_event_type level_;
+
+      string_type path_;
+
+      FILE* file_;
 
 
 };

@@ -35,6 +35,8 @@
 
 // dummy
 #include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_http_server
@@ -136,7 +138,7 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< protocols::rx_http::rx_http_endpoint  > rx_http_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_http_endpoint  > rx_http_port_base;
 
 
 
@@ -155,6 +157,11 @@ HTTP protocol port class. Implementation of a rx-platform HTTP protocol");
 
 
       void stack_assembled ();
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+
+      rx_platform::runtime::io_types::simple_port_status status;
 
 
   protected:

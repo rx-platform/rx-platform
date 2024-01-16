@@ -448,33 +448,6 @@ void source_runtime::source_result_received (rx_result&& result, runtime_transac
 {
     if (container_)
     {
-        if (rx_is_debug_instance())
-        {
-            static string_type message;
-            static char* message_buffer = nullptr;
-            if (message.empty())
-            {
-                std::ostringstream ss;
-                ss << "Source "
-                    << container_->full_path
-                    << " received write result id:%08X - ";
-                message = ss.str();
-                message_buffer = new char[message.size() + 0x20/*This will hold digits and just a bit reserve*/];
-            }
-            if (result)
-            {
-                sprintf(message_buffer, (message + "OK").c_str(), id);
-                RUNTIME_LOG_DEBUG("mapper_runtime", 500, message_buffer);
-            }
-            else
-            {
-                string_type error = result.errors_line();
-                char* error_message_buffer = new char[message.size() + 0x10/*This will hold digits and just a bit reserve*/ + error.size()];
-                sprintf(error_message_buffer, (message + "%s").c_str(), id, error.c_str());
-                RUNTIME_LOG_DEBUG("mapper_runtime", 500, error_message_buffer);
-                delete[] error_message_buffer;
-            }
-        }
         container_->source_result_pending(std::move(result), id);
     }
 }
@@ -560,97 +533,6 @@ rx_result struct_runtime::deinitialize_struct (runtime::runtime_deinit_context& 
 }
 
 
-// Class rx_platform::runtime::blocks::variable_runtime 
-
-string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
-
-variable_runtime::variable_runtime()
-      : container_(nullptr)
-{
-}
-
-
-variable_runtime::~variable_runtime()
-{
-}
-
-
-
-string_type variable_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-rx_result variable_runtime::initialize_variable (runtime::runtime_init_context& ctx)
-{
-	return true;
-}
-
-rx_result variable_runtime::deinitialize_variable (runtime::runtime_deinit_context& ctx)
-{
-	return true;
-}
-
-rx_result variable_runtime::start_variable (runtime::runtime_start_context& ctx)
-{
-	return true;
-}
-
-rx_result variable_runtime::stop_variable (runtime::runtime_stop_context& ctx)
-{
-	return true;
-}
-
-void variable_runtime::process_variable (runtime_process_context* ctx)
-{
-    ctx->variable_pending(container_);
-}
-
-void variable_runtime::variable_result_pending (runtime_process_context* ctx, rx_result&& result, runtime_transaction_id_t id)
-{
-    container_->variable_result_pending(ctx, std::move(result), id);
-}
-
-rx_value variable_runtime::get_variable_input (runtime_process_context* ctx, runtime_sources_type& sources)
-{
-    rx_value ret;
-    for (auto& one : sources)
-    {
-        if (one.is_input())
-        {
-            ret = one.get_current_value();
-            return ret;
-        }
-    }
-    return ret;
-}
-
-rx_result variable_runtime::variable_write (write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources)
-{
-    rx_result ret = RX_NOT_SUPPORTED;
-    if (sources.size() == 1)
-    {
-        if (sources[0].is_output())
-            ret = sources[0].write_value(std::move(data));
-    }
-    else if(!sources.empty())
-    {
-        write_data data_copy(data);
-        for (auto& one : sources)
-        {
-            if (one.is_output())
-            {
-                ret = one.write_value(write_data(data_copy));
-                if (ret)
-                    break;
-            }
-        }
-    }
-    return ret;
-}
-
-
 // Class rx_platform::runtime::blocks::event_runtime 
 
 string_type event_runtime::type_name = RX_CPP_EVENT_TYPE_NAME;
@@ -725,7 +607,76 @@ data::runtime_data_model event_runtime::get_arguemnts ()
 }
 
 
+// Class rx_platform::runtime::blocks::variable_runtime 
+
+string_type variable_runtime::type_name = RX_CPP_VARIABLE_TYPE_NAME;
+
+variable_runtime::variable_runtime()
+      : container_(nullptr)
+{
+}
+
+
+variable_runtime::~variable_runtime()
+{
+}
+
+
+
+string_type variable_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+rx_result variable_runtime::initialize_variable (runtime::runtime_init_context& ctx)
+{
+	return true;
+}
+
+rx_result variable_runtime::deinitialize_variable (runtime::runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+rx_result variable_runtime::start_variable (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result variable_runtime::stop_variable (runtime::runtime_stop_context& ctx)
+{
+	return true;
+}
+
+void variable_runtime::process_variable (runtime_process_context* ctx)
+{
+    ctx->variable_pending(container_);
+}
+
+void variable_runtime::send_write_result (structure::write_task* task, rx_result result)
+{
+    container_->send_write_result(task, std::move(result));
+}
+
+void variable_runtime::process_result (runtime_transaction_id_t id, rx_result&& result)
+{
+}
+
+void variable_runtime::post_process_value (const rx_value& val)
+{
+}
+
+
 } // namespace blocks
 } // namespace runtime
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+    container_->variable_result_pending(ctx, std::move(result), id);
+
+#endif

@@ -315,6 +315,8 @@ class rx_platform_host
 
       rx_result register_storage_type (const string_type& prefix, storage_base::rx_platform_storage_type* what);
 
+      virtual string_type get_default_log_directory () const;
+
 
       rx_platform_host * get_parent ()
       {
@@ -349,6 +351,8 @@ class rx_platform_host
       virtual rx_result fill_host_directories (rx_host_directories& data) = 0;
 
       void dump_startup_log (std::ostream& out);
+
+      rx_result start_log (rx_platform::configuration_data_t& config);
 
 
   private:

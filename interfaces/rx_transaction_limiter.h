@@ -143,7 +143,7 @@ class limiter_endpoint
       ~limiter_endpoint();
 
 
-      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+      rx_protocol_stack_endpoint* bind ();
 
       runtime::items::port_runtime* get_port ();
 
@@ -215,7 +215,7 @@ class limiter_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< limiter_endpoint  > transaction_limiter_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< rx_internal::interfaces::ports_lib::limiter_endpoint  > transaction_limiter_port_base;
 
 
 struct limit_options_t

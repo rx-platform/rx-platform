@@ -36,6 +36,8 @@
 
 // dummy
 #include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
 
@@ -134,6 +136,9 @@ OPC-UA Security None port. Implementation of binary OPC-UA Security None server 
       void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
 
 
+      rx_platform::runtime::io_types::simple_port_status status;
+
+
       static std::map<rx_node_id, opcua_sec_none_port::smart_ptr> runtime_instances;
 
 
@@ -198,7 +203,7 @@ typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< op
 
 class opcua_sec_none_client_port : public opcua_sec_none_client_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+    DECLARE_CODE_INFO("rx", 0, 2, 0, "\
 OPC-UA Security None port. Implementation of binary OPC-UA Security None client transport channel.");
 
     DECLARE_REFERENCE_PTR(opcua_sec_none_client_port);
@@ -208,6 +213,11 @@ OPC-UA Security None port. Implementation of binary OPC-UA Security None client 
 
 
       void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
+
+      rx_result initialize_runtime (runtime_init_context& ctx);
+
+
+      rx_platform::runtime::io_types::simple_port_status status;
 
 
       static std::map<rx_node_id, opcua_sec_none_client_port::smart_ptr> runtime_instances;

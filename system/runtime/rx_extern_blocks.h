@@ -335,6 +335,11 @@ class extern_variable_runtime : public variable_runtime
 
   private:
 
+      rx_value get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources);
+
+      rx_result variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources);
+
+
 
       plugin_variable_runtime_struct* impl_;
 

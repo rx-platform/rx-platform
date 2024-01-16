@@ -163,41 +163,6 @@ void master_port_status::sent_packet ()
 }
 
 
-// Class rx_platform::runtime::io_types::simple_port_status 
-
-simple_port_status::simple_port_status()
-      : received_(0),
-        sent_(0)
-{
-}
-
-
-
-rx_result simple_port_status::initialize (runtime_init_context& ctx)
-{
-    rx_result result;
-
-    auto one_result = received_.bind("Status.RxPackets", ctx);
-    if (!one_result)
-        result.register_error("Error connecting Status.RxPackets:"s + one_result.errors_line());
-    one_result = sent_.bind("Status.TxPackets", ctx);
-    if (!one_result)
-        result.register_error("Error connecting Status.TxPackets:"s + one_result.errors_line());
-
-    return result;
-}
-
-void simple_port_status::received_packet ()
-{
-    received_ += 1;
-}
-
-void simple_port_status::sent_packet ()
-{
-    sent_ += 1;
-}
-
-
 // Class rx_platform::runtime::io_types::external_port_status 
 
 external_port_status::external_port_status()
@@ -240,6 +205,90 @@ rx_result external_port_status::initialize (runtime_init_context& ctx)
         result.register_error("Error connecting Status.TxBytes:"s + one_result.errors_line());
 
     return result;
+}
+
+
+// Class rx_platform::runtime::io_types::simple_port_status 
+
+simple_port_status::simple_port_status()
+      : received_(0),
+        sent_(0)
+{
+}
+
+
+
+rx_result simple_port_status::initialize (runtime_init_context& ctx)
+{
+    rx_result result;
+
+    auto one_result = received_.bind("Status.RxPackets", ctx);
+    if (!one_result)
+        result.register_error("Error connecting Status.RxPackets:"s + one_result.errors_line());
+    one_result = sent_.bind("Status.TxPackets", ctx);
+    if (!one_result)
+        result.register_error("Error connecting Status.TxPackets:"s + one_result.errors_line());
+
+    return result;
+}
+
+void simple_port_status::received_packet ()
+{
+    received_ += 1;
+}
+
+void simple_port_status::sent_packet ()
+{
+    sent_ += 1;
+}
+
+
+// Class rx_platform::runtime::io_types::client_port_status 
+
+client_port_status::client_port_status()
+      : received_(0),
+        sent_(0),
+        connected_(false)
+{
+}
+
+
+
+rx_result client_port_status::initialize (runtime_init_context& ctx)
+{
+    rx_result result;
+
+    auto one_result = received_.bind("Status.RxPackets", ctx);
+    if (!one_result)
+        result.register_error("Error connecting Status.RxPackets:"s + one_result.errors_line());
+    one_result = sent_.bind("Status.TxPackets", ctx);
+    if (!one_result)
+        result.register_error("Error connecting Status.TxPackets:"s + one_result.errors_line());
+    one_result = connected_.bind("Status.Connected", ctx);
+    if (!one_result)
+        result.register_error("Error connecting Status.Connected:"s + one_result.errors_line());
+
+    return result;
+}
+
+void client_port_status::received_packet ()
+{
+    received_ += 1;
+}
+
+void client_port_status::sent_packet ()
+{
+    sent_ += 1;
+}
+
+void client_port_status::set_connected ()
+{
+    connected_ = true;
+}
+
+void client_port_status::set_disconnected ()
+{
+    connected_ = false;
 }
 
 

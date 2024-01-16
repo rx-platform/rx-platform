@@ -235,7 +235,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			std::cout << "========================================================\r\n\r\n";
 			std::cout << "Starting log...";
 			rx_platform::log::log_object::instance().register_subscriber(stdout_log_);
-			ret = rx_platform::log::log_object::instance().start(config.management.test_log);
+			ret = start_log(config);
 			if (ret)
 			{
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";

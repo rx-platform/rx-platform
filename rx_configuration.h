@@ -257,6 +257,9 @@
 #define RX_TRANS_LIMITER_TYPE_NAME "TransactionLimiterPort"
 #define RX_TRANS_LIMITER_TYPE_ID 0xc00005c
 
+#define RX_SIZE_LIMITER_TYPE_NAME "SizeLimiterPort"
+#define RX_SIZE_LIMITER_TYPE_ID 0xc0000e0
+
 #define RX_INITIATOR_TO_LISTENER_PORT_TYPE_NAME "Initiator2ListenerPort"
 #define RX_INITIATOR_TO_LISTENER_PORT_TYPE_ID 0xc00006c
 #define RX_LISTENER_TO_INITIATOR_PORT_TYPE_NAME "Listener2InitiatorPort"
@@ -314,7 +317,8 @@
 #define RX_BRIDGE_PORT_OPTIONS_TYPE_ID 0xc000063
 #define RX_LIMITER_PORT_OPTIONS_TYPE_NAME "LimiterPortOptions"
 #define RX_LIMITER_PORT_OPTIONS_TYPE_ID 0xc000064
-
+#define RX_SIZE_LIMITER_PORT_OPTIONS_TYPE_NAME "SizeLimiterPortOptions"
+#define RX_SIZE_LIMITER_PORT_OPTIONS_TYPE_ID 0xc0000e1
 
 #define RX_STXETX_PORT_OPTIONS_TYPE_NAME "STXETXPortOptions"
 #define RX_STXETX_PORT_OPTIONS_TYPE_ID 0xc00006e
@@ -503,10 +507,24 @@
 //#define RX_SYSTEM_SOURCE_TYPE_ID 0xc000048
 #define RX_REGISTER_SOURCE_TYPE_NAME "RegisterSource"
 #define RX_REGISTER_SOURCE_TYPE_ID 0xc000035
-#define RX_REGISTER_VARIABLE_TYPE_NAME "RegisterVariable"
-#define RX_REGISTER_VARIABLE_TYPE_ID 0xc000069
+//#define RX_REGISTER_VARIABLE_TYPE_NAME "RegisterVariable"
+//#define RX_REGISTER_VARIABLE_TYPE_ID 0xc000069
 #define RX_PLATFORM_SOURCE_TYPE_NAME "PlatformSource"
 #define RX_PLATFORM_SOURCE_TYPE_ID 0xc000049
+
+#define RX_SIMPLE_VARIABLE_TYPE_NAME "SimpleVariable"
+#define RX_SIMPLE_VARIABLE_TYPE_ID 0xc0000e2
+
+#define RX_COMPLEX_INPUT_VARIABLE_TYPE_NAME "ComplexInputVariable"
+#define RX_COMPLEX_INPUT_VARIABLE_TYPE_ID 0xc0000e3
+#define RX_COMPLEX_OUTPUT_VARIABLE_TYPE_NAME "ComplexOutputVariable"
+#define RX_COMPLEX_OUTPUT_VARIABLE_TYPE_ID 0xc0000e4
+#define RX_COMPLEX_IO_VARIABLE_TYPE_NAME "ComplexIOVariable"
+#define RX_COMPLEX_IO_VARIABLE_TYPE_ID 0xc0000e5
+#define RX_BRIDGE_VARIABLE_TYPE_NAME "BridgeVariable"
+#define RX_BRIDGE_VARIABLE_TYPE_ID 0xc0000e6
+#define RX_MUX_VARIABLE_TYPE_NAME "MultiplekserVariable"
+#define RX_MUX_VARIABLE_TYPE_ID 0xc0000e7
 
 
 #define RX_OPCUA_MAPPER_BASE_TYPE_NAME "OpcMapperBase"
@@ -683,7 +701,7 @@
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc0000df!!!! 
+// last is 0xc0000e7!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

@@ -79,6 +79,8 @@ class win32_service_host : public win32_headless_host
 
       string_type get_default_user_storage () const;
 
+      string_type get_default_log_directory () const;
+
 
   protected:
 

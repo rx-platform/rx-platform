@@ -110,8 +110,6 @@ struct management_data_t
     uint32_t wd_timer_period = 1000;
     string_type telnet_addr = "127.0.0.1";
     uint16_t telnet_port = 0;
-    string_type logs_directory;
-    bool test_log = false;
     string_type startup_script;
 };
 
@@ -130,6 +128,13 @@ struct namespace_data_t
     string_type test_storage_reference;
 };
 
+struct log_data_t
+{
+    string_type directory;
+    int log_level = -1;
+    uint32_t cache_size = 0;
+    bool test_log = false;
+};
 
 struct configuration_data_t
 {
@@ -139,6 +144,7 @@ struct configuration_data_t
 	meta_configuration_data_t meta_configuration;
 	io_manager_data_t io;
 	general_data_t other;
+    log_data_t log;
     std::map<string_type, string_type> user_storages;
     std::map<string_type, string_type> system_storages;
 };

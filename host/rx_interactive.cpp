@@ -298,7 +298,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			}
 			std::cout << "========================================================\r\n\r\n";
 			std::cout << "Starting log...";
-			ret =rx_platform::log::log_object::instance().start(config.management.test_log);
+			ret = start_log(config);
 			if (ret)
 			{
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
@@ -554,6 +554,12 @@ void interactive_console_host::terminal_size_changed (int width, int height)
 }
 
 string_type interactive_console_host::get_default_user_storage () const
+{
+  return ".";
+
+}
+
+string_type interactive_console_host::get_default_log_directory () const
 {
   return ".";
 

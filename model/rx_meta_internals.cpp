@@ -694,7 +694,7 @@ rx_result types_repository<typeT>::register_type (typename types_repository<type
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
-		registered_types_.emplace(what->meta_info.id, type_data_t{ what, rx_node_id() });
+		auto add_result = registered_types_.emplace(what->meta_info.id, type_data_t{ what, rx_node_id() });
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
 			rx_node_id parent_id;
@@ -709,10 +709,10 @@ rx_result types_repository<typeT>::register_type (typename types_repository<type
 					return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
 				}
 				parent_id = parent_id_result.move_value();
+				add_result.first->second.super_type = parent_id;
 			}
 			collect_and_add_depedencies(*what, parent_id);
 			auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
-			platform_types_manager::instance().get_dependecies_cache().add_dependency(id, parent_id);
 		}
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info.id, typeT::type_id, what->meta_info);
 		RX_ASSERT(type_res);
@@ -775,8 +775,7 @@ rx_result types_repository<typeT>::update_type (types_repository<typeT>::Tptr wh
 		}
 		it->second.type_ptr = what;
 		it->second.super_type = parent_id;
-		platform_types_manager::instance().get_types_resolver().update_id(id);
-		// TODO Should check and change if parent is different
+		platform_types_manager::instance().get_types_resolver().update_id(id, what->meta_info);
 		return true;
 	}
 	else
@@ -1251,6 +1250,9 @@ rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& id)
 			}
 		}
 	}
+	hash_data_.erase(id);
+	derived_hash_.erase(id);
+	derived_first_hash_.erase(id);
 	return result;
 }
 
@@ -1412,7 +1414,7 @@ typename simple_types_repository<typeT>::TdefRes simple_types_repository<typeT>:
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		return it->second;
+		return it->second.type_ptr;
 	}
 	else
 	{
@@ -1431,7 +1433,7 @@ rx_result simple_types_repository<typeT>::register_type (typename simple_types_r
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end() && registered_peer_types_.find(id)== registered_peer_types_.end())
 	{
-		registered_types_.emplace(what->meta_info.id, what);
+		auto add_result = registered_types_.emplace(what->meta_info.id, type_data_t{ what, rx_node_id() });
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
 			rx_node_id parent_id;
@@ -1447,6 +1449,7 @@ rx_result simple_types_repository<typeT>::register_type (typename simple_types_r
 					return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
 				}
 				parent_id = parent_id_result.move_value();
+				add_result.first->second.super_type = parent_id;
 				auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
 
 			}
@@ -1585,7 +1588,7 @@ api::query_result simple_types_repository<typeT>::get_derived_types (const rx_no
 
 		if (type != registered_types_.end())
 		{
-			ret.items.emplace_back(api::query_result_detail{ typeT::type_id, type->second->meta_info });
+			ret.items.emplace_back(api::query_result_detail{ typeT::type_id, type->second.type_ptr->meta_info });
 		}
 	}
 	ret.success = true;
@@ -1619,7 +1622,7 @@ rx_result simple_types_repository<typeT>::delete_type (rx_node_id id)
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		auto type_id = it->second->meta_info.parent;
+		auto type_id = it->second.type_ptr->meta_info.parent;
 		registered_types_.erase(it);
 		auto remove_result = inheritance_hash_.remove_from_hash_data(id);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
@@ -1656,16 +1659,21 @@ rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host*
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
 	to_add.reserve(registered_types_.size());
-	for (const auto& one : registered_types_)
+	for (auto& one : registered_types_)
 	{
 		ns::rx_directory_resolver dirs;
-		dirs.add_paths({ one.second->meta_info.path });
-		auto parent_id = algorithms::resolve_reference(one.second->meta_info.parent, dirs);
+		dirs.add_paths({ one.second.type_ptr->meta_info.path });
+		auto parent_id = algorithms::resolve_reference(one.second.type_ptr->meta_info.parent, dirs);
 		if (parent_id)
-			to_add.emplace_back(one.second->meta_info.id, parent_id.value());
+		{
+			one.second.super_type = parent_id.value();
+			to_add.emplace_back(one.second.type_ptr->meta_info.id, parent_id.value());
+		}
 		else
-			to_add.emplace_back(one.second->meta_info.id, rx_node_id());
-		collect_and_add_depedencies(*one.second, parent_id.value());
+		{
+			to_add.emplace_back(one.second.type_ptr->meta_info.id, rx_node_id());
+		}
+		collect_and_add_depedencies(*one.second.type_ptr, parent_id.value());
 
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
@@ -1684,11 +1692,30 @@ rx_result simple_types_repository<typeT>::update_type (typename simple_types_rep
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		it->second = what;
-		platform_types_manager::instance().get_types_resolver().update_id(id);
-		// TODO Should check and change if parent is different
-		/*if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			inheritance_hash_.add_to_hash_data(id, what->meta_info.parent);*/
+		rx_node_id parent_id;
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+		{
+			rx_directory_resolver dirs;;
+			dirs.add_paths({ what->meta_info.path });
+			if (!what->meta_info.parent.is_null())
+			{
+				auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
+				if (!parent_id_result)
+				{
+					parent_id_result.register_error("Unable to resolve parent type!");
+					return parent_id_result.errors();
+				}
+				parent_id = parent_id_result.move_value();
+			}
+			if (parent_id != it->second.super_type)
+			{
+				auto type_ret = inheritance_hash_.remove_from_hash_data(id);
+				type_ret = inheritance_hash_.add_to_hash_data(id, parent_id);
+			}
+		}
+		it->second.type_ptr = what;
+		it->second.super_type = parent_id;
+		platform_types_manager::instance().get_types_resolver().update_id(id, what->meta_info);
 		return true;
 	}
 	else
@@ -1841,21 +1868,45 @@ rx_item_type types_resolver::get_item_data (const rx_node_id& id, meta_data& dat
 	return it->second.type;
 }
 
-rx_result types_resolver::update_id (const rx_node_id& id)
+rx_result types_resolver::update_id (const rx_node_id& id, const meta_data& data)
 {
 	auto it = hash_.find(id);
 	if (it == hash_.end())
 		return "Unknown Id";
 	else
 	{
-		resolver_event_data event_data;
-		event_data.verb = resolver_event_verb::updated;
-		event_data.id = id;
-		event_data.path = it->second.data.get_full_path();
-
-		for (auto& one : subscribers_)
+		if (it->second.data.path != data.path)
 		{
-			one.second.callback(event_data);
+			resolver_event_data event_data;
+			event_data.verb = resolver_event_verb::deleted;
+			event_data.id = id;
+			event_data.path = it->second.data.get_full_path();
+
+			for (auto& one : subscribers_)
+			{
+				one.second.callback(event_data);
+			}
+			it->second.data = data;
+			event_data.verb = resolver_event_verb::created;
+			event_data.id = id;
+			event_data.path = it->second.data.get_full_path();
+
+			for (auto& one : subscribers_)
+			{
+				one.second.callback(event_data);
+			}
+		}
+		else
+		{
+			resolver_event_data event_data;
+			event_data.verb = resolver_event_verb::updated;
+			event_data.id = id;
+			event_data.path = it->second.data.get_full_path();
+
+			for (auto& one : subscribers_)
+			{
+				one.second.callback(event_data);
+			}
 		}
 		return true;
 	}
@@ -1883,7 +1934,7 @@ relations_type_repository::TdefRes relations_type_repository::get_type_definitio
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		return it->second;
+		return it->second.type_ptr;
 	}
 	else
 	{
@@ -1902,7 +1953,7 @@ rx_result relations_type_repository::register_type (relations_type_repository::T
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
-		registered_types_.emplace(what->meta_info.id, what);
+		auto add_result = registered_types_.emplace(what->meta_info.id, type_data_t{ what, rx_node_id() });
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
 			rx_node_id parent_id;
@@ -1917,8 +1968,10 @@ rx_result relations_type_repository::register_type (relations_type_repository::T
 					return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
 				}
 				parent_id = parent_id_result.move_value();
+				add_result.first->second.super_type = parent_id;
 			}
 			auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
+			collect_and_add_depedencies(what, parent_id);
 		}
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info.id, relation_type::type_id, what->meta_info);
 		RX_ASSERT(type_res);
@@ -1979,7 +2032,7 @@ api::query_result relations_type_repository::get_derived_types (const rx_node_id
 
 			if (type != registered_types_.end())
 			{
-				ret.items.emplace_back(api::query_result_detail{ relation_type::type_id, type->second->meta_info });
+				ret.items.emplace_back(api::query_result_detail{ relation_type::type_id, type->second.type_ptr->meta_info });
 			}
 		}
 	}
@@ -2032,12 +2085,12 @@ rx_result relations_type_repository::initialize (hosting::rx_platform_host* host
 	for (const auto& one : registered_types_)
 	{
 		ns::rx_directory_resolver dirs;
-		dirs.add_paths({ one.second->meta_info.path });
-		auto parent_id = algorithms::resolve_reference(one.second->meta_info.parent, dirs);
+		dirs.add_paths({ one.second.type_ptr->meta_info.path });
+		auto parent_id = algorithms::resolve_reference(one.second.type_ptr->meta_info.parent, dirs);
 		if(parent_id)
-			to_add.emplace_back(one.second->meta_info.id, parent_id.value());
+			to_add.emplace_back(one.second.type_ptr->meta_info.id, parent_id.value());
 		else
-			to_add.emplace_back(one.second->meta_info.id, rx_node_id());
+			to_add.emplace_back(one.second.type_ptr->meta_info.id, rx_node_id());
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	return result;
@@ -2053,11 +2106,30 @@ rx_result relations_type_repository::update_type (relations_type_repository::Tpt
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		it->second = what;
-		platform_types_manager::instance().get_types_resolver().update_id(id);
-		// TODO Should check and change if parent is different
-		/*if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			inheritance_hash_.add_to_hash_data(id, what->meta_info.parent);*/
+		rx_node_id parent_id;
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+		{
+			rx_directory_resolver dirs;;
+			dirs.add_paths({ what->meta_info.path });
+			if (!what->meta_info.parent.is_null())
+			{
+				auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
+				if (!parent_id_result)
+				{
+					parent_id_result.register_error("Unable to resolve parent type!");
+					return parent_id_result.errors();
+				}
+				parent_id = parent_id_result.move_value();
+			}
+			if (parent_id != it->second.super_type)
+			{
+				auto type_ret = inheritance_hash_.remove_from_hash_data(id);
+				type_ret = inheritance_hash_.add_to_hash_data(id, parent_id);
+			}
+		}
+		it->second.type_ptr = what;
+		it->second.super_type = parent_id;
+		platform_types_manager::instance().get_types_resolver().update_id(id, what->meta_info);
 		return true;
 	}
 	else
@@ -2269,7 +2341,7 @@ data_type_repository::TdefRes data_type_repository::get_type_definition (const r
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		return it->second;
+		return it->second.type_ptr;
 	}
 	else
 	{
@@ -2288,7 +2360,7 @@ rx_result data_type_repository::register_type (data_type_repository::Tptr what)
 	auto it = registered_types_.find(id);
 	if (it == registered_types_.end())
 	{
-		registered_types_.emplace(what->meta_info.id, what);
+		auto add_result = registered_types_.emplace(what->meta_info.id, type_data_t{ what, rx_node_id() });
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
 			rx_node_id parent_id;
@@ -2303,8 +2375,10 @@ rx_result data_type_repository::register_type (data_type_repository::Tptr what)
 					return "Unable to resolve reference to: "s + what->meta_info.parent.to_string() + " for " + what->meta_info.name;
 				}
 				parent_id = parent_id_result.move_value();
+				add_result.first->second.super_type = parent_id;
 			}
 			auto hash_result = inheritance_hash_.add_to_hash_data(id, parent_id);
+			collect_and_add_depedencies(what, parent_id);
 		}
 		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta_info.id, data_type::type_id, what->meta_info);
 		RX_ASSERT(type_res);
@@ -2411,7 +2485,7 @@ api::query_result data_type_repository::get_derived_types (const rx_node_id& id)
 
 		if (type != registered_types_.end())
 		{
-			ret.items.emplace_back(api::query_result_detail{ data_type::type_id, type->second->meta_info });
+			ret.items.emplace_back(api::query_result_detail{ data_type::type_id, type->second.type_ptr->meta_info });
 		}
 	}
 	ret.success = true;
@@ -2443,7 +2517,7 @@ rx_result data_type_repository::delete_type (rx_node_id id)
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		auto type_id = it->second->meta_info.parent;
+		auto type_id = it->second.type_ptr->meta_info.parent;
 		registered_types_.erase(it);
 		auto remove_result = inheritance_hash_.remove_from_hash_data(id);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
@@ -2463,12 +2537,12 @@ rx_result data_type_repository::initialize (hosting::rx_platform_host* host, con
 	for (const auto& one : registered_types_)
 	{
 		ns::rx_directory_resolver dirs;
-		dirs.add_paths({ one.second->meta_info.path });
-		auto parent_id = algorithms::resolve_reference(one.second->meta_info.parent, dirs);
+		dirs.add_paths({ one.second.type_ptr->meta_info.path });
+		auto parent_id = algorithms::resolve_reference(one.second.type_ptr->meta_info.parent, dirs);
 		if (parent_id)
-			to_add.emplace_back(one.second->meta_info.id, parent_id.value());
+			to_add.emplace_back(one.second.type_ptr->meta_info.id, parent_id.value());
 		else
-			to_add.emplace_back(one.second->meta_info.id, rx_node_id());
+			to_add.emplace_back(one.second.type_ptr->meta_info.id, rx_node_id());
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
 	return result;
@@ -2484,11 +2558,30 @@ rx_result data_type_repository::update_type (data_type_repository::Tptr what)
 	auto it = registered_types_.find(id);
 	if (it != registered_types_.end())
 	{
-		it->second = what;
-		platform_types_manager::instance().get_types_resolver().update_id(id);
-		// TODO Should check and change if parent is different
-		/*if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
-			inheritance_hash_.add_to_hash_data(id, what->meta_info.parent);*/
+		rx_node_id parent_id;
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+		{
+			rx_directory_resolver dirs;;
+			dirs.add_paths({ what->meta_info.path });
+			if (!what->meta_info.parent.is_null())
+			{
+				auto parent_id_result = algorithms::resolve_reference(what->meta_info.parent, dirs);
+				if (!parent_id_result)
+				{
+					parent_id_result.register_error("Unable to resolve parent type!");
+					return parent_id_result.errors();
+				}
+				parent_id = parent_id_result.move_value();
+			}
+			if (parent_id != it->second.super_type)
+			{
+				auto type_ret = inheritance_hash_.remove_from_hash_data(id);
+				type_ret = inheritance_hash_.add_to_hash_data(id, parent_id);
+			}
+		}
+		it->second.type_ptr = what;
+		it->second.super_type = parent_id;
+		platform_types_manager::instance().get_types_resolver().update_id(id, what->meta_info);
 		return true;
 	}
 	else

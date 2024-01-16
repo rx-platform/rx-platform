@@ -35,6 +35,8 @@
 
 // dummy
 #include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_blocks_templates
@@ -377,6 +379,8 @@ Basic OPC UA protocol port class. Basic implementation OPC UA binary protocol co
 
       opcua_subscriptions::opcua_subscriptions_collection subscriptions;
 
+      rx_platform::runtime::io_types::simple_port_status status;
+
 
       static std::map<rx_node_id, opcua_basic_server_port::smart_ptr> runtime_instances;
 
@@ -404,7 +408,7 @@ Basic OPC UA protocol port class. Basic implementation OPC UA binary protocol co
 
 
 
-typedef rx_platform::runtime::blocks::blocks_templates::extern_mapper_impl< opcua_basic_server_port  > opcua_basic_mapper_base;
+typedef rx_platform::runtime::blocks::blocks_templates::extern_mapper_impl< protocols::opcua::opcua_basic_server::opcua_basic_server_port  > opcua_basic_mapper_base;
 
 
 //typedef rx_platform::runtime::blocks::mapper_runtime opcua_basic_mapper_base;

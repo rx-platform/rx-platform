@@ -112,6 +112,8 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       string_type get_default_user_storage () const;
 
+      string_type get_default_log_directory () const;
+
 
   protected:
 

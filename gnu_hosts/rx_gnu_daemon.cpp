@@ -172,6 +172,11 @@ string_type gnu_daemon_host::get_default_user_storage () const
     return "/etc/rx-platform/storage/rx-daemon";
 }
 
+string_type gnu_daemon_host::get_default_log_directory () const
+{
+    return "/var/log/rx-platform/rx-daemon";
+}
+
 
 } // namespace gnu
 

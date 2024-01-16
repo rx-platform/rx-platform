@@ -56,7 +56,7 @@ console_runtime::console_runtime (rx_thread_handle_t executer, console_runtime_c
         term_height_(24),
         security_guard_(guard)
 {
-	CONSOLE_LOG_TRACE("console_runtime", 900, "Console endpoint created.");
+	CONSOLE_LOG_DEBUG("console_runtime", 900, "Console endpoint created.");
 #ifdef _DEBUG
 	current_directory_ = "/world";// "_sys";
 #else
@@ -67,7 +67,7 @@ console_runtime::console_runtime (rx_thread_handle_t executer, console_runtime_c
 
 console_runtime::~console_runtime()
 {
-	CONSOLE_LOG_TRACE("console_runtime", 900, "Console endpoint destroyed.");
+	CONSOLE_LOG_DEBUG("console_runtime", 900, "Console endpoint destroyed.");
 }
 
 

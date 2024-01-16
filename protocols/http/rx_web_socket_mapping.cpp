@@ -90,7 +90,10 @@ rx_web_socket_port::rx_web_socket_port()
 rx_result rx_web_socket_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
     auto result = rx_web_socket_port_base::initialize_runtime(ctx);
-
+    if (result)
+    {
+        result = status.initialize(ctx);
+    }
     return result;
 }
 

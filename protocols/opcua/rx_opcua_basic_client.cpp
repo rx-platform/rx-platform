@@ -77,20 +77,23 @@ void opcua_basic_client_port::stack_assembled ()
 
 rx_result opcua_basic_client_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	string_type app_uri = ctx.get_item_static("Options.AppUri", ""s);
-	string_type app_name = ctx.get_item_static("Options.AppName", ""s);
-	string_type app_bind = ctx.get_item_static("Connect.Endpoint", ""s);
+	auto result = status.initialize(ctx);
+	if (result)
+	{
+		string_type app_uri = ctx.get_item_static("Options.AppUri", ""s);
+		string_type app_name = ctx.get_item_static("Options.AppName", ""s);
+		string_type app_bind = ctx.get_item_static("Connect.Endpoint", ""s);
 
-	publish_interval_ = ctx.get_item_static("Options.PublishInterval", publish_interval_);
+		publish_interval_ = ctx.get_item_static("Options.PublishInterval", publish_interval_);
 
-	if (app_name.empty())
-		app_name = app_bind.c_str();
+		if (app_name.empty())
+			app_name = app_bind.c_str();
 
-	if (app_uri.empty())
-		app_uri = app_name;
+		if (app_uri.empty())
+			app_uri = app_name;
 
-	application_description_ = opcua_client_endpoint_base::fill_application_description(app_uri, app_name, app_bind, "BasicClient");
-
+		application_description_ = opcua_client_endpoint_base::fill_application_description(app_uri, app_name, app_bind, "BasicClient");
+	}
     return true;
 }
 
@@ -306,17 +309,21 @@ opcua_basic_client_endpoint::~opcua_basic_client_endpoint()
 rx_protocol_result_t opcua_basic_client_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
 {
 	opcua_basic_client_endpoint* me = (opcua_basic_client_endpoint*)reference->user_data;
+	me->port_->status.set_connected();
 	return me->client_connected(reference, session);
 }
 
 rx_protocol_result_t opcua_basic_client_endpoint::disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason)
 {
-	return RX_PROTOCOL_NOT_IMPLEMENTED;
+	opcua_basic_client_endpoint* me = (opcua_basic_client_endpoint*)reference->user_data;
+	me->port_->status.set_disconnected();
+	return RX_PROTOCOL_OK;
 }
 
 rx_protocol_result_t opcua_basic_client_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
 {
 	opcua_basic_client_endpoint* me = (opcua_basic_client_endpoint*)reference->user_data;
+	me->port_->status.received_packet();
 	return me->received(reference, packet);
 }
 
@@ -349,6 +356,10 @@ rx_result opcua_basic_client_endpoint::send_request (requests::opcua_request_ptr
 				if (protocol_result != RX_PROTOCOL_OK)
 				{
 					result = rx_protocol_error_message(protocol_result);
+				}
+				else
+				{
+					port_->status.sent_packet();
 				}
 			}
 		}

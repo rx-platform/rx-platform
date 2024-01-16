@@ -35,8 +35,21 @@
 
 // dummy
 #include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+
+namespace protocols {
+namespace opcua {
+namespace opcua_transport {
+class opcua_client_transport_port;
+class opcua_transport_port;
+
+} // namespace opcua_transport
+} // namespace opcua
+} // namespace protocols
+
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
@@ -65,19 +78,20 @@ constexpr size_t opc_ua_endpoint_name_len = 0x100;
 
 
 
+
 class opcua_transport_endpoint : public opcua_transport_protocol_type  
 {
 
   public:
-      opcua_transport_endpoint (runtime::items::port_runtime* port);
+      opcua_transport_endpoint (opcua_transport_port* port);
 
       ~opcua_transport_endpoint();
 
 
-      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+      rx_protocol_stack_endpoint* bind ();
 
 
-      runtime::items::port_runtime* get_port ()
+      opcua_transport_port* get_port ()
       {
         return port_;
       }
@@ -94,11 +108,7 @@ class opcua_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-      std::function<void(int64_t)> sent_func_;
-
-      std::function<void(int64_t)> received_func_;
-
-      runtime::items::port_runtime* port_;
+      opcua_transport_port* port_;
 
 
 };
@@ -127,6 +137,12 @@ OPC-UA transport port. Implementation of binary OPC-UA transport.");
       opcua_transport_port();
 
 
+      rx_result initialize_runtime (runtime_init_context& ctx);
+
+
+      rx_platform::runtime::io_types::simple_port_status status;
+
+
       static std::map<rx_node_id, opcua_transport_port::smart_ptr> runtime_instances;
 
 
@@ -142,19 +158,20 @@ OPC-UA transport port. Implementation of binary OPC-UA transport.");
 
 
 
+
 class opcua_client_transport_endpoint : public opcua_transport_protocol_type  
 {
 
   public:
-      opcua_client_transport_endpoint (runtime::items::port_runtime* port);
+      opcua_client_transport_endpoint (opcua_client_transport_port* port);
 
       ~opcua_client_transport_endpoint();
 
 
-      rx_protocol_stack_endpoint* bind (std::function<void(int64_t)> sent_func, std::function<void(int64_t)> received_func);
+      rx_protocol_stack_endpoint* bind ();
 
 
-      runtime::items::port_runtime* get_port ()
+      opcua_client_transport_port* get_port ()
       {
         return port_;
       }
@@ -175,11 +192,7 @@ class opcua_client_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-      std::function<void(int64_t)> sent_func_;
-
-      std::function<void(int64_t)> received_func_;
-
-      runtime::items::port_runtime* port_;
+      opcua_client_transport_port* port_;
 
 
 };
@@ -190,7 +203,7 @@ class opcua_client_transport_endpoint : public opcua_transport_protocol_type
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< opcua_client_transport_endpoint  > opcua_client_transport_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::opcua::opcua_transport::opcua_client_transport_endpoint  > opcua_client_transport_base;
 
 
 
@@ -206,6 +219,12 @@ OPC-UA client transport port. Implementation of binary OPC-UA client transport."
 
   public:
       opcua_client_transport_port();
+
+
+      rx_result initialize_runtime (runtime_init_context& ctx);
+
+
+      rx_platform::runtime::io_types::simple_port_status status;
 
 
       static std::map<rx_node_id, opcua_client_transport_port::smart_ptr> runtime_instances;

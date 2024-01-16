@@ -33,10 +33,10 @@
 
 
 
-// rx_subscription_items
-#include "sys_internal/rx_subscription_items.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
+// rx_subscription_items
+#include "sys_internal/rx_subscription_items.h"
 
 #include "system/runtime/rx_runtime_helpers.h"
 #include "system/runtime/rx_runtime_holder.h"

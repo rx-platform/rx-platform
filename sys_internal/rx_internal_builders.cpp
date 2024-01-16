@@ -1439,6 +1439,17 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 		port->complex_data.register_struct("Options", RX_LIMITER_PORT_OPTIONS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_SIZE_LIMITER_TYPE_NAME
+			, RX_SIZE_LIMITER_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
+		port->complex_data.register_struct("Options", RX_SIZE_LIMITER_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
 
 		port = create_type<port_type>(meta::object_type_creation_data{
 			TLS_PORT_TYPE_NAME
@@ -1806,12 +1817,66 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		auto variable = create_type<basic_types::variable_type>(meta::type_creation_data{
-			RX_REGISTER_VARIABLE_TYPE_NAME
-			, RX_REGISTER_VARIABLE_TYPE_ID
+			RX_SIMPLE_VARIABLE_TYPE_NAME
+			, RX_SIMPLE_VARIABLE_TYPE_ID
 			, RX_CLASS_VARIABLE_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		add_simple_type_to_configuration<variable_type>(dir, variable, false);
+		variable = create_type<basic_types::variable_type>(meta::type_creation_data{
+			RX_COMPLEX_INPUT_VARIABLE_TYPE_NAME
+			, RX_COMPLEX_INPUT_VARIABLE_TYPE_ID
+			, RX_CLASS_VARIABLE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		variable->complex_data.register_const_value_static("InputsSelection", (uint8_t)0, false);
+		add_simple_type_to_configuration<variable_type>(dir, variable, false);
+		variable = create_type<basic_types::variable_type>(meta::type_creation_data{
+			RX_COMPLEX_OUTPUT_VARIABLE_TYPE_NAME
+			, RX_COMPLEX_OUTPUT_VARIABLE_TYPE_ID
+			, RX_CLASS_VARIABLE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		variable->complex_data.register_const_value_static("SequentialWrite", false, false);
+		variable->complex_data.register_const_value_static("SingleSuccess", true, false);
+		variable->complex_data.register_const_value_static("AckFromInput", false, false);
+		add_simple_type_to_configuration<variable_type>(dir, variable, false);
+
+		variable = create_type<basic_types::variable_type>(meta::type_creation_data{
+			RX_COMPLEX_IO_VARIABLE_TYPE_NAME
+			, RX_COMPLEX_IO_VARIABLE_TYPE_ID
+			, RX_CLASS_VARIABLE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		variable->complex_data.register_const_value_static("InputsSelection", (uint8_t)0, false);
+		variable->complex_data.register_const_value_static("SequentialWrite", false, false);
+		variable->complex_data.register_const_value_static("SingleSuccess", true, false);
+		variable->complex_data.register_const_value_static("AckFromInput", false, false);
+		add_simple_type_to_configuration<variable_type>(dir, variable, false);
+		variable = create_type<basic_types::variable_type>(meta::type_creation_data{
+			RX_BRIDGE_VARIABLE_TYPE_NAME
+			, RX_BRIDGE_VARIABLE_TYPE_ID
+			, RX_CLASS_VARIABLE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		variable->complex_data.register_const_value_static("InputsSelection", (uint8_t)0, false);
+		variable->complex_data.register_const_value_static("SequentialWrite", false, false);
+		variable->complex_data.register_const_value_static("SingleSuccess", true, false);
+		variable->complex_data.register_const_value_static("AckFromInput", false, false);
+		add_simple_type_to_configuration<variable_type>(dir, variable, false);
+		variable = create_type<basic_types::variable_type>(meta::type_creation_data{
+			RX_MUX_VARIABLE_TYPE_NAME
+			, RX_MUX_VARIABLE_TYPE_ID
+			, RX_CLASS_VARIABLE_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		variable->complex_data.register_simple_value_static<int8_t>("Select", 0, false, false);
 		add_simple_type_to_configuration<variable_type>(dir, variable, false);
 
 		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
@@ -2042,6 +2107,16 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		what->complex_data.register_simple_value_static("IgnoreZeros", false, false, true);
 		what->complex_data.register_simple_value_static("UsePacketId", true, false, true);
 		what->complex_data.register_simple_value_static("QueueSize", 0, true, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_SIZE_LIMITER_PORT_OPTIONS_TYPE_NAME
+			, RX_SIZE_LIMITER_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static("Limit", 0x10000, false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{

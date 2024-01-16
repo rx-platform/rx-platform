@@ -110,6 +110,41 @@ class master_port_status
 
 
 
+class external_port_status 
+{
+
+  public:
+      external_port_status();
+
+
+      void received_packet (size_t bytes);
+
+      void sent_packet (size_t bytes);
+
+      rx_result initialize (runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+      async_owned_value<int64_t> received_bytes_;
+
+      async_owned_value<int64_t> sent_bytes_;
+
+      async_owned_value<int64_t> received_;
+
+      async_owned_value<int64_t> sent_;
+
+
+};
+
+
+
+
+
+
 class simple_port_status 
 {
 
@@ -141,18 +176,22 @@ class simple_port_status
 
 
 
-class external_port_status 
+class client_port_status 
 {
 
   public:
-      external_port_status();
+      client_port_status();
 
-
-      void received_packet (size_t bytes);
-
-      void sent_packet (size_t bytes);
 
       rx_result initialize (runtime_init_context& ctx);
+
+      void received_packet ();
+
+      void sent_packet ();
+
+      void set_connected ();
+
+      void set_disconnected ();
 
 
   protected:
@@ -160,13 +199,11 @@ class external_port_status
   private:
 
 
-      async_owned_value<int64_t> received_bytes_;
-
-      async_owned_value<int64_t> sent_bytes_;
-
       async_owned_value<int64_t> received_;
 
       async_owned_value<int64_t> sent_;
+
+      async_owned_value<bool> connected_;
 
 
 };

@@ -146,7 +146,7 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 			std::cout << "Starting log...";
 			if (log_subscriber)
 				rx_platform::log::log_object::instance().register_subscriber(log_subscriber);
-			ret = rx_platform::log::log_object::instance().start(config_.management.test_log);
+			ret = start_log(config_);
 			if (ret)
 			{
 				std::cout << "OK\r\n";

@@ -975,6 +975,16 @@ void extern_variable_runtime::destroy_timer (runtime_handle_t handle)
     rx_platform::extern_timers::instance().destroy_timer(handle);
 }
 
+rx_value extern_variable_runtime::get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources)
+{
+    return rx_value();
+}
+
+rx_result extern_variable_runtime::variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
 
 } // namespace blocks
 } // namespace runtime

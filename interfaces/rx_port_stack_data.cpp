@@ -49,6 +49,12 @@ namespace port_stack {
 
 // Class rx_internal::interfaces::port_stack::port_active_map 
 
+port_active_map::port_active_map()
+      : active_endpoints(0)
+{
+}
+
+
 
 rx_result port_active_map::register_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr whose, rx_port_ptr owner)
 {

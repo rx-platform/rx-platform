@@ -60,6 +60,8 @@ class port_active_map
     typedef std::map<rx_protocol_stack_endpoint*, rx_port_ptr> endpoints_map_type;
 
   public:
+      port_active_map();
+
 
       rx_result register_endpoint (rx_protocol_stack_endpoint* what, rx_port_ptr whose, rx_port_ptr owner);
 

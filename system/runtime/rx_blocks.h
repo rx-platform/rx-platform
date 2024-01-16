@@ -438,59 +438,6 @@ struct runtime. basic implementation of an struct runtime");
 
 
 
-class variable_runtime : public rx::pointers::reference_object  
-{
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
-variable runtime. basic implementation of an variable runtime");
-
-	DECLARE_REFERENCE_PTR(variable_runtime);
-    friend class structure::variable_data;
-
-  public:
-      variable_runtime();
-
-      virtual ~variable_runtime();
-
-
-      string_type get_type_name () const;
-
-      virtual rx_result initialize_variable (runtime::runtime_init_context& ctx);
-
-      virtual rx_result deinitialize_variable (runtime::runtime_deinit_context& ctx);
-
-      virtual rx_result start_variable (runtime::runtime_start_context& ctx);
-
-      virtual rx_result stop_variable (runtime::runtime_stop_context& ctx);
-
-
-      static string_type type_name;
-
-
-  protected:
-
-      void process_variable (runtime_process_context* ctx);
-
-      void variable_result_pending (runtime_process_context* ctx, rx_result&& result, runtime_transaction_id_t id);
-
-
-  private:
-
-      virtual rx_value get_variable_input (runtime_process_context* ctx, runtime_sources_type& sources);
-
-      virtual rx_result variable_write (write_data&& data, runtime_process_context* ctx, runtime_sources_type& sources);
-
-
-
-      structure::variable_data* container_;
-
-
-};
-
-
-
-
-
-
 class event_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
@@ -532,6 +479,63 @@ event runtime. basic implementation of an event runtime");
 
 
       structure::event_data* container_;
+
+
+};
+
+
+
+
+
+
+class variable_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+variable runtime. basic implementation of an variable runtime");
+
+	DECLARE_REFERENCE_PTR(variable_runtime);
+    friend class structure::variable_data;
+
+  public:
+      variable_runtime();
+
+      virtual ~variable_runtime();
+
+
+      string_type get_type_name () const;
+
+      virtual rx_result initialize_variable (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_variable (runtime::runtime_deinit_context& ctx);
+
+      virtual rx_result start_variable (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_variable (runtime::runtime_stop_context& ctx);
+
+
+      static string_type type_name;
+
+
+  protected:
+
+      void process_variable (runtime_process_context* ctx);
+
+      void send_write_result (structure::write_task* task, rx_result result);
+
+
+  private:
+
+      virtual rx_value get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources) = 0;
+
+      virtual rx_result variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources) = 0;
+
+      virtual void process_result (runtime_transaction_id_t id, rx_result&& result);
+
+      virtual void post_process_value (const rx_value& val);
+
+
+
+      structure::variable_data* container_;
 
 
 };
