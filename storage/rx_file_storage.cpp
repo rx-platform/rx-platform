@@ -519,15 +519,17 @@ bool rx_file_item<fileT,streamT>::preprocess_meta_data (meta_data& data)
 		data.path = storage_meta_.path;
 		ret = true;
 	}
-	if (storage_meta_.modified_time != rx_time::null_time())
+	if (storage_meta_.modified_time != rx_time::null_time() 
+		&& data.modified_time == rx_time::null_time())
 	{
 		data.modified_time = storage_meta_.modified_time;
-		// ret = true;// this is not worth the trouble
+		ret = true;
 	}
-	if (storage_meta_.created_time != rx_time::null_time())
+	if (storage_meta_.created_time != rx_time::null_time()
+		&& data.modified_time == rx_time::null_time())
 	{
 		data.created_time = storage_meta_.created_time;
-		// ret = true;// this is not worth the trouble
+		ret = true;
 	}
 	return ret;
 }

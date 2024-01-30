@@ -593,6 +593,8 @@ class runtime_process_context
 
       rx_result execute_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id);
 
+      rx_time now ();
+
 
       const rx_mode_type get_mode () const
       {
@@ -612,8 +614,6 @@ class runtime_process_context
       }
 
 
-
-      rx_time now;
 
       const meta_data& meta_info;
 
@@ -668,7 +668,9 @@ class runtime_process_context
       tag_blocks::binded_tags& binded_;
 
 
-      runtime_process_step current_step_;
+      std::atomic<runtime_process_step> current_step_;
+
+      std::atomic<uint64_t> now_;
 
       fire_callback_func_t fire_callback_;
 

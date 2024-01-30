@@ -90,7 +90,7 @@ runtime_holder<typeT>::~runtime_holder()
     }
     else
     {
-        RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta_info_.get_full_path()));
+        RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " destructor, for " + meta_info_.get_full_path()));
     }
 #ifdef _DEBUG
     printf("Deleted %s %s\r\n", rx_item_type_name(typeT::runtime_type_id).c_str(), meta_info_.name.c_str());

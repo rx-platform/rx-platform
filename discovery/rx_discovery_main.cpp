@@ -101,15 +101,29 @@ rx_result discovery_manager::initialize (hosting::rx_platform_host* host, config
 	return true;
 }
 
+rx_result discovery_manager::start (hosting::rx_platform_host* host, const configuration_data_t& config)
+{
+	auto result = peer_discovery_algorithms::start_register(peers_register_, host, config);
+	if (!result)
+		return result;
+
+	return true;
+}
+
+void discovery_manager::stop ()
+{
+}
+
 void discovery_manager::deinitialize ()
 {
+	peer_discovery_algorithms::stop_register(peers_register_);
 }
 
 std::vector<peer_endpoint> discovery_manager::get_peers ()
 {
 	std::vector<peer_endpoint> ret;
 #ifdef _DEBUG
-	ret.emplace_back("ensaco", io::ip4_address("192.168.9.20", 31420), "rx-platform/*");
+	//ret.emplace_back("ensaco", io::ip4_address("192.168.9.20", 31420), "rx-platform/*");
 #else
 #endif
 	return ret;
@@ -122,6 +136,21 @@ peer_connection_ptr discovery_manager::get_peer (const string_type& name)
 		return it->second;
 	else
 		return peer_connection_ptr();
+}
+
+uint32_t discovery_manager::subscribe_to_port (std::function<void(uint16_t)> callback, rx_reference_ptr anchor)
+{
+	return peers_register_.comm_point_->subscribe_to_port(callback, anchor);
+}
+
+void discovery_manager::unsubscribe_from_port (uint32_t id)
+{
+	peers_register_.comm_point_->unsubscribe_from_port(id);
+}
+
+std::vector<discovery::discovered_peer_data> discovery_manager::get_peers_network ()
+{
+	return peer_discovery_algorithms::get_peers_network(peers_register_);
 }
 
 template<class T>
@@ -251,6 +280,7 @@ rx_result peer_connection::build (hosting::rx_platform_host* host, configuration
 		port_instance_data.meta_info.parent = RX_TCP_CLIENT_PORT_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
+		port_instance_data.meta_info.run_at = RX_OTHERS_STORAGE_NAME;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		string_type ip_addr;
 		uint16_t ip_port;
@@ -264,6 +294,7 @@ rx_result peer_connection::build (hosting::rx_platform_host* host, configuration
 		port_instance_data.meta_info.parent = RX_OPCUA_CLIENT_TRANSPORT_PORT_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
+		port_instance_data.meta_info.run_at = RX_OTHERS_STORAGE_NAME;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop"
 			, "./"s + RX_DISCOVERY_PROTOCOL_TCP_NAME_PREFIX + endpoint_.peer_name);
@@ -275,6 +306,7 @@ rx_result peer_connection::build (hosting::rx_platform_host* host, configuration
 		port_instance_data.meta_info.parent = RX_OPCUA_SEC_NONE_CLIENT_PORT_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
+		port_instance_data.meta_info.run_at = RX_OTHERS_STORAGE_NAME;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop"
 			, "./"s + RX_DISCOVERY_PROTOCOL_TRANSPORT_NAME_PREFIX + endpoint_.peer_name);
@@ -286,6 +318,7 @@ rx_result peer_connection::build (hosting::rx_platform_host* host, configuration
 		port_instance_data.meta_info.parent = RX_RX_JSON_CLIENT_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
+		port_instance_data.meta_info.run_at = RX_OTHERS_STORAGE_NAME;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop"
 			, "./"s + RX_DISCOVERY_PROTOCOL_CHANNEL_NAME_PREFIX + endpoint_.peer_name);
@@ -299,6 +332,7 @@ rx_result peer_connection::build (hosting::rx_platform_host* host, configuration
 		instance_data.meta_info.parent = RX_PEER_CONNECTION_TYPE_ID;
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
+		instance_data.meta_info.run_at = RX_OTHERS_STORAGE_NAME;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
 		instance_data.overrides.add_value_static("Endpoint.Name", endpoint_.peer_name);
 		instance_data.overrides.add_value_static("Endpoint.Url", endpoint_.get_url());

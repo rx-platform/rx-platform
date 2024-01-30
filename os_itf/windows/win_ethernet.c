@@ -39,7 +39,6 @@
 
 #include "third-party/win10pcap/NdisDriverCommon.h"
 
-
 // ethernet stuff
 int rx_list_eth_cards(struct ETH_interface** interfaces, size_t* count)
 {
@@ -47,6 +46,8 @@ int rx_list_eth_cards(struct ETH_interface** interfaces, size_t* count)
 	ULONG size = sizeof(info);
 	DWORD ret;
 	size_t idx;
+
+	size_t temp_ip_count = 0;
 
 	ret = GetAdaptersInfo(info, &size);
 	if (ret != ERROR_SUCCESS)
@@ -81,6 +82,53 @@ int rx_list_eth_cards(struct ETH_interface** interfaces, size_t* count)
 				strcpy((*interfaces)[idx].name, iter->AdapterName);
 				strcpy((*interfaces)[idx].description, iter->Description);
 				memcpy((*interfaces)[idx].mac_address, iter->Address, MAC_ADDR_SIZE);
+				(*interfaces)[idx].ip_addrs_size = 0;
+				IP_ADDR_STRING* iter2 = &iter->IpAddressList;
+				do
+				{
+					char* temp_addr = iter2->IpAddress.String;
+					if (temp_addr && strcmp(temp_addr, "0.0.0.0") != 0)
+						(*interfaces)[idx].ip_addrs_size++;
+					iter2= iter2->Next;
+
+				} while (iter2);
+				if ((*interfaces)[idx].ip_addrs_size)
+				{
+					(*interfaces)[idx].ip_addrs = malloc(sizeof(struct IP_interface) * (*interfaces)[idx].ip_addrs_size);
+					iter2 = &iter->IpAddressList;
+					size_t idx2 = 0;
+					do
+					{
+						char* temp_addr = iter2->IpAddress.String;
+						char* temp_addr2 = iter2->IpMask.String;
+
+						if (temp_addr && strcmp(temp_addr, "0.0.0.0") != 0)
+						{
+							(*interfaces)[idx].ip_addrs[idx2].broadcast_address[0] = '\0';
+							(*interfaces)[idx].ip_addrs[idx2].network[0] = '\0';
+							struct in_addr addr1;
+							struct in_addr mask1;
+							struct in_addr brod;
+							int ret = inet_pton(AF_INET, temp_addr, &addr1);
+							if (ret == 1)
+							{
+								ret = inet_pton(AF_INET, temp_addr2, &mask1);
+								if (ret == 1)
+								{
+									brod.S_un.S_addr = mask1.S_un.S_addr & addr1.S_un.S_addr | (~mask1.S_un.S_addr);
+									strcpy((*interfaces)[idx].ip_addrs[idx2].broadcast_address, inet_ntoa(brod));
+									mask1.S_un.S_addr = mask1.S_un.S_addr & addr1.S_un.S_addr;
+									strcpy((*interfaces)[idx].ip_addrs[idx2].network, inet_ntoa(mask1));
+								}
+							}
+							strcpy((*interfaces)[idx].ip_addrs[idx2].ip_address, temp_addr);
+						}
+						idx2++;
+						iter2 = iter2->Next;
+
+					} while (iter2);
+				}
+
 				idx++;
 			}
 

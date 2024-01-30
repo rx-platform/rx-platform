@@ -232,7 +232,9 @@ rx_result rx_gate::deinitialize ()
 
 	rx_internal::rx_http_server::http_server::instance().deinitialize();
 
-	rx_internal::enterprise::enterprise_manager::instance().deinit_interfaces();
+	rx_internal::enterprise::enterprise_manager::instance().deinit_interfaces(); 
+	
+	rx_internal::discovery::discovery_manager::instance().deinitialize();
 
 	rx_internal::model::platform_types_manager::instance().deinitialize();
 
@@ -255,17 +257,27 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 #ifdef UPYTHON_SUPPORT
 		result = python::upython::start_script(host, data);
 #endif
-		result = rx_internal::model::platform_types_manager::instance().start(host, data.meta_configuration);
+		result = rx_internal::discovery::discovery_manager::instance().start(host, data);
 		if (result)
 		{
-			platform_status_ = rx_platform_status::running;
-			host->server_started_event();
-			return true;
+			result = rx_internal::model::platform_types_manager::instance().start(host, data.meta_configuration);
+			if (result)
+			{
+				platform_status_ = rx_platform_status::running;
+				host->server_started_event();
+				return true;
+			}
+			else
+			{
+				rx_internal::discovery::discovery_manager::instance().stop();
+				rx_internal::infrastructure::server_runtime::instance().stop();
+				result.register_error("Error starting platform types manager!");
+			}
 		}
 		else
 		{
 			rx_internal::infrastructure::server_runtime::instance().stop();
-			result.register_error("Error starting platform types manager!");
+			result.register_error("Error starting discovery manager!");
 		}
 	}
 	else
@@ -277,12 +289,13 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 
 rx_result rx_gate::stop ()
 {
-	platform_status_ = rx_platform_status::stopping;
+	platform_status_ = rx_platform_status::stopping; 
 	rx_internal::sys_runtime::platform_runtime_manager::instance().stop_all();
 	rx_internal::model::platform_types_manager::instance().stop();
 #ifdef UPYTHON_SUPPORT
 	python::upython::stop_script();
 #endif
+	rx_internal::discovery::discovery_manager::instance().stop();
 	rx_internal::infrastructure::server_runtime::instance().stop();
 	platform_status_ = rx_platform_status::deinitializing;
 	return true;

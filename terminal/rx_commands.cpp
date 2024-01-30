@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -115,7 +115,7 @@ string_type parse_man_file(const string_type& data)
 }
 }
 
-// Class rx_internal::terminal::commands::server_command_manager 
+// Class rx_internal::terminal::commands::server_command_manager
 
 server_command_manager::server_command_manager()
 {
@@ -138,7 +138,7 @@ void server_command_manager::register_command (server_command_base_ptr cmd)
 
 void server_command_manager::register_internal_commands ()
 {
-	
+
 	// register constructors
 	auto result = rx_internal::model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
 		RX_COMMANDS_MANAGER_TYPE_ID, [] {
@@ -220,7 +220,7 @@ void server_command_manager::register_internal_commands ()
 	result = rx_internal::model::register_internal_constructor<port_type, protocols::mqtt::mqtt_simple::mqtt_simple_server_port>(
 		nullptr, RX_MQTT_SIMPLE_SERVER_PORT_TYPE_ID, [] {
 			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_simple_server_port>();
-		}); 
+		});
 	result = rx_internal::model::register_internal_constructor<port_type, protocols::mqtt::mqtt_simple::mqtt_simple_client_port>(
 		nullptr, RX_MQTT_SIMPLE_CLIENT_PORT_TYPE_ID, [] {
 			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_simple_client_port>();
@@ -244,7 +244,7 @@ void server_command_manager::register_internal_commands ()
 			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_broker_source>();
 		});
 
-	// 
+	//
 
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_VT00_TYPE_ID, [] {
@@ -266,7 +266,7 @@ void server_command_manager::register_internal_commands ()
 		RX_NS_WS_TYPE_ID, [] {
 			return rx_create_reference<protocols::rx_http::rx_web_socket_port>();
 		});
-	
+
 	auto commands = get_internal_commands();
 	for (auto& one : commands)
 	{
@@ -282,7 +282,7 @@ void server_command_manager::register_internal_commands ()
 			});
 	}
 
-	
+
 }
 
 server_command_base_ptr server_command_manager::get_command_by_name (const string_type& name)
@@ -342,7 +342,7 @@ void server_command_manager::clear ()
 std::vector<server_command_base_ptr> server_command_manager::get_internal_commands ()
 {
 	std::vector<server_command_base_ptr> ret_commands;
-	
+
 	// general commands
 	ret_commands.push_back(rx_create_reference<echo_server_command>());
 	ret_commands.push_back(rx_create_reference<console::console_commands::info_command>());
@@ -399,7 +399,7 @@ std::vector<server_command_base_ptr> server_command_manager::get_internal_comman
 }
 
 
-// Class rx_internal::terminal::commands::echo_server_command 
+// Class rx_internal::terminal::commands::echo_server_command
 
 echo_server_command::echo_server_command()
   : server_command("echo")
@@ -428,7 +428,7 @@ bool echo_server_command::do_console_command (std::istream& in, std::ostream& ou
 }
 
 
-// Class rx_internal::terminal::commands::server_command 
+// Class rx_internal::terminal::commands::server_command
 
 server_command::server_command (const string_type& name)
       : time_stamp_(rx_time::now()),

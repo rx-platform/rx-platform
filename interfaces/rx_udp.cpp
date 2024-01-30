@@ -68,6 +68,11 @@ rx_result udp_port::initialize_runtime (runtime::runtime_init_context& ctx)
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);
     bind_address_.parse(addr, port);
 
+    addr = ctx.structure.get_root().get_local_as<string_type>("MultiCast.IPAddress", "");
+    addr = rx_gate::instance().resolve_ip4_alias(addr);
+    port = ctx.structure.get_root().get_local_as<uint16_t>("MultiCast.IPPort", 0);
+    multicast_address_.parse(addr, port);
+
     return true;
 }
 
@@ -86,7 +91,7 @@ rx_result udp_port::start_listen (const protocol_address* local_address, const p
         udp_endpoint* whose = reinterpret_cast<udp_endpoint*>(entry->user_data);
         whose->get_port()->disconnect_stack_endpoint(entry);
     };
-    auto result = endpoint_->open(bind_address_, sec_ctx, this);
+    auto result = endpoint_->open(bind_address_, multicast_address_, sec_ctx, this);
     if (!result)
     {
         stop_passive();
@@ -111,7 +116,7 @@ rx_result_with<port_connect_result> udp_port::start_connect (const protocol_addr
         udp_endpoint* whose = reinterpret_cast<udp_endpoint*>(entry->user_data);
         whose->get_port()->disconnect_stack_endpoint(entry);
     };
-    auto result = endpoint_->open(bind_address_, sec_ctx, this);
+    auto result = endpoint_->open(bind_address_, multicast_address_, sec_ctx, this);
     if (!result)
     {
         stop_passive();
@@ -308,12 +313,13 @@ bool udp_endpoint::readed (const void* data, size_t count, const struct sockaddr
         return true;
 }
 
-rx_result udp_endpoint::open (io::ip4_address addr, security::security_context_ptr identity, udp_port* port)
+rx_result udp_endpoint::open (io::ip4_address addr, io::ip4_address multicast, security::security_context_ptr identity, udp_port* port)
 {
     identity_ = identity;
     identity_->login();
     my_port_ = port;
     bind_address_ = addr;
+    multicast_address_ = multicast;
     timer_ = my_port_->create_timer_function([this]()
         {
             if (!tick())
@@ -355,7 +361,10 @@ bool udp_endpoint::tick ()
             udp_socket_->set_identity(stack_endpoint_.identity);
             if (!bind_address_.is_null())
             {
-                result = udp_socket_->bind_socket_udpip_4(bind_address_.get_ip4_address(), infrastructure::server_runtime::instance().get_io_pool()->get_pool());
+                bool has_multicast = !multicast_address_.is_null() && !multicast_address_.is_empty_ip4();
+                result = udp_socket_->bind_socket_udpip_4(bind_address_.get_ip4_address()
+                    , has_multicast ? multicast_address_.get_ip4_address() : nullptr
+                    , infrastructure::server_runtime::instance().get_io_pool()->get_pool());
                 if (result)
                 {
                     ITF_LOG_INFO("udp_endpoint", 200, "UDP port opened at "s + bind_address_.to_string());

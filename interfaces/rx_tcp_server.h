@@ -156,7 +156,7 @@ class tcp_server_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< rx_internal::interfaces::ip_endpoints::tcp_server_endpoint  > tcp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< tcp_server_endpoint  > tcp_server_base;
 
 
 
@@ -194,13 +194,14 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
 
   protected:
 
+      io::ip4_address bind_address_;
+
+
   private:
 
 
       rx_reference<tcp_listent_std_buffer> listen_socket_;
 
-
-      io::ip4_address bind_address_;
 
       runtime::local_value<uint32_t> recv_timeout_;
 
@@ -228,10 +229,32 @@ class system_server_port_base : public tcp_server_port
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
+      rx_result start_runtime (runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime_stop_context& ctx);
+
+      rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
+
+      rx_result stop_passive ();
+
+      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
+
 
   protected:
 
   private:
+
+
+      rx_platform::runtime::io_types::external_port_status status_;
+
+
+      io::ip4_address active_bind_address_;
+
+      bool listening_;
+
+      uint32_t subs_id_;
+
+      uint16_t system_port_;
 
 
 };

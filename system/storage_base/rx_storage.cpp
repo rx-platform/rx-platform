@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -40,7 +40,6 @@
 #include "system/server/rx_server.h"
 #include "lib/rx_ser_json.h"
 #include "lib/rx_ser_bin.h"
-#define RX_CODE_STORAGE_NAME "<code>"
 
 
 extern "C"
@@ -65,7 +64,7 @@ namespace rx_platform {
 
 namespace storage_base {
 
-// Class rx_platform::storage_base::rx_platform_storage 
+// Class rx_platform::storage_base::rx_platform_storage
 
 rx_platform_storage::rx_platform_storage()
 {
@@ -84,7 +83,7 @@ rx_result rx_platform_storage::list_storage_roles (std::vector<rx_roles_storage_
 }
 
 
-// Class rx_platform::storage_base::rx_storage_item 
+// Class rx_platform::storage_base::rx_storage_item
 
 rx_storage_item::rx_storage_item (rx_storage_item_type storage_type)
       : storage_type_(storage_type)
@@ -98,7 +97,14 @@ rx_storage_item::~rx_storage_item()
 
 
 
-// Class rx_platform::storage_base::rx_platform_storage_type 
+bool rx_storage_item::is_read_only () const
+{
+  return false;
+
+}
+
+
+// Class rx_platform::storage_base::rx_platform_storage_type
 
 rx_platform_storage_type::rx_platform_storage_type()
 {
@@ -111,7 +117,7 @@ rx_platform_storage_type::~rx_platform_storage_type()
 
 
 
-// Class rx_platform::storage_base::rx_code_storage_item 
+// Class rx_platform::storage_base::rx_code_storage_item
 
 rx_code_storage_item::rx_code_storage_item()
     : rx_storage_item(rx_storage_item_type::none)
@@ -181,7 +187,7 @@ string_type rx_code_storage_item::get_item_path () const
 }
 
 
-// Class rx_platform::storage_base::rx_code_storage 
+// Class rx_platform::storage_base::rx_code_storage
 
 rx_code_storage::rx_code_storage()
 {
@@ -245,7 +251,7 @@ rx_result split_storage_reference(const string_type full_ref, string_type& type,
     }
     return true;
 }
-// Class rx_platform::storage_base::rx_storage_connection 
+// Class rx_platform::storage_base::rx_storage_connection
 
 
 rx_result_with<rx_storage_ptr> rx_storage_connection::get_storage (const string_type& name, hosting::rx_platform_host* host)
@@ -301,7 +307,7 @@ rx_result rx_storage_connection::list_storage_roles (std::vector<rx_roles_storag
 }
 
 
-// Class rx_platform::storage_base::rx_empty_storage 
+// Class rx_platform::storage_base::rx_empty_storage
 
 
 string_type rx_empty_storage::get_storage_info ()
@@ -344,7 +350,7 @@ void rx_empty_storage::preprocess_meta_data (meta_data& data)
 }
 
 
-// Class rx_platform::storage_base::rx_empty_storage_connection 
+// Class rx_platform::storage_base::rx_empty_storage_connection
 
 
 string_type rx_empty_storage_connection::get_storage_reference () const
@@ -364,7 +370,7 @@ string_type rx_empty_storage_connection::get_storage_info () const
 }
 
 
-// Class rx_platform::storage_base::rx_plugin_storage 
+// Class rx_platform::storage_base::rx_plugin_storage
 
 rx_plugin_storage::rx_plugin_storage (plugin_storage_struct* impl)
       : impl_(impl)
@@ -420,7 +426,7 @@ void rx_plugin_storage::preprocess_meta_data (meta_data& data)
 }
 
 
-// Class rx_platform::storage_base::rx_plugin_storage_connection 
+// Class rx_platform::storage_base::rx_plugin_storage_connection
 
 rx_plugin_storage_connection::rx_plugin_storage_connection (rx_storage_constructor_t construct_func)
       : constructor_(construct_func)
@@ -461,7 +467,7 @@ rx_result rx_plugin_storage_connection::init_connection (const string_type& stor
 }
 
 
-// Class rx_platform::storage_base::rx_plugin_storage_item 
+// Class rx_platform::storage_base::rx_plugin_storage_item
 
 rx_plugin_storage_item::rx_plugin_storage_item()
     : rx_storage_item(rx_storage_item_type::none)
@@ -530,7 +536,7 @@ string_type rx_plugin_storage_item::get_item_path () const
 }
 
 
-// Class rx_platform::storage_base::rx_plugin_storage_type 
+// Class rx_platform::storage_base::rx_plugin_storage_type
 
 rx_plugin_storage_type::rx_plugin_storage_type (const string_type& prefix, rx_storage_constructor_t construct_func)
       : prefix_(prefix),
@@ -556,7 +562,7 @@ string_type rx_plugin_storage_type::get_reference_prefix () const
 }
 
 
-// Class rx_platform::storage_base::rx_roles_storage_item 
+// Class rx_platform::storage_base::rx_roles_storage_item
 
 rx_roles_storage_item::rx_roles_storage_item()
 {
@@ -567,6 +573,127 @@ rx_roles_storage_item::~rx_roles_storage_item()
 {
 }
 
+
+
+// Class rx_platform::storage_base::rx_others_storage
+
+rx_others_storage::rx_others_storage()
+{
+}
+
+
+
+string_type rx_others_storage::get_storage_info ()
+{
+    return RX_OTHERS_STORAGE_NAME;
+}
+
+rx_result rx_others_storage::list_storage (std::vector<rx_storage_item_ptr>& items)
+{
+    return true;
+}
+
+bool rx_others_storage::is_valid_storage () const
+{
+    return true;
+}
+
+rx_result_with<rx_storage_item_ptr> rx_others_storage::get_item_storage (const meta_data& data, rx_item_type type)
+{
+    rx_other_storage_item* ret = new rx_other_storage_item();
+    ret->meta_info = data;
+    return rx_storage_item_ptr(ret);
+}
+
+rx_result_with<rx_storage_item_ptr> rx_others_storage::get_runtime_storage (const meta_data& data, rx_item_type type)
+{
+    rx_other_storage_item* ret = new rx_other_storage_item();
+    ret->meta_info = data;
+    return rx_storage_item_ptr(ret);
+}
+
+string_type rx_others_storage::get_storage_reference ()
+{
+    return RX_OTHERS_STORAGE_NAME;
+}
+
+void rx_others_storage::preprocess_meta_data (meta_data& data)
+{
+}
+
+
+// Class rx_platform::storage_base::rx_other_storage_item
+
+rx_other_storage_item::rx_other_storage_item()
+    : rx_storage_item(rx_storage_item_type::none)
+{
+}
+
+
+
+base_meta_reader& rx_other_storage_item::read_stream ()
+{
+    RX_ASSERT(false);
+    // this should not happen but be safe of stupidity
+    static memory::std_buffer dummy_buffer;
+    static serialization::std_buffer_reader dummy(dummy_buffer);
+    return dummy;
+}
+
+base_meta_writer& rx_other_storage_item::write_stream ()
+{
+    RX_ASSERT(false);
+    // this should not happen but be safe of stupidity
+    static memory::std_buffer dummy_buffer;
+    static serialization::std_buffer_writer dummy(dummy_buffer);
+    return dummy;
+}
+
+rx_result rx_other_storage_item::open_for_read ()
+{
+    return "Storage is read-only!";
+}
+
+rx_result rx_other_storage_item::open_for_write ()
+{
+    return "Storage is read-only!";
+}
+
+rx_result rx_other_storage_item::close_read ()
+{
+    return "Storage is read-only!";
+}
+
+rx_result rx_other_storage_item::commit_write ()
+{
+    return "Storage is read-only!";
+}
+
+const string_type& rx_other_storage_item::get_item_reference () const
+{
+    static string_type name(RX_OTHERS_STORAGE_NAME);
+    return name;
+}
+
+rx_result rx_other_storage_item::delete_item ()
+{
+    return true;
+}
+
+bool rx_other_storage_item::preprocess_meta_data (meta_data& data)
+{
+    return false;
+}
+
+string_type rx_other_storage_item::get_item_path () const
+{
+    return meta_info.get_full_path();
+}
+
+bool rx_other_storage_item::is_read_only () const
+{
+    return true;
+}
 
 
 } // namespace storage_base

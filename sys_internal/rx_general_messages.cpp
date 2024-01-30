@@ -38,6 +38,8 @@
 #include "system//server/rx_server.h"
 #include "terminal/rx_vt100.h"
 #include "http_server/rx_http_server.h"
+#include "discovery/rx_discovery_algorithm.h"
+#include "discovery/rx_discovery_protocol.h"
 
 
 namespace rx_internal {
@@ -245,6 +247,86 @@ const string_type& rx_system_info_request::get_type_name ()
 }
 
 rx_message_type_t rx_system_info_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::general_messages::rx_peers_net_request 
+
+string_type rx_peers_net_request::type_name = "peersReq";
+
+rx_message_type_t rx_peers_net_request::type_id = rx_peers_request_id;
+
+
+rx_result rx_peers_net_request::serialize (base_meta_writer& stream) const
+{
+    return true;
+}
+
+rx_result rx_peers_net_request::deserialize (base_meta_reader& stream)
+{
+    return true;
+}
+
+message_ptr rx_peers_net_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+    auto response = std::make_unique<rx_peers_net_response>();
+    response->request_id = request_id;
+    response->peers = discovery::discovery_manager::instance().get_peers_network();
+
+    return response;
+}
+
+const string_type& rx_peers_net_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_peers_net_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::general_messages::rx_peers_net_response 
+
+string_type rx_peers_net_response::type_name = "peersResp";
+
+rx_message_type_t rx_peers_net_response::type_id = rx_peers_response_id;
+
+
+rx_result rx_peers_net_response::serialize (base_meta_writer& stream) const
+{
+    if(!stream.start_array("peers", peers.size()))
+        return stream.get_error();
+    for (const auto& one : peers)
+    {
+        if(!one.serialize(stream, "peer", RX_CURRENT_DISCOVERY_VERSION))// be very careful!!!!
+                                           //this is dangerous place
+                                            //NOT SERIALIZATION but DISCOVERY version
+            return stream.get_error();
+    }
+    if(!stream.end_array())
+        return stream.get_error();
+    return true;
+}
+
+rx_result rx_peers_net_response::deserialize (base_meta_reader& stream)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+const string_type& rx_peers_net_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t rx_peers_net_response::get_type_id ()
 {
   return type_id;
 

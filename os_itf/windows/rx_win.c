@@ -1565,7 +1565,83 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr, u
 	return (sys_handle_t)sock;
 }
 
-sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr)
+
+uint32_t* get_ip4_addresses()
+{
+	IP_ADAPTER_INFO info[20];
+	ULONG size = sizeof(info);
+	DWORD ret;
+	size_t idx;
+	size_t count = 1;
+
+	ret = GetAdaptersInfo(info, &size);
+	if (ret != ERROR_SUCCESS)
+		return NULL;
+
+	IP_ADAPTER_INFO* iter = info;
+	idx = 0;
+	do
+	{
+		if (iter->Type == MIB_IF_TYPE_ETHERNET || iter->Type == IF_TYPE_IEEE80211)
+		{
+			IP_ADDR_STRING* iter2 = &iter->IpAddressList;
+			do
+			{
+				char* temp_addr = iter2->IpAddress.String;
+				if (temp_addr && strcmp(temp_addr, "0.0.0.0") != 0)
+				{
+					struct in_addr temp_num;
+					int ret = inet_pton(AF_INET, temp_addr, &temp_num);
+					if (ret == 1)
+					{
+						count++;
+					}
+				}
+				iter2 = iter2->Next;
+
+			} while (iter2);
+		}
+		iter = iter->Next;
+
+	} while (iter);
+
+	if (count)
+	{
+		uint32_t* ret_val = malloc(sizeof(uint32_t) * count);
+		idx = 0;
+		iter = info;
+		do
+		{
+			if (iter->Type == MIB_IF_TYPE_ETHERNET || iter->Type == IF_TYPE_IEEE80211)
+			{
+				IP_ADDR_STRING* iter2 = &iter->IpAddressList;
+				do
+				{
+					char* temp_addr = iter2->IpAddress.String;
+					if (temp_addr && strcmp(temp_addr, "0.0.0.0") != 0)
+					{
+						struct in_addr temp_num;
+						int ret = inet_pton(AF_INET, temp_addr, &temp_num);
+						if (ret == 1)
+						{
+							ret_val[idx] = temp_num.S_un.S_addr;
+							idx++;
+						}
+					}
+					iter2 = iter2->Next;
+
+				} while (iter2);
+			}
+			iter = iter->Next;
+
+		} while (iter);
+		ret_val[idx] = 0;// last one
+		return ret_val;
+	}
+	return NULL;
+}
+
+sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr, const struct sockaddr_in* multicast)
 {
 	SOCKET sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock == INVALID_SOCKET)
@@ -1575,13 +1651,10 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr)
 		return NULL;
 	}
 
-	int on = 1;
-	setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&on, sizeof(on));
-
 	if (addr->sin_port != 0)
 	{//this is listen or udp server socket mark resuse
-		on = 1;
-		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on));
+		//on = 1;
+		//setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on));
 	}
 
 	ULONG buff_len = 0;
@@ -1607,6 +1680,62 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr)
 		any.sin_port = 0;
 		any.sin_addr.S_un.S_addr = INADDR_ANY;
 		if (bind(sock, (PSOCKADDR)&any, sizeof(struct sockaddr_in)) == SOCKET_ERROR)
+		{
+			int err = WSAGetLastError();
+			closesocket(sock);
+			SetLastError(err);
+			return NULL;
+		}
+	}
+	if (sock && multicast && multicast->sin_addr.s_addr != 0)
+	{
+		struct ip_mreq mreq;
+
+		if (addr && addr->sin_addr.s_addr)
+		{
+			mreq.imr_multiaddr.s_addr = multicast->sin_addr.s_addr;
+			mreq.imr_interface.s_addr = addr ? addr->sin_addr.s_addr : INADDR_ANY;
+
+			if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq)) != 0)
+			{
+				int err = WSAGetLastError();
+				closesocket(sock);
+				SetLastError(err);
+				return NULL;
+			}
+			mreq.imr_multiaddr.s_addr = multicast->sin_addr.s_addr;
+			mreq.imr_interface.s_addr = addr ? addr->sin_addr.s_addr : INADDR_ANY;
+			if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, (char*)&mreq, sizeof(mreq)) != 0)
+			{
+				int err = WSAGetLastError();
+				closesocket(sock);
+				SetLastError(err);
+				return NULL;
+			}
+		}
+		else
+		{// listen to all interfaces
+			uint32_t* addrs = get_ip4_addresses();
+			if (addrs)
+			{
+				while (*addrs)
+				{
+					mreq.imr_multiaddr.s_addr = multicast->sin_addr.s_addr;
+					mreq.imr_interface.s_addr = *addrs;
+
+					if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mreq, sizeof(mreq)) != 0)
+					{
+						int err = WSAGetLastError();
+						closesocket(sock);
+						SetLastError(err);
+						return NULL;
+					}
+					addrs++;
+				}
+			}
+		}
+		uint32_t on = 0;
+		if(setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, (char*)&on, sizeof(on)) != 0)
 		{
 			int err = WSAGetLastError();
 			closesocket(sock);

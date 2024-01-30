@@ -32,9 +32,15 @@
 #define rx_storage_h 1
 
 
+
+#define RX_CODE_STORAGE_NAME "<code>"
+#define RX_OTHERS_STORAGE_NAME "<other>"
+
 #include "platform_api/rx_abi.h"
 #include "system/rx_platform_typedefs.h"
 
+// rx_meta_data
+#include "lib/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -122,6 +128,8 @@ class rx_storage_item
       virtual string_type get_item_path () const = 0;
 
       virtual bool preprocess_meta_data (meta_data& data) = 0;
+
+      virtual bool is_read_only () const;
 
 
       const rx_storage_item_type& get_storage_type () const
@@ -591,6 +599,85 @@ class rx_plugin_storage_type : public rx_platform_storage_type
       string_type prefix_;
 
       rx_storage_constructor_t constructor_;
+
+
+};
+
+
+
+
+
+
+class rx_others_storage : public rx_platform_storage  
+{
+
+  public:
+      rx_others_storage();
+
+
+      string_type get_storage_info ();
+
+      rx_result list_storage (std::vector<rx_storage_item_ptr>& items);
+
+      bool is_valid_storage () const;
+
+      rx_result_with<rx_storage_item_ptr> get_item_storage (const meta_data& data, rx_item_type type);
+
+      rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta_data& data, rx_item_type type);
+
+      string_type get_storage_reference ();
+
+      void preprocess_meta_data (meta_data& data);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_other_storage_item : public rx_storage_item  
+{
+
+  public:
+      rx_other_storage_item();
+
+
+      base_meta_reader& read_stream ();
+
+      base_meta_writer& write_stream ();
+
+      rx_result open_for_read ();
+
+      rx_result open_for_write ();
+
+      rx_result close_read ();
+
+      rx_result commit_write ();
+
+      const string_type& get_item_reference () const;
+
+      rx_result delete_item ();
+
+      bool preprocess_meta_data (meta_data& data);
+
+      string_type get_item_path () const;
+
+      bool is_read_only () const;
+
+
+      rx::meta_data meta_info;
+
+
+  protected:
+
+  private:
 
 
 };

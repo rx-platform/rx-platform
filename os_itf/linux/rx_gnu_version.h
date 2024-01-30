@@ -2,8 +2,8 @@
 
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 2
-#define RX_HAL_MINOR_VERSION 0
-#define RX_HAL_BUILD_NUMBER 2
+#define RX_HAL_MINOR_VERSION 1
+#define RX_HAL_BUILD_NUMBER 0
 
 /*********************************************************************************
 
@@ -24,7 +24,7 @@
 0.11.2. get_nprocs_conf used for core counts
 0.12.0. added rx_socket_read_from and rx_socket_write_to
 1.0.0 first release version
-1.0.1 udp socket supports multicast
+1.0.1 udp socket supports broadcast
 1.0.2 corrected file open error with O_TRUNC flag
 1.0.3 support for rx-common shared library
 1.1.0 added rx_thread_set_afinity
@@ -35,5 +35,5 @@
 1.3.0 added FIFO_SCHED
 2.0.0 added TLS to platform
 2.0.2 resolved year 2038 _TIME_BITS 64
-
+2.1.0 Included IP table in Ethernet Cards list, added Multi-cast
 *********************************************************************************/

@@ -127,7 +127,6 @@ runtime_init_context::runtime_init_context (structure::runtime_item& root, const
         next_handle_(0x80000000),
         meta(meta),
         directories(directories),
-        now(rx_time::now()),
         item_type(type),
         method(nullptr),
         event(nullptr)
@@ -169,6 +168,11 @@ rx_result_with<runtime_handle_t> runtime_init_context::connect_item (const strin
 		return tags->connect_item("."s + path, rate, *this, callback);
 		
 	return tags->connect_item(path, rate, *this, callback);
+}
+
+rx_time runtime_init_context::now ()
+{
+	return context->now();
 }
 
 
@@ -241,7 +245,6 @@ runtime_start_context::runtime_start_context (structure::runtime_item& root, run
         relations_(relations),
         tags(binded),
         directories(directories),
-        now(rx_time::now()),
         simulation(false),
         queue(jobs_queue),
         method(nullptr)
@@ -305,6 +308,11 @@ rx_value& runtime_start_context::get_current_variable_value ()
 		return std::get<1>(entry)->variable.value;
 	}
 	return g_null_value;
+}
+
+rx_time runtime_start_context::now ()
+{
+	return context->now();
 }
 
 

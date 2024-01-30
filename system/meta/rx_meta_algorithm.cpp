@@ -1572,7 +1572,7 @@ rx_result relation_blocks_algorithm::construct_relation_attribute (const object_
 		// it will have to wait
 		//!!!!!
 		/*rx_timed_value val;
-		val.assign_static<string_type>("", ctx.now);
+		val.assign_static<string_type>("", ctx.now());
 		ctx.runtime_data.add_value(whose.name, val);*/
 		rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().add_functions(data.meta_info().id, ret_val.value().register_f, ret_val.value().unregister_f);
 		return true;

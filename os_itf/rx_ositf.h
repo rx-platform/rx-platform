@@ -89,6 +89,19 @@ extern "C" {
 	};
 #define MAC_ADDR_SIZE 6
 #define ETH_CARD_NAME_SIZE 0x100
+
+
+	struct IP_interface
+	{
+		char ip_address[0x40];
+		char broadcast_address[0x40];
+		char network[0x40];
+		char name[ETH_CARD_NAME_SIZE];
+		size_t index;
+		enum interface_status_type status;
+	};
+
+
 	struct ETH_interface
 	{
 		uint8_t mac_address[MAC_ADDR_SIZE];
@@ -96,17 +109,10 @@ extern "C" {
 		char description[ETH_CARD_NAME_SIZE];
 		size_t index;
 		enum interface_status_type status;
+		size_t ip_addrs_size;
+		struct IP_interface* ip_addrs;
 	};
 
-
-
-	struct IP_interface
-	{
-		char ip_address[0x10];
-		char name[ETH_CARD_NAME_SIZE];
-		size_t index;
-		enum interface_status_type status;
-	};
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	// list ethernet cards
@@ -235,7 +241,7 @@ extern "C" {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// socket abstractions
 	sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr, uint32_t keep_alive);
-	sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr);
+	sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr, const struct sockaddr_in* multicast);
 	uint32_t rx_socket_listen(sys_handle_t handle);
 	void rx_close_socket(sys_handle_t handle);
 	///////////////////////////////////////////////////////////////////////////////////////////////////

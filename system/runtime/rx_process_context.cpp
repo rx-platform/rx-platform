@@ -87,7 +87,7 @@ bool runtime_process_context::should_do_step()
     }
     else
     {
-        current_step_ = (runtime_process_step)((uint_fast8_t)current_step_ + 1);
+        current_step_ = (runtime_process_step)((uint_fast8_t)(runtime_process_step)current_step_ + 1);
         return false;
     }
 }
@@ -98,6 +98,7 @@ runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binde
       : tags_(tags),
         binded_(binded),
         current_step_(runtime_process_step::idle),
+        now_(rx_time::now().c_data().t_value),
         meta_info(info),
         directory_resolver_(dirs),
         serialize_value_(false),
@@ -107,15 +108,14 @@ runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binde
         security_guard_(guard)
 {
     mode_.turn_off();
-    now = rx_time::now();
-    mode_time_ = now;
+    mode_time_ = rx_time_struct_t{ now_ };
 }
 
 
 
 rx_result runtime_process_context::init_context ()
 {
-    now = rx_time::now();
+    now_ = rx_time::now().c_data().t_value;
     current_step_ = runtime_process_step::async_values;
     return true;
 }
@@ -631,6 +631,14 @@ rx_result runtime_process_context::write_connected (runtime_handle_t handle, rx_
 rx_result runtime_process_context::execute_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id)
 {
     return binded_.execute_connected(handle, std::move(val), trans_id);
+}
+
+rx_time runtime_process_context::now ()
+{
+    if (current_step_ == runtime_process_step::idle)
+        return rx_time::now();
+    else
+        return rx_time_struct_t{ now_ };
 }
 
 rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)

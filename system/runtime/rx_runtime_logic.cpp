@@ -702,7 +702,7 @@ rx_result method_data::execute (context_execute_data&& data, structure::execute_
         val = value.simple_get_value().extract_static<int32_t>(val);
         val++;
         value.value.assign_static(val);
-        value.value.set_time(ctx->now);
+        value.value.set_time(ctx->now());
         context_->method_changed(this);
     }
 
@@ -831,7 +831,7 @@ rx_result method_data::start_runtime (runtime::runtime_start_context& ctx)
     ctx.structure.push_item(*item);
     ctx.method = this;
 
-    value.value.set_time(ctx.now);
+    value.value.set_time(ctx.now());
 
     auto result = item->start_runtime(ctx);
     if (result)

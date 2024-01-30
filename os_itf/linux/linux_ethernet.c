@@ -35,6 +35,7 @@
 #include "os_itf/rx_ositf.h"
 
 
+#include <ifaddrs.h>
 
 typedef uint16_t ether_ethtype_t;
 typedef uint16_t ether_vlan_tci_t;
@@ -66,6 +67,7 @@ typedef struct ether_il_device_t
     int interface_index;
     int prefix_count;
     ether_il_prefix_t* prefixes;
+    ether_il_prefix_t* prefix_masks;
 } ether_il_device_t;
 
 typedef struct ether_il_t
@@ -134,6 +136,8 @@ struct IP_list {
     unsigned char family;
     unsigned char address_len;
     unsigned char* address;
+    unsigned char broadcast_len;
+    unsigned char* broadcast;
     /*
       unsigned char broadcast_len;
       unsigned char *broadcast;
@@ -259,18 +263,14 @@ ether_result_t ether_get_ipl(struct IP_list** ip_list)
                     ipl_temp->next = (struct IP_list*)NULL;
                     ipl_temp->address_len = 0;
                     ipl_temp->address = (unsigned char*)NULL;
-                    /*              ipl_temp->broadcast_len= 0;
-                                  ipl_temp->broadcast= (char *)NULL;
-                                  ipl_temp->local_len= 0;
-                                  ipl_temp->local= (char *)NULL;
-                                  ipl_temp->label_len= 0;
-                                  ipl_temp->label= (char *)NULL; */
+                    ipl_temp->broadcast_len = 0;
+                    ipl_temp->broadcast = (unsigned char*)NULL;
 
                     for (attribute = IFA_RTA(iface); RTA_OK(attribute, len); attribute = RTA_NEXT(attribute, len))
                     {
                         switch (attribute->rta_type)
                         {
-                        case IFA_ADDRESS:
+                        case IFA_LOCAL:
                             ipl_temp->address_len = attribute->rta_len - sizeof(struct rtattr);
                             //                    printf("address len %d\n", ipl_temp->address_len);
                             ipl_temp->address = (unsigned char*)malloc(ipl_temp->address_len);
@@ -279,24 +279,12 @@ ether_result_t ether_get_ipl(struct IP_list** ip_list)
                                 memcpy(ipl_temp->address, (char*)RTA_DATA(attribute), ipl_temp->address_len);
                             //                    printf("addr %d.%d.%d.%d\n", ipl_temp->address[0],ipl_temp->address[1],ipl_temp->address[2],ipl_temp->address[3]);
                             break;
-                            /*                  case IFA_BROADCAST:
-                                                ipl_temp->broadcast_len= attribute->rta_len - sizeof(struct rtattr);
-                                                ipl_temp->broadcast=(char *)malloc(ipl_temp->broadcast_len);
-                                                if(ipl_temp->broadcast)
-                                                  memcpy(ipl_temp->broadcast, (char *) RTA_DATA(attribute),ipl_temp->broadcast_len);
-                                                break;
-                                              case IFA_LOCAL:
-                                                ipl_temp->local_len= attribute->rta_len - sizeof(struct rtattr);
-                                                ipl_temp->local=(char *)malloc(ipl_temp->local_len);
-                                                if(ipl_temp->local)
-                                                  memcpy(ipl_temp->local, (char *) RTA_DATA(attribute),ipl_temp->local_len);
-                                                break;
-                                              case IFA_LABEL:
-                                                ipl_temp->label_len= attribute->rta_len - sizeof(struct rtattr);
-                                                ipl_temp->label=(char *)malloc(ipl_temp->label_len);
-                                                if(ipl_temp->label)
-                                                  memcpy(ipl_temp->label, (char *) RTA_DATA(attribute),ipl_temp->label_len);
-                                                break; */
+                          case IFA_BROADCAST:
+                            ipl_temp->broadcast_len= attribute->rta_len - sizeof(struct rtattr);
+                            ipl_temp->broadcast=(unsigned char *)malloc(ipl_temp->broadcast_len);
+                            if(ipl_temp->broadcast)
+                              memcpy(ipl_temp->broadcast, (char *) RTA_DATA(attribute),ipl_temp->broadcast_len);
+                            break;
                         }
                     }
                     ipl_temp->next = ipl_head;
@@ -435,10 +423,12 @@ ether_result_t ether_get_macl(struct MAC_list** mac_list)
                                 memcpy(macl_temp->mac, (char*)RTA_DATA(attribute), macl_temp->mac_len);
                             break;
                         case IFLA_IFNAME:
-                            macl_temp->name_len = attribute->rta_len - sizeof(struct rtattr);
-                            macl_temp->name = (unsigned char*)malloc(macl_temp->name_len);
-                            if (macl_temp->name)
-                                memcpy(macl_temp->name, (char*)RTA_DATA(attribute), macl_temp->name_len);
+                            {
+                                macl_temp->name_len = attribute->rta_len - sizeof(struct rtattr);
+                                macl_temp->name = (unsigned char*)malloc(macl_temp->name_len);
+                                if (macl_temp->name)
+                                    memcpy(macl_temp->name, (char*)RTA_DATA(attribute), macl_temp->name_len);
+                            }
                             break;
                         }
                     }
@@ -474,6 +464,30 @@ ether_result_t ether_destroy_macl(struct MAC_list* mac_list)
     return ETHER_OK;
 }
 
+const struct sockaddr_in* get_net_mask_for_addr(struct ifaddrs* ifap, unsigned char* addr)
+{
+    uint32_t int_addr;
+    int_addr = (uint32_t)addr[0] | (((uint32_t)addr[1])<<8)
+        | (((uint32_t)addr[2])<<16)
+        | (((uint32_t)addr[3])<<24);
+    struct ifaddrs* ifa;
+    struct sockaddr_in* sa;
+
+    if(ifap)
+    {
+
+        for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+            if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
+                sa = (struct sockaddr_in*)ifa->ifa_addr;
+                if(sa->sin_addr.s_addr == int_addr)
+                {
+                    return  (const struct sockaddr_in*)ifa->ifa_netmask;
+                }
+            }
+        }
+    }
+    return 0;
+}
 
 ether_result_t ether_get_il(ether_il_t* il)
 {
@@ -495,6 +509,12 @@ ether_result_t ether_get_il(ether_il_t* il)
 
     if ((result = ether_get_macl(&mac_list) != ETHER_OK))
         return result;
+
+    struct ifaddrs* ifap;
+
+
+    if(getifaddrs(&ifap)<0)
+        ifap=NULL;
 
     //  ether_macl_to_xml_file(mac_list,stdout);
 
@@ -585,6 +605,7 @@ ether_result_t ether_get_il(ether_il_t* il)
                     //          printf("prefix count %d ix %d\n",interface_alias_count,il_devices[i].interface_index);
                     il_devices[i].prefix_count = interface_alias_count;
                     il_devices[i].prefixes = (ether_il_prefix_t*)calloc(interface_alias_count, sizeof(ether_il_prefix_t));
+                    il_devices[i].prefix_masks = (ether_il_prefix_t*)calloc(interface_alias_count, sizeof(ether_il_prefix_t));
 
                     offset = 0;
                     ipl_temp2 = ip_list;
@@ -599,23 +620,29 @@ ether_result_t ether_get_il(ether_il_t* il)
                             {
                                 memcpy(il_devices[i].prefixes[offset].address, ipl_temp2->address, ipl_temp2->address_len);
                                 il_devices[i].prefixes[offset].address_len = ipl_temp2->address_len;
-
-                                //                printf("addr1 %d.%d.%d.%d\n", ipl_temp2->address[0],ipl_temp2->address[1],ipl_temp2->address[2],ipl_temp2->address[3]);
-                                /*                printf("addr2 %d.%d.%d.%d - %p\n",
-                                                  il_devices[i].prefixes[offset].address[0],
-                                                  il_devices[i].prefixes[offset].address[1],
-                                                  il_devices[i].prefixes[offset].address[2],
-                                                  il_devices[i].prefixes[offset].address[3],
-                                                  il_devices[i].prefixes[offset].address
-                                                 ); */
+                                const struct sockaddr_in* mask=get_net_mask_for_addr(ifap, ipl_temp2->address);
+                                if(mask)
+                                {
+                                    il_devices[i].prefix_masks[offset].address = (unsigned char*)calloc(4, sizeof(unsigned char));
+                                    memcpy(il_devices[i].prefix_masks[offset].address, &mask->sin_addr.s_addr, 4);
+                                    il_devices[i].prefix_masks[offset].address_len = 4;
+                                }
+                                else
+                                {
+                                    il_devices[i].prefix_masks[offset].address = (unsigned char*)calloc(ipl_temp2->broadcast_len, sizeof(unsigned char));
+                                    memcpy(il_devices[i].prefix_masks[offset].address, ipl_temp2->broadcast, ipl_temp2->broadcast_len);
+                                    il_devices[i].prefix_masks[offset].address_len = ipl_temp2->broadcast_len;
+                                }
                             }
                             else
                             {
                                 //              printf("unable to alloc\n");
                                 il_devices[i].prefixes[offset].address_len = 0;
+                                il_devices[i].prefix_masks[offset].address_len = 0;
                             }
 
                             il_devices[i].prefixes[offset].prefixlen = ipl_temp2->prefixlen;
+                            il_devices[i].prefix_masks[offset].prefixlen = ipl_temp2->prefixlen;
                             offset++;
                         }
                         ipl_temp2 = ipl_temp2->next;
@@ -625,6 +652,9 @@ ether_result_t ether_get_il(ether_il_t* il)
             ipl_temp = ipl_temp->next;
         }
     }
+
+    if(ifap)
+        freeifaddrs(ifap);
 
     free(offset_index_map);
     ether_destroy_ipl(ip_list);
@@ -643,7 +673,10 @@ int ether_destroy_il(const ether_il_t* il)
         free(il->devices[i].name);
         free(il->devices[i].mac);
         for (j = 0; j < il->devices[i].prefix_count; j++)
+        {
+            free(il->devices[i].prefix_masks[j].address);
             free(il->devices[i].prefixes[j].address);
+        }
         free(il->devices[i].prefixes);
     }
     free(il->devices);
@@ -842,9 +875,9 @@ ether_result_t ether_get_within_interval(ether_t* gep, ether_octet_t* buffer, co
 // ethernet stuff
 int rx_list_eth_cards(struct ETH_interface** interfaces, size_t* count)
 {
-	int i;
+	int i,j;
     ether_il_t il;
-
+    char ip_buffer[0x40];
 
 
     ether_result_t res=ether_get_il(&il);
@@ -859,6 +892,78 @@ int rx_list_eth_cards(struct ETH_interface** interfaces, size_t* count)
             strcpy((*interfaces)[i-1].description,il.devices[i].name);
             memcpy((*interfaces)[i-1].mac_address, il.devices[i].mac, MAC_ADDR_SIZE);
             (*interfaces)[i-1].index=(uint32_t)(i-1);
+
+            (*interfaces)[i-1].ip_addrs_size = 0;
+            for(j = 0; j<il.devices[i].prefix_count; j++)
+            {
+                if(il.devices[i].prefixes[j].address_len==4
+                    && (il.devices[i].prefixes[j].address[0]!=0
+                    || il.devices[i].prefixes[j].address[1]!=0
+                    || il.devices[i].prefixes[j].address[2]!=0
+                    || il.devices[i].prefixes[j].address[3]!=0)
+                    && il.devices[i].prefix_masks[j].address_len==4
+                    && (il.devices[i].prefix_masks[j].address[0]!=0
+                    || il.devices[i].prefix_masks[j].address[1]!=0
+                    || il.devices[i].prefix_masks[j].address[2]!=0
+                    || il.devices[i].prefix_masks[j].address[3]!=0))
+                    (*interfaces)[i-1].ip_addrs_size++;
+            }
+            if ((*interfaces)[i-1].ip_addrs_size)
+            {
+                (*interfaces)[i-1].ip_addrs = malloc(sizeof(struct IP_interface) * (*interfaces)[i-1].ip_addrs_size);
+                size_t idx2 = 0;
+                for(j = 0; j<il.devices[i].prefix_count; j++)
+                {
+                    if(il.devices[i].prefixes[j].address_len==4
+                        && (il.devices[i].prefixes[j].address[0]!=0
+                        || il.devices[i].prefixes[j].address[1]!=0
+                        || il.devices[i].prefixes[j].address[2]!=0
+                        || il.devices[i].prefixes[j].address[3]!=0)
+                    && il.devices[i].prefix_masks[j].address_len==4
+                    && (il.devices[i].prefix_masks[j].address[0]!=0
+                    || il.devices[i].prefix_masks[j].address[1]!=0
+                    || il.devices[i].prefix_masks[j].address[2]!=0
+                    || il.devices[i].prefix_masks[j].address[3]!=0))
+                    {
+                        sprintf(ip_buffer,"%d.%d.%d.%d"
+                            , (int)il.devices[i].prefixes[j].address[0]
+                            , (int)il.devices[i].prefixes[j].address[1]
+                            , (int)il.devices[i].prefixes[j].address[2]
+                            , (int)il.devices[i].prefixes[j].address[3]);
+
+                        char* dest=(*interfaces)[i-1].ip_addrs[idx2].ip_address;
+                        strcpy(dest, ip_buffer);
+
+                        unsigned char brod_addr[4];
+                        for(int k=0; k<4; k++)
+                        {
+                            brod_addr[k]=
+                                il.devices[i].prefix_masks[j].address[k]
+                                & il.devices[i].prefixes[j].address[k]
+                                | (~il.devices[i].prefix_masks[j].address[k]);
+                        }
+
+                        sprintf(ip_buffer,"%d.%d.%d.%d"
+                            , (int)brod_addr[0]
+                            , (int)brod_addr[1]
+                            , (int)brod_addr[2]
+                            , (int)brod_addr[3]);
+
+                        dest=(*interfaces)[i-1].ip_addrs[idx2].broadcast_address;
+                        strcpy(dest, ip_buffer);
+
+                        sprintf(ip_buffer,"%d.%d.%d.%d"
+                            , (int)(il.devices[i].prefix_masks[j].address[0]&il.devices[i].prefixes[j].address[0])
+                            , (int)(il.devices[i].prefix_masks[j].address[1]&il.devices[i].prefixes[j].address[1])
+                            , (int)(il.devices[i].prefix_masks[j].address[2]&il.devices[i].prefixes[j].address[2])
+                            , (int)(il.devices[i].prefix_masks[j].address[3]&il.devices[i].prefixes[j].address[3]));
+
+                        dest=(*interfaces)[i-1].ip_addrs[idx2].network;
+                        strcpy(dest, ip_buffer);
+                        idx2++;
+                    }
+                }
+            }
 		}
 		ether_destroy_il(&il);
     }

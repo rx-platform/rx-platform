@@ -1350,6 +1350,9 @@ std::atomic<uint32_t> g_current_time_quality(DEFAULT_TIME_QUALITY);
 }
 rx_time::~rx_time()
 {
+	/*rx_full_time_t full;
+	rx_os_split_time(&data_, &full);
+	RX_ASSERT(full.year != 23438);*/
 	static_assert(sizeof(rx_time) == sizeof(rx_time_struct), "Memory size has to be the same, no virtual functions or members");
 }
 rx_time::rx_time() noexcept

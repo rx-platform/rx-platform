@@ -1055,8 +1055,8 @@ rx_result opcua_basic_method_mapper::initialize_mapper (runtime::runtime_init_co
 	rx_uuid temp=rx_uuid::create_new();
 	inputs_node_->node_id = rx_node_id(temp, default_basic_namespace);
 	inputs_node_->data_type = rx_node_id::opcua_standard_id(opcid_Argument);
-	inputs_node_->value.server_ts = ctx.now.c_data();
-	inputs_node_->value.source_ts = ctx.now.c_data();
+	inputs_node_->value.server_ts = ctx.now().c_data();
+	inputs_node_->value.source_ts = inputs_node_->value.server_ts;
 
 	std::vector<std::unique_ptr<ua_extension> > temp_args;
 	auto met_data = get_method_inputs();
@@ -1080,8 +1080,8 @@ rx_result opcua_basic_method_mapper::initialize_mapper (runtime::runtime_init_co
 	temp=rx_uuid::create_new();
 	outputs_node_->node_id = rx_node_id(temp, default_basic_namespace);
 	outputs_node_->data_type = rx_node_id::opcua_standard_id(opcid_Argument);
-	outputs_node_->value.server_ts = ctx.now.c_data();
-	outputs_node_->value.source_ts = ctx.now.c_data();
+	outputs_node_->value.server_ts = ctx.now().c_data();
+	outputs_node_->value.source_ts = outputs_node_->value.server_ts;
 
 	temp_args.clear();
 	met_data = get_method_outputs();

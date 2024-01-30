@@ -33,6 +33,7 @@
 
 
 #include "system/runtime/rx_runtime_helpers.h"
+#include "system/hosting/rx_host.h"
 using namespace rx_platform;
 
 // rx_discovery_items
@@ -41,6 +42,7 @@ using namespace rx_platform;
 namespace rx_internal {
 namespace discovery {
 class peer_connection;
+class discovery_register;
 
 } // namespace discovery
 } // namespace rx_internal
@@ -51,6 +53,7 @@ class peer_connection;
 namespace rx_internal {
 
 namespace discovery {
+struct discovered_peer_data;
 
 
 
@@ -110,6 +113,55 @@ class peer_refresh_algorithm
       void client_disconnected (peer_connection_ptr whose);
 
       void item_changed (const rx_node_id& id, const string_type& path, peer_connection_ptr whose);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class peer_discovery_algorithms 
+{
+
+  public:
+
+      static rx_result start_register (discovery_register& who, hosting::rx_platform_host* host, const configuration_data_t& config);
+
+      static void stop_register (discovery_register& who);
+
+      static bool create_dafult_query (discovery_register& who, base_meta_writer& writer);
+
+      static bool create_fallback_register (discovery_register& who, base_meta_writer& writer);
+
+      static bool parse_new_master_when_active (discovery_register& who, base_meta_writer& writer, base_meta_reader& reader, const rx_uuid_t& id, io::ip4_address from, uint32_t version);
+
+      static bool parse_new_fallback_when_active (discovery_register& who, base_meta_writer& writer, base_meta_reader& reader, const rx_uuid_t& id, io::ip4_address from, uint32_t version, bool& broadcast);
+
+      static bool parse_master_list_when_active (discovery_register& who, base_meta_reader& reader, const rx_uuid_t& id, io::ip4_address from, uint32_t version);
+
+      static bool parse_master_list_when_inactive (discovery_register& who, base_meta_reader& reader, const rx_uuid_t& id, io::ip4_address from, uint32_t version);
+
+      static void recreate_own_data (discovery_register& who);
+
+      static bool create_master_list_mine (discovery_register& who, base_meta_writer& writer, uint32_t version);
+
+      static bool create_master_list_full (discovery_register& who, base_meta_writer& writer, uint32_t version);
+
+      static bool do_time_checks_master (discovery_register& who, rx_timer_ticks_t ticks, rx_timer_ticks_t timeout);
+
+      static bool do_time_checks_follower (discovery_register& who, rx_timer_ticks_t ticks, rx_timer_ticks_t timeout);
+
+      static std::vector<discovery::discovered_peer_data> get_peers_network (discovery_register& who);
+
+      static bool create_unregister (discovery_register& who, base_meta_writer& writer, uint32_t version);
 
 
   protected:

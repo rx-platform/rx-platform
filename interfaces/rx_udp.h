@@ -110,7 +110,7 @@ public:
 
       rx_protocol_result_t send_packet (send_protocol_packet packet);
 
-      rx_result open (io::ip4_address addr, security::security_context_ptr identity, udp_port* port);
+      rx_result open (io::ip4_address addr, io::ip4_address multicast, security::security_context_ptr identity, udp_port* port);
 
       rx_result close ();
 
@@ -152,6 +152,8 @@ public:
 
       io::ip4_address bind_address_;
 
+      io::ip4_address multicast_address_;
+
       security::security_context_ptr identity_;
 
 
@@ -162,7 +164,7 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< udp_endpoint  > udp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::ip_endpoints::udp_endpoint  > udp_server_base;
 
 
 
@@ -212,6 +214,8 @@ UDP port class. implementation of an UDP/IP4 port");
 
 
       io::ip4_address bind_address_;
+
+      io::ip4_address multicast_address_;
 
       runtime::local_value<uint32_t> recv_timeout_;
 

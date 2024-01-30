@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 3
 #define RX_LIB_MINOR_VERSION 2
-#define RX_LIB_BUILD_NUMBER 4
+#define RX_LIB_BUILD_NUMBER 5
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -72,5 +72,6 @@
 // version 3.2.2 corrected deserialization array regarding type
 // version 3.2.3 added string_view to runtime data interface
 // version 3.2.4 added CRLF line endings on pretty-writer (no support so changed "prettywriter.h")
+// version 3.2.5 corrected support for values and IP4
 
 

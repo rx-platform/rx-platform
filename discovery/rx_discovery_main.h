@@ -39,6 +39,8 @@
 #include "system/runtime/rx_objbase.h"
 // rx_internal_protocol
 #include "sys_internal/rx_internal_protocol.h"
+// rx_discovery_comm
+#include "discovery/rx_discovery_comm.h"
 // rx_discovery_items
 #include "discovery/rx_discovery_items.h"
 
@@ -195,11 +197,21 @@ class discovery_manager
 
       rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& config);
 
+      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& config);
+
+      void stop ();
+
       void deinitialize ();
 
       std::vector<peer_endpoint> get_peers ();
 
       peer_connection_ptr get_peer (const string_type& name);
+
+      uint32_t subscribe_to_port (std::function<void(uint16_t)> callback, rx_reference_ptr anchor);
+
+      void unsubscribe_from_port (uint32_t id);
+
+      std::vector<discovery::discovered_peer_data> get_peers_network ();
 
 
   protected:
@@ -208,6 +220,8 @@ class discovery_manager
 
 
       connections_type connections_;
+
+      discovery_register peers_register_;
 
 
       static std::unique_ptr<discovery_manager> g_obj;

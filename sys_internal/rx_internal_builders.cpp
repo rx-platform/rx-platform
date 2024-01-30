@@ -1281,6 +1281,7 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		port->complex_data.register_struct("Bind", RX_IP_BIND_TYPE_ID);
+		port->complex_data.register_struct("MultiCast", RX_IP_BIND_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{

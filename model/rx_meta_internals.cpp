@@ -845,6 +845,17 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 		}
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
+	return result;
+}
+
+template <class typeT>
+void types_repository<typeT>::deinitialize ()
+{
+}
+
+template <class typeT>
+rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+{
 	for (auto& one : registered_objects_)
 	{
 		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second.target);
@@ -867,18 +878,6 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 		if (res)
 			platform_types_manager::instance().get_dependecies_cache().add_dependency(one.first, res.move_value());
 	}
-	return result;
-}
-
-template <class typeT>
-void types_repository<typeT>::deinitialize ()
-{
-}
-
-template <class typeT>
-rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
-{
-
 	return true;
 }
 

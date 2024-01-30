@@ -56,6 +56,10 @@ class ethernet_endpoint;
 
 
 namespace rx_internal {
+namespace discovery
+{
+struct discovered_network_point;
+}
 
 namespace interfaces {
 
@@ -63,6 +67,7 @@ namespace ethernet {
 
 extern std::map<string_type, byte_string> local_mac;
 void rebuild_addresses();
+std::vector<discovery::discovered_network_point> get_ip_addresses(const char* port);
 
 
 

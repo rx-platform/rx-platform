@@ -130,6 +130,9 @@ const rx_message_type_t rx_write_runtime_response_id = 0x8019;
 const rx_message_type_t rx_update_directory_request_id = 0x001a;
 const rx_message_type_t rx_update_directory_response_id = 0x801a;
 
+const rx_message_type_t rx_peers_request_id = 0x0018;
+const rx_message_type_t rx_peers_response_id = 0x8018;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // subscription messages constants

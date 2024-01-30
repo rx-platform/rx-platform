@@ -523,7 +523,7 @@
 #define RX_COMPLEX_IO_VARIABLE_TYPE_ID 0xc0000e5
 #define RX_BRIDGE_VARIABLE_TYPE_NAME "BridgeVariable"
 #define RX_BRIDGE_VARIABLE_TYPE_ID 0xc0000e6
-#define RX_MUX_VARIABLE_TYPE_NAME "MultiplekserVariable"
+#define RX_MUX_VARIABLE_TYPE_NAME "MultiplexerVariable"
 #define RX_MUX_VARIABLE_TYPE_ID 0xc0000e7
 
 

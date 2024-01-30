@@ -2572,7 +2572,7 @@ rx_result block_data::get_value (string_view_type path, rx_value& val, runtime_p
 			string_type temp_str(writer.get_string());
 			if (!temp_str.empty())
 			{
-				val.assign_static(temp_str.c_str(), ctx->now);
+				val.assign_static(temp_str.c_str(), ctx->now());
 				result = true;
 			}
 			else
@@ -3715,12 +3715,12 @@ rx_result value_block_data::initialize_runtime (runtime::runtime_init_context& c
 	auto ret = block.initialize_runtime(ctx);
 	if (ret)
 	{
-		timestamp = ctx.now;
+		timestamp = ctx.now();
 		rx_simple_value val;
 		auto ret = block.collect_value(val, runtime_value_type::simple_runtime_value);
 		if (ret)
 		{
-			struct_value.value = rx_timed_value(std::move(val), ctx.now);
+			struct_value.value = rx_timed_value(std::move(val), ctx.now());
 			ctx.bind_item(ctx.path.get_current_path(), tag_blocks::binded_callback_t(), [this](rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
 				{
 					return do_write_callback(val, data, ctx);
@@ -3904,7 +3904,7 @@ rx_result variable_block_data::initialize_runtime (runtime::runtime_init_context
 	auto ret = block.collect_value(val, runtime_value_type::simple_runtime_value);
 	if (ret)
 	{
-		variable.value = rx_value(std::move(val), ctx.now);
+		variable.value = rx_value(std::move(val), ctx.now());
 		ctx.bind_item(ctx.path.get_current_path(), tag_blocks::binded_callback_t(), [this](rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
 			{
 				return do_write_callback(val, data, ctx);
@@ -4205,11 +4205,11 @@ void block_data_references::block_data_changed (const block_data& data, runtime:
 		rx_simple_value temp;
 		bool changed = false;
 		rx_timed_value temp_val;
-		temp_val.set_time(ctx->now);
+		temp_val.set_time(ctx->now());
 		auto result = data.get_local_value(one.first, temp);
 		if (result)
 		{
-			temp_val = rx_timed_value(std::move(temp), ctx->now);
+			temp_val = rx_timed_value(std::move(temp), ctx->now());
 		}
 		if (!one.second->value.compare(temp_val, time_compare_type::skip))
 		{
@@ -4263,13 +4263,13 @@ void variable_block_data_references::block_data_changed (const block_data& data,
 		rx_simple_value temp;
 		bool changed = false;
 		rx_value temp_val;;
-		temp_val.set_time(ctx->now);
+		temp_val.set_time(ctx->now());
 		temp_val.set_origin(origin);
 		temp_val.set_quality(quality);
 		auto result = data.get_local_value(one.first, temp);
 		if (result)
 		{
-			temp_val = rx_value(std::move(temp), ctx->now, quality);
+			temp_val = rx_value(std::move(temp), ctx->now(), quality);
 			temp_val.set_origin(origin);
 		}
 		if (!one.second->value.compare(temp_val, time_compare_type::skip))

@@ -39,6 +39,7 @@
 #include "system/runtime/rx_operational.h"
 #include "security/rx_security.h"
 #include "rx_endpoints.h"
+#include "discovery/rx_discovery_main.h"
 
 namespace rx_platform
 {
@@ -442,7 +443,7 @@ uint16_t system_rx_port::get_configuration_port () const
     auto ret = rx_gate::instance().get_configuration().other.rx_port;
     if (ret == 0)
         ret = 0x7ABC;
-    return ret;
+    return 0;
 }
 
 
@@ -456,6 +457,107 @@ rx_result system_server_port_base::initialize_runtime (runtime::runtime_init_con
         ctx.set_item_static("Bind.IPPort", port);
     auto result = tcp_server_port::initialize_runtime(ctx);
     return result;
+}
+
+rx_result system_server_port_base::start_runtime (runtime_start_context& ctx)
+{
+    auto result = tcp_server_port::start_runtime(ctx);
+    if (!result)
+        return result;
+
+    subs_id_ = discovery::discovery_manager::instance().subscribe_to_port([this](uint16_t port)
+        {
+            if (system_port_ != port)
+            {
+                if (listening_)
+                {
+                    if (system_port_)
+                        tcp_server_port::stop_passive();
+
+                    if (port)
+                    {
+
+                        if (get_configuration_port() == 0)
+                        {
+                            bind_address_ = io::ip4_address("", port);
+                            ITF_LOG_INFO("system_server_port_base", 900, "System TCP server port binded at "s + bind_address_.to_string());
+                        }
+                        tcp_server_port::start_listen(nullptr, nullptr);
+                    }
+                }
+                else
+                {
+                    if (get_configuration_port() == 0)
+                    {
+                        bind_address_ = io::ip4_address("", port);
+                        ITF_LOG_INFO("system_server_port_base", 900, "System TCP server port binded at "s + bind_address_.to_string());
+                    }
+                }
+                system_port_ = port;
+            }
+
+        }, smart_this());
+
+    return result;
+}
+
+rx_result system_server_port_base::stop_runtime (runtime_stop_context& ctx)
+{
+    auto result = tcp_server_port::stop_runtime(ctx);
+    if (!result)
+        return result;
+
+    discovery::discovery_manager::instance().unsubscribe_from_port(subs_id_);
+
+    return result;
+}
+
+rx_result system_server_port_base::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
+{
+    RX_ASSERT(!listening_);
+    listening_ = true;
+    if (system_port_)
+    {
+        tcp_server_port::start_listen(nullptr, nullptr);
+    }
+    return true;
+}
+
+rx_result system_server_port_base::stop_passive ()
+{
+    if(listening_)
+    {
+        listening_ = false;
+        if (system_port_)
+        {
+            tcp_server_port::stop_passive();
+        }
+    }
+    return true;
+}
+
+void system_server_port_base::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
+{
+    if (local_addr.is_null())
+    {
+        auto addr = binder_data.get_value("Bind.IPAddress");
+        auto port = binder_data.get_value("Bind.IPPort");
+        string_type addr_str;
+        uint16_t port_val = 0;
+        if (!addr.is_null())
+        {
+            addr_str = addr.get_string();
+            addr_str = rx_gate::instance().resolve_ip4_alias(addr_str);
+        }
+        if (!port.is_null())
+            port_val = (uint16_t)port.get_unassigned();
+        if (!addr_str.empty() || port_val != 0)
+        {
+            io::ip4_address ip_addr(addr_str, port_val);
+            if (ip_addr.is_valid())
+                local_addr = &ip_addr;
+        }
+    }
 }
 
 

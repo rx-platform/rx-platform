@@ -938,7 +938,7 @@ find_file_handle_t rx_open_find_file_list(const char* ipath, struct rx_file_dire
 		} while (1);
 	}
 	else
-	{// mybe just filter that exsist here
+	{// maybe just filter that exists here
 		strcpy(path_revised, path);
 		found = &path_revised[strlen(path_revised)];
 		while (*found != '/' && found>path_revised)
@@ -989,7 +989,7 @@ find_file_handle_t rx_open_find_file_list(const char* ipath, struct rx_file_dire
 		return ff;
     }
 }
-// while not zero files are fethecd
+// while not zero files are fetched
 int rx_get_next_file(find_file_handle_t hndl, struct rx_file_directory_entry_t* entry)
 {
 	struct linux_find_files_t* ff = (struct linux_find_files_t*)hndl;
@@ -1761,27 +1761,77 @@ sys_handle_t rx_create_and_bind_ip4_tcp_socket(const struct sockaddr_in* addr, u
     return 0;
 }
 
-sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr)
+sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr, const struct sockaddr_in* multicast)
 {
     sys_handle_t ret=socket(AF_INET,SOCK_DGRAM|SOCK_NONBLOCK,0);
     if(ret>0)
     {
-
         int on = 1;
-        setsockopt(ret, SOL_SOCKET, SO_BROADCAST, (char*)&on, sizeof(on));
+        //setsockopt(ret, SOL_SOCKET, SO_BROADCAST, (char*)&on, sizeof(on));
 
-        if(addr->sin_port!=0)
+    //    if(addr->sin_port!=0)
         {//this is listen or udp server socket mark resuse
-            on=1;
+            on=0;
             setsockopt(ret,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
         }
 
         if (addr->sin_family == AF_INET)
         {
-            int result = bind(ret, (const struct sockaddr*)addr, sizeof(struct sockaddr_in));
-            if (0 == result)
+            if (multicast)
             {
-                return ret;
+                struct sockaddr_in temp = *multicast;
+                temp.sin_port=0;
+                temp.sin_addr.s_addr = INADDR_ANY;
+                int result;
+                if(addr->sin_addr.s_addr == 0)
+                {
+                    result = bind(ret, (const struct sockaddr*)addr, sizeof(struct sockaddr_in));
+                    if (0 == result)
+                    {
+                        on = 1;
+                        if(setsockopt(ret, SOL_SOCKET, IP_MULTICAST_ALL , (char*)&on, sizeof(on)) == 0)
+                        {
+                            uint32_t on = 0;
+                            if (setsockopt(ret, IPPROTO_IP, IP_MULTICAST_LOOP, (char*)&on, sizeof(on)) == 0)
+                            {
+                                return ret;
+                            }
+                            return ret;
+                        }
+                    }
+                }
+                else
+                {
+
+                    result = bind(ret, (const struct sockaddr*)&temp, sizeof(struct sockaddr_in));
+                    if (0 == result)
+                    {
+                        struct ip_mreq mreq;
+                        mreq.imr_multiaddr.s_addr = multicast->sin_addr.s_addr;
+                        mreq.imr_interface.s_addr = addr->sin_addr.s_addr;
+                        if (setsockopt(ret, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) == 0)
+                        {
+                            mreq.imr_multiaddr.s_addr = multicast->sin_addr.s_addr;
+                            mreq.imr_interface.s_addr = addr->sin_addr.s_addr;
+                            if (setsockopt(ret, IPPROTO_IP, IP_MULTICAST_IF, &mreq, sizeof(mreq)) == 0)
+                            {
+                                uint32_t on = 0;
+                                if (setsockopt(ret, IPPROTO_IP, IP_MULTICAST_LOOP, (char*)&on, sizeof(on)) == 0)
+                                {
+                                    return ret;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                int result = bind(ret, (const struct sockaddr*)addr, sizeof(struct sockaddr_in));
+                if (0 == result)
+                {
+                    return ret;
+                }
             }
         }
     }

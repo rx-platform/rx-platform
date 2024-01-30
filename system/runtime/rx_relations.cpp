@@ -103,7 +103,7 @@ rx_result relation_data::initialize_relation (runtime::runtime_init_context& ctx
 			resolve_inverse_name();
 			rx_simple_value val;
 			val.assign_static(target_path.c_str());
-			value.set_value(std::move(val), ctx.now);
+			value.set_value(std::move(val), ctx.now());
 		}
 	}
 	return result;
@@ -132,7 +132,7 @@ rx_result relation_data::start_relation (runtime::runtime_start_context& ctx)
 			}
 			rx_simple_value val;
 			val.assign_static(target_path.c_str());
-			value.set_value(std::move(val), ctx.now);
+			value.set_value(std::move(val), ctx.now());
 			target_id = ref.get_node_id();
 		}
 	}
@@ -174,7 +174,7 @@ void relation_data::fill_data (const data::runtime_values_data& data, runtime_pr
 	}
 	rx_simple_value val;
 	val.assign_static(target_path.c_str());
-	value.set_value(std::move(val), ctx->now);
+	value.set_value(std::move(val), ctx->now());
 }
 
 void relation_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
@@ -288,7 +288,7 @@ rx_result relation_data::start_target_relation (runtime::runtime_start_context& 
 
 	rx_simple_value val;
 	val.assign_static(target_path.c_str());
-	value.set_value(std::move(val), ctx.now);
+	value.set_value(std::move(val), ctx.now());
 
 	auto result = implementation_->start_relation(ctx, true);
 	if (result)

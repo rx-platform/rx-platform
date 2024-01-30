@@ -63,14 +63,21 @@ rx_result rx_save_platform_item(itemT& item)
             item_result.register_error("Error saving item "s + meta.path);
             return item_result.errors();
         }
-        auto result = item_result.value()->open_for_write();
-        if (result)
+        if (!item_result.value()->is_read_only())
         {
-            result = item.serialize(item_result.value()->write_stream());
-            if(result)
-                result = item_result.value()->commit_write();
+            auto result = item_result.value()->open_for_write();
+            if (result)
+            {
+                result = item.serialize(item_result.value()->write_stream());
+                if (result)
+                    result = item_result.value()->commit_write();
+            }
+            return result;
         }
-        return result;
+        else
+        {
+            return true;
+        }
     }
     else // !storage_result
     {

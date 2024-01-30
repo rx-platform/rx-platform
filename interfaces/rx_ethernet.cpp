@@ -36,6 +36,7 @@
 
 #include "rx_endpoints.h"
 #include "rx_ether_defs.h"
+#include "discovery/rx_discovery_comm.h"
 
 
 namespace rx_internal {
@@ -43,6 +44,7 @@ namespace rx_internal {
 namespace interfaces {
 
 namespace ethernet {
+std::map<string_type, std::vector<discovery::discovered_network_point> > local_ip_addrs;
 std::map<string_type, byte_string> local_mac;
 locks::slim_lock mac_lock;
 
@@ -54,7 +56,10 @@ void rebuild_addresses()
     auto res = rx_list_eth_cards(&interfaces, &count);
     if (res == RX_OK)
     {
+        std::scoped_lock _(mac_lock);
+
         local_mac.clear();
+        local_ip_addrs.clear();
         for (size_t i = 0; i < count; i++)
         {
             std::ostringstream ss;
@@ -75,12 +80,47 @@ void rebuild_addresses()
 
             local_mac.emplace(interfaces[i].name, byte_string((std::byte*)interfaces[i].mac_address, (std::byte*)interfaces[i].mac_address + MAC_ADDR_SIZE));
             HOST_LOG_INFO("ethernet", 200, ss.str());
+
+            std::vector<discovery::discovered_network_point> ip_addrs;
+            if (interfaces[i].ip_addrs_size)
+            {
+                for (size_t j = 0; j < interfaces[i].ip_addrs_size; j++)
+                {
+                    discovery::discovered_network_point pt;
+                    pt.address = interfaces[i].ip_addrs[j].ip_address;
+                    pt.network = interfaces[i].ip_addrs[j].network;
+                    ip_addrs.push_back(std::move(pt));
+                }
+            }
+            local_ip_addrs.emplace(interfaces[i].name, ip_addrs);
         }
         HOST_LOG_INFO("ethernet", 200, "Ethernet adapters list done.");
     }
     else
     {
         HOST_LOG_ERROR("ethernet", 200, "Error listing ethernet adapters.");
+    }
+}
+
+std::vector<discovery::discovered_network_point> get_ip_addresses(const char* port)
+{
+    std::scoped_lock _(mac_lock);
+    if (port)
+    {
+        auto it = local_ip_addrs.find(port);
+        if (it != local_ip_addrs.end())
+            return it->second;
+        return std::vector<discovery::discovered_network_point>();
+    }
+    else
+    {
+        std::vector<discovery::discovered_network_point> ips;
+        for (const auto& one_card : local_ip_addrs)
+        {
+            for (const auto& one : one_card.second)
+                ips.push_back(one);
+        }
+        return ips;
     }
 }
 bool fill_mac_address_internal(const char* port, void* buff, bool first)

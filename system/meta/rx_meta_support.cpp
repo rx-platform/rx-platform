@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -73,26 +73,39 @@ meta_data create_type_meta_data(const type_creation_data& type_data)
 
 	return ret;
 }
-
+bool should_run_at(string_view_type val)
+{
+	if (val == RX_OTHERS_STORAGE_NAME || val == RX_CODE_STORAGE_NAME)
+		return false;
+	else
+		return true;
+}
 rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data)
 {
-
-	auto dir = rx_gate::instance().get_directory(data.path);
-	if (dir)
+	if (should_run_at(data.run_at))
 	{
-		auto storage = dir->get_storage();
-		if (!storage)
-			return "No storage defined for item";
+		auto dir = rx_gate::instance().get_directory(data.path);
+		if (dir)
+		{
+			auto storage = dir->get_storage();
+			if (!storage)
+				return "No storage defined for item";
+			else
+				return storage;
+		}
 		else
-			return storage;
+			return "Unable to locate item's storage!";
 	}
 	else
-		return "Unable to locate item's storage!";
+	{
+		rx_storage_ptr ret = rx_create_reference<storage_base::rx_others_storage>();
+		return ret;
+	}
 }
 
 namespace meta {
 
-// Class rx_platform::meta::type_check_context 
+// Class rx_platform::meta::type_check_context
 
 type_check_context::type_check_context ()
 {
@@ -187,7 +200,7 @@ rx_result_erros_t type_check_context::get_errors () const
 }
 
 
-// Class rx_platform::meta::construct_context 
+// Class rx_platform::meta::construct_context
 
 construct_context::construct_context (const string_type& name)
       : now(rx_time::now()),
@@ -382,7 +395,7 @@ object_data_prototype& construct_context::object_data ()
 }
 
 
-// Class rx_platform::meta::runtime_data_prototype 
+// Class rx_platform::meta::runtime_data_prototype
 
 
 rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_simple_value value, const std::bitset<32>& value_opt)
@@ -1732,13 +1745,13 @@ bool runtime_data_prototype::check_read_only(const std::bitset<32>& to, const st
 		to[runtime::structure::value_opt_readonly] ||
 		 !from[runtime::structure::value_opt_readonly];
 }
-// Class rx_platform::meta::object_type_creation_data 
+// Class rx_platform::meta::object_type_creation_data
 
 
-// Class rx_platform::meta::type_creation_data 
+// Class rx_platform::meta::type_creation_data
 
 
-// Class rx_platform::meta::type_create_context 
+// Class rx_platform::meta::type_create_context
 
 type_create_context::type_create_context ()
 {
@@ -1762,10 +1775,10 @@ void type_create_context::reinit ()
 }
 
 
-// Class rx_platform::meta::check_record 
+// Class rx_platform::meta::check_record
 
 
-// Class rx_platform::meta::type_check_source 
+// Class rx_platform::meta::type_check_source
 
 type_check_source::type_check_source (const string_type& source, type_check_context* ctx)
       : ctx_(ctx)
@@ -1781,22 +1794,22 @@ type_check_source::~type_check_source()
 
 
 
-// Class rx_platform::meta::object_data_prototype 
+// Class rx_platform::meta::object_data_prototype
 
 
-// Class rx_platform::meta::method_data_prototype 
+// Class rx_platform::meta::method_data_prototype
 
 
-// Class rx_platform::meta::program_data_prototype 
+// Class rx_platform::meta::program_data_prototype
 
 
-// Class rx_platform::meta::display_data_prototype 
+// Class rx_platform::meta::display_data_prototype
 
 
-// Class rx_platform::meta::dependencies_context 
+// Class rx_platform::meta::dependencies_context
 
 
-// Class rx_platform::meta::config_part_container 
+// Class rx_platform::meta::config_part_container
 
 
 rx_result config_part_container::serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const

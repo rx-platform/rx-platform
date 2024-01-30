@@ -50,19 +50,14 @@ using namespace rx::values;
 
 
 namespace rx_platform {
-namespace runtime {
-namespace structure {
-class mapper_data;
-class variable_data;
-} // namespace structure
-} // namespace runtime
-
 namespace ns {
 class rx_directory_resolver;
 } // namespace ns
 
 namespace runtime {
 namespace structure {
+class mapper_data;
+class variable_data;
 class runtime_item;
 class source_data;
 } // namespace structure
@@ -352,6 +347,8 @@ struct runtime_start_context
 
       rx_value& get_current_variable_value ();
 
+      rx_time now ();
+
 
       runtime_path_resolver path;
 
@@ -365,8 +362,6 @@ struct runtime_start_context
 
 
       ns::rx_directory_resolver* directories;
-
-      rx_time now;
 
       bool simulation;
 
@@ -541,6 +536,8 @@ struct runtime_init_context
 
       rx_result_with<runtime_handle_t> connect_item (const string_type& path, uint32_t rate, tag_blocks::binded_callback_t callback);
 
+      rx_time now ();
+
 
       runtime_path_resolver path;
 
@@ -562,8 +559,6 @@ struct runtime_init_context
       binded_tags_type binded_tags;
 
       ns::rx_directory_resolver* directories;
-
-      rx_time now;
 
       rx_reference_ptr anchor;
 

@@ -179,6 +179,7 @@ rx_result_with<request_message_ptr> rx_request_message::create_request_message (
 rx_result rx_request_message::init_request_messages ()
 {
 	registered_messages_.emplace(general_messages::rx_system_info_request::type_id, [] { return std::make_unique<general_messages::rx_system_info_request>(); });
+	registered_messages_.emplace(general_messages::rx_peers_net_request::type_id, [] { return std::make_unique<general_messages::rx_peers_net_request>(); });
 	registered_messages_.emplace(query_messages::get_code_info_request::type_id, [] { return std::make_unique<query_messages::get_code_info_request>(); });
 	registered_messages_.emplace(query_messages::browse_request_message::type_id, [] { return std::make_unique<query_messages::browse_request_message>(); });
 	registered_messages_.emplace(query_messages::browse_runtime_request::type_id, [] { return std::make_unique<query_messages::browse_runtime_request>(); });
@@ -213,6 +214,7 @@ rx_result rx_request_message::init_request_messages ()
 	registered_messages_.emplace(rx_keep_alive_message::type_id, [] { return std::make_unique<rx_keep_alive_message>(); });
 
 	registered_string_messages_.emplace(general_messages::rx_system_info_request::type_name, [] { return std::make_unique<general_messages::rx_system_info_request>(); });
+	registered_string_messages_.emplace(general_messages::rx_peers_net_request::type_name, [] { return std::make_unique<general_messages::rx_peers_net_request>(); });
 	registered_string_messages_.emplace(query_messages::get_code_info_request::type_name, [] { return std::make_unique<query_messages::get_code_info_request>(); });
 	registered_string_messages_.emplace(query_messages::browse_request_message::type_name, [] { return std::make_unique<query_messages::browse_request_message>(); });
 	registered_string_messages_.emplace(query_messages::browse_runtime_request::type_name, [] { return std::make_unique<query_messages::browse_runtime_request>(); });

@@ -655,7 +655,7 @@ rx_result cumulative_speed_filter::start_filter (runtime::runtime_start_context&
 	if (period_ > 0)
 		timer_->start(period_);
 	my_value_.assign_static<double>(0);
-	my_value_.set_time(ctx.context->now);
+	my_value_.set_time(ctx.context->now());
 	my_value_.adapt_quality_to_mode(ctx.context->get_mode());
 
 	return true;

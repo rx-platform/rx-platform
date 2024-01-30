@@ -36,6 +36,7 @@
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
 
+#include "discovery/rx_discovery_main.h"
 
 
 namespace rx_internal {
@@ -134,6 +135,72 @@ class rx_system_info_request : public rx_request_message
       static string_type type_name;
 
       static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_peers_net_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_peers_net_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      std::vector<discovery::discovered_peer_data> peers;
 
 
   protected:
