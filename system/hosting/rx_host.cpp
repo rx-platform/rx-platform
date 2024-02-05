@@ -574,11 +574,11 @@ rx_result rx_platform_host::initialize_storages (rx_platform::configuration_data
 	else
 	{
 		result = init_storage("sys", config.storage.system_storage_reference);
-		get_system_storage("sys");
 
 	}
 	if (result)
 	{
+		get_system_storage("sys");
 		if (config.storage.user_storage_reference.empty())
 		{
 			result = "No valid user storage reference!";

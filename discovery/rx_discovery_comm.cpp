@@ -148,6 +148,7 @@ bool discovery_point::readed (const void* data, size_t count, const struct socka
         //printf("Discovery Point readed:%d msg type:%d from %s\r\n", (int)count, (int)phead->type, ip_addr.to_string().c_str());
         if (phead->known == RX_DISCOVERY_KNOWN_UINT
             && phead->size == count
+            && !my_register_->is_this_you(phead->idenity)
             && (phead->type >= DISCOVERY_MESSAGE_MIN && phead->type <= DISCOVERY_MESSAGE_MAX))
         {
 
@@ -174,40 +175,36 @@ bool discovery_point::readed (const void* data, size_t count, const struct socka
                             {
                                 // this isn't possible but doesn't harm
                                 // this might be only us!!!
-                                RX_ASSERT(my_register_->is_this_you(phead->idenity));
                             }
                             break;
                         case discovery_state::default_active:
                             {
-                                if (!my_register_->is_this_you(phead->idenity))
+                                out_buffer = get_buffer();
+
+                                rx_discovery_header_t head;
+                                memzero(&head, sizeof(head));
+                                head.version = std::min(phead->version, (uint32_t)RX_CURRENT_DISCOVERY_VERSION);
+                                head.status = (uint32_t)state_;
+                                head.size = 0;
+                                head.type = DISCOVERY_MASTERLIST;
+                                head.known = RX_DISCOVERY_KNOWN_UINT;
+                                head.idenity = my_register_->get_identity();
+                                out_buffer->push_data(&head, sizeof(head));
+
+                                serialization::std_buffer_writer writer(*out_buffer);
+                                bool ret = peer_discovery_algorithms::parse_new_master_when_active(*my_register_
+                                    , writer, reader, phead->idenity, ip_addr, phead->version);
+                                if (!ret)
                                 {
-                                    out_buffer = get_buffer();
+                                    release_buffer(out_buffer);
+                                    out_buffer = buffer_ptr::null_ptr;
+                                }
+                                else
+                                {
+                                    rx_discovery_header_t* phead = out_buffer->get_buffer<rx_discovery_header_t>();
+                                    phead->size = (uint16_t)(out_buffer->get_size());
 
-                                    rx_discovery_header_t head;
-                                    memzero(&head, sizeof(head));
-                                    head.version = std::min(phead->version, (uint32_t)RX_CURRENT_DISCOVERY_VERSION);
-                                    head.status = (uint32_t)state_;
-                                    head.size = 0;
-                                    head.type = DISCOVERY_MASTERLIST;
-                                    head.known = RX_DISCOVERY_KNOWN_UINT;
-                                    head.idenity = my_register_->get_identity();
-                                    out_buffer->push_data(&head, sizeof(head));
-
-                                    serialization::std_buffer_writer writer(*out_buffer);
-                                    bool ret = peer_discovery_algorithms::parse_new_master_when_active(*my_register_
-                                        , writer, reader, phead->idenity, ip_addr, phead->version);
-                                    if (!ret)
-                                    {
-                                        release_buffer(out_buffer);
-                                        out_buffer = buffer_ptr::null_ptr;
-                                    }
-                                    else
-                                    {
-                                        rx_discovery_header_t* phead = out_buffer->get_buffer<rx_discovery_header_t>();
-                                        phead->size = (uint16_t)(out_buffer->get_size());
-
-                                        to_addr = ip_addr;// send it back
-                                    }
+                                    to_addr = ip_addr;// send it back
                                 }
                             }
                             break;
@@ -245,11 +242,36 @@ bool discovery_point::readed (const void* data, size_t count, const struct socka
                             break;
                         case discovery_state::default_active:
                             {
-                                if (!my_register_->is_this_you(phead->idenity))
-                                {
-                                    out_buffer = get_buffer();
+                                out_buffer = get_buffer();
 
-                                    rx_discovery_header_t head;
+                                rx_discovery_header_t head;
+                                memzero(&head, sizeof(head));
+                                head.version = RX_CURRENT_DISCOVERY_VERSION;
+                                head.status = (uint32_t)state_;
+                                head.size = 0;
+                                head.type = DISCOVERY_MASTERLIST;
+                                head.known = RX_DISCOVERY_KNOWN_UINT;
+                                head.idenity = my_register_->get_identity();
+                                out_buffer->push_data(&head, sizeof(head));
+                                bool broadcast = false;
+                                serialization::std_buffer_writer writer(*out_buffer);
+                                bool ret = peer_discovery_algorithms::parse_new_fallback_when_active(*my_register_
+                                    , writer, reader, phead->idenity, ip_addr, phead->version, broadcast);
+                                if (!ret)
+                                {
+                                    release_buffer(out_buffer);
+                                    out_buffer = buffer_ptr::null_ptr;
+                                }
+                                else
+                                {
+                                    rx_discovery_header_t* phead = out_buffer->get_buffer<rx_discovery_header_t>();
+                                    phead->size = (uint16_t)(out_buffer->get_size());
+
+                                    to_addr = ip_addr;// send it back
+                                }
+                                if (broadcast)
+                                {
+                                    auto multi_buff = get_buffer();
                                     memzero(&head, sizeof(head));
                                     head.version = RX_CURRENT_DISCOVERY_VERSION;
                                     head.status = (uint32_t)state_;
@@ -257,48 +279,19 @@ bool discovery_point::readed (const void* data, size_t count, const struct socka
                                     head.type = DISCOVERY_MASTERLIST;
                                     head.known = RX_DISCOVERY_KNOWN_UINT;
                                     head.idenity = my_register_->get_identity();
-                                    out_buffer->push_data(&head, sizeof(head));
-                                    bool broadcast = false;
-                                    serialization::std_buffer_writer writer(*out_buffer);
-                                    bool ret = peer_discovery_algorithms::parse_new_fallback_when_active(*my_register_
-                                        , writer, reader, phead->idenity, ip_addr, phead->version, broadcast);
+                                    multi_buff->push_data(&head, sizeof(head));
+                                    serialization::std_buffer_writer multi_writer(*multi_buff);
+                                    bool ret = peer_discovery_algorithms::create_master_list_mine(*my_register_
+                                        , multi_writer, RX_CURRENT_DISCOVERY_VERSION);
                                     if (!ret)
                                     {
-                                        release_buffer(out_buffer);
-                                        out_buffer = buffer_ptr::null_ptr;
+                                        release_buffer(multi_buff);
                                     }
                                     else
                                     {
-                                        rx_discovery_header_t* phead = out_buffer->get_buffer<rx_discovery_header_t>();
-                                        phead->size = (uint16_t)(out_buffer->get_size());
-
-                                        to_addr = ip_addr;// send it back
+                                        send_broadcast(multi_buff);
                                     }
-                                    if (broadcast)
-                                    {
-                                        auto multi_buff = get_buffer();
-                                        memzero(&head, sizeof(head));
-                                        head.version = RX_CURRENT_DISCOVERY_VERSION;
-                                        head.status = (uint32_t)state_;
-                                        head.size = 0;
-                                        head.type = DISCOVERY_MASTERLIST;
-                                        head.known = RX_DISCOVERY_KNOWN_UINT;
-                                        head.idenity = my_register_->get_identity();
-                                        multi_buff->push_data(&head, sizeof(head));
-                                        serialization::std_buffer_writer multi_writer(*multi_buff);
-                                        bool ret = peer_discovery_algorithms::create_master_list_mine(*my_register_
-                                            , multi_writer, RX_CURRENT_DISCOVERY_VERSION);
-                                        if (!ret)
-                                        {
-                                            release_buffer(multi_buff);
-                                        }
-                                        else
-                                        {
-                                            send_broadcast(multi_buff);
-                                        }
-                                        next_tick_ = rx_get_tick_count() + rx_border_rand(RX_KEEP_ALIVE_MIN, RX_KEEP_ALIVE_MAX);
-
-                                    }
+                                    next_tick_ = rx_get_tick_count() + rx_border_rand(RX_KEEP_ALIVE_MIN, RX_KEEP_ALIVE_MAX);
                                 }
                             }
                             break;
@@ -337,36 +330,32 @@ bool discovery_point::readed (const void* data, size_t count, const struct socka
                             break;
                         case discovery_state::default_active:
                             {
+                                out_buffer = get_buffer();
 
-                                if (!my_register_->is_this_you(phead->idenity))
+                                rx_discovery_header_t head;
+                                memzero(&head, sizeof(head));
+                                head.version = RX_CURRENT_DISCOVERY_VERSION;
+                                head.status = (uint32_t)state_;
+                                head.size = 0;
+                                head.known = RX_DISCOVERY_KNOWN_UINT;
+                                head.type = DISCOVERY_MASTERLIST;
+                                head.idenity = my_register_->get_identity();
+                                out_buffer->push_data(&head, sizeof(head));
+
+                                serialization::std_buffer_writer writer(*out_buffer);
+                                bool ret = peer_discovery_algorithms::create_master_list_full(*my_register_
+                                    , writer, phead->version);
+                                if (!ret)
                                 {
-                                    out_buffer = get_buffer();
+                                    release_buffer(out_buffer);
+                                    out_buffer = buffer_ptr::null_ptr;
+                                }
+                                else
+                                {
+                                    rx_discovery_header_t* phead = out_buffer->get_buffer<rx_discovery_header_t>();
+                                    phead->size = (uint16_t)(out_buffer->get_size());
 
-                                    rx_discovery_header_t head;
-                                    memzero(&head, sizeof(head));
-                                    head.version = RX_CURRENT_DISCOVERY_VERSION;
-                                    head.status = (uint32_t)state_;
-                                    head.size = 0;
-                                    head.known = RX_DISCOVERY_KNOWN_UINT;
-                                    head.type = DISCOVERY_MASTERLIST;
-                                    head.idenity = my_register_->get_identity();
-                                    out_buffer->push_data(&head, sizeof(head));
-
-                                    serialization::std_buffer_writer writer(*out_buffer);
-                                    bool ret = peer_discovery_algorithms::create_master_list_full(*my_register_
-                                        , writer, phead->version);
-                                    if (!ret)
-                                    {
-                                        release_buffer(out_buffer);
-                                        out_buffer = buffer_ptr::null_ptr;
-                                    }
-                                    else
-                                    {
-                                        rx_discovery_header_t* phead = out_buffer->get_buffer<rx_discovery_header_t>();
-                                        phead->size = (uint16_t)(out_buffer->get_size());
-
-                                        to_addr = ip_addr;// send it back
-                                    }
+                                    to_addr = ip_addr;// send it back
                                 }
                             }
                             break;
@@ -399,21 +388,15 @@ bool discovery_point::readed (const void* data, size_t count, const struct socka
                         case discovery_state::opening_default:
                         case discovery_state::default_active:
                             {
-                                if (!my_register_->is_this_you(phead->idenity))
-                                {
-                                    bool ret = peer_discovery_algorithms::parse_master_list_when_active(*my_register_
-                                        , reader, phead->idenity, ip_addr, phead->version);
-                                }
+                                bool ret = peer_discovery_algorithms::parse_master_list_when_active(*my_register_
+                                    , reader, phead->idenity, ip_addr, phead->version);
                             }
                             break;
                         case discovery_state::opening_fallback:
                         case discovery_state::fallback_active:
                             {
-                                if (!my_register_->is_this_you(phead->idenity))
-                                {
-                                    bool ret = peer_discovery_algorithms::parse_master_list_when_inactive(*my_register_
-                                        , reader, phead->idenity, ip_addr, phead->version);
-                                }
+                                bool ret = peer_discovery_algorithms::parse_master_list_when_inactive(*my_register_
+                                    , reader, phead->idenity, ip_addr, phead->version);
                             }
                             break;
                         case discovery_state::stopping:

@@ -317,7 +317,7 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 	}
 
 	request.whose = smart_this();
-	std::scoped_lock(port_lock_);
+	std::scoped_lock _(port_lock_);
 	if (port_)
 	{
 		port_->send_function([](http_request&& request)
@@ -333,7 +333,7 @@ rx_result rx_http_endpoint::send_response (http_response response)
 {
 	rx_reference<rx_http_port> temp_port;
 	{
-		std::scoped_lock(port_lock_);
+		std::scoped_lock _(port_lock_);
 		temp_port = port_;
 	}
 	if (!temp_port)

@@ -73,6 +73,9 @@ rx_result register_runtime()
         return register_source_runtime<T>(T::type_node_id);
     else if constexpr (T::type_id == rx_item_type::rx_display_type)
         return register_display_runtime<T>(T::type_node_id);
+    //
+    else if constexpr (T::type_id == rx_item_type::rx_relation_type)
+        return register_relation_runtime<T>(T::type_node_id);
 
     else
         return "Unknown type";

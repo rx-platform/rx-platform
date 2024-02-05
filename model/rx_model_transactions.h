@@ -33,8 +33,8 @@
 
 
 
-// rx_job
-#include "system/threads/rx_job.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "system/callbacks/rx_callback.h"
 
@@ -44,6 +44,20 @@ namespace rx_internal {
 namespace model {
 
 namespace transactions {
+enum class executer_phase
+{
+    idle = 0,
+    deleting_objects = 1,
+    deleting_ports = 2,
+    deleting_domains = 3,
+    deleting_apps = 4,
+    deleting_types = 5,
+    deleting_directories = 6,
+    building_directories = 7,
+    building_types = 8,
+    building_runtimes = 9,
+    done = 10
+};
 
 
 
@@ -51,17 +65,24 @@ namespace transactions {
 
 class model_transaction_base 
 {
+public:
+    
 
   public:
-      model_transaction_base (rx_reference_ptr anchor, rx_thread_handle_t target);
+      model_transaction_base ();
 
 
-      virtual rx_result do_transaction () = 0;
+      virtual rx_result do_step (executer_phase state, rx_platform::rx_result_callback callback) = 0;
 
-      virtual void do_rollback ();
+      virtual rx_result do_step (executer_phase state) = 0;
 
+      virtual void do_rollback (executer_phase state) = 0;
 
-      const rx_thread_handle_t get_target () const;
+      virtual meta_data& meta_info () = 0;
+
+      virtual bool is_remove (executer_phase state) const = 0;
+
+      virtual bool is_create (executer_phase state, rx_item_type type) const = 0;
 
       virtual ~model_transaction_base() = default;
       model_transaction_base(const model_transaction_base&) = delete;
@@ -73,14 +94,9 @@ class model_transaction_base
   private:
 
 
-      rx_reference_ptr anchor_;
-
-      rx_thread_handle_t target_;
-
-
 };
 
-typedef std::shared_ptr<model_transaction_base> model_transaction_ptr_t;
+typedef std::shared_ptr<model_transaction_base> meta_transaction_ptr_t;
 
 
 
@@ -93,12 +109,20 @@ public:
     typedef typename typeT::smart_ptr type_ptr_t;
 
   public:
-      delete_type_transaction (const rx_node_id& id, rx_reference_ptr anchor);
+      delete_type_transaction (const meta_data& info);
 
 
-      rx_result do_transaction ();
+      rx_result do_step (executer_phase state, rx_platform::rx_result_callback callback);
 
-      void do_rollback ();
+      rx_result do_step (executer_phase state);
+
+      void do_rollback (executer_phase state);
+
+      meta_data& meta_info ();
+
+      bool is_remove (executer_phase state) const;
+
+      bool is_create (executer_phase state, rx_item_type type) const;
 
 
   protected:
@@ -106,9 +130,9 @@ public:
   private:
 
 
-      rx_node_id id_;
-
       type_ptr_t type_ptr_;
+
+      meta_data meta_info_;
 
 
 };
@@ -118,33 +142,52 @@ public:
 
 
 
-class model_transactions_executer : public rx_platform::jobs::job  
+class model_transactions_executer : public rx::pointers::reference_object  
 {
     DECLARE_REFERENCE_PTR(model_transactions_executer);
 
-    typedef std::vector<model_transaction_ptr_t> transactions_type;
     static constexpr size_t not_started_index = (size_t)(-1);
     static constexpr size_t done_index = (size_t)(-2);
-    enum class executer_state
-    {
-        not_started = 0,
-        running = 1,
-        rolling_back = 2,
-        done = 3
-    };
+        
+    typedef std::vector<meta_transaction_ptr_t> transactions_type;
+    typedef std::set<string_type> directory_list_type;
+    typedef transactions_type::iterator current_it_type;
 
   public:
+      model_transactions_executer (rx_platform::rx_result_callback callback);
 
-      void add_transaction (model_transaction_ptr_t what);
+
+      void add_transaction (meta_transaction_ptr_t what);
 
       void execute (rx_platform::rx_result_callback callback);
 
-      void process ();
+      void process (rx_result result);
 
 
   protected:
 
   private:
+
+      rx_result consolidate_meta_data (meta_data& new_data, const meta_data& old_data);
+
+      rx_result consolidate_meta_data (meta_data& data);
+
+      rx_result do_delete_runtimes (executer_phase state);
+
+      rx_result do_delete_types (executer_phase state);
+
+      rx_result delete_directories ();
+
+      rx_result build_directories ();
+
+      rx_result do_build_types (executer_phase state);
+
+      rx_result do_build_types (executer_phase state, rx_item_type type);
+
+      rx_result do_build_runtimes (executer_phase state);
+
+      rx_result do_build_runtimes (executer_phase state, rx_item_type type);
+
 
 
       transactions_type transactions_;
@@ -152,13 +195,19 @@ class model_transactions_executer : public rx_platform::jobs::job
 
       rx_platform::rx_result_callback callback_;
 
-      size_t current_index_;
-
-      std::atomic<executer_state> state_;
+      std::atomic<executer_phase> state_;
 
       rx_result result_;
 
+      directory_list_type dirs_to_delete_;
 
+      directory_list_type dirs_to_create_;
+
+      current_it_type iterator_;
+
+
+      template<typename T>
+      void do_consolidate_for_types(T& container);
 };
 
 

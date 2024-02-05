@@ -985,9 +985,18 @@ void types_model_algorithm<typeT>::delete_type (const rx_item_reference& item_re
 			auto temp = resolve_type_reference<typeT>(item_reference, dirs, tl::type2type<typeT>());
 			if (!temp)
 				callback(temp.errors());
-			auto executer = rx_create_reference<transactions::model_transactions_executer>();
-			executer->add_transaction(std::make_unique<transactions::delete_type_transaction<typeT> >(temp.move_value(), callback.get_anchor()));
-			executer->execute(std::move(callback));
+			meta_data info;
+			rx_item_type type = platform_types_manager::instance().get_types_resolver().get_item_data(temp.value(), info);
+			if (type == typeT::type_id)
+			{
+				auto executer = rx_create_reference<transactions::model_transactions_executer>(std::move(callback));
+				executer->add_transaction(std::make_unique<transactions::delete_type_transaction<typeT> >(info));
+				executer->execute(std::move(callback));
+			}
+			else
+			{
+				callback(rx_result("Invalid type!"));
+			}
 		}, item_reference, std::move(callback));
 	//rx_do_with_callback(RX_DOMAIN_META, types_model_algorithm<typeT>::delete_type_sync, std::move(callback), item_reference);
 }
@@ -1523,6 +1532,8 @@ void runtime_model_algorithm<typeT>::update_runtime_with_depends_sync (instanceT
 					callback(builder_ptr->extract_single_result<typeT>());
 				});
 			auto ret = builder_ptr->apply_items(std::move(my_callback));
+			if(!ret)
+				callback(ret.errors());
 
 		}
 	}

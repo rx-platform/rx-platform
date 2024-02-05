@@ -54,22 +54,22 @@ string_type get_full_path_from_relative(const string_type& path)
 void fill_plugin_paths(string_array& paths)
 {
 #ifdef _DEBUG
-	paths.emplace_back("D:\\RX\\Native\\VS\\RxMainSolution\\x64\\Debug\\rx-first-plugin.dll");
-	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Modbus\\x64\\Debug\\rx-modbus.dll");
-	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Siemens\\x64\\Debug\\rx-siemens.dll");
-	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Filters\\x64\\Debug\\rx-filters.dll");
-	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Filters\\x64\\Debug\\rx-simulation.dll");
-	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\ISO\\x64\\Debug\\rx-iso.dll");
-	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\InfoControl\\x64\\Debug\\rx-ics.dll");
-	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\Beka\\x64\\Debug\\rx-mesrnp.dll");
-	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\SAMTMS\\x64\\Debug\\rx-samcomm.dll");
-	paths.emplace_back("D:\\RX\\Plugins\\Dev\\VS\\iec61850\\x64\\Debug\\iec61850.dll");
-	paths.emplace_back("D:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linntms.dll");
-	paths.emplace_back("D:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linnmes.dll");
-//	paths.emplace_back("D:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
+	paths.emplace_back("C:\\RX\\Native\\VS\\RxMainSolution\\x64\\Debug\\rx-first-plugin.dll");
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Modbus\\x64\\Debug\\rx-modbus.dll");
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Siemens\\x64\\Debug\\rx-siemens.dll");
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Filters\\x64\\Debug\\rx-filters.dll");
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Filters\\x64\\Debug\\rx-simulation.dll");
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\ISO\\x64\\Debug\\rx-iso.dll");
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\InfoControl\\x64\\Debug\\rx-ics.dll");
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Beka\\x64\\Debug\\rx-mesrnp.dll");
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\SAMTMS\\x64\\Debug\\rx-samcomm.dll");
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\iec61850\\x64\\Debug\\iec61850.dll");
+	paths.emplace_back("C:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linntms.dll");
+	paths.emplace_back("C:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linnmes.dll");
+//	paths.emplace_back("C:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
 
-	//paths.emplace_back("D:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_simm.dll");
-	//paths.emplace_back("D:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_test.dll");
+	//paths.emplace_back("C:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_simm.dll");
+	//paths.emplace_back("C:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_test.dll");
 #else
 	char buff[MAX_PATH];
 	DWORD size = sizeof(buff);

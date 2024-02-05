@@ -338,6 +338,10 @@ bool rx_gate::shutdown (const string_type& msg)
 		return false;
 	}
 	shutting_down_ = true;
+	std::ostringstream ss;
+	ss << "Shutdown initiated with message ";
+	ss << msg;
+	HOST_LOG_INFO("rx_gate", 999, ss.str());
 	host_->shutdown(msg);
 	return true;
 }
