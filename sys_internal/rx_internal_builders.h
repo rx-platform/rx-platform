@@ -85,7 +85,7 @@ class rx_platform_builder
       rx_platform_builder & operator=(const rx_platform_builder &right);
 
 
-      static std::vector<std::unique_ptr<rx_platform_builder> > get_system_builders (namespace_data_t& data, const meta_configuration_data_t& meta_data, hosting::rx_platform_host* host);
+      static std::vector<std::unique_ptr<rx_platform_builder> > get_system_builders (const configuration_data_t& data, hosting::rx_platform_host* host);
 
       static std::vector<std::unique_ptr<rx_platform_builder> > get_user_builders (namespace_data_t& data, hosting::rx_platform_host* host);
 

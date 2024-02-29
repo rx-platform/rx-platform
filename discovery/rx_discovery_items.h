@@ -40,8 +40,8 @@
 
 namespace rx_internal {
 namespace discovery {
-class peer_item_stub;
 class peer_connection;
+class peer_item_stub;
 
 } // namespace discovery
 } // namespace rx_internal
@@ -67,6 +67,11 @@ class peer_item : public rx::pointers::reference_object
       ~peer_item();
 
 
+      security::security_guard_ptr get_security_guard ();
+
+      platform_item_ptr get_item_ptr () const;
+
+
       rx_item_type type;
 
       meta_data meta;
@@ -77,6 +82,9 @@ class peer_item : public rx::pointers::reference_object
   protected:
 
   private:
+
+      security::security_guard_ptr security_guard_;
+
 
 
       peer_connection_ptr peer_connection_;

@@ -115,6 +115,52 @@ rx_result init_runtime<meta::object_types::domain_type>(rx_domain_ptr what, runt
 {
 	return domain_algorithms::init_runtime(what, ctx);
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
+// just_init_runtime
+template<>
+rx_result just_init_runtime<meta::object_types::object_type>(rx_object_ptr what, runtime::runtime_init_context& ctx)
+{
+	return object_algorithms::just_init_runtime(what, ctx);
+}
+template<>
+rx_result just_init_runtime<meta::object_types::application_type>(rx_application_ptr what, runtime::runtime_init_context& ctx)
+{
+	return application_algorithms::just_init_runtime(what, ctx);
+}
+template<>
+rx_result just_init_runtime<meta::object_types::port_type>(rx_port_ptr what, runtime::runtime_init_context& ctx)
+{
+	return port_algorithms::just_init_runtime(what, ctx);
+}
+template<>
+rx_result just_init_runtime<meta::object_types::domain_type>(rx_domain_ptr what, runtime::runtime_init_context& ctx)
+{
+	return domain_algorithms::just_init_runtime(what, ctx);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+// just_start_runtime
+template<>
+void just_start_runtime<meta::object_types::object_type>(rx_object_ptr what, const_callbacks_type callbacks)
+{
+	object_algorithms::just_start_runtime(what, callbacks);
+}
+template<>
+void just_start_runtime<meta::object_types::application_type>(rx_application_ptr what, const_callbacks_type callbacks)
+{
+	application_algorithms::just_start_runtime(what, callbacks);
+}
+template<>
+void just_start_runtime<meta::object_types::port_type>(rx_port_ptr what, const_callbacks_type callbacks)
+{
+	port_algorithms::just_start_runtime(what, callbacks);
+}
+template<>
+void just_start_runtime<meta::object_types::domain_type>(rx_domain_ptr what, const_callbacks_type callbacks)
+{
+	domain_algorithms::just_start_runtime(what, callbacks);
+}
 //////////////////////////////////////////////////////////////////////////////////////
 // deinit_runtime
 template<>
@@ -147,6 +193,16 @@ rx_result deinit_runtime<meta::object_types::domain_type>(rx_domain_ptr what
 
 rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
 {
+	auto result = just_init_runtime(what, ctx);
+	if (result)
+	{
+		just_start_runtime(what, std::move(ctx.const_callbacks));
+	}
+	return result;
+}
+
+rx_result object_algorithms::just_init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
+{
 	auto result = what->get_instance_data().before_init_runtime(what, ctx);
 	if (result)
 	{
@@ -156,23 +212,6 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 		if (result)
 		{
 			RUNTIME_LOG_TRACE("object_algorithms", 100, "Initialized "s + rx_item_type_name(rx_object) + " "s + what->meta_info().get_full_path());
-
-			rx_post_function_to(what->get_executer(), what, [](rx_object_ptr whose, const_callbacks_type const_callbacks)
-				{
-					auto ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::object_type>::create_start_context(*whose);
-					ctx.const_callbacks = std::move(const_callbacks);
-					auto result = start_runtime(whose, ctx);
-					if (result)
-					{
-						RUNTIME_LOG_TRACE("object_algorithms", 100, ("Started "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
-					}
-					else
-					{
-						for (const auto& error : result.errors())
-							RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
-						RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
-					}
-				}, what, std::move(ctx.const_callbacks));
 		}
 		else
 		{
@@ -189,6 +228,26 @@ rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_
 	}
 
 	return result;
+}
+
+void object_algorithms::just_start_runtime (rx_object_ptr what, const_callbacks_type callbacks)
+{
+	rx_post_function_to(what->get_executer(), what, [](rx_object_ptr whose, const_callbacks_type const_callbacks)
+		{
+			auto ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::object_type>::create_start_context(*whose);
+			ctx.const_callbacks = std::move(const_callbacks);
+			auto result = start_runtime(whose, ctx);
+			if (result)
+			{
+				RUNTIME_LOG_TRACE("object_algorithms", 100, ("Started "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
+			}
+			else
+			{
+				for (const auto& error : result.errors())
+					RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
+				RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
+			}
+		}, what, std::move(callbacks));
 }
 
 rx_result object_algorithms::start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx)
@@ -343,6 +402,16 @@ rx_result object_algorithms::disconnect_domain (rx_object_ptr what)
 
 rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
 {
+	auto result = just_init_runtime(what, ctx);
+	if (result)
+	{
+		just_start_runtime(what, std::move(ctx.const_callbacks));
+	}
+	return result;
+}
+
+rx_result domain_algorithms::just_init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
+{
 	auto result = what->get_instance_data().before_init_runtime(what, ctx);
 	if (result)
 	{
@@ -353,21 +422,6 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 		{
 			RUNTIME_LOG_TRACE("domain_algorithms", 100, "Initialized "s + rx_item_type_name(rx_domain) + " "s + what->meta_info().get_full_path());
 
-			rx_post_function_to(what->get_executer(), what,[](rx_domain_ptr whose, const_callbacks_type const_callbacks)
-				{
-					auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::domain_type>::create_start_context(*whose);
-					start_ctx.const_callbacks = std::move(const_callbacks);
-					auto result = start_runtime(whose, start_ctx);
-					if (result)
-					{
-						RUNTIME_LOG_TRACE("domain_algorithms", 100, ("Started "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_full_path()).c_str());
-					}
-					else
-					{
-						RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_full_path()).c_str() + result.errors_line());
-
-					}
-				}, what, std::move(ctx.const_callbacks));
 		}
 		else
 		{
@@ -385,6 +439,25 @@ rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_
 		RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error initializing "s + rx_item_type_name(rx_object) + " "s + what->meta_info().name).c_str() + result.errors_line());
 	}
 	return result;
+}
+
+void domain_algorithms::just_start_runtime (rx_domain_ptr what, const_callbacks_type callbacks)
+{
+	rx_post_function_to(what->get_executer(), what, [](rx_domain_ptr whose, const_callbacks_type const_callbacks)
+		{
+			auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::domain_type>::create_start_context(*whose);
+			start_ctx.const_callbacks = std::move(const_callbacks);
+			auto result = start_runtime(whose, start_ctx);
+			if (result)
+			{
+				RUNTIME_LOG_TRACE("domain_algorithms", 100, ("Started "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_full_path()).c_str());
+			}
+			else
+			{
+				RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_full_path()).c_str() + result.errors_line());
+
+			}
+		}, what, std::move(callbacks));
 }
 
 rx_result domain_algorithms::start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx)
@@ -537,6 +610,16 @@ rx_result domain_algorithms::disconnect_application (rx_domain_ptr what)
 
 rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
 {
+	auto result = just_init_runtime(what, ctx);
+	if (result)
+	{
+		just_start_runtime(what, std::move(ctx.const_callbacks));
+	}
+	return result;
+}
+
+rx_result port_algorithms::just_init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
+{
 	auto result = what->get_instance_data().before_init_runtime(what, ctx);
 	if (result)
 	{
@@ -548,22 +631,7 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 			result = what->get_instance_data().stack_data.init_runtime_data(ctx);
 			RUNTIME_LOG_TRACE("port_algorithms", 100, "Initialized "s + rx_item_type_name(rx_port) + " "s + what->meta_info().get_full_path());
 
-			rx_post_function_to(what->get_executer(), what, [](rx_port_ptr whose, const_callbacks_type const_callbacks)
-				{
-					auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::port_type>::create_start_context(*whose);
-					start_ctx.const_callbacks = std::move(const_callbacks);
-					auto result = start_runtime(whose, start_ctx);
-					if (result)
-					{
-						RUNTIME_LOG_TRACE("port_algorithms", 100, ("Started "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
-					}
-					else
-					{
-						for (const auto& error : result.errors())
-							RUNTIME_LOG_ERROR("port_algorithms", 800, error.c_str());
-						RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
-					}
-				}, what, std::move(ctx.const_callbacks));
+			
 		}
 		else
 		{
@@ -576,6 +644,26 @@ rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init
 	}
 
 	return result;
+}
+
+void port_algorithms::just_start_runtime (rx_port_ptr what, const_callbacks_type callbacks)
+{
+	rx_post_function_to(what->get_executer(), what, [](rx_port_ptr whose, const_callbacks_type const_callbacks)
+		{
+			auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::port_type>::create_start_context(*whose);
+			start_ctx.const_callbacks = std::move(const_callbacks);
+			auto result = start_runtime(whose, start_ctx);
+			if (result)
+			{
+				RUNTIME_LOG_TRACE("port_algorithms", 100, ("Started "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
+			}
+			else
+			{
+				for (const auto& error : result.errors())
+					RUNTIME_LOG_ERROR("port_algorithms", 800, error.c_str());
+				RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
+			}
+		}, what, std::move(callbacks));
 }
 
 rx_result port_algorithms::start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx)
@@ -729,6 +817,16 @@ rx_result port_algorithms::disconnect_application (rx_port_ptr what)
 
 rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
 {
+	auto result = just_init_runtime(what, ctx);
+	if (result)
+	{
+		just_start_runtime(what, std::move(ctx.const_callbacks));
+	}
+	return result;
+}
+
+rx_result application_algorithms::just_init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
+{
 	rx_result ret;
 	auto it = platform_runtime_manager::instance().applications_.find(what->meta_info().id);
 	if (it == platform_runtime_manager::instance().applications_.end())
@@ -747,22 +845,6 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 
 				RUNTIME_LOG_TRACE("application_algorithms", 100, "Initialized "s + rx_item_type_name(rx_application) + " "s + what->meta_info().get_full_path());
 
-				runtime::tag_blocks::binded_tags* binded = ctx.tags;
-				rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, runtime::tag_blocks::binded_tags* binded, const_callbacks_type const_callbacks)
-					{
-						auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::application_type>::create_start_context(*whose);
-						start_ctx.const_callbacks = std::move(const_callbacks);
-						auto result = start_runtime(whose, start_ctx, binded);
-						if (result)
-						{
-
-							RUNTIME_LOG_TRACE("application_algorithms", 100, ("Started "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
-						}
-						else
-						{
-							RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str() + result.errors_line());
-						}
-					}, what, binded, std::move(ctx.const_callbacks));
 			}
 			else
 			{
@@ -785,9 +867,28 @@ rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime
 	return ret;
 }
 
-rx_result application_algorithms::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, runtime::tag_blocks::binded_tags* binded)
+void application_algorithms::just_start_runtime (rx_application_ptr what, const_callbacks_type callbacks)
 {
-	auto ret = what->get_instance_data().before_start_runtime(what, ctx, binded);
+	rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, const_callbacks_type const_callbacks)
+		{
+			auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::application_type>::create_start_context(*whose);
+			start_ctx.const_callbacks = std::move(const_callbacks);
+			auto result = start_runtime(whose, start_ctx);
+			if (result)
+			{
+
+				RUNTIME_LOG_TRACE("application_algorithms", 100, ("Started "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str());
+			}
+			else
+			{
+				RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str() + result.errors_line());
+			}
+		}, what, std::move(callbacks));
+}
+
+rx_result application_algorithms::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx)
+{
+	auto ret = what->get_instance_data().before_start_runtime(what, ctx);
 	ret = what->start_runtime(ctx);
 	if (ret)
 	{

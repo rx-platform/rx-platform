@@ -71,7 +71,7 @@ platform_types_manager& platform_types_manager::instance ()
 	return *g_platform_types_instance;//ROOT of CLASSES!!!! $$$ Important Object Here!!!
 }
 
-rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 
 	auto result = get_data_types_repository().initialize(host, data);
@@ -153,7 +153,7 @@ void platform_types_manager::deinitialize ()
 	g_platform_types_instance.reset();
 }
 
-rx_result platform_types_manager::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+rx_result platform_types_manager::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 	auto result = get_type_repository<object_types::application_type>().start(host, data);
 	if (!result)
@@ -822,7 +822,7 @@ rx_result types_repository<typeT>::delete_type (rx_node_id id)
 }
 
 template <class typeT>
-rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
 	to_add.reserve(registered_types_.size());
@@ -845,6 +845,28 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 		}
 	}
 	auto result = inheritance_hash_.add_to_hash_data(to_add);
+
+	for (auto& one : registered_objects_)
+	{
+		result = sys_runtime::platform_runtime_manager::instance().just_init_runtime<typeT>(one.second.target);
+		if (!result)
+		{
+			std::ostringstream ss;
+			ss << "Unable to init runtime "
+				<< one.second.target->meta_info().get_full_path()
+				<< " :" << result.errors_line();
+			META_LOG_ERROR("types_repository", 500, ss.str());
+		}
+		else
+		{
+			ns::rx_directory_resolver dirs;
+			dirs.add_paths({ one.second.target->meta_info().path });
+			auto res = rx_internal::model::algorithms::resolve_reference(one.second.target->meta_info().parent, dirs);
+			if (res)
+				platform_types_manager::instance().get_dependecies_cache().add_dependency(one.first, res.move_value());
+		}
+	}
+
 	return result;
 }
 
@@ -854,29 +876,13 @@ void types_repository<typeT>::deinitialize ()
 }
 
 template <class typeT>
-rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
+	const_callbacks_type callbacks;
 	for (auto& one : registered_objects_)
 	{
-		auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(one.second.target);
-		if (init_result)
-		{
-			one.second.state = runtime_state::runtime_state_running;
-		}
-		else
-		{
-			std::ostringstream ss;
-			ss << "Unable to start runtime "
-				<< one.second.target->meta_info().get_full_path()
-				<< " :" << init_result.errors_line();
-			META_LOG_ERROR("types_repository", 500, ss.str());
-		}
-
-		ns::rx_directory_resolver dirs;
-		dirs.add_paths({ one.second.target->meta_info().path });
-		auto res = rx_internal::model::algorithms::resolve_reference(one.second.target->meta_info().parent, dirs);
-		if (res)
-			platform_types_manager::instance().get_dependecies_cache().add_dependency(one.first, res.move_value());
+		one.second.state = runtime_state::runtime_state_running;
+		sys_runtime::platform_runtime_manager::instance().just_start_runtime<typeT>(one.second.target, callbacks);
 	}
 	return true;
 }
@@ -1654,7 +1660,7 @@ rx_result simple_types_repository<typeT>::type_exists (rx_node_id id) const
 }
 
 template <class typeT>
-rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
 	to_add.reserve(registered_types_.size());
@@ -1792,11 +1798,32 @@ rx_result simple_types_repository<typeT>::register_peer_type (rx_reference<disco
 	if (it == registered_peer_types_.end() && registered_types_.find(what->meta.id) == registered_types_.end())
 	{
 		registered_peer_types_.emplace(what->meta.id, what);
+		auto type_res = platform_types_manager::instance().get_types_resolver().add_id(what->meta.id, typeT::type_id, what->meta);
+		RX_ASSERT(type_res);
 		return true;
 	}
 	else
 	{
 		return "Duplicated Node Id: "s + what->meta.id.to_string() + " for " + what->meta.name;
+	}
+}
+
+template <class typeT>
+rx_result simple_types_repository<typeT>::delete_peer_type (const rx_node_id& id)
+{
+	auto it = registered_peer_types_.find(id);
+	if (it != registered_peer_types_.end())
+	{
+		auto type_ret = inheritance_hash_.remove_from_hash_data(id);
+		RX_ASSERT(type_ret);
+		registered_peer_types_.erase(it);
+		type_ret = platform_types_manager::instance().get_types_resolver().remove_id(id);
+		RX_ASSERT(type_ret);
+		return true;
+	}
+	else
+	{
+		return "Node id not found";
 	}
 }
 
@@ -2077,7 +2104,7 @@ rx_result relations_type_repository::delete_type (rx_node_id id)
 	}
 }
 
-rx_result relations_type_repository::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+rx_result relations_type_repository::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
 	to_add.reserve(registered_types_.size());
@@ -2529,7 +2556,7 @@ rx_result data_type_repository::delete_type (rx_node_id id)
 	}
 }
 
-rx_result data_type_repository::initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data)
+rx_result data_type_repository::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
 	to_add.reserve(registered_types_.size());

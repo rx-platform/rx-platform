@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -33,18 +33,18 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
+// dummy
+#include "dummy.h"
 // rx_http_server
 #include "http_server/rx_http_server.h"
-// rx_io_buffers
-#include "lib/rx_io_buffers.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_io_buffers
+#include "lib/rx_io_buffers.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/http_c/rx_http_c_impl.h"
@@ -138,7 +138,7 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< rx_http_endpoint  > rx_http_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::slave_server_port_impl< protocols::rx_http::rx_http_endpoint  > rx_http_port_base;
 
 
 

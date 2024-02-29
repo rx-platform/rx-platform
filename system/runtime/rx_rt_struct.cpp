@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -38,7 +38,6 @@
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 
-#include "lib/base64.h"
 #include "system/runtime/rx_display_blocks.h"
 #include "system/runtime/rx_runtime_logic.h"
 #include "rx_library.h"
@@ -76,13 +75,13 @@ runtime_variables_type g_empty_variables;
 
 
 
-// Parameterized Class rx_platform::runtime::structure::empty 
+// Parameterized Class rx_platform::runtime::structure::empty
 
 
-// Parameterized Class rx_platform::runtime::structure::has 
+// Parameterized Class rx_platform::runtime::structure::has
 
 
-// Class rx_platform::runtime::structure::variable_data 
+// Class rx_platform::runtime::structure::variable_data
 
 string_type variable_data::type_name = RX_CPP_VARIABLE_TYPE_NAME;
 
@@ -204,7 +203,7 @@ rx_result variable_data::write_value (write_data&& data, write_task* task, runti
 	{
 		if (rx_is_debug_instance())
 		{
-			
+
 			std::ostringstream ss;
 			ss << "Variable "
 				<< full_path
@@ -529,7 +528,7 @@ void variable_data::send_write_result (write_task* task, rx_result result)
 }
 
 
-// Class rx_platform::runtime::structure::struct_data 
+// Class rx_platform::runtime::structure::struct_data
 
 string_type struct_data::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
@@ -636,7 +635,7 @@ void struct_data::object_state_changed (runtime_process_context* ctx)
 }
 
 
-// Class rx_platform::runtime::structure::mapper_data 
+// Class rx_platform::runtime::structure::mapper_data
 
 string_type mapper_data::type_name = RX_CPP_MAPPER_TYPE_NAME;
 
@@ -861,7 +860,7 @@ void mapper_data::process_write (write_data&& data)
 						ss << "Mapper "
 							<< full_path
 							<< " sent write result for id:"
-							<< trans_id 
+							<< trans_id
 							<< " - " << result.errors_line();
 
 						RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
@@ -885,7 +884,7 @@ void mapper_data::process_write (write_data&& data)
 								<< full_path
 								<< " sending write result for id:"
 								<< trans_id << " - " << result.errors_line();
-								
+
 							RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 						}
 						mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
@@ -1203,7 +1202,7 @@ data::runtime_data_model mapper_data::get_data_type ()
 }
 
 
-// Class rx_platform::runtime::structure::source_data 
+// Class rx_platform::runtime::structure::source_data
 
 string_type source_data::type_name = RX_CPP_SOURCE_TYPE_NAME;
 
@@ -1573,7 +1572,7 @@ data::runtime_data_model source_data::get_data_type ()
 }
 
 
-// Class rx_platform::runtime::structure::event_data 
+// Class rx_platform::runtime::structure::event_data
 
 string_type event_data::type_name = RX_CPP_EVENT_TYPE_NAME;
 
@@ -1801,7 +1800,7 @@ void event_data::event_fired (event_fired_data&& data)
 }
 
 
-// Class rx_platform::runtime::structure::filter_data 
+// Class rx_platform::runtime::structure::filter_data
 
 string_type filter_data::type_name = RX_CPP_FILTER_TYPE_NAME;
 
@@ -1998,7 +1997,7 @@ void filter_data::object_state_changed (runtime_process_context* ctx)
 }
 
 
-// Class rx_platform::runtime::structure::const_value_data 
+// Class rx_platform::runtime::structure::const_value_data
 
 string_type const_value_data::type_name = RX_CONST_VALUE_TYPE_NAME;
 
@@ -2025,8 +2024,24 @@ rx_result const_value_data::set_value (rx_simple_value&& val)
 		if (val.get_type() == RX_STRING_TYPE && value.get_type() == RX_BYTES_TYPE)
 		{
 			string_type str = val.get_string();
-			value.assign_static(urke::get_data(str));
-			return true;
+
+
+			bytes_value_struct data;
+			int ret = rx_base64_get_data(&data, rx_c_str(&val.c_ptr()->value.string_value));
+			if (ret == RX_OK)
+			{
+				size_t cnt = 0;
+				std::byte* buff = (std::byte*)rx_c_ptr(&data, &cnt);
+				if (cnt && buff)
+					value.assign_static(byte_string(buff, buff + cnt));
+				else
+					value.assign_static(byte_string());
+
+				rx_destory_bytes_value_struct(&data);
+
+				return true;
+			}
+			return false;
 		}
 		else
 		{
@@ -2045,7 +2060,7 @@ rx_result const_value_data::set_value (rx_simple_value&& val)
 }
 
 
-// Class rx_platform::runtime::structure::value_data 
+// Class rx_platform::runtime::structure::value_data
 
 string_type value_data::type_name = RX_VALUE_TYPE_NAME;
 
@@ -2171,10 +2186,10 @@ rx_result value_data::check_set_value (runtime_process_context* ctx, bool intern
 }
 
 
-// Class rx_platform::runtime::structure::runtime_item 
+// Class rx_platform::runtime::structure::runtime_item
 
 
-// Class rx_platform::runtime::structure::mapper_write_task 
+// Class rx_platform::runtime::structure::mapper_write_task
 
 mapper_write_task::mapper_write_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id)
       : my_mapper_(my_mapper),
@@ -2195,7 +2210,7 @@ runtime_transaction_id_t mapper_write_task::get_id () const
 }
 
 
-// Class rx_platform::runtime::structure::block_data 
+// Class rx_platform::runtime::structure::block_data
 
 
 rx_result block_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
@@ -3628,7 +3643,7 @@ data::runtime_data_model block_data::create_runtime_model ()
 }
 
 
-// Class rx_platform::runtime::structure::full_value_data 
+// Class rx_platform::runtime::structure::full_value_data
 
 
 rx_value full_value_data::get_value (runtime_process_context* ctx) const
@@ -3655,7 +3670,7 @@ rx_simple_value full_value_data::simple_get_value () const
 }
 
 
-// Class rx_platform::runtime::structure::execute_task 
+// Class rx_platform::runtime::structure::execute_task
 
 execute_task::~execute_task()
 {
@@ -3663,10 +3678,10 @@ execute_task::~execute_task()
 
 
 
-// Parameterized Class rx_platform::runtime::structure::array_wrapper 
+// Parameterized Class rx_platform::runtime::structure::array_wrapper
 
 
-// Class rx_platform::runtime::structure::value_block_data 
+// Class rx_platform::runtime::structure::value_block_data
 
 string_type value_block_data::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
@@ -3855,7 +3870,7 @@ rx_result value_block_data::do_write_callback (rx_simple_value& val, data::runti
 }
 
 
-// Class rx_platform::runtime::structure::variable_block_data 
+// Class rx_platform::runtime::structure::variable_block_data
 
 string_type variable_block_data::type_name = RX_CPP_STRUCT_TYPE_NAME;
 
@@ -4156,7 +4171,7 @@ void variable_block_data::process_runtime (runtime_process_context* ctx)
 }
 
 
-// Class rx_platform::runtime::structure::block_data_references 
+// Class rx_platform::runtime::structure::block_data_references
 
 
 rx_result block_data_references::get_value_ref (block_data& data, string_view_type path, rt_value_ref& ref, rx_time ts)
@@ -4222,7 +4237,7 @@ void block_data_references::block_data_changed (const block_data& data, runtime:
 }
 
 
-// Class rx_platform::runtime::structure::variable_block_data_references 
+// Class rx_platform::runtime::structure::variable_block_data_references
 
 
 rx_result variable_block_data_references::get_value_ref (block_data& data, string_view_type path, rt_value_ref& ref, rx_time ts, uint32_t quality, uint32_t origin)
@@ -4291,7 +4306,7 @@ void variable_block_data_references::block_data_changed (const block_data& data,
 //template class array_wrapper<variable_data>;
 //template class array_wrapper<block_data>;
 
-// Class rx_platform::runtime::structure::mapper_execute_task 
+// Class rx_platform::runtime::structure::mapper_execute_task
 
 mapper_execute_task::mapper_execute_task (mapper_data* my_mapper, runtime_transaction_id_t trans_id)
       : my_mapper_(my_mapper),
@@ -4317,7 +4332,7 @@ void mapper_execute_task::process_result (rx_result&& result, data::runtime_valu
 }
 
 
-// Class rx_platform::runtime::structure::write_task 
+// Class rx_platform::runtime::structure::write_task
 
 write_task::~write_task()
 {

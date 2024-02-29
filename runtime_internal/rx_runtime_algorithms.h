@@ -53,6 +53,10 @@ rx_result delete_runtime_structure(typename typeT::RTypePtr what);
 template<class typeT>
 rx_result init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx);
 template<class typeT>
+rx_result just_init_runtime(typename typeT::RTypePtr what, runtime::runtime_init_context& ctx);
+template<class typeT>
+void just_start_runtime(typename typeT::RTypePtr what, const_callbacks_type callbacks);
+template<class typeT>
 rx_result deinit_runtime(typename typeT::RTypePtr what, rx_result_callback&& callback);
 
 
@@ -66,6 +70,10 @@ class object_algorithms
   public:
 
       static rx_result init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx);
+
+      static rx_result just_init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx);
+
+      static void just_start_runtime (rx_object_ptr what, const_callbacks_type callbacks);
 
       static rx_result deinit_runtime (rx_object_ptr what, rx_result_callback&& callback);
 
@@ -98,6 +106,10 @@ class domain_algorithms
 
       static rx_result init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx);
 
+      static rx_result just_init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx);
+
+      static void just_start_runtime (rx_domain_ptr what, const_callbacks_type callbacks);
+
       static rx_result deinit_runtime (rx_domain_ptr what, rx_result_callback&& callback);
 
       static rx_result stop_runtime (rx_domain_ptr what, runtime::runtime_stop_context& ctx);
@@ -128,6 +140,10 @@ class port_algorithms
   public:
 
       static rx_result init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
+
+      static rx_result just_init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx);
+
+      static void just_start_runtime (rx_port_ptr what, const_callbacks_type callbacks);
 
       static rx_result deinit_runtime (rx_port_ptr what, rx_result_callback&& callback);
 
@@ -160,6 +176,10 @@ class application_algorithms
 
       static rx_result init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx);
 
+      static rx_result just_init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx);
+
+      static void just_start_runtime (rx_application_ptr what, const_callbacks_type callbacks);
+
       static rx_result deinit_runtime (rx_application_ptr what, rx_result_callback&& callback);
 
       static rx_result stop_runtime (rx_application_ptr what, runtime::runtime_stop_context& ctx);
@@ -169,7 +189,7 @@ class application_algorithms
 
   private:
 
-      static rx_result start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, runtime::tag_blocks::binded_tags* binded);
+      static rx_result start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx);
 
 
 

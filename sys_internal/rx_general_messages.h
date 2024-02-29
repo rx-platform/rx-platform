@@ -71,6 +71,10 @@ class rx_system_info_response : public rx_message_base
 
       string_type instance;
 
+      string_type network;
+
+      rx_uuid network_id;
+
       rx_time start_time;
 
       rx_time current_time;

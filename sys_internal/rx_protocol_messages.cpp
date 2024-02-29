@@ -289,7 +289,13 @@ rx_result rx_connection_context_request::serialize (base_meta_writer& stream) co
 		return stream.get_error();
 	if (stream_version >= RX_MODE_CONTEXT_VERSION)
 	{
-		stream.write_uint("mode", mode.raw_format);
+		if(!stream.write_uint("mode", mode.raw_format))
+			return stream.get_error();
+	}
+	if (stream_version >= RX_NETWORK_ID_VERSION)
+	{
+		if(!stream.write_uuid("net_id", network_id))
+			return stream.get_error();
 	}
 	return true;
 }
@@ -306,7 +312,13 @@ rx_result rx_connection_context_request::deserialize (base_meta_reader& stream)
 		return stream.get_error();
 	if (stream_version >= RX_MODE_CONTEXT_VERSION)
 	{
-		stream.read_uint("mode", mode.raw_format);
+		if (!stream.read_uint("mode", mode.raw_format))
+			return stream.get_error();
+	}
+	if (stream_version >= RX_NETWORK_ID_VERSION)
+	{
+		if(!stream.read_uuid("net_id", network_id))
+			return stream.get_error();
 	}
 	return true;
 }
@@ -354,6 +366,11 @@ rx_result rx_connection_context_response::serialize (base_meta_writer& stream) c
 	{
 		stream.write_uint("mode", mode.raw_format);
 	}
+	if (stream_version >= RX_NETWORK_ID_VERSION)
+	{
+		if (!stream.write_uuid("net_id", network_id))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -374,6 +391,11 @@ rx_result rx_connection_context_response::deserialize (base_meta_reader& stream)
 	if (stream.get_version() >= RX_MODE_CONTEXT_VERSION)
 	{
 		stream.read_uint("mode", mode.raw_format);
+	}
+	if (stream_version >= RX_NETWORK_ID_VERSION)
+	{
+		if (!stream.read_uuid("net_id", network_id))
+			return stream.get_error();
 	}
 	return true;
 }

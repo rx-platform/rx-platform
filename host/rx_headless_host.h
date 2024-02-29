@@ -33,10 +33,10 @@
 
 
 
-// rx_host
-#include "system/hosting/rx_host.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
+// rx_host
+#include "system/hosting/rx_host.h"
 
 #include "system/server/rx_server.h"
 using rx_platform::hosting::hosts_type;
@@ -116,7 +116,7 @@ class headless_platform_host : public rx_platform::hosting::rx_platform_host
 
       bool break_host (const string_type& msg);
 
-      int initialize_platform (int argc, char* argv[], const char* help_name, log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins);
+      int initialize_platform (int argc, char* argv[], const char* instance_name, const char* help_name, log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins);
 
       static string_type get_headless_info ();
 
@@ -140,6 +140,8 @@ class headless_platform_host : public rx_platform::hosting::rx_platform_host
 
       virtual rx_result register_constructors ();
 
+      string_type get_host_instance ();
+
 
   protected:
 
@@ -159,6 +161,8 @@ class headless_platform_host : public rx_platform::hosting::rx_platform_host
       rx_platform::configuration_data_t config_;
 
       bool debug_break_;
+
+      string_type host_instance_;
 
 
 };

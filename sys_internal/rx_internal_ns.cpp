@@ -46,6 +46,7 @@
 #include "model/rx_model_algorithms.h"
 #include "lib/rx_ser_bin.h"
 #include "system/runtime/rx_event_blocks.h"
+#include "discovery/rx_discovery_items.h"
 
 
 namespace rx_internal {
@@ -762,7 +763,7 @@ rx_proxy_item_implementation<TImpl>::~rx_proxy_item_implementation()
 template <class TImpl>
 rx_item_type rx_proxy_item_implementation<TImpl>::get_type_id () const
 {
-  return rx_invalid_type;
+  return impl_->type;
 }
 
 template <class TImpl>
@@ -792,7 +793,7 @@ rx_result rx_proxy_item_implementation<TImpl>::serialize (base_meta_writer& stre
 template <class TImpl>
 const meta_data& rx_proxy_item_implementation<TImpl>::meta_info () const
 {
-  return meta_data();
+	return impl_->meta;
 }
 
 template <class TImpl>
@@ -824,7 +825,7 @@ rx_result rx_proxy_item_implementation<TImpl>::do_command (rx_object_command_t c
 template <class TImpl>
 void rx_proxy_item_implementation<TImpl>::browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback)
 {
-  return RX_NOT_IMPLEMENTED;
+	callback(RX_NOT_VALID_TYPE, std::vector<runtime_item_attribute>());
 }
 
 template <class TImpl>
@@ -1206,3 +1207,5 @@ template class rx_internal::internal_ns::rx_meta_item_implementation<display_typ
 
 template class rx_internal::internal_ns::rx_meta_item_implementation<data_type_ptr>;
 template class rx_internal::internal_ns::rx_relation_item_implementation<rx_relation_ptr>;
+
+template class rx_internal::internal_ns::rx_proxy_item_implementation<rx_internal::discovery::peer_item::smart_ptr>;

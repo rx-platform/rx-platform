@@ -38,6 +38,9 @@
 
 namespace rx {
 
+rx_uuid running_at_local = rx_uuid();
+rx_uuid running_shared = rx_uuid::create_from_string("ffffffff-ffff-ffff-ffff-ffffffffffff");
+
 // Class rx::meta_data 
 
 meta_data::meta_data()

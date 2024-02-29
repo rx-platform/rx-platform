@@ -101,9 +101,9 @@ class local_dependecy_builder : public rx::pointers::reference_object
     struct item_creation_data
     {
         T item;
-        bool create;
-        bool remove;
-        bool save_result;
+        bool create = false;
+        bool remove = false;
+        bool save_result = false;
     };
 
     typedef std::map<string_type, item_creation_data<object_runtime_data> > objects_type;
@@ -181,7 +181,7 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
       void add_config_part (const meta::config_part_container& part);
 
-      rx_result apply_items (rx_result_callback&& callback);
+      void apply_items (rx_result_callback&& callback);
 
 
       const std::vector<rx_object_ptr>& get_built_objects () const

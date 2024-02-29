@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace model {
 
 namespace transactions {
 
-// Class rx_internal::model::transactions::dependency_cache
+// Class rx_internal::model::transactions::dependency_cache 
 
 
 void dependency_cache::add_dependency (const rx_node_id& id, const rx_node_id& from)
@@ -132,7 +132,7 @@ void dependency_cache::add_single_dependency (const rx_node_id& id, const rx_nod
 }
 
 
-// Class rx_internal::model::transactions::local_dependecy_builder
+// Class rx_internal::model::transactions::local_dependecy_builder 
 
 local_dependecy_builder::~local_dependecy_builder()
 {
@@ -277,7 +277,7 @@ void local_dependecy_builder::add_config_part (const meta::config_part_container
 	}
 }
 
-rx_result local_dependecy_builder::apply_items (rx_result_callback&& callback)
+void local_dependecy_builder::apply_items (rx_result_callback&& callback)
 {
 	// consolidate meta data for all items if needed
 	do_consolidate_for_item(applications_);
@@ -300,7 +300,6 @@ rx_result local_dependecy_builder::apply_items (rx_result_callback&& callback)
 	state_.domains_it = domains_.begin();
 	state_.applications_it = applications_.begin();
 	process(true);
-	return true;
 }
 
 rx_result local_dependecy_builder::delete_types ()
@@ -657,7 +656,7 @@ void local_dependecy_builder::process (rx_result&& result)
 	case builder_phase::done:
 		callback_(std::move(res));
 		objects_.clear();
-		break;
+		return;
 	};
 	if (!res)
 	{

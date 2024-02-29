@@ -123,7 +123,7 @@ rx_result win32_service_host::start_service (int argc, char* argv[], std::vector
 	else
 	{
 		printf("Running as normal process...\r\n");
-		if (initialize_platform(argc, argv, "rx_win32_service"
+		if (initialize_platform(argc, argv, "rx_win32_service", "service"
 			, log::log_subscriber::smart_ptr::null_ptr
 			, host::headless::synchronize_callback_t(), plugins))
 		{
@@ -362,7 +362,7 @@ VOID WINAPI win32_service_host::ServiceMain (DWORD argc, LPSTR* argv)
 
 	OutputDebugStringA(RX_WIN32_SERVICE_HOST " : Initializing application");
 
-	if (win32_service_host::instance().initialize_platform(argc, argv, "rx_win32_service"
+	if (win32_service_host::instance().initialize_platform(argc, argv, "rx_win32_service", "service"
 		, log::log_subscriber::smart_ptr::null_ptr
 		, host::headless::synchronize_callback_t(), win32_service_host::instance().plugins_))
 	{

@@ -141,7 +141,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 #endif
 	RX_ASSERT(host_ = host);
 	host_ = host;
-	rx_name_ = data.meta_configuration.instance_name.empty() ? node_name_ : data.meta_configuration.instance_name;
+	rx_name_ = data.instance.name.empty() ? node_name_ : data.instance.name;
 
 	auto result = rx_internal::infrastructure::server_runtime::instance().initialize(host, data.processor, data.io);
 	if (result)
@@ -175,7 +175,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 						result = rx_internal::discovery::discovery_manager::instance().initialize(host, data);
 						if (result)
 						{
-							result = rx_internal::model::platform_types_manager::instance().initialize(host, data.meta_configuration);
+							result = rx_internal::model::platform_types_manager::instance().initialize(host, data);
 							if (!result)
 							{
 								result.register_error("Error initializing platform types manager!");
@@ -260,7 +260,9 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 		result = rx_internal::discovery::discovery_manager::instance().start(host, data);
 		if (result)
 		{
-			result = rx_internal::model::platform_types_manager::instance().start(host, data.meta_configuration);
+			network_ = rx_internal::discovery::discovery_manager::instance().get_ip4_network().to_string();
+			network_id_ = rx_internal::discovery::discovery_manager::instance().get_network_id();
+			result = rx_internal::model::platform_types_manager::instance().start(host, data);
 			if (result)
 			{
 				platform_status_ = rx_platform_status::running;

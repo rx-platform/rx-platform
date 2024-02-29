@@ -809,6 +809,9 @@ RX_COMMON_API int rx_close_certificate(rx_certificate_t* cert);
 
 RX_COMMON_API rx_os_error_t rx_last_os_error(const char* text, char* buffer, size_t buffer_size);
 
+RX_COMMON_API int rx_base64_get_string(string_value_struct* result, const uint8_t* data, size_t size);
+RX_COMMON_API int rx_base64_get_data(bytes_value_struct* result, const char* data);
+
 /*
 RX_COMMON_API int rx_is_path_reference(const rx_reference_struct* ref);
 RX_COMMON_API int rx_is_id_reference(const rx_reference_struct* ref);

@@ -249,8 +249,6 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 		if (ret)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-			if (config.meta_configuration.instance_name.empty())
-				config.meta_configuration.instance_name = "develop";
 
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls, config.management.debug);
@@ -268,7 +266,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			std::cout << "Instance Name:";
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
-			std::cout << config.meta_configuration.instance_name << "\r\n";
+			std::cout << config.instance.name << "\r\n";
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_RESET;
 			std::cout << "Node Name:";

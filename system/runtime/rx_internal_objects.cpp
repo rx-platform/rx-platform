@@ -217,10 +217,7 @@ rx_result system_object::initialize_runtime (runtime::runtime_init_context& ctx)
     auto result = current_time_.bind("Info.Time", ctx);
     if (result)
     {
-        timer_ = create_timer_function([this]()
-            {
-                current_time_ = rx_time::now();
-            });
+        
     }
 
     ctx.set_item_static("Info.PlatformVer", rx_gate::instance().get_rx_version().c_str());
@@ -234,7 +231,10 @@ rx_result system_object::initialize_runtime (runtime::runtime_init_context& ctx)
 
 rx_result system_object::start_runtime (runtime::runtime_start_context& ctx)
 {
-
+    timer_ = create_timer_function([this]()
+        {
+            current_time_ = rx_time::now();
+        });
     if (timer_)
     {
         timer_->start(200, true);
@@ -309,14 +309,6 @@ rx_result host_object::initialize_runtime (runtime::runtime_init_context& ctx)
     auto result = free_memory_.bind("Info.MemoryFree", ctx);
     if (result)
     {
-        timer_ = create_timer_function([this]()
-            {
-                size_t total = 0;
-                size_t free = 0;
-                size_t process = 0;
-                rx_collect_memory_info(&total, &free, &process);
-                free_memory_ = (uint64_t)free;
-            });
     }
 
 
@@ -325,6 +317,14 @@ rx_result host_object::initialize_runtime (runtime::runtime_init_context& ctx)
 
 rx_result host_object::start_runtime (runtime::runtime_start_context& ctx)
 {
+    timer_ = create_timer_function([this]()
+        {
+            size_t total = 0;
+            size_t free = 0;
+            size_t process = 0;
+            rx_collect_memory_info(&total, &free, &process);
+            free_memory_ = (uint64_t)free;
+        });
     if (timer_)
     {
         timer_->start(5000, true);

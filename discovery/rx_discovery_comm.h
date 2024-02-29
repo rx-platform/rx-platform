@@ -279,9 +279,16 @@ class discovery_register
 
       bool is_this_you (const rx_uuid_t& id);
 
-      const rx_uuid_t& get_identity ();
+      const rx_uuid_t& get_identity () const;
 
       std::vector<io::ip4_address> get_own_addresses (uint16_t port) const;
+
+
+      const io::ip4_address get_multicast_address () const
+      {
+        return multicast_address_;
+      }
+
 
 
   protected:
@@ -305,6 +312,8 @@ class discovery_register
       std::vector<discovered_network_point> system_addresses_;
 
       locks::slim_lock register_lock_;
+
+      io::ip4_address multicast_address_;
 
 
 };

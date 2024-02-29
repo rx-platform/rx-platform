@@ -631,10 +631,25 @@
 #define RX_NS_CHANGED_DATA_EVENT_ID 0xc000050
 
 
+#define RX_HTTP_HOST_NAME_OPTIONS_TYPE_NAME "HttpHostNamePortOptions"
+#define RX_HTTP_HOST_NAME_OPTIONS_TYPE_ID 0xc0000eb
+
+#define RX_NS_HTTP_HOST_NAME_TYPE_NAME "HttpHostNamePort"
+#define RX_NS_HTTP_HOST_NAME_TYPE_ID 0xc0000ea
+
+#define RX_HTTP_PATH_OPTIONS_TYPE_NAME "HttpAddressingPortOptions"
+#define RX_HTTP_PATH_OPTIONS_TYPE_ID 0xc0000e9
+
+#define RX_NS_HTTP_PATH_TYPE_NAME "HttpAddressingPort"
+#define RX_NS_HTTP_PATH_TYPE_ID 0xc0000e8
+
 #define RX_NS_HTTP_TYPE_NAME "HttpProtocol"
 #define RX_NS_HTTP_TYPE_ID 0xc000051
+
 #define RX_NS_HTTP_TCP_NAME "TcpHttp"
 #define RX_NS_HTTP_TCP_ID 0xc000052
+#define RX_NS_HTTP_TRANSP_NAME "HttpTransport"
+#define RX_NS_HTTP_TRANSP_ID 0xc0000ec
 #define RX_NS_HTTP_NAME "Http"
 #define RX_NS_HTTP_ID 0xc000053
 
@@ -701,7 +716,7 @@
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc0000e7!!!! 
+// last is 0xc0000ec!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

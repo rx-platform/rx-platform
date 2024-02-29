@@ -83,11 +83,11 @@ struct io_manager_data_t
 
 struct general_data_t
 {
+    uint16_t rx_port;
 	string_type manuals_path;
     string_type http_path;
     uint16_t http_port;
     uint16_t opcua_port;
-    uint16_t rx_port;
     string_type rx_security;
     string_type py_path;
     std::map<string_type, string_type> certificates;
@@ -113,11 +113,12 @@ struct management_data_t
     string_type startup_script;
 };
 
-struct meta_configuration_data_t
+struct instance_data_t
 {
-    bool build_system_from_code = false;
-    string_type instance_name;
+    string_type name;
     string_type plugin;
+    uint16_t port;
+    string_type group;
 };
 
 
@@ -141,10 +142,11 @@ struct configuration_data_t
 	runtime_data_t processor;
 	management_data_t management;
 	namespace_data_t storage;
-	meta_configuration_data_t meta_configuration;
+	instance_data_t instance;
 	io_manager_data_t io;
 	general_data_t other;
     log_data_t log;
+    bool build_system_from_code = false;
     std::map<string_type, string_type> user_storages;
     std::map<string_type, string_type> system_storages;
 };
@@ -296,6 +298,18 @@ class rx_gate
       }
 
 
+      const string_type& get_network () const
+      {
+        return network_;
+      }
+
+
+      const rx_uuid& get_network_id () const
+      {
+        return network_id_;
+      }
+
+
 
   protected:
 
@@ -344,6 +358,10 @@ class rx_gate
       string_type abi_version_;
 
       string_type common_version_;
+
+      string_type network_;
+
+      rx_uuid network_id_;
 
 
 };

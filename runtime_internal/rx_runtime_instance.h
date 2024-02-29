@@ -35,10 +35,10 @@
 #include "system/runtime/rx_runtime_helpers.h"
 #include "lib/rx_io_addr.h"
 
-// rx_identity
-#include "system/server/rx_identity.h"
 // rx_runtime_data
 #include "system/meta/rx_runtime_data.h"
+// rx_identity
+#include "system/server/rx_identity.h"
 // rx_port_instance
 #include "interfaces/rx_port_instance.h"
 // rx_security
@@ -150,7 +150,7 @@ class domain_instance_data
 
       static rx_result before_init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result before_start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx, tag_blocks::binded_tags* binded);
+      static rx_result before_start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx);
 
       static rx_result after_deinit_runtime (rx_domain_ptr what, runtime::runtime_deinit_context& ctx);
 
@@ -224,7 +224,7 @@ class application_instance_data
 
       static rx_result before_init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx);
 
-      static rx_result before_start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx, tag_blocks::binded_tags* binded);
+      static rx_result before_start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx);
 
       static rx_result after_deinit_runtime (rx_application_ptr what, runtime::runtime_deinit_context& ctx);
 

@@ -99,6 +99,13 @@ rx_result rx_system_info_response::serialize (base_meta_writer& stream) const
         if (!stream.write_string("common", common.c_str()))
             return stream.get_error();
     }
+    if (stream.get_version() >= RX_NETWORK_ID_VERSION)
+    {
+        if(!stream.write_string("network", network.c_str()))
+            return stream.get_error();
+        if(!stream.write_uuid("net_id", network_id))
+            return stream.get_error();
+    }
     if (!stream.end_object())
         return stream.get_error();
     return true;
@@ -149,6 +156,13 @@ rx_result rx_system_info_response::deserialize (base_meta_reader& stream)
         if (!stream.read_string("common", common))
             return stream.get_error();
     }
+    if (stream.get_version() >= RX_NETWORK_ID_VERSION)
+    {
+        if(!stream.read_string("network", network))
+            return stream.get_error();
+        if(!stream.read_uuid("net_id", network_id))
+            return stream.get_error();
+    }
     if (!stream.end_object())
         return stream.get_error();
     return true;
@@ -190,6 +204,8 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
     response->request_id = request_id;
     response->instance = rx_gate::instance().get_instance_name();
     response->node = rx_gate::instance().get_node_name();
+    response->network = rx_gate::instance().get_network();
+    response->network_id = rx_gate::instance().get_network_id();
     response->platform = rx_gate::instance().get_rx_version();
     response->library = rx_gate::instance().get_lib_version();
     response->abi = rx_gate::instance().get_abi_version();

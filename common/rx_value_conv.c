@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -1931,7 +1931,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 				{
 					const char* str = rx_c_str(&what->string_value);
 					rx_node_id_struct temp;
-					auto ret = rx_node_id_from_string(&temp, str);
+					int ret = rx_node_id_from_string(&temp, str);
 					if (ret == RX_OK)
 					{
 						rx_destory_string_value_struct(&what->string_value);
@@ -1950,13 +1950,55 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 		}
 		break;
 	case RX_BYTES_TYPE:
+		{
+			switch (source)
+			{
+				case RX_NULL_TYPE:
+					rx_init_bytes_value_struct(&what->bytes_value, NULL, 0);
+					return RX_OK;
+				case RX_BOOL_TYPE:
+				case RX_INT16_TYPE:
+				case RX_INT32_TYPE:
+				case RX_INT64_TYPE:
+				case RX_UINT8_TYPE:
+				case RX_UINT16_TYPE:
+				case RX_UINT32_TYPE:
+				case RX_UINT64_TYPE:
+				case RX_FLOAT_TYPE:
+				case RX_DOUBLE_TYPE:
+				case RX_TIME_TYPE:
+				case RX_COMPLEX_TYPE:
+				case RX_UUID_TYPE:
+					return RX_ERROR;
+				case RX_STRING_TYPE:
+					{
+						bytes_value_struct data;
+						const char* str = rx_c_str(&what->string_value);
+						int ret = rx_base64_get_data(&data, str);
+						if(ret!=RX_OK)
+							return RX_ERROR;
+
+						rx_destory_string_value_struct(&what->string_value);
+						what->bytes_value = data;
+						return RX_OK;
+					}
+				case RX_BYTES_TYPE:
+				case RX_STRUCT_TYPE:
+				case RX_NODE_ID_TYPE:
+					return RX_ERROR;
+			}
+		}
+		break;
 	case RX_STRUCT_TYPE:
 		{
 			switch (source)
 			{
 			case RX_NULL_TYPE:
-				rx_init_bytes_value_struct(&what->bytes_value, NULL, 0);
-				return RX_OK;
+				{
+					what->struct_value.size = 0;
+					what->struct_value.values = NULL;
+					return RX_OK;
+				}
 			case RX_BOOL_TYPE:
 			case RX_INT16_TYPE:
 			case RX_INT32_TYPE:
@@ -1973,7 +2015,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 				return RX_ERROR;
 			case RX_STRING_TYPE:
 				{
-					// TODO string to bytes
+					// TODO string to struct
 					RX_ASSERT(0);
 					return RX_ERROR;
 				}

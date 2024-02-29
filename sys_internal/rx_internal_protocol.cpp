@@ -1051,6 +1051,7 @@ message_ptr rx_server_connection::set_context (api::rx_context ctx, const messag
 	response->directory = get_current_directory_path();
 	response->stream_version = get_stream_version();
 	response->mode = req.mode;
+	response->network_id = rx_gate::instance().get_network_id();
 	return response;
 }
 

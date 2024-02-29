@@ -424,11 +424,11 @@ public:
 
       rx_result delete_type (rx_node_id id);
 
-      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
 
       void deinitialize ();
 
-      rx_result start (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& data);
 
       api::query_result get_instanced_objects (const rx_node_id& id) const;
 
@@ -521,7 +521,7 @@ public:
 
       rx_result type_exists (rx_node_id id) const;
 
-      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
 
       void deinitialize ();
 
@@ -530,6 +530,8 @@ public:
       bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
 
       rx_result register_peer_type (rx_reference<discovery::peer_item> what);
+
+      rx_result delete_peer_type (const rx_node_id& id);
 
 
   protected:
@@ -701,7 +703,7 @@ public:
 
       rx_result delete_type (rx_node_id id);
 
-      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
 
       void deinitialize ();
 
@@ -782,7 +784,7 @@ public:
 
       rx_result delete_type (rx_node_id id);
 
-      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
 
       void deinitialize ();
 
@@ -920,11 +922,11 @@ class platform_types_manager
 
       static platform_types_manager& instance ();
 
-      rx_result initialize (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
 
       void deinitialize ();
 
-      rx_result start (hosting::rx_platform_host* host, const meta_configuration_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& data);
 
       void stop ();
 

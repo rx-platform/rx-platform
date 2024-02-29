@@ -34,10 +34,10 @@
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -220,6 +220,8 @@ command for querying status of network interfaces");
   private:
 
       bool do_eth_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+      bool do_list_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
 
 

@@ -152,11 +152,11 @@ void model_transactions_executer::add_transaction (meta_transaction_ptr_t what)
     transactions_.emplace_back(what);
 }
 
-void model_transactions_executer::execute (rx_platform::rx_result_callback callback)
+void model_transactions_executer::execute ()
 {
     if (state_ != executer_phase::idle)
     {
-        callback(RX_INVALID_STATE);
+        callback_(RX_INVALID_STATE);
         return;
     }
     // consolidate directories and meta data
@@ -226,7 +226,7 @@ void model_transactions_executer::process (rx_result result)
         [[fallthrough]];
     case executer_phase::done:
         callback_(std::move(res));
-        break;
+        return;
     };
     if (!res)
     {

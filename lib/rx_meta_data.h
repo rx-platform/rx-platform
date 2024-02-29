@@ -225,6 +225,8 @@ rx_item_type rx_parse_type_name(const string_type name);
 
 
 
+extern rx_uuid running_at_local;
+extern rx_uuid running_shared;
 
 
 
@@ -295,6 +297,8 @@ class meta_data
       uint32_t version;
 
       namespace_item_attributes attributes;
+
+      rx_uuid running_at;
 
 
   protected:

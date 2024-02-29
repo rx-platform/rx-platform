@@ -65,9 +65,9 @@ int parse_uint32(const char* str, uint32_t* val);
 
 RX_COMMON_API int rx_init_string_value_struct(string_value_struct* data, const char* val, int count)
 {
-	if (val)
+	if (count < 0)
 	{
-		if (count < 0)
+		if (val)
 		{
 			size_t len = strlen(val) + 1;
 			data->size = len - 1;
@@ -87,7 +87,14 @@ RX_COMMON_API int rx_init_string_value_struct(string_value_struct* data, const c
 			}
 		}
 		else
-		{// this might be non null terminated string
+		{
+			memzero(data, sizeof(string_value_struct));
+		}
+	}
+	else
+	{// this might be non null terminated string
+		if (val)
+		{
 			size_t len = count;
 			int has_null = count > 0 && val[count - 1] == '\0';
 			if (!has_null)
@@ -102,7 +109,7 @@ RX_COMMON_API int rx_init_string_value_struct(string_value_struct* data, const c
 			if (len <= sizeof(data->value))
 			{// optimize string
 				memcpy(&data->value, val, len);
-				if(!has_null)
+				if (!has_null)
 					((char*)&data->value)[len - 1] = '\0';
 			}
 			else
@@ -118,11 +125,27 @@ RX_COMMON_API int rx_init_string_value_struct(string_value_struct* data, const c
 					data->value[len - 1] = '\0';
 			}
 		}
+		else
+		{
+			size_t len = count + 1;// null terminator
+			if (len <= sizeof(data->value))
+			{// optimize string
+				memzero(&data->value, len);
+			}
+			else
+			{
+				data->value = malloc(len);
+				if (data->value == NULL)
+				{
+					data->size = 0;
+					return RX_ERROR;
+				}
+				memzero(data->value, len);
+			}
+			data->size = count;
+		}
 	}
-	else
-	{
-		memzero(data, sizeof(string_value_struct));
-	}
+
 	return RX_OK;
 }
 RX_COMMON_API const char* rx_c_str(const string_value_struct* data)
@@ -171,7 +194,7 @@ RX_COMMON_API int rx_init_bytes_value_struct(bytes_value_struct* data, const uin
 	if (bytes && len)
 	{
 		data->size = len;
-		if (len < sizeof(data->value))
+		if (len <= sizeof(data->value))
 		{// optimize string
 			memcpy(&data->value, bytes, len);
 		}
@@ -188,7 +211,28 @@ RX_COMMON_API int rx_init_bytes_value_struct(bytes_value_struct* data, const uin
 	}
 	else
 	{
-		memzero(data, sizeof(bytes_value_struct));
+		if (len && bytes == NULL)
+		{
+			data->size = len;
+			if (len <= sizeof(data->value))
+			{// optimize string
+				memzero(&data->value, len);
+			}
+			else
+			{
+				data->value = malloc(len);
+				if (data->value == NULL)
+				{
+					data->size = 0;
+					return RX_ERROR;
+				}
+				memzero(data->value, len);
+			}
+		}
+		else
+		{
+			memzero(data, sizeof(bytes_value_struct));
+		}
 	}
 	return RX_OK;
 }

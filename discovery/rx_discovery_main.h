@@ -105,6 +105,65 @@ struct peer_endpoint
 
 
 
+class discovery_manager 
+{
+
+  public:
+      discovery_manager();
+
+      ~discovery_manager();
+
+
+      static discovery_manager& instance ();
+
+      void clear ();
+
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& config);
+
+      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& config);
+
+      void stop ();
+
+      void deinitialize ();
+
+      std::vector<peer_endpoint> get_peers ();
+
+      peer_connection_ptr get_peer (const rx_uuid& id);
+
+      uint32_t subscribe_to_port (std::function<void(uint16_t)> callback, rx_reference_ptr anchor);
+
+      void unsubscribe_from_port (uint32_t id);
+
+      std::vector<discovery::discovered_peer_data> get_peers_network ();
+
+      void peer_registered (const rx_uuid& id, string_view_type instance, string_view_type node, const io::ip4_address& from);
+
+      void peer_unregistered (const rx_uuid& id);
+
+      io::ip4_address get_ip4_network () const;
+
+      rx_uuid get_network_id () const;
+
+
+  protected:
+
+  private:
+
+
+      discovery_register peers_register_;
+
+
+      static std::unique_ptr<discovery_manager> g_obj;
+
+
+};
+
+
+
+
+
+
+
 class peer_connection : public rx_protocol::rx_protocol_client_user  
 {
     DECLARE_REFERENCE_PTR(peer_connection);
@@ -115,12 +174,14 @@ class peer_connection : public rx_protocol::rx_protocol_client_user
     typedef std::map<string_type, peer_item_ptr> cached_paths_type;
 
   public:
-      peer_connection (peer_endpoint endpoint);
+      peer_connection (string_view_type name, const io::ip4_address& addr);
 
       ~peer_connection();
 
 
-      rx_result build (hosting::rx_platform_host* host, configuration_data_t& config, uint32_t id);
+      rx_result build (const rx_uuid& id);
+
+      rx_result destroy ();
 
       rx_result send_request (rx_transaction_ptr trans, uint32_t timeout);
 
@@ -156,6 +217,9 @@ class peer_connection : public rx_protocol::rx_protocol_client_user
 
   private:
 
+      void remove_peer_item_sync (peer_item_ptr item);
+
+
 
       peer_endpoint endpoint_;
 
@@ -172,61 +236,7 @@ class peer_connection : public rx_protocol::rx_protocol_client_user
 
       locks::slim_lock items_lock_;
 
-
-};
-
-
-
-
-
-
-
-class discovery_manager 
-{
-    typedef std::map<string_type, peer_connection_ptr> connections_type;
-
-  public:
-      discovery_manager();
-
-      ~discovery_manager();
-
-
-      static discovery_manager& instance ();
-
-      void clear ();
-
-      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& config);
-
-      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& config);
-
-      void stop ();
-
-      void deinitialize ();
-
-      std::vector<peer_endpoint> get_peers ();
-
-      peer_connection_ptr get_peer (const string_type& name);
-
-      uint32_t subscribe_to_port (std::function<void(uint16_t)> callback, rx_reference_ptr anchor);
-
-      void unsubscribe_from_port (uint32_t id);
-
-      std::vector<discovery::discovered_peer_data> get_peers_network ();
-
-
-  protected:
-
-  private:
-
-
-      connections_type connections_;
-
-      discovery_register peers_register_;
-
-
-      static std::unique_ptr<discovery_manager> g_obj;
-
-      static std::atomic<uint32_t> g_next_id;
+      std::array<rx_node_id, 5> ids_;
 
 
 };

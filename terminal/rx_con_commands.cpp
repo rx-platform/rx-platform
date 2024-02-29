@@ -245,6 +245,12 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	table.back().emplace_back("Node", col_prefix, ANSI_COLOR_RESET);
 	table.back().emplace_back(rx_get_node_name(), color_prefix, ANSI_COLOR_RESET);
 	table.emplace_back(rx_row_type());
+	table.back().emplace_back("Network", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(rx_gate::instance().get_network(), color_prefix, ANSI_COLOR_RESET);
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("Network Id", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(rx_gate::instance().get_network_id().to_string(), color_prefix, ANSI_COLOR_RESET);
+	table.emplace_back(rx_row_type());
 	table.back().emplace_back("Engine", col_prefix, ANSI_COLOR_RESET);
 	table.back().emplace_back(rx_gate::instance().get_rx_version(), color_prefix, ANSI_COLOR_RESET);
 	if (show_all)
@@ -308,7 +314,7 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 		<< "MiB/ Free "
 		<< (int)(free / 1048576ull)
 		<< "MiB";
-	ss << "/ Page " << (int)rx_os_page_size() << " bytes\r\n";
+	ss << "/ Page " << (int)rx_os_page_size() << " bytes";
 
 
 	table.emplace_back(rx_row_type());
@@ -316,7 +322,22 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	table.back().emplace_back(ss.str(), color_prefix, ANSI_COLOR_RESET);
 
 	rx_dump_table(table, out, false, true);
+#ifdef _DEBUG
+	std::ostringstream verstream;
+	dump_version(table, verstream);
 
+	sys_handle_t file = rx_file("rx-platform.json", RX_FILE_OPEN_WRITE, RX_FILE_CREATE_ALWAYS);
+	if (file)
+	{
+		string_type buffer(verstream.str());
+		if (RX_OK != rx_file_write(file, &buffer[0], (uint32_t)buffer.size(), nullptr))
+		{
+
+		}
+		rx_file_close(file);
+	}
+#endif
+						
 	//sprintf(buff, "Total:")
 	//out << "Memory: Total "
 	//	<< (int)(total / 1048576ull)
@@ -328,7 +349,37 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	///////////////////////////////////////////////////////////////////////////
 	//out << "Page size: " << (int)rx_os_page_size() << " bytes\r\n";
 
+	out << "\r\n";
+
 	return true;
+}
+
+void rx_name_command::dump_version (const rx_table_type& table, std::ostream& out)
+{
+	bool first = true;
+	out << "{";
+	int idx = 0;
+	for (const auto& row : table)
+	{
+		if (idx == 2
+			|| idx == 3
+			|| idx == 5
+			|| idx == 6)
+		{
+			if (first)
+				first = false;
+			else
+				out << ",";
+
+			out << "\r\n\t\""
+				<< row[0].value
+				<< "\" : \""
+				<< row[1].value
+				<< "\"";
+		}
+		idx++;
+	}
+	out << "\r\n}";
 }
 
 

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -106,7 +106,7 @@ void discovery_point::socket_holder_t::disconnect()
     initiate_shutdown();
 }
 
-// Class rx_internal::discovery::discovery_point 
+// Class rx_internal::discovery::discovery_point
 
 discovery_point::discovery_point()
       : my_register_(nullptr),
@@ -519,10 +519,16 @@ void discovery_point::deactivate ()
                 rx_discovery_header_t* phead = buffer->get_buffer<rx_discovery_header_t>();
                 phead->size = (uint16_t)(buffer->get_size());
 
-                ret = send_broadcast(buffer);
+
+                io::ip4_address addr("127.0.0.1", default_port_);
+                ret = local_socket_ptr_->write(buffer, addr.get_address(), sizeof(sockaddr_in));
                 if (ret)
-                    send_broadcast(buffer_ptr());
+                    local_socket_ptr_->write(buffer_ptr(), addr.get_address(), sizeof(sockaddr_in));
             }
+        }
+        break;
+    default:
+        {
         }
         break;
     }
@@ -910,7 +916,7 @@ rx_result discovery_point::open_sockets (uint16_t port)
 }
 
 
-// Class rx_internal::discovery::discovery_register 
+// Class rx_internal::discovery::discovery_register
 
 discovery_register::discovery_register()
       : identity_(rx_uuid::create_new()),
@@ -936,7 +942,7 @@ bool discovery_register::is_this_you (const rx_uuid_t& id)
     return identity_ == rx_uuid(id);
 }
 
-const rx_uuid_t& discovery_register::get_identity ()
+const rx_uuid_t& discovery_register::get_identity () const
 {
     return identity_;
 }
@@ -953,7 +959,7 @@ std::vector<io::ip4_address> discovery_register::get_own_addresses (uint16_t por
 }
 
 
-// Class rx_internal::discovery::discovered_peer_data 
+// Class rx_internal::discovery::discovered_peer_data
 
 bool discovered_peer_data::operator==(const discovered_peer_data &right) const
 {

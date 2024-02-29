@@ -32,6 +32,7 @@
 
 #include "system/runtime/rx_holder_algorithms.h"
 #include "system/meta/rx_obj_types.h"
+#include "sys_internal/rx_internal_ns.h"
 
 // rx_discovery_main
 #include "discovery/rx_discovery_main.h"
@@ -50,6 +51,7 @@ peer_item::peer_item (rx_item_type t, meta_data m, peer_connection_ptr conn)
       : type(t),
         meta(std::move(m)),
         connection(std::move(conn))
+    , security_guard_(rx_create_reference<security::security_guard>(meta, security::rx_security_null))
 {
     DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer item "s + meta.get_full_path() + " created.");
 }
@@ -60,6 +62,17 @@ peer_item::~peer_item()
 	DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer item "s + meta.get_full_path() + " destroyed.");
 }
 
+
+
+security::security_guard_ptr peer_item::get_security_guard ()
+{
+    return security_guard_;
+}
+
+platform_item_ptr peer_item::get_item_ptr () const
+{
+    return std::make_unique<internal_ns::rx_proxy_item_implementation<peer_item_ptr> >(smart_this());
+}
 
 
 // Class rx_internal::discovery::peer_item_stub 

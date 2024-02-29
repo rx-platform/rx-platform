@@ -268,6 +268,10 @@ bool net_command::do_console_command (std::istream& in, std::ostream& out, std::
 		err << "No sub command specified!";
 		return false;
 	}
+	if (sub_command == "list")
+	{
+		return do_list_command(in, out, err, ctx);
+	}
 	if (sub_command == "eth")
 	{
 		return do_eth_command(in, out, err, ctx);
@@ -314,6 +318,12 @@ bool net_command::do_eth_command (std::istream& in, std::ostream& out, std::ostr
 		free(interfaces);
 	}
 	return true;
+}
+
+bool net_command::do_list_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	err << RX_NOT_IMPLEMENTED;
+	return false;
 }
 
 

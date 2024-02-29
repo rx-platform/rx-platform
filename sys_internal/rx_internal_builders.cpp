@@ -229,7 +229,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	if (!errors)
 		return errors;
 
-	auto sys_builders = get_system_builders(config.storage, config.meta_configuration, host);
+	auto sys_builders = get_system_builders(config, host);
 	auto user_builders = get_user_builders(config.storage, host);
 	auto test_builders = get_test_builders(config.storage, host);
 	auto other_builders = get_other_builders(config.storage, host);
@@ -258,7 +258,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	else
 		return errors;
 
-	if (config.meta_configuration.build_system_from_code)
+	if (config.build_system_from_code)
 	//@@@@STUPID but have to be turned off for a while, hence the @'s :)
 	{
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Building host items...");
@@ -288,9 +288,9 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 			auto info = (*it_plugin)->get_plugin_info();
 			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + (*it_plugin)->get_plugin_name() + " [" + info.plugin_version + "]..."s));
 			string_type root_path(RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_PLUGINS_NAME RX_DIR_DELIMETER_STR);
-			if (!config.meta_configuration.plugin.empty())
+			if (!config.instance.plugin.empty())
 			{
-				if ((*it_plugin)->get_plugin_name() != config.meta_configuration.plugin)
+				if ((*it_plugin)->get_plugin_name() != config.instance.plugin)
 				{
 					it_plugin = rx_internal::plugins::plugins_manager::instance().get_plugins().erase(it_plugin);
 					continue;
@@ -342,9 +342,9 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		{
 			auto info = (*it_plugin)->get_plugin_info();
 			BUILD_LOG_INFO("rx_platform_builder", 900, ("Found plugin "s + (*it_plugin)->get_plugin_name() + " [" + info.plugin_version + "]..."s));
-			if (!config.meta_configuration.plugin.empty())
+			if (!config.instance.plugin.empty())
 			{
-				if ((*it_plugin)->get_plugin_name() != config.meta_configuration.plugin)
+				if ((*it_plugin)->get_plugin_name() != config.instance.plugin)
 				{
 					BUILD_LOG_INFO("rx_platform_builder", 900, ("Skipping plugin "s + (*it_plugin)->get_plugin_name() + " [" + info.plugin_version + "]..."s));
 					it_plugin = rx_internal::plugins::plugins_manager::instance().get_plugins().erase(it_plugin);
@@ -406,12 +406,12 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	return true;
 }
 
-std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_system_builders (namespace_data_t& data, const meta_configuration_data_t& meta_data, hosting::rx_platform_host* host)
+std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_system_builders (const configuration_data_t& data, hosting::rx_platform_host* host)
 {
 	std::vector<std::unique_ptr<rx_platform_builder> > builders;
 	// create system folder structure
 	builders.emplace_back(std::make_unique<root_folder_builder>(host));
-	if (meta_data.build_system_from_code)
+	if (data.build_system_from_code)
 	{
 		// types builders
 		builders.emplace_back(std::make_unique<basic_types_builder>());
@@ -1153,6 +1153,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		port->complex_data.register_struct("Connect", RX_OPCUA_ENDPOINT_DATA_ID);
+		port->complex_data.register_struct("Status", RX_CLIENT_PORT_STATUS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1162,6 +1163,27 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		add_type_to_configuration(dir, port, false);
+		
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_NS_HTTP_HOST_NAME_TYPE_NAME
+			, RX_NS_HTTP_HOST_NAME_TYPE_ID
+			, RX_CONN_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_HTTP_PATH_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_NS_HTTP_PATH_TYPE_NAME
+			, RX_NS_HTTP_PATH_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_HTTP_PATH_OPTIONS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -2211,6 +2233,31 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		what->complex_data.register_const_value_static<bool>("Reverse", false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
+		
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_HTTP_PATH_OPTIONS_TYPE_NAME
+			, RX_HTTP_PATH_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static<uint32_t>("MaxPacket", 0x10000, false, true);
+		what->complex_data.register_const_value_static<uint8_t>("PathParts", 1);
+		what->complex_data.register_const_value_static<bool>("UseHostName", false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_HTTP_HOST_NAME_OPTIONS_TYPE_NAME
+			, RX_HTTP_HOST_NAME_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static<uint32_t>("MaxPacket", 0x10000, false, true);
+		what->complex_data.register_const_value_static<uint8_t>("PathParts", 1);
+		what->complex_data.register_const_value_static<bool>("UseHostName", false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
 			TLS_PORT_OPTIONS_TYPE_NAME
@@ -2516,13 +2563,22 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 300000);
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
+		port_instance_data.meta_info.name = RX_NS_HTTP_TRANSP_NAME;
+		port_instance_data.meta_info.id = RX_NS_HTTP_TRANSP_ID;
+		port_instance_data.meta_info.parent = RX_NS_HTTP_PATH_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_HTTP_TCP_NAME);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
 		port_instance_data.meta_info.name = RX_NS_HTTP_NAME;
 		port_instance_data.meta_info.id = RX_NS_HTTP_ID;
 		port_instance_data.meta_info.parent = RX_NS_HTTP_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
-		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_HTTP_TCP_NAME);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_HTTP_TRANSP_NAME);
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUA_TCP_NAME;

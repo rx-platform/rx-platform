@@ -94,9 +94,12 @@ bool headless_platform_host::break_host (const string_type& msg)
 	return true;
 }
 
-int headless_platform_host::initialize_platform (int argc, char* argv[], const char* help_name, log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins)
+int headless_platform_host::initialize_platform (int argc, char* argv[], const char* instance_name, const char* help_name, log::log_subscriber::smart_ptr log_subscriber, synchronize_callback_t sync_callback, std::vector<library::rx_plugin_base*>& plugins)
 {
 	rx_thread_data_t tls = rx_alloc_thread_data();
+
+	if(instance_name)
+		host_instance_ = instance_name;
 
 	debug_break_ = false;
 
@@ -117,8 +120,8 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 		{
 			std::cout << "OK\r\n";
 
-			if (config_.meta_configuration.instance_name.empty())
-				config_.meta_configuration.instance_name = rx_get_node_name();
+			if (config_.instance.name.empty())
+				config_.instance.name = instance_name;
 
 			std::cout << "Initializing OS interface...";
 			rx_initialize_os(config_.processor.real_time, !config_.processor.no_hd_timer, tls, config_.management.debug);
@@ -465,6 +468,14 @@ int headless_platform_host::stop_platform ()
 rx_result headless_platform_host::register_constructors ()
 {
 	return true;
+}
+
+string_type headless_platform_host::get_host_instance ()
+{
+	if (!host_instance_.empty())
+		return host_instance_;
+	else
+		return rx_platform::hosting::rx_platform_host::get_host_instance();
 }
 
 

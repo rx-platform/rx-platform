@@ -44,6 +44,7 @@
 #include "model/rx_model_dependencies.h"
 #include "model/rx_model_transactions.h"
 #include "system/server/rx_directory_cache.h"
+#include "discovery/rx_discovery_items.h"
 
 #define RX_NEW_SYMBOL_LOG_PREFIX_STR "#"s
 
@@ -441,6 +442,39 @@ rx_result delete_some_type(typeCache& cache, const rx_item_reference& rx_item_re
 		META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::type_id) + " "s + item.get_meta().get_full_path());
 	return true;
 }
+
+template<class typeCache>
+rx_result delete_some_peer_type(typeCache& cache, discovery::peer_item_ptr what, rx_transaction_type& transaction)
+{
+	rx_node_id id = what->meta.id;
+	string_type name = what->meta.name;
+	rx_directory_ptr dir = rx_gate::instance().get_directory(what->meta.path);
+	if (!dir)
+		return RX_INVALID_PATH;
+
+	auto ret = dir->delete_item(name);
+	if (!ret)
+	{// error, didn't deleted runtime
+		ret.register_error("Error deleting type from the namespace.");
+		return ret;
+	}
+	rx_namespace_item item(what->get_item_ptr());
+
+	transaction.push([dir, item]() mutable {
+		auto add_result = dir->add_item(item);
+		});
+	ret = cache.delete_peer_type(id);
+	if (!ret)
+	{// error, didn't delete runtime
+		ret.register_error("Error deleting type from the repository.");
+		return ret;
+	}
+	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+		META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::type_id) + " "s + item.get_meta().get_full_path());
+	else
+		META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::type_id) + " "s + item.get_meta().get_full_path());
+	return true;
+}
 template<class typeCache, class typeType>
 rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, rx_transaction_type& transaction)
 {
@@ -515,6 +549,60 @@ rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, 
 		META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::type_id) + " "s + prototype->meta_info.get_full_path());
 
 	return prototype;
+}
+
+template<class typeCache>
+rx_result create_some_peer_type(typeCache& cache, discovery::peer_item_ptr what, rx_transaction_type& transaction)
+{
+	rx_node_id item_id = what->meta.id;
+	string_type type_name = what->meta.name;
+	string_type path = what->meta.path;
+
+
+	auto dir_ret = rx_directory_cache::instance().get_or_create_directory(path);
+
+	if (!dir_ret)
+		return path + " error opening dir:" + dir_ret.errors_line();
+	
+	auto dir = dir_ret.move_value();
+
+	auto dir_result = dir->reserve_name(type_name);
+	if (!dir_result)
+		return dir_result.errors();
+
+	transaction.push([=]() mutable {
+		auto cancel_reserve = dir->cancel_reserve(type_name);
+		});
+
+	auto ret = cache.register_peer_type(what);
+	if (!ret)
+	{// error, didn't created runtime
+		ret.register_error("Unable to register type to repository.");
+		return ret.errors();
+	}
+	transaction.push([&cache, item_id]() mutable {
+		auto delete_result = cache.delete_peer_type(item_id);
+		});
+	ret = dir->add_item(what->get_item_ptr());
+	if (!ret)
+	{
+		// error, can't add this name
+		ret.register_error("Unable to add "s + type_name + " to directory!");
+		return ret.errors();
+	}
+	else if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	{
+		transaction.push([=]() mutable {
+			auto remove_result = dir->delete_item(type_name);
+			});
+		// we have to do save, we are running
+
+		META_LOG_INFO("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::type_id) + " "s + what->meta.get_full_path());
+	}
+	else
+		META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::type_id) + " "s + what->meta.get_full_path());
+	
+	return true;
 }
 template<class typeCache, class typeT>
 rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_update_type_data update_data, rx_transaction_type& transaction)
@@ -991,7 +1079,7 @@ void types_model_algorithm<typeT>::delete_type (const rx_item_reference& item_re
 			{
 				auto executer = rx_create_reference<transactions::model_transactions_executer>(std::move(callback));
 				executer->add_transaction(std::make_unique<transactions::delete_type_transaction<typeT> >(info));
-				executer->execute(std::move(callback));
+				executer->execute();
 			}
 			else
 			{
@@ -1213,6 +1301,38 @@ rx_result_with<check_type_result> simple_types_model_algorithm<typeT>::check_typ
 	return ret;
 }
 
+template <class typeT>
+rx_result simple_types_model_algorithm<typeT>::create_peer_type_sync (rx_reference<discovery::peer_item> what)
+{
+	rx_transaction_type transaction;
+	auto result = create_some_peer_type(
+		platform_types_manager::instance().get_simple_type_repository<typeT>(), what, transaction);
+
+	if (result)
+	{
+		transaction.commit();
+	}
+	return result;
+}
+
+template <class typeT>
+rx_result simple_types_model_algorithm<typeT>::update_peer_type_sync (rx_reference<discovery::peer_item> what)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+template <class typeT>
+rx_result simple_types_model_algorithm<typeT>::delete_peer_type_sync (rx_reference<discovery::peer_item> what)
+{
+	rx_transaction_type transaction;
+	auto result = delete_some_peer_type(platform_types_manager::instance().get_simple_type_repository<typeT>(), what, transaction);
+	if (result)
+	{
+		transaction.commit();
+	}
+	return result;
+}
+
 
 // Parameterized Class rx_internal::model::algorithms::runtime_model_algorithm 
 
@@ -1432,7 +1552,7 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 	///////////////////////////////////////////////////////////////////////////
 	// now prepare runtime for creations
 	auto create_result = create_some_runtime(platform_types_manager::instance().get_type_repository<typeT>()
-		, std::move(instance_data), std::move(runtime_data), transaction, temp);
+		, instance_data, std::move(runtime_data), transaction, temp);
 
 	if (!create_result)
 	{
@@ -1531,9 +1651,7 @@ void runtime_model_algorithm<typeT>::update_runtime_with_depends_sync (instanceT
 				else
 					callback(builder_ptr->extract_single_result<typeT>());
 				});
-			auto ret = builder_ptr->apply_items(std::move(my_callback));
-			if(!ret)
-				callback(ret.errors());
+			builder_ptr->apply_items(std::move(my_callback));
 
 		}
 	}

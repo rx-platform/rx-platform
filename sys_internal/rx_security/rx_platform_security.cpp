@@ -463,7 +463,7 @@ rx_result_with<security::security_context_ptr> none_security_provider::create_sy
 
 rx_result_with<security::security_context_ptr> none_security_provider::create_world_context (hosting::rx_platform_host* host, configuration_data_t& data)
 {
-    security::security_context_ptr ret = rx_create_reference<process_context>(data.meta_configuration.instance_name);
+    security::security_context_ptr ret = rx_create_reference<process_context>(data.instance.name);
     return ret;
 }
 

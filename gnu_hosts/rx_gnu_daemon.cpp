@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -42,7 +42,7 @@ bool g_forked_daemon = false;
 
 namespace gnu {
 
-// Class gnu::gnu_daemon_host 
+// Class gnu::gnu_daemon_host
 
 gnu_daemon_host::gnu_daemon_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
       : stop_(false),
@@ -110,7 +110,7 @@ int gnu_daemon_host::daemon_main (int argc, char* argv[], std::vector<library::r
 
 int gnu_daemon_host::headless_main (int argc, char* argv[], std::vector<library::rx_plugin_base*>& plugins)
 {
-    rx_result result = initialize_platform(argc, argv, RX_GNU_DAEMON_HOST
+    rx_result result = initialize_platform(argc, argv, "daemon", RX_GNU_DAEMON_HOST
         , log::log_subscriber::smart_ptr::null_ptr
         , host::headless::synchronize_callback_t(), plugins);
     if(result)

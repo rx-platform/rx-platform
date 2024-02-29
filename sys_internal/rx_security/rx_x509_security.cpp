@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -55,7 +55,7 @@ namespace
 string_type g_cert_security_name = RX_CERT_SECURITY_NAME;
 }
 
-// Class rx_internal::rx_security::certificate_security_provider 
+// Class rx_internal::rx_security::certificate_security_provider
 
 
 const string_type& certificate_security_provider::get_name ()
@@ -128,7 +128,7 @@ rx_result_with<security::security_context_ptr> certificate_security_provider::cr
 }
 
 
-// Class rx_internal::rx_security::x509_security_context 
+// Class rx_internal::rx_security::x509_security_context
 
 x509_security_context::x509_security_context()
 {
@@ -224,7 +224,7 @@ rx_result x509_security_context::deserialize (base_meta_reader& stream)
 }
 
 
-// Class rx_internal::rx_security::x509_certificates 
+// Class rx_internal::rx_security::x509_certificates
 
 x509_certificates::x509_certificates()
 {
@@ -306,7 +306,7 @@ rx_result_with<x509_certificate_ptr> x509_certificates::get_certificate (const s
 }
 
 
-// Class rx_internal::rx_security::x509_certificate 
+// Class rx_internal::rx_security::x509_certificate
 
 x509_certificate::x509_certificate()
 {

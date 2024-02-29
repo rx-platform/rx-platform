@@ -368,6 +368,12 @@ class simple_types_model_algorithm
 
       static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
+      static rx_result create_peer_type_sync (rx_reference<discovery::peer_item> what);
+
+      static rx_result update_peer_type_sync (rx_reference<discovery::peer_item> what);
+
+      static rx_result delete_peer_type_sync (rx_reference<discovery::peer_item> what);
+
 
   protected:
 

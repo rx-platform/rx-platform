@@ -159,7 +159,7 @@ class model_transactions_executer : public rx::pointers::reference_object
 
       void add_transaction (meta_transaction_ptr_t what);
 
-      void execute (rx_platform::rx_result_callback callback);
+      void execute ();
 
       void process (rx_result result);
 

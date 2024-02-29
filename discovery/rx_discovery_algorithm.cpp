@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -52,7 +52,7 @@ bool should_be_cached(rx_item_type type)
 	return type != rx_directory;
 }
 
-// Class rx_internal::discovery::peer_directory_algorithm 
+// Class rx_internal::discovery::peer_directory_algorithm
 
 peer_directory_algorithm::peer_directory_algorithm()
 {
@@ -112,7 +112,7 @@ void peer_directory_algorithm::do_browse (peer_connection_ptr whose, const strin
 }
 
 
-// Class rx_internal::discovery::peer_refresh_algorithm 
+// Class rx_internal::discovery::peer_refresh_algorithm
 
 peer_refresh_algorithm::peer_refresh_algorithm()
 {
@@ -164,24 +164,25 @@ void peer_refresh_algorithm::item_changed (const rx_node_id& id, const string_ty
 }
 
 
-// Class rx_internal::discovery::peer_discovery_algorithms 
+// Class rx_internal::discovery::peer_discovery_algorithms
 
 
 rx_result peer_discovery_algorithms::start_register (discovery_register& who, hosting::rx_platform_host* host, const configuration_data_t& config)
 {
 	auto ips = interfaces::ethernet::get_ip_addresses(nullptr);
-	who.my_data_.instance = config.meta_configuration.instance_name;
+	who.my_data_.instance = config.instance.name;
 	who.my_data_.node = rx_gate::instance().get_node_name();
 	who.my_data_.id = who.identity_;
 	who.system_addresses_ = ips;
 	who.comm_point_ = rx_create_reference<discovery_point>();
 	who.comm_point_->my_register_ = &who;
-	auto port = config.other.rx_port;
+	auto port = config.instance.port;
 	if (port == 0)
 		port = 0x7ABC;
 
 	who.comm_point_->default_port_ = port;
-	who.comm_point_->multicast_address_ = io::ip4_address("224.0.0.213", port); 
+	who.comm_point_->multicast_address_ = io::ip4_address(config.instance.group.empty() ? "224.0.0.213" : config.instance.group, port);
+	who.multicast_address_ = who.comm_point_->multicast_address_;
 	who.comm_point_->activate();
 	return true;
 }
@@ -245,7 +246,8 @@ bool peer_discovery_algorithms::parse_new_master_when_active (discovery_register
 					}
 					else
 					{
-						others.push_back(std::move(temp));
+						if (!who.is_this_you(temp.id))
+							others.push_back(std::move(temp));
 					}
 				}
 				if (success)
@@ -258,7 +260,7 @@ bool peer_discovery_algorithms::parse_new_master_when_active (discovery_register
 						temp.version = std::min(version, (uint32_t)RX_CURRENT_DISCOVERY_VERSION);
 						who.comm_point_->registered_masters_[id] = temp;
 
-						DISCOVERY_LOG_TRACE("discovery_point", 200, "Registered new Discovery Master from "s 
+						DISCOVERY_LOG_TRACE("discovery_point", 200, "Registered new Discovery Master from "s
 							+ from.to_string() + "[" + rx_uuid(id).to_string() + "].");
 
 						who.peers_[id] = others;
@@ -282,6 +284,8 @@ bool peer_discovery_algorithms::parse_new_fallback_when_active (discovery_regist
 		{
 			DISCOVERY_LOG_TRACE("discovery_point", 200, "Erased new Discovery Follower from "s + from.to_string() + " [" + rx_uuid(id).to_string() + "]");
 
+			discovery_manager::instance().peer_unregistered(data.id);
+
 			who.comm_point_->registered_followers_.erase(id);
 			std::scoped_lock _(who.register_lock_);
 			who.peers_.erase(id);
@@ -300,7 +304,9 @@ bool peer_discovery_algorithms::parse_new_fallback_when_active (discovery_regist
 			std::scoped_lock _(who.register_lock_);
 			if (who.peers_[id].empty())
 			{
-				who.peers_[id].push_back(std::move(data));
+
+				discovery_manager::instance().peer_registered(data.id, data.instance, data.node, from);
+				who.peers_[id].push_back(data);
 				who.followers_[id].push_back(std::move(data));
 
 				if (create_master_list_full(who, writer, version))
@@ -316,7 +322,7 @@ bool peer_discovery_algorithms::parse_new_fallback_when_active (discovery_regist
 				who.comm_point_->registered_followers_[id] = temp;
 				if (who.peers_[id][0] != data)
 				{
-					who.peers_[id][0] = std::move(data);
+					who.peers_[id][0] = data;
 					who.followers_[id][0] = std::move(data);
 					broadcast = true;
 
@@ -351,7 +357,8 @@ bool peer_discovery_algorithms::parse_master_list_when_active (discovery_registe
 				}
 				else
 				{
-					others.push_back(std::move(temp));
+					if(!who.is_this_you(temp.id))
+						others.push_back(std::move(temp));
 				}
 			}
 			if (success)
@@ -397,7 +404,8 @@ bool peer_discovery_algorithms::parse_master_list_when_inactive (discovery_regis
 				}
 				else
 				{
-					others.push_back(std::move(temp));
+					if(!who.is_this_you(temp.id))
+						others.push_back(std::move(temp));
 				}
 			}
 			if (success)
@@ -523,7 +531,10 @@ bool peer_discovery_algorithms::do_time_checks_master (discovery_register& who, 
 		{// remove this one
 
 			DISCOVERY_LOG_TRACE("discovery_point", 200, "Erased Discovery Follower from "s + it->first.to_string() + ", timeouted.");
-			
+
+
+			discovery_manager::instance().peer_unregistered(it->first);
+
 			std::scoped_lock _(who.register_lock_);
 			who.peers_.erase(it->first);
 			who.followers_.erase(it->first);
@@ -546,7 +557,7 @@ bool peer_discovery_algorithms::do_time_checks_follower (discovery_register& who
 	{
 		if (it->second.last_heard + timeout < ticks)
 		{// remove this one
-			DISCOVERY_LOG_TRACE("discovery_point", 200, "Erased Discovery Master from "s 
+			DISCOVERY_LOG_TRACE("discovery_point", 200, "Erased Discovery Master from "s
 				+ it->second.binded.to_string() + " [" + it->first.to_string() + "], timeouted.");
 			std::scoped_lock _(who.register_lock_);
 			who.peers_.erase(it->first);

@@ -54,6 +54,7 @@
 #include "protocols/opcua/rx_opcua_basic.h"
 #include "protocols/opcua/rx_opcua_basic_client.h"
 #include "protocols/http/rx_http_mapping.h"
+#include "protocols/http/rx_http_path_mapping.h"
 #include "protocols/http/rx_web_socket_mapping.h"
 #include "interfaces/rx_io.h"
 #include "discovery/rx_discovery_main.h"
@@ -261,6 +262,14 @@ void server_command_manager::register_internal_commands ()
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_NS_HTTP_TYPE_ID, [] {
 			return rx_create_reference<protocols::rx_http::rx_http_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_NS_HTTP_PATH_TYPE_ID, [] {
+			return rx_create_reference<protocols::rx_http::rx_http_addressing_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_NS_HTTP_HOST_NAME_TYPE_ID, [] {
+			return rx_create_reference<protocols::rx_http::rx_http_host_name_port>();
 		});
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_NS_WS_TYPE_ID, [] {

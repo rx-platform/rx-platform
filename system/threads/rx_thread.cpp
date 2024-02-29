@@ -326,6 +326,7 @@ void execute_job(void* arg)
 thread::thread (const string_type& name, rx_thread_handle_t rx_thread_id)
       : thread_id_(0),
         rx_thread_id_(rx_thread_id)
+	, security_context_(0)
 {
 	name_ = name;
 }

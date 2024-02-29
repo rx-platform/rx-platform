@@ -52,8 +52,6 @@
 #endif
 #endif
 
-#include "base64.h"
-
 
 
 namespace rx {
@@ -1021,8 +1019,25 @@ bool json_reader::read_bytes (const char* name, byte_string& val)
 		/*string_type temp_val = base64_decode(sstr);
 		val.assign(temp_val.size(), 0);
 		temp_val.copy((char*)&val[0], val.size());*/
-		val = urke::get_data(sstr);
-		return true;
+		bytes_value_struct data;
+		int ret = rx_base64_get_data(&data, sstr.c_str());
+		if (ret == RX_OK)
+		{
+			size_t cnt = 0;
+			std::byte* buff = (std::byte*)rx_c_ptr(&data, &cnt);
+			if (cnt && buff)
+				val = byte_string(buff, buff + cnt);
+			else
+				val.clear();
+
+			rx_destory_bytes_value_struct(&data);
+
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 	return false;
 }
@@ -1574,7 +1589,18 @@ template <class writerT>
 bool json_writer_type<writerT>::write_bytes (const char* name, const std::byte* val, size_t size)
 {
 	//string_type temp = base64_encode(val, size);
-	string_type temp = urke::get_base64(val, size);
+	string_value_struct str_data;
+
+	int ret = rx_base64_get_string(&str_data, (const uint8_t*)val, size);
+	if (ret != RX_OK)
+		return false;
+
+	string_type temp;
+
+	const char* str_p = rx_c_str(&str_data);
+	if (str_p)
+		temp = str_p;
+	rx_destory_string_value_struct(&str_data);
 
 	return write_string(name, temp.c_str());
 }

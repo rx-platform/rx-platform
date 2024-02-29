@@ -133,6 +133,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
 {
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
     ctx.anchor = smart_this();
+    job_pending_ = true;// this is a false stuff to pause execution untill the end of initialization
     context_.init_state([this]
         {
             runtime_holder_algorithms<typeT>::fire_job(*this);
@@ -157,6 +158,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
         result = implementation_->initialize_runtime(ctx);
     }
     ctx.structure.pop_item();
+    job_pending_ = false;
     return result;
 }
 

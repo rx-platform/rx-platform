@@ -107,6 +107,9 @@ displays details of software and system information");
 
   private:
 
+      void dump_version (const rx_table_type& table, std::ostream& out);
+
+
 
 };
 

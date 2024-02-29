@@ -213,8 +213,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			&& config.storage.test_storage_reference.empty())
 			config.storage.test_storage_reference = row.second;
 		else if (row.first == "instance.name"
-			&& config.meta_configuration.instance_name.empty())
-			config.meta_configuration.instance_name = row.second;
+			&& config.instance.name.empty())
+			config.instance.name = row.second;
 		else if (row.first == "other.manuals" && config.other.manuals_path.empty())
 			config.other.manuals_path = row.second;
 		else if (row.first == "http.resources" && config.other.http_path.empty())
@@ -229,14 +229,18 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.http_port = atoi(row.second.c_str());
 		else if (row.first == "opc.port" && config.other.opcua_port == 0)
 			config.other.opcua_port = atoi(row.second.c_str());
+		else if (row.first == "instance.port" && config.instance.port == 0)
+			config.instance.port = atoi(row.second.c_str());
+		else if (row.first == "instance.group" && config.instance.port == 0)
+			config.instance.group = row.second;
 		else if (row.first == "rx.port" && config.other.rx_port == 0)
 			config.other.rx_port = atoi(row.second.c_str());
 		else if (row.first == "processor.realtime" && !config.processor.real_time && get_bool_value(row.second))
 			config.processor.real_time = true;
 		else if (row.first == "processor.nohdtimer" && !config.processor.no_hd_timer && get_bool_value(row.second))
 			config.processor.no_hd_timer = true;
-		else if (row.first == "instance.code" && !config.meta_configuration.build_system_from_code && get_bool_value(row.second))
-			config.meta_configuration.build_system_from_code = true;
+		else if (row.first == "instance.code" && !config.build_system_from_code && get_bool_value(row.second))
+			config.build_system_from_code = true;
 		else if (row.first.size() > 8 && row.first.substr(0, 6) == "world.")
 			config.user_storages.emplace(row);
 		else if (row.first.size() > 6 && row.first.substr(0, 4) == "sys.")
@@ -287,6 +291,7 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 	rx_result ret = fill_host_directories(host_directories_);
 	if (!ret)
 		return ret;
+
 
 	if (!host_directories_.copyright_file.empty())
 	{
@@ -387,6 +392,10 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 
 		manuals_path_ = config.other.manuals_path;
 
+
+		if (config.instance.name.empty())
+			config.instance.name = get_host_instance();
+
 		return true;
 	}
 	else
@@ -402,6 +411,7 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 {
 	config.other.http_port = 0;
 	config.other.opcua_port = 0;
+	config.instance.port = 0;
 	config.other.rx_port = 0;
 
 
@@ -477,14 +487,16 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("u,user", "User storage reference", cxxopts::value<string_type>(config.storage.user_storage_reference))
 		("test", "Test storage reference", cxxopts::value<string_type>(config.storage.test_storage_reference))
 		("system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
-		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.meta_configuration.instance_name))
-		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.meta_configuration.plugin))
+		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.instance.name))
+		("port", "UDP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.instance.port))
+		("group", "IP address of rx-protocol multicast group", cxxopts::value<string_type>(config.instance.group))
+		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.instance.plugin))
 		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
 		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
 		("py-path", "Location of the micropython files", cxxopts::value<string_type>(config.other.py_path))
 		("opc-port", "TCP/IP port for OPCUA binary server to listen to", cxxopts::value<uint16_t>(config.other.opcua_port))
 
-		("rx-port", "TCP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.other.rx_port))
+		("rx-port", "TCP/IP port for pltaform protocol", cxxopts::value<uint16_t>(config.other.rx_port))
 		("security", "Default security provider for {rx-platform}", cxxopts::value<string_type>(config.other.rx_security))
 
 		("log-test", "Test log at startup", cxxopts::value<bool>(config.log.test_log))
@@ -494,7 +506,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 
 		("debug" , "Force debugging options thorough the platform", cxxopts::value<bool>(config.management.debug))
 		("v,version", "Displays platform version")
-		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.meta_configuration.build_system_from_code))
+		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.build_system_from_code))
 		("h,help", "Print help")
 		;
 }
@@ -788,6 +800,11 @@ string_type rx_platform_host::get_manual (string_type what) const
 		return buffer;
 	}
 	return "";
+}
+
+string_type rx_platform_host::get_host_instance ()
+{
+	return get_host_name();
 }
 
 void rx_platform_host::print_offline_manual (const string_type& host, const rx_host_directories& dirs)

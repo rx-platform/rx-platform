@@ -182,8 +182,6 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 		if (ret)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-			if (config.meta_configuration.instance_name.empty())
-				config.meta_configuration.instance_name = "develop";
 
 			//config.namespace_data.build_system_from_code = true;
 			
@@ -204,7 +202,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			std::cout << "Instance Name:";
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD;
-			std::cout << config.meta_configuration.instance_name << "\r\n";
+			std::cout << config.instance.name << "\r\n";
 			if (supports_ansi())
 				std::cout << ANSI_COLOR_RESET;
 			std::cout << "Node Name:";

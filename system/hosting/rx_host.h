@@ -285,6 +285,8 @@ class rx_platform_host
 
       virtual string_type get_host_name () = 0;
 
+      virtual string_type get_host_instance ();
+
       void print_offline_manual (const string_type& host, const rx_host_directories& dirs);
 
       rx_result_with<rx_storage_ptr> get_system_storage (const string_type& name);

@@ -46,7 +46,7 @@
 extern "C" {
 #endif
 
-	RX_HEADLESS_API int rx_headless_init_platform(int argc, char* argv[], const char* help_name, const char* host_name, const char* local_dir_override);
+	RX_HEADLESS_API int rx_headless_init_platform(int argc, char* argv[], const char* instance_name, const char* help_name, const char* host_name, const char* local_dir_override);
 	RX_HEADLESS_API int rx_headless_start_platform();
 	RX_HEADLESS_API int rx_headless_stop_platform();
 	RX_HEADLESS_API int rx_headless_deinit_platform();

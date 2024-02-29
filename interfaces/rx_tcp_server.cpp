@@ -455,6 +455,7 @@ rx_result system_server_port_base::initialize_runtime (runtime::runtime_init_con
     auto port = get_configuration_port();
     if(port)
         ctx.set_item_static("Bind.IPPort", port);
+    system_port_ = 0;
     auto result = tcp_server_port::initialize_runtime(ctx);
     return result;
 }
