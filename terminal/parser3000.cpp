@@ -368,7 +368,7 @@ namespace urke
 			unsigned int val2;
 			double val3;
 
-			bool wrong = true;
+			bool wrong = false;
 
 			size_t count_bit_options = 0;
 
@@ -395,7 +395,10 @@ namespace urke
 						
 						if (bit_options[i].short_option == '\0')
 							continue;
-						for (unsigned int j = 0; j < form.size(); j++)
+						unsigned int j = 0;
+						if (count_bit_options > 0)
+							j = 1;
+						for (; j <= pom_for_bit_options; j++)
 						{
 							if (form[j] == bit_options[i].short_option)
 							{
@@ -424,6 +427,7 @@ namespace urke
 								{
 									while (!in.eof() && current != ' ' && current != '	' && current != '-')
 									{
+										i = 0;
 										form.push_back(current);
 										in.get(current);
 									}
@@ -850,7 +854,7 @@ namespace urke
 			}
 			if (wrong)
 			{
-				err << "You didn't put anything!";
+				//err << "You didn't put anything!";
 				return true;
 			}
 			else

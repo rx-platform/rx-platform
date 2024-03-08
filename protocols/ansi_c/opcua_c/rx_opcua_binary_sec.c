@@ -181,7 +181,7 @@ rx_protocol_result_t parse_asymetric_security_header(struct rx_protocol_stack_en
 		return result;
 	if (temp_len > 0)
 	{
-		policy_buffer = malloc(temp_len);
+		policy_buffer = rx_heap_alloc(temp_len);
 		result = rx_pop_from_packet(buffer, policy_buffer, temp_len);
 		if (result != RX_PROTOCOL_OK)
 			return result;
@@ -191,7 +191,7 @@ rx_protocol_result_t parse_asymetric_security_header(struct rx_protocol_stack_en
 		return result;
 	if (temp_len > 0)
 	{
-		cert_buffer = malloc(temp_len);
+		cert_buffer = rx_heap_alloc(temp_len);
 		result = rx_pop_from_packet(buffer, cert_buffer, temp_len);
 		if (result != RX_PROTOCOL_OK)
 			return result;
@@ -201,7 +201,7 @@ rx_protocol_result_t parse_asymetric_security_header(struct rx_protocol_stack_en
 		return result;
 	if (temp_len > 0)
 	{
-		thumb_buffer = malloc(temp_len);
+		thumb_buffer = rx_heap_alloc(temp_len);
 		result = rx_pop_from_packet(buffer, thumb_buffer, temp_len);
 		if (result != RX_PROTOCOL_OK)
 			return result;

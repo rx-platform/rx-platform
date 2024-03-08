@@ -1049,11 +1049,13 @@ const rx_node_id_type rx_node_id::get_node_type() const
 }
 
 
+#ifndef RX_USE_OWN_HEAP
 #ifdef _MSC_VER
 #ifdef _DEBUG
 #define new DEBUG_CLIENTBLOCK
 #endif
 #endif
+#endif //RX_USE_OWN_HEAP
 
 const char* g_complie_time;
 const char* g_lib_version;

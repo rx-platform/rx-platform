@@ -35,12 +35,12 @@
 #include "system/runtime/rx_value_templates.h"
 using namespace rx_platform::runtime;
 
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 // rx_job
 #include "system/threads/rx_job.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -283,6 +283,31 @@ used for special executer types\r\n\
 
 
 
+class low_priority_house_keeping : public rx_platform::jobs::periodic_job  
+{
+    DECLARE_REFERENCE_PTR(low_priority_house_keeping);
+
+  public:
+      low_priority_house_keeping();
+
+      ~low_priority_house_keeping();
+
+
+      void process ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
 
 class server_runtime : public rx_platform::runtime::items::object_runtime  
 {
@@ -379,6 +404,8 @@ calculation ( normal priority)");
       rx_reference<physical_thread_object> meta_pool_;
 
       rx_reference<server_dispatcher_object> slow_pool_;
+
+      rx_reference<low_priority_house_keeping> low_priority_;
 
 
       threads::job_thread* extern_executer_;

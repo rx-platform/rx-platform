@@ -103,6 +103,13 @@ struct runtime_data_t
     bool has_calculation_timer = false;
     threads::job_thread* extern_executer = nullptr;
 };
+struct heap_data_t
+{
+    size_t initial_heap_size = 0;
+    size_t heap_alloc_size = 0;
+    size_t heap_trigger = 0;
+    size_t heap_bucket_capacity = 0;
+};
 
 struct management_data_t
 {
@@ -137,9 +144,17 @@ struct log_data_t
     bool test_log = false;
 };
 
+
+struct memory_data_t
+{
+    string_type heap;
+    std::vector<size_t> parameters;
+};
+
 struct configuration_data_t
 {
 	runtime_data_t processor;
+    heap_data_t heap;
 	management_data_t management;
 	namespace_data_t storage;
 	instance_data_t instance;
@@ -149,6 +164,7 @@ struct configuration_data_t
     bool build_system_from_code = false;
     std::map<string_type, string_type> user_storages;
     std::map<string_type, string_type> system_storages;
+    memory_data_t memory;
 };
 
 enum class rx_platform_status

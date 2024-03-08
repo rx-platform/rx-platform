@@ -82,11 +82,17 @@ extern HCERTSTORE hcert_store;
 
 int g_is_debug_instance;
 
+int rx_init_heap(size_t initial_heap, size_t heap_alloc, size_t heap_trigger);
+
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 {
 	g_is_debug_instance = init_data->is_debug;
 	if (g_init_count == 0)
 	{
+		rx_init_heap(
+			init_data->rx_initial_heap_size != 0 ? init_data->rx_initial_heap_size : 24 * 1024 * 1024
+			, init_data->rx_alloc_heap_size != 0 ? init_data->rx_alloc_heap_size : 8 * 1024 * 1024
+			, init_data->rx_heap_alloc_trigger != 0 ? init_data->rx_heap_alloc_trigger : 950);
 		rx_hd_timer = init_data->rx_hd_timer;
 
 		LARGE_INTEGER res;

@@ -3736,7 +3736,17 @@ rx_result value_block_data::initialize_runtime (runtime::runtime_init_context& c
 		if (ret)
 		{
 			struct_value.value = rx_timed_value(std::move(val), ctx.now());
-			ctx.bind_item(ctx.path.get_current_path(), tag_blocks::binded_callback_t(), [this](rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
+			ctx.bind_item(ctx.path.get_current_path(), 
+				[this, ctx=ctx.context](const rx_value& vval)
+				{
+					rx_simple_value val = vval.to_simple();
+					auto result = block.fill_value(val);
+					if (result)
+					{
+						if (tag_references_)
+							tag_references_->block_data_changed(block, ctx);
+					}
+				}, [this](rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
 				{
 					return do_write_callback(val, data, ctx);
 				});

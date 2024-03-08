@@ -43,8 +43,6 @@ rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory)
 		g_memory = *memory;
 		if (g_memory.alloc_buffer_function == NULL)
 			g_memory.alloc_buffer_function = rx_c_alloc_buffer;
-		if (g_memory.realloc_buffer_function == NULL)
-			g_memory.realloc_buffer_function = rx_c_realloc_buffer;
 		if (g_memory.alloc_function == NULL)
 			g_memory.alloc_function = rx_c_alloc_buffer;
 		if (g_memory.free_buffer_function == NULL)
@@ -55,7 +53,6 @@ rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory)
 	else
 	{
 		g_memory.alloc_buffer_function = rx_c_alloc_buffer;
-		g_memory.realloc_buffer_function = rx_c_realloc_buffer;
 		g_memory.alloc_function = rx_c_alloc_buffer;
 		g_memory.free_buffer_function = rx_c_free_buffer;
 		g_memory.free_function = rx_c_free_buffer;

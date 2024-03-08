@@ -32,32 +32,35 @@
 #define rx_win_h 1
 
 
+////## begin module%580FE720011D.includes preserve=yes
+//
+//#define _CRT_SECURE_NO_WARNINGS
+//#define _WINSOCK_DEPRECATED_NO_WARNINGS
+//#define _CRT_RAND_S
+//#define NOMINMAX
+//
+//#define _CRTDBG_MAP_ALLOC
+//
+//#endif //RX_USE_OWN_HEAP
+//#ifdef _DEBUG
+//#define DEBUG_CLIENTBLOCK new ( _CLIENT_BLOCK , __FILE__ , __LINE__ )
+////// Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
+////// allocations to be of _CLIENT_BLOCK type
+//#else
+//#define DEBUG_CLIENTBLOCK new
+//#endif
+//
+//
+//#include <WinSock2.h>
+//#include <ws2tcpip.h>
+//#include <ws2ipdef.h>
+//#include <windows.h>
+//
+//#include <stdlib.h>
+//#include <crtdbg.h>
 
-#define _CRT_SECURE_NO_WARNINGS
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _CRT_RAND_S
-#define NOMINMAX
+#include "common/rx_common.h"
 
-#define _CRTDBG_MAP_ALLOC
-
-
-#ifdef _DEBUG
-#define DEBUG_CLIENTBLOCK new ( _CLIENT_BLOCK , __FILE__ , __LINE__ )
-// Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
-// allocations to be of _CLIENT_BLOCK type
-#else
-#define DEBUG_CLIENTBLOCK new
-#endif
-
-#include <stdlib.h>
-#include <crtdbg.h>
-
-
-
-#include <WinSock2.h>
-#include <ws2tcpip.h>
-#include <ws2ipdef.h>
-#include <windows.h>
 
 
 

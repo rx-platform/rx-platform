@@ -35,6 +35,10 @@
 
 
 
+
+#define RX_USE_OWN_HEAP
+
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif

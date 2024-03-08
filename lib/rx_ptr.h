@@ -32,7 +32,7 @@
 #define rx_ptr_h 1
 
 
-
+#include "common/rx_common.h"
 #include "rx_lib.h"
 
 
@@ -439,6 +439,21 @@ using rx_reference = pointers::reference<Tptr>;
 typedef pointers::reference_object::smart_ptr rx_reference_ptr;
 typedef pointers::reference_object::smart_ptr rx_struct_ptr;
 
+#ifdef RX_USE_OWN_HEAP
+
+// for now just starndard stuff
+template<class T, typename... Args>
+pointers::reference<T> rx_create_reference(Args&&... args)
+{
+	return pointers::reference<T>::create_from_pointer_without_bind(new T(std::forward<Args>(args)...));
+}
+template<class T>
+pointers::reference<T> rx_create_reference()
+{
+	return pointers::reference<T>::create_from_pointer_without_bind(new T());
+}
+
+#else
 
 // this strange looking stuff is placed in order to catch dangling pointers with
 //  microsoft debug heap, if used enables to detect the caller line and file
@@ -505,6 +520,7 @@ pointers::reference<T> rx_create_reference()
 
 #endif
 
+#endif //RX_USE_OWN_HEAP
 
 }
 

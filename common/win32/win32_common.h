@@ -35,6 +35,10 @@
 
 
 
+#define RX_USE_OWN_HEAP
+
+
+
 #define _CRT_SECURE_NO_WARNINGS
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -42,10 +46,18 @@
 #define _CRT_RAND_S
 #define NOMINMAX
 
+#ifndef RX_USE_OWN_HEAP
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
+#else
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif //RX_USE_OWN_HEAP
 
+
+
+#ifndef RX_USE_OWN_HEAP
 #ifdef _DEBUG
 #define DEBUG_CLIENTBLOCK new ( _CLIENT_BLOCK , __FILE__ , __LINE__ )
 // Replace _NORMAL_BLOCK with _CLIENT_BLOCK if you want the
@@ -53,6 +65,9 @@
 #else
 #define DEBUG_CLIENTBLOCK new
 #endif
+#else
+#define DEBUG_CLIENTBLOCK new
+#endif //RX_USE_OWN_HEAP
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -86,10 +101,11 @@ typedef HANDLE sys_handle_t;
 #define SET_IP4_ADDR(a, d) ((a).sin_addr.S_un.S_addr = (d))
 
 
-
+#ifndef RX_USE_OWN_HEAP
 #ifdef _DEBUG
 #define new DEBUG_CLIENTBLOCK
 #endif
+#endif //RX_USE_OWN_HEAP
 
 
 #ifdef RXCOMMON_EXPORTS

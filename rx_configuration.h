@@ -152,6 +152,10 @@
 #define RX_NS_SYSTEM_NAME "System"
 #define RX_NS_SYSTEM_ID 0x800001a
 
+
+#define RX_NS_MEMORY_NAME "Memory"
+#define RX_NS_MEMORY_ID 0xc0000ed
+
 // system objects type stuff
 #define RX_NS_SYSTEM_APP_TYPE_NAME "SysAppType"
 #define RX_NS_SYSTEM_APP_TYPE_ID 0xc000000
@@ -161,10 +165,17 @@
 
 #define RX_NS_SYSTEM_TYPE_NAME "SystemType"
 #define RX_NS_SYSTEM_TYPE_ID 0xc000054
+#define RX_NS_MEMORY_TYPE_NAME "MemoryType"
+#define RX_NS_MEMORY_TYPE_ID 0xc0000ee
 #define RX_NS_SYSTEM_INFO_TYPE_NAME "SystemInfo"
 #define RX_NS_SYSTEM_INFO_TYPE_ID 0xc000055
 #define RX_NS_SYSTEM_DOM_TYPE_NAME "SysDomainType"
 #define RX_NS_SYSTEM_DOM_TYPE_ID 0xc000001
+
+#define RX_NS_BUCKET_STATUS_TYPE_NAME "BucketStatus"
+#define RX_NS_BUCKET_STATUS_TYPE_ID 0xc0000ef
+#define RX_NS_MEMORY_STATUS_TYPE_NAME "MemoryStatus"
+#define RX_NS_MEMORY_STATUS_TYPE_ID 0xc0000f0
 
 
 #define RX_USER_APP_TYPE_NAME "UserApplication"
@@ -716,7 +727,7 @@
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc0000ec!!!! 
+// last is 0xc0000f0!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

@@ -59,7 +59,7 @@ int strmultiequal(const char* str, const char* vals[], size_t vals_count, int* h
 	else if (vals_count > sizeof(static_buff) / sizeof(static_buff[0]))
 	{
 		allocated = 1;
-		not_equal = malloc(sizeof(int) * vals_count);
+		not_equal = rx_heap_alloc(sizeof(int) * vals_count);
 	}
 	memzero(not_equal, vals_count * sizeof(int));
 
@@ -94,7 +94,7 @@ int strmultiequal(const char* str, const char* vals[], size_t vals_count, int* h
 	} while (!done);
 
 	if (allocated)
-		free(not_equal);
+		rx_heap_free(not_equal);
 
 	return has_one;
 }
@@ -276,7 +276,7 @@ int parse_bytes(const char* str, bytes_value_struct* val)
 
 	if (array_size > sizeof(static_buff) / sizeof(static_buff[0]))
 	{
-		pbuffer = malloc(array_size);
+		pbuffer = rx_heap_alloc(array_size);
 		if (pbuffer == NULL)
 			return RX_ERROR;
 	}
@@ -308,7 +308,7 @@ int parse_bytes(const char* str, bytes_value_struct* val)
 	}
 	int ret = rx_init_bytes_value_struct(val, (uint8_t*)pbuffer, array_size);
 	if (array_size > sizeof(static_buff) / sizeof(static_buff[0]))
-		free(pbuffer);
+		rx_heap_free(pbuffer);
 	return ret;
 }
 int parse_time_from_ISO8601(const char* str, rx_time_struct* val)
@@ -458,7 +458,7 @@ int bytes_to_str(const bytes_value_struct* val, string_value_struct* str)
 	const uint8_t* pbytes = rx_c_ptr(val, &temp_size);
 	if (val->size * 2 + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
 	{
-		pbuffer = malloc(val->size * 2 + 1);
+		pbuffer = rx_heap_alloc(val->size * 2 + 1);
 		if (pbuffer == NULL)
 			return RX_ERROR;
 	}
@@ -468,7 +468,7 @@ int bytes_to_str(const bytes_value_struct* val, string_value_struct* str)
 	}
 	int ret = rx_init_string_value_struct(str, pbuffer, -1);
 	if (val->size * 2 + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
-		free(pbuffer);
+		rx_heap_free(pbuffer);
 	return ret;
 }
 int time_to_ISO8601(rx_time_struct val, string_value_struct* str)
@@ -541,14 +541,14 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					uint_fast8_t temp = what->complex_value->real != 0 || what->complex_value->imag != 0;
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->bool_value = temp;
 					return RX_OK;
 				}
 			case RX_UUID_TYPE:
 				{
 					uint_fast8_t temp = !rx_is_null_uuid(what->uuid_value);
-					free(what->uuid_value);
+					rx_heap_free(what->uuid_value);
 					what->bool_value = temp;
 					return RX_OK;
 				}
@@ -609,7 +609,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					uint_fast8_t temp = what->struct_value.size > 0;
 					if (temp)
 					{
-						free(what->struct_value.values);
+						rx_heap_free(what->struct_value.values);
 					}
 					what->bool_value = temp;
 					return RX_OK;
@@ -625,7 +625,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 				{
 					uint_fast8_t temp = !rx_is_null_node_id(what->node_id_value);
 					rx_destory_node_id(what->node_id_value);
-					free(what->node_id_value);
+					rx_heap_free(what->node_id_value);
 					what->bool_value = temp;
 					return RX_OK;
 				}
@@ -678,7 +678,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					int8_t temp = (int8_t)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->int8_value = temp;
 					return RX_OK;
 				}
@@ -761,7 +761,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					int16_t temp = (int16_t)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->int16_value = temp;
 					return RX_OK;
 				}
@@ -844,7 +844,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					int32_t temp = (int32_t)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->int32_value = temp;
 					return RX_OK;
 				}
@@ -927,7 +927,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					int64_t temp = (int64_t)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->int64_value = temp;
 					return RX_OK;
 				}
@@ -1010,7 +1010,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					uint8_t temp = (uint8_t)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->uint8_value = temp;
 					return RX_OK;
 				}
@@ -1093,7 +1093,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					uint16_t temp = (uint16_t)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->uint16_value = temp;
 					return RX_OK;
 				}
@@ -1176,7 +1176,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					uint32_t temp = (uint32_t)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->uint32_value = temp;
 					return RX_OK;
 				}
@@ -1259,7 +1259,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					uint64_t temp = (uint64_t)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->uint64_value = temp;
 					return RX_OK;
 				}
@@ -1342,7 +1342,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					float temp = (float)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->float_value = temp;
 					return RX_OK;
 				}
@@ -1425,7 +1425,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					double temp = (double)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->double_value = temp;
 					return RX_OK;
 				}
@@ -1468,67 +1468,67 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			switch (source)
 			{
 			case RX_NULL_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = 0;
 				return RX_OK;
 			case RX_BOOL_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = what->bool_value ? 1.0 : 0.0;
 				return RX_OK;
 			case RX_INT8_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->int8_value;
 				return RX_OK;
 			case RX_INT16_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->int16_value;
 				return RX_OK;
 			case RX_INT32_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->int32_value;
 				return RX_OK;
 			case RX_INT64_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->int64_value;
 				return RX_OK;
 			case RX_UINT8_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->uint8_value;
 				return RX_OK;
 			case RX_UINT16_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->uint16_value;
 				return RX_OK;
 			case RX_UINT32_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->uint32_value;
 				return RX_OK;
 			case RX_UINT64_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->uint64_value;
 				return RX_OK;
 			case RX_FLOAT_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->float_value;
 				return RX_OK;
 			case RX_DOUBLE_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = what->double_value;
 				return RX_OK;
 			case RX_TIME_TYPE:
-				what->complex_value = malloc(sizeof(complex_value_struct));
+				what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 				what->complex_value->imag = 0;
 				what->complex_value->real = (double)what->time_value.t_value;
 				return RX_OK;
@@ -1545,7 +1545,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					if (ret)
 					{
 						rx_destory_string_value_struct(&what->string_value);
-						what->complex_value = malloc(sizeof(complex_value_struct));
+						what->complex_value = rx_heap_alloc(sizeof(complex_value_struct));
 						*what->complex_value = temp;
 					}
 					return ret;
@@ -1647,7 +1647,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			switch (source)
 			{
 			case RX_NULL_TYPE:
-				what->uuid_value = malloc(sizeof(rx_uuid_t));
+				what->uuid_value = rx_heap_alloc(sizeof(rx_uuid_t));
 				memzero(what->uuid_value, sizeof(rx_uuid_t));
 				return RX_OK;
 			case RX_BOOL_TYPE:
@@ -1675,7 +1675,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					if (ret)
 					{
 						rx_destory_string_value_struct(&what->string_value);
-						what->uuid_value = malloc(sizeof(rx_uuid_t));
+						what->uuid_value = rx_heap_alloc(sizeof(rx_uuid_t));
 						*what->uuid_value = temp;
 					}
 					return ret;
@@ -1778,7 +1778,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			case RX_COMPLEX_TYPE:
 				{
 					uint64_t temp = (uint64_t)complex_amplitude_helper(what->complex_value);
-					free(what->complex_value);
+					rx_heap_free(what->complex_value);
 					what->time_value.t_value = temp;
 					return RX_OK;
 				}
@@ -1854,7 +1854,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					int ret = complex_to_str(temp, &temp_str);
 					if (ret == RX_OK)
 					{
-						free(what->complex_value);
+						rx_heap_free(what->complex_value);
 						what->string_value = temp_str;
 					}
 					return ret;
@@ -1866,7 +1866,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					int ret = rx_uuid_to_string(&temp, buff);
 					if (ret)
 					{
-						free(what->uuid_value);
+						rx_heap_free(what->uuid_value);
 						rx_init_string_value_struct(&what->string_value, buff, -1);
 					}
 					return ret;
@@ -1909,7 +1909,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 			switch (source)
 			{
 			case RX_NULL_TYPE:
-				what->node_id_value = malloc(sizeof(rx_node_id_struct));
+				what->node_id_value = rx_heap_alloc(sizeof(rx_node_id_struct));
 				rx_init_null_node_id(what->node_id_value);
 				return RX_OK;
 			case RX_BOOL_TYPE:
@@ -1935,7 +1935,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					if (ret == RX_OK)
 					{
 						rx_destory_string_value_struct(&what->string_value);
-						what->node_id_value = malloc(sizeof(rx_node_id_struct));
+						what->node_id_value = rx_heap_alloc(sizeof(rx_node_id_struct));
 						*what->node_id_value = temp;
 						rx_move_node_id(what->node_id_value, &temp);
 						return RX_OK;
@@ -2059,7 +2059,7 @@ RX_COMMON_API int rx_convert_value(struct typed_value_type* val, rx_value_t type
 		{
 			int ret = RX_OK;
 			if (val->value.array_value.size > sizeof(static_temp) / sizeof(static_temp[0]))
-				temp = malloc(val->value.array_value.size * sizeof(union rx_value_union));
+				temp = rx_heap_alloc(val->value.array_value.size * sizeof(union rx_value_union));
 			else
 				temp = static_temp;
 			size_t i = 0;
@@ -2090,7 +2090,7 @@ RX_COMMON_API int rx_convert_value(struct typed_value_type* val, rx_value_t type
 				}
 			}
 			if (val->value.array_value.size > sizeof(static_temp) / sizeof(static_temp[0]))
-				free(temp);
+				rx_heap_free(temp);
 
 			return ret;
 		}
@@ -2111,7 +2111,7 @@ RX_COMMON_API int rx_convert_value(struct typed_value_type* val, rx_value_t type
 			return RX_ERROR;
 		union rx_value_union temp = val->value.array_value.values[0];
 		if (val->value.array_value.size > 0)
-			free(val->value.array_value.values);
+			rx_heap_free(val->value.array_value.values);
 		val->value = temp;
 		val->value_type = type;
 		return RX_OK;
@@ -2122,7 +2122,7 @@ RX_COMMON_API int rx_convert_value(struct typed_value_type* val, rx_value_t type
 			return RX_ERROR;
 		union rx_value_union temp;
 		temp = val->value;
-		val->value.array_value.values = malloc(1 * sizeof(union rx_value_union));
+		val->value.array_value.values = rx_heap_alloc(1 * sizeof(union rx_value_union));
 		val->value.array_value.values[0] = temp;
 		val->value.array_value.size = 1;
 		val->value_type = type;

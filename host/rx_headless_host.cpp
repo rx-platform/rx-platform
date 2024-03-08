@@ -124,7 +124,8 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 				config_.instance.name = instance_name;
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config_.processor.real_time, !config_.processor.no_hd_timer, tls, config_.management.debug);
+			rx_initialize_os(config_.processor.real_time, !config_.processor.no_hd_timer, tls, config_.management.debug
+				, config_.heap.initial_heap_size, config_.heap.heap_alloc_size, config_.heap.heap_trigger, config_.heap.heap_bucket_capacity);
 			std::cout << "OK\r\n";
 			std::cout << "\r\n"
 				<< "{rx-platform} "

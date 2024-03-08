@@ -77,7 +77,7 @@ RX_COMMON_API int rx_init_string_value_struct(string_value_struct* data, const c
 			}
 			else
 			{
-				data->value = malloc(len);
+				data->value = rx_heap_alloc(len);
 				if (data->value == NULL)
 				{
 					data->size = 0;
@@ -114,7 +114,7 @@ RX_COMMON_API int rx_init_string_value_struct(string_value_struct* data, const c
 			}
 			else
 			{
-				data->value = malloc(len);
+				data->value = rx_heap_alloc(len);
 				if (data->value == NULL)
 				{
 					data->size = 0;
@@ -134,7 +134,7 @@ RX_COMMON_API int rx_init_string_value_struct(string_value_struct* data, const c
 			}
 			else
 			{
-				data->value = malloc(len);
+				data->value = rx_heap_alloc(len);
 				if (data->value == NULL)
 				{
 					data->size = 0;
@@ -167,7 +167,7 @@ RX_COMMON_API int rx_copy_string_value(string_value_struct* dest, const string_v
 		size_t len = dest->size + 1;
 		if (len > sizeof(dest->value))
 		{
-			dest->value = malloc(len);
+			dest->value = rx_heap_alloc(len);
 			if (dest->value)
 				memcpy(dest->value, src->value, len);
 			else
@@ -185,7 +185,7 @@ RX_COMMON_API void rx_destory_string_value_struct(string_value_struct* data)
 	if (data->size > sizeof(data->value))
 	{
 		RX_ASSERT(data->value);
-		free(data->value);
+		rx_heap_free(data->value);
 	}
 	memzero(data, sizeof(string_value_struct));
 }
@@ -200,7 +200,7 @@ RX_COMMON_API int rx_init_bytes_value_struct(bytes_value_struct* data, const uin
 		}
 		else
 		{
-			data->value = malloc(len);
+			data->value = rx_heap_alloc(len);
 			if (data->value == NULL)
 			{
 				data->size = 0;
@@ -220,7 +220,7 @@ RX_COMMON_API int rx_init_bytes_value_struct(bytes_value_struct* data, const uin
 			}
 			else
 			{
-				data->value = malloc(len);
+				data->value = rx_heap_alloc(len);
 				if (data->value == NULL)
 				{
 					data->size = 0;
@@ -245,7 +245,7 @@ RX_COMMON_API int rx_copy_bytes_value(bytes_value_struct* dest, const bytes_valu
 	{
 		if (dest->size > sizeof(dest->value))
 		{
-			dest->value = malloc(src->size);
+			dest->value = rx_heap_alloc(src->size);
 			if (dest->value == NULL)
 			{
 				dest->size = 0;
@@ -274,7 +274,7 @@ RX_COMMON_API const uint8_t* rx_c_ptr(const bytes_value_struct* data, size_t* si
 RX_COMMON_API void rx_destory_bytes_value_struct(bytes_value_struct* data)
 {
 	if (data->size > sizeof(data->value))
-		free(data->value);
+		rx_heap_free(data->value);
 	memzero(data, sizeof(bytes_value_struct));
 }
 
@@ -283,7 +283,7 @@ RX_COMMON_API int rx_init_values_array_struct(values_array_struct* data, const s
 	memzero(data, sizeof(values_array_struct));
 	if (len && values)
 	{
-		data->values = malloc(len * sizeof(struct typed_value_type));
+		data->values = rx_heap_alloc(len * sizeof(struct typed_value_type));
 		if (data->values == NULL)
 			return RX_ERROR;
 		for (size_t i = 0; i < len; i++)
@@ -302,7 +302,7 @@ RX_COMMON_API void rx_destory_values_array_struct(values_array_struct* data)
 		{
 			rx_destroy_value(&data->values[i]);
 		}
-		free(data->values);
+		rx_heap_free(data->values);
 	}
 }
 
@@ -754,7 +754,7 @@ RX_COMMON_API int rx_node_id_to_string(const rx_node_id_struct* data, string_val
 	// now we have the size, check to see for allocation
 	if (buffer_size > sizeof(static_buff) / sizeof(static_buff[0]))
 	{
-		buffer = malloc(buffer_size);
+		buffer = rx_heap_alloc(buffer_size);
 		if (buffer == NULL)
 			return RX_ERROR;
 		allocated = 1;
@@ -772,7 +772,7 @@ RX_COMMON_API int rx_node_id_to_string(const rx_node_id_struct* data, string_val
 	}
 
 	if (allocated)
-		free(buffer);
+		rx_heap_free(buffer);
 
 	return ret_value;
 }
@@ -938,7 +938,7 @@ RX_COMMON_API int rx_reference_to_string(const rx_reference_struct* data, string
 		// now we have the size, check to see for allocation
 		if (buffer_size > sizeof(static_buff) / sizeof(static_buff[0]))
 		{
-			buffer = malloc(buffer_size);
+			buffer = rx_heap_alloc(buffer_size);
 			if (buffer == NULL)
 				return RX_ERROR;
 			allocated = 1;
@@ -958,7 +958,7 @@ RX_COMMON_API int rx_reference_to_string(const rx_reference_struct* data, string
 		}
 
 		if (allocated)
-			free(buffer);
+			rx_heap_free(buffer);
 
 		return ret_value;
 	}

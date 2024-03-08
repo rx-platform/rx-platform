@@ -30,6 +30,7 @@
 
 #include "pch.h"
 
+#include "common/rx_common.h"
 
 // rx_opcua_transport
 #include "protocols/ansi_c/opcua_c/rx_opcua_transport.h"
@@ -107,7 +108,7 @@ rx_protocol_result_t opcua_bin_init_server_transport(opcua_transport_protocol_ty
 rx_protocol_result_t opcua_bin_deinit_transport(opcua_transport_protocol_type* transport)
 {
 	if (transport->endpoint_url)
-		free((char*)transport->endpoint_url);
+		rx_heap_free((char*)transport->endpoint_url);
 	return RX_PROTOCOL_OK;
 }
 
@@ -138,12 +139,12 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	char* url = NULL;
 	if (ep_size)
 	{
-		url = malloc(sizeof(char) * ep_size + 1);
+		url = rx_heap_alloc(sizeof(char) * ep_size + 1);
 		url[ep_size] = '\0';
 		result = rx_pop_from_packet(buffer, url, ep_size);
 		if (result != RX_PROTOCOL_OK)
 		{
-			free(url);
+			rx_heap_free(url);
 			return result;
 		}
 		transport->endpoint_url = url;
@@ -152,7 +153,7 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	if (message->receive_buffer_size < RX_OPCUA_MIN_BUFFER || message->send_buffer_size < RX_OPCUA_MIN_BUFFER)
 	{
 		if (transport->endpoint_url)
-			free((char*)transport->endpoint_url);
+			rx_heap_free((char*)transport->endpoint_url);
 		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
 	}
 
@@ -168,7 +169,7 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	if (result != RX_PROTOCOL_OK)
 	{
 		if (transport->endpoint_url)
-			free((char*)transport->endpoint_url);
+			rx_heap_free((char*)transport->endpoint_url);
 		return result;
 	}
 	// fill the response header
@@ -176,7 +177,7 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	if (!header)
 	{
 		if (transport->endpoint_url)
-			free((char*)transport->endpoint_url);
+			rx_heap_free((char*)transport->endpoint_url);
 		return result;
 	}
 
@@ -189,7 +190,7 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	if (!ack_message)
 	{
 		if (transport->endpoint_url)
-			free((char*)transport->endpoint_url);
+			rx_heap_free((char*)transport->endpoint_url);
 		return result;
 	}
 	ack_message->protocol_version = transport->connection_data.protocol_version;
@@ -225,7 +226,7 @@ rx_protocol_result_t opcua_parse_hello_message(struct rx_protocol_stack_endpoint
 	stack->release_packet(stack, &response);
 
 	if (transport->endpoint_url)
-		free((char*)transport->endpoint_url);
+		rx_heap_free((char*)transport->endpoint_url);
 
 	return result;
 }

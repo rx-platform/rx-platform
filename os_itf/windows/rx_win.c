@@ -279,11 +279,14 @@ int init_common_result = RX_ERROR;
 
 uint32_t tlc_max_token = 0;
 
-void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug)
+void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug, size_t initial_heap, size_t heap_alloc, size_t heap_trigger, size_t bucket_capacity)
 {
 	rx_platform_init_data common_data;
 	common_data.rx_hd_timer = hdt;
 	common_data.is_debug = is_debug;
+	common_data.rx_initial_heap_size = initial_heap;
+	common_data.rx_alloc_heap_size = heap_alloc;
+	common_data.rx_heap_alloc_trigger = heap_trigger;
 
 	init_common_result = rx_init_common_library(&common_data);
 	
@@ -372,10 +375,10 @@ void rx_deinitialize_os()
 	if (drives_count > 0 && drives)
 	{
 		for (; i < drives_count; i++)
-			free(drives[i]);
+			rx_heap_free(drives[i]);
 	}
 	if(drives)
-		free(drives);
+		rx_heap_free(drives);
 
 	WSACleanup();
 
@@ -624,7 +627,7 @@ BOOL GetOsVersionFromSystemFile(RTL_OSVERSIONINFOEXW* os, int* build_minor)
 	if (len > 0)
 	{
 
-		BYTE* pVersionInfo = (BYTE*)malloc(len); // allocate version info
+		BYTE* pVersionInfo = (BYTE*)rx_heap_alloc(len); // allocate version info
 		if (!GetFileVersionInfoA(fname, 0, len, pVersionInfo))
 			return FALSE;
 
@@ -643,7 +646,7 @@ BOOL GetOsVersionFromSystemFile(RTL_OSVERSIONINFOEXW* os, int* build_minor)
 		uint32_t build_minor = ver.dwFileVersionLS & 0xffff;
 
 
-		free(pVersionInfo);
+		rx_heap_free(pVersionInfo);
 
 	}
 
@@ -819,7 +822,7 @@ unsigned _stdcall _inner_handler(void* arg)
 		TerminateProcess(GetCurrentProcess(), 113);
 	}
 #endif //RELEASE_TRACE
-	free(arg);
+	rx_heap_free(arg);
 	return RX_ERROR;
 }
 
@@ -853,7 +856,7 @@ sys_handle_t rx_thread_create(void(*start_address)(void*), void* arg, int priori
 		break;
 	}
 
-	inner_arg = (struct _thread_start_arg_t*)malloc(sizeof(struct _thread_start_arg_t));
+	inner_arg = (struct _thread_start_arg_t*)rx_heap_alloc(sizeof(struct _thread_start_arg_t));
 	inner_arg->start_address = start_address;
 	inner_arg->arg = arg;
 
@@ -914,7 +917,7 @@ void init_fixed_drives()
 			}
 		}
 	}
-	drives = (char**)malloc(sizeof(char*)*count);
+	drives = (char**)rx_heap_alloc(sizeof(char*)*count);
 	int i = 0;
 	drv[0] = 'A';
 	drvq[0] = 'A';
@@ -929,7 +932,7 @@ void init_fixed_drives()
 			{
 				if (i >= count)
 					break;
-				drives[i] = (char*)malloc(sizeof(char) * 3);
+				drives[i] = (char*)rx_heap_alloc(sizeof(char) * 3);
 				strcpy_s(drives[i], sizeof(char) * 3, drv);
 				i++;
 			}
@@ -957,7 +960,7 @@ find_file_handle_t rx_open_find_file_list(const char* path, struct rx_file_direc
 
 	if (path == NULL || path[0] == '\0')
 	{// root directories
-		ret = (struct find_file_struct_t*)malloc(sizeof(struct find_file_struct_t));
+		ret = (struct find_file_struct_t*)rx_heap_alloc(sizeof(struct find_file_struct_t));
 		ret->handle = 0;
 		ret->idx = 0;
 		strcpy_s(entry->file_name, MAX_PATH, drives[ret->idx]);
@@ -988,7 +991,7 @@ find_file_handle_t rx_open_find_file_list(const char* path, struct rx_file_direc
 		if (hndl == INVALID_HANDLE_VALUE)
 			return RX_ERROR;
 
-		ret = (struct find_file_struct_t*)malloc(sizeof(struct find_file_struct_t));
+		ret = (struct find_file_struct_t*)rx_heap_alloc(sizeof(struct find_file_struct_t));
 		ret->handle = hndl;
 		ret->idx = -1;
 
@@ -1030,7 +1033,7 @@ void rx_find_file_close(find_file_handle_t hndl)
 {
 	if (hndl->handle)
 		FindClose(hndl->handle);
-	free(hndl);
+	rx_heap_free(hndl);
 }
 
 
@@ -1607,7 +1610,7 @@ uint32_t* get_ip4_addresses()
 
 	if (count)
 	{
-		uint32_t* ret_val = malloc(sizeof(uint32_t) * count);
+		uint32_t* ret_val = rx_heap_alloc(sizeof(uint32_t) * count);
 		idx = 0;
 		iter = info;
 		do

@@ -74,12 +74,18 @@ void create_ssl_context()
     //SSL_CTX_set_verify(g_ssl_ctx, SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
 }
+int rx_init_heap(size_t initial_heap, size_t heap_alloc, size_t heap_trigger);
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 {
     g_is_debug_instance = init_data->is_debug;
     if(g_init_count == 0)
     {
+        rx_init_heap(
+            init_data->rx_initial_heap_size != 0 ? init_data->rx_initial_heap_size : 2 * 1024 * 1024
+            , init_data->rx_alloc_heap_size != 0 ? init_data->rx_alloc_heap_size : 1 * 1024 * 1024
+            , init_data->rx_heap_alloc_trigger != 0 ? init_data->rx_heap_alloc_trigger : 950);
+
         rx_hd_timer = init_data->rx_hd_timer;
 
         g_init_count = 1;
@@ -146,7 +152,8 @@ uint32_t rx_border_rand(uint32_t min, uint32_t max)
 
 void* rx_allocate_os_memory(size_t size)
 {
-    return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    void* addr= mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    return addr;
 }
 void rx_deallocate_os_memory(void* p, size_t size)
 {

@@ -198,6 +198,43 @@ bool get_bool_value(const string_type val)
     return false;
 }
 
+size_t str_to_mem(const char* str)
+{
+	size_t len = 0;
+	size_t multiply = 0;
+	int radix = 10;
+	if (str)
+	{
+		len = strlen(str);
+	}
+	if (len == 0)
+		return 0;
+	if (len > 1)
+	{
+		switch (str[len - 1])
+		{
+			case 'G':
+				multiply += 10;
+			case 'M':
+				multiply += 10;
+			case 'K':
+				multiply += 10;
+			default:
+				;
+		}
+	}
+	if (len > 3)
+	{
+		if (memcmp(str, "0x", 2) == 0)
+		{
+			radix = 0x10;
+			str += 2;
+		}
+
+	}
+	char* end_ptr = nullptr;
+	return strtoul(str, &end_ptr, radix) << multiply;
+}
 
 void read_base_config_options(const std::map<string_type, string_type>& options, rx_platform::configuration_data_t& config)
 {
@@ -239,6 +276,14 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.processor.real_time = true;
 		else if (row.first == "processor.nohdtimer" && !config.processor.no_hd_timer && get_bool_value(row.second))
 			config.processor.no_hd_timer = true;
+		else if (row.first == "heap.initial" && config.heap.initial_heap_size == 0)
+			config.heap.initial_heap_size = str_to_mem(row.second.c_str());
+		else if (row.first == "heap.alloc" && config.heap.heap_alloc_size == 0)
+			config.heap.heap_alloc_size = str_to_mem(row.second.c_str());
+		else if (row.first == "heap.trigger" && config.heap.heap_trigger == 0)
+			config.heap.heap_trigger = atoi(row.second.c_str());
+		else if (row.first == "heap.bucket" && config.heap.heap_bucket_capacity == 0)
+			config.heap.heap_bucket_capacity = atoi(row.second.c_str());
 		else if (row.first == "instance.code" && !config.build_system_from_code && get_bool_value(row.second))
 			config.build_system_from_code = true;
 		else if (row.first.size() > 8 && row.first.substr(0, 6) == "world.")
@@ -482,6 +527,9 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("calculation", "Use dedicated calculation timer", cxxopts::value<bool>(config.processor.has_calculation_timer))
 		("no-hd-timer", "Do not use high definition timer", cxxopts::value<bool>(config.processor.no_hd_timer))
 		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.processor.real_time))
+		("heap-initial", "Initial Heap size", cxxopts::value<size_t>(config.heap.initial_heap_size))
+		("heap-alloc", "Heap Allocation size", cxxopts::value<size_t>(config.heap.heap_alloc_size))
+		("heap-trigger", "Heap Trigger for additional allocation [1-1023]", cxxopts::value<size_t>(config.heap.heap_trigger))
 
 		("s,startup", "Startup script", cxxopts::value<string_type>(config.management.startup_script))
 		("u,user", "User storage reference", cxxopts::value<string_type>(config.storage.user_storage_reference))

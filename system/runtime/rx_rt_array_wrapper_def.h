@@ -206,11 +206,13 @@ array_wrapper<typeT>::array_wrapper_union_t::~array_wrapper_union_t()
 
 
 
+#ifndef RX_USE_OWN_HEAP
 #ifdef _MSC_VER
 #ifdef _DEBUG
 #define new DEBUG_CLIENTBLOCK
 #endif
 #endif
+#endif //RX_USE_OWN_HEAP
 
 template <class typeT>
 array_wrapper<typeT>::array_wrapper()

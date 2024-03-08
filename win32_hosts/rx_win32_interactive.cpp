@@ -160,14 +160,14 @@ DWORD get_ip_addresses(size_t* count, char*** addresses, char*** names, ip_addr_
 	ret = GetAdaptersInfo(info, &size);
 
 	outBufLen = sizeof(IP_ADAPTER_ADDRESSES);
-	pAddresses = (IP_ADAPTER_ADDRESSES *)malloc(outBufLen);
+	pAddresses = (IP_ADAPTER_ADDRESSES *)rx_heap_alloc(outBufLen);
 
 	dwRetVal = GetAdaptersAddresses(AF_INET, 0, NULL, pAddresses, &outBufLen);
 
 	if (dwRetVal == ERROR_BUFFER_OVERFLOW)
 	{
-		free(pAddresses);
-		pAddresses = (IP_ADAPTER_ADDRESSES *)malloc(outBufLen);
+		rx_heap_free(pAddresses);
+		pAddresses = (IP_ADAPTER_ADDRESSES *)rx_heap_alloc(outBufLen);
 		dwRetVal = GetAdaptersAddresses(AF_INET, 0, NULL, pAddresses, &outBufLen);
 	}
 		
@@ -188,10 +188,10 @@ DWORD get_ip_addresses(size_t* count, char*** addresses, char*** names, ip_addr_
 		} while (iter);
 
 		//allocate some space
-		*names = (char**)malloc((*count) * sizeof(char**));
-		*addresses = (char**)malloc((*count) * sizeof(char**));
-		*ctxs = (ip_addr_ctx_t*)malloc((*count) * sizeof(dword));
-		*states = (dword*)malloc((*count) * sizeof(dword));
+		*names = (char**)rx_heap_alloc((*count) * sizeof(char**));
+		*addresses = (char**)rx_heap_alloc((*count) * sizeof(char**));
+		*ctxs = (ip_addr_ctx_t*)rx_heap_alloc((*count) * sizeof(dword));
+		*states = (dword*)rx_heap_alloc((*count) * sizeof(dword));
 
 		// easier this way
 		locnames = *names;
@@ -255,7 +255,7 @@ size_t list_ip_adapters(IP_interface** interfaces)
 	{
 		if (count > 0)
 		{
-			padapters = (IP_interface*)malloc(sizeof(IP_interface)*count);
+			padapters = (IP_interface*)rx_heap_alloc(sizeof(IP_interface)*count);
 			for (i = 0; i <count; i++)
 			{
 				strcpy(padapters[i].name, names[i]);
@@ -264,10 +264,10 @@ size_t list_ip_adapters(IP_interface** interfaces)
 				padapters[i].status = interface_status_disconnected;
 				ret_count++;
 			}
-			free(names);
-			free(addresses);
-			free(ctxs);
-			free(states);
+			rx_heap_free(names);
+			rx_heap_free(addresses);
+			rx_heap_free(ctxs);
+			rx_heap_free(states);
 		}
 	}
 	return ret;

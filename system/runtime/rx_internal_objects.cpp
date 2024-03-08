@@ -52,6 +52,7 @@ system_domain::smart_ptr g_system_domain_inst;
 unassigned_domain::smart_ptr g_unassigned_domain_inst;
 system_object::smart_ptr g_system_object_inst;
 host_object::smart_ptr g_host_object_inst;
+memory_object::smart_ptr g_memory_object_inst;
 }
 
 // Class rx_platform::sys_objects::system_application 
@@ -198,7 +199,7 @@ system_object::~system_object()
 
 namespace_item_attributes system_object::get_attributes () const
 {
-    return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+    return (namespace_item_attributes)(namespace_item_read_access | namespace_item_pull_access | namespace_item_system);
 }
 
 system_object::smart_ptr system_object::instance ()
@@ -217,7 +218,7 @@ rx_result system_object::initialize_runtime (runtime::runtime_init_context& ctx)
     auto result = current_time_.bind("Info.Time", ctx);
     if (result)
     {
-        
+
     }
 
     ctx.set_item_static("Info.PlatformVer", rx_gate::instance().get_rx_version().c_str());
@@ -233,7 +234,7 @@ rx_result system_object::start_runtime (runtime::runtime_start_context& ctx)
 {
     timer_ = create_timer_function([this]()
         {
-            current_time_ = rx_time::now();
+            system_tick();
         });
     if (timer_)
     {
@@ -249,6 +250,11 @@ void system_object::deinitialize ()
     timer_ = rx_timer_ptr::null_ptr;
     if (g_system_object_inst)
         g_system_object_inst = smart_ptr::null_ptr;
+}
+
+void system_object::system_tick ()
+{
+    current_time_ = rx_time::now();
 }
 
 
@@ -268,7 +274,7 @@ host_object::~host_object()
 
 namespace_item_attributes host_object::get_attributes () const
 {
-    return (namespace_item_attributes)(namespace_item_read_access | namespace_item_system);
+    return (namespace_item_attributes)(namespace_item_read_access | namespace_item_pull_access | namespace_item_system);
 }
 
 host_object::smart_ptr host_object::instance ()
@@ -311,7 +317,6 @@ rx_result host_object::initialize_runtime (runtime::runtime_init_context& ctx)
     {
     }
 
-
     return true;
 }
 
@@ -319,11 +324,7 @@ rx_result host_object::start_runtime (runtime::runtime_start_context& ctx)
 {
     timer_ = create_timer_function([this]()
         {
-            size_t total = 0;
-            size_t free = 0;
-            size_t process = 0;
-            rx_collect_memory_info(&total, &free, &process);
-            free_memory_ = (uint64_t)free;
+            host_tick();
         });
     if (timer_)
     {
@@ -339,6 +340,16 @@ void host_object::deinitialize ()
     timer_ = rx_timer_ptr::null_ptr;
     if (g_host_object_inst)
         g_host_object_inst = smart_ptr::null_ptr;
+}
+
+void host_object::host_tick ()
+{
+    size_t total = 0;
+    size_t free = 0;
+    size_t process = 0;
+    rx_collect_memory_info(&total, &free, &process);
+    free_memory_ = (uint64_t)free;
+
 }
 
 
@@ -403,6 +414,140 @@ void host_application::deinitialize ()
 {
     if (g_host_application_inst)
         g_host_application_inst = smart_ptr::null_ptr;
+}
+
+
+// Class rx_platform::sys_objects::memory_object 
+
+memory_object::memory_object()
+{
+}
+
+
+memory_object::~memory_object()
+{
+}
+
+
+
+namespace_item_attributes memory_object::get_attributes () const
+{
+    return (namespace_item_attributes)(namespace_item_read_access | namespace_item_pull_access | namespace_item_system);
+}
+
+memory_object::smart_ptr memory_object::instance ()
+{
+    if (!g_memory_object_inst)
+        g_memory_object_inst = smart_ptr::create_from_pointer_without_bind(new memory_object());
+    return g_memory_object_inst;
+}
+
+rx_result memory_object::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+    rx_result result(true);
+    result = heap_status_.bind("Status", ctx);
+    /*result = heap_total_.bind("Info.HeapTotal", ctx);
+    if (result)
+    {
+    }
+
+    result = heap_used_.bind("Info.HeapUsed", ctx);
+    if (result)
+    {
+    }
+
+    result = heap_perc_.bind("Info.HeapPercent", ctx);
+    if (result)
+    {
+    }*/
+
+    return result;
+}
+
+rx_result memory_object::start_runtime (runtime::runtime_start_context& ctx)
+{
+    timer_ = create_timer_function([this]()
+        {
+            memory_tick();
+        });
+    if (timer_)
+    {
+        timer_->start(5000, true);
+    }
+    return true;
+}
+
+void memory_object::deinitialize ()
+{
+    if (timer_)
+        timer_->cancel();
+    timer_ = rx_timer_ptr::null_ptr;
+    if (g_memory_object_inst)
+        g_memory_object_inst = smart_ptr::null_ptr;
+}
+
+void memory_object::memory_tick ()
+{
+
+    rx_platform_heap_status status[0x20];
+    size_t total_heap = 0;
+    size_t heap_used = 0;
+    size_t heap_trigger = 0;
+    size_t heap_alloc = 0;
+
+
+    rx_heap_status(status, &total_heap, &heap_used, &heap_trigger, &heap_alloc);
+
+    std::vector<rx_simple_value> buckets_data;
+
+    /*
+    dtype->complex_data.register_value_static<uint64_t>("Bucketsize", 0);
+    dtype->complex_data.register_value_static<uint64_t>("Used", 0);
+    dtype->complex_data.register_value_static<uint64_t>("Free", 0);
+    dtype->complex_data.register_value_static<uint64_t>("Capacity", 0);
+    dtype->complex_data.register_value_static<uint64_t>("MaxUsed", 0);
+    */
+    int idx = 0;
+    while (status[idx].bucket_size)
+    {
+        std::vector<rx_simple_value> arr(5, rx_simple_value());
+        arr[0].assign_static(status[idx].bucket_size);
+        arr[1].assign_static(status[idx].occuupied);
+        arr[2].assign_static(status[idx].free);
+        arr[3].assign_static(status[idx].buckets_capacity);
+        arr[4].assign_static(status[idx].bucket_max_used);
+        rx_simple_value temp_val;
+        temp_val.assign_static(arr);
+        buckets_data.push_back(std::move(temp_val));
+        idx++;
+    }
+    rx_simple_value rx_tot;
+    rx_simple_value rx_used;
+    rx_simple_value rx_perc;
+    rx_simple_value rx_buckets;
+    rx_tot.assign_static(total_heap);
+    rx_used.assign_static(heap_used);
+    rx_perc.assign_static((double)heap_used / (double)total_heap * 100.0);
+    rx_buckets.assign_array(buckets_data);
+
+    rx_simple_value full;
+    full.assign_static(std::vector< rx_simple_value>{
+            rx_tot,
+            rx_used,
+            rx_perc,
+            rx_buckets
+        });
+
+
+    heap_status_.commit(std::move(full));
+   /* heap_total_ = total_heap;
+    heap_used_ = heap_used;
+    heap_perc_ = perc;*/
+    // printf("***JEEEE!!!!\r\n");
+    // char* a = new char[0x10000];
+     //*a = '\0';
+     //printf("****** Total:%gMB, Used:%gMB, [ %g %% ]                \r", total_mib, occupied_mib, perc);
+
 }
 
 

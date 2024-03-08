@@ -109,13 +109,20 @@ rx_protocol_result_t rx_handle_buffer_back_resize(rx_packet_buffer* buffer, size
 		if (temp_ptr == NULL)
 		{
 			result = g_memory.alloc_buffer_function((void**)&temp_ptr, new_capacity + buffer->front_capacity);
+			if (result != RX_PROTOCOL_OK)
+				return result;
 		}
 		else
 		{
-			result = g_memory.realloc_buffer_function((void**)&temp_ptr, buffer->capacity + new_capacity);
+			uint8_t* old_buffer = temp_ptr;
+			size_t old_size = buffer->capacity + buffer->front_capacity;
+			result = g_memory.alloc_buffer_function((void**)&temp_ptr, buffer->front_capacity + new_capacity);
+			if (result != RX_PROTOCOL_OK)
+				return result;
+			if (buffer->size)
+				memcpy(temp_ptr + front_reserve, buffer->buffer_ptr, buffer->size);
+			g_memory.free_buffer_function(buffer->mem_ptr, buffer->capacity + buffer->front_capacity);
 		}
-		if (result != RX_PROTOCOL_OK)
-			return result;
 		buffer->mem_ptr = temp_ptr;
 		buffer->buffer_ptr = buffer->mem_ptr + front_reserve;
 		buffer->capacity = new_capacity;

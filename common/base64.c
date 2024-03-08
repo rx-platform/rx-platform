@@ -256,7 +256,7 @@ RX_COMMON_API int rx_base64_get_data(bytes_value_struct* result, const char* dat
 		// and will free eventual buffer that is left
 		bytes_value_struct temp_struct;
 		size_t temp_size = 0;
-		uint8_t* temp_ptr = rx_c_ptr(result, &temp_size);
+		uint8_t* temp_ptr = (uint8_t*)rx_c_ptr(result, &temp_size);
 		RX_ASSERT(temp_size >= new_size);
 		rx_init_bytes_value_struct(&temp_struct, temp_ptr, new_size);
 		rx_destory_bytes_value_struct(result);

@@ -222,10 +222,17 @@ rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_
 		calculation_timer_->start(RX_PRIORITY_NORMAL);
 
 	dispatcher_timer_ = rx_create_reference<dispatcher_subscribers_job>();
+	low_priority_ = rx_create_reference<low_priority_house_keeping>();
 	if (general_timer_)
 	{
 		general_timer_->append_job(dispatcher_timer_, &io_pool_->get_pool());
 		dispatcher_timer_->start(io_data.io_timer_period);
+
+		if(slow_pool_)
+			general_timer_->append_job(low_priority_, &slow_pool_->get_pool());
+		else
+			general_timer_->append_job(low_priority_, &meta_pool_->get_pool());
+		low_priority_->start(6000);
 	}
 
 	return true;
@@ -656,6 +663,33 @@ rx_result physical_thread_object::initialize_runtime (runtime::runtime_init_cont
 		max_queue_size_.bind("Pool.MaxSize", ctx);
 	}
 	return result;
+}
+
+
+// Class rx_internal::infrastructure::low_priority_house_keeping 
+
+low_priority_house_keeping::low_priority_house_keeping()
+{
+}
+
+
+low_priority_house_keeping::~low_priority_house_keeping()
+{
+}
+
+
+
+void low_priority_house_keeping::process ()
+{
+	size_t result = rx_heap_house_keeping();
+	if (result)
+	{
+		std::ostringstream ss;
+		ss << "Heap claimed "
+			<< result / 1024
+			<< "KB of memory.";
+		HOST_LOG_INFO("low_priority_house_keeping", 900, ss.str());
+	}
 }
 
 

@@ -41,9 +41,9 @@
 namespace rx_platform {
 namespace meta {
 namespace def_blocks {
+class mapper_attribute;
 class variable_attribute;
 class struct_attribute;
-class mapper_attribute;
 
 } // namespace def_blocks
 } // namespace meta
@@ -168,6 +168,8 @@ public:
       const_value_def (const string_type& name, rx_simple_value&& value, bool config_only);
 
       const_value_def (const string_type& name, const rx_simple_value& value, bool config_only);
+
+      const_value_def (const string_type& name, const rx_item_reference& type_id, bool is_array, bool config_only);
 
 
       rx_result serialize_definition (base_meta_writer& stream) const;
@@ -333,6 +335,8 @@ public:
 
       simple_value_def (const string_type& name, const rx_simple_value& value, bool read_only, bool persistent);
 
+      simple_value_def (const string_type& name, const rx_item_reference& type_id, bool is_array, bool read_only, bool persistent);
+
 
       rx_result serialize_definition (base_meta_writer& stream) const;
 
@@ -439,6 +443,10 @@ class complex_data_type
       rx_result register_simple_value (const string_type& name, const rx_simple_value& val, bool read_only, bool persistent);
 
       rx_result register_const_value (const string_type& name, const rx_simple_value& val, bool config_only = false);
+
+      rx_result register_simple_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool read_only, bool persistent);
+
+      rx_result register_const_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool config_only = false);
 
       rx_result check_name (const string_type& name, int rt_index);
 
@@ -1021,9 +1029,9 @@ public:
     ~data_attribute() = default;
 
   public:
-      data_attribute (const string_type& name, const rx_node_id& id);
+      data_attribute (const string_type& name, const rx_node_id& id, bool is_array = false);
 
-      data_attribute (const string_type& name, const string_type& target_name);
+      data_attribute (const string_type& name, const string_type& target_name, bool is_array = false);
 
 
       const string_type& get_name () const
@@ -1334,7 +1342,7 @@ class data_type_def
 
   public:
 
-      rx_result register_child (const string_type& name, const rx_item_reference& ref);
+      rx_result register_child (const string_type& name, const rx_item_reference& ref, bool is_array);
 
       rx_result register_value (const string_type& name, rx_simple_value&& val);
 

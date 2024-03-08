@@ -202,7 +202,6 @@ struct rx_hosting_functions
 	rx_free_buffer_type free_function;
 
 	rx_alloc_buffer_type alloc_buffer_function;
-	rx_alloc_buffer_type realloc_buffer_function;
 	rx_free_buffer_type free_buffer_function;
 
 	rx_protocol_atomic_inc_type atomic_inc_function;

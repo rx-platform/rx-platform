@@ -208,6 +208,9 @@ System object implementation");
 
   private:
 
+      void system_tick ();
+
+
 
       runtime::owned_value<rx_time> current_time_;
 
@@ -247,6 +250,9 @@ Host object implementation");
   protected:
 
   private:
+
+      void host_tick ();
+
 
 
       rx_timer_ptr timer_;
@@ -322,6 +328,49 @@ host application. contains identity of the host");
   private:
       host_application();
 
+
+
+};
+
+
+
+
+
+
+class memory_object : public runtime::items::object_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Memory object implementation");
+    DECLARE_REFERENCE_PTR(memory_object);
+
+  public:
+      memory_object();
+
+      ~memory_object();
+
+
+      namespace_item_attributes get_attributes () const;
+
+      static memory_object::smart_ptr instance ();
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      void deinitialize ();
+
+
+  protected:
+
+  private:
+
+      void memory_tick ();
+
+
+
+      rx_timer_ptr timer_;
+
+      runtime::owned_complex_value heap_status_;
 
 
 };

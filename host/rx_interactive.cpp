@@ -251,7 +251,8 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls, config.management.debug);
+			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls, config.management.debug
+				, config.heap.initial_heap_size, config.heap.heap_alloc_size, config.heap.heap_trigger, config.heap.heap_bucket_capacity);
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			std::cout << "\r\n";

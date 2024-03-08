@@ -337,6 +337,52 @@ public:
     }
 };
 
+
+struct owned_complex_value
+{
+    rx_simple_value val_;
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+
+    void internal_commit();
+public:
+    owned_complex_value() = default;
+    ~owned_complex_value() = default;
+    owned_complex_value(const owned_complex_value&) = default;
+    owned_complex_value(owned_complex_value&&) = default;
+    owned_complex_value& operator=(const owned_complex_value&) = default;
+    owned_complex_value& operator=(owned_complex_value&&) = default;
+    rx_result bind(const string_type& path, runtime_init_context& ctx);
+    owned_complex_value(const rx_simple_value& right);
+    owned_complex_value(rx_simple_value&& right);
+    rx_simple_value& value();
+    void commit(const rx_simple_value& val);
+    void commit(rx_simple_value&& val);
+};
+
+struct local_complex_value
+{
+    using callback_t = std::function<void(const rx_simple_value&)>;
+    callback_t callback_;
+    rx_simple_value bad_value_;
+    rx_simple_value value_;
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+public:
+    local_complex_value() = default;
+    ~local_complex_value() = default;
+    local_complex_value(const local_complex_value&) = default;
+    local_complex_value(local_complex_value&&) = default;
+    local_complex_value& operator=(const local_complex_value&) = default;
+    local_complex_value& operator=(local_complex_value&&) = default;
+    rx_result bind(const string_type& path, runtime_init_context& ctx, callback_t callback = callback_t());
+    local_complex_value(const rx_simple_value& right);
+    local_complex_value(rx_simple_value&& right);
+    local_complex_value(const rx_simple_value& right, const rx_simple_value& bad_value);
+    local_complex_value(rx_simple_value&& right, rx_simple_value&& bad_value);
+    const rx_simple_value& value() const;
+};
+
 template <typename typeT, bool manual = false>
 struct async_owned_value
 {
@@ -552,6 +598,7 @@ public:
 
 } // namespace runtime
 } // namespace rx_platform
+
 
 
 

@@ -137,6 +137,26 @@ rx_result complex_data_type::register_const_value (const string_type& name, cons
 	return ret;
 }
 
+rx_result complex_data_type::register_simple_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool read_only, bool persistent)
+{
+	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
+	if (ret)
+	{
+		simple_values_.emplace_back(name, ref, is_array, read_only, persistent);
+	}
+	return ret;
+}
+
+rx_result complex_data_type::register_const_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool config_only)
+{
+	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
+	if (ret)
+	{
+		const_values_.emplace_back(name, ref, is_array, config_only);
+	}
+	return ret;
+}
+
 rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 {
 	if (!rx_is_valid_item_name(name))
@@ -156,7 +176,7 @@ rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 // Class rx_platform::meta::def_blocks::const_value_def 
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value, bool config_only)
-      : array_size_(-1)
+	: array_size_(-1)
 	, name_(name)
 	, value_(std::move(value))
 	, read_only_(false)
@@ -166,9 +186,19 @@ const_value_def::const_value_def (const string_type& name, rx_simple_value&& val
 }
 
 const_value_def::const_value_def (const string_type& name, const rx_simple_value& value, bool config_only)
-      : array_size_(-1)
+	: array_size_(-1)
 	, name_(name)
 	, value_(value)
+	, read_only_(false)
+	, persistent_(false)
+	, config_only_(config_only)
+{
+}
+
+const_value_def::const_value_def (const string_type& name, const rx_item_reference& type_id, bool is_array, bool config_only)
+	: array_size_(is_array ?  0 : -1)
+	, name_(name)
+	, data_type_ref_(type_id)
 	, read_only_(false)
 	, persistent_(false)
 	, config_only_(config_only)
@@ -450,7 +480,7 @@ mapper_attribute::mapper_attribute (const string_type& name, const string_type& 
 // Class rx_platform::meta::def_blocks::simple_value_def 
 
 simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& value, bool read_only, bool persistent)
-      : array_size_(-1)
+	: array_size_(-1)
 	, name_(name)
 	, value_(std::move(value))
 	, read_only_(read_only)
@@ -459,9 +489,18 @@ simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& v
 }
 
 simple_value_def::simple_value_def (const string_type& name, const rx_simple_value& value, bool read_only, bool persistent)
-      : array_size_(-1)
+	: array_size_(-1)
 	, name_(name)
 	, value_(value)
+	, read_only_(read_only)
+	, persistent_(persistent)
+{
+}
+
+simple_value_def::simple_value_def (const string_type& name, const rx_item_reference& type_id, bool is_array, bool read_only, bool persistent)
+	: array_size_(is_array ? 0 : -1)
+	, name_(name)
+	, data_type_ref_(type_id)
 	, read_only_(read_only)
 	, persistent_(persistent)
 {
@@ -735,16 +774,16 @@ rx_result filtered_data_type::register_filter (const string_type& name, const rx
 
 // Class rx_platform::meta::def_blocks::data_attribute 
 
-data_attribute::data_attribute (const string_type& name, const rx_node_id& id)
+data_attribute::data_attribute (const string_type& name, const rx_node_id& id, bool is_array)
       : name_(name),
-        array_size_(-1)
+        array_size_(is_array ? 0 : -1)
 	, target_(id)
 {
 }
 
-data_attribute::data_attribute (const string_type& name, const string_type& target_name)
+data_attribute::data_attribute (const string_type& name, const string_type& target_name, bool is_array)
       : name_(name),
-        array_size_(-1)
+        array_size_(is_array ? 0 : -1)
 	, target_(target_name)
 {
 }
@@ -800,15 +839,15 @@ display_attribute::display_attribute (const string_type& name, const string_type
 // Class rx_platform::meta::def_blocks::data_type_def 
 
 
-rx_result data_type_def::register_child (const string_type& name, const rx_item_reference& ref)
+rx_result data_type_def::register_child (const string_type& name, const rx_item_reference& ref, bool is_array)
 {
 	auto ret = check_name(name, (static_cast<int>(children_.size() | child_values_mask)));
 	if (!ret)
 		return ret;
 	if (ref.is_node_id())
-		children_.emplace_back(data_attribute(name, ref.get_node_id()));
+		children_.emplace_back(data_attribute(name, ref.get_node_id(), is_array));
 	else
-		children_.emplace_back(data_attribute(name, ref.get_path()));
+		children_.emplace_back(data_attribute(name, ref.get_path(), is_array));
 	return true;
 }
 

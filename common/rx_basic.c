@@ -62,7 +62,7 @@ RX_COMMON_API int rx_init_result_struct_with_errors(rx_result_struct* res, uint3
 		}
 		else
 		{
-			temp_ptr = malloc(sizeof(rx_result_data) * (res->count + 1));
+			temp_ptr = rx_heap_alloc(sizeof(rx_result_data) * (res->count + 1));
 			if (!temp_ptr)
 				return RX_ERROR;
 			res->data.ptr_data = temp_ptr;
@@ -86,7 +86,7 @@ RX_COMMON_API int rx_init_result_struct_with_errors(rx_result_struct* res, uint3
 				{
 					rx_destory_string_value_struct(&temp_ptr[j].text);
 				}
-				free(temp_ptr);
+				rx_heap_free(temp_ptr);
 				return ret;
 			}
 			
@@ -105,7 +105,7 @@ RX_COMMON_API int rx_result_add_error(rx_result_struct* res, uint32_t code, cons
 	}
 	else if (res->count == RESULT_STATIC_SIZE)
 	{// transfer from static to dynamic array
-		temp_ptr = malloc(sizeof(rx_result_data) * (RESULT_STATIC_SIZE + 1));
+		temp_ptr = rx_heap_alloc(sizeof(rx_result_data) * (RESULT_STATIC_SIZE + 1));
 		if (temp_ptr)
 		{
 			memcpy(temp_ptr, res->data.static_data, sizeof(rx_result_data) * RESULT_STATIC_SIZE);
@@ -123,7 +123,7 @@ RX_COMMON_API int rx_result_add_error(rx_result_struct* res, uint32_t code, cons
 	else
 	{// full dynamic
 
-		temp_ptr = malloc(sizeof(rx_result_data) * (res->count + 1));
+		temp_ptr = rx_heap_alloc(sizeof(rx_result_data) * (res->count + 1));
 		if (temp_ptr)
 		{
 			memcpy(temp_ptr, res->data.ptr_data, sizeof(rx_result_data) * (res->count));
@@ -131,7 +131,7 @@ RX_COMMON_API int rx_result_add_error(rx_result_struct* res, uint32_t code, cons
 			temp_ptr[res->count].code = code;
 			ret = rx_init_string_value_struct(&temp_ptr[res->count].text, text, count);
 
-			free(res->data.ptr_data);
+			rx_heap_free(res->data.ptr_data);
 			res->data.ptr_data = temp_ptr;
 		}
 		else
@@ -166,7 +166,7 @@ RX_COMMON_API int rx_copy_result_struct(rx_result_struct* res, const rx_result_s
 		}
 		else
 		{
-			res->data.ptr_data = malloc(sizeof(rx_result_data) * src->count);
+			res->data.ptr_data = rx_heap_alloc(sizeof(rx_result_data) * src->count);
 			for (i = 0; i < src->count; i++)
 			{
 				ret = rx_copy_string_value(&res->data.ptr_data[i].text, &src->data.ptr_data[i].text);
@@ -227,7 +227,7 @@ RX_COMMON_API void rx_destroy_result_struct(rx_result_struct* res)
 			{
 				rx_destory_string_value_struct(&res->data.ptr_data[i].text);
 			}
-			free(res->data.ptr_data);
+			rx_heap_free(res->data.ptr_data);
 		}
 	}
 }

@@ -513,6 +513,14 @@ rx_result rx_platform_builder::register_system_constructors ()
 		result.register_error("Error registering constructor for system object!");
 		return result;
 	}
+	// memory object
+	result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
+		RX_NS_MEMORY_TYPE_ID, [] { return rx_platform::sys_objects::memory_object::instance(); });
+	if (!result)
+	{
+		result.register_error("Error registering constructor for system object!");
+		return result;
+	}
 	// unassigned app
 	result = model::platform_types_manager::instance().get_type_repository<application_type>().register_constructor(
 		RX_NS_SYSTEM_UNASS_APP_TYPE_ID, [] { return rx_platform::sys_objects::unassigned_application::instance(); });
@@ -596,6 +604,7 @@ void rx_platform_builder::deinitialize ()
 	rx_platform::sys_objects::system_domain::instance()->deinitialize();
 	rx_platform::sys_objects::system_object::instance()->deinitialize();
 	rx_platform::sys_objects::host_object::instance()->deinitialize();
+	rx_platform::sys_objects::memory_object::instance()->deinitialize();
 	rx_platform::sys_objects::unassigned_application::instance()->deinitialize();
 	rx_platform::sys_objects::unassigned_domain::instance()->deinitialize();
 	// now delete directories recursive
@@ -919,6 +928,17 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 		obj->object_data.register_display(def_blocks::display_attribute("index", RX_MAIN_HTTP_DISPLAY_TYPE_ID), obj->complex_data);
 		obj->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "index.html");
 		add_type_to_configuration(dir, obj, false);
+
+		obj = create_type<object_type>(meta::object_type_creation_data{
+			RX_NS_MEMORY_TYPE_NAME
+			, RX_NS_MEMORY_TYPE_ID
+			, RX_INTERNAL_OBJECT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		obj->complex_data.register_simple_value("Status", rx_node_id(RX_NS_MEMORY_STATUS_TYPE_ID), false, true, false);
+		add_type_to_configuration(dir, obj, false);
+
 		obj = create_type<object_type>(meta::object_type_creation_data{
 			RX_NS_HOST_TYPE_NAME
 			, RX_NS_HOST_TYPE_ID
@@ -937,6 +957,34 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			});
 		build_instance_info_struct_type(dir, str);
 		add_simple_type_to_configuration(dir, str, false);
+
+		auto dtype = create_type<basic_types::data_type>(meta::type_creation_data{
+			RX_NS_BUCKET_STATUS_TYPE_NAME
+			, RX_NS_BUCKET_STATUS_TYPE_ID
+			, RX_CLASS_DATA_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		dtype->complex_data.register_value_static<uint64_t>("BucketSize", 0);
+		dtype->complex_data.register_value_static<uint64_t>("Used", 0);
+		dtype->complex_data.register_value_static<uint64_t>("Free", 0);
+		dtype->complex_data.register_value_static<uint64_t>("Capacity", 0);
+		dtype->complex_data.register_value_static<uint64_t>("MaxUsed", 0);
+		add_data_type_to_configuration(dir, dtype);
+
+		dtype = create_type<basic_types::data_type>(meta::type_creation_data{
+			RX_NS_MEMORY_STATUS_TYPE_NAME
+			, RX_NS_MEMORY_STATUS_TYPE_ID
+			, RX_CLASS_DATA_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		dtype->complex_data.register_value_static<uint64_t>("Total", 0);
+		dtype->complex_data.register_value_static<uint64_t>("Used", 0);
+		dtype->complex_data.register_value_static<double>("Percent", 0);
+		dtype->complex_data.register_child("Buckets", rx_node_id(RX_NS_BUCKET_STATUS_TYPE_ID), true);
+		add_data_type_to_configuration(dir, dtype);
+
 		str = create_type<basic_types::struct_type>(meta::type_creation_data{
 			RX_NS_HOST_INFO_NAME
 			, RX_NS_HOST_INFO_ID
@@ -1017,7 +1065,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			});
 		add_type_to_configuration(dir, dom, false);
 		// data types used by system classes
-		auto dtype = create_type<basic_types::data_type>(meta::type_creation_data{
+		dtype = create_type<basic_types::data_type>(meta::type_creation_data{
 			RX_NS_CHANGED_DATA_NAME
 			, RX_NS_CHANGED_DATA_ID
 			, RX_CLASS_DATA_BASE_ID
@@ -1550,7 +1598,8 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		domain_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		domain_instance_data.instance_data.priority = rx_domain_priority::normal;
 		result = add_object_to_configuration(dir, std::move(domain_instance_data), data::runtime_values_data(), tl::type2type<domain_type>());
-		
+
+		app_instance_data = runtime_data::application_runtime_data();
 		app_instance_data.meta_info.name = RX_NS_WORLD_APP_NAME;
 		app_instance_data.meta_info.id = RX_NS_WORLD_APP_ID;
 		app_instance_data.meta_info.parent = RX_NS_WORLD_APP_TYPE_ID;
@@ -1571,6 +1620,16 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
 		instance_data.overrides.add_value_static("index.Resources.DisplayFile", "index.html");
 		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
+
+		instance_data = runtime_data::object_runtime_data();
+		instance_data.meta_info.name = RX_NS_MEMORY_NAME;
+		instance_data.meta_info.id = RX_NS_MEMORY_ID;
+		instance_data.meta_info.parent = RX_NS_MEMORY_TYPE_ID;
+		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		instance_data.meta_info.path = full_path;
+		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
+
 
 		instance_data = runtime_data::object_runtime_data();
 		instance_data.meta_info.name = RX_NS_SERVER_RT_NAME;

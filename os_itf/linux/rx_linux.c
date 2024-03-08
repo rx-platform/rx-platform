@@ -113,11 +113,14 @@ void rx_init_hal_version()
 
 int init_common_result = RX_ERROR;
 
-void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug)
+void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug, size_t initial_heap, size_t heap_alloc, size_t heap_trigger, size_t bucket_capacity)
 {
     rx_platform_init_data common_data;
     common_data.rx_hd_timer = hdt;
     common_data.is_debug = is_debug;
+    common_data.rx_initial_heap_size = initial_heap;
+    common_data.rx_alloc_heap_size = heap_alloc;
+    common_data.rx_heap_alloc_trigger = heap_trigger;
 
     init_common_result = rx_init_common_library(&common_data);
 
@@ -365,7 +368,7 @@ int lookup(char *line, char *pattern, char **value)
     for (p = line + len; isspace(*(p-1)); p--);
     *p = '\0';
 
-    *value=(char*)malloc(strlen(v)+1);
+    *value=(char*)rx_heap_alloc(strlen(v)+1);
     strcpy(*value,v);
     return RX_OK;
 }
@@ -388,7 +391,7 @@ void rx_collect_processor_info(char* buffer, size_t buffer_size, size_t* count)
     if(model_name!=NULL)
     {
         strcpy(buffer,model_name);
-        free(model_name);
+        rx_heap_free(model_name);
     }
     else
     {
@@ -465,7 +468,7 @@ void* do_stuff(void* arg)
 sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32_t* thread_id, const char* name)
 {
 	struct sched_param sp;
-	struct linux_thread_chunk* chunk = (struct linux_thread_chunk*)malloc(sizeof(struct linux_thread_chunk));
+	struct linux_thread_chunk* chunk = (struct linux_thread_chunk*)rx_heap_alloc(sizeof(struct linux_thread_chunk));
 	chunk->f = f;
 	chunk->thread_fd = eventfd(0, EFD_NONBLOCK);
 	chunk->arg=arg;
@@ -925,7 +928,7 @@ find_file_handle_t rx_open_find_file_list(const char* ipath, struct rx_file_dire
 			{
 				if (fill_dir_entry(entry, pentry))
 				{
-                    ff = (struct linux_find_files_t*)malloc(sizeof(struct linux_find_files_t));
+                    ff = (struct linux_find_files_t*)rx_heap_alloc(sizeof(struct linux_find_files_t));
                     ff->pdir = dir;
                     ff->filter = NULL;
 					break;// found file or directory
@@ -963,9 +966,9 @@ find_file_handle_t rx_open_find_file_list(const char* ipath, struct rx_file_dire
 						{
 							if (fill_dir_entry(entry, pentry))
 							{
-                                ff = (struct linux_find_files_t*)malloc(sizeof(struct linux_find_files_t));
+                                ff = (struct linux_find_files_t*)rx_heap_alloc(sizeof(struct linux_find_files_t));
                                 ff->pdir = dir;
-                                ff->filter = (char*)malloc(strlen(filter) + 1);
+                                ff->filter = (char*)rx_heap_alloc(strlen(filter) + 1);
                                 strcpy(ff->filter, filter);
 								break;// found file or directory
                             }
@@ -1024,7 +1027,7 @@ void rx_find_file_close(find_file_handle_t hndl)
 {
 	struct linux_find_files_t* ff = (struct linux_find_files_t*)hndl;
 	closedir(ff->pdir);
-	free(hndl);
+	rx_heap_free(hndl);
 }
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1040,7 +1043,7 @@ typedef struct dispatch_function_data_t
 rx_kernel_dispather_t rx_create_kernel_dispathcer(int max)
 {
     struct epoll_event event;
-    struct linux_epoll_struct_t* pepoll=(struct linux_epoll_struct_t*)malloc(sizeof(struct linux_epoll_struct_t));
+    struct linux_epoll_struct_t* pepoll=(struct linux_epoll_struct_t*)rx_heap_alloc(sizeof(struct linux_epoll_struct_t));
     int ret=pipe2(pepoll->pipe,O_NONBLOCK);
     if(ret==0)
     {// success
@@ -1383,7 +1386,7 @@ uint32_t rx_destroy_kernel_dispatcher(rx_kernel_dispather_t disp)
     close(disp->pipe[0]);
     close(disp->pipe[1]);
     close(disp->epoll_fd);
-    free(disp);
+    rx_heap_free(disp);
     return RX_ERROR;
 }
 uint32_t rx_dispatcher_signal_end(rx_kernel_dispather_t disp)

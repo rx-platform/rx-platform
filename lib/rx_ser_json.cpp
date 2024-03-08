@@ -46,11 +46,13 @@
 #include "third-party/rapidjson/include/rapidjson/prettywriter.h"
 
 // placement new and MSVC debug heap problem
+#ifndef RX_USE_OWN_HEAP
 #ifdef _MSC_VER
 #ifdef _DEBUG
 #define new DEBUG_CLIENTBLOCK
 #endif
 #endif
+#endif //RX_USE_OWN_HEAP
 
 
 

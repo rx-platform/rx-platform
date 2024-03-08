@@ -58,6 +58,10 @@ typedef struct rx_platform_init_data_t
 	int rx_hd_timer; // use high definition timer
 	int is_debug; // is this a debug instance, pure informatively, 
 				  // this is a best place to keep this information i think
+	size_t rx_initial_heap_size;
+	size_t rx_alloc_heap_size;
+	size_t rx_heap_alloc_trigger;
+	size_t rx_bucket_capacity;
 
 } rx_platform_init_data;
 
@@ -68,6 +72,21 @@ typedef uint32_t runtime_transaction_id_t;
 
 typedef intptr_t rx_security_handle_t;
 
+RX_COMMON_API void* rx_heap_alloc(size_t size);
+RX_COMMON_API int rx_heap_free(void* ptr);
+RX_COMMON_API size_t rx_heap_house_keeping();
+
+
+typedef struct rx_platform_heap_status_t
+{
+	size_t bucket_size;
+	size_t occuupied;
+	size_t free;
+	size_t buckets_capacity;
+	size_t bucket_max_used;
+} rx_platform_heap_status;
+
+RX_COMMON_API int rx_heap_status(struct rx_platform_heap_status_t* buffer, size_t* total, size_t* used, size_t* trigger, size_t* alloc);
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data);
 RX_COMMON_API void rx_deinit_common_library();

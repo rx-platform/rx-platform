@@ -105,6 +105,8 @@ rx_result rx_system_info_response::serialize (base_meta_writer& stream) const
             return stream.get_error();
         if(!stream.write_uuid("net_id", network_id))
             return stream.get_error();
+        if (!stream.write_string("heap", heap.c_str()))
+            return stream.get_error();
     }
     if (!stream.end_object())
         return stream.get_error();
@@ -161,6 +163,8 @@ rx_result rx_system_info_response::deserialize (base_meta_reader& stream)
         if(!stream.read_string("network", network))
             return stream.get_error();
         if(!stream.read_uuid("net_id", network_id))
+            return stream.get_error();
+        if (!stream.read_string("heap", heap))
             return stream.get_error();
     }
     if (!stream.end_object())
@@ -231,7 +235,8 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
     size_t cpu_count = 1;
     std::ostringstream out1;
     rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]), &cpu_count);
-    out1 << "CPU: " << buff
+    out1 <<  buff
+        << "[" << cpu_count << " Threads]"
         << (rx_big_endian ? "; Big-endian" : "; Little-endian");
     response->cpu = out1.str();
 
@@ -242,16 +247,54 @@ message_ptr rx_system_info_request::do_job (api::rx_context ctx, rx_protocol_con
     size_t process = 0;
     std::ostringstream out2;
     rx_collect_memory_info(&total, &free, &process);
-    out2 << "Memory: Total "
-        << (int)(total / 1048576ull)
-        << "MiB / Free "
-        << (int)(free / 1048576ull)
-        << "MiB / Process "
-        << (int)(process / 1024ull)
-        << "KiB \r\n";
+    if (total > 100 * 1024 * 1024 /*100 MB*/)
+    {
+        out2 << "Total "
+            << (int)(total / 1048576ull)
+            << "MiB / Free "
+            << (int)(free / 1048576ull)
+            << "KiB / ";
+    }
+    else //if (total > 100 * 1024 /*100 KB*/)
+    {
+        out2 << "Total "
+            << (int)(total / 1024ull)
+            << "KiB / Free "
+            << (int)(free / 1024ull)
+            << "KiB / ";
+    }
     /////////////////////////////////////////////////////////////////////////
     out2 << "Page size: " << (int)rx_os_page_size() << " bytes";
     response->memory = out2.str();
+
+
+    size_t used = 0;
+    size_t trigger = 0;
+    size_t alloc = 0;
+    rx_heap_status(NULL, &total, &used, &trigger, &alloc);
+    std::ostringstream out4;
+    out4.clear();
+    if (total > 100 * 1024 * 1024 /*100 MB*/)
+    {
+        out4 << "Total "
+            << (int)(total / 1048576ull)
+            << "MiB / Used "
+            << (int)(used / 1048576ull)
+            << "KiB / Percent "
+            << (used*100.0/(double)trigger)
+            << "%";
+    }
+    else //if (total > 100 * 1024 /*100 KB*/)
+    {
+        out4 << "Total "
+            << (int)(total / 1024ull)
+            << "KiB / Used "
+            << (int)(used / 1024ull)
+            << "KiB / Percent "
+            << (used * 100.0 / (double)total)
+            << "%";
+    }
+    response->heap = out4.str();
 
     return response;
 }

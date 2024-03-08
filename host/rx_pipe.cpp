@@ -186,7 +186,8 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 			//config.namespace_data.build_system_from_code = true;
 			
 			std::cout << "Initializing OS interface...";
-			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls, config.management.debug);
+			rx_initialize_os(config.processor.real_time, !config.processor.no_hd_timer, tls, config.management.debug
+				, config.heap.initial_heap_size, config.heap.heap_alloc_size, config.heap.heap_trigger, config.heap.heap_bucket_capacity);
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			

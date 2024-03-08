@@ -69,7 +69,7 @@ int rx_list_eth_cards(struct ETH_interface** interfaces, size_t* count)
 
 	if (*count > 0)
 	{
-		*interfaces = malloc(sizeof(struct ETH_interface) * (*count));
+		*interfaces = rx_heap_alloc(sizeof(struct ETH_interface) * (*count));
 		iter = info;
 		idx = 0;
 		// iterate to get count first
@@ -94,7 +94,7 @@ int rx_list_eth_cards(struct ETH_interface** interfaces, size_t* count)
 				} while (iter2);
 				if ((*interfaces)[idx].ip_addrs_size)
 				{
-					(*interfaces)[idx].ip_addrs = malloc(sizeof(struct IP_interface) * (*interfaces)[idx].ip_addrs_size);
+					(*interfaces)[idx].ip_addrs = rx_heap_alloc(sizeof(struct IP_interface) * (*interfaces)[idx].ip_addrs_size);
 					iter2 = &iter->IpAddressList;
 					size_t idx2 = 0;
 					do
@@ -202,7 +202,7 @@ struct eth_socket_data
 
 uint32_t rx_create_ethernet_socket(const char* adapter_name, peth_socket* psock)
 {
-	struct eth_socket_data* pret = malloc(sizeof(struct eth_socket_data));
+	struct eth_socket_data* pret = rx_heap_alloc(sizeof(struct eth_socket_data));
 	*psock = NULL;
 	char name_buff[0x100];
 	sprintf(name_buff, "\\\\.\\WTCAP_A_%s", adapter_name);
@@ -210,7 +210,7 @@ uint32_t rx_create_ethernet_socket(const char* adapter_name, peth_socket* psock)
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 	if (pret->handle == INVALID_HANDLE_VALUE)
 	{
-		free(pret);
+		rx_heap_free(pret);
 		return RX_ERROR;
 	}
 	pret->next_read = 0;
@@ -219,7 +219,7 @@ uint32_t rx_create_ethernet_socket(const char* adapter_name, peth_socket* psock)
 	if (pret->buffer == NULL)
 	{
 		CloseHandle(pret->handle);
-		free(pret);
+		rx_heap_free(pret);
 		return RX_ERROR;
 	}
 	pret->write_buffer = VirtualAlloc(NULL, SL_EXCHANGE_BUFFER_SIZE, MEM_COMMIT, PAGE_READWRITE);
@@ -227,7 +227,7 @@ uint32_t rx_create_ethernet_socket(const char* adapter_name, peth_socket* psock)
 	{
 		VirtualFree(pret->buffer, 0, MEM_RELEASE);
 		CloseHandle(pret->handle);
-		free(pret);
+		rx_heap_free(pret);
 		return RX_ERROR;
 	}
 	*psock = pret;

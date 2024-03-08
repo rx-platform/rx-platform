@@ -200,7 +200,7 @@ opcua_client_transport_port::opcua_client_transport_port()
             string_type temp_str = temp.get_address();
             if (!temp_str.empty())
             {
-                char* temp_char = (char*)malloc(temp_str.size() + 1);
+                char* temp_char = (char*)rx_heap_alloc(temp_str.size() + 1);
                 strcpy(temp_char, temp_str.c_str());
                 rt->endpoint_url = (const char*)temp_char;
             }

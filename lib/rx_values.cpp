@@ -2656,7 +2656,7 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	}
 }
 
-rx_simple_value rx_value::to_simple () const
+rx::values::rx_simple_value rx_value::to_simple () const
 {
     return rx_simple_value(&data_.value);
 }
@@ -2756,7 +2756,7 @@ uint32_t rx_value::get_origin () const
 	return data_.origin & RX_ORIGIN_MASK;
 }
 
-rx_simple_value rx_value::operator [] (int index) const
+rx::values::rx_simple_value rx_value::operator [] (int index) const
 {
 	if (is_array())
 	{
@@ -3207,7 +3207,7 @@ byte_string rx_simple_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx_simple_value rx_simple_value::operator [] (int index) const
+rx::values::rx_simple_value rx_simple_value::operator [] (int index) const
 {
 	if (is_array())
 	{
@@ -3249,21 +3249,27 @@ rx_simple_value rx_simple_value::operator [] (int index) const
 void rx_simple_value::assign_array (const std::vector<rx_simple_value>& from)
 {
 	if (from.empty())
-		return;	 
-	rx_value_t type = from[0].data_.value_type;
-	for (const auto& val : from)
 	{
-		if (val.data_.value_type != type)
-			return;
+		rx_destroy_value(&data_);
+		rx_init_array_value_with_ptrs(&data_, RX_STRUCT_TYPE, NULL, 0);
 	}
-	std::vector<const rx_value_union*> data(from.size());
-	int idx = 0;
-	for (const auto& val : from)
+	else
 	{
-		data[idx++] = &val.data_.value;
+		rx_value_t type = from[0].data_.value_type;
+		for (const auto& val : from)
+		{
+			if (val.data_.value_type != type)
+				return;
+		}
+		std::vector<const rx_value_union*> data(from.size());
+		int idx = 0;
+		for (const auto& val : from)
+		{
+			data[idx++] = &val.data_.value;
+		}
+		rx_destroy_value(&data_);
+		rx_init_array_value_with_ptrs(&data_, type, &data[0], data.size());
 	}
-	rx_destroy_value(&data_);
-	rx_init_array_value_with_ptrs(&data_, type, &data[0], data.size());
 }
 
 bool rx_simple_value::is_struct () const
@@ -3602,7 +3608,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx_simple_value rx_timed_value::to_simple () const
+rx::values::rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(&data_.value);
 }
@@ -3625,7 +3631,7 @@ byte_string rx_timed_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx_simple_value rx_timed_value::operator [] (int index) const
+rx::values::rx_simple_value rx_timed_value::operator [] (int index) const
 {
 	/*if (is_array())
 	{

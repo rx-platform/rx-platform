@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -43,6 +43,7 @@
 // first_plugin
 #include "first_plugin/first_plugin.h"
 
+#include "lib/rx_heap.cpp"
 RX_DECLARE_PLUGIN(first_plugin);
 
 static const uint8_t c_def_mojFilter[] = {
@@ -151,7 +152,7 @@ static const uint8_t c_def_mojMethod[] = {
 
 
 
-// Class first_filter 
+// Class first_filter
 
 first_filter::first_filter()
       : timer_(0)
@@ -224,7 +225,7 @@ void first_filter::timer_tick ()
 }
 
 
-// Class first_mapper 
+// Class first_mapper
 
 first_mapper::first_mapper()
       : timer_(0)
@@ -280,7 +281,7 @@ void first_mapper::timer_tick ()
 }
 
 
-// Class first_plugin 
+// Class first_plugin
 
 
 rx_result first_plugin::init_plugin ()
@@ -427,7 +428,7 @@ rx_result first_plugin::build_plugin ()
 }
 
 
-// Class first_source 
+// Class first_source
 
 first_source::first_source()
       : timer_(0),
@@ -521,7 +522,7 @@ void first_source::timer_tick ()
 }
 
 
-// Class first_object 
+// Class first_object
 
 first_object::first_object()
       : timer_(0)
@@ -570,7 +571,7 @@ void first_object::timer_tick ()
 }
 
 
-// Class first_domain 
+// Class first_domain
 
 first_domain::first_domain()
       : timer_(0)
@@ -619,7 +620,7 @@ void first_domain::timer_tick ()
 }
 
 
-// Class first_application 
+// Class first_application
 
 first_application::first_application()
       : timer_(0)
@@ -668,7 +669,7 @@ void first_application::timer_tick ()
 }
 
 
-// Class first_struct 
+// Class first_struct
 
 first_struct::first_struct()
       : timer_(0)
@@ -717,7 +718,7 @@ void first_struct::timer_tick ()
 }
 
 
-// Class first_relation 
+// Class first_relation
 
 first_relation::first_relation()
 {
@@ -771,7 +772,7 @@ rx_relation::smart_ptr first_relation::make_target_relation ()
 }
 
 
-// Class first_singleton 
+// Class first_singleton
 
 first_singleton::first_singleton()
       : timer_(0)

@@ -107,6 +107,8 @@ class rx_system_info_response : public rx_message_base
 
       string_type common;
 
+      string_type heap;
+
 
   protected:
 

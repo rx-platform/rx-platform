@@ -315,7 +315,7 @@ bool net_command::do_eth_command (std::istream& in, std::ostream& out, std::ostr
 
 		}
 		rx_dump_table(table, out, false, false);
-		free(interfaces);
+		rx_heap_free(interfaces);
 	}
 	return true;
 }
