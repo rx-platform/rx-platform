@@ -86,12 +86,6 @@ rx_result security_context::login ()
 	return true;
 }
 
-bool security_context::has_console () const
-{
-  return false;
-
-}
-
 bool security_context::is_system () const
 {
   return false;
@@ -369,7 +363,8 @@ secured_scope::~secured_scope()
 
 // Class rx_platform::security::unathorized_security_context 
 
-unathorized_security_context::unathorized_security_context()
+unathorized_security_context::unathorized_security_context (bool has_console)
+      : has_console_(has_console)
 {
 	user_name_ = "unauthorized";
 	full_name_ = user_name_ + "@";
@@ -406,6 +401,12 @@ rx_result unathorized_security_context::serialize (base_meta_writer& stream) con
 rx_result unathorized_security_context::deserialize (base_meta_reader& stream)
 {
 	return RX_NOT_IMPLEMENTED;
+}
+
+
+bool unathorized_security_context::has_console () const
+{
+  return has_console_;
 }
 
 

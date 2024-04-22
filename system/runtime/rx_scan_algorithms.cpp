@@ -54,7 +54,7 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     whose.job_pending_ = false;
     whose.job_lock_.unlock();
     whose.json_cache_.clear();
-    whose.context_.init_context();
+    whose.context_->init_context();
 
     string_type full_path = whose.meta_info().get_full_path();
 
@@ -62,7 +62,7 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
     whose.tags_.common_tags_.loop_count_.commit();
     whose.tags_.common_tags_.last_scan_time_.commit();
 
-    check_context(whose, whose.context_);
+    check_context(whose, *whose.context_);
 
     auto old_tick = rx_get_us_ticks();
 
@@ -83,13 +83,13 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
         // REMOTE UPDATES
         if constexpr (C_has_remote_updates)
         {
-            process_from_remotes(whose, whose.context_);
+            process_from_remotes(whose, *whose.context_);
         }
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // STATUS
         if constexpr (C_has_status_response)
         {
-            process_status_change(whose, whose.context_);
+            process_status_change(whose, *whose.context_);
         }
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -97,15 +97,15 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
         // INPUTS
         if constexpr (C_has_source_updates || C_has_source_results)
         {
-            process_source_inputs(whose, whose.context_);
+            process_source_inputs(whose, *whose.context_);
         }
         if constexpr (C_has_mapper_writes)
         {
-            process_mapper_inputs(whose, whose.context_);
+            process_mapper_inputs(whose, *whose.context_);
         }
         if constexpr (C_has_tag_writes)
         {
-            process_subscription_inputs(whose, whose.context_);
+            process_subscription_inputs(whose, *whose.context_);
         }
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -113,27 +113,27 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
         // PROCESS
         if constexpr (C_has_variables)
         {
-            process_variables(whose, whose.context_);
+            process_variables(whose, *whose.context_);
         }
         if constexpr (C_has_programs)
         {
-            process_programs(whose, whose.context_);
+            process_programs(whose, *whose.context_);
         }
         if constexpr (C_has_events)
         {
-            process_events(whose, whose.context_);
+            process_events(whose, *whose.context_);
         }
         if constexpr (C_has_filters)
         {
-            process_filters(whose, whose.context_);
+            process_filters(whose, *whose.context_);
         }
         if constexpr (C_has_structs)
         {
-            process_structs(whose, whose.context_);
+            process_structs(whose, *whose.context_);
         }
         if constexpr (C_has_own)
         {
-            process_own(whose, whose.context_);
+            process_own(whose, *whose.context_);
         }
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -141,28 +141,28 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
         // OUTPUTS
         if constexpr (C_has_tag_updates)
         {
-            process_subscription_outputs(whose, whose.context_);
+            process_subscription_outputs(whose, *whose.context_);
         }
         if constexpr (C_has_mapper_updates)
         {
-            process_mapper_outputs(whose, whose.context_);
+            process_mapper_outputs(whose, *whose.context_);
         }
         if constexpr (C_has_source_writes)
         {
-            process_source_outputs(whose, whose.context_);
+            process_source_outputs(whose, *whose.context_);
         }
         /////////////////////////////////////////////////////////////////////////////////////////////////
 
         lap_count++;
 
-    } while (whose.context_.should_repeat());
+    } while (whose.context_->should_repeat());
 
     auto diff = rx_get_us_ticks() - old_tick;
     whose.tags_.common_tags_.last_scan_time_ = (double)diff / 1000.0;
     whose.tags_.common_tags_.loop_count_ += lap_count;
 
     // persistence handling send side
-    if (whose.context_.should_save())
+    if (whose.context_->should_save())
         runtime_holder_algorithms<typeT>::save_runtime(whose);
 
     if (whose.tags_.common_tags_.max_scan_time_ < whose.tags_.common_tags_.last_scan_time_)
@@ -204,68 +204,68 @@ void runtime_scan_algorithms<typeT>::process_debug_scan (typename typeT::RType& 
     // internal stuff
     if constexpr (!C_has_remote_updates)
     {
-        auto remote_updates = whose.context_.get_from_remote();
+        auto remote_updates = whose.context_->get_from_remote();
     }
     if constexpr (!C_has_status_response)
     {
-        auto status_response = whose.context_.should_process_status_change();
+        auto status_response = whose.context_->should_process_status_change();
     }
 
     // input stuff
     if constexpr (!C_has_source_results)
     {
-        auto source_results = &whose.context_.get_source_results();
+        auto source_results = &whose.context_->get_source_results();
     }
     if constexpr (!C_has_source_updates)
     {
-        auto source_updates = whose.context_.get_source_updates();
+        auto source_updates = whose.context_->get_source_updates();
     }
     if constexpr (!C_has_mapper_writes)
     {
-        auto mapper_writes = whose.context_.get_mapper_writes();
+        auto mapper_writes = whose.context_->get_mapper_writes();
     }
     if constexpr (!C_has_tag_writes)
     {
-        auto writes_response = whose.context_.should_process_tag_writes();
+        auto writes_response = whose.context_->should_process_tag_writes();
     }
     // processing
     if constexpr (!C_has_variables)
     {
-        auto variables = whose.context_.get_variables_for_process();
+        auto variables = whose.context_->get_variables_for_process();
     }
     if constexpr (!C_has_programs)
     {
-        auto programs = whose.context_.get_programs_for_process();
+        auto programs = whose.context_->get_programs_for_process();
     }
     if constexpr (!C_has_events)
     {
-        auto events = whose.context_.get_events_for_process();
+        auto events = whose.context_->get_events_for_process();
     }
     if constexpr (!C_has_filters)
     {
-        auto filters = whose.context_.get_filters_for_process();
+        auto filters = whose.context_->get_filters_for_process();
     }
     if constexpr (!C_has_structs)
     {
-        auto structs = whose.context_.get_structs_for_process();
+        auto structs = whose.context_->get_structs_for_process();
     }
     if constexpr (!C_has_own)
     {
-        auto own = whose.context_.get_for_own_process();
+        auto own = whose.context_->get_for_own_process();
     }
 
 
     if constexpr (!C_has_tag_updates)
     {
-        auto tag_updates_result = whose.context_.should_process_tag_updates();
+        auto tag_updates_result = whose.context_->should_process_tag_updates();
     }
     if constexpr (!C_has_mapper_updates)
     {
-        auto mapper_updates = whose.context_.get_mapper_updates();
+        auto mapper_updates = whose.context_->get_mapper_updates();
     }
     if constexpr (!C_has_source_writes)
     {
-        auto source_writes = &whose.context_.get_source_writes();
+        auto source_writes = &whose.context_->get_source_writes();
     }
 
 }
@@ -290,19 +290,19 @@ void runtime_scan_algorithms<typeT>::process_status_change (typename typeT::RTyp
 
         bool on = whose.tags_.common_tags_.on_;
         bool test = whose.tags_.common_tags_.test_;
-        bool my_on = whose.context_.mode_.is_on();
-        bool my_test = whose.context_.mode_.is_test();
+        bool my_on = whose.context_->mode_.is_on();
+        bool my_test = whose.context_->mode_.is_test();
         if (on != my_on)
         {
             if (on)
             {
-                if (whose.context_.mode_.turn_on())
-                    whose.context_.status_change_pending();
+                if (whose.context_->mode_.turn_on())
+                    whose.context_->status_change_pending();
             }
             else
             {
-                if (whose.context_.mode_.turn_off())
-                    whose.context_.status_change_pending();
+                if (whose.context_->mode_.turn_off())
+                    whose.context_->status_change_pending();
             }
 
         }
@@ -310,13 +310,13 @@ void runtime_scan_algorithms<typeT>::process_status_change (typename typeT::RTyp
         {
             if (test)
             {
-                if (whose.context_.mode_.set_test())
-                    whose.context_.status_change_pending();
+                if (whose.context_->mode_.set_test())
+                    whose.context_->status_change_pending();
             }
             else
             {
-                if (whose.context_.mode_.reset_test())
-                    whose.context_.status_change_pending();
+                if (whose.context_->mode_.reset_test())
+                    whose.context_->status_change_pending();
             }
         }
         ctx.set_binded_as(whose.tags_.common_tags_.on_handle_, ctx.mode_.is_on());

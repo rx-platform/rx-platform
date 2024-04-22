@@ -94,8 +94,14 @@ tcp_server_endpoint::tcp_server_endpoint()
 
 tcp_server_endpoint::~tcp_server_endpoint()
 {
-    if (tcp_socket_)
-        tcp_socket_->disconnect();
+
+    {
+        //locks::auto_lock_t _(&state_lock_);
+        if (tcp_socket_)
+        {
+            tcp_socket_->detach();
+        }
+    }
     ITF_LOG_DEBUG("tcp_server_endpoint", 200, "TCP server endpoint destroyed.");
 }
 
@@ -296,6 +302,10 @@ void tcp_server_endpoint::socket_holder_t::disconnect()
 {
     whose = nullptr;
     initiate_shutdown();
+}
+void tcp_server_endpoint::socket_holder_t::detach()
+{
+    whose = nullptr;
 }
 // Class rx_internal::interfaces::ip_endpoints::tcp_server_port 
 

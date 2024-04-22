@@ -34,6 +34,7 @@
 // rx_extern_blocks
 #include "system/runtime/rx_extern_blocks.h"
 
+#include "lib/rx_ser_bin.h"
 
 
 extern "C"
@@ -212,6 +213,11 @@ extern "C"
         rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct3>* self =
             (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct3>*)whose;
 
+        auto ret = self->extern_get_method_inputs();
+        if (!ret.empty())
+            rx_init_bytes_value_struct(data, (const uint8_t*)&ret[0], ret.size());
+        else
+            rx_init_bytes_value_struct(data, NULL, 0);
     }
 
     void c_mapper_get_method_outputs_model3(void* whose, struct bytes_value_struct_t* data)
@@ -432,6 +438,43 @@ extern "C"
         , c_event_fired
         , c_event_get_model
     };
+
+
+    void c_data_type_start_timer(void* whose, runtime_handle_t timer, uint32_t period)
+    {
+        rx_platform::runtime::blocks::extern_data_type_runtime* self = (rx_platform::runtime::blocks::extern_data_type_runtime*)whose;
+        self->start_timer(timer, period);
+    }
+    void c_data_type_suspend_timer(void* whose, runtime_handle_t timer)
+    {
+        rx_platform::runtime::blocks::extern_data_type_runtime* self = (rx_platform::runtime::blocks::extern_data_type_runtime*)whose;
+        self->suspend_timer(timer);
+    }
+    void c_data_type_destroy_timer(void* whose, runtime_handle_t timer)
+    {
+        rx_platform::runtime::blocks::extern_data_type_runtime* self = (rx_platform::runtime::blocks::extern_data_type_runtime*)whose;
+        self->destroy_timer(timer);
+    }
+    /*void c_data_type_fired(void* whose, runtime_transaction_id_t id, int test, rx_security_handle_t identity, struct timed_value_type data)
+    {
+        rx_platform::runtime::blocks::extern_data_type_runtime* self = (rx_platform::runtime::blocks::extern_data_type_runtime*)whose;
+        self->extern_data_type_fired(id, test, identity, data);
+    }*/
+    /*void c_data_type_get_model(void* whose, struct bytes_value_struct_t* data)
+    {
+    }*/
+
+
+    host_data_type_def_struct _g_data_type_def_
+    {
+        {
+            nullptr
+            , nullptr
+            , c_data_type_start_timer
+            , c_data_type_suspend_timer
+            , c_data_type_destroy_timer
+        }
+    };
 }
 
 
@@ -506,7 +549,8 @@ rx_result extern_source_runtime<implT>::source_write (write_data&& data, runtime
 template <typename implT>
 rx_result extern_source_runtime<implT>::update_source (rx_value&& val)
 {
-    val.increment_signal_level();
+    if(val.get_signal_level() == 0)
+        val.increment_signal_level();
     return source_value_changed(std::move(val));
 }
 
@@ -809,6 +853,7 @@ rx_result extern_filter_runtime::extern_filter_changed ()
 
 extern_struct_runtime::extern_struct_runtime (plugin_struct_runtime_struct* impl)
       : impl_(impl)
+    , struct_runtime(&impl->anchor)
 {
     impl_->host = this;
     impl_->host_def = &_g_struct_def_;
@@ -983,6 +1028,75 @@ rx_value extern_variable_runtime::get_variable_input (runtime_process_context* c
 rx_result extern_variable_runtime::variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources)
 {
     return RX_NOT_IMPLEMENTED;
+}
+
+
+// Class rx_platform::runtime::blocks::extern_data_type_runtime 
+
+extern_data_type_runtime::extern_data_type_runtime (plugin_data_type_runtime_struct* impl)
+      : impl_(impl)
+    , data_type_runtime(&impl->anchor)
+{
+    impl_->host = this;
+    impl_->host_def = &_g_data_type_def_;
+}
+
+
+extern_data_type_runtime::~extern_data_type_runtime()
+{
+}
+
+
+
+rx_result extern_data_type_runtime::initialize_data_type (runtime::runtime_init_context& ctx, const data::runtime_data_model& data)
+{
+    memory::std_buffer buffer;
+    serialization::std_buffer_writer writer(buffer);
+    if (writer.write_data_type("type", data))
+    {
+        bytes_value_struct str;
+        if(!buffer.empty())
+            rx_init_bytes_value_struct(&str, buffer.get_buffer<const uint8_t>(), buffer.get_size());
+        else
+            rx_init_bytes_value_struct(&str, nullptr, 0);
+
+        rx_result ret =  impl_->def->init_data_type(impl_->anchor.target, &ctx, &str);
+
+        rx_destory_bytes_value_struct(&str);
+
+        return ret;
+    }
+    return "Error in extern type class!";
+}
+
+rx_result extern_data_type_runtime::start_data_type (runtime::runtime_start_context& ctx)
+{
+    return impl_->def->start_data_type(impl_->anchor.target, &ctx);
+}
+
+rx_result extern_data_type_runtime::stop_data_type (runtime::runtime_stop_context& ctx)
+{
+    return impl_->def->stop_data_type(impl_->anchor.target);
+}
+
+rx_result extern_data_type_runtime::deinitialize_data_type (runtime::runtime_deinit_context& ctx)
+{
+    return impl_->def->deinit_data_type(impl_->anchor.target);
+}
+
+void extern_data_type_runtime::start_timer (runtime_handle_t handle, uint32_t period)
+{
+    rx_platform::extern_timers::instance().start_timer(handle, period);
+}
+
+void extern_data_type_runtime::suspend_timer (runtime_handle_t handle)
+{
+    rx_platform::extern_timers::instance().suspend_timer(handle);
+}
+
+void extern_data_type_runtime::destroy_timer (runtime_handle_t handle)
+{
+    rx_platform::extern_timers::instance().destroy_timer(handle);
 }
 
 

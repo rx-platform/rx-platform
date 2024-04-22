@@ -759,6 +759,7 @@ public:
     typedef typename data_type::RDataType RDataType;
     typedef typename data_type::smart_ptr Tptr;
     typedef rx_result_with<Tptr> TdefRes;
+    typedef typename data_type::RTypePtr RTypePtr;
 
     struct type_data_t
     {
@@ -767,6 +768,7 @@ public:
     };
     typedef typename std::map<rx_node_id, rx_reference<discovery::peer_item> > registered_peer_types_type;
     typedef typename std::map<rx_node_id, type_data_t> registered_types_type;
+    typedef typename std::map<rx_node_id, std::function<RTypePtr()> > constructors_type;
 
   public:
       data_type_repository();
@@ -775,6 +777,8 @@ public:
       data_type_repository::TdefRes get_type_definition (const rx_node_id& id) const;
 
       rx_result register_type (data_type_repository::Tptr what);
+
+      rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
       rx_result_with<runtime::structure::block_data_result_t> create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs);
 
@@ -807,6 +811,8 @@ public:
 
 
       registered_types_type registered_types_;
+
+      constructors_type constructors_;
 
       registered_peer_types_type registered_peer_types_;
 

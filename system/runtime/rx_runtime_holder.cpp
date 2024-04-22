@@ -32,6 +32,8 @@
 
 #include "system/meta/rx_obj_types.h"
 
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 // rx_event_blocks
 #include "system/runtime/rx_event_blocks.h"
 // rx_runtime_holder
@@ -71,10 +73,9 @@ runtime_holder<typeT>::runtime_holder (const meta_data& meta, const typename typ
     , meta_info_(meta)
     , instance_data_(instance.instance_data, std::move(rt_behavior))
     , security_guard_(rx_create_reference<security::security_guard>(meta, security::rx_security_null))
-    , context_(runtime_holder_algorithms<typeT>::create_context(*this))
 {
     using rimpl_t = typename typeT::RImplType;
-
+    context_ = runtime_holder_algorithms<typeT>::create_context(*this);
     
     RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta.get_full_path()));
 }
@@ -92,12 +93,16 @@ runtime_holder<typeT>::~runtime_holder()
     {
         RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " destructor, for " + meta_info_.get_full_path()));
     }
-#ifdef _DEBUG
-    printf("Deleted %s %s\r\n", rx_item_type_name(typeT::runtime_type_id).c_str(), meta_info_.name.c_str());
-#endif
+    RUNTIME_LOG_DEBUG("runtime_holder", 900, "Deleted "s + rx_item_type_name(typeT::runtime_type_id) + ": " + meta_info_.name);
 }
 
 
+
+template <class typeT>
+runtime_process_context& runtime_holder<typeT>::get_context ()
+{
+    return *context_;
+}
 
 template <class typeT>
 rx_result runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t type) const
@@ -134,11 +139,11 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
     ctx.anchor = smart_this();
     job_pending_ = true;// this is a false stuff to pause execution untill the end of initialization
-    context_.init_state([this]
+    context_->init_state([this]
         {
             runtime_holder_algorithms<typeT>::fire_job(*this);
         });
-    ctx.context = &context_;
+    ctx.context = context_.get();
     string_type rt_path = meta_info_.get_full_path();
     auto result = tags_.initialize_runtime(ctx, &relations_, &logic_, &displays_);
     if (result)
@@ -184,7 +189,7 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
             }
         }
     }
-    context_.runtime_deinitialized();
+    context_->runtime_deinitialized();
     my_job_ptr_ = process_runtime_job<typeT>::smart_ptr::null_ptr;
     return result;
 }
@@ -241,14 +246,14 @@ rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
             }
         }
     }
-    context_.runtime_stopped();
+    context_->runtime_stopped();
     return result;
 }
 
 template <class typeT>
 rx_result runtime_holder<typeT>::do_command (rx_object_command_t command_type)
 {
-    return context_.do_command(command_type);
+    return context_->do_command(command_type);
 }
 
 template <class typeT>
@@ -292,7 +297,7 @@ rx_result runtime_holder<typeT>::add_target_relation (relations::relation_data::
 template <class typeT>
 rx_result runtime_holder<typeT>::remove_target_relation (const string_type& name)
 {
-    runtime_stop_context ctx(meta_info_, &context_);
+    runtime_stop_context ctx(meta_info_, context_.get());
     auto result = relations_.remove_target_relation(name, ctx);
     if (result)
     {

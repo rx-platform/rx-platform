@@ -408,6 +408,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 					temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
 					runtime::structure::variable_block_data block;
 					block.variable = temp.move_value();
+					block.type_ptr = std::move(temp_data.value().type_ptr);
 					block.block = std::move(temp_data.value().runtime);
 					return ctx.runtime_data().add_variable_block(whose.name_, std::move(block), target);
 				}
@@ -446,6 +447,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 						temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
 						runtime::structure::variable_block_data block;
 						block.variable = temp.move_value();
+						block.type_ptr = std::move(temp_data.value().type_ptr);
 						block.block = std::move(temp_data.value().runtime);
 						data.push_back(std::move(block));
 					}
@@ -1336,6 +1338,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 				data.timestamp = ctx.now;
 				data.struct_value.value = whose.get_value();
 				data.struct_value.value.set_time(ctx.now);
+				data.type_ptr = std::move(temp.value().type_ptr);
 				return ctx.runtime_data().add_value_block(whose.get_name(), std::move(data), target);
 			}
 			else
@@ -1430,6 +1433,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 				data.block = std::move(temp.value().runtime);
 				data.timestamp = ctx.now;
 				data.struct_value.value = whose.get_value(ctx.now);
+				data.type_ptr = std::move(temp.value().type_ptr);
 				return ctx.runtime_data().add_value_block(whose.get_name(), std::move(data), target);
 			}
 			else
@@ -1453,6 +1457,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 						whose.get_persistent());
 					temp_data.block = std::move(temp.value().runtime);
 					temp_data.timestamp = ctx.now;
+					temp_data.type_ptr = std::move(temp.value().type_ptr);
 					temp_data.struct_value.value = whose.get_value(ctx.now);
 
 					data.push_back(std::move(temp_data));

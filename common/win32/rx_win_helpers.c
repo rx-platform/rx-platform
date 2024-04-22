@@ -79,10 +79,11 @@ size_t g_page_size = 0;
 extern HCRYPTPROV hcrypt;
 
 extern HCERTSTORE hcert_store;
+extern HCERTSTORE hcert_store_machine;
 
 int g_is_debug_instance;
 
-int rx_init_heap(size_t initial_heap, size_t heap_alloc, size_t heap_trigger);
+int rx_init_heap(size_t initial_heap, size_t heap_alloc, size_t heap_trigger, size_t bucket_size);
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 {
@@ -92,7 +93,8 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 		rx_init_heap(
 			init_data->rx_initial_heap_size != 0 ? init_data->rx_initial_heap_size : 24 * 1024 * 1024
 			, init_data->rx_alloc_heap_size != 0 ? init_data->rx_alloc_heap_size : 8 * 1024 * 1024
-			, init_data->rx_heap_alloc_trigger != 0 ? init_data->rx_heap_alloc_trigger : 950);
+			, init_data->rx_heap_alloc_trigger != 0 ? init_data->rx_heap_alloc_trigger : 950
+			, init_data->rx_bucket_capacity != 0 ? init_data->rx_bucket_capacity : 0x1000);
 		rx_hd_timer = init_data->rx_hd_timer;
 
 		LARGE_INTEGER res;
@@ -116,6 +118,7 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 
 
 		hcert_store = CertOpenSystemStoreA(0, "My");
+		hcert_store_machine = CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, 0, CERT_SYSTEM_STORE_LOCAL_MACHINE, "My");
 
 		return RX_OK;
 	}
@@ -130,6 +133,8 @@ RX_COMMON_API void rx_deinit_common_library()
 
 	if (hcert_store)
 		CertCloseStore(hcert_store, CERT_CLOSE_STORE_CHECK_FLAG);
+	if (hcert_store_machine)
+		CertCloseStore(hcert_store_machine, CERT_CLOSE_STORE_CHECK_FLAG);
 
 	if (hcrypt)
 		CryptReleaseContext(hcrypt, 0);

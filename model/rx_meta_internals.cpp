@@ -2416,6 +2416,12 @@ rx_result data_type_repository::register_type (data_type_repository::Tptr what)
 	}
 }
 
+rx_result data_type_repository::register_constructor (const rx_node_id& id, std::function<RTypePtr()> f)
+{
+	constructors_.emplace(id, f);
+	return true;
+}
+
 rx_result_with<runtime::structure::block_data_result_t> data_type_repository::create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs)
 {
 	block_data_result_t ret;
@@ -2466,6 +2472,18 @@ rx_result_with<runtime::structure::block_data_result_t> data_type_repository::cr
 	ctx.push_rt_name(rt_name);
 
 	block_data created_data;
+	data_type_runtime_ptr type_ptr;
+
+
+	for (const auto& one : base)
+	{
+		auto it = constructors_.find(one);
+		if (it != constructors_.end())
+		{
+			type_ptr = (it->second)();
+			break;
+		}
+	}
 
 	std::vector<data::runtime_values_data> overrides;
 	for (auto it = base.rbegin(); it != base.rend(); it++)
@@ -2495,6 +2513,7 @@ rx_result_with<runtime::structure::block_data_result_t> data_type_repository::cr
 		if (!it->empty())
 			created_data.fill_data(*it);
 	}
+	ret.type_ptr = type_ptr;
 	ret.runtime = std::move(created_data);
 	ret.success = true;
 	return ret;

@@ -42,6 +42,7 @@
 #include "model/rx_meta_internals.h"
 #include "system/meta/rx_meta_algorithm.h"
 using namespace rx_platform::runtime::structure;
+using namespace rx_internal::model;
 
 
 namespace rx_platform {
@@ -1075,7 +1076,48 @@ rx_result runtime_data_prototype::add_value_block (const string_type& name, runt
 	}
 	else
 	{
-		return RX_NOT_IMPLEMENTED;
+		// override so check it
+		auto& elem = items[idx];
+		switch (elem.index & rt_type_mask)
+		{
+			case rt_value_data_index_type:
+				{
+					auto& this_val = blocks[elem.index >> rt_type_shift];
+					if (!check_read_only(value.struct_value.value_opt, this_val.second.get_item()->struct_value.value_opt))
+						return "Can't override const value wrong read-only value";
+					if (this_val.second.is_array())
+						return "Can't override constant value, can not replace array with scalar data!";
+					if(!platform_types_manager::instance().get_data_types_repository().is_derived_from(id, blocks[elem.index >> rt_type_shift].first))
+
+						return "Can't override data, wrong data type!";
+
+					members_index_type new_idx = static_cast<members_index_type>(blocks.size());
+					blocks.emplace_back(std::move(id), std::move(value));
+					elem.index = (new_idx << rt_type_shift) | rt_value_data_index_type;
+					return true;
+				}
+				break;
+			case rt_variable_data_index_type:
+				{
+					auto& this_val = variable_blocks[elem.index >> rt_type_shift];
+					if (!check_read_only(value.struct_value.value_opt, this_val.second.get_item()->variable.value_opt))
+						return "Can't override variable data wrong read-only value";
+					if (this_val.second.is_array())
+						return "Can't override variable data, can not replace array with scalar data!";
+					
+					if (!platform_types_manager::instance().get_data_types_repository().is_derived_from(id, variable_blocks[elem.index >> rt_type_shift].first))
+						return "Can't override variable data, wrong data type!";
+
+					members_index_type new_idx = static_cast<members_index_type>(blocks.size());
+					blocks.emplace_back(std::move(id), std::move(value));
+					elem.index = (new_idx << rt_type_shift) | rt_value_data_index_type;
+					return true;
+				}
+				break;
+			default:
+				return name + " has invalid type to override";
+		}
+		return true;
 	}
 }
 

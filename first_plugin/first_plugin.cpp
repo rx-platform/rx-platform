@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -44,7 +44,8 @@
 #include "first_plugin/first_plugin.h"
 
 #include "lib/rx_heap.cpp"
-RX_DECLARE_PLUGIN(first_plugin);
+const char* deps[] = { "modbus", nullptr };
+RX_DECLARE_PLUGIN2(first_plugin, deps);
 
 static const uint8_t c_def_mojFilter[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -150,9 +151,17 @@ static const uint8_t c_def_mojMethod[] = {
 };
 
 
+static const uint8_t c_def_mojDataType[] = {
+	0x02, 0x00, 0x00, 0x00, 0xff, 0x05, 0x00, 0x00, 0x00, 0x61, 0x74, 0x74, 0x72, 0x31, 0xff, 0xff,
+	0xff, 0xff, 0x01, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0x05, 0x00, 0x00, 0x00, 0x61, 0x74, 0x74,
+	0x72, 0x32, 0xff, 0xff, 0xff, 0xff, 0x0b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
 
 
-// Class first_filter
+
+
+// Class first_filter 
 
 first_filter::first_filter()
       : timer_(0)
@@ -225,7 +234,7 @@ void first_filter::timer_tick ()
 }
 
 
-// Class first_mapper
+// Class first_mapper 
 
 first_mapper::first_mapper()
       : timer_(0)
@@ -281,7 +290,7 @@ void first_mapper::timer_tick ()
 }
 
 
-// Class first_plugin
+// Class first_plugin 
 
 
 rx_result first_plugin::init_plugin ()
@@ -339,6 +348,10 @@ rx_result first_plugin::init_plugin ()
 		return result;
 
 	result = rx_platform_api::register_method_runtime<first_method>(rx_node_id(33, 8));
+	if (!result)
+		return result;
+
+	result = rx_platform_api::register_data_type_runtime<first_data_type>(rx_node_id(34, 8));
 	if (!result)
 		return result;
 
@@ -424,11 +437,16 @@ rx_result first_plugin::build_plugin ()
 	if (!result)
 		return result;
 
+	result = rx_platform_api::register_item_binary_with_code<first_data_type>("mojDataType", ""
+		, rx_node_id(34, 8), RX_CLASS_DATA_BASE_ID, c_def_mojDataType, sizeof(c_def_mojDataType), 0x20005);
+	if (!result)
+		return result;
+
 	return result;
 }
 
 
-// Class first_source
+// Class first_source 
 
 first_source::first_source()
       : timer_(0),
@@ -522,7 +540,7 @@ void first_source::timer_tick ()
 }
 
 
-// Class first_object
+// Class first_object 
 
 first_object::first_object()
       : timer_(0)
@@ -571,7 +589,7 @@ void first_object::timer_tick ()
 }
 
 
-// Class first_domain
+// Class first_domain 
 
 first_domain::first_domain()
       : timer_(0)
@@ -620,7 +638,7 @@ void first_domain::timer_tick ()
 }
 
 
-// Class first_application
+// Class first_application 
 
 first_application::first_application()
       : timer_(0)
@@ -669,7 +687,7 @@ void first_application::timer_tick ()
 }
 
 
-// Class first_struct
+// Class first_struct 
 
 first_struct::first_struct()
       : timer_(0)
@@ -718,7 +736,7 @@ void first_struct::timer_tick ()
 }
 
 
-// Class first_relation
+// Class first_relation 
 
 first_relation::first_relation()
 {
@@ -772,7 +790,7 @@ rx_relation::smart_ptr first_relation::make_target_relation ()
 }
 
 
-// Class first_singleton
+// Class first_singleton 
 
 first_singleton::first_singleton()
       : timer_(0)
@@ -826,6 +844,44 @@ first_singleton::smart_ptr first_singleton::instance ()
 	if (!g_inst)
 		g_inst = rx_create_reference< first_singleton>();
 	return g_inst;
+}
+
+
+// Class first_data_type 
+
+first_data_type::first_data_type()
+{
+}
+
+
+first_data_type::~first_data_type()
+{
+}
+
+
+
+rx_result first_data_type::initialize_data_type (rx_init_context& ctx, const data::runtime_data_model& data)
+{
+	RX_PLUGIN_LOG_DEBUG("first_data_type", 100, _rx_func_);
+	return true;
+}
+
+rx_result first_data_type::deinitialize_data_type ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_data_type", 100, _rx_func_);
+	return true;
+}
+
+rx_result first_data_type::start_data_type (rx_start_context& ctx)
+{
+	RX_PLUGIN_LOG_DEBUG("first_data_type", 100, _rx_func_);
+	return true;
+}
+
+rx_result first_data_type::stop_data_type ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_data_type", 100, _rx_func_);
+	return true;
 }
 
 

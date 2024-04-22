@@ -56,6 +56,7 @@
 #include "upython/upython.h"
 #include "discovery/rx_discovery_main.h"
 #include "enterprise/rx_enterprise.h"
+#include "system/runtime/rx_internal_objects.h"
 
 
 namespace rx_platform {
@@ -250,6 +251,8 @@ rx_result rx_gate::deinitialize ()
 
 rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
+
+	security::secured_scope _(rx_platform::sys_objects::system_application::instance()->system_identity);
 	auto result = rx_internal::infrastructure::server_runtime::instance().start(host, data.processor, data.io);
 	if (result)
 	{

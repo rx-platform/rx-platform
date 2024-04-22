@@ -141,6 +141,9 @@ bool log_event_data::is_included(log_query_type query) const
 	if (!query.pattern.empty() && rx_match_pattern(message.c_str(), query.pattern.c_str(), 1) == 0)
 		return false;
 
+	if (!query.library.empty() && library != query.library)
+		return false;
+
 	return true;
 }
 
@@ -213,11 +216,6 @@ void log_object::log_event (log_event_type event_type, const char* library, cons
 
 void log_object::sync_log_event (log_event_type event_type, const char* library, const char* source, uint16_t level, const char* user, const char* code, const char* message, log_callback_func_t callback, rx_time when)
 {
-
-
-	/*log_event_data one = { event_type,library,source,level,code,message,when };
-
-	one.dump_to_stream(std::cout);*/
 
 	std::vector<log_subscriber::smart_ptr> temp_array;
 	temp_array.reserve(0x10);
@@ -319,7 +317,7 @@ rx_result log_object::start (bool test, std::vector<log_subscriber::smart_ptr>& 
 	return true;
 }
 
-bool log_object::read_log (const string_type& log, const log_query_type& query, std::function<void(rx_result_with<log_events_type>&&)> callback)
+bool log_object::read_log (const string_type& log, const log_query_type& query, std::function<void(rx_result_with<log_events_type>&&)> callback) const
 {
 	rx_reference_ptr ref;
 	auto my_job = jobs::rx_create_func_job(std::move(ref), [this](const string_type& log, log_query_type query, std::function<void(rx_result_with < log_events_type>&&)> callback)
@@ -328,7 +326,7 @@ bool log_object::read_log (const string_type& log, const log_query_type& query, 
 			auto it = subscribers_.find(log);
 			if (it != subscribers_.end())
 			{
-				auto read_result = it->second->read_log(query, result);
+				auto read_result = it->second->read_log(std::move(query), result);
 				if (read_result)
 				{
 					result.succeeded = true;
@@ -344,7 +342,7 @@ bool log_object::read_log (const string_type& log, const log_query_type& query, 
 				callback(RX_INVALID_ARGUMENT);
 			}
 		}, log, log_query_type(query), std::move(callback));
-	worker_.append(my_job);
+	const_cast<log_object*>(this)->worker_.append(my_job);
 	return true;
 }
 
@@ -362,7 +360,7 @@ log_subscriber::~log_subscriber()
 
 
 
-rx_result log_subscriber::read_log (const log_query_type& query, log_events_type& result)
+rx_result log_subscriber::read_log (log_query_type query, log_events_type& result) const
 {
 	return RX_NOT_IMPLEMENTED;
 }
@@ -380,7 +378,9 @@ log_event_job::log_event_job (log_event_type event_type, const char* library, co
         when_(when),
         callback_(callback)
 {
-	user_ = security::active_security()->get_full_name();
+	auto sec_ctx = security::active_security();
+	if(sec_ctx)
+		user_ = sec_ctx->get_full_name();
 }
 
 
@@ -459,48 +459,33 @@ void cache_log_subscriber::log_event (log_event_type event_type, const string_ty
 	}
 }
 
-rx_result cache_log_subscriber::read_log (const log_query_type& query, log_events_type& result)
+rx_result cache_log_subscriber::read_log (log_query_type query, log_events_type& result) const
 {
-	bool acc = (query.type & rx_log_acceding) != 0;
-	result.data.reserve(0x20);
-	locks::auto_lock_t dummy(&cache_lock_);
-	auto start_it = events_cache_.begin();
-	auto end_it = events_cache_.end();
-	if (!query.start_time.is_null())
-	{// we have start time
-		start_it = events_cache_.lower_bound(query.start_time);
-		if (start_it == events_cache_.end())
-			start_it = events_cache_.begin();
-	}
-	if (!query.stop_time.is_null())
-	{// we have start time
-		end_it = events_cache_.upper_bound(query.start_time);
-	}
-	uint32_t count = 0;
 	if (!events_cache_.empty())
 	{
-		events_cache_type::const_iterator it = acc ? start_it : end_it;
-
-		if (start_it != end_it)
-		{
-			do
-			{
-				it--;
-				if (it->second.is_included(query))
-				{
-					result.data.emplace_back(it->second);
-					if (query.count)
-					{
-						count++;
-						if (count >= query.count)
-							break;
-					}
-				}
-			} while (it != start_it);
+		bool acc = (query.type & rx_log_acceding) != 0;
+		result.data.reserve(0x20);
+		locks::const_auto_lock_t dummy(&cache_lock_);
+		events_cache_type::const_iterator start_it = events_cache_.begin();
+		events_cache_type::const_iterator end_it = events_cache_.end();
+		if (!query.start_time.is_null())
+		{// we have start time
+			start_it = events_cache_.lower_bound(query.start_time);
+			if (start_it == events_cache_.end())
+				start_it = events_cache_.begin();
 		}
+		if (!query.stop_time.is_null())
+		{// we have start time
+			end_it = events_cache_.upper_bound(query.start_time);
+		}
+		if (acc)
+			read_log(query, result, events_cache_type::const_reverse_iterator(end_it), events_cache_type::const_reverse_iterator(start_it));
+		else
+			read_log(query, result, start_it, end_it);
+
+		if (!result.data.empty() && !acc)
+			std::reverse(result.data.begin(), result.data.end());
 	}
-	if(!result.data.empty())
-		std::reverse(result.data.begin(), result.data.end());
 	return true;
 }
 
@@ -509,7 +494,32 @@ string_type cache_log_subscriber::get_name () const
 	return CACHE_LOG_NAME;
 }
 
+template<class itType>
+rx_result cache_log_subscriber::read_log(const log_query_type& query, log_events_type& result, itType start_it, itType end_it) const
+{
+	if (start_it != end_it)
+	{
+		uint32_t count = 0;
+		itType it = end_it;
 
+		do
+		{
+			it--;
+			if (it->second.is_included(query))
+			{
+				result.data.emplace_back(it->second);
+				if (query.count)
+				{
+					count++;
+					if (count >= query.count)
+						break;
+				}
+			}
+		} while (it != start_it);
+	}
+
+	return true;
+}
 // Class rx_platform::log::file_log_subscriber 
 
 file_log_subscriber::file_log_subscriber (const string_type& path, log_event_type level)

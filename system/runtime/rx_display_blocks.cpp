@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -45,7 +45,7 @@ namespace runtime {
 
 namespace display_blocks {
 
-// Class rx_platform::runtime::display_blocks::displays_holder 
+// Class rx_platform::runtime::display_blocks::displays_holder
 
 
 rx_result displays_holder::get_value (const string_type& path, rx_value& val, runtime_process_context* ctx) const
@@ -123,7 +123,7 @@ rx_result displays_holder::start_displays (runtime::runtime_start_context& ctx, 
             ret = one.display_ptr->register_display(ctx, disp_path);
             if (!ret)
                 return ret;
-            
+
         }
     }
     return ret;
@@ -267,7 +267,6 @@ rx_result displays_holder::get_value_ref (string_view_type path, rt_value_ref& r
     if (idx != string_type::npos)
     {
         string_view_type name = path.substr(0, idx);
-        size_t len = idx;
         for (auto& one : displays_)
         {
             if (one.name == name)
@@ -281,7 +280,6 @@ rx_result displays_holder::get_value_ref (string_view_type path, rt_value_ref& r
 
 rx_result displays_holder::get_struct_value (string_view_type item, string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const
 {
-    const structure::runtime_item* item_ptr = nullptr;
     for (const auto& one : displays_)
     {
         if (one.name == item)
@@ -299,7 +297,7 @@ void displays_holder::set_displays (std::vector<display_data> data)
 }
 
 
-// Class rx_platform::runtime::display_blocks::display_data 
+// Class rx_platform::runtime::display_blocks::display_data
 
 display_data::display_data (runtime_item_ptr&& rt, display_runtime_ptr&& var, const display_data& prototype)
     : display_ptr(std::move(var))

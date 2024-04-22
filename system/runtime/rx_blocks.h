@@ -57,7 +57,7 @@ namespace blocks {
 
 class filter_runtime : public rx::pointers::reference_object  
 {
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 filter runtime. basic implementation of an filter runtime");
 
 	DECLARE_REFERENCE_PTR(filter_runtime);
@@ -135,7 +135,7 @@ filter runtime. basic implementation of an filter runtime");
 
 class mapper_runtime : public rx::pointers::reference_object  
 {
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 mapper runtime. basic implementation of an mapper runtime");
 
 	DECLARE_REFERENCE_PTR(mapper_runtime);
@@ -273,7 +273,7 @@ mapper runtime. basic implementation of an mapper runtime");
 
 class source_runtime : public rx::pointers::reference_object  
 {
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 source runtime. basic implementation of an source runtime");
 
 	DECLARE_REFERENCE_PTR(source_runtime);
@@ -400,7 +400,7 @@ source runtime. basic implementation of an source runtime");
 
 class struct_runtime : public rx::pointers::reference_object  
 {
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 struct runtime. basic implementation of an struct runtime");
 
 	DECLARE_REFERENCE_PTR(struct_runtime);
@@ -408,6 +408,8 @@ struct runtime. basic implementation of an struct runtime");
 
   public:
       struct_runtime();
+
+      struct_runtime (lock_reference_struct* extern_data);
 
       virtual ~struct_runtime();
 
@@ -440,7 +442,7 @@ struct runtime. basic implementation of an struct runtime");
 
 class event_runtime : public rx::pointers::reference_object  
 {
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 event runtime. basic implementation of an event runtime");
 
 	DECLARE_REFERENCE_PTR(event_runtime);
@@ -490,7 +492,7 @@ event runtime. basic implementation of an event runtime");
 
 class variable_runtime : public rx::pointers::reference_object  
 {
-	DECLARE_CODE_INFO("rx", 0, 3, 0, "\
+	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
 variable runtime. basic implementation of an variable runtime");
 
 	DECLARE_REFERENCE_PTR(variable_runtime);
@@ -536,6 +538,48 @@ variable runtime. basic implementation of an variable runtime");
 
 
       structure::variable_data* container_;
+
+
+};
+
+
+
+
+
+
+class data_type_runtime : public rx::pointers::reference_object  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+data type runtime. basic implementation of an data runtime");
+
+    DECLARE_REFERENCE_PTR(data_type_runtime);
+    friend class structure::struct_data;
+
+  public:
+      data_type_runtime();
+
+      data_type_runtime (lock_reference_struct* extern_data);
+
+      ~data_type_runtime();
+
+
+      string_type get_type_name () const;
+
+      virtual rx_result initialize_data_type (runtime::runtime_init_context& ctx, const data::runtime_data_model& data);
+
+      virtual rx_result start_data_type (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_data_type (runtime::runtime_stop_context& ctx);
+
+      virtual rx_result deinitialize_data_type (runtime::runtime_deinit_context& ctx);
+
+
+      static string_type type_name;
+
+
+  protected:
+
+  private:
 
 
 };

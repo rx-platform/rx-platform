@@ -214,12 +214,24 @@ rx_result_with<rx_directory_ptr> rx_directory_cache::get_or_create_directory (co
 
 rx_directory_ptr rx_directory_cache::get_directory (const string_type& path) const
 {
-	locks::const_auto_lock_t _(&cache_lock_);
-	auto it = cache_.find(path);
-	if (it != cache_.end())
-		return it->second;
+	if (path.size() > 1 && *path.rbegin() == RX_DIR_DELIMETER)
+	{
+		locks::const_auto_lock_t _(&cache_lock_);
+		auto it = cache_.find(path.substr(0, path.size()-1));
+		if (it != cache_.end())
+			return it->second;
+		else
+			return rx_directory_ptr::null_ptr;
+	}
 	else
-		return rx_directory_ptr::null_ptr;
+	{
+		locks::const_auto_lock_t _(&cache_lock_);
+		auto it = cache_.find(path);
+		if (it != cache_.end())
+			return it->second;
+		else
+			return rx_directory_ptr::null_ptr;
+	}
 }
 
 rx_directory_ptr rx_directory_cache::get_sub_directory (rx_directory_ptr whose, const string_type& name) const

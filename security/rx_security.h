@@ -88,7 +88,7 @@ class security_context : public rx::pointers::reference_object
 
       rx_result login ();
 
-      virtual bool has_console () const;
+      virtual bool has_console () const = 0;
 
       virtual bool is_system () const;
 
@@ -301,7 +301,7 @@ class unathorized_security_context : public security_context
 	DECLARE_REFERENCE_PTR(unathorized_security_context);
 
   public:
-      unathorized_security_context();
+      unathorized_security_context (bool has_console = false);
 
       ~unathorized_security_context();
 
@@ -313,6 +313,9 @@ class unathorized_security_context : public security_context
       rx_result deserialize (base_meta_reader& stream);
 
 
+      bool has_console () const;
+
+
   protected:
 
       void interface_bind ();
@@ -321,6 +324,9 @@ class unathorized_security_context : public security_context
 
 
   private:
+
+
+      bool has_console_;
 
 
 };

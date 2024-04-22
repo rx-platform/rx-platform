@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -85,7 +85,7 @@ bool is_serialization_type_array(int type);
 
 
 
-class base_meta_writer
+class base_meta_writer 
 {
 public:
 	template<typename T>
@@ -144,6 +144,8 @@ public:
 
       virtual bool write_init_values (const char* name, const data::runtime_values_data& values) = 0;
 
+      virtual bool write_data_type (const char* name, const data::runtime_data_model& data) = 0;
+
       virtual bool is_string_based () const = 0;
 
       virtual bool write_item_reference (const char* name, const rx_item_reference& ref) = 0;
@@ -185,7 +187,7 @@ public:
 
 
 
-class base_meta_reader
+class base_meta_reader 
 {
 
   public:
@@ -237,6 +239,8 @@ class base_meta_reader
       virtual bool read_version (const char* name, uint32_t& val) = 0;
 
       virtual bool read_init_values (const char* name, data::runtime_values_data& values) = 0;
+
+      virtual bool read_data_type (const char* name, data::runtime_data_model& values) = 0;
 
       virtual bool is_string_based () const = 0;
 

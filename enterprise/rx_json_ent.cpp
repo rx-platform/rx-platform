@@ -135,7 +135,6 @@ void json_enterprise_interface::sync_write (uint64_t trans_id, platform_item_ptr
 			item->write_value(path, false, std::move(vals), write_result_callback_t(anchor
 				, [this, trans_id, args = args, us1](uint32_t signal_level, rx_result&& result) mutable
 				{
-					uint64_t us2 = rx_get_us_ticks() - us1;
 					uint32_t http_result = 501;
 					string_type content;
 
@@ -207,7 +206,6 @@ void json_enterprise_interface::sync_execute (uint64_t trans_id, platform_item_p
 			item->execute_method(path, false, std::move(vals), named_execute_method_callback_t(anchor
 				, [this, trans_id, args = args, us1](uint32_t signal_level, rx_result&& result, data::runtime_values_data data) mutable
 				{
-					uint64_t us2 = rx_get_us_ticks() - us1;
 					uint32_t http_result = 501;
 					string_type content;
 

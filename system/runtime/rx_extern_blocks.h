@@ -347,6 +347,45 @@ class extern_variable_runtime : public variable_runtime
 };
 
 
+
+
+
+
+class extern_data_type_runtime : public data_type_runtime  
+{
+
+  public:
+      extern_data_type_runtime (plugin_data_type_runtime_struct* impl);
+
+      ~extern_data_type_runtime();
+
+
+      rx_result initialize_data_type (runtime::runtime_init_context& ctx, const data::runtime_data_model& data);
+
+      rx_result start_data_type (runtime::runtime_start_context& ctx);
+
+      rx_result stop_data_type (runtime::runtime_stop_context& ctx);
+
+      rx_result deinitialize_data_type (runtime::runtime_deinit_context& ctx);
+
+      void start_timer (runtime_handle_t handle, uint32_t period);
+
+      void suspend_timer (runtime_handle_t handle);
+
+      void destroy_timer (runtime_handle_t handle);
+
+
+  protected:
+
+  private:
+
+
+      plugin_data_type_runtime_struct* impl_;
+
+
+};
+
+
 } // namespace blocks
 } // namespace runtime
 } // namespace rx_platform

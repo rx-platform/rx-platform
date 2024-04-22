@@ -63,57 +63,66 @@ std::atomic<ref_counting_type> reference_object::g_objects_count;
 
 reference_object::reference_object()
       : ref_count_(1),
-        own_ref_(false)
-	, extern_data_(nullptr)
+        shared_ref_(false)
+	, shared_data_(nullptr)
 {
 	g_objects_count++;
 }
 
-reference_object::reference_object (lock_reference_struct* extern_data)
+reference_object::reference_object (lock_reference_struct* shared_data)
       : ref_count_(1),
-        own_ref_(false)
-	, extern_data_(extern_data)
+        shared_ref_(false)
+	, shared_data_(shared_data)
 {
-	if (extern_data_)
+	if (shared_data_)
 	{
-		rx_aquire_lock_reference(extern_data_);
+		rx_aquire_lock_reference(shared_data_);
 	}
 }
 
 
 reference_object::~reference_object()
 {
-	if (extern_data_ && !own_ref_)
-		rx_release_lock_reference(extern_data_);
+	if (shared_data_)
+	{
+		if (!shared_ref_)
+			rx_release_lock_reference(shared_data_);
+	}
 	g_objects_count--;
 }
 
 
 
-void reference_object::bind_as_shared (lock_reference_struct* extern_data)
+void reference_object::bind_as_shared (lock_reference_struct* shared_data)
 {
-	extern_data_ = extern_data;
-	RX_ASSERT(extern_data);
-	if (extern_data_)
+	RX_ASSERT(shared_data_ == nullptr);
+	shared_data_ = shared_data;
+	RX_ASSERT(shared_data_);
+	if (shared_data_)
 	{
-		own_ref_ = true;
-		rx_init_lock_reference(extern_data_, this, &_g_ref_def_struct);
+		shared_ref_ = true;
+		rx_init_lock_reference(shared_data_, this, &_g_ref_def_struct);
 	}
+}
+
+lock_reference_struct* reference_object::get_shared_ref ()
+{
+	return shared_data_;
 }
 
 void reference_object::bind ()
 {
-	if (own_ref_)
-		rx_aquire_lock_reference(extern_data_);
+	if (shared_ref_)
+		rx_aquire_lock_reference(shared_data_);
 	else
 		ref_count_.fetch_add(1);
 }
 
 void reference_object::release ()
 {
-	if (own_ref_)
+	if (shared_ref_)
 	{
-		rx_release_lock_reference(extern_data_);
+		rx_release_lock_reference(shared_data_);
 	}
 	else
 	{
@@ -129,11 +138,6 @@ size_t reference_object::get_objects_count ()
 
 void reference_object::fill_code_info (std::ostream& info, const string_type& name) const
 {
-}
-
-lock_reference_struct* reference_object::get_extern_ref ()
-{
-	return extern_data_;
 }
 
 

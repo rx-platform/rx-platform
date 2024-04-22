@@ -58,24 +58,27 @@ namespace runtime {
 namespace structure {
 class mapper_data;
 class variable_data;
+} // namespace structure
+
+namespace relations {
+class relations_holder;
+} // namespace relations
+
+namespace tag_blocks {
+class binded_tags;
+} // namespace tag_blocks
+
+class relation_subscriber;
+class runtime_process_context;
+namespace structure {
 class runtime_item;
 class source_data;
 } // namespace structure
 
 namespace algorithms {
 template <class typeT> class runtime_holder;
+
 } // namespace algorithms
-
-namespace relations {
-class relations_holder;
-} // namespace relations
-
-class relation_subscriber;
-class runtime_process_context;
-namespace tag_blocks {
-class binded_tags;
-
-} // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -233,6 +236,7 @@ class runtime_path_resolver
 class runtime_structure_resolver 
 {
 	typedef std::stack<std::reference_wrapper<structure::runtime_item>, std::vector<std::reference_wrapper<structure::runtime_item> > > runtime_items_type;
+    typedef std::map<string_type, data::runtime_data_model> data_types_type;
 
   public:
       runtime_structure_resolver (structure::runtime_item& root);
@@ -246,6 +250,10 @@ class runtime_structure_resolver
 
       structure::runtime_item& get_root ();
 
+      data::runtime_data_model get_data_type (const string_type& path);
+
+      void register_data_type (const string_type& path, data::runtime_data_model data);
+
 
   protected:
 
@@ -255,6 +263,8 @@ class runtime_structure_resolver
       runtime_items_type items_;
 
       std::reference_wrapper<structure::runtime_item> root_;
+
+      data_types_type data_types_;
 
 
 };
@@ -537,6 +547,8 @@ struct runtime_init_context
       rx_result_with<runtime_handle_t> connect_item (const string_type& path, uint32_t rate, tag_blocks::binded_callback_t callback);
 
       rx_time now ();
+
+      data::runtime_data_model get_data_model (string_view_type path);
 
 
       runtime_path_resolver path;

@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Molecule"
 #define RX_SERVER_MAJOR_VERSION 2
 #define RX_SERVER_MINOR_VERSION 5
-#define RX_SERVER_BUILD_NUMBER 0
+#define RX_SERVER_BUILD_NUMBER 2
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>

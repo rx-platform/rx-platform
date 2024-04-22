@@ -106,6 +106,8 @@ class json_reader : public base_meta_reader
 
       bool read_init_values (const char* name, data::runtime_values_data& values);
 
+      bool read_data_type (const char* name, data::runtime_data_model& values);
+
       string_array get_errors () const;
 
       bool is_string_based () const;
@@ -196,6 +198,8 @@ class json_writer_type : public base_meta_writer
       bool write_version (const char* name, uint32_t val);
 
       bool write_init_values (const char* name, const data::runtime_values_data& values);
+
+      bool write_data_type (const char* name, const data::runtime_data_model& data);
 
       bool is_string_based () const;
 

@@ -15,10 +15,16 @@ public:
 	bool do_console_command(std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 	{
 		out << "\r\n"
-			"Kad si mlad onda si glup,"
-			"Kad se opametis onda vise nisi mlad,"
-			"Ceo zivot si jurio sopstveni rep,"
-			"I onda riknes..."
+			"   Trag\r\n\r\n"
+			"   volim tvoju necujnu senku kad sklizne iz sobe,\r\n"
+			"   volim mirisni trag koji tada ostavis za sobom,\r\n"
+			"   nedostajes mi danas, nedostajaces mi i sutra,\r\n"
+			"   lepo je ceznuti za tvojim mirisnim tragom,\r\n"
+			"   radovati se tvom prisustvu,\r\n"
+			"   ziveti za momenat,\r\n"
+			"   lepo je voleti te...\r\n\r\n\r\n"
+			"                           jednoj Kseniji,\r\n"
+			"                           28.10.2022.\r\n"
 			"\r\n\r\n";
 		return true;
 	}

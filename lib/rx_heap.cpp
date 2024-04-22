@@ -34,7 +34,7 @@
 #ifdef _MSC_VER
 #include "rx_msvc_heap.cpp"
 #endif
-#ifdef __GCC__
+#ifdef __GNUC__
 #include "rx_gcc_heap.cpp"
 #endif
 

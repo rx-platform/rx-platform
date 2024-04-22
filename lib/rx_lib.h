@@ -64,6 +64,7 @@ string_type _implemented_func(const char* fname);
 #define RX_INVALID_STATE "Invalid state of the object!"
 #define RX_NOT_AN_ARRAY "Item is not an array."
 #define RX_OUT_OF_BOUNDS "Index is out of bounds of array."
+#define RX_OUT_OF_MEMORY "Out of memory."
 
 namespace rx
 {
@@ -100,6 +101,25 @@ T alias_cast(F raw_data)
 	return ac.data;
 }
 
+
+template<typename T>
+void rx_create_string_internal(std::ostringstream& ss, T t)
+{
+	ss << t;
+}
+template<typename T, typename... Args>
+void rx_create_string_internal(std::ostringstream& ss, T t, Args... args)
+{
+	ss << t;
+	rx_create_string_internal(ss, std::forward<Args>(args)...);
+}
+template<typename... Args>
+string_type rx_create_string(Args... args)
+{
+	std::ostringstream ss;
+	rx_create_string_internal(ss, std::forward<Args>(args)...);
+	return ss.str();
+}
 
 // string and byte array helpers
 class rx_string_wrapper : public string_value_struct

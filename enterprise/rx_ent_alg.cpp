@@ -87,8 +87,6 @@ std_enterprise_interface::~std_enterprise_interface()
 
 void std_enterprise_interface::begin_read (uint64_t trans_id, string_view_type path, const enterprise_args_t& args, enterprise_callback* callback, rx_reference_ptr anchor)
 {
-	int result = 0;
-
 	string_type path_val;
 	if (!path.empty() && path[0] == '/')
 		path_val = path.substr(1);
@@ -203,8 +201,6 @@ void std_enterprise_interface::begin_write (uint64_t trans_id, string_view_type 
 
 void std_enterprise_interface::begin_execute (uint64_t trans_id, string_view_type path, const enterprise_args_t& args, string_view_type data, enterprise_callback* callback, rx_reference_ptr anchor)
 {
-	int result = 0;
-
 	string_type path_val;
 	if (!path.empty() && path[0] == '/')
 		path_val = path.substr(1);

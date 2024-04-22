@@ -83,6 +83,7 @@ class tcp_server_endpoint
         socket_holder_t(tcp_server_endpoint* whose, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr);
         socket_holder_t(socket_holder_t&& right) noexcept;
         void disconnect();
+        void detach();
     };
     friend struct tcp_server_endpoint::socket_holder_t;
   public:

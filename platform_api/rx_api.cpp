@@ -67,6 +67,7 @@ extern rxRegisterObjectRuntime_t api_reg_object_func;
 extern rxRegisterPortRuntime_t api_reg_port_func;
 
 extern rxRegisterRelationRuntime_t api_reg_relation_func;
+extern rxRegisterDataTypeRuntime_t api_reg_data_type_func;
 
 extern rxInitCtxBindItem_t api_bind_item_func;
 extern rxInitCtxGetCurrentPath_t api_init_get_current_path;
@@ -75,6 +76,7 @@ extern rxInitCtxSetLocalValue_t api_init_set_local_value;
 extern rxInitCtxGetMappingValues_t api_get_mapping_values;
 extern rxInitCtxGetSourceValues_t api_get_source_values;
 extern rxInitCtxGetItemMeta_t api_item_meta;
+extern rxInitCtxGetDataType_t api_get_data_type_func;
 
 
 extern rxStartCtxGetCurrentPath_t api_start_get_current_path;
@@ -94,7 +96,7 @@ extern rxCtxExecuteConnected_t api_execute_connected_func;
 extern rxRegisterStorageType_t api_reg_storage_func;
 
 
-const platform_api3* g_api;
+const platform_api4* g_api;
 
 
 
@@ -120,7 +122,7 @@ intptr_t set_rx_plugin(intptr_t what)
 	RX_ASSERT(prev == 0);
 	return prev;
 }
-void copy_rt_to_rt3(const platform_runtime_api* src, platform_runtime_api3* dest)
+void copy_rt_to_rt4(const platform_runtime_api* src, platform_runtime_api4* dest)
 {
 
 	dest->prxRegisterSourceRuntime = src->prxRegisterSourceRuntime;
@@ -161,6 +163,12 @@ void copy_rt_to_rt3(const platform_runtime_api* src, platform_runtime_api3* dest
 }
 
 
+void copy_rt3_to_rt4(const platform_runtime_api3* src, platform_runtime_api4* dest)
+{
+	memcpy(dest, src, sizeof(platform_runtime_api3));//!!!!
+	// WARNING rxInitCtxGetDataType_t added at the end/ beware of errors!!!
+}
+
 namespace
 {
 string_type rx_version_;
@@ -171,8 +179,12 @@ string_type common_version_;
 uint32_t _g_stream_version_ = RX_CURRENT_SERIALIZE_VERSION;
 }
 
+int get_binded_stream_version()
+{
+	return _g_stream_version_;
+}
 
-rx_result_struct rx_bind_plugin(const platform_api3* api, uint32_t host_stream_version, uint32_t* plugin_stream_version)
+rx_result_struct rx_bind_plugin(const platform_api4* api, uint32_t host_stream_version, uint32_t* plugin_stream_version)
 {
 	_g_stream_version_ = std::min(host_stream_version, _g_stream_version_);
 	*plugin_stream_version = _g_stream_version_;
@@ -222,6 +234,7 @@ rx_result_struct rx_bind_plugin(const platform_api3* api, uint32_t host_stream_v
 	api_reg_port_func = api->runtime.prxRegisterPortRuntime;
 
 	api_reg_relation_func=api->runtime.prxRegisterRelationRuntime;
+	api_reg_data_type_func = api->runtime.prxRegisterDataTypeRuntime;
 
 	api_reg_object_func = api->runtime.prxRegisterObjectRuntime;
 	api_reg_domain_func = api->runtime.prxRegisterDomainRuntime;
@@ -234,6 +247,7 @@ rx_result_struct rx_bind_plugin(const platform_api3* api, uint32_t host_stream_v
 	api_get_mapping_values = api->runtime.prxInitCtxGetMappingValues;
 	api_get_source_values = api->runtime.prxInitCtxGetSourceValues;
 	api_item_meta = api->runtime.prxInitCtxGetItemMeta;
+	api_get_data_type_func = api->runtime.prxInitCtxGetDataType;
 
 	api_start_get_current_path = api->runtime.prxStartCtxGetCurrentPath;
 	api_start_ctx_create_timer = api->runtime.prxStartCtxCreateTimer;
@@ -249,6 +263,7 @@ rx_result_struct rx_bind_plugin(const platform_api3* api, uint32_t host_stream_v
 	api_set_async_pending_func = api->runtime.prxCtxSetAsyncPending;
 
 	api_reg_storage_func = api->storage.prxRegisterStorageType;
+
 
 	return rx_result(true).move();
 }

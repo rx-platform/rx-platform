@@ -308,13 +308,12 @@ void runtime_cache::add_to_cache (platform_item_ptr&& item, collected_subscriber
 			RX_ASSERT(false);
 			return;
 		}
-		if (it_id->second.register_f)
-			it_id->second.register_f(item->meta_info().id);
+		
 		it_id->second.item = item->clone();
 	}
 	else
 	{
-		id_cache_.emplace(std::move(id), runtime_id_data{ item->clone(), g_dummy_f, g_dummy_f });
+		id_cache_.emplace(id, runtime_id_data{ item->clone(), g_dummy_f, g_dummy_f });
 	}
 	path_cache_.emplace(std::move(path), std::move(item));
 
@@ -419,6 +418,8 @@ void runtime_cache::add_functions (const rx_node_id& id, const std::function<voi
 	}
 	else
 	{
+		if(register_f)
+			register_f(id);
 		id_cache_.emplace(id, runtime_id_data{ platform_item_ptr(), register_f, deleter_f });
 	}
 }
@@ -429,6 +430,8 @@ void runtime_cache::remove_functions (const rx_node_id& id)
 	auto it_id = id_cache_.find(id);
 	if (it_id != id_cache_.end())
 	{
+		if(it_id->second.deleter_f)
+			it_id->second.deleter_f(id);
 		id_cache_.erase(it_id);
 	}
 	else

@@ -41,7 +41,10 @@
 
 
 namespace rx {
-
+void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, values::rx_simple_value t)
+{
+	vals.push_back(std::move(t));
+}
 bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const char* name)
 {
 	rx_value_t type;
@@ -1163,6 +1166,27 @@ rx_time_struct extract_value(const typed_value_type& from, const rx_time_struct&
 	}
 	return default_value;
 }
+
+rx_time extract_value(const typed_value_type& from, const rx_time& default_value)
+{
+	if (from.value_type == RX_TIME_TYPE)
+	{
+		return from.value.time_value;
+	}
+	else
+	{
+		typed_value_type temp_val;
+		rx_copy_value(&temp_val, &from);
+		rx_time ret;
+		if (rx_convert_value(&temp_val, RX_TIME_TYPE))
+			ret = temp_val.value.time_value;
+		else
+			ret = default_value;
+		rx_destroy_value(&temp_val);
+		return ret;
+	}
+	return default_value;
+	}
 
 rx_uuid_t extract_value(const typed_value_type& from, const rx_uuid_t& default_value)
 {
@@ -2656,7 +2680,7 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	}
 }
 
-rx::values::rx_simple_value rx_value::to_simple () const
+rx_simple_value rx_value::to_simple () const
 {
     return rx_simple_value(&data_.value);
 }
@@ -2746,6 +2770,11 @@ uint32_t rx_value::increment_signal_level ()
 	return temp;
 }
 
+void rx_value::set_signal_level (uint32_t val)
+{
+	data_.origin = (data_.origin & ~RX_LEVEL_MASK) | (val & RX_LEVEL_MASK);
+}
+
 uint32_t rx_value::get_signal_level () const
 {
 	return data_.origin & RX_LEVEL_MASK;
@@ -2756,7 +2785,7 @@ uint32_t rx_value::get_origin () const
 	return data_.origin & RX_ORIGIN_MASK;
 }
 
-rx::values::rx_simple_value rx_value::operator [] (int index) const
+rx_simple_value rx_value::operator [] (int index) const
 {
 	if (is_array())
 	{
@@ -3207,7 +3236,7 @@ byte_string rx_simple_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx::values::rx_simple_value rx_simple_value::operator [] (int index) const
+rx_simple_value rx_simple_value::operator [] (int index) const
 {
 	if (is_array())
 	{
@@ -3608,7 +3637,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx::values::rx_simple_value rx_timed_value::to_simple () const
+rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(&data_.value);
 }
@@ -3631,7 +3660,7 @@ byte_string rx_timed_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx::values::rx_simple_value rx_timed_value::operator [] (int index) const
+rx_simple_value rx_timed_value::operator [] (int index) const
 {
 	/*if (is_array())
 	{

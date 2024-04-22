@@ -131,18 +131,17 @@ public:
 
 class runtime_data_model 
 {
-    typedef std::vector<std::unique_ptr<runtime_model_element> > elements_type;
+    typedef std::vector<runtime_model_element> elements_type;
 
   public:
 
-      byte_string serialize () const;
-
-      static runtime_data_model deserialize (byte_string& data);
-
-
       elements_type elements;
 
-
+      runtime_data_model() = default;
+      runtime_data_model(const runtime_data_model&);
+      runtime_data_model(runtime_data_model&&) noexcept;
+      runtime_data_model& operator=(const runtime_data_model&);
+      runtime_data_model& operator=(runtime_data_model&&) noexcept;
   protected:
 
   private:
@@ -181,7 +180,9 @@ class runtime_model_element
 
       model_value_type value;
 
-
+      runtime_model_element() = default;
+      runtime_model_element(const runtime_model_element&) = default;
+      runtime_model_element(runtime_model_element&&) noexcept = default;
   protected:
 
   private:

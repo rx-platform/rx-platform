@@ -36,7 +36,7 @@
 
 
 #define CHUNK_NUMBER 20
-#define INITIAL_CHUNK_SIZE 0x1000
+#define INITIAL_CHUNK_SIZE 0x100
 
 #define MAX_CHUNKSIZE (8<<(CHUNK_NUMBER-1))
 
@@ -117,7 +117,7 @@ struct my_heap_chunk
 	size_t free;
 	size_t max_buckets;
 	size_t g_allocated[CHUNK_NUMBER];
-	uintptr_t** array;
+	uint64_t** array;
 };
 
 struct my_heap_chunk g_chunks[CHUNK_NUMBER * 8];
@@ -219,7 +219,7 @@ int rx_init_heap(size_t initial_heap, size_t alloc_size, size_t trigger, size_t 
 			bucket_size = INITIAL_CHUNK_SIZE;
 		for (int i = 0; i < CHUNK_NUMBER; i++)
 		{
-			g_chunks[i].array = (uintptr_t**)alloc_from_buffer(sizeof(uint8_t*) * bucket_size);
+			g_chunks[i].array = (uint64_t**)alloc_from_buffer(sizeof(uint64_t*) * bucket_size);
 			g_chunks[i].size = bucket_size;
 			g_chunks[i].next_index = 0;
 			g_chunks[i].occupied = 0;
@@ -243,8 +243,8 @@ int rx_init_heap(size_t initial_heap, size_t alloc_size, size_t trigger, size_t 
 				{
 					void* old_data = my_chunk->array;
 					size_t new_size = bucket_size;
-					my_chunk->array = (uintptr_t**)alloc_from_buffer(new_size * sizeof(uint8_t*));
-					memcpy(my_chunk->array, old_data, my_chunk->size * sizeof(uint8_t*));
+					my_chunk->array = (uint64_t**)alloc_from_buffer(new_size * sizeof(uint64_t*));
+					memcpy(my_chunk->array, old_data, my_chunk->size * sizeof(uint64_t*));
 					my_chunk->size = new_size;
 				}
 
@@ -271,11 +271,11 @@ RX_COMMON_API void* rx_heap_alloc(size_t size)
 		rx_init_heap(0, 0, 0, 0);
 	}
 
-	uintptr_t* p = NULL;
+	uint64_t* p = NULL;
 
 	if (size < MAX_CHUNKSIZE)
 	{
-		uintptr_t chunknum = 0;
+		uint64_t chunknum = 0;
 		size_t tmp = size >> 3;// start with 8 bytes
 		//RX_ASSERT(tmp != 0);
 		while (tmp != 0 && chunknum != CHUNK_NUMBER)
@@ -302,7 +302,7 @@ RX_COMMON_API void* rx_heap_alloc(size_t size)
 		else
 		{// we don't have it jet
 
-			p = (uintptr_t*)alloc_from_buffer(bucket_size + sizeof(uintptr_t));
+			p = (uint64_t*)alloc_from_buffer(bucket_size + sizeof(uint64_t));
 			*p = chunknum;
 			p++;// return address just one byte upper from us
 		}
@@ -311,7 +311,7 @@ RX_COMMON_API void* rx_heap_alloc(size_t size)
 	}
 	else
 	{
-		p = (uintptr_t*)rx_allocate_os_memory(size + sizeof(uintptr_t));
+		p = (uint64_t*)rx_allocate_os_memory(size + sizeof(uint64_t));
 		*p = 0xff;
 		p++;// return address just one byte upper from us
 	}
@@ -323,10 +323,10 @@ RX_COMMON_API int rx_heap_free(void* ptr)
 	if (ptr == NULL)
 		return 1;
 
-	uintptr_t* mem = (uintptr_t*)ptr;
+	uint64_t* mem = (uint64_t*)ptr;
 	mem--;
 
-	uintptr_t chunk = *mem;
+	uint64_t chunk = *mem;
 
 	if (chunk != 0xff)
 	{// return it to bucket
@@ -340,8 +340,8 @@ RX_COMMON_API int rx_heap_free(void* ptr)
 		{// we should do realloc becouse we are out of limit
 			void* old_data = my_chunk->array;
 			size_t new_size = ((my_chunk->size) << 1);
-			my_chunk->array = (uintptr_t**)alloc_from_buffer(new_size * sizeof(uint8_t*));
-			memcpy(my_chunk->array, old_data, my_chunk->size * sizeof(uint8_t*));
+			my_chunk->array = (uint64_t**)alloc_from_buffer(new_size * sizeof(uint64_t*));
+			memcpy(my_chunk->array, old_data, my_chunk->size * sizeof(uint64_t*));
 			my_chunk->size = new_size;
 		}
 		if (my_chunk->max_buckets < my_chunk->next_index)

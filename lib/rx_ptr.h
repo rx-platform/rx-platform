@@ -381,10 +381,12 @@ class reference_object
   public:
       reference_object();
 
-      reference_object (lock_reference_struct* extern_data);
+      reference_object (lock_reference_struct* shared_data);
 
       virtual ~reference_object();
 
+
+      lock_reference_struct* get_shared_ref ();
 
       static size_t get_objects_count ();
 
@@ -396,15 +398,13 @@ class reference_object
 
       virtual void fill_code_info (std::ostream& info, const string_type& name) const;
 
-      lock_reference_struct* get_extern_ref ();
-
 	  reference_object(const reference_object&) = delete;
 	  reference_object(reference_object&&) = delete;
 	  reference_object& operator=(const reference_object&) = delete;
 	  reference_object& operator=(reference_object&&) = delete;
   protected:
 
-      void bind_as_shared (lock_reference_struct* extern_data);
+      void bind_as_shared (lock_reference_struct* shared_data);
 
       void bind ();
 
@@ -416,11 +416,11 @@ class reference_object
 
       std::atomic<ref_counting_type> ref_count_;
 
-      lock_reference_struct* extern_data_;
+      lock_reference_struct* shared_data_;
+
+      bool shared_ref_;
 
       static std::atomic<ref_counting_type> g_objects_count;
-
-      bool own_ref_;
 
 
 };

@@ -53,6 +53,7 @@ struct _rx_domain_holder_stub;
 struct _rx_port_holder_stub;
 
 struct _rx_relation_holder_stub;
+struct _rx_data_type_holder_stub;
 
 struct _rx_storage_holder_stub;
 
@@ -496,6 +497,30 @@ rx_result_struct c_relation_connected_stub(void* whose, const struct rx_node_id_
 rx_result_struct c_relation_disconnected_stub(void* whose, const struct rx_node_id_struct_t* from, const struct rx_node_id_struct_t* to)
 {
     return c_relation_disconnected(whose, from, to);
+}
+
+
+rx_result_struct c_init_data_type(struct _rx_data_type_holder_stub* self, init_ctx_ptr ctx);
+rx_result_struct c_start_data_type(struct _rx_data_type_holder_stub* self, start_ctx_ptr ctx);
+rx_result_struct c_stop_data_type(struct _rx_data_type_holder_stub* self);
+rx_result_struct c_deinit_data_type(struct _rx_data_type_holder_stub* self);
+
+rx_result_struct c_init_data_type_stub(void* self, init_ctx_ptr ctx)
+{
+    return c_init_data_type(self, ctx);
+}
+
+rx_result_struct c_start_data_type_stub(void* self, start_ctx_ptr ctx)
+{
+    return c_start_data_type(self, ctx);
+}
+rx_result_struct c_stop_data_type_stub(void* self)
+{
+    return c_stop_data_type(self);
+}
+rx_result_struct c_deinit_data_type_stub(void* self)
+{
+    return c_deinit_data_type(self);
 }
 
 

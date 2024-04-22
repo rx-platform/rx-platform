@@ -84,7 +84,7 @@ void discovery_point::socket_holder_t::on_shutdown(rx_security_handle_t identity
     {
     }
 }
-discovery_point::socket_holder_t::socket_holder_t(discovery_point* whose, const io::ip4_address& bind_addr)
+discovery_point::socket_holder_t::socket_holder_t(discovery_point::smart_ptr whose, const io::ip4_address& bind_addr)
     : whose(whose)
     , bind_address(bind_addr)
 {
@@ -93,7 +93,7 @@ discovery_point::socket_holder_t::socket_holder_t(socket_holder_t&& right) noexc
 {
     whose = right.whose;
     bind_address = right.bind_address;
-    right.whose = nullptr;
+    right.whose = discovery_point::smart_ptr::null_ptr;
 }
 void discovery_point::socket_holder_t::timer_tick(rx_timer_ticks_t ticks)
 {
@@ -102,7 +102,7 @@ void discovery_point::socket_holder_t::timer_tick(rx_timer_ticks_t ticks)
 }
 void discovery_point::socket_holder_t::disconnect()
 {
-    whose = nullptr;
+    whose = discovery_point::smart_ptr::null_ptr;
     initiate_shutdown();
 }
 
@@ -145,7 +145,7 @@ bool discovery_point::readed (const void* data, size_t count, const struct socka
         io::ip4_address to_addr;
         io::ip4_address ip_addr(addr);
         rx_discovery_header_t* phead = (rx_discovery_header_t*)data;
-        //printf("Discovery Point readed:%d msg type:%d from %s\r\n", (int)count, (int)phead->type, ip_addr.to_string().c_str());
+        
         if (phead->known == RX_DISCOVERY_KNOWN_UINT
             && phead->size == count
             && !my_register_->is_this_you(phead->idenity)
@@ -461,7 +461,7 @@ void discovery_point::activate ()
 {
     if (!multicast_address_.is_null() && !multicast_address_.is_empty_ip4())
         multicast_arg_ = multicast_address_.get_ip4_address();
-    local_socket_ptr_ = rx_create_reference<socket_holder_t>(this, io::ip4_address());
+    local_socket_ptr_ = rx_create_reference<socket_holder_t>(smart_this(), io::ip4_address());
 }
 
 void discovery_point::deactivate ()
@@ -599,7 +599,7 @@ void discovery_point::timer_tick (rx_timer_ticks_t ticks)
                         current_port_ = default_port_;
                         current_port_ += 3;
                         local_socket_ptr_->close();
-                        local_socket_ptr_ = rx_create_reference<socket_holder_t>(this, io::ip4_address());
+                        local_socket_ptr_ = rx_create_reference<socket_holder_t>(smart_this(), io::ip4_address());
                         close_sockets();
                     }
                 }
@@ -655,7 +655,7 @@ void discovery_point::timer_tick (rx_timer_ticks_t ticks)
                         next_tick_ = ticks;// this is next scan
                         current_port_ += 3;
                         local_socket_ptr_->close();
-                        local_socket_ptr_ = rx_create_reference<socket_holder_t>(this, io::ip4_address());
+                        local_socket_ptr_ = rx_create_reference<socket_holder_t>(smart_this(), io::ip4_address());
                         close_sockets();
                     }
                 }
@@ -707,7 +707,7 @@ void discovery_point::timer_tick (rx_timer_ticks_t ticks)
                 next_tick_ = ticks;// this is next scan
                 current_port_ = 0;
                 local_socket_ptr_->close();
-                local_socket_ptr_ = rx_create_reference<socket_holder_t>(this, io::ip4_address());
+                local_socket_ptr_ = rx_create_reference<socket_holder_t>(smart_this(), io::ip4_address());
                 close_sockets();
 
             }
@@ -749,7 +749,7 @@ void discovery_point::timer_tick (rx_timer_ticks_t ticks)
                     state_ = discovery_state::idle;
                     current_port_ = 0;
                     local_socket_ptr_->close();
-                    local_socket_ptr_ = rx_create_reference<socket_holder_t>(this, io::ip4_address());
+                    local_socket_ptr_ = rx_create_reference<socket_holder_t>(smart_this(), io::ip4_address());
                     close_sockets();
                     next_tick_ = ticks;
                 }
@@ -896,7 +896,7 @@ rx_result discovery_point::open_sockets (uint16_t port)
     {
         socket_struct_t temp;
         temp.bind_address = addr;
-        temp.socket = rx_create_reference<socket_holder_t>(this, temp.bind_address);
+        temp.socket = rx_create_reference<socket_holder_t>(smart_this(), temp.bind_address);
         auto result = temp.socket->bind_socket_udpip_4(temp.bind_address.get_ip4_address(), multicast_arg_
             , infrastructure::server_runtime::instance().get_io_pool()->get_pool());
         if (result)

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -55,7 +55,7 @@ namespace meta {
 
 namespace meta_algorithm {
 
-// Class rx_platform::meta::meta_algorithm::data_types_algorithm 
+// Class rx_platform::meta::meta_algorithm::data_types_algorithm
 
 
 rx_result data_types_algorithm::serialize_type (const data_type& whose, base_meta_writer& stream, uint8_t type)
@@ -227,10 +227,6 @@ bool data_types_algorithm::check_type (data_type& whose, type_check_context& ctx
 rx_result data_types_algorithm::construct_runtime (const data_type& whose, runtime::structure::block_data& what, construct_context& ctx)
 {
 	rx_result ret = true;
-	// first pass, create structure
-	size_t children_size = 0;
-	size_t values_size = 0;
-	size_t items_size = 0;
 	// first pass find the sizes
 
 	std::vector<runtime::structure::index_data> items;
@@ -358,7 +354,7 @@ bool data_types_algorithm::check_name (const string_type& name, std::vector<runt
 }
 
 
-// Parameterized Class rx_platform::meta::meta_algorithm::basic_types_algorithm 
+// Parameterized Class rx_platform::meta::meta_algorithm::basic_types_algorithm
 
 
 template <class typeT>
@@ -984,7 +980,7 @@ template class basic_types_algorithm<basic_types::event_type>;
 template class basic_types_algorithm<basic_types::method_type>;
 template class basic_types_algorithm<basic_types::program_type>;
 template class basic_types_algorithm<basic_types::display_type>;
-// Parameterized Class rx_platform::meta::meta_algorithm::object_types_algorithm 
+// Parameterized Class rx_platform::meta::meta_algorithm::object_types_algorithm
 
 
 template <class typeT>
@@ -1080,7 +1076,7 @@ template class object_types_algorithm<object_types::object_type>;
 template class object_types_algorithm<object_types::port_type>;
 template class object_types_algorithm<object_types::application_type>;
 template class object_types_algorithm<object_types::domain_type>;
-// Class rx_platform::meta::meta_algorithm::relation_type_algorithm 
+// Class rx_platform::meta::meta_algorithm::relation_type_algorithm
 
 
 rx_result relation_type_algorithm::serialize_type (const relation_type& whose, base_meta_writer& stream, uint8_t type)
@@ -1173,7 +1169,7 @@ rx_result relation_type_algorithm::construct_runtime (const relation_type& whose
 }
 
 
-// Parameterized Class rx_platform::meta::meta_algorithm::object_data_algorithm 
+// Parameterized Class rx_platform::meta::meta_algorithm::object_data_algorithm
 
 
 template <class typeT>
@@ -1469,7 +1465,7 @@ rx_result object_data_algorithm<typeT>::get_depends (const object_types::object_
 }
 
 
-// Class rx_platform::meta::meta_algorithm::relation_blocks_algorithm 
+// Class rx_platform::meta::meta_algorithm::relation_blocks_algorithm
 
 
 rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_types::relation_attribute& whose, base_meta_writer& stream)

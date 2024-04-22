@@ -158,7 +158,7 @@ rx_result_with<io::rx_io_buffer> port_buffers::alloc_io_buffer (rx_port_ptr& who
         if (result != RX_PROTOCOL_OK)
         {
             memzero(&ret, sizeof(ret));
-            return "Out of memory";
+            return RX_OUT_OF_MEMORY;
         }
         buffers.buffer_count += 1;
     }

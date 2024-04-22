@@ -454,7 +454,7 @@ extern "C" {
 			}
 			if (construct_data.register_func)
 			{
-				lock_reference_struct* extern_data = new_ptr->get_extern_ref();
+				lock_reference_struct* extern_data = new_ptr->get_shared_ref();
 				ret.register_f = [construct_data, extern_data](const rx_node_id& id)
 				{
 					construct_data.register_func(id.c_ptr(), extern_data);
@@ -494,10 +494,10 @@ extern "C" {
 			}
 			if (construct_data.register_func)
 			{
-				lock_reference_struct* extern_data = new_ptr->get_extern_ref();
-				ret.register_f = [construct_data, extern_data](const rx_node_id& id)
+				lock_reference_struct* shared_data = new_ptr->get_shared_ref();
+				ret.register_f = [construct_data, shared_data](const rx_node_id& id)
 				{
-					construct_data.register_func(id.c_ptr(), extern_data);
+					construct_data.register_func(id.c_ptr(), shared_data);
 				};
 			}
 			if (construct_data.unregister_func)
@@ -533,7 +533,7 @@ extern "C" {
 			}
 			if (construct_data.register_func)
 			{
-				lock_reference_struct* extern_data = new_ptr->get_extern_ref();
+				lock_reference_struct* extern_data = new_ptr->get_shared_ref();
 				ret.register_f = [construct_data, extern_data](const rx_node_id& id)
 				{
 					construct_data.register_func(id.c_ptr(), extern_data);
@@ -572,7 +572,7 @@ extern "C" {
 			}
 			if (construct_data.register_func)
 			{
-				lock_reference_struct* extern_data = new_ptr->get_extern_ref();
+				lock_reference_struct* extern_data = new_ptr->get_shared_ref();
 				ret.register_f = [construct_data, extern_data](const rx_node_id& id)
 				{
 					construct_data.register_func(id.c_ptr(), extern_data);
@@ -612,7 +612,7 @@ extern "C" {
 			}
 			if (construct_data.register_func)
 			{
-				lock_reference_struct* extern_data = new_ptr->get_extern_ref();
+				lock_reference_struct* extern_data = new_ptr->get_shared_ref();
 				ret.register_f = [construct_data, extern_data](const rx_node_id& id)
 				{
 					construct_data.register_func(id.c_ptr(), extern_data);
@@ -629,6 +629,16 @@ extern "C" {
 		};
 		auto result = rx_internal::model::platform_types_manager::instance().get_relations_repository().register_constructor(
 			id, func);
+		return result.move();
+	}
+
+
+	RX_PLATFORM_API rx_result_struct rxRegisterDataTypeRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_data_type_constructor_t construct_func)
+	{
+		auto result = rx_internal::model::platform_types_manager::instance().get_data_types_repository().register_constructor(
+			id, [construct_func] {
+				return rx_create_reference<blocks::extern_data_type_runtime>(construct_func());
+			});
 		return result.move();
 	}
 
@@ -749,7 +759,29 @@ extern "C" {
 		*path = self->meta.path.c_str();
 		*name = self->meta.name.c_str();
 	}
+	RX_PLATFORM_API rx_result_struct rxInitCtxGetDataType(int version, init_ctx_ptr ctx, const char* path, bytes_value_struct* data)
+	{
+		runtime::runtime_init_context* self = (runtime::runtime_init_context*)ctx;
+		data::runtime_data_model data_str = self->structure.get_data_type(path);
+		
 
+		memory::std_buffer buffer;
+		serialization::std_buffer_writer writer(buffer);
+
+		if (!writer.write_data_type(nullptr, data_str))
+			return rx_result(writer.get_error()).move();
+
+		int ret;
+		if (buffer.empty())
+			ret = rx_init_bytes_value_struct(data, NULL, 0);
+		else
+			ret = rx_init_bytes_value_struct(data, buffer.get_buffer<const uint8_t>(), buffer.get_size());
+
+		if (ret == RX_OK)
+			return rx_result(true).move();
+		else
+			return rx_result(rx_get_error_text(ret)).move();
+	}
 	RX_PLATFORM_API rx_result_struct rxCtxGetValue(runtime_ctx_ptr ctx, runtime_handle_t handle, typed_value_type* val)
 	{
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
@@ -868,6 +900,7 @@ namespace rx_platform
 platform_api g_api;
 platform_api2 g_api2;
 platform_api3 g_api3;
+platform_api4 g_api4;
 
 namespace api
 {
@@ -1009,6 +1042,55 @@ void bind_plugins_dynamic_api()
 	g_api3.runtime.prxCtxSetAsyncPending = rxCtxSetAsyncPending;
 
 	g_api3.storage.prxRegisterStorageType = rxRegisterStorageType;
+
+
+	g_api4.general.pWriteLog = rxWriteLog;
+	g_api4.general.pRegisterItem = rxRegisterItem;
+	g_api4.general.prxRegisterRuntimeItem = rxRegisterRuntimeItem;
+
+	g_api4.general.prxLockRuntimeManager = rxLockRuntimeManager;
+	g_api4.general.prxUnlockRuntimeManager = rxUnlockRuntimeManager;
+
+	g_api4.runtime.prxRegisterSourceRuntime = rxRegisterSourceRuntime;
+	g_api4.runtime.prxRegisterMapperRuntime = rxRegisterMapperRuntime;
+	g_api4.runtime.prxRegisterMapperRuntime3 = rxRegisterMapperRuntime3;
+	g_api4.runtime.prxRegisterFilterRuntime = rxRegisterFilterRuntime;
+	g_api4.runtime.prxRegisterStructRuntime = rxRegisterStructRuntime;
+	g_api4.runtime.prxRegisterVariableRuntime = rxRegisterVariableRuntime;
+	g_api4.runtime.prxRegisterEventRuntime = rxRegisterEventRuntime;
+
+	g_api4.runtime.prxRegisterMethodRuntime = rxRegisterMethodRuntime;
+	g_api4.runtime.prxRegisterDisplayRuntime = rxRegisterDisplayRuntime;
+	g_api4.runtime.prxRegisterProgramRuntime = rxRegisterProgramRuntime;
+
+	g_api4.runtime.prxRegisterObjectRuntime = rxRegisterObjectRuntime;
+	g_api4.runtime.prxRegisterDomainRuntime = rxRegisterDomainRuntime;
+	g_api4.runtime.prxRegisterApplicationRuntime = rxRegisterApplicationRuntime;
+	g_api4.runtime.prxRegisterPortRuntime = rxRegisterPortRuntime;
+
+	g_api4.runtime.prxRegisterRelationRuntime = rxRegisterRelationRuntime;
+	g_api4.runtime.prxRegisterDataTypeRuntime = rxRegisterDataTypeRuntime;
+
+	g_api4.runtime.prxInitCtxBindItem = rxInitCtxBindItem;
+	g_api4.runtime.prxInitCtxGetCurrentPath = rxInitCtxGetCurrentPath;
+	g_api4.runtime.prxInitCtxGetLocalValue = rxInitCtxGetLocalValue;
+	g_api4.runtime.prxInitCtxSetLocalValue = rxInitCtxSetLocalValue;
+	g_api4.runtime.prxInitCtxGetMappingValues = rxInitCtxGetMappingValues;
+	g_api4.runtime.prxInitCtxGetSourceValues = rxInitCtxGetSourceValues;
+	g_api4.runtime.prxInitCtxGetItemMeta = rxInitCtxGetItemMeta;
+	g_api4.runtime.prxInitCtxGetDataType = rxInitCtxGetDataType;
+
+
+	g_api4.runtime.prxStartCtxGetCurrentPath = rxStartCtxGetCurrentPath;
+	g_api4.runtime.prxStartCtxCreateTimer = rxStartCtxCreateTimer;
+	g_api4.runtime.prxStartCtxGetLocalValue = rxStartCtxGetLocalValue;
+	g_api4.runtime.prxStartCtxSubscribeRelation = rxStartCtxSubscribeRelation;
+
+	g_api4.runtime.prxCtxGetValue = rxCtxGetValue;
+	g_api4.runtime.prxCtxSetValue = rxCtxSetValue;
+	g_api4.runtime.prxCtxSetAsyncPending = rxCtxSetAsyncPending;
+
+	g_api4.storage.prxRegisterStorageType = rxRegisterStorageType;
 }
 
 const platform_api_t* get_plugins_dynamic_api()
@@ -1028,6 +1110,11 @@ const platform_api2_t* get_plugins_dynamic_api2()
 const platform_api3_t* get_plugins_dynamic_api3()
 {
 	return &g_api3;
+}
+
+const platform_api4_t* get_plugins_dynamic_api4()
+{
+	return &g_api4;
 }
 
 

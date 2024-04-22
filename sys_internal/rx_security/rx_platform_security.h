@@ -57,7 +57,7 @@ class built_in_security_context : public rx_platform::security::security_context
     DECLARE_REFERENCE_PTR(built_in_security_context);
 
   public:
-      built_in_security_context();
+      built_in_security_context (bool has_console);
 
       ~built_in_security_context();
 
@@ -73,6 +73,8 @@ class built_in_security_context : public rx_platform::security::security_context
       }
 
 
+      bool has_console () const;
+
 
   protected:
 
@@ -80,6 +82,9 @@ class built_in_security_context : public rx_platform::security::security_context
 
 
   private:
+
+
+      bool has_console_;
 
 
 };
@@ -94,12 +99,9 @@ class maintenance_context : public built_in_security_context
     DECLARE_REFERENCE_PTR(maintenance_context);
 
   public:
-      maintenance_context();
+      maintenance_context (bool has_console);
 
       ~maintenance_context();
-
-
-      bool has_console () const;
 
 
   protected:
@@ -119,7 +121,7 @@ class host_security_context : public built_in_security_context
     DECLARE_REFERENCE_PTR(host_security_context);
 
   public:
-      host_security_context();
+      host_security_context (bool has_console);
 
       ~host_security_context();
 
@@ -145,14 +147,12 @@ class process_context : public built_in_security_context
 {
 
   public:
-      process_context (const string_type& name = "", bool sys = false);
+      process_context (const string_type& name = "", bool sys = false, bool has_console = false);
 
       ~process_context();
 
 
       bool is_system () const;
-
-      bool has_console () const;
 
       bool is_interactive () const;
 
@@ -230,6 +230,8 @@ class platform_security
       platform_security_provider* get_provider (const string_type& name);
 
       bool check_permissions (security::security_mask_t mask, const string_type& path, security::security_context_ptr ctx);
+
+      security::security_context_ptr get_world_context ();
 
 
   protected:

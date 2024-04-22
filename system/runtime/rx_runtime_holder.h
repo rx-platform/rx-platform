@@ -36,22 +36,20 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_value_templates.h"
 
+// rx_ns_resolver
+#include "system/server/rx_ns_resolver.h"
 // rx_tag_blocks
 #include "system/runtime/rx_tag_blocks.h"
 // rx_display_blocks
 #include "system/runtime/rx_display_blocks.h"
 // rx_runtime_logic
 #include "system/runtime/rx_runtime_logic.h"
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_ns_resolver
-#include "system/server/rx_ns_resolver.h"
 // rx_job
 #include "system/threads/rx_job.h"
 // rx_rt_data
@@ -61,6 +59,7 @@
 
 namespace rx_platform {
 namespace runtime {
+class runtime_process_context;
 namespace event_blocks {
 class runtime_events;
 
@@ -153,6 +152,8 @@ public:
       ~runtime_holder();
 
 
+      runtime_process_context& get_context ();
+
       rx_result serialize (base_meta_writer& stream, uint8_t type) const;
 
       rx_result initialize_runtime (runtime_init_context& ctx);
@@ -189,12 +190,6 @@ public:
       rx::data::runtime_values_data& get_overrides ()
       {
         return overrides_;
-      }
-
-
-      runtime_process_context& get_context ()
-      {
-        return context_;
       }
 
 
@@ -237,7 +232,7 @@ public:
 
       typename process_runtime_job<typeT>::smart_ptr my_job_ptr_;
 
-      runtime_process_context context_;
+      std::unique_ptr<runtime_process_context> context_;
 
       ns::rx_directory_resolver directories_;
 

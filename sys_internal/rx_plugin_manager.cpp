@@ -171,6 +171,25 @@ bool plugin_command::do_console_command (std::istream& in, std::ostream& out, st
 			out << "Compiler: " << info.comp_version << "\r\n";
 			out << "ABI: " << (info.abi_version.empty() ? "-" : info.abi_version) << "\r\n";
 			out << "Common: " << (info.common_version.empty() ? "-" : info.common_version) << "\r\n";
+			out << "Dependencies: ";
+			string_array deps = plugin->get_dependencies();
+			if (!deps.empty())
+			{
+				bool first = true;
+				for (const auto& one : deps)
+				{
+					if (first)
+						first = false;
+					else
+						out << ";";
+					out << one;
+				}
+			}
+			else
+			{
+				out << " / ";
+			}
+			out << "\r\n";
 
 		}
 		else

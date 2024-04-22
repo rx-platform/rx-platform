@@ -110,6 +110,8 @@ class rx_plugin_base
 
       virtual string_type get_plugin_name () const = 0;
 
+      virtual string_array get_dependencies () const = 0;
+
 
   protected:
 
@@ -154,6 +156,8 @@ class rx_dynamic_plugin : public rx_plugin_base
 
       static uint32_t get_stream_version (uintptr_t id);
 
+      string_array get_dependencies () const;
+
 
   protected:
 
@@ -168,6 +172,8 @@ class rx_dynamic_plugin : public rx_plugin_base
 
       rxBindPlugin3_t prxBindPlugin3_;
 
+      rxBindPlugin4_t prxBindPlugin4_;
+
       rxGetPluginInfo_t prxGetPluginInfo_;
 
       rxGetPluginInfo2_t prxGetPluginInfo2_;
@@ -179,6 +185,8 @@ class rx_dynamic_plugin : public rx_plugin_base
       rxDeinitPlugin_t prxDeinitPlugin_;
 
       rxBuildPlugin_t prxBuildPlugin_;
+
+      string_array dependencies_;
 
       string_type lib_path_;
 

@@ -499,6 +499,11 @@ struct_runtime::struct_runtime()
 {
 }
 
+struct_runtime::struct_runtime (lock_reference_struct* extern_data)
+    : reference_object(extern_data)
+{
+}
+
 
 struct_runtime::~struct_runtime()
 {
@@ -668,15 +673,54 @@ void variable_runtime::post_process_value (const rx_value& val)
 }
 
 
+// Class rx_platform::runtime::blocks::data_type_runtime 
+
+string_type data_type_runtime::type_name = RX_CPP_DATA_TYPE_NAME;
+
+data_type_runtime::data_type_runtime()
+{
+}
+
+data_type_runtime::data_type_runtime (lock_reference_struct* extern_data)
+    : reference_object(extern_data)
+{
+}
+
+
+data_type_runtime::~data_type_runtime()
+{
+}
+
+
+
+string_type data_type_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+rx_result data_type_runtime::initialize_data_type (runtime::runtime_init_context& ctx, const data::runtime_data_model& data)
+{
+    return true;
+}
+
+rx_result data_type_runtime::start_data_type (runtime::runtime_start_context& ctx)
+{
+    return true;
+}
+
+rx_result data_type_runtime::stop_data_type (runtime::runtime_stop_context& ctx)
+{
+    return true;
+}
+
+rx_result data_type_runtime::deinitialize_data_type (runtime::runtime_deinit_context& ctx)
+{
+    return true;
+}
+
+
 } // namespace blocks
 } // namespace runtime
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-    container_->variable_result_pending(ctx, std::move(result), id);
-
-#endif

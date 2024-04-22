@@ -74,7 +74,7 @@ void create_ssl_context()
     //SSL_CTX_set_verify(g_ssl_ctx, SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 
 }
-int rx_init_heap(size_t initial_heap, size_t heap_alloc, size_t heap_trigger);
+int rx_init_heap(size_t initial_heap, size_t heap_alloc, size_t heap_trigger, size_t bucket_size);
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 {
@@ -84,7 +84,8 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
         rx_init_heap(
             init_data->rx_initial_heap_size != 0 ? init_data->rx_initial_heap_size : 2 * 1024 * 1024
             , init_data->rx_alloc_heap_size != 0 ? init_data->rx_alloc_heap_size : 1 * 1024 * 1024
-            , init_data->rx_heap_alloc_trigger != 0 ? init_data->rx_heap_alloc_trigger : 950);
+            , init_data->rx_heap_alloc_trigger != 0 ? init_data->rx_heap_alloc_trigger : 950
+            , init_data->rx_bucket_capacity != 0 ? init_data->rx_bucket_capacity : 0x1000);
 
         rx_hd_timer = init_data->rx_hd_timer;
 
@@ -300,11 +301,6 @@ RX_COMMON_API int rx_os_split_time(const struct rx_time_struct_t* st, struct rx_
     full->second=tm.tm_sec;
     full->milliseconds=tv.tv_nsec/1000000;
 
-    if(full->year==60425)
-    {
-        printf("Jebi ga evo greske:%lu:%lu od %lx \r\n", tv.tv_sec, tv.tv_nsec, st->t_value);
-    }
-
     return RX_OK;
 }
 RX_COMMON_API int rx_os_collect_time(const struct rx_full_time_t* full, struct rx_time_struct_t* st)
@@ -374,7 +370,7 @@ RX_COMMON_API int rx_string_to_uuid(const char* str, rx_uuid_t* u)
 
 RX_COMMON_API void rx_slim_lock_create(pslim_lock_t plock)
 {
-    uint64_t addr_offset=((uint64_t)plock)&0x7;
+    uintptr_t addr_offset=((uintptr_t)plock)&0x7;
     pthread_mutex_t* mtx = (pthread_mutex_t*)&plock->data[8 - addr_offset];
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
@@ -383,19 +379,19 @@ RX_COMMON_API void rx_slim_lock_create(pslim_lock_t plock)
 }
 RX_COMMON_API void rx_slim_lock_destroy(pslim_lock_t plock)
 {
-    uint64_t addr_offset=((uint64_t)plock)&0x7;
+    uintptr_t addr_offset=((uintptr_t)plock)&0x7;
     pthread_mutex_t* mtx = (pthread_mutex_t*)&plock->data[8 - addr_offset];
     pthread_mutex_destroy(mtx);
 }
 RX_COMMON_API void rx_slim_lock_aquire(pslim_lock_t plock)
 {
-    uint64_t addr_offset=((uint64_t)plock)&0x7;
+    uintptr_t addr_offset=((uintptr_t)plock)&0x7;
     pthread_mutex_t* mtx = (pthread_mutex_t*)&plock->data[8 - addr_offset];
     pthread_mutex_lock(mtx);
 }
 RX_COMMON_API void rx_slim_lock_release(pslim_lock_t plock)
 {
-    uint64_t addr_offset=((uint64_t)plock)&0x7;
+    uintptr_t addr_offset=((uintptr_t)plock)&0x7;
     pthread_mutex_t* mtx = (pthread_mutex_t*)&plock->data[8 - addr_offset];
     pthread_mutex_unlock(mtx);
 }
@@ -462,8 +458,7 @@ RX_COMMON_API uint32_t rx_handle_wait_us(sys_handle_t what, uint64_t timeout)
     pfds.fd = what;
     pfds.events = POLLIN;
     pfds.revents = 0;
-    sigset_t sigset;
-    ret = ppoll(&pfds, 1, &ts, &sigset);
+    ret = ppoll(&pfds, 1, &ts, NULL);
     if (ret == 0)
         return RX_WAIT_TIMEOUT;
     else if (ret == 1)

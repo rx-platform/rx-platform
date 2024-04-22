@@ -287,6 +287,7 @@ void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug, size_
 	common_data.rx_initial_heap_size = initial_heap;
 	common_data.rx_alloc_heap_size = heap_alloc;
 	common_data.rx_heap_alloc_trigger = heap_trigger;
+	common_data.rx_bucket_capacity = bucket_capacity;
 
 	init_common_result = rx_init_common_library(&common_data);
 	

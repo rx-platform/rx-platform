@@ -71,7 +71,7 @@ class runtime_holder_algorithms
 
       static void save_runtime (typename typeT::RType& whose);
 
-      static runtime_process_context create_context (typename typeT::RType& whose);
+      static std::unique_ptr<runtime_process_context> create_context (typename typeT::RType& whose);
 
       static runtime_init_context create_init_context (typename typeT::RType& whose);
 

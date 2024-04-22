@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -45,7 +45,7 @@ namespace meta {
 
 namespace queries {
 
-// Class rx_platform::meta::queries::ns_suggetions_query 
+// Class rx_platform::meta::queries::ns_suggetions_query
 
 string_type ns_suggetions_query::query_name = "suggestion";
 
@@ -95,7 +95,6 @@ const string_type& ns_suggetions_query::get_query_type ()
 
 rx_result ns_suggetions_query::do_query (api::query_result& result, const string_type& dir)
 {
-	auto type = rx_parse_type_name(type_name);
 	rx_directory_ptr target_dir;
 	string_type local_stuff;
 	size_t idx = suggested_path.rfind(RX_DIR_DELIMETER);
@@ -118,7 +117,7 @@ rx_result ns_suggetions_query::do_query (api::query_result& result, const string
 		}
 		local_stuff = suggested_path.substr(idx + 1);
 	}
-	
+
 	RX_ASSERT(target_dir);
 	if (target_dir)// can't help this one :(
 	{

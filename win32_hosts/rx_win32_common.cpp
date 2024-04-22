@@ -66,6 +66,9 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\iec61850\\x64\\Debug\\iec61850.dll");
 	paths.emplace_back("C:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linntms.dll");
 	paths.emplace_back("C:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linnmes.dll");
+
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\LazzarStuff\\x64\\Debug\\lazzar.dll");
+
 //	paths.emplace_back("C:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
 
 	//paths.emplace_back("C:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_simm.dll");

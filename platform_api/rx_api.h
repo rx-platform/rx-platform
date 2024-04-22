@@ -53,7 +53,9 @@ namespace rx_platform_api {
 
 intptr_t get_rx_plugin();
 intptr_t set_rx_plugin(intptr_t what);
-void copy_rt_to_rt3(const platform_runtime_api* src, platform_runtime_api3* dest);
+void copy_rt_to_rt4(const platform_runtime_api* src, platform_runtime_api4* dest);
+void copy_rt3_to_rt4(const platform_runtime_api3* src, platform_runtime_api4* dest);
+int get_binded_stream_version();
 
 }
 
@@ -61,40 +63,53 @@ void copy_rt_to_rt3(const platform_runtime_api* src, platform_runtime_api3* dest
 // this macro bellow if ugly but hides "C" ABI details from implementer
 // I think that is more important!!!
 ////////////////////////////////////////////////////////////////////////
-#define RX_DECLARE_PLUGIN(class_name) \
+#define RX_DECLARE_PLUGIN2(class_name, deps) \
 std::unique_ptr<class_name> _g_plugin_obj_;\
 extern "C" {\
-platform_api3 api3;\
+platform_api4 api4;\
 uint32_t g_bind_version=0;\
 RX_PLUGIN_API rx_result_struct rxBindPlugin(const platform_api* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin)\
 {\
 	_g_plugin_obj_ = std::make_unique<class_name>();\
     rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
     *plugin = rx_platform_api::get_rx_plugin();\
-    memzero(&api3, sizeof(api3));\
-    rx_platform_api::copy_rt_to_rt3(&api->runtime, &api3.runtime);\
-    api3.general=api->general;\
+    memzero(&api4, sizeof(api4));\
+    rx_platform_api::copy_rt_to_rt4(&api->runtime, &api4.runtime);\
+    api4.general=api->general;\
     g_bind_version=1;\
-	return rx_platform_api::rx_bind_plugin(&api3, host_stream_version, plugin_stream_version);\
+	return rx_platform_api::rx_bind_plugin(&api4, host_stream_version, plugin_stream_version);\
 }\
 RX_PLUGIN_API rx_result_struct rxBindPlugin2(const platform_api2* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin)\
 {\
 	_g_plugin_obj_ = std::make_unique<class_name>();\
     rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
     *plugin = rx_platform_api::get_rx_plugin();\
-    memzero(&api3, sizeof(api3));\
-    rx_platform_api::copy_rt_to_rt3(&api->runtime, &api3.runtime);\
-    api3.general=api->general;\
-    api3.storage = api->storage;\
+    memzero(&api4, sizeof(api4));\
+    rx_platform_api::copy_rt_to_rt4(&api->runtime, &api4.runtime);\
+    api4.general=api->general;\
+    api4.storage = api->storage;\
     g_bind_version=2;\
-	return rx_platform_api::rx_bind_plugin(&api3, host_stream_version, plugin_stream_version);\
+	return rx_platform_api::rx_bind_plugin(&api4, host_stream_version, plugin_stream_version);\
 }\
 RX_PLUGIN_API rx_result_struct rxBindPlugin3(const platform_api3* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin)\
 {\
 	_g_plugin_obj_ = std::make_unique<class_name>();\
     rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
     *plugin = rx_platform_api::get_rx_plugin();\
+    memzero(&api4, sizeof(api4));\
+    rx_platform_api::copy_rt3_to_rt4(&api->runtime, &api4.runtime);\
+    api4.general=api->general;\
+    api4.storage = api->storage;\
     g_bind_version=3;\
+	return rx_platform_api::rx_bind_plugin(&api4, host_stream_version, plugin_stream_version);\
+}\
+RX_PLUGIN_API rx_result_struct rxBindPlugin4(const platform_api4* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin, const char*** dependecies)\
+{\
+	_g_plugin_obj_ = std::make_unique<class_name>();\
+    rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
+    *plugin = rx_platform_api::get_rx_plugin();\
+    *dependecies = deps;\
+    g_bind_version=4;\
 	return rx_platform_api::rx_bind_plugin(api, host_stream_version, plugin_stream_version);\
 }\
 RX_PLUGIN_API void rxGetPluginInfo(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver)\
@@ -123,6 +138,7 @@ RX_PLUGIN_API rx_result_struct rxBuildPlugin(const char* root)\
 }\
 }\
 
+#define RX_DECLARE_PLUGIN(class_name) RX_DECLARE_PLUGIN2(class_name, nullptr)
 
 #define DECLARE_PLUGIN_CODE_INFO(v, m, b, d) DECLARE_CODE_INFO(RX_PLUGIN_ID, v, m, b, d)
 ////////////////////////////////////////////////////////////////////////
@@ -131,7 +147,7 @@ using namespace rx;
 
 
 namespace rx_platform_api {
-uint32_t rx_git_plugin_bind_version();
+//uint32_t rx_get_plugin_bind_version();
 enum class rx_item_type : uint8_t
 {
     rx_directory = 0,
@@ -190,7 +206,7 @@ class rx_platform_plugin
 
 };
 
-rx_result_struct rx_bind_plugin(const platform_api3* api, uint32_t host_stream_version, uint32_t* plugin_stream_version);
+rx_result_struct rx_bind_plugin(const platform_api4* api, uint32_t host_stream_version, uint32_t* plugin_stream_version);
 void rx_get_plugin_info(const char* name, int major, int minor, int build, string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver);
 rx_result_struct rx_init_plugin(rx_platform_plugin* plugin);
 rx_result_struct rx_deinit_plugin(rx_platform_plugin* plugin);

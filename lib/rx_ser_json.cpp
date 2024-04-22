@@ -1119,6 +1119,12 @@ bool json_reader::read_init_values (const char* name, data::runtime_values_data&
 	return true;
 }
 
+bool json_reader::read_data_type (const char* name, data::runtime_data_model& values)
+{
+	RX_ASSERT(false);
+	return false;
+}
+
 string_array json_reader::get_errors () const
 {
 	return errors_;
@@ -1705,6 +1711,13 @@ bool json_writer_type<writerT>::write_init_values (const char* name, const data:
 			return false;
 	}
 	return true;
+}
+
+template <class writerT>
+bool json_writer_type<writerT>::write_data_type (const char* name, const data::runtime_data_model& data)
+{
+	RX_ASSERT(false);
+	return false;
 }
 
 template <class writerT>

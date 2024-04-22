@@ -94,6 +94,7 @@ float extract_value(const typed_value_type& from, const float& default_value);
 double extract_value(const typed_value_type& from, const double& default_value);
 string_type extract_value(const typed_value_type& from, const string_type& default_value);
 byte_string extract_value(const typed_value_type& from, const byte_string& default_value);
+rx_time extract_value(const typed_value_type& from, const rx_time& default_value);
 rx_time_struct extract_value(const typed_value_type& from, const rx_time_struct& default_value);
 rx_uuid_t extract_value(const typed_value_type& from, const rx_uuid_t& default_value);
 string_array extract_value(const typed_value_type& from, const string_array& default_value);
@@ -405,7 +406,7 @@ public:
 
       bool compare (const rx_value& right, time_compare_type time_compare) const;
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       void set_substituted ();
 
@@ -431,11 +432,13 @@ public:
 
       uint32_t increment_signal_level ();
 
+      void set_signal_level (uint32_t val);
+
       uint32_t get_signal_level () const;
 
       uint32_t get_origin () const;
 
-      rx::values::rx_simple_value operator [] (int index) const;
+      rx_simple_value operator [] (int index) const;
 
       void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY);
 
@@ -571,13 +574,13 @@ public:
 
       bool compare (const rx_timed_value& right, time_compare_type time_compare) const;
 
-      rx::values::rx_simple_value to_simple () const;
+      rx_simple_value to_simple () const;
 
       bool is_byte_string () const;
 
       byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
 
-      rx::values::rx_simple_value operator [] (int index) const;
+      rx_simple_value operator [] (int index) const;
 
       void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time());
 
@@ -620,6 +623,7 @@ class rx_value_holder
 
 namespace rx
 {
+void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, values::rx_simple_value t);
 
 template<typename T>
 void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, T t)
@@ -636,6 +640,13 @@ void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals,
     vals.push_back(std::move(temp));
     rx_create_value_static_internal(vals, std::forward<Args>(args)...);
 }
+
+template<typename T, typename... Args>
+void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, values::rx_simple_value t, Args... args)
+{
+    vals.push_back(std::move(t));
+    rx_create_value_static_internal(vals, std::forward<Args>(args)...);
+}
 template<typename... Args>
 values::rx_simple_value rx_create_value_static(Args... args)
 {
@@ -645,6 +656,8 @@ values::rx_simple_value rx_create_value_static(Args... args)
     ret.assign_static(vals);
     return ret;
 }
+
+
 
 void fill_quality_string(values::rx_value val, string_type& q);
 namespace values

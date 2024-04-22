@@ -203,6 +203,12 @@ extern "C" {
 	typedef rx_result_struct(*rxRegisterRelationRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, plugin_relation_register_data construct_data);
 
 
+	struct plugin_data_type_runtime_struct_t;
+	typedef struct plugin_data_type_runtime_struct_t* (*rx_data_type_constructor_t)();
+	RX_PLATFORM_API rx_result_struct rxRegisterDataTypeRuntime(uintptr_t plugin, const rx_node_id_struct* id, rx_data_type_constructor_t construct_func);
+	typedef rx_result_struct(*rxRegisterDataTypeRuntime_t)(uintptr_t plugin, const rx_node_id_struct* id, rx_data_type_constructor_t construct_data);
+
+
 
 	struct plugin_method_runtime_struct_t;
 	typedef struct plugin_method_runtime_struct_t* (*rx_method_constructor_t)();
@@ -267,6 +273,9 @@ extern "C" {
 
 	RX_PLATFORM_API void rxInitCtxGetItemMeta(init_ctx_ptr ctx, const rx_node_id_struct** id, const char** path, const char** name);
 	typedef void(*rxInitCtxGetItemMeta_t)(init_ctx_ptr ctx, const rx_node_id_struct** id, const char** path, const char** name);
+	
+	RX_PLATFORM_API rx_result_struct rxInitCtxGetDataType(int version, init_ctx_ptr ctx, const char* path, bytes_value_struct* data);
+	typedef rx_result_struct(*rxInitCtxGetDataType_t)(int version, init_ctx_ptr ctx, const char* path, bytes_value_struct* data);
 
 
 	typedef void* start_ctx_ptr;
@@ -413,6 +422,58 @@ extern "C" {
 	} platform_runtime_api3;
 
 
+	typedef struct platform_runtime_api4_t
+	{
+
+		rxRegisterSourceRuntime_t prxRegisterSourceRuntime;
+		rxRegisterMapperRuntime_t prxRegisterMapperRuntime;
+		rxRegisterMapperRuntime3_t prxRegisterMapperRuntime3;
+		rxRegisterFilterRuntime_t prxRegisterFilterRuntime;
+		rxRegisterStructRuntime_t prxRegisterStructRuntime;
+		rxRegisterVariableRuntime_t prxRegisterVariableRuntime;
+		rxRegisterEventRuntime_t prxRegisterEventRuntime;
+
+		rxRegisterMethodRuntime_t prxRegisterMethodRuntime;
+		rxRegisterProgramRuntime_t prxRegisterProgramRuntime;
+		rxRegisterDisplayRuntime_t prxRegisterDisplayRuntime;
+
+		rxRegisterObjectRuntime_t prxRegisterObjectRuntime;
+		rxRegisterApplicationRuntime_t prxRegisterApplicationRuntime;
+		rxRegisterDomainRuntime_t prxRegisterDomainRuntime;
+		rxRegisterPortRuntime_t prxRegisterPortRuntime;
+
+		rxRegisterRelationRuntime_t prxRegisterRelationRuntime;
+
+		rxInitCtxBindItem_t prxInitCtxBindItem;
+		rxInitCtxGetCurrentPath_t prxInitCtxGetCurrentPath;
+		rxInitCtxGetLocalValue_t prxInitCtxGetLocalValue;
+		rxInitCtxSetLocalValue_t prxInitCtxSetLocalValue;
+		rxInitCtxGetMappingValues_t prxInitCtxGetMappingValues;
+		rxInitCtxGetSourceValues_t prxInitCtxGetSourceValues;
+		rxInitCtxGetItemMeta_t prxInitCtxGetItemMeta;
+
+		rxStartCtxGetCurrentPath_t prxStartCtxGetCurrentPath;
+		rxStartCtxCreateTimer_t prxStartCtxCreateTimer;
+		rxStartCtxGetLocalValue_t prxStartCtxGetLocalValue;
+		rxStartCtxSetLocalValue_t prxStartCtxSetLocalValue;
+		rxStartCtxSubscribeRelation_t prxStartCtxSubscribeRelation;
+
+		rxCtxGetValue_t prxCtxGetValue;
+		rxCtxSetValue_t prxCtxSetValue;
+		rxCtxSetAsyncPending_t prxCtxSetAsyncPending;
+
+		rxInitCtxConnectItem_t prxInitCtxConnectItem;
+		rxCtxWriteConnected_t prxCtxWriteConnected;
+		rxCtxExecuteConnected_t prxCtxExecuteConnected;
+
+		rxInitCtxGetDataType_t prxInitCtxGetDataType;
+
+		// bind version 4
+		rxRegisterDataTypeRuntime_t prxRegisterDataTypeRuntime;
+
+	} platform_runtime_api4;
+
+
 	typedef struct platform_api_t
 	{
 		platform_general_api general;
@@ -448,6 +509,14 @@ extern "C" {
 		platform_storage_api storage;
 
 	} platform_api3;
+
+	typedef struct platform_api4_t
+	{
+		platform_general_api general;
+		platform_runtime_api4 runtime;
+		platform_storage_api storage;
+
+	} platform_api4;
 
 
 	// common host stuff, timers...
@@ -493,6 +562,8 @@ extern "C" {
 	typedef rx_result_struct(*rxBindPlugin2_t)(const struct platform_api2_t* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin);
 
 	typedef rx_result_struct(*rxBindPlugin3_t)(const struct platform_api3_t* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin);
+
+	typedef rx_result_struct(*rxBindPlugin4_t)(const struct platform_api4_t* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin, const char*** dependecies);
 
 
 
@@ -850,6 +921,45 @@ extern "C" {
 		uint32_t io_data;
 
 	} plugin_event_runtime_struct;
+
+
+	// Event ABI interface
+	typedef rx_result_struct(*rx_init_data_type_t)(void* whose, init_ctx_ptr ctx, const struct bytes_value_struct_t* data);
+	typedef rx_result_struct(*rx_start_data_type_t)(void* whose, start_ctx_ptr ctx);
+	typedef rx_result_struct(*rx_stop_data_type_t)(void* whose);
+	typedef rx_result_struct(*rx_deinit_data_type_t)(void* whose);
+
+
+	typedef struct plugin_data_type_def_struct_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_data_type_t init_data_type;
+		rx_start_data_type_t start_data_type;
+		rx_stop_data_type_t stop_data_type;
+		rx_deinit_data_type_t deinit_data_type;
+
+
+	} plugin_data_type_def_struct;
+
+	//typedef void(*rx_data_type_fired_t)(void* whose, runtime_transaction_id_t id, int test
+	//	, rx_security_handle_t identity, struct timed_value_type data);
+	//typedef void(*rx_data_type_get_model_t)(void* whose, struct bytes_value_struct_t* data);
+
+	typedef struct host_data_type_def_struct_t
+	{
+		host_runtime_def_struct runtime;
+
+	} host_data_type_def_struct;
+
+	typedef struct plugin_data_type_runtime_struct_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_data_type_def_struct* def;
+		host_data_type_def_struct* host_def;
+
+	} plugin_data_type_runtime_struct;
 
 
 	// Method ABI interface

@@ -42,6 +42,7 @@
 #include "runtime_internal/rx_runtime_relations.h"
 #include "model/rx_meta_internals.h"
 #include "system/runtime/rx_internal_objects.h"
+#include "sys_internal/rx_security/rx_platform_security.h"
 using namespace meta::object_types;
 
 
@@ -132,12 +133,12 @@ rx_result application_instance_data::before_init_runtime (rx_application_ptr wha
         what->get_instance_data().mine_security_ = true;
     }
     else if(what->meta_info().id != rx_node_id(RX_HOST_APP_ID)
-        || what->meta_info().id != rx_node_id(RX_NS_SYSTEM_APP_ID)
-        || what->meta_info().id != rx_node_id(RX_NS_WORLD_APP_ID))
+        && what->meta_info().id != rx_node_id(RX_NS_SYSTEM_APP_ID)
+        && what->meta_info().id != rx_node_id(RX_NS_WORLD_APP_ID))
     {
-        if (what->meta_info().path.size() > 6)
+        if (what->meta_info().path.size() > 5)
         {
-            if (memcmp(what->meta_info().path.c_str(), "/world/", 7) == 0)
+            if (memcmp(what->meta_info().path.c_str(), "/world", 6) == 0)
             {
                 what->get_instance_data().security_ctx_ = rx_platform::sys_objects::world_application::instance()->world_identity;
             }
@@ -159,7 +160,7 @@ rx_result application_instance_data::before_init_runtime (rx_application_ptr wha
         }
         else
         {
-            RUNTIME_LOG_WARNING("application_instance_data", 900, "Unable to create security context:"s + sec_result.errors_line());
+            RUNTIME_LOG_WARNING("application_instance_data", 900, "Unable to create security context: Unrecognized path");
         }
  
     }
@@ -210,9 +211,13 @@ rx_result application_instance_data::after_stop_runtime (rx_application_ptr what
 security::security_context_ptr application_instance_data::get_security_context () const
 {
     if (security_ctx_)
+    {
         return security_ctx_;
+    }
     else
+    {
         return security::unauthorized_context();
+    }
 }
 
 std::vector<rx_domain_ptr> application_instance_data::get_domains ()

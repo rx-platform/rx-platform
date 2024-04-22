@@ -77,7 +77,7 @@ std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<typeT>:
     }
     if (had_good)
     {
-        whose.context_.tag_updates_pending();
+        whose.context_->tag_updates_pending();
     }
     return results;
 }
@@ -189,23 +189,23 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
 }
 
 template <class typeT>
-runtime_process_context runtime_holder_algorithms<typeT>::create_context (typename typeT::RType& whose)
+std::unique_ptr<runtime_process_context> runtime_holder_algorithms<typeT>::create_context (typename typeT::RType& whose)
 {
-    return runtime_process_context(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.smart_this(), whose.security_guard_);
+    return std::make_unique<runtime_process_context>(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.smart_this(), whose.security_guard_);
 }
 
 template <class typeT>
 runtime_init_context runtime_holder_algorithms<typeT>::create_init_context (typename typeT::RType& whose)
 {
-    return runtime::runtime_init_context(*whose.tags_.item_, whose.meta_info_, &whose.context_, &whose.tags_.binded_tags_, &whose.directories_, typeT::runtime_type_id);
+    return runtime::runtime_init_context(*whose.tags_.item_, whose.meta_info_, whose.context_.get(), &whose.tags_.binded_tags_, &whose.directories_, typeT::runtime_type_id);
 }
 
 template <class typeT>
 runtime_start_context runtime_holder_algorithms<typeT>::create_start_context (typename typeT::RType& whose)
 {
-    whose.context_.job_queue_ = rx_internal::infrastructure::server_runtime::instance().get_executer(whose.instance_data_.get_executer());
-    return runtime_start_context(*whose.tags_.item_, &whose.context_, &whose.tags_.binded_tags_
-        , &whose.directories_, &whose.relations_, whose.context_.job_queue_);
+    whose.context_->job_queue_ = rx_internal::infrastructure::server_runtime::instance().get_executer(whose.instance_data_.get_executer());
+    return runtime_start_context(*whose.tags_.item_, whose.context_.get(), &whose.tags_.binded_tags_
+        , &whose.directories_, &whose.relations_, whose.context_->job_queue_);
 }
 
 template <class typeT>
@@ -230,16 +230,16 @@ void runtime_holder_algorithms<typeT>::browse (const string_type& prefix, const 
     if (path.empty())
     {
         std::vector<runtime_item_attribute> items;
-        auto ret = whose.tags_.browse(prefix, path, filter, items, &whose.context_);
+        auto ret = whose.tags_.browse(prefix, path, filter, items, whose.context_.get());
         if (ret)
         {
             ret = whose.relations_.browse(prefix, filter, items);
             if (ret)
             {
-                ret = whose.logic_.browse(prefix, path, filter, items, &whose.context_);
+                ret = whose.logic_.browse(prefix, path, filter, items, whose.context_.get());
                 if (ret)
                 {
-                    ret = whose.displays_.browse(prefix, path, filter, items, &whose.context_);
+                    ret = whose.displays_.browse(prefix, path, filter, items, whose.context_.get());
                 }
             }
         }
@@ -250,7 +250,7 @@ void runtime_holder_algorithms<typeT>::browse (const string_type& prefix, const 
         if (whose.tags_.is_this_yours(path))
         {
             std::vector<runtime_item_attribute> items;
-            auto result = whose.tags_.browse(prefix, path, filter, items, &whose.context_);
+            auto result = whose.tags_.browse(prefix, path, filter, items, whose.context_.get());
             callback(std::move(result), std::move(items));
         }
         else if (whose.relations_.is_this_yours(path))
@@ -261,13 +261,13 @@ void runtime_holder_algorithms<typeT>::browse (const string_type& prefix, const 
         else if (whose.logic_.is_this_yours(path))
         {
             std::vector<runtime_item_attribute> items;
-            auto result = whose.logic_.browse(prefix, path, filter, items, &whose.context_);
+            auto result = whose.logic_.browse(prefix, path, filter, items, whose.context_.get());
             callback(std::move(result), std::move(items));
         }
         else if (whose.displays_.is_this_yours(path))
         {
             std::vector<runtime_item_attribute> items;
-            auto result = whose.displays_.browse(prefix, path, filter, items, &whose.context_);
+            auto result = whose.displays_.browse(prefix, path, filter, items, whose.context_.get());
             callback(std::move(result), std::move(items));
         }
         else
@@ -280,10 +280,10 @@ void runtime_holder_algorithms<typeT>::browse (const string_type& prefix, const 
 template <class typeT>
 void runtime_holder_algorithms<typeT>::fill_data (const data::runtime_values_data& data, typename typeT::RType& whose)
 {
-    whose.tags_.fill_data(data, &whose.context_);
-    whose.relations_.fill_data(data, &whose.context_);
-    whose.logic_.fill_data(data, &whose.context_);
-    whose.displays_.fill_data(data, &whose.context_);
+    whose.tags_.fill_data(data, whose.context_.get());
+    whose.relations_.fill_data(data, whose.context_.get());
+    whose.logic_.fill_data(data, whose.context_.get());
+    whose.displays_.fill_data(data, whose.context_.get());
 }
 
 template <class typeT>
@@ -372,16 +372,16 @@ void runtime_holder_algorithms<typeT>::read_value (const string_type& path, read
         values::rx_value value;
 
         if (whose.tags_.is_this_yours(path))
-            result = whose.tags_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
+            result = whose.tags_.get_value(path, value, const_cast<runtime_process_context*>(whose.context_.get()));
         else if (whose.relations_.is_this_yours(path))
         {
-            whose.relations_.read_value(path, std::move(callback), const_cast<runtime_process_context*>(&whose.context_));
+            whose.relations_.read_value(path, std::move(callback), const_cast<runtime_process_context*>(whose.context_.get()));
             return;// relations will do callback!!!
         }
         else if (whose.logic_.is_this_yours(path))
-            result = whose.logic_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
+            result = whose.logic_.get_value(path, value, const_cast<runtime_process_context*>(whose.context_.get()));
         else if (whose.displays_.is_this_yours(path))
-            result = whose.displays_.get_value(path, value, const_cast<runtime_process_context*>(&whose.context_));
+            result = whose.displays_.get_value(path, value, const_cast<runtime_process_context*>(whose.context_.get()));
         else
             result = path + " not found!";
 
@@ -457,7 +457,7 @@ void runtime_holder_algorithms<typeT>::read_struct (string_view_type path, read_
 
         if (whose.tags_.is_this_yours(item))
         {
-            result = whose.tags_.get_struct_value(path, collected_data, data.type, const_cast<runtime_process_context*>(&whose.context_));
+            result = whose.tags_.get_struct_value(path, collected_data, data.type, const_cast<runtime_process_context*>(whose.context_.get()));
         }
         else if (whose.relations_.is_this_yours(item))
         {
@@ -466,11 +466,11 @@ void runtime_holder_algorithms<typeT>::read_struct (string_view_type path, read_
         }
         else if (whose.logic_.is_this_yours(item))
         {
-            result = whose.logic_.get_struct_value(item, path.substr(idx+1), collected_data, data.type, const_cast<runtime_process_context*>(&whose.context_));
+            result = whose.logic_.get_struct_value(item, path.substr(idx+1), collected_data, data.type, const_cast<runtime_process_context*>(whose.context_.get()));
         }
         else if (whose.displays_.is_this_yours(item))
         {
-            result = whose.displays_.get_struct_value(item, path.substr(idx + 1), collected_data, data.type, const_cast<runtime_process_context*>(&whose.context_));
+            result = whose.displays_.get_struct_value(item, path.substr(idx + 1), collected_data, data.type, const_cast<runtime_process_context*>(whose.context_.get()));
         }
         else
             result = string_type(path) + " not found!";

@@ -735,6 +735,35 @@ void binded_tags::method_changed (logic_blocks::method_data* whose, const rx_val
 	}
 }
 
+data::runtime_data_model binded_tags::internal_get_data_model (const string_type& path, runtime_structure_resolver& structure)
+{
+	if (!path.empty())
+	{
+		switch (path[0])
+		{
+			case RX_PATH_CURRENT:
+				{
+					return structure.get_data_type(path);
+				}
+				break;
+			case RX_PATH_PARENT:
+				{
+					size_t idx = 1;
+					while (idx < path.size() && path[idx] == RX_PATH_PARENT)
+						idx++;
+					return structure.get_data_type(&path.c_str()[idx]);
+				}
+				break;
+		}
+	}
+	return data::runtime_data_model();
+}
+
+data::runtime_data_model binded_tags::get_data_model (const string_type& path, runtime_structure_resolver& structure)
+{
+	return internal_get_data_model(path, structure);
+}
+
 
 // Class rx_platform::runtime::tag_blocks::connected_tags 
 

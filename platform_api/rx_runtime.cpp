@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  D:\RX\Native\Source\platform_api\rx_runtime.cpp
+*  C:\RX\Native\Source\platform_api\rx_runtime.cpp
 *
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -37,6 +37,7 @@
 #include "platform_api/rx_abi.h"
 #include "lib/rx_values.h"
 #include "lib/rx_ptr.h"
+#include "lib/rx_ser_bin.h"
 
 
 rxRegisterSourceRuntime_t api_reg_source_func;
@@ -51,6 +52,7 @@ rxRegisterProgramRuntime_t api_reg_program_func;
 rxRegisterDisplayRuntime_t api_reg_display_func;
 
 rxRegisterRelationRuntime_t api_reg_relation_func;
+rxRegisterDataTypeRuntime_t api_reg_data_type_func;
 
 rxInitCtxBindItem_t api_bind_item_func;
 rxInitCtxGetCurrentPath_t api_init_get_current_path;
@@ -60,6 +62,7 @@ rxInitCtxGetMappingValues_t api_get_mapping_values;
 rxInitCtxGetSourceValues_t api_get_source_values;
 rxInitCtxGetItemMeta_t api_item_meta;
 rxInitCtxConnectItem_t api_connect_item_func;
+rxInitCtxGetDataType_t api_get_data_type_func;
 
 rxStartCtxGetCurrentPath_t api_start_get_current_path;
 rxStartCtxCreateTimer_t api_start_ctx_create_timer;
@@ -155,12 +158,121 @@ extern "C"
         return rx_result(true).move();
     }
 
+
+
+    rx_result_struct c_init_data_type_stub(void* self, init_ctx_ptr ctx, const struct bytes_value_struct_t* data);
+    rx_result_struct c_start_data_type_stub(void* self, start_ctx_ptr ctx);
+    rx_result_struct c_stop_data_type_stub(void* self);
+    rx_result_struct c_deinit_data_type_stub(void* self);
+
+
+    plugin_data_type_def_struct _g_data_type_def_
+    {
+        c_get_code_info
+        ,c_init_data_type_stub
+        ,c_start_data_type_stub
+        ,c_stop_data_type_stub
+        ,c_deinit_data_type_stub
+    };
+
+
+    rx_result_struct c_init_data_type(rx_platform_api::rx_data_type* self, init_ctx_ptr ctx, const struct bytes_value_struct_t* data)
+    {
+        self->bind_runtime(&self->impl_.host_def->runtime, self->impl_.host);
+        rx_platform_api::rx_init_context ctx_obj(ctx);
+
+        data::runtime_data_model model;
+
+        size_t count = 0;
+        const uint8_t* data_ptr = rx_c_ptr(data, &count);
+        if (count)
+        {
+            memory::std_buffer buffer;
+            bool data_ret = buffer.push_data(data_ptr, count);
+
+            if (!data_ret)
+                return rx_result(RX_OUT_OF_MEMORY).move();
+
+            serialization::std_buffer_reader reader(buffer, rx_platform_api::get_binded_stream_version());
+
+
+            if (!reader.read_data_type(NULL, model))
+                return rx_result(reader.get_error()).move();
+
+        }
+
+        return self->initialize_data_type(ctx_obj, model).move(); 
+    }
+    rx_result_struct c_start_data_type(rx_platform_api::rx_data_type* self, start_ctx_ptr ctx)
+    {
+        rx_platform_api::rx_start_context ctx_obj(ctx, self->smart_this());
+        return self->start_data_type(ctx_obj).move();
+    }
+    rx_result_struct c_stop_data_type(rx_platform_api::rx_data_type* self)
+    {
+        return self->stop_data_type().move();
+    }
+    rx_result_struct c_deinit_data_type(rx_platform_api::rx_data_type* self)
+    {
+        return self->deinitialize_data_type().move();
+    }
+
 }
 
 
 
 
 namespace rx_platform_api {
+rx_result local_complex_value::bind(const string_type& path, rx_init_context& ctx, callback_t callback)
+{
+
+    callback_data_.target = this;
+    callback_data_.callback = [](void* target, const struct full_value_type* val)
+        {
+            local_complex_value* self = (local_complex_value*)target;
+            rx_value local_val(val);
+            self->value_ = local_val.to_simple();
+            if (self->callback_)
+            {
+                self->callback_(self->value_);
+            }
+        };
+
+    callback_ = callback;
+    runtime_ctx_ptr rt_ctx = 0;
+    auto result = ctx.bind_item(path.c_str(), &rt_ctx, &callback_data_);
+    if (result)
+    {
+        ctx_.bind(rt_ctx);
+        handle_ = result.move_value();
+        auto res = ctx_.get_value(handle_, value_);
+        return res;
+    }
+    else
+    {
+        return result.errors();
+    }
+}
+local_complex_value::local_complex_value(const values::rx_simple_value& right)
+{
+    value_ = right;
+}
+local_complex_value::local_complex_value(values::rx_simple_value&& right)
+{
+    value_ = std::move(right);
+}
+local_complex_value& local_complex_value::operator=(values::rx_simple_value right)
+{
+    if (ctx_.is_binded() && handle_)// just in case both of them...
+    {
+        ctx_.set_value(handle_, std::move(right));
+    }
+    return *this;
+}
+const values::rx_simple_value& local_complex_value::value() const
+{
+    return value_;
+}
 
 rx_result register_source_runtime(const rx_node_id& id, rx_source_constructor_t construct_func)
 {
@@ -231,6 +343,13 @@ rx_result register_relation_runtime(const rx_node_id& id, rx_relation_constructo
     return ret;
 }
 
+rx_result register_data_type_runtime(const rx_node_id& id, rx_data_type_constructor_t construct_func)
+{
+    RX_ASSERT(api_reg_data_type_func != nullptr);
+    auto ret = api_reg_data_type_func(get_rx_plugin(), id.c_ptr(), construct_func);
+    return ret;
+}
+
 // Class rx_platform_api::rx_relation 
 
 rx_relation::rx_relation()
@@ -277,6 +396,42 @@ void rx_relation::relation_disconnected (rx_node_id from, rx_node_id to)
 rx_relation::smart_ptr rx_relation::make_target_relation ()
 {
     return rx_create_reference<rx_relation>();
+}
+
+
+// Class rx_platform_api::rx_data_type 
+
+rx_data_type::rx_data_type()
+{
+    impl_.def = &_g_data_type_def_;
+    bind_as_shared(&impl_.anchor);
+}
+
+
+rx_data_type::~rx_data_type()
+{
+}
+
+
+
+rx_result rx_data_type::initialize_data_type (rx_init_context& ctx, const data::runtime_data_model& data)
+{
+    return true;
+}
+
+rx_result rx_data_type::deinitialize_data_type ()
+{
+    return true;
+}
+
+rx_result rx_data_type::start_data_type (rx_start_context& ctx)
+{
+    return true;
+}
+
+rx_result rx_data_type::stop_data_type ()
+{
+    return true;
 }
 
 
@@ -428,6 +583,39 @@ string_type rx_init_context::get_full_path ()
         return string_type(path) + "/" + name;
     else
         return string_type();
+}
+
+rx_result rx_init_context::get_data_type (const string_type& path, data::runtime_data_model& data) const
+{
+    if (!api_get_data_type_func)
+        return RX_NOT_SUPPORTED;
+
+    bytes_value_struct type_data;
+    rx_result ret = api_get_data_type_func(get_binded_stream_version(), impl_, path.c_str(), &type_data);
+    if (ret)
+    {
+        size_t count = 0;
+        const uint8_t* data_ptr = rx_c_ptr(&type_data, &count);
+        if (count)
+        {
+            memory::std_buffer buffer;
+            bool data_ret = buffer.push_data(data_ptr, count);
+            rx_destory_bytes_value_struct(&type_data);
+
+            if(!data_ret)
+                return RX_OUT_OF_MEMORY;
+
+            serialization::std_buffer_reader reader(buffer, get_binded_stream_version());
+
+            data::runtime_data_model model;
+
+            if (!reader.read_data_type(NULL, model))
+                return reader.get_error();
+
+            data = std::move(model);
+        }
+    }
+    return ret;
 }
 
 

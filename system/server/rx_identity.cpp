@@ -92,7 +92,7 @@ rx_result security_context_holder::create_context (const string_type& port, cons
                 {
                 case MAINTENANCE_PORT:
                     {
-                        ptr = rx_create_reference<rx_internal::rx_security::maintenance_context>();
+                        ptr = rx_create_reference<rx_internal::rx_security::maintenance_context>(false);
                     }
                     break;
                 case PROCESS_PORT:
@@ -116,7 +116,7 @@ rx_result security_context_holder::create_context (const string_type& port, cons
                 {
                 case X509_ACCOUNT:
                     {
-                        auto ptr = rx_create_reference<rx_internal::rx_security::x509_security_context>();
+                        auto ptr = rx_create_reference<rx_internal::rx_security::x509::x509_security_context>();
                         auto result = ptr->deserialize(reader);
                         if (!result)
                             return result.errors();

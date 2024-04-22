@@ -67,6 +67,7 @@ rx_dynamic_plugin::rx_dynamic_plugin (const string_type& lib_path)
         prxBindPlugin_(nullptr),
         prxBindPlugin2_(nullptr),
         prxBindPlugin3_(nullptr),
+        prxBindPlugin4_(nullptr),
         prxGetPluginInfo_(nullptr),
         prxGetPluginInfo2_(nullptr),
         prxGetPluginName_(nullptr),
@@ -89,20 +90,44 @@ rx_dynamic_plugin::~rx_dynamic_plugin()
 
 rx_result rx_dynamic_plugin::bind_plugin ()
 {
-    if (prxBindPlugin3_ || prxBindPlugin2_ || prxBindPlugin_)
+    if (prxBindPlugin4_ || prxBindPlugin3_ || prxBindPlugin2_ || prxBindPlugin_)
     {
         uintptr_t plugin_id;
         uint32_t plugin_version;
+        uint32_t bind_version = 0;
+        const char** dependencies = NULL;
         rx_result ret;
-        if (prxBindPlugin3_ != nullptr)
+        if (prxBindPlugin4_ != nullptr)
+        {
+            bind_version = 4;
+            ret = prxBindPlugin4_(rx_platform::api::get_plugins_dynamic_api4(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id, &dependencies);
+        }
+        else if (prxBindPlugin3_ != nullptr)
+        {
+            bind_version = 3;
             ret = prxBindPlugin3_(rx_platform::api::get_plugins_dynamic_api3(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id);
+        }
         else if (prxBindPlugin2_ != nullptr)
+        {
+            bind_version = 2;
             ret = prxBindPlugin2_(rx_platform::api::get_plugins_dynamic_api2(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id);
+        }
         else
+        {
+            bind_version = 1;
             ret = prxBindPlugin_(rx_platform::api::get_plugins_dynamic_api(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id);
-
+        }
         if (ret)
         {
+            if (dependencies != NULL)
+            {
+                int idx = 0;
+                while (dependencies[idx] != nullptr)
+                {
+                    dependencies_.push_back(dependencies[idx]);
+                    idx++;
+                }
+            }
             registered_plugins_.emplace(plugin_id, this);
             stream_version_ = plugin_version;
             prxGetPluginInfo_ = (rxGetPluginInfo_t)rx_get_func_address(module_, "rxGetPluginInfo");
@@ -111,6 +136,19 @@ rx_result rx_dynamic_plugin::bind_plugin ()
             prxInitPlugin_ = (rxInitPlugin_t)rx_get_func_address(module_, "rxInitPlugin");
             prxDeinitPlugin_ = (rxDeinitPlugin_t)rx_get_func_address(module_, "rxDeinitPlugin");
             prxBuildPlugin_ = (rxBuildPlugin_t)rx_get_func_address(module_, "rxBuildPlugin");
+
+            if (prxGetPluginName_)
+            {
+                rx::rx_string_wrapper wrap;
+                prxGetPluginName_(&wrap);
+                std::ostringstream ss;
+                ss << "Plugin "
+                    << wrap.c_str()
+                    << " binded with version "
+                    << bind_version
+                    << ".";
+                PLUGIN_LOG_INFO("rx_dynamic_plugin", 900, ss.str());
+            }
         }
 
         return ret;
@@ -127,6 +165,11 @@ rx_result rx_dynamic_plugin::load_plugin ()
     module_ = rx_load_library(lib_path_.c_str());
     if (module_)
     {
+        prxBindPlugin4_ = (rxBindPlugin4_t)rx_get_func_address(module_, "rxBindPlugin4");
+        if (prxBindPlugin4_)
+        {
+            return true;
+        }
         prxBindPlugin3_ = (rxBindPlugin3_t)rx_get_func_address(module_, "rxBindPlugin3");
         if (prxBindPlugin3_)
         {
@@ -191,7 +234,7 @@ rx_plugin_info rx_dynamic_plugin::get_plugin_info () const
 
 rx_result rx_dynamic_plugin::init_plugin ()
 {
-    if (prxBindPlugin_ || prxBindPlugin2_ || prxBindPlugin3_)
+    if (prxBindPlugin_ || prxBindPlugin2_ || prxBindPlugin3_ || prxBindPlugin4_)
     {
         if (prxInitPlugin_)
         {
@@ -266,6 +309,11 @@ uint32_t rx_dynamic_plugin::get_stream_version (uintptr_t id)
         return it->second->stream_version_;
     else
         return RX_CURRENT_SERIALIZE_VERSION;
+}
+
+string_array rx_dynamic_plugin::get_dependencies () const
+{
+    return dependencies_;
 }
 
 

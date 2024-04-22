@@ -323,18 +323,21 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 
 	rx_dump_table(table, out, false, true);
 #ifdef _DEBUG
-	std::ostringstream verstream;
-	dump_version(table, verstream);
-
-	sys_handle_t file = rx_file("rx-platform.json", RX_FILE_OPEN_WRITE, RX_FILE_CREATE_ALWAYS);
-	if (file)
+	if (show_all)
 	{
-		string_type buffer(verstream.str());
-		if (RX_OK != rx_file_write(file, &buffer[0], (uint32_t)buffer.size(), nullptr))
-		{
+		std::ostringstream verstream;
+		dump_version(table, verstream);
 
+		sys_handle_t file = rx_file("rx-platform.json", RX_FILE_OPEN_WRITE, RX_FILE_CREATE_ALWAYS);
+		if (file)
+		{
+			string_type buffer(verstream.str());
+			if (RX_OK != rx_file_write(file, &buffer[0], (uint32_t)buffer.size(), nullptr))
+			{
+
+			}
+			rx_file_close(file);
 		}
-		rx_file_close(file);
 	}
 #endif
 						
@@ -361,10 +364,11 @@ void rx_name_command::dump_version (const rx_table_type& table, std::ostream& ou
 	int idx = 0;
 	for (const auto& row : table)
 	{
-		if (idx == 2
-			|| idx == 3
+		if (idx == 4
 			|| idx == 5
-			|| idx == 6)
+			|| idx == 7
+			|| idx == 8
+			|| idx == 9)
 		{
 			if (first)
 				first = false;
@@ -565,12 +569,13 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 	log::log_query_type query;
 	query.type = log::rx_log_normal_level;
 	string_type log_name = "last";
+	string_type plugin_name = "";
+	bool reverse = false;
 	bool trace = false;
 	bool debug = false;
 	bool warning = false;
 	bool error = false;
 	bool help = false;
-	bool acceding = false;
 	bool version = false;
 	bool user = false;
 	bool sub = false;
@@ -591,6 +596,8 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 	parser.add_string_option('f', "filter", &pattern, "Search pattern filter.");
 	parser.add_int_option('c', "count", &count, "Count of events.");
 	parser.add_string_option('l', "log", &log_name, "Specifies log to be read (default is last).");
+	parser.add_string_option('p', "plugin", &plugin_name, "Specifies plugin log to be read (default is all).");
+	parser.add_bit_option('r', "reverse", &reverse, "Read Log in reverse order, oldest on top.");
 
 	auto ret = parser.parse(in, err);
 	if (ret)
@@ -621,9 +628,10 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 				query.type = log::rx_log_warining_level;
 			if (error)
 				query.type = log::rx_log_error_level;
-			if (acceding)
+			if (reverse)
 				query.type = query.type | log::rx_log_acceding;
 			query.count = count;
+			query.library = plugin_name;
 
 			ctx->set_waiting();
 			ret = rx_gate::instance().read_log(log_name, query, [ctx, this, user, sub](rx_result_with<log::log_events_type>&& result)

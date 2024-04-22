@@ -118,7 +118,7 @@ rx_protocol_result_t rx_http_endpoint::received_function (rx_protocol_stack_endp
 		}
 		else if (packet.buffer->size == self->content_left_)
 		{
-			// we readed everything
+			// we read everything
 			self->prepared_request_.content.insert(self->prepared_request_.content.end(), (const std::byte*)packet.buffer->buffer_ptr, (const std::byte*)packet.buffer->buffer_ptr + self->content_left_);
 			self->content_left_ = 0;
 			self->send_current_request();
@@ -130,13 +130,14 @@ rx_protocol_result_t rx_http_endpoint::received_function (rx_protocol_stack_endp
 		else
 		{
 			RX_ASSERT(packet.buffer->size > self->content_left_);
-			// we readed everything and even more
+			// we read everything and even more
 			self->prepared_request_.content.insert(self->prepared_request_.content.end(), (const std::byte*)packet.buffer->buffer_ptr, (const std::byte*)packet.buffer->buffer_ptr + self->content_left_);
 			self->content_left_ = 0;
 			self->send_current_request();
 
 			rx_reinit_packet_buffer(&self->receive_buffer_);
 
+			// now do the even more stuff
 			result = rx_push_to_packet(&self->receive_buffer_
 				, packet.buffer->buffer_ptr + self->content_left_
 				, packet.buffer->size - self->content_left_);
@@ -355,7 +356,7 @@ rx_result rx_http_endpoint::send_response (http_response response)
 	auto buffer = temp_port->alloc_io_buffer();
 	if (!buffer)
 	{
-		buffer.register_error("Out of memory");
+		buffer.register_error(RX_OUT_OF_MEMORY);
 		return buffer.errors();
 	}
 

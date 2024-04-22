@@ -44,15 +44,16 @@
 
 namespace rx_platform {
 namespace runtime {
-class runtime_process_context;
 namespace logic_blocks {
 class method_data;
 } // namespace logic_blocks
 
 namespace tag_blocks {
 class binded_tags;
-
 } // namespace tag_blocks
+
+class runtime_process_context;
+
 } // namespace runtime
 } // namespace rx_platform
 
@@ -312,6 +313,8 @@ class binded_tags
 
       void method_changed (logic_blocks::method_data* whose, const rx_value& val);
 
+      data::runtime_data_model get_data_model (const string_type& path, runtime_structure_resolver& structure);
+
 	  template<typename T>
 	  rx_result set_item_static(const string_type& path, T&& value, runtime_init_context& ctx)
 	  {
@@ -339,6 +342,8 @@ class binded_tags
       rx_result internal_get_item (const string_type& path, rx_simple_value& what, runtime_structure_resolver& structure, runtime_process_context* ctx);
 
       void add_callbacks (runtime_handle_t handle, binded_callback_t callback, write_callback_t write_callback);
+
+      data::runtime_data_model internal_get_data_model (const string_type& path, runtime_structure_resolver& structure);
 
 
 

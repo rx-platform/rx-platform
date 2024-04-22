@@ -36,6 +36,7 @@
 
 
 HCERTSTORE hcert_store = 0;
+HCERTSTORE hcert_store_machine = 0;
 
 RX_COMMON_API int rx_init_certificate_struct(rx_certificate_t* cert)
 {
@@ -63,7 +64,7 @@ RX_COMMON_API int rx_open_certificate_from_thumb(rx_certificate_t* cert, const c
 
 	memzero(cert, sizeof(rx_certificate_t));
 
-	if (hcert_store == NULL)
+	if (hcert_store == NULL && hcert_store_machine == NULL)
 		return RX_ERROR;
 
 
@@ -78,7 +79,17 @@ RX_COMMON_API int rx_open_certificate_from_thumb(rx_certificate_t* cert, const c
 
 	if (pCertContext == NULL)
 	{
-		return RX_ERROR;
+		pCertContext = CertFindCertificateInStore(hcert_store_machine,
+			X509_ASN_ENCODING,
+			0,
+			CERT_FIND_HASH, //CERT_FIND_CERT_ID, //CERT_FIND_SUBJECT_STR,
+			&hash, //&id, //L"dusan.r.ciric",
+			NULL);
+
+		if (pCertContext == NULL)
+		{
+			return RX_ERROR;
+		}
 	}
 
 	cert->ctx = pCertContext;

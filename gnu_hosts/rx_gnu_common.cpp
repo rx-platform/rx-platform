@@ -108,6 +108,8 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("/media/sf_MES/GCC/project/bin/Debug/librx-linnmes.so");
 	paths.emplace_back("/media/sf_MES/GCC/project/bin/Debug/librx-linntms.so");
 
+	paths.emplace_back("/media/sf_rx-release/Dev/GCC/LazzarStuff/bin/Debug/liblazzar.so");
+
 #else
 	string_type search_dir("/usr/lib/rx-platform/plugins");
 	if (!search_dir.empty())

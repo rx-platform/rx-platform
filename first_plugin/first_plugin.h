@@ -452,4 +452,38 @@ First Singleton. Singleton implementation in test plugin.");
 
 
 
+
+
+class first_data_type : public rx_platform_api::rx_data_type  
+{
+    DECLARE_PLUGIN_CODE_INFO(1, 0, 0, "\
+First Data Type. Data Type implementation in test plugin.");
+
+    DECLARE_REFERENCE_PTR(first_data_type);
+
+  public:
+      first_data_type();
+
+      ~first_data_type();
+
+
+      rx_result initialize_data_type (rx_init_context& ctx, const data::runtime_data_model& data);
+
+      rx_result deinitialize_data_type ();
+
+      rx_result start_data_type (rx_start_context& ctx);
+
+      rx_result stop_data_type ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
 #endif

@@ -96,14 +96,14 @@ class discovery_point : public rx::pointers::reference_object
         DECLARE_REFERENCE_PTR(discovery_point::socket_holder_t);
         friend class discovery_point;
     private:
-        discovery_point* whose = nullptr;
+        discovery_point::smart_ptr whose;
         io::ip4_address bind_address;
     protected:
         void release_buffer(buffer_ptr what);
         bool readed(const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity);
         void on_shutdown(rx_security_handle_t identity);
     public:
-        socket_holder_t(discovery_point* whose, const io::ip4_address& bind_addr);
+        socket_holder_t(discovery_point::smart_ptr whose, const io::ip4_address& bind_addr);
         socket_holder_t(socket_holder_t&& right) noexcept;
         void timer_tick(rx_timer_ticks_t ticks);
         void disconnect();

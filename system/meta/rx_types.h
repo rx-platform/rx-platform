@@ -356,6 +356,8 @@ public:
     typedef std::vector<def_blocks::data_attribute> children_type;
 
     typedef runtime::structure::block_data_result_t RDataType;
+    typedef runtime::blocks::data_type_runtime RType;
+    typedef runtime::data_type_runtime_ptr RTypePtr;
     typedef meta_algorithm::data_types_algorithm algorithm_type;
 
     friend class meta_algorithm::data_types_algorithm;

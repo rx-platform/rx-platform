@@ -112,10 +112,8 @@ void fill_attributes_string(namespace_item_attributes attr, string_type& str)
 
 rx_platform_directory::~rx_platform_directory()
 {
-#ifdef _DEBUG
-	if(!meta_.name.empty())
-		printf("Deleted directory: %s\r\n", meta_.name.c_str());
-#endif
+	//if(!meta_.name.empty())
+		//NAMESPACE_LOG_DEBUG("rx_platform_directory", 900, "Deleted directory: "s +  meta_.name);
 }
 
 

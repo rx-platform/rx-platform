@@ -35,6 +35,7 @@
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 
+#include "lib/rx_ser_bin.h"
 
 
 namespace rx {
@@ -600,18 +601,66 @@ bool runtime_values_data::get_complex_value (rx_simple_value& val) const
 
 // Class rx::data::runtime_data_model 
 
-
-byte_string runtime_data_model::serialize () const
+runtime_data_model::runtime_data_model(const runtime_data_model& right)
 {
-	return byte_string();
+	if (!right.elements.empty())
+	{
+		size_t count = right.elements.size();
+		elements.reserve(count);
+		for (size_t i = 0; i < count; i++)
+		{
+			elements.push_back(right.elements[i]);
+		}
+	}
 }
-
-runtime_data_model runtime_data_model::deserialize (byte_string& data)
+runtime_data_model::runtime_data_model(runtime_data_model&& right) noexcept
 {
-	return runtime_data_model();
+	if (!right.elements.empty())
+	{
+		size_t count = right.elements.size();
+		elements.reserve(count);
+		for (size_t i = 0; i < count; i++)
+		{
+			elements.push_back(std::move(right.elements[i]));
+		}
+		right.elements.clear();
+	}
 }
-
-
+runtime_data_model& runtime_data_model::operator=(const runtime_data_model& right)
+{
+	if (this != &right)
+	{
+		elements.clear();
+		if (!right.elements.empty())
+		{
+			size_t count = right.elements.size();
+			elements.reserve(count);
+			for (size_t i = 0; i < count; i++)
+			{
+				elements.push_back(right.elements[i]);
+			}
+		}
+	}
+	return *this;
+}
+runtime_data_model& runtime_data_model::operator=(runtime_data_model&& right) noexcept
+{
+	if (this != &right)
+	{
+		elements.clear();
+		if (!right.elements.empty())
+		{
+			size_t count = right.elements.size();
+			elements.reserve(count);
+			for (size_t i = 0; i < count; i++)
+			{
+				elements.push_back(std::move(right.elements[i]));
+			}
+			right.elements.clear();
+		}
+	}
+	return *this;
+}
 // Class rx::data::runtime_model_element 
 
 
@@ -661,3 +710,33 @@ const std::vector<runtime_data_model>& runtime_model_element::get_complex_array 
 } // namespace data
 } // namespace rx
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	writter
+	auto result = writter.start_array("elements", elements.size());
+	if (result)
+	{
+		for (const auto& elem : elements)
+		{
+			result = elem->serialize(writter);
+			if (!result)
+				break;
+		}
+	}
+	if (result && !buffer.empty())
+	{
+		byte_string ret(buffer.get_size());
+		memcpy(&ret[0], buffer.get_data(), buffer.get_size());
+		return ret;
+	}
+	else
+	{
+		return byte_string();
+	}
+
+	return runtime_data_model();
+
+#endif

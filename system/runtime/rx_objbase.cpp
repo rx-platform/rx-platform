@@ -105,7 +105,6 @@ object_runtime::~object_runtime()
 
 rx_result object_runtime::initialize_runtime (runtime_init_context& ctx)
 {
-    context_ = ctx.context;
 	return true;
 }
 

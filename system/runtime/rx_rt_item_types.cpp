@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -159,7 +159,7 @@ template<typename T>
 const runtime_item* get_child_item_plain(int array_idx, string_view_type path, const T& item);
 
 
-// Parameterized Class rx_platform::runtime::structure::runtime_data
+// Parameterized Class rx_platform::runtime::structure::runtime_data 
 
 template <class variables_type, class structs_type, class sources_type, class mappers_type, class filters_type, class events_type, class blocks_type, class variable_blocks_type, uint_fast8_t type_id>
 runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_type,events_type,blocks_type,variable_blocks_type,type_id>::~runtime_data()

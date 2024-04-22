@@ -63,7 +63,8 @@ string_type g_cert_security_name = RX_CERT_SECURITY_NAME;
 
 // Class rx_internal::rx_security::maintenance_context 
 
-maintenance_context::maintenance_context()
+maintenance_context::maintenance_context (bool has_console)
+    : built_in_security_context(has_console)
 {
     location_ = rx_gate::instance().get_node_name();
 }
@@ -73,13 +74,6 @@ maintenance_context::~maintenance_context()
 {
 }
 
-
-
-bool maintenance_context::has_console () const
-{
-  return true;
-
-}
 
 
 // Class rx_internal::rx_security::platform_security 
@@ -131,6 +125,7 @@ rx_result platform_security::initialize (hosting::rx_platform_host* host, config
         if (it != providers_.end())
         {
             default_provider_ = it->second.get();
+            SECURITY_LOG_INFO("platform_security", 999, "Default security provider is set to "s + default_provider_->get_info());
         }
         else
         {
@@ -197,7 +192,7 @@ rx_result platform_security::initialize (hosting::rx_platform_host* host, config
         }
         else
         {
-            SECURITY_LOG_WARNING("platform_security", 999, "Word security identity not set >> defaulting to system identity!");
+            SECURITY_LOG_WARNING("platform_security", 999, "World security identity not set >> defaulting to system identity!");
             sys_objects::world_application::instance()->world_identity = sys_objects::system_application::instance()->system_identity;
         }
     }
@@ -315,7 +310,7 @@ std::vector<std::unique_ptr<platform_security_provider> > platform_security::col
 {
     std::vector<std::unique_ptr<platform_security_provider> > ret;
     ret.push_back(std::make_unique<none_security_provider>());
-    ret.push_back(std::make_unique<certificate_security_provider>());
+    ret.push_back(std::make_unique<x509::certificate_security_provider>());
     return ret;
 }
 
@@ -324,10 +319,16 @@ bool platform_security::check_permissions (security::security_mask_t mask, const
     return roles_manager_.check_permissions(mask, path, ctx);
 }
 
+security::security_context_ptr platform_security::get_world_context ()
+{
+    return world_ctx_;
+}
+
 
 // Class rx_internal::rx_security::built_in_security_context 
 
-built_in_security_context::built_in_security_context()
+built_in_security_context::built_in_security_context (bool has_console)
+      : has_console_(has_console)
 {
 }
 
@@ -358,9 +359,16 @@ rx_result built_in_security_context::deserialize (base_meta_reader& stream)
 }
 
 
+bool built_in_security_context::has_console () const
+{
+  return has_console_;
+}
+
+
 // Class rx_internal::rx_security::host_security_context 
 
-host_security_context::host_security_context()
+host_security_context::host_security_context (bool has_console)
+    : built_in_security_context(has_console)
 {
     user_name_ = "host";
     location_ = rx_gate::instance().get_node_name();
@@ -389,8 +397,9 @@ bool host_security_context::is_hosted () const
 
 // Class rx_internal::rx_security::process_context 
 
-process_context::process_context (const string_type& name, bool sys)
+process_context::process_context (const string_type& name, bool sys, bool has_console)
       : system_(sys)
+    , built_in_security_context(has_console)
 {
     user_name_ = name;
     location_ = rx_gate::instance().get_node_name();
@@ -408,12 +417,6 @@ process_context::~process_context()
 bool process_context::is_system () const
 {
   return system_;
-
-}
-
-bool process_context::has_console () const
-{
-  return true;
 
 }
 
@@ -451,7 +454,7 @@ void none_security_provider::deinitialize ()
 
 rx_result_with<security::security_context_ptr> none_security_provider::create_host_context (hosting::rx_platform_host* host, configuration_data_t& data)
 {
-    security::security_context_ptr ret = rx_create_reference<host_security_context>();
+    security::security_context_ptr ret = rx_create_reference<host_security_context>(false);
     return ret;
 }
 

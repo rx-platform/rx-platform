@@ -34,7 +34,7 @@
 
 #include "sys_internal/rx_security/rx_x509_security.h"
 
-using rx_internal::rx_security::x509_security_context;
+using rx_internal::rx_security::x509::x509_security_context;
 /////////////////////////////////////////////////////////////
 // logging macros for http library
 #define TLS_LOG_INFO(src,lvl,msg) RX_LOG_INFO("TLS",src,lvl,msg)
@@ -58,7 +58,7 @@ class tls_transport_port;
 } // namespace protocols
 
 
-using rx_internal::rx_security::x509_certificate_ptr;
+using rx_internal::rx_security::x509::x509_certificate_ptr;
 
 
 namespace protocols {

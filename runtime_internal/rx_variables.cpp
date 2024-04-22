@@ -110,6 +110,9 @@ rx_result register_variables_constructors()
 }
 rx_value get_variable_complex_input(input_selection_type selection, runtime_process_context* ctx, std::vector<rx_value> sources)
 {
+    rx_time max_ts;
+    rx_value bad_value;
+
     switch (selection)
     {
     case input_selection_type::first_good:
@@ -118,7 +121,13 @@ rx_value get_variable_complex_input(input_selection_type selection, runtime_proc
             {
                 if (ctx->get_mode().can_callculate(one))
                     return std::move(one);
+                if (one.get_time() > max_ts)
+                {
+                    max_ts = one.get_time();
+                    bad_value = std::move(one);
+                }
             }
+            return bad_value;
         }
         break;
     case input_selection_type::first_non_zero:
@@ -130,6 +139,11 @@ rx_value get_variable_complex_input(input_selection_type selection, runtime_proc
                     rx_value temp(one);
                     if (temp.convert_to(RX_BOOL_TYPE) && temp.get_bool())
                         return std::move(one);
+                }
+                else if (one.get_time() > max_ts)
+                {
+                    max_ts = one.get_time();
+                    bad_value = std::move(one);
                 }
             }
         }
@@ -159,6 +173,13 @@ rx_value get_variable_complex_input(input_selection_type selection, runtime_proc
                             selected_index = current_idx;
                         }
                     }
+                }
+                else if (one.get_time() > max_ts)
+                {
+                    max_ts = one.get_time();
+                    bad_value = std::move(one);
+                    if (ctx->get_mode().can_callculate(one))
+                        bad_value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
                 }
                 current_idx++;
             }
@@ -192,6 +213,13 @@ rx_value get_variable_complex_input(input_selection_type selection, runtime_proc
                         }
                     }
                 }
+                else if (one.get_time() > max_ts)
+                {
+                    max_ts = one.get_time();
+                    bad_value = std::move(one);
+                    if (ctx->get_mode().can_callculate(one))
+                        bad_value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+                }
                 current_idx++;
             }
             if (selected_index >= 0)
@@ -224,6 +252,13 @@ rx_value get_variable_complex_input(input_selection_type selection, runtime_proc
                         }
                     }
                 }
+                else if (one.get_time() > max_ts)
+                {
+                    max_ts = one.get_time();
+                    bad_value = std::move(one);
+                    if (ctx->get_mode().can_callculate(one))
+                        bad_value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+                }
                 current_idx++;
             }
             if (selected_index >= 0)
@@ -255,6 +290,13 @@ rx_value get_variable_complex_input(input_selection_type selection, runtime_proc
                         }
                     }
                 }
+                else if (one.get_time() > max_ts)
+                {
+                    max_ts = one.get_time();
+                    bad_value = std::move(one);
+                    if (ctx->get_mode().can_callculate(one))
+                        bad_value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+                }
                 current_idx++;
             }
             if (selected_index >= 0)
@@ -264,7 +306,7 @@ rx_value get_variable_complex_input(input_selection_type selection, runtime_proc
     default:
         RX_ASSERT(false);
     }
-    return rx_value();
+    return bad_value;
 }
 
 // Parameterized Class rx_internal::sys_runtime::variables::simple_variable 

@@ -46,6 +46,8 @@ namespace rx_internal {
 
 namespace rx_security {
 
+namespace x509 {
+
 
 
 
@@ -174,7 +176,7 @@ class x509_security_context : public rx_platform::security::security_context
   public:
       x509_security_context();
 
-      x509_security_context (const string_view_type name, const string_view_type location);
+      x509_security_context (const string_view_type name, const string_view_type location, bool has_console = false);
 
       ~x509_security_context();
 
@@ -189,6 +191,9 @@ class x509_security_context : public rx_platform::security::security_context
 
       virtual rx_result deserialize (base_meta_reader& stream);
 
+
+      bool has_console () const;
+
       x509_security_context(const x509_security_context& right) = delete;
       x509_security_context& operator=(const x509_security_context& right) = delete;
       x509_security_context(x509_security_context&& right) = delete;
@@ -201,9 +206,13 @@ class x509_security_context : public rx_platform::security::security_context
       x509_certificate_ptr certificate_;
 
 
+      bool has_console_;
+
+
 };
 
 
+} // namespace x509
 } // namespace rx_security
 } // namespace rx_internal
 

@@ -3,9 +3,9 @@
 
 int is_valid_base64(char ch)
 {
-	return ch >= 'A' && ch <= 'Z' ||
-		ch >= 'a' && ch <= 'z' ||
-		ch >= '0' && ch <= '9' ||
+	return (ch >= 'A' && ch <= 'Z') ||
+		(ch >= 'a' && ch <= 'z') ||
+		(ch >= '0' && ch <= '9') ||
 		ch == '+' || ch == '/';
 }
 
@@ -91,7 +91,7 @@ RX_COMMON_API int rx_base64_get_string(string_value_struct* result, const uint8_
 			between = data[i] & (uint8_t)0xf0;
 			between = between >> 4;
 		}
-			
+
 		second = second | between;
 
 		//////////////////////////////////////////////////
@@ -116,7 +116,7 @@ RX_COMMON_API int rx_base64_get_string(string_value_struct* result, const uint8_
 
 		//////////////////////////////////////////////////
 
-			
+
 		str_data[result_idx] = tabel_base64[first];
 		str_data[result_idx + 1] = tabel_base64[second];
 		str_data[result_idx + 2] = tabel_base64[third];
@@ -169,7 +169,7 @@ RX_COMMON_API int rx_base64_get_data(bytes_value_struct* result, const char* dat
 		return RX_ERROR;
 	if (str_size % 4 != 0)
 		return RX_ERROR;
-	
+
 	int ret = rx_init_bytes_value_struct(result, NULL, str_size);
 	if (ret != RX_OK)
 		return ret;
@@ -179,7 +179,7 @@ RX_COMMON_API int rx_base64_get_data(bytes_value_struct* result, const char* dat
 	size_t len = str_size;
 	size_t temp_size;
 	uint8_t* result_data = (uint8_t*)rx_c_ptr(result, &temp_size);
-	
+
 
 	if (data[len - 2] == '=')
 	{
@@ -193,13 +193,13 @@ RX_COMMON_API int rx_base64_get_data(bytes_value_struct* result, const char* dat
 	size_t result_idx = 0;
 	uint8_t between = 0;
 	for (size_t i = 0; i < len; i++)
-	{		
+	{
 		uint8_t one_char = get_next_char(data, i, bonus, len);
 		if (one_char == 0xff)
 			return RX_ERROR;
 
 		uint8_t first = one_char << 2;
-		i++; 
+		i++;
 		one_char = get_next_char(data, i, bonus, len);
 		if (one_char == 0xff)
 			return RX_ERROR;
@@ -207,7 +207,7 @@ RX_COMMON_API int rx_base64_get_data(bytes_value_struct* result, const char* dat
 		first = first | between;
 
 		/////////////////////////////////////////////
-		
+
 		uint8_t second = one_char << 4;
 		i++;
 		one_char = get_next_char(data, i, bonus, len);

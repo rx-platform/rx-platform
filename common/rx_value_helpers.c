@@ -170,7 +170,7 @@ RX_COMMON_API int rx_get_struct_value(size_t idx, struct typed_value_type* out_v
 	if (val->value_type == RX_STRUCT_TYPE
 		&& idx < val->value.struct_value.size)
 	{
-		*out_val = val->value.struct_value.values[idx];
+		rx_copy_value(out_val, &val->value.struct_value.values[idx]);
 		return RX_OK;
 	}
 	else
@@ -1671,7 +1671,7 @@ int get_string_value(const union rx_value_union* val, rx_value_t type, size_t id
 
 				}
 				rx_push_to_packet(&buffer, "]", 2);
-				auto ret = rx_init_string_value_struct(value, (const char*)buffer.buffer_ptr, -1);
+				int ret = rx_init_string_value_struct(value, (const char*)buffer.buffer_ptr, -1);
 				rx_deinit_packet_buffer(&buffer);
 				return ret;
 			}

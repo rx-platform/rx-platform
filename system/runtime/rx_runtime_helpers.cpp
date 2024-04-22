@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -57,7 +57,7 @@ namespace rx_platform {
 
 namespace runtime {
 
-// Class rx_platform::runtime::io_capabilities 
+// Class rx_platform::runtime::io_capabilities
 
 
 void io_capabilities::set_input (bool val)
@@ -111,7 +111,7 @@ bool io_capabilities::get_in_event () const
 }
 
 
-// Class rx_platform::runtime::runtime_deinit_context 
+// Class rx_platform::runtime::runtime_deinit_context
 
 runtime_deinit_context::runtime_deinit_context (const meta_data& meta_data)
       : meta(meta_data)
@@ -120,7 +120,7 @@ runtime_deinit_context::runtime_deinit_context (const meta_data& meta_data)
 
 
 
-// Class rx_platform::runtime::runtime_init_context 
+// Class rx_platform::runtime::runtime_init_context
 
 runtime_init_context::runtime_init_context (structure::runtime_item& root, const meta_data& meta, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, rx_item_type type)
       : context(context),
@@ -166,7 +166,7 @@ rx_result_with<runtime_handle_t> runtime_init_context::connect_item (const strin
 {
 	if(!path.empty() && path[0]=='.')
 		return tags->connect_item("."s + path, rate, *this, callback);
-		
+
 	return tags->connect_item(path, rate, *this, callback);
 }
 
@@ -175,8 +175,13 @@ rx_time runtime_init_context::now ()
 	return context->now();
 }
 
+data::runtime_data_model runtime_init_context::get_data_model (string_view_type path)
+{
+	return tags->get_data_model(string_type(path), structure);
+}
 
-// Class rx_platform::runtime::runtime_path_resolver 
+
+// Class rx_platform::runtime::runtime_path_resolver
 
 
 void runtime_path_resolver::push_to_path (const string_type& name)
@@ -238,7 +243,7 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 }
 
 
-// Class rx_platform::runtime::runtime_start_context 
+// Class rx_platform::runtime::runtime_start_context
 
 runtime_start_context::runtime_start_context (structure::runtime_item& root, runtime_process_context* context, tag_blocks::binded_tags* binded, ns::rx_directory_resolver* directories, relations::relations_holder* relations, threads::job_thread* jobs_queue)
       : context(context),
@@ -316,7 +321,7 @@ rx_time runtime_start_context::now ()
 }
 
 
-// Class rx_platform::runtime::runtime_stop_context 
+// Class rx_platform::runtime::runtime_stop_context
 
 runtime_stop_context::runtime_stop_context (const meta_data& meta_data, runtime_process_context* context)
       : context(context),
@@ -326,7 +331,7 @@ runtime_stop_context::runtime_stop_context (const meta_data& meta_data, runtime_
 
 
 
-// Class rx_platform::runtime::runtime_structure_resolver 
+// Class rx_platform::runtime::runtime_structure_resolver
 
 runtime_structure_resolver::runtime_structure_resolver (structure::runtime_item& root)
       : root_(root)
@@ -362,8 +367,22 @@ structure::runtime_item& runtime_structure_resolver::get_root ()
     return root_;
 }
 
+data::runtime_data_model runtime_structure_resolver::get_data_type (const string_type& path)
+{
+	auto it = data_types_.find(path);
+	if (it != data_types_.end())
+		return it->second;
+	else
+		return data::runtime_data_model();
+}
 
-// Class rx_platform::runtime::variables_stack 
+void runtime_structure_resolver::register_data_type (const string_type& path, data::runtime_data_model data)
+{
+	data_types_.emplace(path, data);
+}
+
+
+// Class rx_platform::runtime::variables_stack
 
 
 void variables_stack::push_variable (structure::variable_data* what)
@@ -391,7 +410,7 @@ variable_stack_entry variables_stack::get_current_variable () const
 }
 
 
-// Class rx_platform::runtime::mappers_stack 
+// Class rx_platform::runtime::mappers_stack
 
 
 void mappers_stack::push_mapper (const rx_node_id& id, structure::mapper_data* what)
@@ -427,7 +446,7 @@ std::vector<rx_simple_value> mappers_stack::get_mapping_values (const rx_node_id
 	auto it = mappers_.find(id);
 	if (it != mappers_.end() && !it->second.empty())
 	{
-		for (auto& one : it->second)
+		for (const auto& one : it->second)
 		{
 			rx_simple_value val;
 			if (one->item->get_local_value(path, val))
@@ -438,7 +457,7 @@ std::vector<rx_simple_value> mappers_stack::get_mapping_values (const rx_node_id
 }
 
 
-// Class rx_platform::runtime::sources_stack 
+// Class rx_platform::runtime::sources_stack
 
 
 void sources_stack::push_source (const rx_node_id& id, structure::source_data* what)
@@ -474,10 +493,10 @@ std::vector<rx_simple_value> sources_stack::get_source_values (const rx_node_id&
 	auto it = sources_.find(id);
 	if (it != sources_.end() && !it->second.empty())
 	{
-		for (auto one_it = it->second.rbegin(); one_it != it->second.rend(); one_it++)
+		for (const auto& one : it->second)
 		{
 			rx_simple_value val;
-			if ((*one_it)->item->get_local_value(path, val))
+			if (one->item->get_local_value(path, val))
 				ret_value.emplace_back(std::move(val));
 		}
 	}

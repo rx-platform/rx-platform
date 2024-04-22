@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  D:\RX\Native\Source\platform_api\rx_runtime.h
+*  C:\RX\Native\Source\platform_api\rx_runtime.h
 *
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -66,6 +66,7 @@ class rx_program;
 class rx_display;
 
 class rx_relation;
+class rx_data_type;
 
 }
 
@@ -100,6 +101,9 @@ extern "C"
 
     rx_result_struct c_init_relation(rx_platform_api::rx_relation* self, init_ctx_ptr ctx);
     rx_result_struct c_start_relation(rx_platform_api::rx_relation* self, start_ctx_ptr ctx, int is_target);
+
+    rx_result_struct c_init_data_type(rx_platform_api::rx_data_type* self, init_ctx_ptr ctx, const struct bytes_value_struct_t* data);
+    rx_result_struct c_start_data_type(rx_platform_api::rx_data_type* self, start_ctx_ptr ctx);
 
 
     rx_result_struct c_init_method(rx_platform_api::rx_method* self, init_ctx_ptr ctx);
@@ -151,6 +155,20 @@ rx_result register_monitored_relation_runtime(const rx_node_id& id)
     };
     return register_relation_runtime(id, constr_lambda, reg_func, unreg_func);
 }
+
+
+rx_result register_data_type_runtime(const rx_node_id& id, rx_data_type_constructor_t construct_func);
+template<class T>
+rx_result register_data_type_runtime(const rx_node_id& id)
+{
+    auto constr_lambda = []() -> plugin_data_type_runtime_struct_t*
+        {
+            T* temp = new T;
+            return &temp->impl_;
+        };
+    return register_data_type_runtime(id, constr_lambda);
+}
+
 
 template<typename T>
 rx_result_with<typename T::smart_ptr> get_runtime_instance(const rx_node_id& id)
@@ -268,6 +286,8 @@ class rx_init_context
       string_type get_name ();
 
       string_type get_full_path ();
+
+      rx_result get_data_type (const string_type& path, data::runtime_data_model& data) const;
 
       template<typename T>
       T get_local_value_as(const string_type& path, const T& default_value)
@@ -429,6 +449,7 @@ class rx_init_context
       friend rx_result_struct(::c_init_port)(rx_platform_api::rx_port* self, init_ctx_ptr ctx);
 
       friend rx_result_struct(::c_init_relation)(rx_platform_api::rx_relation* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_init_data_type)(rx_platform_api::rx_data_type* self, init_ctx_ptr ctx, const struct bytes_value_struct_t* data);
 
       friend rx_result_struct(::c_init_method)(rx_platform_api::rx_method* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_program)(rx_platform_api::rx_program* self, init_ctx_ptr ctx);
@@ -528,6 +549,7 @@ class rx_start_context
       friend rx_result_struct(::c_start_port)(rx_platform_api::rx_port* self, start_ctx_ptr ctx);
 
       friend rx_result_struct(::c_start_relation)(rx_platform_api::rx_relation* self, start_ctx_ptr ctx, int is_target);
+      friend rx_result_struct(::c_start_data_type)(rx_platform_api::rx_data_type* self, start_ctx_ptr ctx);
 
       friend rx_result_struct(::c_start_method)(rx_platform_api::rx_method* self, start_ctx_ptr ctx);
       friend rx_result_struct(::c_start_program)(rx_platform_api::rx_program* self, start_ctx_ptr ctx);
@@ -586,6 +608,7 @@ class rx_runtime : public rx::pointers::reference_object
       friend rx_result_struct(::c_init_port)(rx_platform_api::rx_port* self, init_ctx_ptr ctx);
 
       friend rx_result_struct(::c_init_relation)(rx_platform_api::rx_relation* self, init_ctx_ptr ctx);
+      friend rx_result_struct(::c_init_data_type)(rx_platform_api::rx_data_type* self, init_ctx_ptr ctx, const struct bytes_value_struct_t* data);
 
       friend rx_result_struct(::c_init_method)(rx_platform_api::rx_method* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_program)(rx_platform_api::rx_program* self, init_ctx_ptr ctx);
@@ -643,6 +666,43 @@ class rx_relation : public rx_runtime
       plugin_relation_runtime_struct impl_;
 
 
+};
+
+
+
+
+
+
+class rx_data_type : public rx_runtime  
+{
+    DECLARE_REFERENCE_PTR(rx_data_type);
+
+  public:
+      rx_data_type();
+
+      ~rx_data_type();
+
+
+      virtual rx_result initialize_data_type (rx_init_context& ctx, const data::runtime_data_model& data);
+
+      virtual rx_result deinitialize_data_type ();
+
+      virtual rx_result start_data_type (rx_start_context& ctx);
+
+      virtual rx_result stop_data_type ();
+
+      static constexpr rx_item_type type_id = rx_item_type::rx_data_type;
+  protected:
+
+  private:
+
+
+      plugin_data_type_runtime_struct impl_;
+
+      template<class T>
+      friend rx_result register_data_type_runtime(const rx_node_id& id);
+      friend rx_result_struct(::c_init_data_type)(rx_platform_api::rx_data_type* self, init_ctx_ptr ctx, const struct bytes_value_struct_t* data);
+      friend rx_result_struct(::c_start_data_type)(rx_platform_api::rx_data_type* self, start_ctx_ptr ctx);
 };
 
 
@@ -815,6 +875,28 @@ public:
     {
         return value_;
     }
+};
+
+struct local_complex_value
+{
+    using callback_t = std::function<void(const values::rx_simple_value&)>;
+    callback_t callback_;
+    values::rx_simple_value value_;
+    runtime_handle_t handle_ = 0;
+    rx_process_context ctx_;
+    bind_callback_data callback_data_;
+public:
+    local_complex_value() = default;
+    ~local_complex_value() = default;
+    local_complex_value(const local_complex_value&) = delete;
+    local_complex_value(local_complex_value&&) = delete;
+    local_complex_value& operator=(const local_complex_value&) = delete;
+    local_complex_value& operator=(local_complex_value&&) = delete;
+    rx_result bind(const string_type& path, rx_init_context& ctx, callback_t callback = callback_t());
+    local_complex_value(const values::rx_simple_value& right);
+    local_complex_value(values::rx_simple_value&& right);
+    local_complex_value& operator=(values::rx_simple_value right);
+    const values::rx_simple_value& value() const;
 };
 template <typename typeT, bool manual = false>
 struct owned_value

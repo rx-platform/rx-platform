@@ -231,6 +231,7 @@ class source_runtime;
 class mapper_runtime;
 class filter_runtime;
 class event_runtime;
+class data_type_runtime;
 }
 namespace relations
 {
@@ -247,6 +248,7 @@ typedef rx::pointers::reference<blocks::mapper_runtime> mapper_runtime_ptr;
 typedef rx::pointers::reference<blocks::filter_runtime> filter_runtime_ptr;
 typedef rx::pointers::reference<blocks::event_runtime> event_runtime_ptr;
 typedef rx::pointers::reference<relations::relation_runtime> relation_runtime_ptr;
+typedef rx::pointers::reference<blocks::data_type_runtime> data_type_runtime_ptr;
 
 namespace structure {
 template<typename typeT>
