@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -59,7 +59,7 @@ namespace runtime {
 
 
 
-class context_job
+class context_job 
 {
 
   public:
@@ -114,7 +114,7 @@ class process_context_job : public context_job
 
 
 
-struct context_write_data
+struct context_write_data 
 {
 
 
@@ -142,7 +142,7 @@ struct context_write_data
 
 
 
-class relation_subscriber
+class relation_subscriber 
 {
 
   public:
@@ -164,7 +164,7 @@ class relation_subscriber
 
 
 
-struct context_execute_data
+struct context_execute_data 
 {
 
 
@@ -215,7 +215,7 @@ struct method_execute_result_data
 
 
 
-struct write_data
+struct write_data 
 {
 
 
@@ -271,7 +271,7 @@ struct write_result_struct
 
 
 
-struct execute_data
+struct execute_data 
 {
 
 
@@ -327,7 +327,7 @@ struct execute_result_struct
 
 
 
-struct event_fired_data
+struct event_fired_data 
 {
 
 
@@ -390,6 +390,7 @@ struct async_data
 {
     runtime_handle_t handle;
     values::rx_simple_value value;
+    tag_blocks::binded_write_result_callback_t callback;
 };
 
 template<class T>
@@ -463,7 +464,7 @@ struct variable_data_for_process_t
 
 
 
-class runtime_process_context
+class runtime_process_context 
 {
     template<typename typeT>
     friend class algorithms::runtime_holder_algorithms;
@@ -489,7 +490,7 @@ class runtime_process_context
 
       rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
 
-      rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
+      rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback);
 
       rx_result set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx);
 
@@ -550,6 +551,8 @@ class runtime_process_context
       filters_type& get_filters_for_process ();
 
       void variable_value_changed (structure::variable_data* whose, const values::rx_value& val);
+
+      void variable_block_value_changed (structure::variable_block_data* whose, const values::rx_value& val);
 
       void event_pending (event_fired_struct<structure::event_data> data);
 
@@ -638,17 +641,18 @@ class runtime_process_context
           return default_value;
       }
       template<typename valT>
-      void set_binded_as(runtime_handle_t handle, valT&& value)
+      void set_binded_as(runtime_handle_t handle, valT&& value, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t())
       {
           values::rx_simple_value temp_val;
           temp_val.assign_static<valT>(std::forward<valT>(value));
-          auto result = this->set_value(handle, std::move(temp_val));
+          auto result = this->set_value(handle, std::move(temp_val), callback);
       }
       template<typename valT>
-      void set_async_binded_as(runtime_handle_t handle, valT&& value)
+      void set_async_binded_as(runtime_handle_t handle, valT&& value, tag_blocks::binded_write_result_callback_t callback)
       {
           async_data data;
           data.handle = handle;
+          data.callback = std::move(callback);
           data.value.assign_static<valT>(std::forward<valT>(value));
           this->async_value_pending(std::move(data));
       }

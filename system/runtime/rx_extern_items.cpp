@@ -41,7 +41,22 @@ extern "C"
 {
     rx_result_struct c_object_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
-        return rx_result(RX_NOT_IMPLEMENTED).move();
+        rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
+        switch (type)
+        {
+            case RX_JOB_REGULAR:
+                if (period == 0)
+                {
+                    self->post_own_job(job);
+                    return rx_result(true).move();
+                }
+            case RX_JOB_SLOW:
+                //return rx_platform::extern_timers::instance().create_calc_timer(job, period, self->get_jobs_queue());
+            case RX_JOB_IO:
+                //return rx_platform::extern_timers::instance().create_timer(job, period, rx_internal::infrastructure::server_runtime::instance().get_executer(RX_DOMAIN_IO));
+            default:
+                return rx_result(RX_NOT_SUPPORTED).move();
+        }
         
     }
     runtime_handle_t c_object_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
@@ -87,7 +102,22 @@ extern "C"
     };
     rx_result_struct c_application_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
-        return rx_result(RX_NOT_IMPLEMENTED).move();
+        rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
+        switch (type)
+        {
+            case RX_JOB_REGULAR:
+                if (period == 0)
+                {
+                    self->post_own_job(job);
+                    return rx_result(true).move();
+                }
+            case RX_JOB_SLOW:
+                //return rx_platform::extern_timers::instance().create_calc_timer(job, period, self->get_jobs_queue());
+            case RX_JOB_IO:
+                //return rx_platform::extern_timers::instance().create_timer(job, period, rx_internal::infrastructure::server_runtime::instance().get_executer(RX_DOMAIN_IO));
+            default:
+                return rx_result(RX_NOT_SUPPORTED).move();
+        }
 
     }
     runtime_handle_t c_application_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
@@ -134,7 +164,22 @@ extern "C"
 
     rx_result_struct c_domain_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
-        return rx_result(RX_NOT_IMPLEMENTED).move();
+        rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
+        switch (type)
+        {
+            case RX_JOB_REGULAR:
+                if (period == 0)
+                {
+                    self->post_own_job(job);
+                    return rx_result(true).move();
+                }
+            case RX_JOB_SLOW:
+                //return rx_platform::extern_timers::instance().create_calc_timer(job, period, self->get_jobs_queue());
+            case RX_JOB_IO:
+                //return rx_platform::extern_timers::instance().create_timer(job, period, rx_internal::infrastructure::server_runtime::instance().get_executer(RX_DOMAIN_IO));
+            default:
+                return rx_result(RX_NOT_SUPPORTED).move();
+        }
 
     }
     runtime_handle_t c_domain_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
@@ -370,6 +415,12 @@ void extern_object_runtime::fill_code_info (std::ostream& info, const string_typ
         info << "No information available for " << name << "!";
 }
 
+void extern_object_runtime::post_own_job (plugin_job_struct* what)
+{
+    auto job = rx_create_reference<extern_job>(what);
+    get_context()->own_pending(job);
+}
+
 
 // Class rx_platform::runtime::items::extern_port_runtime 
 
@@ -542,6 +593,12 @@ rx_result extern_application_runtime::stop_runtime (runtime_stop_context& ctx)
     return impl_->def->stop_application(impl_->anchor.target);
 }
 
+void extern_application_runtime::post_own_job (plugin_job_struct* what)
+{
+    auto job = rx_create_reference<extern_job>(what);
+    get_context()->own_pending(job);
+}
+
 
 // Class rx_platform::runtime::items::extern_domain_runtime 
 
@@ -593,6 +650,10 @@ rx_result extern_domain_runtime::deinitialize_runtime (runtime_deinit_context& c
 rx_result extern_domain_runtime::stop_runtime (runtime_stop_context& ctx)
 {
     return impl_->def->stop_domain(impl_->anchor.target);
+}
+
+void extern_domain_runtime::post_own_job (plugin_job_struct* what)
+{
 }
 
 

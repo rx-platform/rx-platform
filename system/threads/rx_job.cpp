@@ -233,7 +233,7 @@ periodic_job::periodic_job()
 rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, rx_timer_ticks_t random_offset, bool& remove)
 {
 	std::scoped_lock _(*this);
-	if (suspended_)
+	if (suspended_ || period_ == 0)
 	{
 		return 0;
 	}
@@ -248,7 +248,7 @@ rx_timer_ticks_t periodic_job::tick (rx_timer_ticks_t current_tick, rx_timer_tic
 			loop_count++;
 			next_ = next_ + period_;// new time
 
-		} while (next_ < current_tick);
+		} while (next_ <= current_tick);
 
 		next_ += random_offset;
 

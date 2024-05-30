@@ -243,6 +243,8 @@ First Object. Object implementation in test plugin.");
 
       runtime_handle_t timer_;
 
+      local_value<string_type> const_value_;
+
 
 };
 
@@ -479,6 +481,46 @@ First Data Type. Data Type implementation in test plugin.");
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class first_event : public rx_platform_api::rx_event  
+{
+        DECLARE_PLUGIN_CODE_INFO(1, 0, 0, "\
+First Event. Event implementation in test plugin.");
+
+        DECLARE_REFERENCE_PTR(first_event);
+
+  public:
+      first_event();
+
+      ~first_event();
+
+
+      rx_result initialize_event (rx_init_context& ctx);
+
+      rx_result start_event (rx_start_context& ctx);
+
+      rx_result stop_event ();
+
+      rx_result deinitialize_event ();
+
+
+  protected:
+
+  private:
+
+      void timer_tick ();
+
+
+
+      runtime_handle_t timer_;
 
 
 };

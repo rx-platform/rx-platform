@@ -262,21 +262,26 @@ class platform_runtime_manager
 		  return result;
 	  }
       template<class typeT>
-      rx_result just_init_runtime(typename typeT::RTypePtr what)
+      rx_result just_init_runtime(typename typeT::RTypePtr what, initialize_data_type& init_data)
       {
           auto result = algorithms::create_runtime_structure<typeT>(what);
           if (result)
           {
               auto ctx = runtime::algorithms::runtime_holder_algorithms<typeT>::create_init_context(*what);
               result = algorithms::just_init_runtime<typeT>(what, ctx);
+              if (result)
+              {
+                  init_data.emplace(what->meta_info().id
+                      , initialize_data_t{std::move(ctx.const_callbacks), std::move(ctx.pending_connections)});
+              }
           }
           return result;
       }
 
       template<class typeT>
-      void just_start_runtime(typename typeT::RTypePtr what, const_callbacks_type callbacks)
+      void just_start_runtime(typename typeT::RTypePtr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
       {
-          algorithms::just_start_runtime<typeT>(what, std::move(callbacks));
+          algorithms::just_start_runtime<typeT>(what, std::move(callbacks), std::move(pending_connections));
       }
 	  template<class typeT>
 	  rx_result deinit_runtime(typename typeT::RTypePtr what, rx_result_callback&& callback)

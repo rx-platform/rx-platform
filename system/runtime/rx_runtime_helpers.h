@@ -47,39 +47,49 @@ using namespace rx::values;
 #define RUNTIME_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Run",src,lvl,(msg))
 #define RUNTIME_LOG_TRACE(src,lvl,msg) RX_TRACE("Run",src,lvl,(msg))
 
+namespace rx_internal
+{
+namespace sys_runtime
+{
+namespace data_source
+{
+class callback_value_point;
+}
+}
+}
+
+
 
 
 namespace rx_platform {
-namespace ns {
-class rx_directory_resolver;
-} // namespace ns
-
 namespace runtime {
+namespace tag_blocks {
+class binded_tags;
+} // namespace tag_blocks
+
 namespace structure {
-class mapper_data;
 class variable_data;
+class runtime_item;
+class source_data;
+class mapper_data;
 } // namespace structure
+
+namespace algorithms {
+template <class typeT> class runtime_holder;
+} // namespace algorithms
 
 namespace relations {
 class relations_holder;
 } // namespace relations
 
-namespace tag_blocks {
-class binded_tags;
-} // namespace tag_blocks
-
 class relation_subscriber;
 class runtime_process_context;
-namespace structure {
-class runtime_item;
-class source_data;
-} // namespace structure
-
-namespace algorithms {
-template <class typeT> class runtime_holder;
-
-} // namespace algorithms
 } // namespace runtime
+
+namespace ns {
+class rx_directory_resolver;
+
+} // namespace ns
 } // namespace rx_platform
 
 
@@ -328,6 +338,13 @@ struct runtime_deinit_context
 
 
 typedef std::vector<std::pair<structure::const_value_data*, tag_blocks::binded_callback_t> > const_callbacks_type;
+struct pending_data_t
+{
+    string_type path;
+    uint32_t rate;
+    std::unique_ptr<rx_internal::sys_runtime::data_source::callback_value_point> value_pt;
+};
+typedef std::map<runtime_handle_t, pending_data_t> pending_connections_type;
 
 
 
@@ -381,7 +398,10 @@ struct runtime_start_context
 
       logic_blocks::method_data *method;
 
+      pending_connections_type pending_connections;
+
   public:
+      runtime_start_context(const runtime_start_context&) = delete;
       template<typename funcT, typename... Args>
       rx_timer_ptr create_timer_function(rx_reference_ptr anchor, funcT&& func, Args&&... args)
       {
@@ -582,7 +602,10 @@ struct runtime_init_context
 
       structure::event_data *event;
 
+      pending_connections_type pending_connections;
+
   public:
+      runtime_init_context(const runtime_init_context&) = delete;
       template<typename T>
       rx_result set_item_static(const string_type& path, T&& value)
       {

@@ -87,30 +87,9 @@ filter runtime. basic implementation of an filter runtime");
 
   protected:
 
-      rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
-
-      rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val);
-
       rx_result filter_changed ();
 
-      template<typename valT>
-      valT get_binded_as(runtime_handle_t handle, const valT& default_value) const
-      {
-          values::rx_simple_value temp_val;
-          auto result = get_value(handle, temp_val);
-          if (result)
-          {
-              return temp_val.extract_static<valT>(default_value);
-          }
-          return default_value;
-      }
-      template<typename valT>
-      void set_binded_as(runtime_handle_t handle, valT&& value)
-      {
-          values::rx_simple_value temp_val;
-          temp_val.assign_static<valT>(std::forward<valT>(value));
-          auto result = set_value(handle, std::move(temp_val));
-      }
+
   private:
 
       virtual bool supports_input () const;
@@ -253,7 +232,7 @@ mapper runtime. basic implementation of an mapper runtime");
 
       virtual void mapper_result_received (rx_result&& result, runtime_transaction_id_t id, runtime_process_context* ctx);
 
-      virtual void mapped_event_fired (rx_value&& val, runtime_process_context* ctx);
+      virtual void mapped_event_fired (rx_timed_value val, runtime_process_context* ctx);
 
       virtual void mapper_execute_result_received (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id, runtime_process_context* ctx);
 

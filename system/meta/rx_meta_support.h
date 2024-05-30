@@ -710,6 +710,52 @@ public:
 };
 
 
+
+
+
+
+class block_data_prototype 
+{
+    typedef std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > values_type;
+    typedef std::vector<std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::block_data> > > children_type;
+
+    typedef std::vector<runtime::structure::index_data> items_type;
+
+  public:
+
+      rx_result add_value (const string_type& name, rx_simple_value value);
+
+      rx_result add_empty_array_value (const string_type& name, rx_simple_value value);
+
+      rx_result add_value (const string_type& name, std::vector<values::rx_simple_value> value);
+
+      rx_result add (const string_type& name, runtime::structure::block_data&& value, rx_node_id id);
+
+      rx_result add_empty_array (const string_type& name, runtime::structure::block_data&& value, rx_node_id id);
+
+      rx_result add (const string_type& name, std::vector<runtime::structure::block_data>&& value, rx_node_id id);
+
+      runtime::structure::block_data create_block ();
+
+
+      items_type items;
+
+      values_type values;
+
+      children_type children;
+
+
+  protected:
+
+  private:
+
+      int check_member_name (const string_type& name) const;
+
+
+
+};
+
+
 } // namespace meta
 } // namespace rx_platform
 

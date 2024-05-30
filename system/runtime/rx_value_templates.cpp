@@ -44,7 +44,7 @@ void owned_complex_value::internal_commit()
 {
     if (ctx_ && handle_)// just in case both of them...
     {
-        ctx_->set_value(handle_, rx_simple_value(val_));
+        ctx_->set_value(handle_, rx_simple_value(val_), tag_blocks::binded_write_result_callback_t());
     }
 }
 rx_result owned_complex_value::bind(const string_type& path, runtime_init_context& ctx)

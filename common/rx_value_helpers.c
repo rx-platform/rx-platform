@@ -1840,5 +1840,324 @@ RX_COMMON_API int rx_get_bytes_value(const struct typed_value_type* val, size_t 
 }
 
 
+RX_COMMON_API int rx_get_sub_struct_value(size_t idx_count, const size_t* idxs, struct typed_value_type* out_val, const struct typed_value_type* val)
+{
+	if (idx_count == 0)
+	{
+		rx_copy_value(out_val, val);
+		return RX_OK;
+	}
+	else
+	{
+		if (IS_ARRAY_VALUE(val->value_type) && idxs[0] < val->value.array_value.size)
+		{
+			if (RX_SIMPLE_TYPE(val->value_type) == RX_STRUCT_TYPE)
+			{
+				if (idx_count > 1)
+				{
+					if (idxs[0] < val->value.array_value.size
+						&& idxs[1] < val->value.array_value.values[idxs[0]].struct_value.size)
+					{
+						return rx_get_sub_struct_value(idx_count - 2, idxs + 2, out_val, &val->value.array_value.values[idxs[0]].struct_value.values[idxs[1]]);
+					}
+					else
+					{
+						return RX_ERROR;
+					}
+				}
+				else
+				{
+					out_val->value_type = RX_STRUCT_TYPE;
+					assign_value(&out_val->value, &val->value.array_value.values[idxs[0]], out_val->value_type);
+					return RX_OK;
+				}
+			}
+			else
+			{
+				if (idx_count == 1)
+				{
+					out_val->value_type = RX_SIMPLE_TYPE(val->value_type);
+					assign_value(&out_val->value, &val->value, out_val->value_type);
+					return RX_OK;
+				}
+				else
+				{
+					return RX_ERROR;
+				}
+			}
+		}
+		else if (val->value_type == RX_STRUCT_TYPE
+			&& idxs[0] < val->value.struct_value.size)
+		{
+			return rx_get_sub_struct_value(idx_count - 1, idxs + 1, out_val, &val->value.struct_value.values[idxs[0]]);
+		}
+		else
+		{
+			return RX_ERROR;
+		}
+	}
+}
+
+RX_COMMON_API int rx_set_sub_struct_value(size_t idx_count, const size_t* idxs, const struct typed_value_type* in_val, struct typed_value_type* val)
+{
+	if (idx_count == 0)
+	{
+		destroy_union_value(&val->value, val->value_type);
+		rx_copy_value(val, in_val);
+		return RX_OK;
+	}
+	else
+	{
+		/*if (IS_ARRAY_VALUE(val->value_type) && idxs[0] < val->value.array_value.size)
+		{
+			if (RX_SIMPLE_TYPE(val->value_type) == RX_STRUCT_TYPE)
+			{
+				if (idx_count > 1)
+				{
+					if (idxs[0] < val->value.array_value.size
+						&& idxs[1] < val->value.array_value.values[idxs[0]].struct_value.size)
+					{
+						return rx_get_sub_struct_value(idx_count - 2, idxs + 2, out_val, &val->value.array_value.values[idxs[0]].struct_value.values[idxs[1]]);
+					}
+					else
+					{
+						return RX_ERROR;
+					}
+				}
+				else
+				{
+					val->value_type = RX_STRUCT_TYPE;
+					assign_value(&val->value, &val->value.array_value.values[idxs[0]], out_val->value_type);
+					return RX_OK;
+				}
+			}
+			else
+			{
+				if (idx_count == 1)
+				{
+					out_val->value_type = RX_SIMPLE_TYPE(val->value_type);
+					assign_value(&out_val->value, &val->value, out_val->value_type);
+					return RX_OK;
+				}
+				else
+				{
+					return RX_ERROR;
+				}
+			}
+		}
+		else*/ if (val->value_type == RX_STRUCT_TYPE
+			&& idxs[0] < val->value.struct_value.size)
+		{
+			return rx_set_sub_struct_value(idx_count - 1, idxs + 1, in_val, &val->value.struct_value.values[idxs[0]]);
+		}
+		else
+		{
+			return RX_ERROR;
+		}
+	}
+}
+RX_COMMON_API int rx_is_sub_struct(size_t idx_count, const size_t* idxs, const struct typed_value_type* val)
+{
+	if (idx_count == 0)
+	{
+		return val->value_type == RX_STRUCT_TYPE;
+	}
+	else
+	{
+		if (IS_ARRAY_VALUE(val->value_type) && idxs[0] < val->value.array_value.size)
+		{
+			if (RX_SIMPLE_TYPE(val->value_type) == RX_STRUCT_TYPE)
+			{
+				if (idx_count > 1)
+				{
+					if (idxs[0] < val->value.array_value.size
+						&& idxs[1] < val->value.array_value.values[idxs[0]].struct_value.size)
+					{
+						return rx_is_sub_struct(idx_count - 2, idxs + 2, &val->value.array_value.values[idxs[0]].struct_value.values[idxs[1]]);
+					}
+					else
+					{
+						return 0;
+					}
+				}
+				else
+				{
+					return 1;
+				}
+			}
+			else
+			{
+				
+				return 0;
+			}
+		}
+		else if (val->value_type == RX_STRUCT_TYPE
+			&& idxs[0] < val->value.struct_value.size)
+		{
+			return rx_is_sub_struct(idx_count - 1, idxs + 1, &val->value.struct_value.values[idxs[0]]);
+		}
+		else
+		{
+			return 0;
+		}
+	}
+}
+RX_COMMON_API int rx_get_sub_struct_size(size_t idx_count, const size_t* idxs, const struct typed_value_type* val, size_t* size)
+{
+
+	if (idx_count == 0)
+	{
+		if (val->value_type == RX_STRUCT_TYPE)
+		{
+			*size = val->value.struct_value.size;
+			return RX_OK;
+		}
+		else
+		{
+			return RX_ERROR;
+		}
+	}
+	else
+	{
+		if (IS_ARRAY_VALUE(val->value_type) && idxs[0] < val->value.array_value.size)
+		{
+			if (RX_SIMPLE_TYPE(val->value_type) == RX_STRUCT_TYPE)
+			{
+				if (idx_count > 1)
+				{
+					if (idxs[0] < val->value.array_value.size
+						&& idxs[1] < val->value.array_value.values[idxs[0]].struct_value.size)
+					{
+						return rx_get_sub_struct_size(idx_count - 2, idxs + 2, &val->value.array_value.values[idxs[0]].struct_value.values[idxs[1]], size);
+					}
+					else
+					{
+						return RX_ERROR;
+					}
+				}
+				else
+				{
+					*size = val->value.array_value.values[idxs[0]].struct_value.size;
+					return RX_OK;
+				}
+			}
+			else
+			{
+				return RX_ERROR;
+			}
+		}
+		else if (val->value_type == RX_STRUCT_TYPE
+			&& idxs[0] < val->value.struct_value.size)
+		{
+			return rx_get_sub_struct_size(idx_count - 1, idxs + 1, &val->value.struct_value.values[idxs[0]], size);
+		}
+		else
+		{
+			return RX_ERROR;
+		}
+	}
+}
+RX_COMMON_API int rx_is_sub_array_value(size_t idx_count, const size_t* idxs, const struct typed_value_type* val)
+{
+	if (idx_count == 0)
+	{
+		return IS_ARRAY_VALUE(val->value_type);
+	}
+	else
+	{
+		if (IS_ARRAY_VALUE(val->value_type) && idxs[0] < val->value.array_value.size)
+		{
+			if (RX_SIMPLE_TYPE(val->value_type) == RX_STRUCT_TYPE)
+			{
+				if (idx_count > 1)
+				{
+					if (idxs[0] < val->value.array_value.size
+						&& idxs[1] < val->value.array_value.values[idxs[0]].struct_value.size)
+					{
+						return rx_is_sub_array_value(idx_count - 2, idxs + 2, &val->value.array_value.values[idxs[0]].struct_value.values[idxs[1]]);
+					}
+					else
+					{
+						return 0;
+					}
+				}
+				else
+				{
+					return 1;
+				}
+			}
+			else
+			{
+				
+				return 0;
+			}
+		}
+		else if (val->value_type == RX_STRUCT_TYPE
+			&& idxs[0] < val->value.struct_value.size)
+		{
+			return rx_is_sub_array_value(idx_count - 1, idxs + 1, &val->value.struct_value.values[idxs[0]]);
+		}
+		else
+		{
+			return 0;
+		}
+	}
+}
+RX_COMMON_API int rx_get_sub_array_size(size_t idx_count, const size_t* idxs, const struct typed_value_type* val, size_t* size)
+{
+	if (idx_count == 0)
+	{
+		if (IS_ARRAY_VALUE(val->value_type))
+		{
+			*size = val->value.array_value.size;
+			return RX_OK;
+		}
+		else
+		{
+			return RX_ERROR;
+		}
+	}
+	else
+	{
+		if (IS_ARRAY_VALUE(val->value_type) && idxs[0] < val->value.array_value.size)
+		{
+			if (RX_SIMPLE_TYPE(val->value_type) == RX_STRUCT_TYPE)
+			{
+				if (idx_count > 1)
+				{
+					if (idxs[0] < val->value.array_value.size
+						&& idxs[1] < val->value.array_value.values[idxs[0]].struct_value.size)
+					{
+						return rx_get_sub_array_size(idx_count - 2, idxs + 2, &val->value.array_value.values[idxs[0]].struct_value.values[idxs[1]], size);
+					}
+					else
+					{
+						return RX_ERROR;
+					}
+				}
+				else
+				{
+					*size = val->value.array_value.values[idxs[0]].struct_value.size;
+					return RX_OK;
+				}
+			}
+			else
+			{
+				return RX_ERROR;
+			}
+		}
+		else if (val->value_type == RX_STRUCT_TYPE
+			&& idxs[0] < val->value.struct_value.size)
+		{
+			return rx_get_sub_array_size(idx_count - 1, idxs + 1, &val->value.struct_value.values[idxs[0]], size);
+		}
+		else
+		{
+			return RX_ERROR;
+		}
+	}
+}
+
+
 
 

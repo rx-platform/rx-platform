@@ -472,6 +472,15 @@
 #define RX_MQTT_SIMPLE_BROKER_MAPPER_TYPE_ID 0xc0000ce
 
 
+#define RX_MQTT_EVENT_MAPPER_BASE_TYPE_NAME "MqttEventMapperBase"
+#define RX_MQTT_EVENT_MAPPER_BASE_TYPE_ID 0xc0000f4
+
+#define RX_MQTT_SIMPLE_EVENT_MAPPER_TYPE_NAME "MqttSimpleEventMapper"
+#define RX_MQTT_SIMPLE_EVENT_MAPPER_TYPE_ID 0xc0000f5
+#define RX_MQTT_SIMPLE_BROKER_EVENT_MAPPER_TYPE_NAME "MqttSimpleBrokerEventMapper"
+#define RX_MQTT_SIMPLE_BROKER_EVENT_MAPPER_TYPE_ID 0xc0000f6
+
+
 #define RX_MQTT_SOURCE_BASE_TYPE_NAME "MqttSourceBase"
 #define RX_MQTT_SOURCE_BASE_TYPE_ID 0xc0000cc
 
@@ -480,6 +489,20 @@
 #define RX_MQTT_SIMPLE_BROKER_SOURCE_TYPE_NAME "MqttSimpleBrokerSource"
 #define RX_MQTT_SIMPLE_BROKER_SOURCE_TYPE_ID 0xc0000cf
 
+
+#define RX_MQTT_EVENT_BASE_TYPE_NAME "MqttEventBase"
+#define RX_MQTT_EVENT_BASE_TYPE_ID 0xc0000f7
+
+#define RX_MQTT_SIMPLE_EVENT_TYPE_NAME "MqttSimpleEvent"
+#define RX_MQTT_SIMPLE_EVENT_TYPE_ID 0xc0000f8
+#define RX_MQTT_SIMPLE_BROKER_EVENT_TYPE_NAME "MqttSimpleBrokerEvent"
+#define RX_MQTT_SIMPLE_BROKER_EVENT_TYPE_ID 0xc0000f9
+
+
+#define RX_NS_SYSTEM_MQTT_TCP_NAME "TcpMqttClient"
+#define RX_NS_SYSTEM_MQTT_TCP_ID 0xc0000f1
+#define RX_NS_SYSTEM_MQTT_NAME "MqttClient"
+#define RX_NS_SYSTEM_MQTT_ID 0xc0000f2
 
 #define TLS_PORT_TYPE_NAME "TlsPortType"
 #define TLS_PORT_TYPE_ID 0xc0000b6
@@ -675,6 +698,8 @@
 #define RX_TCP_RX_PORT_TYPE_NAME "SystemRxPort"
 #define RX_TCP_OPCUA_PORT_TYPE_ID 0xc000084
 #define RX_TCP_OPCUA_PORT_TYPE_NAME "SystemOpcPort"
+#define RX_TCP_MQTT_PORT_TYPE_ID 0xc0000f3
+#define RX_TCP_MQTT_PORT_TYPE_NAME "SystemMqttPort"
 
 
 #define RX_DISPLAY_RESOURCE_TYPE_ID 0xc000074
@@ -727,7 +752,7 @@
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc0000f0!!!! 
+// last is 0xc0000f9!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

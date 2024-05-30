@@ -500,13 +500,6 @@ void memory_object::memory_tick ()
 
     std::vector<rx_simple_value> buckets_data;
 
-    /*
-    dtype->complex_data.register_value_static<uint64_t>("Bucketsize", 0);
-    dtype->complex_data.register_value_static<uint64_t>("Used", 0);
-    dtype->complex_data.register_value_static<uint64_t>("Free", 0);
-    dtype->complex_data.register_value_static<uint64_t>("Capacity", 0);
-    dtype->complex_data.register_value_static<uint64_t>("MaxUsed", 0);
-    */
     int idx = 0;
     while (status[idx].bucket_size)
     {
@@ -539,14 +532,7 @@ void memory_object::memory_tick ()
         });
 
 
-    heap_status_.commit(std::move(full));
-   /* heap_total_ = total_heap;
-    heap_used_ = heap_used;
-    heap_perc_ = perc;*/
-    // printf("***JEEEE!!!!\r\n");
-    // char* a = new char[0x10000];
-     //*a = '\0';
-     //printf("****** Total:%gMB, Used:%gMB, [ %g %% ]                \r", total_mib, occupied_mib, perc);
+   //heap_status_.commit(std::move(full));
 
 }
 

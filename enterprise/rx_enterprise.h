@@ -49,7 +49,7 @@
 namespace rx_internal {
 
 namespace enterprise {
-typedef std::map<string_view_type, string_view_type> enterprise_args_t;
+typedef std::map<string_type, string_type> enterprise_args_t;
 
 
 

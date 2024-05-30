@@ -135,6 +135,11 @@ class runtime_data_model
 
   public:
 
+      rx_result fill_runtime_value (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_value& val) const;
+
+      rx_result fill_runtime_value (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_simple_value& val) const;
+
+
       elements_type elements;
 
       runtime_data_model() = default;
@@ -146,10 +151,21 @@ class runtime_data_model
 
   private:
 
+      rx_result fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_value& val, std::vector<size_t>& indexes) const;
+
+      rx_result fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_simple_value& val, std::vector<size_t>& indexes) const;
+
+
 
 };
 
 
+template<bool isArray>
+struct rt_model_wrapper
+{
+    static constexpr bool is_array = isArray;
+    runtime_data_model model;
+};
 
 
 
@@ -157,7 +173,8 @@ class runtime_data_model
 
 class runtime_model_element 
 {
-    typedef std::variant<values::rx_simple_value, runtime_data_model, std::vector<runtime_data_model> > model_value_type;
+    
+    typedef std::variant<values::rx_simple_value, rt_model_wrapper<false>, rt_model_wrapper<true> > model_value_type;
 
   public:
 
@@ -171,7 +188,7 @@ class runtime_model_element
 
       const runtime_data_model& get_complex () const;
 
-      const std::vector<runtime_data_model>& get_complex_array () const;
+      const runtime_data_model& get_complex_array () const;
 
 
       string_type name;
@@ -179,6 +196,8 @@ class runtime_model_element
       string_type description;
 
       model_value_type value;
+
+      bool is_array;
 
       runtime_model_element() = default;
       runtime_model_element(const runtime_model_element&) = default;

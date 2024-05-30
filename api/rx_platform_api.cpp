@@ -701,7 +701,7 @@ extern "C" {
 	}
 	RX_PLATFORM_API rx_result_struct rxInitCtxSetLocalValue(init_ctx_ptr ctx, const char* path, struct typed_value_type val)
 	{
-		rx_simple_value temp(val);
+		rx_simple_value temp(std::move(val));
 		runtime::runtime_start_context* self = (runtime::runtime_start_context*)ctx;
 		auto result = self->set_item(path, std::move(temp));
 		return result.move();
@@ -797,19 +797,19 @@ extern "C" {
 	RX_PLATFORM_API rx_result_struct rxCtxSetValue(runtime_ctx_ptr ctx, runtime_handle_t handle, typed_value_type val)
 	{
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
-		return self->set_value(handle, values::rx_simple_value(val)).move();
+		return self->set_value(handle, values::rx_simple_value(std::move(val)), tag_blocks::binded_write_result_callback_t()).move();
 	}
 
 	RX_PLATFORM_API rx_result_struct rxCtxWriteConnected(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id)
 	{
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
-		return self->write_connected(handle, values::rx_simple_value(va), trans_id).move();
+		return self->write_connected(handle, values::rx_simple_value(std::move(va)), trans_id).move();
 	}
 
 	RX_PLATFORM_API rx_result_struct rxCtxExecuteConnected(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id)
 	{
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
-		return self->execute_connected(handle, values::rx_simple_value(va), trans_id).move();
+		return self->execute_connected(handle, values::rx_simple_value(std::move(va)), trans_id).move();
 	}
 
 	RX_PLATFORM_API void rxCtxSetRemotePending(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val)
@@ -817,7 +817,7 @@ extern "C" {
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
 		runtime::async_data data;
 		data.handle = handle;
-		data.value = values::rx_simple_value(val);
+		data.value = values::rx_simple_value(std::move(val));
 		self->async_value_pending(std::move(data));
 
 	}
@@ -826,7 +826,7 @@ extern "C" {
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
 		runtime::async_data data;
 		data.handle = handle;
-		data.value = values::rx_simple_value(val);
+		data.value = values::rx_simple_value(std::move(val));
 		self->async_value_pending(std::move(data));
 
 	}
@@ -863,7 +863,7 @@ extern "C" {
 	}
 	RX_PLATFORM_API rx_result_struct rxStartCtxSetLocalValue(start_ctx_ptr ctx, const char* path, struct typed_value_type val)
 	{
-		rx_simple_value temp(val);
+		rx_simple_value temp(std::move(val));
 		runtime::runtime_start_context* self = (runtime::runtime_start_context*)ctx;
 		auto result = self->set_item(path, std::move(temp));
 		return result.move();

@@ -48,6 +48,7 @@ rxRegisterFilterRuntime_t api_reg_filter_func;
 rxRegisterVariableRuntime_t api_reg_variable_func;
 rxRegisterStructRuntime_t api_reg_struct_func;
 rxRegisterMethodRuntime_t api_reg_method_func;
+rxRegisterEventRuntime_t api_reg_event_func;
 rxRegisterProgramRuntime_t api_reg_program_func;
 rxRegisterDisplayRuntime_t api_reg_display_func;
 
@@ -274,6 +275,83 @@ const values::rx_simple_value& local_complex_value::value() const
     return value_;
 }
 
+
+template <bool useInit>
+void owned_complex_value<useInit>::internal_commit()
+{
+    if (ctx_.is_binded() && handle_)// just in case both of them...
+    {
+        ctx_.set_value(handle_, rx_simple_value(value_));
+    }
+}
+template <bool useInit>
+rx_result owned_complex_value<useInit>::bind(const string_type& path, rx_init_context& ctx)
+{
+    callback_data_.target = this;
+    callback_data_.callback = [](void* target, const struct full_value_type* val)
+        {
+            owned_complex_value* self = (owned_complex_value*)target;
+            rx_simple_value local_val(&val->value);
+            if constexpr (useInit)
+            {
+                self->value_ = local_val;
+            }
+        };
+    runtime_ctx_ptr rt_ctx = 0;
+    auto result = ctx.bind_item(path.c_str(), &rt_ctx, &callback_data_);
+    if (result)
+    {
+            ctx_.bind(rt_ctx);
+            handle_ = result.move_value();
+            if constexpr (!useInit)
+            {
+                if (handle_)
+                    internal_commit();
+            }
+            else
+            {
+                auto res = ctx_.get_value(handle_, value_);
+                return res;
+            }
+            return true;
+    }
+    else
+    {
+        return result.errors();
+    }
+}
+template <bool useInit>
+owned_complex_value<useInit>::owned_complex_value(const values::rx_simple_value& right)
+{
+    value_ = right;
+}
+template <bool useInit>
+owned_complex_value<useInit>::owned_complex_value(values::rx_simple_value&& right)
+{
+    value_ = std::move(right);
+}
+template <bool useInit>
+owned_complex_value<useInit>& owned_complex_value<useInit>::operator=(values::rx_simple_value right)
+{
+    if (ctx_.is_binded() && handle_)// just in case both of them...
+    {
+        if (value_ != right)
+        {
+            value_ = right;
+            internal_commit();
+        }
+    }
+    return *this;
+}
+template <bool useInit>
+const values::rx_simple_value& owned_complex_value<useInit>::value() const
+{
+    return value_;
+}
+
+template struct owned_complex_value<true>;
+template struct owned_complex_value<false>;
+
 rx_result register_source_runtime(const rx_node_id& id, rx_source_constructor_t construct_func)
 {
     RX_ASSERT(api_reg_source_func != nullptr);
@@ -318,6 +396,12 @@ rx_result register_method_runtime(const rx_node_id& id, rx_method_constructor_t 
 {
     RX_ASSERT(api_reg_method_func != nullptr);
     auto ret = api_reg_method_func(get_rx_plugin(), id.c_ptr(), construct_func);
+    return ret;
+}
+rx_result register_event_runtime(const rx_node_id& id, rx_event_constructor_t construct_func)
+{
+    RX_ASSERT(api_reg_event_func != nullptr);
+    auto ret = api_reg_event_func(get_rx_plugin(), id.c_ptr(), construct_func);
     return ret;
 }
 rx_result register_program_runtime(const rx_node_id& id, rx_program_constructor_t construct_func)
@@ -477,7 +561,7 @@ rx_result rx_init_context::get_local_value (const string_type& path, values::rx_
     rx_result ret = api_init_get_local_value(impl_, path.c_str(), &temp);
     if (ret)
     {
-        val = rx_simple_value(temp);
+        val = rx_simple_value(std::move(temp));
     }
     return ret;
 }
@@ -640,7 +724,7 @@ rx_result rx_start_context::get_local_value (const string_type& path, values::rx
     rx_result ret = api_get_local_value(impl_, path.c_str(), &temp);
     if (ret)
     {
-        val = rx_simple_value(temp);
+        val = rx_simple_value(std::move(temp));
     }
     return ret;
 }
@@ -731,7 +815,7 @@ rx_result rx_process_context::get_value (runtime_handle_t handle, values::rx_sim
     typed_value_type temp_val;
     rx_result result= api_get_value_func(impl_, handle, &temp_val);
     if (result)
-        val = temp_val;
+        val = std::move(temp_val);
     return result;
 }
 

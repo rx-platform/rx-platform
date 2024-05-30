@@ -95,7 +95,7 @@ extern "C"
     {
         rx_platform_api::rx_process_context pctx;
         pctx.bind(ctx);
-        return self->source_write(id, test != 0, identity, rx_simple_value(val), pctx).move();
+        return self->source_write(id, test != 0, identity, rx_simple_value(std::move(val)), pctx).move();
     }
 
 
@@ -147,7 +147,7 @@ extern "C"
     {
         rx_platform_api::rx_process_context pctx;
         pctx.bind(ctx);
-        self->mapped_value_changed(val, pctx);
+        self->mapped_value_changed(std::move(val), pctx);
     }
     void c_mapper_result_received(rx_platform_api::rx_mapper* self, rx_result_struct result, runtime_transaction_id_t id, runtime_ctx_ptr ctx)
     {
@@ -159,7 +159,7 @@ extern "C"
     {
         rx_platform_api::rx_process_context pctx;
         pctx.bind(ctx);
-        self->mapper_execute_result_received(result, out_val, id, pctx);
+        self->mapper_execute_result_received(result, std::move(out_val), id, pctx);
     }
 
 

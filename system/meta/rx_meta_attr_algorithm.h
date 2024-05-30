@@ -215,11 +215,11 @@ class data_blocks_algorithm
 
       static bool check_data_attribute (def_blocks::data_attribute& whose, type_check_context& ctx);
 
-      static rx_result construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, construct_context& ctx);
+      static rx_result construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, rx_node_id& id, construct_context& ctx);
 
       static rx_result check_data_reference (const rx_item_reference& ref, ns::rx_directory_resolver& dirs);
 
-      static rx_result construct_data_block (const rx_item_reference& whose, const string_type& name, runtime::structure::block_data& data, construct_context& ctx);
+      static rx_result construct_data_block (const rx_item_reference& whose, const string_type& name, runtime::structure::block_data& data, rx_node_id& id, construct_context& ctx);
 
 
   protected:

@@ -117,32 +117,6 @@ rx_result filter_runtime::filter_output (rx_simple_value& val)
     return true;
 }
 
-rx_result filter_runtime::get_value (runtime_handle_t handle, values::rx_simple_value& val) const
-{
-    if (container_)
-    {
-        return container_->get_value(handle, val);
-    }
-    else
-    {
-        RX_ASSERT(false);
-        return "Context not binded!";
-    }
-}
-
-rx_result filter_runtime::set_value (runtime_handle_t handle, values::rx_simple_value&& val)
-{
-    if (container_)
-    {
-        return container_->set_value(handle, std::move(val));
-    }
-    else
-    {
-        RX_ASSERT(false);
-        return "Context not binded!";
-    }
-}
-
 rx_result filter_runtime::filter_changed ()
 {
     if (container_)
@@ -293,7 +267,7 @@ void mapper_runtime::mapper_result_received (rx_result&& result, runtime_transac
 {
 }
 
-void mapper_runtime::mapped_event_fired (rx_value&& val, runtime_process_context* ctx)
+void mapper_runtime::mapped_event_fired (rx_timed_value val, runtime_process_context* ctx)
 {
 }
 

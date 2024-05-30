@@ -277,7 +277,7 @@ void runtime_scan_algorithms<typeT>::process_from_remotes (typename typeT::RType
     while (!async_values->empty())
     {
         for (auto& one : *async_values)
-            ctx.set_value(one.handle, std::move(one.value));
+            ctx.set_value(one.handle, std::move(one.value), std::move(one.callback));
         async_values = &ctx.get_async_values();
     }
 }
@@ -414,12 +414,11 @@ void runtime_scan_algorithms<typeT>::process_events (typename typeT::RType& whos
     auto events = &ctx.get_events_for_process();
     while (!events->empty())
     {
-        // no event processing yet!!!!
-        // don't know how?
-        RX_ASSERT(false);
-        //for (auto& one : *events)
-        //    one->process_runtime(&ctx);
-
+        // event processing!!!!
+        for (auto& one : *events)
+        {
+            one.whose->process_runtime(&ctx, std::move(one.data));
+        }
         events = &ctx.get_events_for_process();
     }
 }

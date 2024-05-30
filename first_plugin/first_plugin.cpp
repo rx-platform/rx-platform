@@ -159,6 +159,15 @@ static const uint8_t c_def_mojDataType[] = {
 };
 
 
+static const uint8_t c_def_mojEvent[] = {
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x2f, 0x73, 0x79, 0x73, 0x2f, 0x74, 0x79, 0x70, 0x65,
+	0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x44, 0x61, 0x74, 0x61, 0x54, 0x79, 0x70, 0x65, 0x42,
+	0x61, 0x73, 0x65, 0x00, 0x00, 0x00, 0x00
+};
+
+
+
 
 
 // Class first_filter 
@@ -302,6 +311,9 @@ rx_result first_plugin::init_plugin ()
 	result = rx_platform_api::register_mapper_runtime<first_mapper>(rx_node_id(19, 8));
 	if (!result)
 		return result;
+	result = rx_platform_api::register_event_runtime<first_event>(rx_node_id(35, 8));
+	if (!result)
+		return result;
 	result = rx_platform_api::register_filter_runtime<first_filter>(rx_node_id(18, 8));
 	if (!result)
 		return result;
@@ -442,6 +454,11 @@ rx_result first_plugin::build_plugin ()
 	if (!result)
 		return result;
 
+	result = rx_platform_api::register_item_binary_with_code<first_event>("mojEvent", "subFolder"
+		, rx_node_id(35, 8), RX_CLASS_EVENT_BASE_ID, c_def_mojEvent, sizeof(c_def_mojEvent), 0x20005);
+	if (!result)
+		return result;
+
 	return result;
 }
 
@@ -543,7 +560,8 @@ void first_source::timer_tick ()
 // Class first_object 
 
 first_object::first_object()
-      : timer_(0)
+      : timer_(0),
+        const_value_("test1")
 {
 }
 
@@ -557,6 +575,11 @@ first_object::~first_object()
 rx_result first_object::initialize_object (rx_platform_api::rx_init_context& ctx)
 {
 	RX_PLUGIN_LOG_DEBUG("first_object", 100, _rx_func_);
+	auto result = const_value_.bind("_Name", ctx, [](const string_type& val)
+		{
+		//	RX_ASSERT(false);
+		});
+	RX_ASSERT(result);
 	return true;
 }
 
@@ -882,6 +905,61 @@ rx_result first_data_type::stop_data_type ()
 {
 	RX_PLUGIN_LOG_DEBUG("first_data_type", 100, _rx_func_);
 	return true;
+}
+
+
+// Class first_event 
+
+first_event::first_event()
+      : timer_(0)
+{
+}
+
+
+first_event::~first_event()
+{
+}
+
+
+
+rx_result first_event::initialize_event (rx_init_context& ctx)
+{
+	RX_PLUGIN_LOG_DEBUG("first_event", 100, _rx_func_);
+	return true;
+}
+
+rx_result first_event::start_event (rx_start_context& ctx)
+{
+	RX_PLUGIN_LOG_DEBUG("first_event", 1000, _rx_func_);
+	timer_ = ctx.create_calc_timer([this]() {timer_tick(); }, 1000);
+	return true;
+}
+
+rx_result first_event::stop_event ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_event", 100, _rx_func_);
+	if (timer_)
+	{
+		destroy_timer(timer_);
+		timer_ = 0;
+	}
+	return true;
+}
+
+rx_result first_event::deinitialize_event ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_event", 100, _rx_func_);
+	return true;
+}
+
+void first_event::timer_tick ()
+{
+	RX_PLUGIN_LOG_DEBUG("first_mapper", 100, _rx_func_);
+	
+	rx_timed_value timed;
+	timed.assign(rx_create_value_static(78.9, 66));
+	timed.set_time(rx_time::now());
+	event_fired(99, false, 0, std::move(timed));
 }
 
 

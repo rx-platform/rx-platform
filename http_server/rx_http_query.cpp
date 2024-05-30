@@ -146,6 +146,7 @@ enterprise_handler_callback::~enterprise_handler_callback()
 
 void enterprise_handler_callback::read_complete (uint64_t trans_id, uint32_t result, string_view_type cont_type, string_view_type data)
 {
+
 	request_complete(trans_id, result, cont_type, data);
 }
 

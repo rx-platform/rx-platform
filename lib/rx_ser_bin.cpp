@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -40,7 +40,7 @@ namespace rx {
 
 namespace serialization {
 
-// Parameterized Class rx::serialization::binary_reader 
+// Parameterized Class rx::serialization::binary_reader
 
 template <typename allocT, bool swap_bytes>
 binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer, int version)
@@ -461,28 +461,16 @@ bool binary_reader<allocT,swap_bytes>::read_data_type (const char* name, data::r
                     if (!read_data_type("val", val))
                         return false;
 
-                    one.value = std::move(val);
+                    one.value = data::rt_model_wrapper<false>{ std::move(val) };
                 }
                 break;
             case 2:
                 {
-                    std::vector<data::runtime_data_model> array_val;
-
-                    if (!start_array("val"))
+                    data::runtime_data_model val;
+                    if (!read_data_type("val", val))
                         return false;
 
-                    while (!array_end())
-                    {
-
-                        data::runtime_data_model val;
-                        if (!read_data_type("val", val))
-                            return false;
-
-                        array_val.push_back(std::move(val));
-
-                    }
-
-                    one.value = std::move(array_val);
+                    one.value = data::rt_model_wrapper<true>{ std::move(val) };
                 }
                 break;
             default:
@@ -575,7 +563,7 @@ string_type binary_reader<allocT,swap_bytes>::get_error () const
 }
 
 
-// Parameterized Class rx::serialization::binary_writer 
+// Parameterized Class rx::serialization::binary_writer
 
 template <typename allocT, bool swap_bytes>
 binary_writer<allocT,swap_bytes>::binary_writer (buffer_type& buffer, int version)
@@ -1010,23 +998,13 @@ bool binary_writer<allocT,swap_bytes>::write_data_type (const char* name, const 
                 break;
             case 1:
                 {
-                    if (!write_data_type("val", std::get<data::runtime_data_model>(one.value)))
+                    if (!write_data_type("val", std::get<data::rt_model_wrapper<false> >(one.value).model))
                         return false;
                 }
                 break;
             case 2:
                 {
-                    const auto& arr = std::get<std::vector<data::runtime_data_model> >(one.value);
-                    if (!start_array("val", arr.size()))
-                        return false;
-
-                    for (const auto& one : arr)
-                    {
-                        if (!write_data_type("val", one))
-                            return false;
-
-                    }
-                    if (!end_array())
+                    if (!write_data_type("val", std::get<data::rt_model_wrapper<true> >(one.value).model))
                         return false;
                 }
                 break;

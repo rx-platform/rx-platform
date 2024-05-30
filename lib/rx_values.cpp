@@ -41,10 +41,6 @@
 
 
 namespace rx {
-void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, values::rx_simple_value t)
-{
-	vals.push_back(std::move(t));
-}
 bool deserialize_value(base_meta_reader& reader, typed_value_type& val, const char* name)
 {
 	rx_value_t type;
@@ -2036,6 +2032,13 @@ std::vector<rx_uuid_t> extract_value(const typed_value_type& from, const std::ve
 }
 
 
+
+bool assign_value(typed_value_type& from, rx_simple_value value)
+{
+	typed_value_type tmp = value.move();
+	rx_move_value(&from, &tmp);
+	return true;
+}
 bool assign_value(typed_value_type& from, bool value)
 {
 	return rx_init_bool_value(&from, value ? 1 : 0);
@@ -2107,6 +2110,11 @@ bool assign_value(typed_value_type& from, rx_time value)
 bool assign_value(typed_value_type& from, const rx_uuid_t& value)
 {
 	return rx_init_uuid_value(&from, &value);
+
+}
+bool assign_value(typed_value_type& from, const rx_node_id& value)
+{
+	return rx_init_node_id_value(&from, value.c_ptr());
 
 }
 bool assign_value(typed_value_type& from, const byte_string& value)
@@ -2680,7 +2688,7 @@ bool rx_value::compare (const rx_value& right, time_compare_type time_compare) c
 	}
 }
 
-rx_simple_value rx_value::to_simple () const
+rx::values::rx_simple_value rx_value::to_simple () const
 {
     return rx_simple_value(&data_.value);
 }
@@ -2785,7 +2793,7 @@ uint32_t rx_value::get_origin () const
 	return data_.origin & RX_ORIGIN_MASK;
 }
 
-rx_simple_value rx_value::operator [] (int index) const
+rx::values::rx_simple_value rx_value::operator [] (int index) const
 {
 	if (is_array())
 	{
@@ -2859,6 +2867,50 @@ size_t rx_value::struct_size () const
 		throw std::invalid_argument("Value is not an array");
 }
 
+bool rx_value::set_struct_value (rx::values::rx_simple_value rx_val, const std::vector<size_t>& indexes)
+{
+	if (indexes.empty())
+	{
+		*this = std::move(rx_val);
+		return true;
+	}
+	else
+	{
+		auto res = rx_set_sub_struct_value(indexes.size(), &indexes[0], &rx_val.data_, &data_.value);
+		return res == RX_OK;
+	}
+}
+
+bool rx_value::get_struct_value (rx_simple_value& rx_val, const std::vector<size_t>& indexes) const
+{
+	if (indexes.empty())
+	{
+		rx_val = to_simple();
+		return true;
+	}
+	else
+	{
+		auto res = rx_get_sub_struct_value(indexes.size(), &indexes[0], &rx_val.data_, &data_.value);
+		return res == RX_OK;
+	}
+}
+
+size_t rx_value::array_size (const std::vector<size_t>& indexes) const
+{
+	size_t sz = 0;
+	auto ret = rx_get_sub_array_size(indexes.size(), &indexes[0], &data_.value, &sz);
+
+	return ret == RX_OK ? sz : npos;
+}
+
+size_t rx_value::struct_size (const std::vector<size_t>& indexes) const
+{
+	size_t sz = 0;
+	auto ret = rx_get_sub_struct_size(indexes.size(), &indexes[0], &data_.value, &sz);
+
+	return ret == RX_OK ? sz : npos;
+}
+
 
 rx_value::rx_value()
 {
@@ -2866,7 +2918,7 @@ rx_value::rx_value()
 	data_.origin = RX_DEFAULT_ORIGIN;
 	data_.quality = RX_DEFAULT_VALUE_QUALITY;
 }
-rx_value::rx_value(full_value_type right) noexcept
+rx_value::rx_value(full_value_type&& right) noexcept
 {
 	rx_move_value(&data_.value, &right.value);
 	data_.origin = right.origin;
@@ -3236,7 +3288,7 @@ byte_string rx_simple_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx_simple_value rx_simple_value::operator [] (int index) const
+rx::values::rx_simple_value rx_simple_value::operator [] (int index) const
 {
 	if (is_array())
 	{
@@ -3316,11 +3368,55 @@ size_t rx_simple_value::struct_size () const
 		throw std::invalid_argument("Value is not an array");
 }
 
+bool rx_simple_value::set_struct_value (rx::values::rx_simple_value rx_val, const std::vector<size_t>& indexes)
+{
+	if (indexes.empty())
+	{
+		*this = std::move(rx_val);
+		return true;
+	}
+	else
+	{
+		auto res = rx_set_sub_struct_value(indexes.size(), &indexes[0], &rx_val.data_, &data_);
+		return res == RX_OK;
+	}
+}
+
+bool rx_simple_value::get_struct_value (rx_simple_value& rx_val, const std::vector<size_t>& indexes) const
+{
+	if (indexes.empty())
+	{
+		rx_val = *this;
+		return true;
+	}
+	else
+	{
+		auto res = rx_get_sub_struct_value(indexes.size(), &indexes[0], &rx_val.data_, &data_);
+		return res == RX_OK;
+	}
+}
+
+size_t rx_simple_value::array_size (const std::vector<size_t>& indexes) const
+{
+	size_t sz = 0;
+	auto ret = rx_get_sub_array_size(indexes.size(), &indexes[0], &data_, &sz);
+
+	return ret == RX_OK ? sz : npos;
+}
+
+size_t rx_simple_value::struct_size (const std::vector<size_t>& indexes) const
+{
+	size_t sz = 0;
+	auto ret = rx_get_sub_struct_size(indexes.size(), &indexes[0], &data_, &sz);
+
+	return ret == RX_OK ? sz : npos;
+}
+
 rx_simple_value::rx_simple_value()
 {
 	rx_init_null_value(&data_);
 }
-rx_simple_value::rx_simple_value(typed_value_type val) noexcept
+rx_simple_value::rx_simple_value(typed_value_type&& val) noexcept
 {
 	rx_move_value(&data_, &val);
 }
@@ -3637,7 +3733,7 @@ bool rx_timed_value::compare (const rx_timed_value& right, time_compare_type tim
 	}
 }
 
-rx_simple_value rx_timed_value::to_simple () const
+rx::values::rx_simple_value rx_timed_value::to_simple () const
 {
 	return rx_simple_value(&data_.value);
 }
@@ -3660,7 +3756,7 @@ byte_string rx_timed_value::get_byte_string (size_t idx) const
 	}
 }
 
-rx_simple_value rx_timed_value::operator [] (int index) const
+rx::values::rx_simple_value rx_timed_value::operator [] (int index) const
 {
 	/*if (is_array())
 	{
@@ -3719,6 +3815,50 @@ size_t rx_timed_value::struct_size () const
 		throw std::invalid_argument("Value is not an array");
 }
 
+bool rx_timed_value::set_struct_value (rx::values::rx_simple_value rx_val, const std::vector<size_t>& indexes)
+{
+	if (indexes.empty())
+	{
+		*this = std::move(rx_val);
+		return true;
+	}
+	else
+	{
+		auto res = rx_set_sub_struct_value(indexes.size(), &indexes[0], &rx_val.data_, &data_.value);
+		return res == RX_OK;
+	}
+}
+
+bool rx_timed_value::get_struct_value (rx_simple_value& rx_val, const std::vector<size_t>& indexes) const
+{
+	if (indexes.empty())
+	{
+		rx_val = to_simple();
+		return true;
+	}
+	else
+	{
+		auto res = rx_get_sub_struct_value(indexes.size(), &indexes[0], &rx_val.data_, &data_.value);
+		return res == RX_OK;
+	}
+}
+
+size_t rx_timed_value::array_size (const std::vector<size_t>& indexes) const
+{
+	size_t sz = 0;
+	auto ret = rx_get_sub_array_size(indexes.size(), &indexes[0], &data_.value, &sz);
+
+	return ret == RX_OK ? sz : npos;
+}
+
+size_t rx_timed_value::struct_size (const std::vector<size_t>& indexes) const
+{
+	size_t sz = 0;
+	auto ret = rx_get_sub_struct_size(indexes.size(), &indexes[0], &data_.value, &sz);
+
+	return ret == RX_OK ? sz : npos;
+}
+
 
 rx_timed_value::rx_timed_value()
 {
@@ -3726,7 +3866,7 @@ rx_timed_value::rx_timed_value()
 	data_.time = rx_time::null_time().c_data();
 }
 
-rx_timed_value::rx_timed_value(timed_value_type right) noexcept
+rx_timed_value::rx_timed_value(timed_value_type&& right) noexcept
 {
 	rx_move_value(&data_.value, &right.value);
 	data_.time = right.time;

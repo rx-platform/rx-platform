@@ -325,6 +325,9 @@ class mqtt_json_mapper : public mqtt_simple_mapper
   private:
 
 
+      data::runtime_data_model model_;
+
+
 };
 
 
@@ -399,6 +402,80 @@ class mqtt_json_source : public mqtt_simple_source
 
 
       string_type value_path_;
+
+
+};
+
+
+
+
+
+
+class mqtt_simple_event_mapper : public mqtt_simple_mapper_base  
+{
+    DECLARE_REFERENCE_PTR(mqtt_simple_event_mapper);
+
+    typedef std::map<string_type, mqtt_common::mqtt_publish_data> unpublished_cahce_type;
+
+  public:
+      mqtt_simple_event_mapper();
+
+      ~mqtt_simple_event_mapper();
+
+
+      rx_result initialize_mapper (runtime::runtime_init_context& ctx);
+
+      void port_connected (port_ptr_t port);
+
+      void port_disconnected (port_ptr_t port);
+
+      virtual void update_publish_from_value (rx_timed_value val, mqtt_common::mqtt_publish_data& data, string_type& topic_add) = 0;
+
+
+  protected:
+
+  private:
+
+      virtual void mapped_event_fired (rx_timed_value val, runtime_process_context* ctx);
+
+
+
+      string_type topic_;
+
+      mqtt_qos_level qos_;
+
+      bool retain_;
+
+      unpublished_cahce_type unpublished_;
+
+
+};
+
+
+
+
+
+
+class mqtt_json_event_mapper : public mqtt_simple_event_mapper  
+{
+
+  public:
+      mqtt_json_event_mapper();
+
+      ~mqtt_json_event_mapper();
+
+
+      rx_result initialize_mapper (runtime::runtime_init_context& ctx);
+
+      void update_publish_from_value (rx_timed_value val, mqtt_common::mqtt_publish_data& data, string_type& topic_add);
+
+
+  protected:
+
+  private:
+
+
+      data::runtime_data_model model_;
 
 
 };

@@ -113,7 +113,7 @@ class port_buffers
       size_t buffer_discard_size;
 
       async_owned_value<uint32_t> buffer_count;
-
+      
       async_owned_value<int64_t> discard_buffer_count;
 
 
@@ -188,7 +188,9 @@ class port_passive_map
       bool empty () const;
 
 
-      async_owned_value<bool> stack_binded;
+      async_owned_value<bool> stack_binded_up;
+
+      async_owned_value<bool> stack_binded_down;
 
       rx_port_ptr bind_port;
 

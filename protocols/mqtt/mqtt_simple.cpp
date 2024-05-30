@@ -77,18 +77,34 @@ rx_result mqtt_json_mapper::initialize_mapper (runtime::runtime_init_context& ct
 	if (!result)
 		return result;
 
+
+	model_ = get_data_type();
+
 	return true;
 }
 
 void mqtt_json_mapper::update_publish_from_value (rx_value&& val, mqtt_common::mqtt_publish_data& data)
 {
 	data::runtime_values_data rt;
-	rt.add_value("val", val.to_simple());
 
-	rx_simple_value vlsv;
-	string_type very_large_string(32000, 'F');
-	vlsv.assign_static(very_large_string);
-	rt.add_value("vls", std::move(vlsv));
+	if (model_.elements.empty())
+	{
+		rt.add_value("val", val.to_simple());
+
+		rx_simple_value vlsv;
+		string_type very_large_string(32000, 'F');
+		vlsv.assign_static(very_large_string);
+		rt.add_value("vls", std::move(vlsv));
+	}
+	else
+	{
+		auto result = model_.fill_runtime_value(rt, model_, val);
+		if (!result)
+		{
+			MQTT_LOG_WARNING("mqtt_json_mapper", 200, "Mapped value in wrong format!"s + result.errors_line());
+			return;
+		}
+	}
 
 	data.content_type = "application/json";
 	data.utf_string = true;
@@ -894,7 +910,6 @@ rx_result mqtt_simple_mapper::initialize_mapper (runtime::runtime_init_context& 
 	auto result = mqtt_simple_mapper_base::initialize_mapper(ctx);
 	if (!result)
 		return result;
-
 	topic_ = ctx.get_item_static(".Topic", ""s);
 	uint8_t temp_byte = ctx.get_item_static<uint8_t>(".QoS", 0);
 	if (temp_byte > 2)
@@ -922,7 +937,7 @@ void mqtt_simple_mapper::mapped_value_changed (rx_value&& val, runtime::runtime_
 		data.retain = retain_;
 		data.qos = qos_;
 		data.topic = topic_;
-		if(my_port_)
+		if (my_port_)
 			my_port_->publish(std::move(data));
 	}
 }
@@ -975,6 +990,144 @@ void mqtt_simple_source::port_disconnected (port_ptr_t port)
 	val.set_quality(RX_BAD_QUALITY_CONFIG_ERROR);
 	val.set_time(rx_time::now());
 	source_value_changed(std::move(val));
+}
+
+
+// Class protocols::mqtt::mqtt_simple::mqtt_simple_event_mapper 
+
+mqtt_simple_event_mapper::mqtt_simple_event_mapper()
+      : qos_(mqtt_qos_level::Level0),
+        retain_(true)
+{
+}
+
+
+mqtt_simple_event_mapper::~mqtt_simple_event_mapper()
+{
+}
+
+
+
+rx_result mqtt_simple_event_mapper::initialize_mapper (runtime::runtime_init_context& ctx)
+{
+	auto result = mqtt_simple_mapper_base::initialize_mapper(ctx);
+	if (!result)
+		return result;
+	topic_ = ctx.get_item_static(".Topic", ""s);
+	uint8_t temp_byte = ctx.get_item_static<uint8_t>(".QoS", 0);
+	if (temp_byte > 2)
+		return "Invalid QoS parameter for MQTT mapper";
+	qos_ = (mqtt_qos_level)temp_byte;
+	retain_ = ctx.get_item_static(".Retain", false);
+
+	return true;
+}
+
+void mqtt_simple_event_mapper::port_connected (port_ptr_t port)
+{
+	for (auto& one : unpublished_)
+	{
+		port->publish(std::move(one.second));
+	}
+	unpublished_.clear();
+}
+
+void mqtt_simple_event_mapper::port_disconnected (port_ptr_t port)
+{
+}
+
+void mqtt_simple_event_mapper::mapped_event_fired (rx_timed_value val, runtime_process_context* ctx)
+{
+	mqtt_publish_data data;
+	string_type topic_add;
+	update_publish_from_value(std::move(val), data, topic_add);
+	if (!data.data.empty())
+	{
+		data.retain = retain_;
+		data.qos = qos_;
+		if(topic_add.empty())
+			data.topic = topic_;
+		else
+			data.topic = topic_ + "/" + topic_add;
+		
+		if (my_port_)
+			my_port_->publish(std::move(data));
+		else
+			unpublished_[data.topic] = std::move(data);
+	}
+}
+
+
+// Class protocols::mqtt::mqtt_simple::mqtt_json_event_mapper 
+
+mqtt_json_event_mapper::mqtt_json_event_mapper()
+{
+}
+
+
+mqtt_json_event_mapper::~mqtt_json_event_mapper()
+{
+}
+
+
+
+rx_result mqtt_json_event_mapper::initialize_mapper (runtime::runtime_init_context& ctx)
+{
+	auto result = mqtt_simple_event_mapper::initialize_mapper(ctx);
+	if (!result)
+		return result;
+
+
+	model_ = get_event_arguments();
+
+	return true;
+}
+
+void mqtt_json_event_mapper::update_publish_from_value (rx_timed_value val, mqtt_common::mqtt_publish_data& data, string_type& topic_add)
+{
+	data::runtime_values_data rt;
+
+	if (model_.elements.empty())
+	{
+		rt.add_value("val", val.to_simple());
+
+		rx_simple_value vlsv;
+		string_type very_large_string(32000, 'F');
+		vlsv.assign_static(very_large_string);
+		rt.add_value("vls", std::move(vlsv));
+	}
+	else
+	{
+		auto result = model_.fill_runtime_value(rt, model_, val);
+		if (!result)
+		{
+			MQTT_LOG_WARNING("mqtt_json_mapper", 200, "Mapped event in wrong format!"s + result.errors_line());
+			return;
+		}
+	}
+
+	data.content_type = "application/json";
+	data.utf_string = true;
+
+	serialization::json_writer writer;
+
+	writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+	auto result = writer.write_init_values(nullptr, rt);
+	if (result)
+	{
+		result = writer.write_footer();
+		if (result)
+		{
+			topic_add = rt.get_value_static("Identity", ""s);
+			string_type expr = writer.get_string();
+			if (!expr.empty())
+			{
+				data.data.resize(expr.size());
+				memcpy(&data.data[0], &expr[0], expr.size());
+			}
+
+		}
+	}
 }
 
 

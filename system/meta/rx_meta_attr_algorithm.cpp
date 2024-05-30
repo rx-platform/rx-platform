@@ -713,7 +713,41 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::construct_complex
 	{
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
+		temp.value().filtered_value_.value.set_time(ctx.now);
+		temp.value().filtered_value_.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
 		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
+	}
+	else
+	{
+		return temp.errors();
+	}
+}
+
+template<>
+rx_result meta_blocks_algorithm<def_blocks::event_attribute>::construct_complex_attribute(const def_blocks::event_attribute& whose, construct_context& ctx)
+{
+	rx_node_id target;
+	auto resolve_result = rx_internal::model::algorithms::resolve_simple_type_reference(whose.target_, ctx.get_directories(), tl::type2type<def_blocks::event_attribute::TargetType>());
+	if (!resolve_result)
+	{
+		rx_result ret(resolve_result.errors());
+		ret.register_error("Unable to resolve attribute");
+		return ret;
+	}
+	target = resolve_result.value();
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::event_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+	if (temp)
+	{
+		if (!whose.arguments_.is_null())
+		{
+			rx_node_id id;
+			auto result = data_blocks_algorithm::construct_data_block(whose.arguments_, "Args", temp.value().arguments, id, ctx);
+			if (!result)
+			{
+				result.register_error("Unable to resolve inputs data type"s + whose.arguments_.to_string());
+			}
+		}
+		return ctx.runtime_data().add(whose.name_, temp.move_value(), target);
 	}
 	else
 	{
@@ -1874,9 +1908,9 @@ bool data_blocks_algorithm::check_data_attribute (def_blocks::data_attribute& wh
 		return ctx.is_check_ok();
 }
 
-rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, construct_context& ctx)
+rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, rx_node_id& id, construct_context& ctx)
 {
-	return construct_data_block(whose.target_, whose.name_, data, ctx);
+	return construct_data_block(whose.target_, whose.name_, data, id, ctx);
 }
 
 rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& ref, ns::rx_directory_resolver& dirs)
@@ -1894,9 +1928,8 @@ rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& 
 		return true;
 }
 
-rx_result data_blocks_algorithm::construct_data_block (const rx_item_reference& whose, const string_type& name, runtime::structure::block_data& data, construct_context& ctx)
+rx_result data_blocks_algorithm::construct_data_block (const rx_item_reference& whose, const string_type& name, runtime::structure::block_data& data, rx_node_id& id, construct_context& ctx)
 {
-	rx_node_id target;
 	auto resolve_result = rx_internal::model::algorithms::resolve_data_type_reference(whose, ctx.get_directories());
 	if (!resolve_result)
 	{
@@ -1904,8 +1937,8 @@ rx_result data_blocks_algorithm::construct_data_block (const rx_item_reference& 
 		ret.register_error("Unable to resolve attribute");
 		return ret;
 	}
-	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, name, ctx, ctx.get_directories());
+	id = resolve_result.value();
+	auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(id, name, ctx, ctx.get_directories());
 	if (temp)
 	{
 		data = std::move(temp.value().runtime);
@@ -2148,17 +2181,18 @@ rx_result method_blocks_algorithm::construct_complex_attribute (const def_blocks
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::method_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
-
 		if (!whose.inputs_.is_null())
 		{
-			auto result = data_blocks_algorithm::construct_data_block(whose.inputs_, "In", temp.value().inputs, ctx);
+			rx_node_id id;
+			auto result = data_blocks_algorithm::construct_data_block(whose.inputs_, "In", temp.value().inputs, id, ctx);
 			if (!result)
 			{
 				result.register_error("Unable to resolve inputs data type"s + whose.inputs_.to_string());				
 			}
 		}if (!whose.outputs_.is_null())
 		{
-			auto result = data_blocks_algorithm::construct_data_block(whose.outputs_, "In", temp.value().outputs, ctx);
+			rx_node_id id;
+			auto result = data_blocks_algorithm::construct_data_block(whose.outputs_, "In", temp.value().outputs, id, ctx);
 			if (!result)
 			{
 				result.register_error("Unable to resolve outputs data type"s + whose.outputs_.to_string());

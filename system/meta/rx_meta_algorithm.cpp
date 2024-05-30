@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -55,7 +55,7 @@ namespace meta {
 
 namespace meta_algorithm {
 
-// Class rx_platform::meta::meta_algorithm::data_types_algorithm
+// Class rx_platform::meta::meta_algorithm::data_types_algorithm 
 
 
 rx_result data_types_algorithm::serialize_type (const data_type& whose, base_meta_writer& stream, uint8_t type)
@@ -224,14 +224,14 @@ bool data_types_algorithm::check_type (data_type& whose, type_check_context& ctx
 	return true;
 }
 
-rx_result data_types_algorithm::construct_runtime (const data_type& whose, runtime::structure::block_data& what, construct_context& ctx)
+rx_result data_types_algorithm::construct_runtime (const data_type& whose, block_data_prototype& what, construct_context& ctx)
 {
 	rx_result ret = true;
 	// first pass find the sizes
 
-	std::vector<runtime::structure::index_data> items;
-	std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > values;
-	std::vector<runtime::structure::array_wrapper<runtime::structure::block_data> > children;
+	//std::vector<runtime::structure::index_data> items;
+	//std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > values;
+	//std::vector<runtime::structure::array_wrapper<runtime::structure::block_data> > children;
 
 	for (const auto& one : whose.complex_data.names_cache_)
 	{
@@ -241,45 +241,28 @@ rx_result data_types_algorithm::construct_runtime (const data_type& whose, runti
 			{
 				if (whose.complex_data.values_[one.second & complex_data_type::index_mask].get_array_size() < 0)
 				{
-					if (check_name(one.first, items))
-					{
-						members_index_type new_idx = static_cast<members_index_type>(values.size());
-						runtime::structure::const_value_data temp;
-						temp.value = std::move(whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
-						values.emplace_back(std::move(temp));
-						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_const_index_type });
-					}
+					ret = what.add_value(one.first, whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
+					if (!ret)
+						return ret;
 				}
 				else if (whose.complex_data.values_[one.second & complex_data_type::index_mask].get_array_size() == 0)
 				{
-					if (check_name(one.first, items))
-					{
-						members_index_type new_idx = static_cast<members_index_type>(values.size());
-						runtime::structure::const_value_data temp_const;
-						temp_const.value = std::move(whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
-						runtime::structure::array_wrapper<runtime::structure::const_value_data> temp;
-						temp.declare_null_array(std::move(temp_const));
-						values.emplace_back(std::move(temp));
-						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_const_index_type });
-					}
+					ret = what.add_empty_array_value(one.first, whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
+					if (!ret)
+						return ret;
 				}
 				else
 				{
 					auto size = whose.complex_data.children_[one.second & complex_data_type::index_mask].get_array_size();
-					std::vector<runtime::structure::const_value_data> child_data(size);
+					std::vector<rx_simple_value> child_data(size);
 
-					if (check_name(one.first, items))
+					for (int i = 0; i < size; i++)
 					{
-						for (int i = 0; i < size; i++)
-						{
-							runtime::structure::const_value_data one_temp;
-							one_temp.value = std::move(whose.complex_data.values_[one.second & complex_data_type::index_mask].get_value());
-							child_data.push_back(std::move(one_temp));
-						}
-						members_index_type new_idx = static_cast<members_index_type>(values.size());
-						values.emplace_back(std::move(child_data));
-						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_const_index_type });
+						child_data.push_back(whose.complex_data.values_[one.second & complex_data_type::index_mask].get_values().at(i));
 					}
+					ret = what.add_value(one.first, child_data);
+					if (!ret)
+						return ret;
 				}
 			}
 			break;
@@ -288,58 +271,50 @@ rx_result data_types_algorithm::construct_runtime (const data_type& whose, runti
 				if (whose.complex_data.children_[one.second & complex_data_type::index_mask].get_array_size() < 0)
 				{
 					block_data child_data;
+					rx_node_id type_id;
 					ret = data_blocks_algorithm::construct_data_attribute(
-						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, ctx);
+						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, type_id, ctx);
 					if (!ret)
 						return ret;
-					if (check_name(one.first, items))
-					{
-						members_index_type new_idx = static_cast<members_index_type>(children.size());
-						children.emplace_back(std::move(child_data));
-						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_data_index_type });
-					}
+					ret = what.add(one.first, std::move(child_data), type_id);
+					if (!ret)
+						return ret;
 				}
 				else if (whose.complex_data.children_[one.second & complex_data_type::index_mask].get_array_size() == 0)
 				{
 					block_data child_data;
+					rx_node_id type_id;
 					ret = data_blocks_algorithm::construct_data_attribute(
-						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, ctx);
+						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, type_id, ctx);
 					if (!ret)
 						return ret;
-					if (check_name(one.first, items))
-					{
-						members_index_type new_idx = static_cast<members_index_type>(children.size());
-						runtime::structure::array_wrapper<runtime::structure::block_data> temp;
-						temp.declare_null_array(std::move(child_data));
-						children.emplace_back(std::move(temp));
-						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_data_index_type });
-					}
+					ret = what.add_empty_array(one.first, std::move(child_data), type_id);
+					if (!ret)
+						return ret;
 				}
 				else
 				{
 					auto size = whose.complex_data.children_[one.second & complex_data_type::index_mask].get_array_size();
 					std::vector<block_data> child_data(size);
+					rx_node_id type_id;
 					for (auto i = 0; i < size; i++)
 					{
 						ret = data_blocks_algorithm::construct_data_attribute(
-							whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data[i], ctx);
+							whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data[i], type_id, ctx);
 						if (!ret)
 							return ret;
 					}
-					if (check_name(one.first, items))
-					{
-						members_index_type new_idx = static_cast<members_index_type>(children.size());
-						children.emplace_back(std::move(child_data));
-						items.push_back({ one.first, (new_idx << rt_type_shift) | rt_data_index_type });
-					}
+					ret = what.add(one.first, std::move(child_data), type_id);
+					if (!ret)
+						return ret;
 				}
 			}
 			break;
 		}
 	}
-	what.items = const_size_vector<runtime::structure::index_data>(std::move(items));
+	/*what.items = const_size_vector<runtime::structure::index_data>(std::move(items));
 	what.children = const_size_vector<runtime::structure::array_wrapper<runtime::structure::block_data> >(std::move(children));
-	what.values = const_size_vector<runtime::structure::array_wrapper<runtime::structure::const_value_data>>(std::move(values));
+	what.values = const_size_vector<runtime::structure::array_wrapper<runtime::structure::const_value_data>>(std::move(values));*/
 	return ret;
 }
 
@@ -354,7 +329,7 @@ bool data_types_algorithm::check_name (const string_type& name, std::vector<runt
 }
 
 
-// Parameterized Class rx_platform::meta::meta_algorithm::basic_types_algorithm
+// Parameterized Class rx_platform::meta::meta_algorithm::basic_types_algorithm 
 
 
 template <class typeT>
@@ -829,7 +804,8 @@ rx_result basic_types_algorithm<event_type>::construct(const event_type& whose, 
 				else
 					attr = std::move(data_attribute("Args", whose.arguments.get_path()));
 
-				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
+				rx_node_id type_id;
+				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, type_id, ctx);
 				if (ret)
 					prototype.arguments = std::move(data_proto);
 			}
@@ -848,7 +824,7 @@ rx_result basic_types_algorithm<method_type>::construct(const method_type& whose
 		auto ret = mapped_data_algorithm::construct_complex_attribute(whose.mapping_data, whose.complex_data.get_names_cache(), ctx);
 		if (ret)
 		{
-			if (prototype.inputs.values.empty() && prototype.inputs.children.empty() && !whose.inputs.is_null())
+			if (/*prototype.inputs.values.empty() && prototype.inputs.children.empty() && */!whose.inputs.is_null())
 			{
 				block_data data_proto;
 				data_attribute attr;
@@ -856,21 +832,22 @@ rx_result basic_types_algorithm<method_type>::construct(const method_type& whose
 					attr = std::move(data_attribute("In", whose.inputs.get_node_id()));
 				else
 					attr = std::move(data_attribute("In", whose.inputs.get_path()));
-
-				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
+				rx_node_id type_id;
+				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, type_id, ctx);
 				if (ret)
 					prototype.inputs = std::move(data_proto);
 			}
-			if (prototype.outputs.values.empty() && prototype.outputs.children.empty() && !whose.outputs.is_null())
+			if (/*prototype.outputs.values.empty() && prototype.outputs.children.empty() && */!whose.outputs.is_null())
 			{
 				block_data data_proto;
 				data_attribute attr;
+				rx_node_id type_id;
 				if (whose.outputs.is_node_id())
 					attr = std::move(data_attribute("Out", whose.outputs.get_node_id()));
 				else
 					attr = std::move(data_attribute("Out", whose.outputs.get_path()));
 
-				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, ctx);
+				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, type_id, ctx);
 				if (ret)
 					prototype.outputs = std::move(data_proto);
 			}
@@ -980,7 +957,7 @@ template class basic_types_algorithm<basic_types::event_type>;
 template class basic_types_algorithm<basic_types::method_type>;
 template class basic_types_algorithm<basic_types::program_type>;
 template class basic_types_algorithm<basic_types::display_type>;
-// Parameterized Class rx_platform::meta::meta_algorithm::object_types_algorithm
+// Parameterized Class rx_platform::meta::meta_algorithm::object_types_algorithm 
 
 
 template <class typeT>
@@ -1076,7 +1053,7 @@ template class object_types_algorithm<object_types::object_type>;
 template class object_types_algorithm<object_types::port_type>;
 template class object_types_algorithm<object_types::application_type>;
 template class object_types_algorithm<object_types::domain_type>;
-// Class rx_platform::meta::meta_algorithm::relation_type_algorithm
+// Class rx_platform::meta::meta_algorithm::relation_type_algorithm 
 
 
 rx_result relation_type_algorithm::serialize_type (const relation_type& whose, base_meta_writer& stream, uint8_t type)
@@ -1169,7 +1146,7 @@ rx_result relation_type_algorithm::construct_runtime (const relation_type& whose
 }
 
 
-// Parameterized Class rx_platform::meta::meta_algorithm::object_data_algorithm
+// Parameterized Class rx_platform::meta::meta_algorithm::object_data_algorithm 
 
 
 template <class typeT>
@@ -1465,7 +1442,7 @@ rx_result object_data_algorithm<typeT>::get_depends (const object_types::object_
 }
 
 
-// Class rx_platform::meta::meta_algorithm::relation_blocks_algorithm
+// Class rx_platform::meta::meta_algorithm::relation_blocks_algorithm 
 
 
 rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_types::relation_attribute& whose, base_meta_writer& stream)

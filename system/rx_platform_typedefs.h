@@ -218,7 +218,9 @@ namespace tag_blocks
 class rx_tags_callback;
 typedef rx_reference<rx_tags_callback> tags_callback_ptr;
 typedef std::function<void(const rx_value&)> binded_callback_t;
-typedef std::function<rx_result(rx_simple_value&, data::runtime_values_data* data, runtime_process_context*)> write_callback_t;
+typedef std::function<rx_result(const rx_simple_value&, runtime_process_context*)> write_callback_t;
+typedef std::function<void(rx_result)> binded_write_result_callback_t;
+typedef std::function<void(rx_result, rx_simple_value)> binded_execute_result_callback_t;
 }
 using tag_blocks::tags_callback_ptr;
 
@@ -258,6 +260,7 @@ class value_data;
 class full_value_data;
 class struct_data;
 class variable_data;
+class value_block_data;
 class variable_block_data;
 struct variable_commons_base;
 class event_data;
@@ -293,6 +296,8 @@ union rt_value_ref_union
     logic_blocks::method_data* method;
     relations::relation_data* relation;
     relations::relation_value_data* relation_value;
+    structure::value_block_data* block_value;
+    structure::variable_block_data* block_variable;
 };
 enum class rt_value_ref_type
 {
@@ -303,8 +308,16 @@ enum class rt_value_ref_type
     rt_variable = 4,
     rt_method = 5,
     rt_relation = 6,
-    rt_relation_value = 7
+    rt_relation_value = 7,
+    rt_block_value = 8,
+    rt_block_variable = 9
 };
+// why not use std::variant?
+// this code bellow is something that is completely runtime
+// compiler can not know the runtime behavior i am trying to have
+// it depends on configuration
+// so i use plain old switch-case to do this
+// this is a dangerous code!!
 struct rt_value_ref
 {
     rt_value_ref_type ref_type;

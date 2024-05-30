@@ -197,13 +197,15 @@ void logic_holder::collect_data (data::runtime_values_data& data, runtime_value_
     {
         data::runtime_values_data one_data;
         one.collect_data(one_data, type);
-        data.add_child(one.name, std::move(one_data));
+        if(!one_data.empty())
+            data.add_child(one.name, std::move(one_data));
     }
     for (const auto& one : runtime_methods_)
     {
         data::runtime_values_data one_data;
         one.collect_data(one_data, type);
-        data.add_child(one.name, std::move(one_data));
+        if (!one_data.empty())
+            data.add_child(one.name, std::move(one_data));
     }
 }
 
@@ -491,12 +493,15 @@ void method_data::fill_data (const data::runtime_values_data& data)
 void method_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
     item->collect_data("", data, type);
-    data::runtime_values_data child_inputs;
-    data::runtime_values_data child_outputs;
-    inputs.collect_data("", child_inputs, type);
-    outputs.collect_data("", child_outputs, type);
-    data.add_child("In", std::move(child_inputs));
-    data.add_child("Out", std::move(child_outputs));
+    if (type != runtime_value_type::persistent_runtime_value)
+    {
+        data::runtime_values_data child_inputs;
+        data::runtime_values_data child_outputs;
+        inputs.collect_data("", child_inputs, type);
+        outputs.collect_data("", child_outputs, type);
+        data.add_child("In", std::move(child_inputs));
+        data.add_child("Out", std::move(child_outputs));
+    }
 }
 
 rx_result method_data::browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx)

@@ -42,7 +42,7 @@ extern "C"
     rx_result_struct c_update_source(void* whose, full_value_type val)
     {
         rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct>* self = (rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct>*)whose;
-        return self->update_source(rx_value(val)).move();
+        return self->update_source(rx_value(std::move(val))).move();
     }
     void c_result_update_source(void* whose, rx_result_struct result, runtime_transaction_id_t id)
     {
@@ -83,7 +83,7 @@ extern "C"
     {
         rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>* self 
             = (rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>*)whose;
-        return self->update_source(rx_value(val)).move();
+        return self->update_source(rx_value(std::move(val))).move();
     }
     void c_result_update_source4(void* whose, rx_result_struct result, runtime_transaction_id_t id)
     {
@@ -128,7 +128,7 @@ extern "C"
     {
         rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct>* self 
             = (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct>*)whose;
-        return self->mapper_write(id, test!=0, identity, rx_simple_value(val)).move();
+        return self->mapper_write(id, test!=0, identity, rx_simple_value(std::move(val))).move();
     }
     void c_mapper_map_current(void* whose)
     {
@@ -174,7 +174,7 @@ extern "C"
     {
         rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct3>* self =
             (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct3>*)whose;
-        return self->mapper_write(id, test != 0, identity, rx_simple_value(val)).move();
+        return self->mapper_write(id, test != 0, identity, rx_simple_value(std::move(val))).move();
     }
     void c_mapper_map_current3(void* whose)
     {
@@ -205,7 +205,7 @@ extern "C"
     {
         rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct3>* self =
             (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct3>*)whose;
-        return self->mapper_execute(id, test != 0, identity, rx_simple_value(val)).move();
+        return self->mapper_execute(id, test != 0, identity, rx_simple_value(std::move(val))).move();
     }
 
     void c_mapper_get_method_inputs_model3(void* whose, struct bytes_value_struct_t* data)
@@ -249,7 +249,7 @@ extern "C"
     {
         rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
             (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
-        return self->mapper_write(id, test != 0, identity, rx_simple_value(val)).move();
+        return self->mapper_write(id, test != 0, identity, rx_simple_value(std::move(val))).move();
     }
     void c_mapper_map_current4(void* whose)
     {
@@ -280,7 +280,7 @@ extern "C"
     {
         rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>* self =
             (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct4>*)whose;
-        return self->mapper_execute(id, test != 0, identity, rx_simple_value(val)).move();
+        return self->mapper_execute(id, test != 0, identity, rx_simple_value(std::move(val))).move();
     }
 
     void c_mapper_get_method_inputs_model4(void* whose, struct bytes_value_struct_t* data)
@@ -419,7 +419,7 @@ extern "C"
     void c_event_fired(void* whose, runtime_transaction_id_t id, int test, rx_security_handle_t identity, struct timed_value_type data)
     {
         rx_platform::runtime::blocks::extern_event_runtime* self = (rx_platform::runtime::blocks::extern_event_runtime*)whose;
-        self->extern_event_fired(id, test, identity, data);
+        self->extern_event_fired(id, test, identity, std::move(data));
     }
     void c_event_get_model(void* whose, struct bytes_value_struct_t* data)
     {
@@ -816,7 +816,7 @@ rx_result extern_filter_runtime::filter_input (rx_value& val)
 {
     full_value_type temp_val = val.move();
     rx_result result(impl_->def->filter_input(impl_->anchor.target, &temp_val));
-    val = rx_value(temp_val);
+    val = rx_value(std::move(temp_val));
     return result;
 }
 
@@ -824,7 +824,7 @@ rx_result extern_filter_runtime::filter_output (rx_simple_value& val)
 {
     typed_value_type temp_val = val.move();
     rx_result result(impl_->def->filter_output(impl_->anchor.target, &temp_val));
-    val = rx_simple_value(temp_val);
+    val = rx_simple_value(std::move(temp_val));
     return result;
 }
 

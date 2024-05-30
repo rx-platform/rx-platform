@@ -232,6 +232,10 @@ void server_command_manager::register_internal_commands ()
 			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_mapper>();
 		});
 	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().register_constructor(
+		RX_MQTT_SIMPLE_EVENT_MAPPER_TYPE_ID, [] {
+			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_event_mapper>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<mapper_type>().register_constructor(
 		RX_MQTT_SIMPLE_BROKER_MAPPER_TYPE_ID, [] {
 			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_broker_mapper>();
 		});

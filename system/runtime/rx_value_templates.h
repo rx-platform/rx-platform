@@ -205,13 +205,23 @@ public:
         value_ = std::move(right);
         bad_value_ = std::move(bad_value);
     }
+    rx_result write(typeT right, tag_blocks::binded_write_result_callback_t callback)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            values::rx_simple_value temp_val;
+            temp_val.assign_static<typeT>(std::forward<typeT>(right));
+            ctx_->set_value(handle_, std::move(temp_val), callback);
+        }
+        return *this;
+    }
     local_value& operator=(typeT right)
     {
         if (ctx_ && handle_)// just in case both of them...
         {
             values::rx_simple_value temp_val;
             temp_val.assign_static<typeT>(std::forward<typeT>(right));
-            ctx_->set_value(handle_, std::move(temp_val));
+            ctx_->set_value(handle_, std::move(temp_val), tag_blocks::binded_write_result_callback_t());
         }
         return *this;
     }
@@ -395,7 +405,7 @@ struct async_owned_value
         if (ctx_ && handle_)// just in case both of them...
         {
             typeT temp(val_);
-            ctx_->set_async_binded_as<typeT>(handle_, std::move(temp));
+            ctx_->set_async_binded_as<typeT>(handle_, std::move(temp), tag_blocks::binded_write_result_callback_t());
         }
     }
 public:
@@ -585,9 +595,19 @@ public:
         if (ctx_ && handle_)// just in case both of them...
         {
             typeT temp(right);
-            ctx_->set_async_binded_as<typeT>(handle_, std::move(temp));
+            ctx_->set_async_binded_as<typeT>(handle_, std::move(temp), tag_blocks::binded_write_result_callback_t());
         }
         return this;
+    }
+    rx_result write(typeT right, tag_blocks::binded_write_result_callback_t callback)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            typeT temp(right);
+            ctx_->set_async_binded_as<typeT>(handle_, std::move(temp), std::move(callback));
+            return true;
+        }
+        return RX_NOT_CONNECTED;
     }
     operator typeT() const
     {

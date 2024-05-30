@@ -92,6 +92,81 @@ rx_result register_method_runtime(const rx_node_id& id)
     };
     return register_method_runtime(id, constr_lambda);
 }
+//
+//template <> struct convert_type_helper <int>
+//{
+//    static int from_arg(const rx_simple_value& what)
+//    {
+//        return what.extract_static<int>(0);
+//    }
+//
+//    static rx_simple_value to_result(int r)
+//    {
+//        rx_simple_value ret;
+//        ret.assign_static(r);
+//        return std::to_string(r);
+//    }
+//
+//};
+
+template<typename... Args>
+class rx_simple_method : public rx_method
+{
+
+    template < typename Type>
+    Type from_arg(const rx_simple_value& what)
+    {
+        return what.extract_static<Type>(0);
+    }
+
+    template < typename Type>
+    rx_simple_value to_result(Type what)
+    {
+        rx_simple_value ret;
+        ret.assign_static(std::move(what));
+        return ret;
+    }
+public:
+    rx_simple_method()
+    {
+    }
+    template<std::size_t... I>
+    void invoke_helper(runtime_transaction_id_t id, std::vector<rx_simple_value> const& inputs,
+        std::index_sequence<I...>)
+    {
+        execute(id, from_arg<Args>(inputs.at(I))...);
+    }
+    virtual void execute(runtime_transaction_id_t id, Args... args) = 0;
+    rx_result call_value(runtime_transaction_id_t id, rx_simple_value args)
+    {
+        if (args.is_struct())
+        {
+            std::vector<rx_simple_value> inputs;
+            inputs.reserve(args.struct_size());
+            for (size_t i = 0; i < args.struct_size(); i++)
+            {
+                inputs.push_back(args[(int)i]);
+            }
+            invoke_helper(id, inputs, std::index_sequence_for<Args...>{});
+            return true;
+        }
+        else
+        {
+            return RX_INVALID_ARGUMENT;
+        }
+    }
+    template<typename... Results>
+    void send_result(runtime_transaction_id_t id, Results... args)
+    {
+        rx_simple_value result = rx_create_value_static(std::forward<Results>(args)...);
+        execute_result_received(true, id, std::move(result));
+    }
+    rx_result method_execute(runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_simple_value val, rx_process_context& ctx)
+    {
+        auto result = call_value(id, std::move(val));
+        return result;
+    }
+};
 
 
 

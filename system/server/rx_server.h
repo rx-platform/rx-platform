@@ -86,7 +86,10 @@ struct general_data_t
     uint16_t rx_port;
 	string_type manuals_path;
     string_type http_path;
+    string_type http_user;
     uint16_t http_port;
+    uint16_t mqtt_port;
+    string_type mqtt_address;
     uint16_t opcua_port;
     string_type rx_security;
     string_type py_path;
@@ -175,6 +178,14 @@ enum class rx_platform_status
 	stopping,
 	deinitializing
 };
+
+
+struct initialize_data_t
+{
+    runtime::const_callbacks_type callbacks;
+    runtime::pending_connections_type pending_connections;
+};
+typedef std::map<rx_node_id, initialize_data_t> initialize_data_type;
 
 
 
@@ -378,6 +389,8 @@ class rx_gate
       string_type network_;
 
       rx_uuid network_id_;
+
+      std::unique_ptr<initialize_data_type> init_data_;
 
 
 };

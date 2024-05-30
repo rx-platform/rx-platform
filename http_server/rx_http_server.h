@@ -157,9 +157,9 @@ class http_server
 
 
 
-      const string_type& get_static_path () const
+      const string_array& get_static_paths () const
       {
-        return static_path_;
+        return static_paths_;
       }
 
 
@@ -181,11 +181,11 @@ class http_server
       http_displays::http_displays_repository displays_;
 
 
-      string_type static_path_;
+      string_array static_paths_;
 
       string_type global_path_;
 
-      string_type dynamic_path_;
+      string_array dynamic_paths_;
 
       cached_items_type cached_items_;
 

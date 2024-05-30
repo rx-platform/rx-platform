@@ -70,6 +70,13 @@ rx_result rx_http_static_display::initialize_display (runtime::runtime_init_cont
 {
 	http_display_custom_content content;
 	fill_contents(content, ctx, disp_path);
+	content.body_begin_content += "\r\n"
+		"<script>\r\n"
+		"var rx_rt_path = '";
+	content.body_begin_content += ctx.meta.get_full_path();
+	content.body_begin_content += "';\r\n"
+		"</script>\r\n";
+
 	content.body_end_content += "\r\n"
 		"<script>\r\n"
 		"setInterval(function () {\r\n"

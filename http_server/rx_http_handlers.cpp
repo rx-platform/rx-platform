@@ -107,45 +107,47 @@ rx_result http_file_handler::handle_request (http_request& req, http_response& r
 		resp.result = 405;
 		return true;
 	}
-	auto file_path = rx_combine_paths(rx_internal::rx_http_server::http_server::instance().get_static_path(), req.path);
-	auto file = rx_file(file_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
-	if (file)
+	auto paths = rx_internal::rx_http_server::http_server::instance().get_static_paths();
+	for (const auto& one_dir : paths)
 	{
-		resp.result = 403;// Forbidden
-		uint64_t size = 0;
-		auto result = rx_file_get_size(file, &size);
-		if (result == RX_OK)
+		auto file_path = rx_combine_paths(one_dir, req.path);
+		auto file = rx_file(file_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		if (file)
 		{
-			resp.content.assign((size_t)size, std::byte{ 0 });
-			uint32_t readed = 0;
-			result = rx_file_read(file, &resp.content[0], (uint32_t)size, &readed);
+			resp.result = 403;// Forbidden
+			uint64_t size = 0;
+			auto result = rx_file_get_size(file, &size);
 			if (result == RX_OK)
 			{
-				resp.headers["Content-Type"] = get_content_type();
-				resp.cache_me = true;
-				resp.result = 200;// OK
+				resp.content.assign((size_t)size, std::byte{ 0 });
+				uint32_t readed = 0;
+				result = rx_file_read(file, &resp.content[0], (uint32_t)size, &readed);
+				if (result == RX_OK)
+				{
+					resp.headers["Content-Type"] = get_content_type();
+					resp.cache_me = true;
+					resp.result = 200;// OK
+				}
+				else
+				{// clear this buffer
+					resp.content.clear();
+				}
 			}
-			else
-			{// clear this buffer
-				resp.content.clear();
+			if (resp.result != 200)
+			{
+				char buff[0x100];
+				rx_last_os_error("Error processing request:", buff, sizeof(buff));
+				resp.set_string_content(buff);
 			}
+			rx_file_close(file);
+			return true;
 		}
-		if (resp.result != 200)
-		{
-			char buff[0x100];
-			rx_last_os_error("Error processing request:", buff, sizeof(buff));
-			resp.set_string_content(buff);
-		}
-		rx_file_close(file);
-	}
-	else
-	{
-		resp.result = 404;// Not Found
-		char buff[0x100];
-		rx_last_os_error("Error processing request:", buff, sizeof(buff));
-		resp.set_string_content(buff);
 	}
 
+	resp.result = 404;// Not Found
+	char buff[0x100];
+	rx_last_os_error("Error processing request:", buff, sizeof(buff));
+	resp.set_string_content(buff);
 
 	return true;
 }

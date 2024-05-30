@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 3
 #define RX_LIB_MINOR_VERSION 3
-#define RX_LIB_BUILD_NUMBER 0
+#define RX_LIB_BUILD_NUMBER 2
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -78,5 +78,7 @@
 // version 3.2.8 added set_signal_level to rx_value
 // version 3.2.9 added create_string function
 // version 3.3.0 added create_string function
+// version 3.3.1 alloc from buffer receives size
+// version 3.3.2 alloc from buffer receives size
 
 

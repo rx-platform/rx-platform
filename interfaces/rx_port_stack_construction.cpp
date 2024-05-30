@@ -178,7 +178,11 @@ rx_result stack_builder::connect_stack_top (rx_port_ptr top, rx_port_ptr who)
     if (result)
     {
         if (top_build_kind->is_assemble_sender() || top_data.build_map.stack_ready)
+        {
+            if (!top_data.build_map.stack_ready)
+                top_data.build_map.stack_ready = true;
             stack_builder::recursive_send_stack_assembled(who);
+        }
     }
     else
     {
@@ -228,6 +232,7 @@ void stack_builder::recursive_send_stack_assembled (rx_port_ptr who)
     who_data.build_map.stack_ready = true;
     if (who_build_kind->is_assemble_subscriber())
     {
+        who_data.build_map.stack_ready = true;
         std::ostringstream ss;
         ss << "Port Stack assembled:";
 

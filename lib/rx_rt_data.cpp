@@ -425,7 +425,7 @@ rx_simple_value runtime_values_data::get_value (string_view_type path) const
 								}
 								rx_init_complex_array_value(&temp_val, &data[0], data.size());
 							}
-							return rx_simple_value(temp_val);
+							return rx_simple_value(std::move(temp_val));
 						}
 					}
 					else if(std::holds_alternative<array_child_type>(child_it->second)
@@ -574,12 +574,12 @@ bool runtime_values_data::get_complex_value (rx_simple_value& val) const
 	if (values.size() == 2 && children.size() == 0)
 	{
 		auto it_real = values.find("Real");
-		if (it_real != values.end() 
+		if (it_real != values.end()
 			&& std::holds_alternative<value_type>(it_real->second)
 			&& std::get<value_type>(it_real->second).is_numeric())
 		{
 			auto it_imag = values.find("Imag");
-			if (it_imag != values.end() 
+			if (it_imag != values.end()
 				&& std::holds_alternative<value_type>(it_imag->second)
 				&& std::get<value_type>(it_imag->second).is_numeric())
 			{
@@ -589,7 +589,7 @@ bool runtime_values_data::get_complex_value (rx_simple_value& val) const
 				typed_value_type temp;
 				if (RX_OK == rx_init_complex_value(&temp, str))
 				{
-					val = rx_simple_value(temp);
+					val = rx_simple_value(std::move(temp));
 					return true;
 				}
 			}
@@ -600,6 +600,141 @@ bool runtime_values_data::get_complex_value (rx_simple_value& val) const
 
 
 // Class rx::data::runtime_data_model 
+
+
+rx_result runtime_data_model::fill_runtime_value (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_value& val) const
+{
+	if (val.get_type() != RX_STRUCT_TYPE)
+		return "Rx invalid format!";
+	size_t idx = 0;
+	std::vector<size_t> indexes;
+	for (const auto& str : elements)
+	{
+		indexes.push_back(idx);
+
+		if (str.is_value())
+		{
+			rx_simple_value one_val;
+			if (!val.get_struct_value(one_val, indexes))
+				return "Invalid data structure";
+
+			if (one_val.get_type() != str.get_value().get_type())
+			{
+				if(!one_val.convert_to(str.get_value().get_type()))
+					return "Invalid data type";
+			}
+
+			data.add_value(str.name, std::move(one_val));
+		}
+		else if (str.is_complex())
+		{
+			data::runtime_values_data one_val;
+
+			auto result = fill_runtime_value_recursive(one_val, str.get_complex(), val, indexes);
+			if (!result)
+				return result;
+
+			data.add_child(str.name, std::move(one_val));
+		}
+		else // if(str.is_complex_array())
+		{
+			RX_ASSERT(str.is_complex_array());
+
+			size_t sz = val.array_size(indexes);
+
+			if(sz==rx_value::npos)
+				return "Invalid data structure";
+			std::vector<runtime_values_data> one_val;
+			for (size_t idx2 = 0 ; idx2<sz; idx2++)
+			{
+				data::runtime_values_data single_val;
+				indexes.push_back(idx2);
+				auto result = fill_runtime_value_recursive(single_val, str.get_complex_array(), val, indexes);
+				if (!result)
+					return result;
+				indexes.pop_back();
+
+				one_val.push_back(std::move(single_val));
+			}
+			data.add_array_child(str.name, std::move(one_val));
+		}
+
+
+		indexes.pop_back();
+		idx++;
+	}
+	return true;
+	
+}
+
+rx_result runtime_data_model::fill_runtime_value (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_simple_value& val) const
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result runtime_data_model::fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_value& val, std::vector<size_t>& indexes) const
+{
+	size_t idx = 0;
+	for (const auto& str : model.elements)
+	{
+		indexes.push_back(idx);
+
+		if (str.is_value())
+		{
+			rx_simple_value one_val;
+			if (!val.get_struct_value(one_val, indexes))
+				return "Invalid data structure";
+
+			if (one_val.get_type() != str.get_value().get_type())
+				return "Invalid data type";
+
+			data.add_value(str.name, std::move(one_val));
+		}
+		else if (str.is_complex())
+		{
+			data::runtime_values_data one_val;
+
+			auto result = fill_runtime_value_recursive(one_val, str.get_complex(), val, indexes);
+			if (!result)
+				return result;
+
+			data.add_child(str.name, std::move(one_val));
+		}
+		else // if(str.is_complex_array())
+		{
+			RX_ASSERT(str.is_complex_array());
+
+
+			size_t sz = val.array_size(indexes);
+
+			if (sz == rx_value::npos)
+				return "Invalid data structure";
+			std::vector<runtime_values_data> one_val;
+			for (size_t idx2 = 0; idx2 < sz; idx2++)
+			{
+				data::runtime_values_data single_val;
+				indexes.push_back(idx2);
+				auto result = fill_runtime_value_recursive(single_val, str.get_complex_array(), val, indexes);
+				if (!result)
+					return result;
+				indexes.pop_back();
+
+				one_val.push_back(std::move(single_val));
+			}
+			data.add_array_child(str.name, std::move(one_val));
+		}
+
+
+		indexes.pop_back();
+		idx++;
+	}
+	return true;
+}
+
+rx_result runtime_data_model::fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_simple_value& val, std::vector<size_t>& indexes) const
+{
+	return RX_NOT_IMPLEMENTED;
+}
 
 runtime_data_model::runtime_data_model(const runtime_data_model& right)
 {
@@ -671,12 +806,12 @@ bool runtime_model_element::is_value () const
 
 bool runtime_model_element::is_complex () const
 {
-	return std::holds_alternative<runtime_data_model>(value);
+	return std::holds_alternative<rt_model_wrapper<false> >(value);
 }
 
 bool runtime_model_element::is_complex_array () const
 {
-	return std::holds_alternative<std::vector<runtime_data_model> >(value);
+	return std::holds_alternative<rt_model_wrapper<true> >(value);
 }
 
 const values::rx_simple_value& runtime_model_element::get_value () const
@@ -692,16 +827,16 @@ const runtime_data_model& runtime_model_element::get_complex () const
 {
 	static runtime_data_model g_empty;
 	if (is_complex())
-		return std::get<runtime_data_model>(value);
+		return std::get<rt_model_wrapper<false> >(value).model;
 	else
 		return g_empty;
 }
 
-const std::vector<runtime_data_model>& runtime_model_element::get_complex_array () const
+const runtime_data_model& runtime_model_element::get_complex_array () const
 {
-	static std::vector<runtime_data_model> g_empty;
-	if (is_value())
-		return std::get<std::vector<runtime_data_model>>(value);
+	static runtime_data_model g_empty;
+	if (is_complex_array())
+		return std::get<rt_model_wrapper<true> >(value).model;
 	else
 		return g_empty;
 }
@@ -710,33 +845,3 @@ const std::vector<runtime_data_model>& runtime_model_element::get_complex_array 
 } // namespace data
 } // namespace rx
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	writter
-	auto result = writter.start_array("elements", elements.size());
-	if (result)
-	{
-		for (const auto& elem : elements)
-		{
-			result = elem->serialize(writter);
-			if (!result)
-				break;
-		}
-	}
-	if (result && !buffer.empty())
-	{
-		byte_string ret(buffer.get_size());
-		memcpy(&ret[0], buffer.get_data(), buffer.get_size());
-		return ret;
-	}
-	else
-	{
-		return byte_string();
-	}
-
-	return runtime_data_model();
-
-#endif

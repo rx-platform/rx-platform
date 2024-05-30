@@ -142,9 +142,9 @@ rx_result runtime_process_context::get_value (runtime_handle_t handle, values::r
     return binded_.get_value(handle, val);
 }
 
-rx_result runtime_process_context::set_value (runtime_handle_t handle, values::rx_simple_value&& val)
+rx_result runtime_process_context::set_value (runtime_handle_t handle, values::rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback)
 {
-    return binded_.set_value(handle, std::move(val), tags_, this);
+    return binded_.set_value(handle, std::move(val), tags_, this, std::move(callback));
 }
 
 rx_result runtime_process_context::set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx)
@@ -401,9 +401,17 @@ filters_type& runtime_process_context::get_filters_for_process ()
 void runtime_process_context::variable_value_changed (structure::variable_data* whose, const values::rx_value& val)
 {
     rx_value adapted_val = adapt_value(val);
-    if(is_mine_value(val))
-        binded_.variable_change(whose, adapted_val);
+    /*if(is_mine_value(val))
+        binded_.variable_change(whose, adapted_val);*/
     tags_.variable_change(whose, std::move(adapted_val));
+}
+
+void runtime_process_context::variable_block_value_changed (structure::variable_block_data* whose, const values::rx_value& val)
+{
+    rx_value adapted_val = adapt_value(val);
+    /*if (is_mine_value(val))
+        binded_.block_variable_change(whose, adapted_val);*/
+    tags_.variable_block_change(whose, std::move(adapted_val));
 }
 
 void runtime_process_context::event_pending (event_fired_struct<structure::event_data> data)
@@ -641,10 +649,6 @@ rx_time runtime_process_context::now ()
         return rx_time_struct_t{ now_ };
 }
 
-rx_result rx_set_value_to_context(runtime_process_context* ctx, runtime_handle_t handle, values::rx_simple_value&& val)
-{
-    return ctx->set_value(handle, std::move(val));
-}
 // Parameterized Class rx_platform::runtime::process_context_job 
 
 

@@ -118,6 +118,7 @@ std::vector<rx_uuid_t> extract_value(const typed_value_type& from, const std::ve
 std::vector<rx_uuid> extract_value(const typed_value_type& from, const std::vector<rx_uuid>& default_value);
 std::vector<rx_node_id> extract_value(const typed_value_type& from, const std::vector<rx_node_id>& default_value);
 
+bool assign_value(typed_value_type& from, rx_simple_value value);
 bool assign_value(typed_value_type& from, bool value);;
 bool assign_value(typed_value_type& from, int8_t value);
 bool assign_value(typed_value_type& from, uint8_t value);
@@ -136,6 +137,7 @@ bool assign_value(typed_value_type& from, const complex_value_struct& value);
 bool assign_value(typed_value_type& from, rx_time_struct value);
 bool assign_value(typed_value_type& from, rx_time value);
 bool assign_value(typed_value_type& from, const rx_uuid_t& value);
+bool assign_value(typed_value_type& from, const rx_node_id& value);
 bool assign_value(typed_value_type& from, const byte_string& value);
 bool assign_value(typed_value_type& from, const std::vector<rx_simple_value>& value);
 bool assign_value(typed_value_type& from, const std::vector<bool>& value);
@@ -164,20 +166,141 @@ bool assign_value(typed_value_type& from, const std::vector<std::vector<rx_simpl
 
 class rx_simple_value 
 {
-  public:
-      template<typename typeT>
-	  void assign_static(typeT&& val, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY)
-	  {
-          rx_destroy_value(&data_);
-		  assign_value(data_, std::forward<typeT>(val));
-	  }
-      template<typename typeT>
-      typeT extract_static(const typeT& def) const
+      template<size_t sz, typename... Ts>
+      void fill_array_internal(std::array<size_t, sz>& arr, size_t arr_idx, size_t idx1) const
       {
-          return extract_value(data_, def);
+          arr[arr_idx] = idx1;
+      }
+      template<size_t sz, typename... Ts>
+      void fill_array_internal(std::array<size_t, sz>& arr, size_t arr_idx, size_t idx1, Ts... types) const
+      {
+          arr[arr_idx] = idx1;
+          fill_array_internal(arr, arr_idx + 1, types...);
+      }
+public:
+      static constexpr size_t npos = (size_t)(-1);
+      template<typename... Ts>
+      void assign(rx_simple_value val, Ts... types)
+      {
+          if constexpr (sizeof...(Ts) > 0)
+          {
+              std::array<size_t, sizeof...(Ts)> indexes;
+              fill_array_internal(indexes, 0, types...);
+              rx_set_sub_struct_value(indexes.size(), &indexes[0], &val.data_, &data_);
+          }
+          else
+          {
+              *this = std::move(val);
+          }
+      }
+      template<typename typeT, typename... Ts>
+	  void assign_static(typeT&& val, Ts... types)
+	  {
+          rx_simple_value temp;
+          assign_value(temp.data_, std::forward<typeT>(val));
+          assign(std::move(temp), types...);
+	  }
+      template<typename typeT, typename... Ts>
+      typeT extract_static(const typeT& def, Ts... types) const
+      {
+          if constexpr (sizeof...(Ts) > 0)
+          {
+              std::array<size_t, sizeof...(Ts)> indexes;
+              fill_array_internal(indexes, 0, types...);
+              rx_simple_value temp;
+              auto ret = rx_get_sub_struct_value(indexes.size(), &indexes[0], &temp.data_, &data_);
+              if (ret == RX_OK)
+              {
+                  return extract_value(temp.data_, def);
+              }
+              else
+              {
+                  return def;
+              }
+          }
+          else
+          {
+              return extract_value(data_, def);
+          }
+      }
+      template<typename... Ts>
+      bool is_array(size_t idx1, Ts... types) const
+      {
+          if constexpr (sizeof...(Ts) > 0)
+          {
+              std::array<size_t, 1 + sizeof...(Ts)> indexes;
+              indexes[0] = idx1;
+              fill_array_internal(indexes, 1, types...);
+              auto ret = rx_is_sub_array_value(indexes.size(), &indexes[0], &data_);
+              return ret != 0;
+          }
+          else
+          {
+              auto ret = rx_is_sub_array_value(1, &idx1, &data_);
+              return ret != 0;
+          }
+      }
+      template<typename... Ts>
+      bool is_struct(size_t idx1, Ts... types) const
+      {
+          if constexpr (sizeof...(Ts) > 0)
+          {
+              std::array<size_t, 1 + sizeof...(Ts)> indexes;
+              indexes[0] = idx1;
+              fill_array_internal(indexes, 1, types...);
+              auto ret = rx_is_sub_struct(indexes.size(), &indexes[0], &data_);
+              return ret != 0;
+          }
+          else
+          {
+              auto ret = rx_is_sub_struct(1, &idx1, &data_);
+              return ret != 0;
+          }
+      }
+      template<typename... Ts>
+      size_t array_size(size_t idx1, Ts... types) const
+      {
+          if constexpr (sizeof...(Ts) > 0)
+          {
+              std::array<size_t, 1 + sizeof...(Ts)> indexes;
+              indexes[0] = idx1;
+              fill_array_internal(indexes, 1, types...);
+              size_t sz = 0;
+              auto ret = rx_get_sub_array_size(indexes.size(), &indexes[0], &data_, &sz);
+
+              return ret == RX_OK ? sz : npos;
+          }
+          else
+          {
+              size_t sz = 0;
+              auto ret = rx_get_sub_array_size(1, &idx1, &data_, &sz);
+
+              return ret == RX_OK ? sz : npos;
+          }
+      }
+      template<typename... Ts>
+      size_t struct_size(size_t idx1, Ts... types) const
+      {
+          if constexpr (sizeof...(Ts) > 0)
+          {
+              std::array<size_t, 1 + sizeof...(Ts)> indexes;
+              indexes[0] = idx1;
+              fill_array_internal(indexes, 1, types...);
+              size_t sz = 0;
+              auto ret = rx_get_sub_struct_size(indexes.size(), &indexes[0], &data_, &sz);
+
+              return ret == RX_OK ? sz : npos;
+          }
+          else
+          {
+              size_t sz = 0;
+              auto ret = rx_get_sub_struct_size(1, &idx1, &data_, &sz);
+
+              return ret == RX_OK ? sz : npos;
+          }
       }
       rx_simple_value();
-      rx_simple_value(typed_value_type val) noexcept;
+      rx_simple_value(typed_value_type&& val) noexcept;
 	  rx_simple_value(const rx_simple_value &right);
 	  rx_simple_value(rx_simple_value&& right) noexcept;
 	  rx_simple_value& operator=(rx_simple_value&& right) noexcept;
@@ -276,8 +399,17 @@ class rx_simple_value
 
       size_t struct_size () const;
 
+      bool set_struct_value (rx_simple_value rx_val, const std::vector<size_t>& indexes);
+
+      bool get_struct_value (rx_simple_value& rx_val, const std::vector<size_t>& indexes) const;
+
+      size_t array_size (const std::vector<size_t>& indexes) const;
+
+      size_t struct_size (const std::vector<size_t>& indexes) const;
+
       friend class rx_timed_value;
       friend class rx_value;
+
   protected:
 
   private:
@@ -296,21 +428,153 @@ class rx_simple_value
 
 class rx_value 
 {
-public:
-    template<typename typeT>
-    void assign_static(typeT val, rx_time ts = rx_time::null_time())
+    template<size_t sz, typename... Ts>
+    void fill_array_internal(std::array<size_t, sz>& arr, size_t arr_idx, size_t idx1) const
     {
-        rx_destroy_value(&data_.value);
-        assign_value(data_.value, std::forward<typeT>(val));
-        data_.time = ts.c_data();
+        arr[arr_idx] = idx1;
     }
-    template<typename typeT>
-    typeT extract_static(const typeT& def) const
+    template<size_t sz, typename... Ts>
+    void fill_array_internal(std::array<size_t, sz>& arr, size_t arr_idx, size_t idx1, Ts... types) const
     {
-        return extract_value(data_.value, def);
+        arr[arr_idx] = idx1;
+        fill_array_internal(arr, arr_idx + 1, types...);
+    }
+public:
+    static constexpr size_t npos = (size_t)(-1);
+    template<typename... Ts>
+    void assign(rx_simple_value val, Ts... types)
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, sizeof...(Ts)> indexes;
+            fill_array_internal(indexes, 0, types...);
+            rx_set_sub_struct_value(indexes.size(), &indexes[0], &val.data_, &data_.value);
+        }
+        else
+        {
+            *this = std::move(val);
+        }
+    }
+    template<typename typeT, typename... Ts>
+    void assign_static(typeT val, Ts... types)
+    {
+        rx_simple_value temp;
+        assign_value(temp.data_, std::forward<typeT>(val));
+        assign(std::move(temp), types...);
+        data_.time = rx_time::null_time().c_data();
+        data_.quality = RX_GOOD_QUALITY;
+    }
+
+    template<typename typeT, typename... Ts>
+    void assign_static(typeT val, rx_time ts, Ts... types)
+    {
+        rx_simple_value temp;
+        assign_value(temp.data_, std::forward<typeT>(val));
+        assign(std::move(temp), types...);
+        data_.time = ts.c_data();
+        data_.quality = RX_GOOD_QUALITY;
+    }
+    template<typename typeT, typename... Ts>
+    typeT extract_static(const typeT& def, Ts... types) const
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, sizeof...(Ts)> indexes;
+            fill_array_internal(indexes, 0, types...);
+            rx_simple_value temp;
+            auto ret = rx_get_sub_struct_value(indexes.size(), &indexes[0], &temp.data_, &data_.value);
+            if (ret == RX_OK)
+            {
+                return extract_value(temp.data_, def);
+            }
+            else
+            {
+                return def;
+            }
+        }
+        else
+        {
+            return extract_value(data_.value, def);
+        }
+    }
+    template<typename... Ts>
+    bool is_array(size_t idx1, Ts... types) const
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, 1 + sizeof...(Ts)> indexes;
+            indexes[0] = idx1;
+            fill_array_internal(indexes, 1, types...);
+            auto ret = rx_is_sub_array_value(indexes.size(), &indexes[0], &data_.value);
+            return ret != 0;
+        }
+        else
+        {
+            auto ret = rx_is_sub_array_value(1, &idx1, &data_.value);
+            return ret != 0;
+        }
+    }
+    template<typename... Ts>
+    bool is_struct(size_t idx1, Ts... types) const
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, 1 + sizeof...(Ts)> indexes;
+            indexes[0] = idx1;
+            fill_array_internal(indexes, 1, types...);
+            auto ret = rx_is_sub_struct(indexes.size(), &indexes[0], &data_.value);
+            return ret != 0;
+        }
+        else
+        {
+            auto ret = rx_is_sub_struct(1, &idx1, &data_.value);
+            return ret != 0;
+        }
+    }
+    template<typename... Ts>
+    size_t array_size(size_t idx1, Ts... types) const
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, 1 + sizeof...(Ts)> indexes;
+            indexes[0] = idx1;
+            fill_array_internal(indexes, 1, types...);
+            size_t sz = 0;
+            auto ret = rx_get_sub_array_size(indexes.size(), &indexes[0], &data_.value, &sz);
+
+            return ret == RX_OK ? sz : npos;
+        }
+        else
+        {
+            size_t sz = 0;
+            auto ret = rx_get_sub_array_size(1, &idx1, &data_.value, &sz);
+
+            return ret == RX_OK ? sz : npos;
+        }
+    }
+    template<typename... Ts>
+    size_t struct_size(size_t idx1, Ts... types) const
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, 1 + sizeof...(Ts)> indexes;
+            indexes[0] = idx1;
+            fill_array_internal(indexes, 1, types...);
+            size_t sz = 0;
+            auto ret = rx_get_sub_struct_size(indexes.size(), &indexes[0], &data_.value, &sz);
+
+            return ret == RX_OK ? sz : npos;
+        }
+        else
+        {
+            size_t sz = 0;
+            auto ret = rx_get_sub_struct_size(1, &idx1, &data_.value, &sz);
+
+            return ret == RX_OK ? sz : npos;
+        }
     }
 	rx_value();
-    rx_value(full_value_type right) noexcept;
+    rx_value(full_value_type&& right) noexcept;
 	rx_value(const rx_value &right);
 	rx_value(rx_value&& right) noexcept;
 	rx_value& operator=(rx_value&& right) noexcept;
@@ -406,7 +670,7 @@ public:
 
       bool compare (const rx_value& right, time_compare_type time_compare) const;
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       void set_substituted ();
 
@@ -438,13 +702,21 @@ public:
 
       uint32_t get_origin () const;
 
-      rx_simple_value operator [] (int index) const;
+      rx::values::rx_simple_value operator [] (int index) const;
 
       void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY);
 
       bool is_struct () const;
 
       size_t struct_size () const;
+
+      bool set_struct_value (rx::values::rx_simple_value rx_val, const std::vector<size_t>& indexes);
+
+      bool get_struct_value (rx_simple_value& rx_val, const std::vector<size_t>& indexes) const;
+
+      size_t array_size (const std::vector<size_t>& indexes) const;
+
+      size_t struct_size (const std::vector<size_t>& indexes) const;
 
 
   protected:
@@ -465,22 +737,151 @@ public:
 
 class rx_timed_value 
 {
-public:
-
-    template<typename typeT>
-    void assign_static(typeT val, rx_time ts = rx_time::null_time(), uint32_t quality = RX_GOOD_QUALITY)
+    template<size_t sz, typename... Ts>
+    void fill_array_internal(std::array<size_t, sz>& arr, size_t arr_idx, size_t idx1) const
     {
-        rx_destroy_value(&data_.value);
-        assign_value(data_.value, std::forward<typeT>(val));
+        arr[arr_idx] = idx1;
+    }
+    template<size_t sz, typename... Ts>
+    void fill_array_internal(std::array<size_t, sz>& arr, size_t arr_idx, size_t idx1, Ts... types) const
+    {
+        arr[arr_idx] = idx1;
+        fill_array_internal(arr, arr_idx + 1, types...);
+    }
+public:
+    static constexpr size_t npos = (size_t)(-1);
+    template<typename... Ts>
+    void assign(rx_simple_value val, Ts... types)
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, sizeof...(Ts)> indexes;
+            fill_array_internal(indexes, 0, types...);
+            rx_set_sub_struct_value(indexes.size(), &indexes[0], &val.data_, &data_.value);
+        }
+        else
+        {
+            *this = std::move(val);
+        }
+    }
+    template<typename typeT, typename... Ts>
+    void assign_static(typeT val, Ts... types)
+    {
+        rx_simple_value temp;
+        assign_value(temp.data_, std::forward<typeT>(val));
+        assign(std::move(temp), types...);
+        data_.time = rx_time::null_time().c_data();
+    }
+
+    template<typename typeT, typename... Ts>
+    void assign_static(typeT val, rx_time ts, Ts... types)
+    {
+        rx_simple_value temp;
+        assign_value(temp.data_, std::forward<typeT>(val));
+        assign(std::move(temp), types...);
         data_.time = ts.c_data();
     }
-    template<typename typeT>
-    typeT extract_static(const typeT& def) const
+    template<typename typeT, typename... Ts>
+    typeT extract_static(const typeT& def, Ts... types) const
     {
-        return extract_value(&data_.value, def);
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, sizeof...(Ts)> indexes;
+            fill_array_internal(indexes, 0, types...);
+            rx_simple_value temp;
+            auto ret = rx_get_sub_struct_value(indexes.size(), &indexes[0], &temp.data_, &data_.value);
+            if (ret == RX_OK)
+            {
+                return extract_value(temp.data_, def);
+            }
+            else
+            {
+                return def;
+            }
+        }
+        else
+        {
+            return extract_value(data_.value, def);
+        }
+    }
+    template<typename... Ts>
+    bool is_array(size_t idx1, Ts... types) const
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, 1 + sizeof...(Ts)> indexes;
+            indexes[0] = idx1;
+            fill_array_internal(indexes, 1, types...);
+            auto ret = rx_is_sub_array_value(indexes.size(), &indexes[0], &data_.value);
+            return ret != 0;
+        }
+        else
+        {
+            auto ret = rx_is_sub_array_value(1, &idx1, &data_.value);
+            return ret != 0;
+        }
+    }
+    template<typename... Ts>
+    bool is_struct(size_t idx1, Ts... types) const
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, 1 + sizeof...(Ts)> indexes;
+            indexes[0] = idx1;
+            fill_array_internal(indexes, 1, types...);
+            auto ret = rx_is_sub_struct(indexes.size(), &indexes[0], &data_.value);
+            return ret != 0;
+        }
+        else
+        {
+            auto ret = rx_is_sub_struct(1, &idx1, &data_.value);
+            return ret != 0;
+        }
+    }
+    template<typename... Ts>
+    size_t array_size(size_t idx1, Ts... types) const
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, 1 + sizeof...(Ts)> indexes;
+            indexes[0] = idx1;
+            fill_array_internal(indexes, 1, types...);
+            size_t sz = 0;
+            auto ret = rx_get_sub_array_size(indexes.size(), &indexes[0], &data_.value, &sz);
+
+            return ret == RX_OK ? sz : npos;
+        }
+        else
+        {
+            size_t sz = 0;
+            auto ret = rx_get_sub_array_size(1, &idx1, &data_.value, &sz);
+
+            return ret == RX_OK ? sz : npos;
+        }
+    }
+    template<typename... Ts>
+    size_t struct_size(size_t idx1, Ts... types) const
+    {
+        if constexpr (sizeof...(Ts) > 0)
+        {
+            std::array<size_t, 1 + sizeof...(Ts)> indexes;
+            indexes[0] = idx1;
+            fill_array_internal(indexes, 1, types...);
+            size_t sz = 0;
+            auto ret = rx_get_sub_struct_size(indexes.size(), &indexes[0], &data_.value, &sz);
+
+            return ret == RX_OK ? sz : npos;
+        }
+        else
+        {
+            size_t sz = 0;
+            auto ret = rx_get_sub_struct_size(1, &idx1, &data_.value, &sz);
+
+            return ret == RX_OK ? sz : npos;
+        }
     }
 	rx_timed_value();
-    rx_timed_value(timed_value_type right) noexcept;
+    rx_timed_value(timed_value_type&& right) noexcept;
 	rx_timed_value(const rx_timed_value &right);
 	rx_timed_value(rx_timed_value&& right) noexcept;
 	rx_timed_value& operator=(rx_timed_value&& right) noexcept;
@@ -574,19 +975,27 @@ public:
 
       bool compare (const rx_timed_value& right, time_compare_type time_compare) const;
 
-      rx_simple_value to_simple () const;
+      rx::values::rx_simple_value to_simple () const;
 
       bool is_byte_string () const;
 
       byte_string get_byte_string (size_t idx = RX_INVALID_INDEX_VALUE) const;
 
-      rx_simple_value operator [] (int index) const;
+      rx::values::rx_simple_value operator [] (int index) const;
 
       void assign_array (const std::vector<rx_simple_value>& from, rx_time ts = rx_time::null_time());
 
       bool is_struct () const;
 
       size_t struct_size () const;
+
+      bool set_struct_value (rx::values::rx_simple_value rx_val, const std::vector<size_t>& indexes);
+
+      bool get_struct_value (rx_simple_value& rx_val, const std::vector<size_t>& indexes) const;
+
+      size_t array_size (const std::vector<size_t>& indexes) const;
+
+      size_t struct_size (const std::vector<size_t>& indexes) const;
 
 
   protected:
@@ -623,7 +1032,6 @@ class rx_value_holder
 
 namespace rx
 {
-void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, values::rx_simple_value t);
 
 template<typename T>
 void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, T t)
@@ -632,6 +1040,7 @@ void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals,
     temp.assign_static(t);
     vals.push_back(std::move(temp));
 }
+
 template<typename T, typename... Args>
 void rx_create_value_static_internal(std::vector<values::rx_simple_value>& vals, T t, Args... args)
 {

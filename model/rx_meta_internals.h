@@ -253,7 +253,7 @@ class inheritance_hash
 
       rx_result remove_from_hash_data (const rx_node_id& id);
 
-      rx_result add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items);
+      rx_result add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items, std::unique_ptr<std::map<rx_node_id, string_type> > ids_map);
 
       void deinitialize ();
 
@@ -424,11 +424,11 @@ public:
 
       rx_result delete_type (rx_node_id id);
 
-      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data);
 
       void deinitialize ();
 
-      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data);
 
       api::query_result get_instanced_objects (const rx_node_id& id) const;
 
@@ -928,11 +928,11 @@ class platform_types_manager
 
       static platform_types_manager& instance ();
 
-      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data);
 
       void deinitialize ();
 
-      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& data);
+      rx_result start (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data);
 
       void stop ();
 

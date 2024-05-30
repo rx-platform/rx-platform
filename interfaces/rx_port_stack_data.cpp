@@ -248,7 +248,8 @@ std::vector<rx_port_ptr> port_build_map::get_registered ()
 // Class rx_internal::interfaces::port_stack::port_passive_map 
 
 port_passive_map::port_passive_map()
-      : stack_binded(false)
+      : stack_binded_up(false),
+        stack_binded_down(false)
 {
 }
 
@@ -425,7 +426,8 @@ rx_result port_stack_data::init_runtime_data (runtime::runtime_init_context& ctx
     buffers.buffer_discard_size = ctx.get_item_static<size_t>("Options.BuffDiscardSize", 0x1000);
     buffers.buffer_count.bind("Status.Buffers", ctx);
     buffers.discard_buffer_count.bind("Status.DropedBuffers", ctx);
-    passive_map.stack_binded.bind("Status.Binded", ctx);
+    passive_map.stack_binded_up.bind("Status.BindedUp", ctx);
+    passive_map.stack_binded_down.bind("Status.BindedDown", ctx);
     build_map.stack_ready.bind("Status.Assembled", ctx);
     active_map.active_endpoints.bind("Status.Endpoints", ctx);
     return true;

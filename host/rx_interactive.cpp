@@ -137,6 +137,10 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 	}
 	else
 	{
+		std::ostringstream ss;
+		ss << "Error initializing {rx-platform}:";
+		rx_dump_error_result(ss, init_result);
+		HOST_LOG_ERROR("Main", 999, ss.str());
 		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError initializing {rx-platform}:\r\n";
 		rx_dump_error_result(std::cout, init_result);
 		result = init_result.errors();

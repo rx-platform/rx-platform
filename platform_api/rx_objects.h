@@ -66,13 +66,13 @@ class rx_object : public rx_runtime
       static constexpr rx_item_type runtime_type_id = rx_item_type::rx_object;
 
       template<typename funcT>
-      runtime_handle_t post_job(funcT func, uint32_t period = 0)
+      rx_result post_job(funcT func, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
           return post_job_internal(RX_JOB_REGULAR, data, period);
       }
       template<typename funcT>
-      runtime_handle_t post_slow_job(funcT func, uint32_t period = 0)
+      rx_result post_slow_job(funcT func, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
           return post_job_internal(RX_JOB_SLOW, data, period);
@@ -184,13 +184,13 @@ class rx_application : public rx_runtime
       static constexpr rx_item_type runtime_type_id = rx_item_type::rx_application;
 
       template<typename funcT>
-      runtime_handle_t post_job(funcT func, uint32_t period = 0)
+      rx_result post_job(funcT func, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
           return post_job_internal(RX_JOB_REGULAR, data, period);
       }
       template<typename funcT>
-      runtime_handle_t post_slow_job(funcT func, uint32_t period = 0)
+      rx_result post_slow_job(funcT func, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
           return post_job_internal(RX_JOB_SLOW, data, period);
@@ -290,13 +290,13 @@ class rx_domain : public rx_runtime
       static constexpr rx_item_type runtime_type_id = rx_item_type::rx_domain;
 
       template<typename funcT>
-      runtime_handle_t post_job(funcT func, uint32_t period = 0)
+      rx_result post_job(funcT func, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
           return post_job_internal(RX_JOB_REGULAR, data, period);
       }
       template<typename funcT>
-      runtime_handle_t post_slow_job(funcT func, uint32_t period = 0)
+      rx_result post_slow_job(funcT func, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
           return post_job_internal(RX_JOB_SLOW, data, period);

@@ -61,7 +61,7 @@ extern "C"
 	void c_method_result(void* whose, rx_result_struct result, runtime_transaction_id_t id, struct typed_value_type out_val)
 	{
 		rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
-		self->method_result(result, id, out_val);
+		self->method_result(result, id, std::move(out_val));
 	}
 
 	host_method_def_struct _g_method_def_

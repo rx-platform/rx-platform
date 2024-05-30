@@ -211,7 +211,7 @@ RX_COMMON_API int rx_init_bytes_value_struct(bytes_value_struct* data, const uin
 	}
 	else
 	{
-		if (len && bytes == NULL)
+		if (len && len != (size_t)(-1) && bytes == NULL)
 		{
 			data->size = len;
 			if (len <= sizeof(data->value))

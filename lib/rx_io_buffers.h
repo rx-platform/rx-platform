@@ -172,13 +172,13 @@ class rx_io_buffer : public rx_packet_buffer
 	  }
 
       template<typename T>
-      T* alloc_from_buffer()
+      T* alloc_from_buffer(size_t count = 1)
       {
           static_assert(std::is_trivial<T>::value);
 
           rx_protocol_result_t result;
 
-          T* ptr = (T*)rx_alloc_from_packet(this, sizeof(T), &result);
+          T* ptr = (T*)rx_alloc_from_packet(this, sizeof(T) * count, &result);
 
           if (result == RX_PROTOCOL_OK)
               return ptr;

@@ -176,13 +176,14 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 						result = rx_internal::discovery::discovery_manager::instance().initialize(host, data);
 						if (result)
 						{
-							result = rx_internal::model::platform_types_manager::instance().initialize(host, data);
+							init_data_ = std::make_unique<initialize_data_type>();
+							result = rx_internal::model::platform_types_manager::instance().initialize(host, data, *init_data_);
 							if (!result)
 							{
 								result.register_error("Error initializing platform types manager!");
 							}
 						}
-						if (!result)
+						else
 						{
 							result.register_error("Error initializing discovery manager!");
 						}
@@ -263,24 +264,34 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 		result = rx_internal::discovery::discovery_manager::instance().start(host, data);
 		if (result)
 		{
-			network_ = rx_internal::discovery::discovery_manager::instance().get_ip4_network().to_string();
-			network_id_ = rx_internal::discovery::discovery_manager::instance().get_network_id();
-			result = rx_internal::model::platform_types_manager::instance().start(host, data);
-			if (result)
+			if (init_data_)
 			{
-				platform_status_ = rx_platform_status::running;
-				host->server_started_event();
-				return true;
+				network_ = rx_internal::discovery::discovery_manager::instance().get_ip4_network().to_string();
+				network_id_ = rx_internal::discovery::discovery_manager::instance().get_network_id();
+			
+				result = rx_internal::model::platform_types_manager::instance().start(host, data, *init_data_);
+				if (result)
+				{
+					init_data_.reset();// we do not need this anymore
+					platform_status_ = rx_platform_status::running;
+					host->server_started_event();
+					return true;
+				}
+				else
+				{
+					rx_internal::discovery::discovery_manager::instance().stop();
+					rx_internal::infrastructure::server_runtime::instance().stop();
+					result.register_error("Error starting platform types manager!");
+				}
 			}
 			else
 			{
-				rx_internal::discovery::discovery_manager::instance().stop();
-				rx_internal::infrastructure::server_runtime::instance().stop();
-				result.register_error("Error starting platform types manager!");
+				result.register_error("Platform not started!");
 			}
 		}
 		else
 		{
+			rx_internal::discovery::discovery_manager::instance().stop();
 			rx_internal::infrastructure::server_runtime::instance().stop();
 			result.register_error("Error starting discovery manager!");
 		}

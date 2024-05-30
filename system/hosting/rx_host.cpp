@@ -256,6 +256,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.manuals_path = row.second;
 		else if (row.first == "http.resources" && config.other.http_path.empty())
 			config.other.http_path = row.second;
+		else if (row.first == "http.user" && config.other.http_user.empty())
+			config.other.http_user = row.second;
 		else if (row.first == "py.resources" && config.other.py_path.empty())
 			config.other.py_path = row.second;
 		else if (row.first == "rx.security" && config.other.rx_security.empty())
@@ -264,11 +266,15 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.certificates.emplace(row);
 		else if (row.first == "http.port" && config.other.http_port == 0)
 			config.other.http_port = atoi(row.second.c_str());
+		else if (row.first == "mqtt.broker_port" && config.other.mqtt_port == 0)
+			config.other.mqtt_port = atoi(row.second.c_str());
+		else if (row.first == "mqtt.broker_addr" && config.other.mqtt_address.empty())
+			config.other.mqtt_address = row.second;
 		else if (row.first == "opc.port" && config.other.opcua_port == 0)
 			config.other.opcua_port = atoi(row.second.c_str());
 		else if (row.first == "instance.port" && config.instance.port == 0)
 			config.instance.port = atoi(row.second.c_str());
-		else if (row.first == "instance.group" && config.instance.port == 0)
+		else if (row.first == "instance.group" && config.instance.group.empty())
 			config.instance.group = row.second;
 		else if (row.first == "rx.port" && config.other.rx_port == 0)
 			config.other.rx_port = atoi(row.second.c_str());
@@ -455,6 +461,7 @@ void rx_platform_host::read_config_options (const std::map<string_type, string_t
 bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* help_name, rx_platform::configuration_data_t& config)
 {
 	config.other.http_port = 0;
+	config.other.mqtt_port = 0;
 	config.other.opcua_port = 0;
 	config.instance.port = 0;
 	config.other.rx_port = 0;
@@ -540,6 +547,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("group", "IP address of rx-protocol multicast group", cxxopts::value<string_type>(config.instance.group))
 		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.instance.plugin))
 		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
+		("http", "Location of the http user resource files", cxxopts::value<string_type>(config.other.http_user))
 		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
 		("py-path", "Location of the micropython files", cxxopts::value<string_type>(config.other.py_path))
 		("opc-port", "TCP/IP port for OPCUA binary server to listen to", cxxopts::value<uint16_t>(config.other.opcua_port))

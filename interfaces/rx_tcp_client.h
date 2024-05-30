@@ -34,12 +34,12 @@
 
 #include "system/runtime/rx_value_templates.h"
 
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
 #include "interfaces/rx_stream_io.h"
 
@@ -233,6 +233,66 @@ TCP Server port class. implementation of an TCP/IP4 client side, connect...");
       free_buffers_type free_buffers_;
 
       locks::slim_lock free_buffers_lock_;
+
+
+};
+
+
+
+
+
+
+class system_client_port_base : public tcp_client_port  
+{
+    DECLARE_REFERENCE_PTR(system_client_port_base);
+
+  public:
+
+      virtual uint16_t get_configuration_port () const = 0;
+
+      virtual string_type get_configuration_address () const = 0;
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      rx_result start_runtime (runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime_stop_context& ctx);
+
+
+  protected:
+
+  private:
+
+
+      io::ip4_address active_connect_address_;
+
+      bool connecting_;
+
+      uint32_t subs_id_;
+
+      uint16_t system_port_;
+
+
+};
+
+
+
+
+
+
+class system_mqtt_client : public system_client_port_base  
+{
+
+  public:
+
+      uint16_t get_configuration_port () const;
+
+      string_type get_configuration_address () const;
+
+
+  protected:
+
+  private:
 
 
 };

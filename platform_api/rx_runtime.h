@@ -807,6 +807,7 @@ public:
     }
 };
 
+
 template <typename typeT>
 struct local_value
 {
@@ -896,6 +897,29 @@ public:
     local_complex_value(const values::rx_simple_value& right);
     local_complex_value(values::rx_simple_value&& right);
     local_complex_value& operator=(values::rx_simple_value right);
+    const values::rx_simple_value& value() const;
+};
+
+
+template <bool useIinit>
+struct owned_complex_value
+{
+    values::rx_simple_value value_;
+    runtime_handle_t handle_ = 0;
+    rx_process_context ctx_;
+    bind_callback_data callback_data_;
+    void internal_commit();
+public:
+    owned_complex_value() = default;
+    ~owned_complex_value() = default;
+    owned_complex_value(const owned_complex_value&) = delete;
+    owned_complex_value(owned_complex_value&&) = delete;
+    owned_complex_value& operator=(const owned_complex_value&) = delete;
+    owned_complex_value& operator=(owned_complex_value&&) = delete;
+    rx_result bind(const string_type& path, rx_init_context& ctx);
+    owned_complex_value(const values::rx_simple_value& right);
+    owned_complex_value(values::rx_simple_value&& right);
+    owned_complex_value& operator=(values::rx_simple_value right);
     const values::rx_simple_value& value() const;
 };
 template <typename typeT, bool manual = false>

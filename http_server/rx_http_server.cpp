@@ -71,10 +71,15 @@ rx_result http_server::initialize (hosting::rx_platform_host* host, configuratio
 	string_type master_path = config.other.http_path;
 	if (!master_path.empty())
 	{
-		static_path_ = rx_combine_paths(master_path, "_static");
+		static_paths_.push_back(rx_combine_paths(master_path, "_static"));
 		global_path_ = rx_combine_paths(master_path, "_global");
-		dynamic_path_ = rx_combine_paths(master_path, "_dynamic");
+		dynamic_paths_.push_back(rx_combine_paths(master_path, "_dynamic"));
 		handlers_.initialize(host, config);
+	}
+	if (!config.other.http_user.empty())
+	{
+		static_paths_.push_back(config.other.http_user);
+		dynamic_paths_.push_back(config.other.http_user);
 	}
 	auto result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
 		RX_STATIC_HTTP_DISPLAY_TYPE_ID, [] {
@@ -103,23 +108,26 @@ rx_result http_server::handle_request (http_request req)
 	HTTP_LOG_DEBUG("http_server", 100, "HTTP request received for "s + req.path);
 	http_response response;
 	response.cache_me = false;
-#ifndef _DEBUG
-	if (req.method == rx_http_method::get)
+
+
+	if (!rx_gate::instance().get_configuration().management.debug)
 	{
-		locks::auto_lock_t _(&cache_lock_);
-		auto it = cached_items_.find(req.path);
-		if (it != cached_items_.end())
+		if (req.method == rx_http_method::get)
 		{
-			response = it->second;
+			locks::auto_lock_t _(&cache_lock_);
+			auto it = cached_items_.find(req.path);
+			if (it != cached_items_.end())
+			{
+				response = it->second;
+			}
+		}
+		if (response.cache_me)
+		{
+			HTTP_LOG_DEBUG("http_server", 100, "Cache sending HTTP response "s + response.result_string + " for "s + req.path);
+			req.whose->send_response(std::move(response));
+			return true;// done with the cache
 		}
 	}
-	if (response.cache_me)
-	{
-		HTTP_LOG_DEBUG("http_server", 100, "Cache sending HTTP response "s + response.result_string + " for "s + req.path);
-		req.whose->send_response(std::move(response));
-		return true;// done with the cache
-	}
-#endif
 
 	for (auto& one : filters_)
 	{
@@ -149,6 +157,7 @@ rx_result http_server::handle_request (http_request req)
 
 void http_server::send_response (http_request& request, http_response response)
 {
+
 	for (auto& one : filters_)
 	{
 		one->handle_request_after(request, response);
@@ -226,18 +235,22 @@ string_type http_server::get_global_content (const string_type& path)
 string_type http_server::get_dynamic_content (const string_type& path)
 {
 	string_type ret;
-	auto file_path = rx_combine_paths(dynamic_path_, path);
-	rx::rx_source_file src;
-	auto result = src.open(file_path.c_str());
-	if (result)
+	for (const auto& one_path : dynamic_paths_)
 	{
-		string_type buffer;
-		result = src.read_string(buffer);
+		auto file_path = rx_combine_paths(one_path, path);
+		rx::rx_source_file src;
+		auto result = src.open(file_path.c_str());
 		if (result)
 		{
-			ret = std::move(buffer);
-			locks::auto_lock_t _(&cache_lock_);
-			cached_dynamic_.emplace(path, ret);
+			string_type buffer;
+			result = src.read_string(buffer);
+			if (result)
+			{
+				ret = std::move(buffer);
+				locks::auto_lock_t _(&cache_lock_);
+				cached_dynamic_.emplace(path, ret);
+			}
+			return ret;
 		}
 	}
 	return ret;

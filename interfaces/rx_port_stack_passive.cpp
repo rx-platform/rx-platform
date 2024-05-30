@@ -77,13 +77,13 @@ rx_result passive_builder::send_listen (rx_port_ptr who, const io::any_address& 
     who_data.passive_map.bind_port = stack_top;
     if (top_passive_kind->is_listen_subscriber())
     {
-        if (!top_data.passive_map.stack_binded)
+        if (!top_data.passive_map.stack_binded_up)
         {
             result = stack_top->get_implementation()->start_listen(&local_addr_copy, &remote_addr_copy);
             if (result)
             {
-                who_data.passive_map.stack_binded = true;
-                top_data.passive_map.stack_binded = true;
+                who_data.passive_map.stack_binded_down = true;
+                top_data.passive_map.stack_binded_up = true;
             }
             else
             {
@@ -97,7 +97,8 @@ rx_result passive_builder::send_listen (rx_port_ptr who, const io::any_address& 
         result = send_listen(stack_top, local_addr, remote_addr);
         if (result)
         {
-            who_data.passive_map.stack_binded = true;
+            top_data.passive_map.stack_binded_up = true;
+            who_data.passive_map.stack_binded_down = true;
             who_data.passive_map.bind_port = stack_top;
         }
         else
@@ -114,7 +115,22 @@ rx_result passive_builder::send_connect (rx_port_ptr who, const io::any_address&
 {
     auto& who_data = who->get_instance_data().stack_data;
     if (!who_data.build_map.stack_ready || !who_data.build_map.stack_top)
-        return "Protocol stack not ready";
+    {
+        rx_result result("Protocol stack not ready");
+        std::ostringstream ss;
+        ss << "Port "
+            << who->meta_info().get_full_path()
+            << " not connected to "
+            << "["
+            << local_addr.to_string()
+            << ","
+            << remote_addr.to_string()
+            << "];"
+            << result.errors_line();
+        RUNTIME_LOG_ERROR("passive_builder", 200, ss.str());
+
+        return result;
+    }
 
     auto ep = who->get_implementation()->construct_initiator_endpoint(&local_addr, &remote_addr);
     if (ep)
@@ -129,6 +145,7 @@ rx_result passive_builder::send_connect (rx_port_ptr who, const io::any_address&
                 who, ep, who, nullptr, &local_addr_copy, &remote_addr_copy);
             if (result)
             {
+                who_data.passive_map.stack_binded_down = true;
                 if (connected_data.first)
                 {
                     auto session = rx_create_session(&local_addr, &remote_addr, 0, 0, nullptr);
@@ -161,7 +178,21 @@ rx_result passive_builder::send_connect (rx_port_ptr who, const io::any_address&
     }
     else
     {
-        return "Error constructing endpoint.";
+        rx_result result("Error constructing endpoint.");
+
+        who->get_implementation()->destroy_endpoint(ep);
+        std::ostringstream ss;
+        ss << "Port "
+            << who->meta_info().get_full_path()
+            << " not connected to "
+            << "["
+            << local_addr.to_string()
+            << ","
+            << remote_addr.to_string()
+            << "];"
+            << result.errors_line();
+        
+        return result;
     }
 }
 
@@ -197,7 +228,8 @@ rx_result passive_builder::send_connect_down_recursive (rx_port_ptr who, rx_prot
                 result = stack_active::active_builder::register_connection_endpoints(stack_top, connect_result.value().endpoint, who, ep, &local_addr, &remote_addr);
                 if (result)
                 {
-                    who_data.passive_map.stack_binded = true;
+                    who_data.passive_map.stack_binded_down = true;
+                    top_data.passive_map.stack_binded_up = true;
                     if(connect_result.value().connected)
                         connected.first = connect_result.value().endpoint;
                     return true;
@@ -240,7 +272,8 @@ rx_result passive_builder::send_connect_down_recursive (rx_port_ptr who, rx_prot
                 result = send_connect_down_recursive(stack_top, top_ep, local_addr_copy, remote_addr_copy, connected);
                 if (result)
                 {
-                    who_data.passive_map.stack_binded = true;
+                    top_data.passive_map.stack_binded_up = true;
+                    who_data.passive_map.stack_binded_down = true;
                     who_data.passive_map.bind_port = stack_top;
                     return true;
                 }
@@ -277,15 +310,16 @@ rx_result passive_builder::unbind_passive (rx_port_ptr who)
             // we are already unbind-ed
             break;
         }
+        who_data.stack_binded_down = false;
         auto bottom_ptr = who_data.bind_port;
         auto& temp_build_kind = bottom_ptr->get_instance_data().behavior.passive_behavior;
         auto& bottom_data = bottom_ptr->get_instance_data().stack_data.passive_map;
-        RX_ASSERT(bottom_data.stack_binded);
+        RX_ASSERT(bottom_data.stack_binded_up);
         auto result = bottom_data.unregister_passive(next_port, bottom_ptr);
         if (result)
         {
             if(bottom_data.empty())
-                bottom_data.stack_binded = false;
+                bottom_data.stack_binded_up = false;
             who_data.bind_port = rx_port_ptr::null_ptr;
         }
         bottom_port = temp_build_kind->is_connect_subscriber() || temp_build_kind->is_listen_subscriber();
@@ -296,7 +330,7 @@ rx_result passive_builder::unbind_passive (rx_port_ptr who)
     if (bottom_port)
     {
         auto result = who->get_implementation()->stop_passive();
-        who->get_instance_data().stack_data.passive_map.stack_binded = false;
+        who->get_instance_data().stack_data.passive_map.stack_binded_up = false;
         if (!result)
             return result;
     }
@@ -315,6 +349,7 @@ rx_result passive_builder::send_unbind_up_recursive (rx_port_ptr who)
     {
         auto& one_data = one->get_instance_data().stack_data.passive_map;
         auto& one_build_kind = one->get_instance_data().behavior.passive_behavior;
+        one_data.stack_binded_down = false;
         who_data.unregister_passive(one, who);
         one_data.bind_port = rx_port_ptr::null_ptr;
         if (!one_build_kind->is_connect_sender() && !one_build_kind->is_listen_sender())
@@ -322,7 +357,7 @@ rx_result passive_builder::send_unbind_up_recursive (rx_port_ptr who)
             send_unbind_up_recursive(one);
         }
     }
-    who_data.stack_binded = false;
+    who_data.stack_binded_up = false;
     return true;
 }
 

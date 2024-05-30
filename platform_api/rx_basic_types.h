@@ -133,7 +133,7 @@ rx_result register_variable_runtime(const rx_node_id& id)
         T* temp = new T;
         return &temp->impl_;
     };
-    return register_variable_runtime(id, constr_lambda, rx_runtime_register_func_t());
+    return register_variable_runtime(id, constr_lambda);
 }
 
 

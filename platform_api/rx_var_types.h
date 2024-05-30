@@ -561,7 +561,7 @@ rx_result rx_numeric_filter<valT>::filter_output (rx_simple_value& val)
     valT ext = val.extract_static<valT>(0);
     auto result = filter_output(ext);
     if (result)
-        val.assign_static<valT>(std::move(ext), rx_time::now());
+        val.assign_static<valT>(std::move(ext));
     return result;
 }
 

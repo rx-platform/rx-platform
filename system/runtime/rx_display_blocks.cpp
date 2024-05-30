@@ -171,7 +171,8 @@ void displays_holder::collect_data (data::runtime_values_data& data, runtime_val
     {
         data::runtime_values_data one_data;
         one.collect_data(one_data, type);
-        data.add_child(one.name, std::move(one_data));
+        if (!one_data.empty())
+            data.add_child(one.name, std::move(one_data));
 
     }
 }

@@ -95,37 +95,37 @@ class rx_port : public rx_runtime
       static constexpr rx_item_type runtime_type_id = rx_item_type::rx_port;
 
       template<typename funcT>
-      runtime_handle_t post_job(funcT func, uint32_t period = 0)
+      rx_result post_job(funcT func, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
           return post_job_internal(RX_JOB_REGULAR, data, period);
       }
       template<typename funcT>
-      runtime_handle_t post_job_with_anchor(funcT func, rx_reference_ptr anchor, uint32_t period = 0)
+      rx_result post_job_with_anchor(funcT func, rx_reference_ptr anchor, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(anchor, std::forward<funcT>(func));
           return post_job_internal(RX_JOB_REGULAR, data, period);
       }
       template<typename funcT>
-      runtime_handle_t post_io_job(funcT func, uint32_t period = 0)
+      rx_result post_io_job(funcT func, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
           return post_job_internal(RX_JOB_IO, data, period);
       }
       template<typename funcT>
-      runtime_handle_t post_io_job_with_anchor(funcT func, rx_reference_ptr anchor, uint32_t period = 0)
+      rx_result post_io_job_with_anchor(funcT func, rx_reference_ptr anchor, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(anchor, std::forward<funcT>(func));
           return post_job_internal(RX_JOB_IO, data, period);
       }
       template<typename funcT>
-      runtime_handle_t post_slow_job(funcT func, uint32_t period = 0)
+      rx_result post_slow_job(funcT func, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(smart_this(), std::forward<funcT>(func));
           return post_job_internal(RX_JOB_SLOW, data, period);
       }
       template<typename funcT>
-      runtime_handle_t post_slow_job_with_anchor(funcT func, rx_reference_ptr anchor, uint32_t period = 0)
+      rx_result post_slow_job_with_anchor(funcT func, rx_reference_ptr anchor, uint32_t period = 0)
       {
           callback_data::smart_ptr data = rx_create_reference<callback_data>(anchor, std::forward<funcT>(func));
           return post_job_internal(RX_JOB_SLOW, data, period);

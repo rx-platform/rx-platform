@@ -138,6 +138,7 @@ rx_result tags_holder::stop_runtime (runtime_stop_context& ctx)
 {
 	auto result = item_->stop_runtime(ctx);
 	connected_tags_.runtime_stopped(rx_time::now());
+	binded_tags_.runtime_stopped(ctx);
 	return result;
 }
 

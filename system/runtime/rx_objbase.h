@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -36,16 +36,16 @@
 #include "system/server/rx_server.h"
 #include "lib/rx_io_addr.h"
 
-// dummy
-#include "dummy.h"
-// rx_process_context
-#include "system/runtime/rx_process_context.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_meta_data
 #include "lib/rx_meta_data.h"
 // rx_io_buffers
 #include "lib/rx_io_buffers.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
+// dummy
+#include "dummy.h"
+// rx_process_context
+#include "system/runtime/rx_process_context.h"
 
 namespace rx_platform {
 namespace security {
@@ -192,23 +192,16 @@ object class. basic implementation of an object");
       {
           if (context_)
           {
-              values::rx_simple_value temp_val;
-              auto result = context_->get_value(handle, temp_val);
-              if (result)
-              {
-                  return temp_val.extract_static(default_value);
-              }
+              return context_->get_binded_as<valT>(handle, default_value);
           }
           return default_value;
       }
       template<typename valT>
-      void set_binded_as(runtime_handle_t handle, valT&& value)
+      void set_binded_as(runtime_handle_t handle, valT&& value, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t())
       {
           if (context_)
           {
-              values::rx_simple_value temp_val;
-              temp_val.assign_static<valT>(std::forward<valT>(value));
-              auto result = context_->set_value(handle, std::move(temp_val));
+              context_->set_binded_as<valT>(handle, std::move(value), std::move(callback));
           }
       }
       template<typename funcT, typename... Args>
@@ -219,6 +212,13 @@ object class. basic implementation of an object");
           return job;
       }
   protected:
+
+      runtime_process_context * get_context ()
+      {
+        return context_;
+      }
+
+
 
   private:
 
@@ -292,26 +292,26 @@ system application class. basic implementation of a application");
       {
           if (context_)
           {
-              values::rx_simple_value temp_val;
-              auto result = context_->get_value(handle, temp_val);
-              if (result)
-              {
-                  return temp_val.extract_static(default_value);
-              }
+              return context_->get_binded_as<valT>(handle, default_value);
           }
           return default_value;
       }
       template<typename valT>
-      void set_binded_as(runtime_handle_t handle, valT&& value)
+      void set_binded_as(runtime_handle_t handle, valT&& value, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t())
       {
           if (context_)
           {
-              values::rx_simple_value temp_val;
-              temp_val.assign_static<valT>(std::forward<valT>(value));
-              auto result = context_->set_value(handle, std::move(temp_val));
+              context_->set_binded_as<valT>(handle, value, std::move(callback));
           }
       }
   protected:
+
+      runtime_process_context * get_context ()
+      {
+        return context_;
+      }
+
+
 
   private:
 
@@ -385,26 +385,26 @@ system domain class. basic implementation of a domain");
       {
           if (context_)
           {
-              values::rx_simple_value temp_val;
-              auto result = context_->get_value(handle, temp_val);
-              if (result)
-              {
-                  return temp_val.extract_static(default_value);
-              }
+              return context_->get_binded_as<valT>(handle, default_value);
           }
           return default_value;
       }
       template<typename valT>
-      void set_binded_as(runtime_handle_t handle, valT&& value)
+      void set_binded_as(runtime_handle_t handle, valT&& value, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t())
       {
           if (context_)
           {
-              values::rx_simple_value temp_val;
-              temp_val.assign_static<valT>(std::forward<valT>(value));
-              auto result = context_->set_value(handle, std::move(temp_val));
+              context_->set_binded_as<valT>(handle, value, std::move(callback));
           }
       }
   protected:
+
+      runtime_process_context * get_context ()
+      {
+        return context_;
+      }
+
+
 
   private:
 
@@ -511,23 +511,16 @@ system port class. basic implementation of a port");
       {
           if (context_)
           {
-              values::rx_simple_value temp_val;
-              auto result = context_->get_value(handle, temp_val);
-              if (result)
-              {
-                  return temp_val.extract_static(default_value);
-              }
+              return context_->get_binded_as<valT>(handle, default_value);
           }
           return default_value;
       }
       template<typename valT>
-      void set_binded_as(runtime_handle_t handle, valT&& value)
+      void set_binded_as(runtime_handle_t handle, valT&& value, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t())
       {
           if (context_)
           {
-              values::rx_simple_value temp_val;
-              temp_val.assign_static<valT>(std::forward<valT>(value));
-              auto result = context_->set_value(handle, std::move(temp_val));
+              context_->set_binded_as<valT>(handle, value, std::move(callback));
           }
       }
       template<typename funcT, typename... Args>

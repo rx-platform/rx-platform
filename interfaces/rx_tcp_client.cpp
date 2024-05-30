@@ -233,6 +233,10 @@ bool tcp_client_endpoint::tick ()
         locks::auto_lock_t _(&state_lock_);
         temp_state = current_state_;
     }
+    if (remote_addr_.is_empty_ip4())
+    {
+        return false;
+    }
     switch (temp_state)
     {
     case tcp_state::not_active:
@@ -310,6 +314,12 @@ rx_result tcp_client_endpoint::open (const protocol_address* addr, const protoco
     my_port_ = port;
     local_addr_.parse(addr);
     remote_addr_.parse(remote_addr);
+
+    if (remote_addr_.is_empty_ip4())
+    {
+        ITF_LOG_WARNING("tcp_client_endpoint", 900, "IP Client with empty connect address!");
+    }
+
     timer_ = my_port_->create_timer_function([this]()
         {
             if (!tick())
@@ -418,16 +428,16 @@ rx_result tcp_client_port::initialize_runtime (runtime::runtime_init_context& ct
     auto result = status.initialize(ctx);
     auto bind_result = recv_timeout_.bind("Timeouts.ReceiveTimeout", ctx);
     if (!bind_result)
-        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
+        ITF_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
     bind_result = send_timeout_.bind("Timeouts.SendTimeout", ctx);
     if (!bind_result)
-        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.SendTimeout");
+        ITF_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.SendTimeout");
     bind_result = connect_timeout_.bind("Timeouts.ConnectTimeout", ctx);
     if (!bind_result)
-        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ConnectTimeout");
+        ITF_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ConnectTimeout");
     bind_result = reconnect_timeout_.bind("Timeouts.ReconnectTimeout", ctx);
     if (!bind_result)
-        RUNTIME_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReconnectTimeout");
+        ITF_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReconnectTimeout");
 
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
     addr = rx_gate::instance().resolve_ip4_alias(addr);
@@ -575,6 +585,60 @@ uint32_t tcp_client_port::get_send_timeout () const
 uint32_t tcp_client_port::get_connect_timeout () const
 {
     return connect_timeout_;
+}
+
+
+// Class rx_internal::interfaces::ip_endpoints::system_client_port_base 
+
+
+rx_result system_client_port_base::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+    auto port = get_configuration_port();
+    auto addr = get_configuration_address();
+    if (port)
+    {
+        ctx.set_item_static("Connect.IPPort", port);
+        ctx.set_item_static("Connect.IPAddress", std::move(addr));
+    }
+    system_port_ = 0;
+    auto result = tcp_client_port::initialize_runtime(ctx);
+    return result;
+}
+
+rx_result system_client_port_base::start_runtime (runtime_start_context& ctx)
+{
+    auto result = tcp_client_port::start_runtime(ctx);
+    if (!result)
+        return result;
+
+    return true;
+}
+
+rx_result system_client_port_base::stop_runtime (runtime_stop_context& ctx)
+{
+    auto result = tcp_client_port::stop_runtime(ctx);
+    if (!result)
+        return result;
+
+    return true;
+}
+
+
+// Class rx_internal::interfaces::ip_endpoints::system_mqtt_client 
+
+
+uint16_t system_mqtt_client::get_configuration_port () const
+{
+    auto ret = rx_gate::instance().get_configuration().other.mqtt_port;
+    
+    return ret;
+}
+
+string_type system_mqtt_client::get_configuration_address () const
+{
+    auto ret = rx_gate::instance().get_configuration().other.mqtt_address;
+
+    return ret;
 }
 
 

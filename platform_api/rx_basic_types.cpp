@@ -245,6 +245,9 @@ rx_result rx_variable::deinitialize_variable ()
 
 rx_event::rx_event()
 {
+    impl_.io_data = 0;
+    impl_.def = &_g_event_def_;
+    bind_as_shared(&impl_.anchor);
 }
 
 

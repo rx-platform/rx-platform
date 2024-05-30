@@ -658,6 +658,12 @@ RX_COMMON_API int rx_get_array_size(const struct typed_value_type* val, size_t* 
 RX_COMMON_API int rx_is_struct(const struct typed_value_type* val);
 RX_COMMON_API int rx_get_struct_size(const struct typed_value_type* val, size_t* size);
 RX_COMMON_API int rx_get_struct_value(size_t idx, struct typed_value_type* out_val, const struct typed_value_type* val);
+RX_COMMON_API int rx_get_sub_struct_value(size_t idx_count, const size_t* idxs, struct typed_value_type* out_val, const struct typed_value_type* val);
+RX_COMMON_API int rx_set_sub_struct_value(size_t idx_count, const size_t* idxs, const struct typed_value_type* in_val, struct typed_value_type* val);
+RX_COMMON_API int rx_is_sub_struct(size_t idx_count, const size_t* idxs, const struct typed_value_type* val);
+RX_COMMON_API int rx_get_sub_struct_size(size_t idx_count, const size_t* idxs, const struct typed_value_type* val, size_t* size);
+RX_COMMON_API int rx_is_sub_array_value(size_t idx_count, const size_t* idxs, const struct typed_value_type* val);
+RX_COMMON_API int rx_get_sub_array_size(size_t idx_count, const size_t* idxs, const struct typed_value_type* val, size_t* size);
 
 RX_COMMON_API int rx_get_float_value(const struct typed_value_type* val, size_t idx, double* value, rx_value_t* type);
 RX_COMMON_API int rx_get_complex_value(const struct typed_value_type* val, size_t idx, complex_value_struct* value);

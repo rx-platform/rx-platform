@@ -59,6 +59,7 @@ extern rxRegisterVariableRuntime_t api_reg_variable_func;
 extern rxRegisterMethodRuntime_t api_reg_method_func;
 extern rxRegisterProgramRuntime_t api_reg_program_func;
 extern rxRegisterDisplayRuntime_t api_reg_display_func;
+extern rxRegisterEventRuntime_t api_reg_event_func;
 
 extern rxRegisterApplicationRuntime_t api_reg_application_func;
 extern rxRegisterDomainRuntime_t api_reg_domain_func;
@@ -228,6 +229,7 @@ rx_result_struct rx_bind_plugin(const platform_api4* api, uint32_t host_stream_v
 	api_reg_variable_func = api->runtime.prxRegisterVariableRuntime;
 
 	api_reg_method_func = api->runtime.prxRegisterMethodRuntime;
+	api_reg_event_func = api->runtime.prxRegisterEventRuntime;
 	api_reg_program_func = api->runtime.prxRegisterProgramRuntime;
 	api_reg_display_func = api->runtime.prxRegisterDisplayRuntime;
 

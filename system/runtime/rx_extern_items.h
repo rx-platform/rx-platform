@@ -76,6 +76,8 @@ class extern_object_runtime : public object_runtime
 
       void fill_code_info (std::ostream& info, const string_type& name) const;
 
+      void post_own_job (plugin_job_struct* what);
+
 
   protected:
 
@@ -177,6 +179,8 @@ class extern_application_runtime : public application_runtime
 
       rx_result stop_runtime (runtime_stop_context& ctx);
 
+      void post_own_job (plugin_job_struct* what);
+
 
   protected:
 
@@ -215,6 +219,8 @@ class extern_domain_runtime : public domain_runtime
       rx_result deinitialize_runtime (runtime_deinit_context& ctx);
 
       rx_result stop_runtime (runtime_stop_context& ctx);
+
+      void post_own_job (plugin_job_struct* what);
 
 
   protected:

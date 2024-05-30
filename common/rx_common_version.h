@@ -2,8 +2,8 @@
 
 
 #define RX_COMMON_MAJOR_VERSION 3
-#define RX_COMMON_MINOR_VERSION 0
-#define RX_COMMON_BUILD_NUMBER 1
+#define RX_COMMON_MINOR_VERSION 1
+#define RX_COMMON_BUILD_NUMBER 3
 
 // Ver 1.0.1 added RX_STRUCT_TYPE support
 // Ver 2.0.0 added meta data to rx-common
@@ -16,3 +16,5 @@
 // Ver 2.1.6 added base64 to common
 // Ver 3.0.0 cpp heap implementation
 // Ver 3.0.1 corrected rx_get_struct_value
+// Ver 3.1.0 added rx_get_sub_struct_value and rx_set_sub_struct_value
+// Ver 3.1.3 corrected nasty bug with rx_init_bytes_value_struct function

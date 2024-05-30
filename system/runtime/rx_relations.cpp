@@ -958,8 +958,8 @@ rx_result_with<relations::relation_value_data*> relation_connections::connect_ta
 	value_data_ptr->value.set_time(rx_time::now());
 	value_data_ptr->parent = this;
 	value_data_ptr->handle = 0;
-	auto& emplace_result = values_cache_.emplace_back(std::move(value_data_ptr));
-	tag_paths_.emplace(path, emplace_result.get());
+	relation_value_data* emplace_result = values_cache_.emplace_back(std::move(value_data_ptr)).get();
+	tag_paths_.emplace(path, emplace_result);
 	if (connector_)
 	{
 		string_array paths{ path };
@@ -969,7 +969,7 @@ rx_result_with<relations::relation_value_data*> relation_connections::connect_ta
 			// check for insane stuff
 			RX_ASSERT(handles_map_.find(result[0].value()) == handles_map_.end());
 			emplace_result->handle = result[0].value();
-			handles_map_.emplace(result[0].value(), emplace_result.get());
+			handles_map_.emplace(result[0].value(), emplace_result);
 			//inv_handles_map_.emplace(handle, result[0].value());
 		}
 		else
@@ -977,7 +977,7 @@ rx_result_with<relations::relation_value_data*> relation_connections::connect_ta
 			RX_ASSERT(result.size() == 1);
 		}
 	}
-	return emplace_result.get();
+	return emplace_result;
 }
 
 rx_result relation_connections::write_tag (runtime_handle_t item, context_write_data&& data, structure::write_task* task, runtime_process_context* ctx)

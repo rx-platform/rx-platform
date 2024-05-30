@@ -174,6 +174,7 @@ std::vector<rx_result_with<runtime_handle_t> > remote_relation_connector::connec
             path_buffer += ".";
             path_buffer += paths[i];
             path_buffer += "}";
+            vp_ptr->set_context(parent_->context);
             values_.emplace(my_handle, std::move(vp_smart_ptr));
             vp_ptr->connect(path_buffer, 200);
             ret_values.emplace_back(my_handle);

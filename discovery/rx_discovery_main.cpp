@@ -499,7 +499,7 @@ rx_result peer_connection::start_runtime (runtime_start_context& ctx)
 {
 	peer_connection_ptr ptr = smart_this();
 	// send client connected
-	std::apply([&ptr, ctx, this](auto&&... args) mutable {(args.start_algorithm(ctx, object_, ptr), ...); }, algorithms_);
+	std::apply([&ptr, &ctx, this](auto&&... args) mutable {(args.start_algorithm(ctx, object_, ptr), ...); }, algorithms_);
 	return true;
 }
 
@@ -507,7 +507,7 @@ rx_result peer_connection::stop_runtime (runtime_stop_context& ctx)
 {
 	peer_connection_ptr ptr = smart_this();
 	// send client connected
-	std::apply([&ptr, ctx, this](auto&&... args) mutable {(args.stop_algorithm(ctx, ptr), ...); }, algorithms_);
+	std::apply([&ptr, &ctx, this](auto&&... args) mutable {(args.stop_algorithm(ctx, ptr), ...); }, algorithms_);
 	return true;
 }
 

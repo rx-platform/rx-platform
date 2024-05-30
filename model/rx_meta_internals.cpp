@@ -71,7 +71,7 @@ platform_types_manager& platform_types_manager::instance ()
 	return *g_platform_types_instance;//ROOT of CLASSES!!!! $$$ Important Object Here!!!
 }
 
-rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
+rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data)
 {
 
 	auto result = get_data_types_repository().initialize(host, data);
@@ -110,16 +110,16 @@ rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, c
 	if (!result)
 		return result;
 
-	result = get_type_repository<object_types::application_type>().initialize(host, data);
+	result = get_type_repository<object_types::application_type>().initialize(host, data, init_data);
 	if (!result)
 		return result;
-	result = get_type_repository<object_types::domain_type>().initialize(host, data);
+	result = get_type_repository<object_types::domain_type>().initialize(host, data, init_data);
 	if (!result)
 		return result;
-	result = get_type_repository<object_types::port_type>().initialize(host, data);
+	result = get_type_repository<object_types::port_type>().initialize(host, data, init_data);
 	if (!result)
 		return result;
-	result = get_type_repository<object_types::object_type>().initialize(host, data);
+	result = get_type_repository<object_types::object_type>().initialize(host, data, init_data);
 	if (!result)
 		return result;
 
@@ -153,18 +153,18 @@ void platform_types_manager::deinitialize ()
 	g_platform_types_instance.reset();
 }
 
-rx_result platform_types_manager::start (hosting::rx_platform_host* host, const configuration_data_t& data)
+rx_result platform_types_manager::start (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data)
 {
-	auto result = get_type_repository<object_types::application_type>().start(host, data);
+	auto result = get_type_repository<object_types::application_type>().start(host, data, init_data);
 	if (!result)
 		return result;
-	result = get_type_repository<object_types::domain_type>().start(host, data);
+	result = get_type_repository<object_types::domain_type>().start(host, data, init_data);
 	if (!result)
 		return result;
-	result = get_type_repository<object_types::port_type>().start(host, data);
+	result = get_type_repository<object_types::port_type>().start(host, data, init_data);
 	if (!result)
 		return result;
-	result = get_type_repository<object_types::object_type>().start(host, data);
+	result = get_type_repository<object_types::object_type>().start(host, data, init_data);
 	if (!result)
 		return result;
 
@@ -822,12 +822,17 @@ rx_result types_repository<typeT>::delete_type (rx_node_id id)
 }
 
 template <class typeT>
-rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
+rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
+	std::unique_ptr<std::map<rx_node_id, string_type> > ids_map;
+	if (data.management.debug)
+		ids_map = std::make_unique<std::map<rx_node_id, string_type> >();
 	to_add.reserve(registered_types_.size());
 	for (auto& one : registered_types_)
 	{
+		if (ids_map)
+			ids_map->emplace(one.second.type_ptr->meta_info.id, one.second.type_ptr->meta_info.get_full_path());
 		ns::rx_directory_resolver dirs;
 		dirs.add_paths({ one.second.type_ptr->meta_info.path });
 		auto parent_id = algorithms::resolve_reference(one.second.type_ptr->meta_info.parent, dirs);
@@ -844,11 +849,11 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 			collect_and_add_depedencies(*one.second.type_ptr, rx_node_id());
 		}
 	}
-	auto result = inheritance_hash_.add_to_hash_data(to_add);
+	auto result = inheritance_hash_.add_to_hash_data(to_add, std::move(ids_map));
 
 	for (auto& one : registered_objects_)
 	{
-		result = sys_runtime::platform_runtime_manager::instance().just_init_runtime<typeT>(one.second.target);
+		result = sys_runtime::platform_runtime_manager::instance().just_init_runtime<typeT>(one.second.target, init_data);
 		if (!result)
 		{
 			std::ostringstream ss;
@@ -876,13 +881,25 @@ void types_repository<typeT>::deinitialize ()
 }
 
 template <class typeT>
-rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const configuration_data_t& data)
+rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data)
 {
-	const_callbacks_type callbacks;
 	for (auto& one : registered_objects_)
 	{
+		pending_connections_type pending_connections;
+		const_callbacks_type callbacks;
+
+		auto it = init_data.find(one.first);
+		if (it != init_data.end())
+		{
+			callbacks = std::move(it->second.callbacks);
+			pending_connections = std::move(it->second.pending_connections);
+		}
+		else
+		{
+			RX_ASSERT(false);
+		}
 		one.second.state = runtime_state::runtime_state_running;
-		sys_runtime::platform_runtime_manager::instance().just_start_runtime<typeT>(one.second.target, callbacks);
+		sys_runtime::platform_runtime_manager::instance().just_start_runtime<typeT>(one.second.target, std::move(callbacks), std::move(pending_connections));
 	}
 	return true;
 }
@@ -1261,7 +1278,7 @@ rx_result inheritance_hash::remove_from_hash_data (const rx_node_id& id)
 	return result;
 }
 
-rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items)
+rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_node_id, rx_node_id> >& items, std::unique_ptr<std::map<rx_node_id, string_type> > ids_map)
 {
 	std::scoped_lock _(hash_lock_);
 	std::set<rx_node_id> to_add;
@@ -1284,7 +1301,11 @@ rx_result inheritance_hash::add_to_hash_data (const std::vector<std::pair<rx_nod
 				{
 					result = add_to_hash_data(one.first, one.second);
 					if (!result)
+					{
+						if (ids_map)
+							result.register_error("Error adding "s + (*ids_map)[one.first] + " to inheritance hash");
 						return result;
+					}
 					to_add.erase(one.first);
 					one.first = rx_node_id();
 				}
@@ -1663,9 +1684,14 @@ template <class typeT>
 rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
+	std::unique_ptr<std::map<rx_node_id, string_type> > ids_map;
+	if (data.management.debug)
+		ids_map = std::make_unique<std::map<rx_node_id, string_type> >();
 	to_add.reserve(registered_types_.size());
 	for (auto& one : registered_types_)
 	{
+		if (ids_map)
+			ids_map->emplace(one.second.type_ptr->meta_info.id, one.second.type_ptr->meta_info.get_full_path());
 		ns::rx_directory_resolver dirs;
 		dirs.add_paths({ one.second.type_ptr->meta_info.path });
 		auto parent_id = algorithms::resolve_reference(one.second.type_ptr->meta_info.parent, dirs);
@@ -1681,7 +1707,7 @@ rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host*
 		collect_and_add_depedencies(*one.second.type_ptr, parent_id.value());
 
 	}
-	auto result = inheritance_hash_.add_to_hash_data(to_add);
+	auto result = inheritance_hash_.add_to_hash_data(to_add, std::move(ids_map));
 	return result;
 }
 
@@ -2107,9 +2133,14 @@ rx_result relations_type_repository::delete_type (rx_node_id id)
 rx_result relations_type_repository::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
+	std::unique_ptr<std::map<rx_node_id, string_type> > ids_map;
+	if (data.management.debug)
+		ids_map = std::make_unique<std::map<rx_node_id, string_type> >();
 	to_add.reserve(registered_types_.size());
 	for (const auto& one : registered_types_)
 	{
+		if (ids_map)
+			ids_map->emplace(one.second.type_ptr->meta_info.id, one.second.type_ptr->meta_info.get_full_path());
 		ns::rx_directory_resolver dirs;
 		dirs.add_paths({ one.second.type_ptr->meta_info.path });
 		auto parent_id = algorithms::resolve_reference(one.second.type_ptr->meta_info.parent, dirs);
@@ -2118,7 +2149,7 @@ rx_result relations_type_repository::initialize (hosting::rx_platform_host* host
 		else
 			to_add.emplace_back(one.second.type_ptr->meta_info.id, rx_node_id());
 	}
-	auto result = inheritance_hash_.add_to_hash_data(to_add);
+	auto result = inheritance_hash_.add_to_hash_data(to_add, std::move(ids_map));
 	return result;
 }
 
@@ -2471,7 +2502,7 @@ rx_result_with<runtime::structure::block_data_result_t> data_type_repository::cr
 
 	ctx.push_rt_name(rt_name);
 
-	block_data created_data;
+	meta::block_data_prototype prototype;
 	data_type_runtime_ptr type_ptr;
 
 
@@ -2493,7 +2524,7 @@ rx_result_with<runtime::structure::block_data_result_t> data_type_repository::cr
 		{
 			std::unique_ptr<data::runtime_values_data> temp_values = std::make_unique<data::runtime_values_data>();
 			ctx.get_directories().add_paths({ my_class.value()->meta_info.path });
-			auto result = meta::meta_algorithm::data_types_algorithm::construct_runtime(*my_class.value(), created_data, ctx);
+			auto result = meta::meta_algorithm::data_types_algorithm::construct_runtime(*my_class.value(), prototype, ctx);
 
 			if (!result)
 			{// error constructing object
@@ -2505,6 +2536,8 @@ rx_result_with<runtime::structure::block_data_result_t> data_type_repository::cr
 		else
 			return my_class.errors();
 	}
+
+	block_data created_data = prototype.create_block();
 
 	runtime_data_prototype rt = ctx.pop_rt_name();
 	// go reverse with overrides
@@ -2578,9 +2611,14 @@ rx_result data_type_repository::delete_type (rx_node_id id)
 rx_result data_type_repository::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
+	std::unique_ptr<std::map<rx_node_id, string_type> > ids_map;
+	if (data.management.debug)
+		ids_map = std::make_unique<std::map<rx_node_id, string_type> >();
 	to_add.reserve(registered_types_.size());
 	for (const auto& one : registered_types_)
 	{
+		if (ids_map)
+			ids_map->emplace(one.second.type_ptr->meta_info.id, one.second.type_ptr->meta_info.get_full_path());
 		ns::rx_directory_resolver dirs;
 		dirs.add_paths({ one.second.type_ptr->meta_info.path });
 		auto parent_id = algorithms::resolve_reference(one.second.type_ptr->meta_info.parent, dirs);
@@ -2589,7 +2627,7 @@ rx_result data_type_repository::initialize (hosting::rx_platform_host* host, con
 		else
 			to_add.emplace_back(one.second.type_ptr->meta_info.id, rx_node_id());
 	}
-	auto result = inheritance_hash_.add_to_hash_data(to_add);
+	auto result = inheritance_hash_.add_to_hash_data(to_add, std::move(ids_map));
 	return result;
 }
 
