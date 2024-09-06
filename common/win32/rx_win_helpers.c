@@ -69,6 +69,23 @@ uint64_t g_start;
 
 int g_init_count = 0;
 
+uint32_t g_trans_id = 1;
+uint32_t g_handle_id = 1;
+
+RX_COMMON_API runtime_transaction_id_t rx_get_new_transaction_id()
+{
+	LONG ret = InterlockedIncrement((LONG*)&g_trans_id);
+	if(ret==0)
+		ret = InterlockedIncrement((LONG*)&g_trans_id);
+	return ret;
+}
+RX_COMMON_API runtime_handle_t rx_get_new_handle()
+{
+	LONG ret = InterlockedIncrement((LONG*)&g_handle_id);
+	if (ret == 0)
+		ret = InterlockedIncrement((LONG*)&g_handle_id);
+	return ret;
+}
 
 rx_protocol_result_t rx_init_protocols(struct rx_hosting_functions* memory);
 rx_protocol_result_t rx_deinit_protocols();
@@ -83,10 +100,22 @@ extern HCERTSTORE hcert_store_machine;
 
 int g_is_debug_instance;
 
-int rx_init_heap(size_t initial_heap, size_t heap_alloc, size_t heap_trigger, size_t bucket_size);
+size_t rx_init_heap(size_t initial_heap, size_t heap_alloc, size_t heap_trigger, size_t bucket_size);
+
+const uint64_t g_my_version = ((uint64_t)RX_COMMON_MAJOR_VERSION << 48)
+| (((uint64_t)RX_COMMON_MINOR_VERSION & 0xffff) << 32)
+| ((uint64_t)RX_COMMON_BUILD_NUMBER);
+
+uint64_t g_init_version = 0;
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 {
+	if (init_data->version == 0)
+		return RX_ERROR;
+	g_init_version = init_data->version;
+	if (g_init_version > g_my_version)
+		return RX_ERROR;
+
 	g_is_debug_instance = init_data->is_debug;
 	if (g_init_count == 0)
 	{

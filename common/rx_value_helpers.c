@@ -236,6 +236,14 @@ void assign_value(union rx_value_union* left, const union rx_value_union* right,
 	}
 }
 
+
+void move_value(union rx_value_union* left, union rx_value_union* right, rx_value_t type)
+{
+	// just copy memory
+	memcpy(left, right, sizeof(union rx_value_union));
+	memzero(right, sizeof(union rx_value_union));
+}
+
 void destroy_union_value(union rx_value_union* who, rx_value_t type)
 {
 	if (type == RX_NULL_TYPE)
@@ -587,6 +595,44 @@ RX_COMMON_API int rx_init_array_value_with_ptrs(struct typed_value_type* val, rx
 		for (int i = 0; i < count; i++)
 		{
 			assign_value(&val->value.array_value.values[i], data[i], type);
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+
+
+RX_COMMON_API int rx_init_array_value_with_move(struct typed_value_type* val, rx_value_t type, union rx_value_union* data, size_t count)
+{
+	val->value_type = type | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+			move_value(&val->value.array_value.values[i], &data[i], type);
+		}
+	}
+	else
+	{
+		val->value.array_value.values = NULL;
+	}
+	return RX_OK;
+}
+RX_COMMON_API int rx_init_array_value_with_ptrs_move(struct typed_value_type* val, rx_value_t type, union rx_value_union** data, size_t count)
+{
+	val->value_type = type | RX_ARRAY_VALUE_MASK;
+	val->value.array_value.size = count;
+	if (count)
+	{
+		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
+		for (int i = 0; i < count; i++)
+		{
+			move_value(&val->value.array_value.values[i], data[i], type);
 		}
 	}
 	else

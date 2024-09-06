@@ -34,10 +34,10 @@
 
 #include "lib/rx_rt_data.h"
 
-// rx_runtime_helpers
-#include "system/runtime/rx_runtime_helpers.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
+// rx_runtime_helpers
+#include "system/runtime/rx_runtime_helpers.h"
 // rx_values
 #include "lib/rx_values.h"
 
@@ -445,7 +445,7 @@ class variable_data
 
       void set_value (rx_simple_value&& val);
 
-      rx_result write_value (write_data&& data, write_task* task, runtime_process_context* ctx);
+      rx_result write_value (write_data&& data, std::unique_ptr<write_task> task, runtime_process_context* ctx);
 
       rx_result internal_initialize_runtime (runtime::runtime_init_context& ctx, bool in_complex);
 
@@ -1070,6 +1070,8 @@ public:
 
       rx_result create_safe_runtime_data (const data::runtime_values_data& in, data::runtime_values_data& out);
 
+      rx_result create_safe_runtime_data (const values::rx_simple_value& in, data::runtime_values_data& out);
+
       data::runtime_data_model create_runtime_model ();
 
 
@@ -1185,6 +1187,8 @@ public:
 
       event_runtime_ptr event_ptr;
 
+      types_cache types;
+
 	  typedef std::unique_ptr<event_data> smart_ptr;
   protected:
 
@@ -1192,6 +1196,8 @@ public:
 
 
       runtime_process_context* context_;
+
+      string_type path_;
 
 
 };
@@ -1394,7 +1400,7 @@ public:
 
       rx_result prepare_value (rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx);
 
-      rx_result write_value (write_data&& data, write_task* task, runtime_process_context* ctx);
+      rx_result write_value (write_data&& data, std::unique_ptr<write_task> task, runtime_process_context* ctx);
 
       void process_result (runtime_transaction_id_t id, rx_result&& result);
 

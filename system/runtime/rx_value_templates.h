@@ -132,6 +132,93 @@ public:
     }
 };
 
+
+template <typename ...OutArgs>
+struct connected_function
+{
+    template < typename Type>
+    Type from_arg(const rx_simple_value& what)
+    {
+        return what.extract_static<Type>(0);
+    }
+    bool valid_ = false;
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+    std::map<runtime_transaction_id_t, typename std::function<void(rx_result, OutArgs...)> > transactions_;
+public:
+    connected_function() = default;
+    ~connected_function() = default;
+    connected_function(const connected_function&) = delete;
+    connected_function(connected_function&&) = default;
+    connected_function& operator=(const connected_function&) = delete;
+    connected_function& operator=(connected_function&&) = default;
+    rx_result bind(const string_type& path, runtime_init_context& ctx)
+    {
+        tag_blocks::binded_execute_result_callback_t callback = [](void* target, struct typed_value_type output, runtime_transaction_id_t trans_id, rx_result_struct result)
+            {
+                connected_function* self = (connected_function*)target;
+                auto it = self->transactions_.find(trans_id);
+                if (it != self->transactions_.end())
+                {
+                    self->callback_execute(std::move(it->second), rx_result(result), rx_simple_value(std::move(output)));
+                    self->transactions_.erase(it);
+                }
+            };
+
+        auto result = ctx.connect_item(path, 0, tag_blocks::binded_callback_t()
+            , tag_blocks::binded_write_result_callback_t(), callback);
+        if (result)
+        {
+            ctx_ = ctx.context;
+            handle_ = result.move_value();
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    template<typename funcT, std::size_t... I>
+    void invoke_helper(runtime_transaction_id_t id, std::vector<rx_simple_value> inputs,
+        std::index_sequence<I...>)
+    {
+        execute(id, from_arg<OutArgs>(std::move(inputs.at(I)))...);
+    }
+    template<typename funcT>
+    rx_result callback_execute(funcT callback, rx_result result, rx_simple_value args)
+    {
+        if (args.is_struct())
+        {
+            std::vector<rx_simple_value> inputs;
+            inputs.reserve(args.struct_size());
+            for (size_t i = 0; i < args.struct_size(); i++)
+            {
+                inputs.push_back(args[(int)i]);
+            }
+            invoke_helper(std::move(callback), std::move(result), std::move(inputs), std::index_sequence_for<OutArgs...>{});
+            return true;
+        }
+        else
+        {
+            return RX_INVALID_ARGUMENT;
+        }
+    }
+    template<typename funcT, typename ...InArgs>
+    rx_result operator()(InArgs... in_args, funcT callback)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            values::rx_simple_value temp_val = rx_create_value_static(std::forward<InArgs>(in_args)...);
+            ctx_->execute_connected(handle_, std::move(temp_val),
+                [this, callback = std::move(callback)](rx_result result, rx_simple_value data)
+                {
+                    callback_execute(callback, data);
+                });
+        }
+        return *this;
+    }
+};
+
 template <typename typeT>
 struct local_value
 {
@@ -230,6 +317,83 @@ public:
         return value_;
     }
 };
+
+
+
+template <typename ...OutArgs>
+struct local_function
+{
+    template < typename Type>
+    Type from_arg(const rx_simple_value& what)
+    {
+        return what.extract_static<Type>(0);
+    }
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+public:
+    local_function() = default;
+    ~local_function() = default;
+    local_function(const local_function&) = default;
+    local_function(local_function&&) = default;
+    local_function& operator=(const local_function&) = delete;
+    local_function& operator=(local_function&&) = delete;
+    rx_result bind(const string_type& path, runtime_init_context& ctx)
+    {
+        auto result = ctx.bind_item(path, tag_blocks::binded_callback_t());
+        if (result)
+        {
+            ctx_ = ctx.context;
+            handle_ = result.move_value();
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    template<typename funcT, std::size_t... I>
+    void invoke_helper(runtime_transaction_id_t id, std::vector<rx_simple_value> inputs,
+        std::index_sequence<I...>)
+    {
+        execute(id, from_arg<OutArgs>(std::move(inputs.at(I)))...);
+    }
+    template<typename funcT>
+    rx_result callback_execute(funcT callback, rx_result result, rx_simple_value args)
+    {
+        if (args.is_struct())
+        {
+            std::vector<rx_simple_value> inputs;
+            inputs.reserve(args.struct_size());
+            for (size_t i = 0; i < args.struct_size(); i++)
+            {
+                inputs.push_back(args[(int)i]);
+            }
+            invoke_helper(std::move(callback), std::move(result), std::move(inputs), std::index_sequence_for<OutArgs...>{});
+            return true;
+        }
+        else
+        {
+            return RX_INVALID_ARGUMENT;
+        }
+    }
+
+    template<typename funcT, typename ...InArgs>
+    rx_result execute(InArgs... in_args, funcT callback)
+    {
+        if (ctx_ && handle_)// just in case both of them...
+        {
+            values::rx_simple_value temp_val = rx_create_value_static(std::forward<InArgs>(in_args)...);
+            ctx_->execute_connected(handle_, std::move(temp_val),
+                [this, callback = std::move(callback)](rx_result result, rx_simple_value data)
+                {
+                    callback_execute(callback, data);
+                });
+        }
+        return *this;
+    }
+};
+
+
 template <typename typeT, bool manual = false>
 struct owned_value
 {

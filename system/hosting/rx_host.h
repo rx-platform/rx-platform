@@ -216,6 +216,8 @@ struct rx_host_directories
 	string_type logs;
     // web files location
     string_type http;
+    // python files location
+    string_type upy;
 
 	void fill_missing(rx_host_directories&& from)
 	{
@@ -236,6 +238,9 @@ struct rx_host_directories
 
         if (http.empty())
             http = std::move(from.http);
+
+        if (upy.empty())
+            upy = std::move(from.upy);
 
 		if (logs.empty())
 			logs = std::move(from.logs);

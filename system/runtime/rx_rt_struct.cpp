@@ -102,7 +102,8 @@ rx_result variable_data::collect_data (string_view_type path, data::runtime_valu
 	if (path.empty())
 	{
 		if (type != runtime_value_type::persistent_runtime_value
-			|| value_opt[runtime::structure::value_opt_persistent])
+			|| (value_opt[runtime::structure::value_opt_persistent]
+			&& !value_opt[runtime::structure::value_opt_default_value]))
 			data.add_value(RX_DEFAULT_VARIABLE_NAME, value.to_simple());
 	}
 	return item->collect_data(path, data, type);
@@ -123,7 +124,8 @@ void variable_data::fill_data (const data::runtime_values_data& data)
 rx_result variable_data::collect_value (values::rx_simple_value& data, runtime_value_type type) const
 {
 	if (type != runtime_value_type::persistent_runtime_value
-		|| value_opt[runtime::structure::value_opt_persistent])
+		|| (value_opt[runtime::structure::value_opt_persistent]
+		&& !value_opt[runtime::structure::value_opt_default_value]))
 	{
 		std::vector<rx_simple_value> temp(2);
 		temp[0] = value.to_simple();
@@ -160,7 +162,7 @@ void variable_data::set_value (rx_simple_value&& val)
 	}
 }
 
-rx_result variable_data::write_value (write_data&& data, write_task* task, runtime_process_context* ctx)
+rx_result variable_data::write_value (write_data&& data, std::unique_ptr<write_task> task, runtime_process_context* ctx)
 {
 
 	if (rx_is_debug_instance())
@@ -197,7 +199,7 @@ rx_result variable_data::write_value (write_data&& data, write_task* task, runti
 			}
 		}
 		auto& sources = item->get_sources();
-		result = variable_ptr->variable_write(std::move(data), task, ctx, sources);
+		result = variable_ptr->variable_write(std::move(data), std::move(task), ctx, sources);
 	}
 	if (!result)
 	{
@@ -869,12 +871,11 @@ void mapper_data::process_write (write_data&& data)
 				}
 				else
 				{
-					auto task = new mapper_write_task(this, trans_id);
 					data.value = prepared_value.to_simple();
 					if (io_.get_complex())
-						result = my_owner_.block_ptr->write_value(std::move(data), task, context_);
+						result = my_owner_.block_ptr->write_value(std::move(data), std::make_unique<mapper_write_task>(this, trans_id), context_);
 					else
-						result = my_owner_.variable_ptr->write_value(std::move(data), task, context_);
+						result = my_owner_.variable_ptr->write_value(std::move(data), std::make_unique<mapper_write_task>(this, trans_id), context_);
 					if (!result)
 					{
 						if (rx_is_debug_instance())
@@ -906,7 +907,6 @@ void mapper_data::process_execute (execute_data&& data)
 		if (my_owner_.method_ptr)
 		{
 			auto trans_id = data.transaction_id;
-			auto task = new mapper_execute_task(this, trans_id);
 			context_execute_data ctx_data;
 			ctx_data.data = std::move(data.value);
 			ctx_data.identity = data.identity;
@@ -914,7 +914,7 @@ void mapper_data::process_execute (execute_data&& data)
 			ctx_data.test = data.test;
 			ctx_data.transaction_id = trans_id;
 
-			auto result = my_owner_.method_ptr->execute(std::move(ctx_data), task, context_);
+			auto result = my_owner_.method_ptr->execute(std::move(ctx_data), std::make_unique<mapper_execute_task>(this, trans_id), context_);
 			if (!result)
 			{
 				if (rx_is_debug_instance())
@@ -1051,7 +1051,7 @@ void mapper_data::process_event (event_fired_data data)
 
 			RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 		}
-		mapper_ptr->mapped_event_fired(std::move(data.value), context_);
+		mapper_ptr->mapped_event_fired(std::move(data.value), data.queue, data.state_machine, data.remove_queue, context_);
 	}
 }
 
@@ -1587,6 +1587,7 @@ event_data::event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var, e
 	, item(std::move(rt))
 	, event_ptr(std::move(var))
 	, arguments(std::move(prototype.arguments))
+	, types(std::move(prototype.types))
 {
 }
 
@@ -1670,20 +1671,44 @@ rx_result event_data::stop_runtime (runtime::runtime_stop_context& ctx)
 
 void event_data::process_runtime (runtime_process_context* ctx, event_fired_data data)
 {
-	
+	RX_ASSERT(!data.types.empty());
 	// send update to mappers
 	if (!ctx->get_mode().is_blocked())
 	{
+
+		events::fired_event_data rest_data;
+		rest_data.path = path_;
+		rest_data.remove_queue = data.remove_queue;
+		rest_data.simple_value = data.value.to_simple();
+		rest_data.test = data.test;
+		rest_data.time = data.value.get_time();
+		
+		arguments.create_safe_runtime_data(rest_data.simple_value, rest_data.struct_value);
+
 		auto& mappers = item->get_mappers();
-		if (mappers.size() == 1)
+		if (mappers.empty())
 		{
-			mappers[0].process_event(std::move(data));
+			rest_data.queue = std::move(data.queue);
+			rest_data.types = std::move(data.types);
+
+			ctx->get_events_manager()->event_fired(std::move(rest_data));
 		}
 		else
 		{
-			for (auto& one : mappers)
+			rest_data.queue = data.queue;
+			rest_data.types = data.types;
+
+			ctx->get_events_manager()->event_fired(std::move(rest_data));
+			if (mappers.size() == 1)
 			{
-				one.process_event(data);
+				mappers[0].process_event(std::move(data));
+			}
+			else
+			{
+				for (auto& one : mappers)
+				{
+					one.process_event(data);
+				}
 			}
 		}
 	}
@@ -1817,6 +1842,7 @@ void event_data::event_fired (event_fired_data&& data)
 		data.identity = rx_security_context();
 	}
 	reg_data.data = std::move(data);
+	reg_data.data.types = types;
 
 	if (context_)
 		context_->event_pending(std::move(reg_data));
@@ -2143,10 +2169,25 @@ rx_result value_data::write_value (write_data&& data, runtime_process_context* c
 		rx_timed_value temp(std::move(data.value), rx_time::now());
 		if (!temp.compare(value, time_compare_type::skip))
 		{
-			changed = true;
-			value = std::move(temp);
 			if (value_opt[runtime::structure::value_opt_persistent])
-				ctx->runtime_dirty();
+			{
+				if (!value_opt[runtime::structure::value_opt_default_value])
+					value_opt[runtime::structure::value_opt_default_value] = false;
+				value = std::move(temp);
+				ctx->value_changed(this);
+				ctx->runtime_dirty([ctx, temp = std::move(temp), this](rx_result result)
+					{
+						if (result)
+						{
+						}
+					});
+				changed = true;
+			}
+			else
+			{
+				changed = true;
+				value = std::move(temp);
+			}
 		}
 		else
 		{
@@ -3315,6 +3356,26 @@ rx_result block_data::create_safe_runtime_data (const data::runtime_values_data&
 	return true;
 }
 
+rx_result block_data::create_safe_runtime_data (const values::rx_simple_value& in, data::runtime_values_data& out)
+{
+	//!!!PERFORMANCE!!!!
+	data::runtime_values_data rt_data;
+	structure::block_data temp(*this);
+	rx_result temp_result = temp.fill_value(in);
+	if (!temp_result)
+	{
+		temp_result.register_error("Error converting output parameters!");
+		RUNTIME_LOG_WARNING("method_data", 300, temp_result.errors_line());
+		return temp_result;
+	}
+	else
+	{
+		temp.collect_data("", rt_data, runtime_value_type::simple_runtime_value);
+	}
+	out = std::move(rt_data);
+	return true;
+}
+
 rx_result block_data::check_value (rx_value_t val_type, const rx_value_union& data, string_array& stack)
 {
 	if (val_type != RX_STRUCT_TYPE)
@@ -3737,7 +3798,9 @@ rx_result value_block_data::collect_data (string_view_type path, data::runtime_v
 		}
 		else
 		{
-			if (!struct_value.value_opt[opt_is_constant] && struct_value.value_opt[runtime::structure::value_opt_persistent])
+			if (!struct_value.value_opt[opt_is_constant] 
+				&& struct_value.value_opt[runtime::structure::value_opt_persistent]
+				&& !struct_value.value_opt[runtime::structure::value_opt_default_value])
 				block.collect_data(path, data, type);
 		}
 		return true;
@@ -3989,10 +4052,24 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 					struct_value.value = std::move(temp);
 
 					if (struct_value.value_opt[runtime::structure::value_opt_persistent])
-						ctx->runtime_dirty();
-
-					if (tag_references_)
-						tag_references_->block_data_changed(block, ctx);
+					{
+						if (!struct_value.value_opt[runtime::structure::value_opt_default_value])
+							struct_value.value_opt[runtime::structure::value_opt_default_value] = false;
+						changed = false;
+						ctx->runtime_dirty([this, ctx](rx_result result)
+							{
+								if (result)
+								{
+									if (tag_references_)
+										tag_references_->block_data_changed(block, ctx);
+								}
+							});
+					}
+					else
+					{
+						if (tag_references_)
+							tag_references_->block_data_changed(block, ctx);
+					}
 
 				}
 				else
@@ -4280,10 +4357,10 @@ rx_result variable_block_data::prepare_value (rx_simple_value& val, data::runtim
 	}
 }
 
-rx_result variable_block_data::write_value (write_data&& data, write_task* task, runtime_process_context* ctx)
+rx_result variable_block_data::write_value (write_data&& data, std::unique_ptr<write_task> task, runtime_process_context* ctx)
 {
 	
-	auto ret = variable.write_value(std::move(data), task, ctx);
+	auto ret = variable.write_value(std::move(data), std::move(task), ctx);
 
 	return ret;
 }

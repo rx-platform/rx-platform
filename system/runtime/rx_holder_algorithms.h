@@ -71,7 +71,7 @@ class runtime_holder_algorithms
 
       static void save_runtime (typename typeT::RType& whose);
 
-      static std::unique_ptr<runtime_process_context> create_context (typename typeT::RType& whose);
+      static std::unique_ptr<runtime_process_context> create_context (typename typeT::RType& whose, runtime::events::runtime_events_manager* events);
 
       static runtime_init_context create_init_context (typename typeT::RType& whose);
 
@@ -105,9 +105,9 @@ class runtime_holder_algorithms
 
       static rx_result execute_item (runtime_transaction_id_t transaction_id, bool test, runtime_handle_t handle, values::rx_simple_value data, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose);
 
-      static rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor, typename typeT::RType& whose);
+      static rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, events_callback_ptr monitor, bool bin_value, typename typeT::RType& whose);
 
-      static rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor, typename typeT::RType& whose);
+      static rx_result disconnect_events (runtime_handle_t hndl, events_callback_ptr monitor, typename typeT::RType& whose);
 
 
   protected:

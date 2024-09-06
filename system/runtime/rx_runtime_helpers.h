@@ -62,16 +62,20 @@ class callback_value_point;
 
 
 namespace rx_platform {
+namespace ns {
+class rx_directory_resolver;
+} // namespace ns
+
 namespace runtime {
 namespace tag_blocks {
 class binded_tags;
 } // namespace tag_blocks
 
 namespace structure {
+class mapper_data;
 class variable_data;
 class runtime_item;
 class source_data;
-class mapper_data;
 } // namespace structure
 
 namespace algorithms {
@@ -84,12 +88,8 @@ class relations_holder;
 
 class relation_subscriber;
 class runtime_process_context;
+
 } // namespace runtime
-
-namespace ns {
-class rx_directory_resolver;
-
-} // namespace ns
 } // namespace rx_platform
 
 
@@ -346,6 +346,19 @@ struct pending_data_t
 };
 typedef std::map<runtime_handle_t, pending_data_t> pending_connections_type;
 
+struct status_detail_t
+{
+    string_type item;
+    uint32_t state;
+    string_type msg;
+};
+typedef std::vector<status_detail_t> status_details_type;
+struct  status_data_type
+{
+    rx_mode_type mode;
+    status_details_type details;
+};
+
 
 
 
@@ -399,6 +412,10 @@ struct runtime_start_context
       logic_blocks::method_data *method;
 
       pending_connections_type pending_connections;
+
+      status_data_type status_data;
+
+      std::function<platform_item_ptr()> get_platform_item;
 
   public:
       runtime_start_context(const runtime_start_context&) = delete;
@@ -564,7 +581,7 @@ struct runtime_init_context
 
       rx_result get_item (const string_type& path, rx_simple_value& val);
 
-      rx_result_with<runtime_handle_t> connect_item (const string_type& path, uint32_t rate, tag_blocks::binded_callback_t callback);
+      rx_result_with<runtime_handle_t> connect_item (const string_type& path, uint32_t rate, tag_blocks::binded_callback_t callback, tag_blocks::binded_write_result_callback_t write_callback, tag_blocks::binded_execute_result_callback_t execute_callback);
 
       rx_time now ();
 
@@ -603,6 +620,8 @@ struct runtime_init_context
       structure::event_data *event;
 
       pending_connections_type pending_connections;
+
+      status_data_type status_data;
 
   public:
       runtime_init_context(const runtime_init_context&) = delete;

@@ -1224,13 +1224,13 @@ bool rx_mode_type::can_callculate(uint32_t quality) const
 }
 bool rx_mode_type::can_callculate(const values::rx_value& value) const
 {
-	return (raw_format & RX_MODE_MASK_OFF) == 0
+	return !is_off()
 		&& value.is_good()
-		&& value.is_test() == is_test();
+		&& value.can_operate(is_test());
 }
 bool rx_mode_type::is_on() const
 {
-	return (raw_format&RX_MODE_MASK_OFF) == 0;
+	return (raw_format& RX_MODE_OFF_TEST_MASK) == 0;
 }
 bool rx_mode_type::is_test() const
 {
@@ -1250,7 +1250,7 @@ bool rx_mode_type::is_unassigned() const
 }
 bool rx_mode_type::is_off() const
 {
-	return (raw_format&RX_MODE_MASK_OFF) != 0;
+	return (raw_format& RX_MODE_OFF_TEST_MASK) != 0;
 }
 bool rx_mode_type::set_test()
 {
@@ -1309,7 +1309,7 @@ bool rx_mode_type::reset_unassigned()
 
 bool rx_mode_type::is_good() const
 {
-	return (raw_format&(RX_MODE_MASK_OFF | RX_MODE_MASK_UNASSIGNED)) != 0;
+	return (raw_format & RX_MODE_GOOD_TEST_MASK) != 0;
 }
 
 bool rx_mode_type::set_blocked()
@@ -1343,6 +1343,17 @@ bool rx_mode_type::turn_off()
 	uint32_t old_stuff = raw_format;
 	raw_format = RX_MODE_MASK_OFF;
 	return (old_stuff != raw_format);
+}
+
+bool rx_mode_type::set_error()
+{
+	uint32_t old_stuff = raw_format;
+	raw_format = RX_MODE_MASK_IN_ERROR;
+	return (old_stuff != raw_format);
+}
+bool rx_mode_type::is_in_error() const
+{
+	return (raw_format & RX_MODE_MASK_IN_ERROR) != 0;
 }
 
 namespace

@@ -142,24 +142,24 @@ rx_result just_init_runtime<meta::object_types::domain_type>(rx_domain_ptr what,
 //////////////////////////////////////////////////////////////////////////////////////
 // just_start_runtime
 template<>
-void just_start_runtime<meta::object_types::object_type>(rx_object_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
+void just_start_runtime<meta::object_types::object_type>(rx_object_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections, status_data_type status)
 {
-	object_algorithms::just_start_runtime(what, callbacks, std::move(pending_connections));
+	object_algorithms::just_start_runtime(what, callbacks, std::move(pending_connections), std::move(status));
 }
 template<>
-void just_start_runtime<meta::object_types::application_type>(rx_application_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
+void just_start_runtime<meta::object_types::application_type>(rx_application_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections, status_data_type status)
 {
-	application_algorithms::just_start_runtime(what, callbacks, std::move(pending_connections));
+	application_algorithms::just_start_runtime(what, callbacks, std::move(pending_connections), std::move(status));
 }
 template<>
-void just_start_runtime<meta::object_types::port_type>(rx_port_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
+void just_start_runtime<meta::object_types::port_type>(rx_port_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections, status_data_type status)
 {
-	port_algorithms::just_start_runtime(what, callbacks, std::move(pending_connections));
+	port_algorithms::just_start_runtime(what, callbacks, std::move(pending_connections), std::move(status));
 }
 template<>
-void just_start_runtime<meta::object_types::domain_type>(rx_domain_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
+void just_start_runtime<meta::object_types::domain_type>(rx_domain_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections, status_data_type status)
 {
-	domain_algorithms::just_start_runtime(what, callbacks, std::move(pending_connections));
+	domain_algorithms::just_start_runtime(what, callbacks, std::move(pending_connections), std::move(status));
 }
 //////////////////////////////////////////////////////////////////////////////////////
 // deinit_runtime
@@ -194,10 +194,11 @@ rx_result deinit_runtime<meta::object_types::domain_type>(rx_domain_ptr what
 rx_result object_algorithms::init_runtime (rx_object_ptr what, runtime::runtime_init_context& ctx)
 {
 	auto result = just_init_runtime(what, ctx);
-	if (result)
+	if (!result)
 	{
-		just_start_runtime(what, std::move(ctx.const_callbacks), std::move(ctx.pending_connections));
+		ctx.status_data.mode.set_error();
 	}
+	just_start_runtime(what, std::move(ctx.const_callbacks), std::move(ctx.pending_connections), std::move(ctx.status_data));
 	return result;
 }
 
@@ -215,7 +216,7 @@ rx_result object_algorithms::just_init_runtime (rx_object_ptr what, runtime::run
 		}
 		else
 		{
-			result.register_error("Unable to initialize domain runtime");
+			result.register_error("Unable to initialize object runtime");
 		}
 	}
 	else
@@ -230,13 +231,14 @@ rx_result object_algorithms::just_init_runtime (rx_object_ptr what, runtime::run
 	return result;
 }
 
-void object_algorithms::just_start_runtime (rx_object_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
+void object_algorithms::just_start_runtime (rx_object_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections, status_data_type status)
 {
-	rx_post_function_to(what->get_executer(), what, [](rx_object_ptr whose, const_callbacks_type const_callbacks, pending_connections_type pending_connections)
+	rx_post_function_to(what->get_executer(), what, [](rx_object_ptr whose, const_callbacks_type const_callbacks, pending_connections_type pending_connections, status_data_type status)
 		{
 			auto ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::object_type>::create_start_context(*whose);
 			ctx.const_callbacks = std::move(const_callbacks);
 			ctx.pending_connections = std::move(pending_connections);
+			ctx.status_data = std::move(status);
 			auto result = start_runtime(whose, ctx);
 			if (result)
 			{
@@ -248,7 +250,7 @@ void object_algorithms::just_start_runtime (rx_object_ptr what, const_callbacks_
 					RUNTIME_LOG_ERROR("object_algorithms", 800, error.c_str());
 				RUNTIME_LOG_ERROR("object_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_object) + " "s + whose->meta_info().get_full_path()).c_str());
 			}
-		}, what, std::move(callbacks), std::move(pending_connections));
+		}, what, std::move(callbacks), std::move(pending_connections), std::move(status));
 }
 
 rx_result object_algorithms::start_runtime (rx_object_ptr what, runtime::runtime_start_context& ctx)
@@ -403,11 +405,13 @@ rx_result object_algorithms::disconnect_domain (rx_object_ptr what)
 
 rx_result domain_algorithms::init_runtime (rx_domain_ptr what, runtime::runtime_init_context& ctx)
 {
+	rx_mode_type mode;
 	auto result = just_init_runtime(what, ctx);
-	if (result)
+	if (!result)
 	{
-		just_start_runtime(what, std::move(ctx.const_callbacks), std::move(ctx.pending_connections));
+		ctx.status_data.mode.set_error();
 	}
+	just_start_runtime(what, std::move(ctx.const_callbacks), std::move(ctx.pending_connections), std::move(ctx.status_data));
 	return result;
 }
 
@@ -442,13 +446,14 @@ rx_result domain_algorithms::just_init_runtime (rx_domain_ptr what, runtime::run
 	return result;
 }
 
-void domain_algorithms::just_start_runtime (rx_domain_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
+void domain_algorithms::just_start_runtime (rx_domain_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections, status_data_type status)
 {
-	rx_post_function_to(what->get_executer(), what, [](rx_domain_ptr whose, const_callbacks_type const_callbacks, pending_connections_type pending_connections)
+	rx_post_function_to(what->get_executer(), what, [](rx_domain_ptr whose, const_callbacks_type const_callbacks, pending_connections_type pending_connections, status_data_type status)
 		{
 			auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::domain_type>::create_start_context(*whose);
 			start_ctx.const_callbacks = std::move(const_callbacks);
 			start_ctx.pending_connections = std::move(pending_connections);
+			start_ctx.status_data = std::move(status);
 			auto result = start_runtime(whose, start_ctx);
 			if (result)
 			{
@@ -459,7 +464,7 @@ void domain_algorithms::just_start_runtime (rx_domain_ptr what, const_callbacks_
 				RUNTIME_LOG_ERROR("domain_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_domain) + " "s + whose->meta_info().get_full_path()).c_str() + result.errors_line());
 
 			}
-		}, what, std::move(callbacks), std::move(pending_connections));
+		}, what, std::move(callbacks), std::move(pending_connections), std::move(status));
 }
 
 rx_result domain_algorithms::start_runtime (rx_domain_ptr what, runtime::runtime_start_context& ctx)
@@ -612,11 +617,13 @@ rx_result domain_algorithms::disconnect_application (rx_domain_ptr what)
 
 rx_result port_algorithms::init_runtime (rx_port_ptr what, runtime::runtime_init_context& ctx)
 {
+	rx_mode_type mode;
 	auto result = just_init_runtime(what, ctx);
-	if (result)
+	if (!result)
 	{
-		just_start_runtime(what, std::move(ctx.const_callbacks), std::move(ctx.pending_connections));
+		ctx.status_data.mode.set_error();
 	}
+	just_start_runtime(what, std::move(ctx.const_callbacks), std::move(ctx.pending_connections), std::move(ctx.status_data));
 	return result;
 }
 
@@ -648,13 +655,14 @@ rx_result port_algorithms::just_init_runtime (rx_port_ptr what, runtime::runtime
 	return result;
 }
 
-void port_algorithms::just_start_runtime (rx_port_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
+void port_algorithms::just_start_runtime (rx_port_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections, status_data_type status)
 {
-	rx_post_function_to(what->get_executer(), what, [](rx_port_ptr whose, const_callbacks_type const_callbacks, pending_connections_type pending_connections)
+	rx_post_function_to(what->get_executer(), what, [](rx_port_ptr whose, const_callbacks_type const_callbacks, pending_connections_type pending_connections, status_data_type status)
 		{
 			auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::port_type>::create_start_context(*whose);
 			start_ctx.const_callbacks = std::move(const_callbacks);
 			start_ctx.pending_connections = std::move(pending_connections);
+			start_ctx.status_data = std::move(status);
 			auto result = start_runtime(whose, start_ctx);
 			if (result)
 			{
@@ -666,7 +674,7 @@ void port_algorithms::just_start_runtime (rx_port_ptr what, const_callbacks_type
 					RUNTIME_LOG_ERROR("port_algorithms", 800, error.c_str());
 				RUNTIME_LOG_ERROR("port_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_port) + " "s + whose->meta_info().get_full_path()).c_str());
 			}
-		}, what, std::move(callbacks), std::move(pending_connections));
+		}, what, std::move(callbacks), std::move(pending_connections), std::move(status));
 }
 
 rx_result port_algorithms::start_runtime (rx_port_ptr what, runtime::runtime_start_context& ctx)
@@ -820,11 +828,13 @@ rx_result port_algorithms::disconnect_application (rx_port_ptr what)
 
 rx_result application_algorithms::init_runtime (rx_application_ptr what, runtime::runtime_init_context& ctx)
 {
+	rx_mode_type mode;
 	auto result = just_init_runtime(what, ctx);
-	if (result)
+	if (!result)
 	{
-		just_start_runtime(what, std::move(ctx.const_callbacks), std::move(ctx.pending_connections));
+		ctx.status_data.mode.set_error();
 	}
+	just_start_runtime(what, std::move(ctx.const_callbacks), std::move(ctx.pending_connections), std::move(ctx.status_data));
 	return result;
 }
 
@@ -837,6 +847,7 @@ rx_result application_algorithms::just_init_runtime (rx_application_ptr what, ru
 		auto insert_result = platform_runtime_manager::instance().applications_.emplace(what->meta_info().id, what);
 		RX_ASSERT(insert_result.second);
 		ret = what->get_instance_data().before_init_runtime(what, ctx);
+		
 		if (ret)
 		{
 			security::secured_scope _(what->get_instance_data().get_security_context());
@@ -870,12 +881,14 @@ rx_result application_algorithms::just_init_runtime (rx_application_ptr what, ru
 	return ret;
 }
 
-void application_algorithms::just_start_runtime (rx_application_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
+void application_algorithms::just_start_runtime (rx_application_ptr what, const_callbacks_type callbacks, pending_connections_type pending_connections, status_data_type status)
 {
-	rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, const_callbacks_type const_callbacks, pending_connections_type pending_connections)
+	rx_post_function_to(what->get_executer(), what, [](rx_application_ptr whose, const_callbacks_type const_callbacks, pending_connections_type pending_connections, status_data_type status)
 		{
 			auto start_ctx = runtime::algorithms::runtime_holder_algorithms<meta::object_types::application_type>::create_start_context(*whose);
+			start_ctx.const_callbacks = std::move(const_callbacks);
 			start_ctx.pending_connections = std::move(pending_connections);
+			start_ctx.status_data = std::move(status);
 			auto result = start_runtime(whose, start_ctx);
 			if (result)
 			{
@@ -886,7 +899,7 @@ void application_algorithms::just_start_runtime (rx_application_ptr what, const_
 			{
 				RUNTIME_LOG_ERROR("application_algorithms", 800, ("Error starting "s + rx_item_type_name(rx_application) + " "s + whose->meta_info().get_full_path()).c_str() + result.errors_line());
 			}
-		}, what, std::move(callbacks), std::move(pending_connections));
+		}, what, std::move(callbacks), std::move(pending_connections), std::move(status));
 }
 
 rx_result application_algorithms::start_runtime (rx_application_ptr what, runtime::runtime_start_context& ctx)

@@ -68,6 +68,8 @@ const platform_api_t* get_plugins_dynamic_api();
 const platform_api2_t* get_plugins_dynamic_api2();
 const platform_api3_t* get_plugins_dynamic_api3();
 const platform_api4_t* get_plugins_dynamic_api4();
+const platform_api5_t* get_plugins_dynamic_api5();
+const platform_api6_t* get_plugins_dynamic_api6();
 
 struct query_result_detail
 {

@@ -39,10 +39,10 @@
 #include "platform_api/rx_abi.h"
 #include "system/rx_platform_typedefs.h"
 
-// rx_meta_data
-#include "lib/rx_meta_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_meta_data
+#include "lib/rx_meta_data.h"
 
 namespace rx_platform {
 namespace hosting {
@@ -94,6 +94,7 @@ enum class rx_storage_item_type
 };
 
 
+
 namespace storage_base {
 
 
@@ -119,7 +120,9 @@ class rx_storage_item
 
       virtual base_meta_writer& write_stream () = 0;
 
-      virtual rx_result commit_write () = 0;
+      virtual void commit_write (storage_callback_t callback, runtime_transaction_id_t trans_id) = 0;
+
+      virtual rx_result commit_write_sync () = 0;
 
       virtual rx_result delete_item () = 0;
 
@@ -130,6 +133,8 @@ class rx_storage_item
       virtual bool preprocess_meta_data (meta_data& data) = 0;
 
       virtual bool is_read_only () const;
+
+      virtual rx_result save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback) = 0;
 
 
       const rx_storage_item_type& get_storage_type () const
@@ -175,7 +180,9 @@ class rx_code_storage_item : public rx_storage_item
 
       rx_result close_read ();
 
-      rx_result commit_write ();
+      void commit_write (storage_callback_t callback, runtime_transaction_id_t trans_id);
+
+      rx_result commit_write_sync ();
 
       const string_type& get_item_reference () const;
 
@@ -184,6 +191,8 @@ class rx_code_storage_item : public rx_storage_item
       bool preprocess_meta_data (meta_data& data);
 
       string_type get_item_path () const;
+
+      rx_result save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback);
 
 
   protected:
@@ -217,6 +226,8 @@ class rx_plugin_storage_item : public rx_storage_item
 
       rx_result commit_write ();
 
+      rx_result commit_write_sync ();
+
       const string_type& get_item_reference () const;
 
       rx_result delete_item ();
@@ -224,6 +235,8 @@ class rx_plugin_storage_item : public rx_storage_item
       bool preprocess_meta_data (meta_data& data);
 
       string_type get_item_path () const;
+
+      rx_result save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback);
 
 
   protected:
@@ -309,6 +322,10 @@ class rx_platform_storage : public rx::pointers::reference_object
 
       virtual void preprocess_meta_data (meta_data& data) = 0;
 
+      virtual runtime_transaction_id_t get_new_unique_ids (size_t count) = 0;
+
+      virtual void set_next_unique_id (runtime_transaction_id_t id) = 0;
+
 
       const string_type& get_base_path () const
       {
@@ -358,6 +375,10 @@ class rx_code_storage : public rx_platform_storage
       string_type get_storage_reference ();
 
       void preprocess_meta_data (meta_data& data);
+
+      runtime_transaction_id_t get_new_unique_ids (size_t count);
+
+      void set_next_unique_id (runtime_transaction_id_t id);
 
 
   protected:
@@ -463,6 +484,10 @@ class rx_empty_storage : public rx_platform_storage
 
       void preprocess_meta_data (meta_data& data);
 
+      runtime_transaction_id_t get_new_unique_ids (size_t count);
+
+      void set_next_unique_id (runtime_transaction_id_t id);
+
 
   protected:
 
@@ -526,6 +551,10 @@ class rx_plugin_storage : public rx_platform_storage
       rx_result init_storage (const string_type& name, const string_type& ref);
 
       void preprocess_meta_data (meta_data& data);
+
+      runtime_transaction_id_t get_new_unique_ids (size_t count);
+
+      void set_next_unique_id (runtime_transaction_id_t id);
 
 
   protected:
@@ -629,6 +658,10 @@ class rx_others_storage : public rx_platform_storage
 
       void preprocess_meta_data (meta_data& data);
 
+      runtime_transaction_id_t get_new_unique_ids (size_t count);
+
+      void set_next_unique_id (runtime_transaction_id_t id);
+
 
   protected:
 
@@ -659,7 +692,9 @@ class rx_other_storage_item : public rx_storage_item
 
       rx_result close_read ();
 
-      rx_result commit_write ();
+      void commit_write (storage_callback_t callback, runtime_transaction_id_t trans_id);
+
+      rx_result commit_write_sync ();
 
       const string_type& get_item_reference () const;
 
@@ -670,6 +705,8 @@ class rx_other_storage_item : public rx_storage_item
       string_type get_item_path () const;
 
       bool is_read_only () const;
+
+      rx_result save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback);
 
 
       rx::meta_data meta_info;

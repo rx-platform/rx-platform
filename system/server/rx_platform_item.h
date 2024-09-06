@@ -106,6 +106,7 @@ typedef callback::rx_any_callback<uint32_t, rx_result, data::runtime_values_data
 struct event_filter
 {
     string_array paths;
+    rx_node_id type;
 };
 
 
@@ -135,7 +136,9 @@ private:
 
       virtual string_type get_name () const = 0;
 
-      virtual rx_result save () const = 0;
+      virtual rx_result save_sync () const = 0;
+
+      virtual rx_result save (storage_callback_t callback, runtime_transaction_id_t trans_id) const = 0;
 
       virtual const meta_data& meta_info () const = 0;
 
@@ -187,9 +190,9 @@ private:
 
       virtual security::security_guard_ptr get_security_guard () = 0;
 
-      virtual rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor) = 0;
+      virtual rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value) = 0;
 
-      virtual rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor) = 0;
+      virtual rx_result disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor) = 0;
 
 
   protected:

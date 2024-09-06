@@ -184,6 +184,7 @@ rx_result application_instance_data::before_init_runtime (rx_application_ptr wha
 
     what->get_instance_data().executer_ = rx_internal::sys_runtime::platform_runtime_manager::instance().resolve_app_processor(what->get_instance_data());
     what->get_implementation()->context_ = ctx.context;
+    ctx.context->set_events_manager(&what->get_instance_data().events_);
     what->get_implementation()->executer_ = what->get_instance_data().executer_;
     ctx.set_item_static("CPU", (int)rx_internal::infrastructure::server_runtime::instance().get_CPU(what->get_instance_data().executer_));
     return true;
@@ -349,6 +350,7 @@ rx_result domain_instance_data::before_init_runtime (rx_domain_ptr what, runtime
 
     }
     what->get_implementation()->context_ = ctx.context;
+    ctx.context->set_events_manager(&what->get_instance_data().events_);
 
     ctx.set_item_static("CPU", (int)rx_internal::infrastructure::server_runtime::instance().get_CPU(what->get_instance_data().executer_));
     return true;
@@ -428,6 +430,10 @@ rx_result object_instance_data::before_init_runtime (rx_object_ptr what, runtime
     RX_ASSERT(what->get_instance_data().my_domain_);
     if (what->get_instance_data().my_domain_)
     {
+
+        ctx.context->set_events_manager(
+            &what->get_instance_data().my_domain_->get_instance_data().get_events());
+
         what->get_instance_data().executer_ = what->get_instance_data().my_domain_->get_executer();
         what->get_implementation()->executer_ = what->get_instance_data().executer_;
 

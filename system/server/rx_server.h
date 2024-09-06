@@ -92,8 +92,11 @@ struct general_data_t
     string_type mqtt_address;
     uint16_t opcua_port;
     string_type rx_security;
-    string_type py_path;
+    string_type upy_path;
+    string_type upy_user;
     std::map<string_type, string_type> certificates;
+    size_t ids_prefetch = 64;
+    size_t ids_prefetch_sp = 48;
 };
 struct runtime_data_t
 {
@@ -184,6 +187,7 @@ struct initialize_data_t
 {
     runtime::const_callbacks_type callbacks;
     runtime::pending_connections_type pending_connections;
+    runtime::status_data_type status_data;
 };
 typedef std::map<rx_node_id, initialize_data_t> initialize_data_type;
 
@@ -232,6 +236,8 @@ class rx_gate
       string_type resolve_serial_alias (const string_type& what) const;
 
       string_type resolve_ethernet_alias (const string_type& what) const;
+
+      runtime_transaction_id_t get_new_unique_id ();
 
 
       hosting::rx_platform_host * get_host ()

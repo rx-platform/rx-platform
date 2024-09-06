@@ -53,6 +53,7 @@ public:
 	rx_source_file();
 	rx_result open(const char* file_name);
 	rx_result open_write(const char* file_name);
+	rx_result open_read_write(const char* file_name);
 	rx_result read_string(std::string& buff);
 	rx_result write_string(const std::string& buff);
 	rx_result read_data(byte_string& buff);

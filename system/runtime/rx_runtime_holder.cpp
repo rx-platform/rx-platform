@@ -34,8 +34,6 @@
 
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
-// rx_event_blocks
-#include "system/runtime/rx_event_blocks.h"
 // rx_runtime_holder
 #include "system/runtime/rx_runtime_holder.h"
 
@@ -75,7 +73,7 @@ runtime_holder<typeT>::runtime_holder (const meta_data& meta, const typename typ
     , security_guard_(rx_create_reference<security::security_guard>(meta, security::rx_security_null))
 {
     using rimpl_t = typename typeT::RImplType;
-    context_ = runtime_holder_algorithms<typeT>::create_context(*this);
+    context_ = runtime_holder_algorithms<typeT>::create_context(*this, nullptr);
     
     RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta.get_full_path()));
 }
@@ -197,6 +195,8 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
 template <class typeT>
 rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
 {
+    context_->start_state(std::move(ctx.status_data));
+    ctx.get_platform_item = [this]() {return get_item_ptr(); };
     string_type rt_path = meta_info_.get_full_path();
     auto result = tags_.start_runtime(ctx);
     if (result)

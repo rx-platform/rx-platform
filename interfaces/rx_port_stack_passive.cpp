@@ -87,6 +87,17 @@ rx_result passive_builder::send_listen (rx_port_ptr who, const io::any_address& 
             }
             else
             {
+                std::ostringstream ss;
+                ss << "Port "
+                    << who->meta_info().get_full_path()
+                    << " returned error on listen request "
+                    << "["
+                    << local_addr.to_string()
+                    << ","
+                    << remote_addr.to_string()
+                    << "];"
+                    << result.errors_line();
+                RUNTIME_LOG_ERROR("passive_builder", 200, ss.str());
                 top_data.passive_map.unregister_passive(who, stack_top);
                 who_data.passive_map.bind_port = rx_port_ptr::null_ptr;
             }

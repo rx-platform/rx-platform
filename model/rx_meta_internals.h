@@ -334,6 +334,7 @@ struct create_runtime_result
     typename typeT::RTypePtr ptr;
     std::function<void(const rx_node_id&)> register_f;
     std::function<void(const rx_node_id&)> unregister_f;
+    data::runtime_values_data runtime_data;
     operator bool() const
     {
         return ptr;
@@ -779,8 +780,8 @@ public:
       rx_result register_type (data_type_repository::Tptr what);
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
-
-      rx_result_with<runtime::structure::block_data_result_t> create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs);
+      
+      rx_result_with<runtime::structure::block_data_result_t> create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs, runtime::types_cache* types);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 

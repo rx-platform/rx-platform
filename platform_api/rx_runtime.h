@@ -574,6 +574,8 @@ class rx_runtime : public rx::pointers::reference_object
 
       void destroy_timer (runtime_handle_t handle);
 
+      runtime_transaction_id_t get_new_unique_id ();
+
 
   protected:
 
@@ -804,6 +806,104 @@ public:
     operator typeT() const
     {
         return value_;
+    }
+};
+
+
+template <typename ...OutArgs>
+struct connected_function
+{
+    template < typename Type>
+    Type from_arg(const rx_simple_value& what)
+    {
+        return what.extract_static<Type>(0);
+    }
+    bool valid_ = false;
+    runtime_handle_t handle_ = 0;
+    rx_process_context ctx_;
+    connect_callback_data_t callback_data_{ };
+    std::map<runtime_transaction_id_t, typename std::function<void(rx_result, OutArgs...)> > transactions_;
+public:
+    connected_function() = default;
+    ~connected_function() = default;
+    connected_function(const connected_function&) = delete;
+    connected_function(connected_function&&) = default;
+    connected_function& operator=(const connected_function&) = delete;
+    connected_function& operator=(connected_function&&) = default;
+    rx_result bind(const string_type& path, rx_init_context& ctx)
+    {
+        callback_data_.target = this;
+        callback_data_.execute_callback = [](void* target, struct typed_value_type output, runtime_transaction_id_t trans_id, rx_result_struct result)
+            {
+                connected_function* self = (connected_function*)target;
+                auto it = self->transactions_.find(trans_id);
+                if (it != self->transactions_.end())
+                {
+                    self->callback_execute(std::move(it->second), rx_result(result), rx_simple_value(std::move(output)));
+                    self->transactions_.erase(it);
+                }
+            };
+
+
+        runtime_ctx_ptr rt_ctx = 0;
+        auto result = ctx.connect_item(path.c_str(), 200, &rt_ctx, &callback_data_);
+        if (result)
+        {
+            ctx_.bind(rt_ctx);
+            handle_ = result.move_value();
+            return true;
+        }
+        else
+        {
+            return result.errors();
+        }
+    }
+    template<typename funcT, std::size_t... I>
+    void invoke_helper(funcT callback, rx_result result, std::vector<rx_simple_value> inputs,
+        std::index_sequence<I...>)
+    {
+        callback(std::move(result), from_arg<OutArgs>(std::move(inputs.at(I)))...);
+    }
+    template<typename funcT>
+    rx_result callback_execute(funcT callback, rx_result result, rx_simple_value args)
+    {
+        if (args.is_struct())
+        {
+            std::vector<rx_simple_value> inputs;
+            inputs.reserve(args.struct_size());
+            for (size_t i = 0; i < args.struct_size(); i++)
+            {
+                inputs.push_back(args[(int)i]);
+            }
+            invoke_helper(std::move(callback), std::move(result), std::move(inputs), std::index_sequence_for<OutArgs...>{});
+            return true;
+        }
+        else if (args.is_null())
+        {
+            callback(std::move(result), OutArgs()...);
+            return true;
+        }
+        else
+        {
+            return RX_INVALID_ARGUMENT;
+        }
+    }
+    template<typename funcT, typename ...InArgs>
+    rx_result operator()(funcT callback, InArgs... in_args)
+    {
+        if (ctx_.is_binded() && handle_)// just in case both of them...
+        {
+            values::rx_simple_value temp_val = rx_create_value_static(std::forward<InArgs>(in_args)...);
+            auto trans_id = rx_get_new_transaction_id();
+            auto insert_ret = transactions_.emplace(trans_id, typename std::function<void(rx_result, OutArgs...)>(std::move(callback)));
+            auto result = ctx_.execute_connected(handle_, std::move(temp_val), trans_id);
+            if (!result)
+            {
+                transactions_.erase(insert_ret.first);
+            }
+            return result;
+        }
+        return RX_NOT_CONNECTED;
     }
 };
 
@@ -1316,7 +1416,7 @@ public:
             typeT temp(right);
             ctx_.set_async_binded_as<typeT>(handle_, std::move(temp));
         }
-        return this;
+        return *this;
     }
     operator typeT() const
     {

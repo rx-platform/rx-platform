@@ -77,6 +77,7 @@ extern rxInitCtxSetLocalValue_t api_init_set_local_value;
 extern rxInitCtxGetMappingValues_t api_get_mapping_values;
 extern rxInitCtxGetSourceValues_t api_get_source_values;
 extern rxInitCtxGetItemMeta_t api_item_meta;
+extern rxInitCtxConnectItem_t api_connect_item_func;
 extern rxInitCtxGetDataType_t api_get_data_type_func;
 
 
@@ -92,12 +93,15 @@ extern rxCtxSetAsyncPending_t api_set_async_pending_func;
 
 extern rxCtxWriteConnected_t api_write_connected_func;
 extern rxCtxExecuteConnected_t api_execute_connected_func;
+extern rxCtxWriteBinded_t api_write_binded_func;
+
+extern rxGetNewUniqueId_t api_get_new_unique_id_func;
 
 
 extern rxRegisterStorageType_t api_reg_storage_func;
 
 
-const platform_api4* g_api;
+const platform_api6* g_api;
 
 
 
@@ -123,8 +127,9 @@ intptr_t set_rx_plugin(intptr_t what)
 	RX_ASSERT(prev == 0);
 	return prev;
 }
-void copy_rt_to_rt4(const platform_runtime_api* src, platform_runtime_api4* dest)
+void copy_rt_to_rt6(const platform_runtime_api* src, platform_runtime_api6* dest)
 {
+	memzero(dest, sizeof(platform_runtime_api5));
 
 	dest->prxRegisterSourceRuntime = src->prxRegisterSourceRuntime;
 	dest->prxRegisterMapperRuntime = src->prxRegisterMapperRuntime;
@@ -164,10 +169,23 @@ void copy_rt_to_rt4(const platform_runtime_api* src, platform_runtime_api4* dest
 }
 
 
-void copy_rt3_to_rt4(const platform_runtime_api3* src, platform_runtime_api4* dest)
+void copy_rt3_to_rt6(const platform_runtime_api3* src, platform_runtime_api6* dest)
 {
+	memzero(dest, sizeof(platform_runtime_api6));
 	memcpy(dest, src, sizeof(platform_runtime_api3));//!!!!
-	// WARNING rxInitCtxGetDataType_t added at the end/ beware of errors!!!
+}
+
+
+void copy_rt4_to_rt6(const platform_runtime_api4* src, platform_runtime_api6* dest)
+{
+	memzero(dest, sizeof(platform_runtime_api6));
+	memcpy(dest, src, sizeof(platform_runtime_api4));//!!!!
+}
+
+void copy_rt5_to_rt6(const platform_runtime_api5* src, platform_runtime_api6* dest)
+{
+	memzero(dest, sizeof(platform_runtime_api6));
+	memcpy(dest, src, sizeof(platform_runtime_api5));//!!!!
 }
 
 namespace
@@ -185,7 +203,7 @@ int get_binded_stream_version()
 	return _g_stream_version_;
 }
 
-rx_result_struct rx_bind_plugin(const platform_api4* api, uint32_t host_stream_version, uint32_t* plugin_stream_version)
+rx_result_struct rx_bind_plugin(const platform_api6* api, uint32_t host_stream_version, uint32_t* plugin_stream_version)
 {
 	_g_stream_version_ = std::min(host_stream_version, _g_stream_version_);
 	*plugin_stream_version = _g_stream_version_;
@@ -250,6 +268,7 @@ rx_result_struct rx_bind_plugin(const platform_api4* api, uint32_t host_stream_v
 	api_get_source_values = api->runtime.prxInitCtxGetSourceValues;
 	api_item_meta = api->runtime.prxInitCtxGetItemMeta;
 	api_get_data_type_func = api->runtime.prxInitCtxGetDataType;
+	api_connect_item_func = api->runtime.prxInitCtxConnectItem;
 
 	api_start_get_current_path = api->runtime.prxStartCtxGetCurrentPath;
 	api_start_ctx_create_timer = api->runtime.prxStartCtxCreateTimer;
@@ -265,6 +284,9 @@ rx_result_struct rx_bind_plugin(const platform_api4* api, uint32_t host_stream_v
 	api_set_async_pending_func = api->runtime.prxCtxSetAsyncPending;
 
 	api_reg_storage_func = api->storage.prxRegisterStorageType;
+	api_write_binded_func = api->runtime.prxCtxWriteBinded;
+
+	api_get_new_unique_id_func = api->runtime.rxGetNewUniqueId;
 
 
 	return rx_result(true).move();

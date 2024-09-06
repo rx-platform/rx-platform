@@ -166,6 +166,8 @@ bool tcp_client_endpoint::readed (const void* data, size_t count, rx_security_ha
 
 rx_protocol_result_t tcp_client_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
 {
+
+
     tcp_client_endpoint* self = reinterpret_cast<tcp_client_endpoint*>(reference->user_data);
     socket_holder_t::smart_ptr temp_socket;
     {
@@ -242,14 +244,9 @@ bool tcp_client_endpoint::tick ()
     case tcp_state::not_active:
     case tcp_state::not_connected:
         {
-            socket_holder_t::smart_ptr temp_socket;
-            {
-                locks::auto_lock_t _(&state_lock_);
-                RX_ASSERT(!tcp_socket_ && my_port_ != nullptr);
-                current_state_ = tcp_state::connecting;
-                temp_socket = tcp_socket_;
-            }
+            
             rx_result result;
+            socket_holder_t::smart_ptr temp_socket;
             temp_socket = rx_create_reference<socket_holder_t>(this);
             temp_socket->set_identity(stack_endpoint_.identity);
             if(local_addr_.is_empty_ip4())
@@ -261,7 +258,12 @@ bool tcp_client_endpoint::tick ()
                 temp_socket->set_connect_timeout(my_port_->get_connect_timeout());
                 temp_socket->set_receive_timeout(my_port_->get_receive_timeout());
                 temp_socket->set_send_timeout(my_port_->get_send_timeout());
-                current_state_ = tcp_state::connecting;
+                {
+                    locks::auto_lock_t _(&state_lock_);
+                    RX_ASSERT(!tcp_socket_ && my_port_ != nullptr);
+                    current_state_ = tcp_state::connecting;
+                    tcp_socket_ = temp_socket;
+                }
                 const sockaddr* remote_addr = remote_addr_.get_address();
                 if (remote_addr)
                     result = temp_socket->connect_to(
@@ -280,12 +282,11 @@ bool tcp_client_endpoint::tick ()
                 }
                 locks::auto_lock_t _(&state_lock_);
                 current_state_ = tcp_state::not_connected;
+                tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
                 return true;
             }
             else
             {
-                locks::auto_lock_t _(&state_lock_);
-                tcp_socket_ = temp_socket;
                 return false;
             }
         }
@@ -391,11 +392,17 @@ void tcp_client_endpoint::socket_holder_t::on_shutdown(rx_security_handle_t iden
 bool tcp_client_endpoint::socket_holder_t::connect_complete(sockaddr_in* addr, sockaddr_in* local_addr)
 {
     if (whose)
+    {
         whose->connected(addr, local_addr);
+    }
     else
+    {
         return false;
+    }
 
-    return tcp_client_socket_std_buffer::connect_complete(addr, local_addr);
+    auto ret = tcp_client_socket_std_buffer::connect_complete(addr, local_addr);
+
+    return ret;
 }
 tcp_client_endpoint::socket_holder_t::socket_holder_t(tcp_client_endpoint* whose)
     : whose(whose)
@@ -425,7 +432,11 @@ tcp_client_port::tcp_client_port()
 
 rx_result tcp_client_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+    
     auto result = status.initialize(ctx);
+    if (!result)
+        return result; 
+
     auto bind_result = recv_timeout_.bind("Timeouts.ReceiveTimeout", ctx);
     if (!bind_result)
         ITF_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");

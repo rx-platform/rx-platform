@@ -364,6 +364,7 @@ std::vector<server_command_base_ptr> server_command_manager::get_internal_comman
 	ret_commands.push_back(rx_create_reference<console::console_commands::cls_command>());
 	ret_commands.push_back(rx_create_reference<console::console_commands::shutdown_command>());
 	ret_commands.push_back(rx_create_reference<console::console_commands::log_command>());
+	ret_commands.push_back(rx_create_reference<console::console_commands::ll_command>());
 	ret_commands.push_back(rx_create_reference<console::console_commands::sec_command>());
 	ret_commands.push_back(rx_create_reference<console::console_commands::time_command>());
 	ret_commands.push_back(rx_create_reference<console::console_commands::sleep_command>());

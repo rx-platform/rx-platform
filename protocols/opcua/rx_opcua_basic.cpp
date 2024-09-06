@@ -938,7 +938,7 @@ std::pair<opcua_result_t, runtime_transaction_id_t> opcua_basic_mapper::write_va
 {
 	if(!range.empty())
 		return { opcid_Bad_IndexRangeInvalid, 0 };
-	auto trans_id = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
+	auto trans_id = rx_get_new_transaction_id();
 	rx_value val;
 	auto result = value.fill_rx_value(val);
 	if (result)
@@ -1120,7 +1120,7 @@ void opcua_basic_method_mapper::port_disconnected (port_ptr_t port)
 
 std::pair<opcua_result_t, runtime_transaction_id_t> opcua_basic_method_mapper::execute (std::vector<variant_type> args, opcua_server_endpoint_ptr ep)
 {
-	auto trans_id = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
+	auto trans_id = rx_get_new_transaction_id();
 	size_t count = args.size();
 	std::vector<rx_simple_value> val(count);
 	for (size_t i = 0; i < count; i++)

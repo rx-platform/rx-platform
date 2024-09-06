@@ -397,7 +397,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 
 		if (whose.array_size_ < 0)
 		{
-			auto temp_data = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(data_target, whose.get_name(), ctx, ctx.get_directories());
+			auto temp_data = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(data_target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
 			if (temp_data)
 			{
 				auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
@@ -433,7 +433,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 			data.reserve(whose.array_size_);
 			for (int i = 0; i < whose.array_size_; i++)
 			{
-				auto temp_data = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(data_target, whose.get_name(), ctx, ctx.get_directories());
+				auto temp_data = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(data_target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
 				if (temp_data)
 				{
 					auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
@@ -741,11 +741,17 @@ rx_result meta_blocks_algorithm<def_blocks::event_attribute>::construct_complex_
 		if (!whose.arguments_.is_null())
 		{
 			rx_node_id id;
-			auto result = data_blocks_algorithm::construct_data_block(whose.arguments_, "Args", temp.value().arguments, id, ctx);
-			if (!result)
+			runtime::types_cache types;
+			auto result = data_blocks_algorithm::construct_data_block(whose.arguments_, "Args", temp.value().arguments, id, ctx, &types);
+			if (result)
+			{
+				temp.value().types = std::move(types);
+			}
+			else
 			{
 				result.register_error("Unable to resolve inputs data type"s + whose.arguments_.to_string());
 			}
+			
 		}
 		return ctx.runtime_data().add(whose.name_, temp.move_value(), target);
 	}
@@ -1357,7 +1363,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 			return ret;
 		}
 		target = resolve_result.value();
-		auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories());
+		auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
 		if (temp)
 		{
 			if (whose.get_array_size() < 0)
@@ -1456,7 +1462,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 		target = resolve_result.value();
 		if (whose.get_array_size() < 0)
 		{
-			auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories());
+			auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
 			if (temp)
 			{
 				value_block_data data;
@@ -1481,7 +1487,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 			data.reserve(whose.get_array_size());
 			for (int i = 0; i < whose.get_array_size(); i++)
 			{
-				auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories());
+				auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
 				if (temp)
 				{
 					value_block_data temp_data;
@@ -1908,9 +1914,9 @@ bool data_blocks_algorithm::check_data_attribute (def_blocks::data_attribute& wh
 		return ctx.is_check_ok();
 }
 
-rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, rx_node_id& id, construct_context& ctx)
+rx_result data_blocks_algorithm::construct_data_attribute (const def_blocks::data_attribute& whose, runtime::structure::block_data& data, rx_node_id& id, construct_context& ctx, runtime::types_cache* types)
 {
-	return construct_data_block(whose.target_, whose.name_, data, id, ctx);
+	return construct_data_block(whose.target_, whose.name_, data, id, ctx, types);
 }
 
 rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& ref, ns::rx_directory_resolver& dirs)
@@ -1928,7 +1934,7 @@ rx_result data_blocks_algorithm::check_data_reference (const rx_item_reference& 
 		return true;
 }
 
-rx_result data_blocks_algorithm::construct_data_block (const rx_item_reference& whose, const string_type& name, runtime::structure::block_data& data, rx_node_id& id, construct_context& ctx)
+rx_result data_blocks_algorithm::construct_data_block (const rx_item_reference& whose, const string_type& name, runtime::structure::block_data& data, rx_node_id& id, construct_context& ctx, runtime::types_cache* types)
 {
 	auto resolve_result = rx_internal::model::algorithms::resolve_data_type_reference(whose, ctx.get_directories());
 	if (!resolve_result)
@@ -1938,7 +1944,7 @@ rx_result data_blocks_algorithm::construct_data_block (const rx_item_reference& 
 		return ret;
 	}
 	id = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(id, name, ctx, ctx.get_directories());
+	auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(id, name, ctx, ctx.get_directories(), types);
 	if (temp)
 	{
 		data = std::move(temp.value().runtime);
@@ -2177,28 +2183,69 @@ rx_result method_blocks_algorithm::construct_complex_attribute (const def_blocks
 		return ret;
 	}
 	target = resolve_result.value();
-	ctx.start_method(whose.get_name());
+	rx_node_id input_id, output_id;
+	ctx.start_method(whose.get_name(), input_id, output_id);
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::method_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
 		if (!whose.inputs_.is_null())
 		{
 			rx_node_id id;
-			auto result = data_blocks_algorithm::construct_data_block(whose.inputs_, "In", temp.value().inputs, id, ctx);
+			auto result = data_blocks_algorithm::construct_data_block(whose.inputs_, "In", temp.value().inputs, id, ctx, nullptr);
 			if (!result)
 			{
 				result.register_error("Unable to resolve inputs data type"s + whose.inputs_.to_string());				
+				return result;
 			}
-		}if (!whose.outputs_.is_null())
+			else if (!input_id.is_null() && !id.is_null())
+			{
+				if (input_id != id && !rx_internal::model::platform_types_manager::instance().get_data_types_repository().is_derived_from(id, input_id))
+				{
+					result.register_error("Wrong Data Type for method override!");
+					return result;
+				}
+				input_id = id;
+			}
+		}
+		else if(!input_id.is_null())
+		{// base method gives the data type
+			rx_node_id id;
+			auto result = data_blocks_algorithm::construct_data_block(rx_item_reference(input_id), "In", temp.value().inputs, id, ctx, nullptr);
+			if (!result)
+			{
+				result.register_error("Unable to resolve inputs data type"s + whose.inputs_.to_string());
+				return result;
+			}
+		}
+		if (!whose.outputs_.is_null())
 		{
 			rx_node_id id;
-			auto result = data_blocks_algorithm::construct_data_block(whose.outputs_, "In", temp.value().outputs, id, ctx);
+			auto result = data_blocks_algorithm::construct_data_block(whose.outputs_, "In", temp.value().outputs, id, ctx, nullptr);
 			if (!result)
 			{
 				result.register_error("Unable to resolve outputs data type"s + whose.outputs_.to_string());
 			}
+			else if (!output_id.is_null() && !id.is_null())
+			{
+				if (output_id != id && !rx_internal::model::platform_types_manager::instance().get_data_types_repository().is_derived_from(id, output_id))
+				{
+					result.register_error("Wrong Data Type for method override!");
+					return result;
+				}
+				input_id = id;
+			}
 		}
-		ctx.end_method(temp.move_value());
+		else if (!output_id.is_null())
+		{// base method gives the data type
+			rx_node_id id;
+			auto result = data_blocks_algorithm::construct_data_block(rx_item_reference(output_id), "In", temp.value().inputs, id, ctx, nullptr);
+			if (!result)
+			{
+				result.register_error("Unable to resolve inputs data type"s + whose.inputs_.to_string());
+				return result;
+			}
+		}
+		ctx.end_method(temp.move_value(), input_id, output_id);
 		return true;
 	}
 	else

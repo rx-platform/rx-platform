@@ -416,10 +416,10 @@ extern "C"
         rx_platform::runtime::blocks::extern_event_runtime* self = (rx_platform::runtime::blocks::extern_event_runtime*)whose;
         self->destroy_timer(timer);
     }
-    void c_event_fired(void* whose, runtime_transaction_id_t id, int test, rx_security_handle_t identity, struct timed_value_type data)
+    void c_event_fired(void* whose, runtime_transaction_id_t id, int test, rx_security_handle_t identity, struct timed_value_type data, const char* queue, int state_machine, int remove)
     {
         rx_platform::runtime::blocks::extern_event_runtime* self = (rx_platform::runtime::blocks::extern_event_runtime*)whose;
-        self->extern_event_fired(id, test, identity, std::move(data));
+        self->extern_event_fired(id, test, identity, std::move(data), queue, state_machine != 0, remove != 0);
     }
     void c_event_get_model(void* whose, struct bytes_value_struct_t* data)
     {
@@ -959,7 +959,7 @@ byte_string extern_event_runtime::extern_get_arguments ()
     return byte_string();
 }
 
-void extern_event_runtime::extern_event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data)
+void extern_event_runtime::extern_event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data, string_view_type queue, bool state, bool remove)
 {
     event_fired_data ev_data;
     ev_data.identity = identity;
@@ -967,6 +967,9 @@ void extern_event_runtime::extern_event_fired (runtime_transaction_id_t id, bool
     ev_data.test = test;
     ev_data.transaction_id = id;
     ev_data.value = std::move(data);
+    ev_data.queue = queue;
+    ev_data.state_machine = state;
+    ev_data.remove_queue = remove;
     event_fired(std::move(ev_data));
 }
 
@@ -1025,7 +1028,7 @@ rx_value extern_variable_runtime::get_variable_input (runtime_process_context* c
     return rx_value();
 }
 
-rx_result extern_variable_runtime::variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources)
+rx_result extern_variable_runtime::variable_write (write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx, runtime_sources_type& sources)
 {
     return RX_NOT_IMPLEMENTED;
 }

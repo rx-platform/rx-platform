@@ -58,6 +58,8 @@ void http_handlers_repository::register_standard_handlers ()
 	// standard file handlers
 	std::unique_ptr<http_handler> handler_ptr = std::make_unique<png_file_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<jpg_file_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<html_file_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<css_file_handler>();
@@ -209,6 +211,20 @@ const char* js_file_handler::get_extension ()
 const char* js_file_handler::get_content_type ()
 {
 	return "text/javascript";
+}
+
+
+// Class rx_internal::rx_http_server::jpg_file_handler 
+
+
+const char* jpg_file_handler::get_extension ()
+{
+	return "jpg";
+}
+
+const char* jpg_file_handler::get_content_type ()
+{
+	return "image/jpeg";
 }
 
 

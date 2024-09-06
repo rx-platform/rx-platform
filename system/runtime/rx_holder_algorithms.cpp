@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace runtime {
 
 namespace algorithms {
 
-// Parameterized Class rx_platform::runtime::algorithms::runtime_holder_algorithms 
+// Parameterized Class rx_platform::runtime::algorithms::runtime_holder_algorithms
 
 
 template <class typeT>
@@ -156,42 +156,123 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
         auto item_result = storage_result.value()->get_runtime_storage(whose.meta_info_, whose.get_type_id());
         if (item_result)
         {
-            auto result = item_result.value()->open_for_write();
+            runtime_transaction_id_t this_transaction_id = whose.context_->serialize_trans_id_.exchange(0);
+            serialization::pretty_json_writer writer;
+            string_type data;
+
+            writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+            auto result = serialize_runtime_value(writer, runtime_value_type::persistent_runtime_value, whose);
             if (result)
             {
-                item_result.value()->write_stream().write_header(STREAMING_TYPE_MESSAGE, 0);
-                result = serialize_runtime_value(item_result.value()->write_stream(), runtime_value_type::persistent_runtime_value, whose);
+                result = writer.write_footer();
                 if (result)
                 {
-                    result = item_result.value()->write_stream().write_footer();
-                    if (result)
-                        result = item_result.value()->commit_write();
-                    if (result)
-                    {
-                        RUNTIME_LOG_DEBUG("runtime_model_algorithm", 100, "Saved "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
-                    }
-                    else
-                    {
-                        RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
-                    }
+                    data = writer.get_string();
                 }
             }
-            else
+
+            //
+            if (result)
             {
-                RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+                byte_string buffer(data.size());
+                if (!data.empty())
+                {
+                    memcpy(&buffer[0], &data[0], data.size());
+                }
+
+                result = item_result.value()->save(this_transaction_id, std::move(buffer), [ whose = whose.smart_this()](runtime_transaction_id_t trans_id, rx_result result)
+                    {
+                        if (!result)
+                        {
+                            RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s + rx_item_type_name(typeT::RImplType::type_id)
+                                + " "s + whose->meta_info_.get_full_path() + " :" + result.errors_line());
+
+                        }
+                        else
+                        {
+                            RUNTIME_LOG_INFO("runtime_model_algorithm", 100, "Saved "s 
+                                + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose->meta_info_.get_full_path());
+                        }
+                        auto it = whose->context_->serialize_callbacks_.find(trans_id);
+                        if (it != whose->context_->serialize_callbacks_.end())
+                        {
+                            for (auto callback : it->second)
+                            {
+                                if (result)
+                                    callback(true);
+                                else
+                                    callback(result.errors());
+                            }
+                            whose->context_->serialize_callbacks_.erase(it);
+                        }
+                    });
+            }
+
+            if (!result)
+            {
+                RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s
+                    + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path() + " " + result.errors_line());
+                auto it = whose.context_->serialize_callbacks_.find(this_transaction_id);
+                if (it != whose.context_->serialize_callbacks_.end())
+                {
+                    for (auto callback : it->second)
+                    {
+                        if (result)
+                            callback(true);
+                        else
+                            callback(result.errors());
+                    }
+                    whose.context_->serialize_callbacks_.erase(it);
+                }
             }
         }
         else
         {
-            RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path());
+   
+            runtime_transaction_id_t this_transaction_id = whose.context_->serialize_trans_id_.exchange(0);
+            RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error opening runtime storage for "s 
+                + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path() + " " + item_result.errors_line());
+
+
+            auto it = whose.context_->serialize_callbacks_.find(this_transaction_id);
+            if (it != whose.context_->serialize_callbacks_.end())
+            {
+                for (auto callback : it->second)
+                {
+                    if (item_result)
+                        callback(true);
+                    else
+                        callback(item_result.errors());
+                }
+                whose.context_->serialize_callbacks_.erase(it);
+            }
+        }
+    }
+    else
+    {
+        runtime_transaction_id_t this_transaction_id = whose.context_->serialize_trans_id_.exchange(0);
+        RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error resolving storage for "s
+            + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path() + " " + storage_result.errors_line());
+
+        auto it = whose.context_->serialize_callbacks_.find(this_transaction_id);
+        if (it != whose.context_->serialize_callbacks_.end())
+        {
+            for (auto callback : it->second)
+            {
+                if (storage_result)
+                    callback(true);
+                else
+                    callback(storage_result.errors());
+            }
+            whose.context_->serialize_callbacks_.erase(it);
         }
     }
 }
 
 template <class typeT>
-std::unique_ptr<runtime_process_context> runtime_holder_algorithms<typeT>::create_context (typename typeT::RType& whose)
+std::unique_ptr<runtime_process_context> runtime_holder_algorithms<typeT>::create_context (typename typeT::RType& whose, runtime::events::runtime_events_manager* events)
 {
-    return std::make_unique<runtime_process_context>(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.smart_this(), whose.security_guard_);
+    return std::make_unique<runtime_process_context>(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.smart_this(), whose.security_guard_, events);
 }
 
 template <class typeT>
@@ -328,7 +409,7 @@ void runtime_holder_algorithms<typeT>::read_value (const string_type& path, read
 #endif
                     if (!whose.json_cache_.empty())
                         value.assign_static(whose.json_cache_.c_str(), whose.meta_info_.modified_time);
-                                        
+
                 }
             }
         }
@@ -445,6 +526,15 @@ void runtime_holder_algorithms<typeT>::read_struct (string_view_type path, read_
         }
         result = true;
     }
+    else if (path == "Storage")
+    {// our runtime value
+        data.type = runtime_value_type::persistent_runtime_value;
+        whose.tags_.collect_data(collected_data, data.type);
+        whose.relations_.collect_data(collected_data, data.type);
+        whose.logic_.collect_data(collected_data, data.type);
+        whose.displays_.collect_data(collected_data, data.type);
+        result = true;
+    }
     else
     {
         // someone's else
@@ -549,13 +639,13 @@ rx_result runtime_holder_algorithms<typeT>::execute_item (runtime_transaction_id
 }
 
 template <class typeT>
-rx_result_with<runtime_handle_t> runtime_holder_algorithms<typeT>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor, typename typeT::RType& whose)
+rx_result_with<runtime_handle_t> runtime_holder_algorithms<typeT>::connect_events (const event_filter& filter, events_callback_ptr monitor, bool bin_value, typename typeT::RType& whose)
 {
     return RX_NOT_IMPLEMENTED;
 }
 
 template <class typeT>
-rx_result runtime_holder_algorithms<typeT>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor, typename typeT::RType& whose)
+rx_result runtime_holder_algorithms<typeT>::disconnect_events (runtime_handle_t hndl, events_callback_ptr monitor, typename typeT::RType& whose)
 {
     return RX_NOT_IMPLEMENTED;
 }
@@ -573,7 +663,7 @@ std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<meta::o
         result.emplace_back(RX_NOT_IMPLEMENTED);
     }
 
-    return result;    
+    return result;
 }
 
 template class runtime_holder_algorithms<meta::object_types::port_type>;
@@ -581,7 +671,7 @@ template class runtime_holder_algorithms<meta::object_types::object_type>;
 template class runtime_holder_algorithms<meta::object_types::domain_type>;
 template class runtime_holder_algorithms<meta::object_types::application_type>;
 
-// Class rx_platform::runtime::algorithms::runtime_relation_algorithms 
+// Class rx_platform::runtime::algorithms::runtime_relation_algorithms
 
 
 void runtime_relation_algorithms::notify_relation_connected (const string_type& name, const platform_item_ptr& item, runtime_process_context* ctx)

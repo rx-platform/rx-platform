@@ -33,6 +33,8 @@
 
 // rx_operational
 #include "system/runtime/rx_operational.h"
+// rx_event_manager
+#include "system/runtime/rx_event_manager.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 
@@ -94,14 +96,15 @@ bool runtime_process_context::should_do_step()
 
 // Class rx_platform::runtime::runtime_process_context 
 
-runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, security::security_guard_ptr guard)
+runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, security::security_guard_ptr guard, events::runtime_events_manager* events)
       : tags_(tags),
         binded_(binded),
+        events_manager_(events),
         current_step_(runtime_process_step::idle),
         now_(rx_time::now().c_data().t_value),
         meta_info(info),
         directory_resolver_(dirs),
-        serialize_value_(false),
+        serialize_trans_id_(0),
         stopping_(false),
         job_queue_(nullptr),
         anchor_(anchor),
@@ -124,6 +127,11 @@ void runtime_process_context::init_state (fire_callback_func_t fire_callback)
 {
     fire_callback_ = fire_callback;
     mode_.turn_on();
+}
+
+void runtime_process_context::start_state (status_data_type status_data)
+{
+    mode_ = status_data.mode;
 }
 
 void runtime_process_context::runtime_stopped ()
@@ -150,6 +158,11 @@ rx_result runtime_process_context::set_value (runtime_handle_t handle, values::r
 rx_result runtime_process_context::set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx)
 {
     return binded_.set_item(path, std::move(what), ctx);
+}
+
+rx_reference_ptr runtime_process_context::get_anchor ()
+{
+    return anchor_;
 }
 
 bool runtime_process_context::should_repeat ()
@@ -570,14 +583,18 @@ std::pair<source_results_type*, source_updates_type*> runtime_process_context::g
         return { &g_empty_source_results, &g_empty_source_updates };
 }
 
-void runtime_process_context::runtime_dirty ()
+void runtime_process_context::runtime_dirty (serialize_callback_t callback)
 {
-    serialize_value_ = true;
+    locks::auto_lock_t _(&context_lock_);
+    if(serialize_trans_id_ ==0)
+        serialize_trans_id_ = rx_get_new_transaction_id();
+    serialize_callbacks_[serialize_trans_id_].emplace_back(std::move(callback));
 }
 
 bool runtime_process_context::should_save ()
 {
-    return serialize_value_.exchange(false);
+    locks::auto_lock_t _(&context_lock_);
+    return serialize_trans_id_ != 0;
 }
 
 async_values_type& runtime_process_context::get_async_values ()
@@ -648,6 +665,7 @@ rx_time runtime_process_context::now ()
     else
         return rx_time_struct_t{ now_ };
 }
+
 
 // Parameterized Class rx_platform::runtime::process_context_job 
 

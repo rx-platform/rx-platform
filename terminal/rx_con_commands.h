@@ -196,6 +196,8 @@ pretty much implemented read to be useful!");
   public:
       log_command();
 
+      log_command (const string_type& name);
+
       ~log_command();
 
 
@@ -499,6 +501,33 @@ displays copyright info");
       copyright_command();
 
       ~copyright_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class ll_command : public log_command  
+{
+    DECLARE_REFERENCE_PTR(ll_command);
+    DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+<log read> shorten command");
+
+  public:
+      ll_command();
+
+      ~ll_command();
 
 
   protected:

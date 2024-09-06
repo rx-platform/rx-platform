@@ -40,9 +40,13 @@
 
 namespace rx_platform {
 namespace runtime {
+namespace events {
+class runtime_events_manager;
+} // namespace events
+
 namespace tag_blocks {
-class connected_tags;
 class binded_tags;
+class connected_tags;
 
 } // namespace tag_blocks
 } // namespace runtime
@@ -323,6 +327,7 @@ struct execute_result_struct
     }
 };
 
+typedef std::vector <rx_node_id> types_cache;
 
 
 
@@ -340,6 +345,14 @@ struct event_fired_data
       bool test;
 
       rx_security_handle_t identity;
+
+      string_type queue;
+
+      bool state_machine;
+
+      bool remove_queue;
+
+      types_cache types;
 
   public:
 
@@ -459,6 +472,8 @@ struct variable_data_for_process_t
     block_variables_type* block_vars;
 };
 
+typedef std::function<void(rx_result)> serialize_callback_t;
+
 
 
 
@@ -473,16 +488,18 @@ class runtime_process_context
     friend class algorithms::runtime_relation_algorithms;
 
     typedef std::function<void()> fire_callback_func_t;
-
+    typedef std::map<runtime_transaction_id_t, std::vector<serialize_callback_t> > serialize_callbacks_type;
     //typedef std::vector<context_value_point*> points_type;
 
   public:
-      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, security::security_guard_ptr guard);
+      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, security::security_guard_ptr guard, events::runtime_events_manager* events);
 
 
       rx_result init_context ();
 
       void init_state (fire_callback_func_t fire_callback);
+
+      void start_state (status_data_type status_data);
 
       void runtime_stopped ();
 
@@ -493,6 +510,8 @@ class runtime_process_context
       rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback);
 
       rx_result set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx);
+
+      rx_reference_ptr get_anchor ();
 
       bool should_repeat ();
 
@@ -576,7 +595,7 @@ class runtime_process_context
 
       std::pair<source_results_type*, source_updates_type*> get_source_inputs ();
 
-      void runtime_dirty ();
+      void runtime_dirty (serialize_callback_t callback);
 
       bool should_save ();
 
@@ -597,6 +616,18 @@ class runtime_process_context
       rx_result execute_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id);
 
       rx_time now ();
+
+
+      events::runtime_events_manager * get_events_manager ()
+      {
+        return events_manager_;
+      }
+
+      void set_events_manager (events::runtime_events_manager * value)
+      {
+        events_manager_ = value;
+      }
+
 
 
       const rx_mode_type get_mode () const
@@ -671,6 +702,8 @@ class runtime_process_context
 
       tag_blocks::binded_tags& binded_;
 
+      events::runtime_events_manager *events_manager_;
+
 
       std::atomic<runtime_process_step> current_step_;
 
@@ -718,7 +751,7 @@ class runtime_process_context
 
       locks::slim_lock context_lock_;
 
-      std::atomic<bool> serialize_value_;
+      std::atomic<runtime_transaction_id_t> serialize_trans_id_;
 
       double_collection<async_values_type> async_values_;
 
@@ -731,6 +764,8 @@ class runtime_process_context
       rx_reference_ptr anchor_;
 
       security::security_guard_ptr security_guard_;
+
+      serialize_callbacks_type serialize_callbacks_;
 
       template<runtime_process_step step>
       void turn_on_pending();

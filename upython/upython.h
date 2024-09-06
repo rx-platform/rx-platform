@@ -33,6 +33,18 @@
 
 
 #ifdef UPYTHON_SUPPORT
+#include "system/server/rx_server.h"
+
+
+/////////////////////////////////////////////////////////////
+// logging macros
+#define UPYTHON_LOG_INFO(src,lvl,msg) RX_LOG_INFO("upython",src,lvl,msg)
+#define UPYTHON_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("upython",src,lvl,msg)
+#define UPYTHON_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("upython",src,lvl,msg)
+#define UPYTHON_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("upython",src,lvl,msg)
+#define UPYTHON_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("upython",src,lvl,msg)
+#define UPYTHON_LOG_TRACE(src,lvl,msg) RX_TRACE("upython",src,lvl,msg)
+
 
 
 namespace rx_platform {
@@ -46,6 +58,10 @@ class upy_module;
 
 
 namespace rx_platform {
+namespace hosting
+{
+class rx_platform_host;
+}
 
 namespace python {
 typedef rx_reference<upy_module> upy_module_ptr;
@@ -66,7 +82,7 @@ class upython
 
       static rx_result register_logic_handlers ();
 
-      static rx_result start_script (hosting::rx_platform_host* host, const configuration_data_t& data);
+      static rx_result start_script (hosting::rx_platform_host* host, const rx_platform::configuration_data_t& data);
 
       static void stop_script ();
 

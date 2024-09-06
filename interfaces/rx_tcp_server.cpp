@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -55,7 +55,7 @@ namespace interfaces {
 
 namespace ip_endpoints {
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_server_endpoint 
+// Class rx_internal::interfaces::ip_endpoints::tcp_server_endpoint
 
 tcp_server_endpoint::tcp_server_endpoint()
       : my_port_(nullptr),
@@ -75,18 +75,6 @@ tcp_server_endpoint::tcp_server_endpoint()
             me->close();
         }
         rx_notify_closed(&me->stack_endpoint_, 0);
-        return RX_PROTOCOL_OK;
-
-
-        if (me->tcp_socket_)
-        {
-            me->tcp_socket_->write(buffer_ptr::null_ptr);
-            return RX_PROTOCOL_OK;
-        }
-        else
-        {
-            return RX_PROTOCOL_WRONG_STATE;
-        }
         return RX_PROTOCOL_OK;
     };
 }
@@ -142,7 +130,9 @@ rx_result tcp_server_endpoint::close ()
         }
         if (temp_socket)
         {
-            temp_socket->disconnect();
+            temp_socket->write(buffer_ptr::null_ptr);
+            //temp_socket->detach();
+            rx_notify_closed(&stack_endpoint_, 0);
         }
     }
     return true;
@@ -159,18 +149,19 @@ void tcp_server_endpoint::disconnected (rx_security_handle_t identity)
     if (temp_socket)
     {
         tcp_socket_ = socket_ptr::null_ptr;
+
+        std::ostringstream ss;
+        ss << "Client from IP4:"
+            << remote_address_.to_string()
+            << " disconnected from IP4:"
+            << local_address_.to_string()
+            << ".";
+        ITF_LOG_TRACE("tcp_server_port", 500, ss.str());
+
         rx_session session = rx_create_session(&remote_address_, &local_address_, 0, 0, nullptr);
         rx_notify_disconnected(&stack_endpoint_, &session, 0);
         rx_close(&stack_endpoint_, 0);
     }
-
-    std::ostringstream ss;
-    ss << "Client from IP4:"
-        << remote_address_.to_string()
-        << " disconnected from IP4:"
-        << local_address_.to_string()
-        << ".";
-    ITF_LOG_TRACE("tcp_server_port", 500, ss.str());
 }
 
 bool tcp_server_endpoint::readed (const void* data, size_t count, rx_security_handle_t identity)
@@ -229,7 +220,7 @@ rx_protocol_result_t tcp_server_endpoint::send_function (rx_protocol_stack_endpo
                 return RX_PROTOCOL_COLLECT_ERROR;
             }
             self->my_port_->status.sent_packet(chunk_size);
-            sent += chunk_size;            
+            sent += chunk_size;
         }
         return RX_PROTOCOL_OK;
     }
@@ -307,12 +298,16 @@ void tcp_server_endpoint::socket_holder_t::detach()
 {
     whose = nullptr;
 }
-// Class rx_internal::interfaces::ip_endpoints::tcp_server_port 
+// Class rx_internal::interfaces::ip_endpoints::tcp_server_port
 
 
 rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+
     auto result = status.initialize(ctx);
+    if (!result)
+        return result;
+
     auto bind_result = recv_timeout_.bind("Timeouts.ReceiveTimeout", ctx);
     if (!bind_result)
         RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
@@ -433,7 +428,7 @@ buffer_ptr tcp_server_port::get_buffer ()
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_http_port 
+// Class rx_internal::interfaces::ip_endpoints::system_http_port
 
 
 uint16_t system_http_port::get_configuration_port () const
@@ -445,7 +440,7 @@ uint16_t system_http_port::get_configuration_port () const
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_rx_port 
+// Class rx_internal::interfaces::ip_endpoints::system_rx_port
 
 
 uint16_t system_rx_port::get_configuration_port () const
@@ -457,7 +452,7 @@ uint16_t system_rx_port::get_configuration_port () const
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_server_port_base 
+// Class rx_internal::interfaces::ip_endpoints::system_server_port_base
 
 
 rx_result system_server_port_base::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -572,7 +567,7 @@ void system_server_port_base::extract_bind_address (const data::runtime_values_d
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_opcua_port 
+// Class rx_internal::interfaces::ip_endpoints::system_opcua_port
 
 
 uint16_t system_opcua_port::get_configuration_port () const

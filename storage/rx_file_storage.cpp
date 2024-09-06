@@ -54,6 +54,7 @@
 #include "rx_configuration.h"
 #include "rx_file_storage_version.h"
 #include "system/hosting/rx_host.h"
+#include "sys_internal/rx_async_functions.h"
 
 
 namespace storage {
@@ -443,11 +444,80 @@ void file_system_storage::preprocess_meta_data (meta_data& data)
 	}
 }
 
+runtime_transaction_id_t file_system_storage::get_new_unique_ids (size_t count)
+{
+	string_type path =	rx_combine_paths(root_, RX_FILE_STORAGE_RUNTIME_DIR "/_db_status.");
+	runtime_transaction_id_t id = 0;
+	runtime_transaction_id_t ret_id = 0;
+	{
+		rx_source_file file;
+		auto result = file.open(path.c_str());
+		if (result)
+		{
+			string_type data;
+			if (!file.read_string(data))
+			{
+				result = rx_result::create_from_last_os_error("Error reading file "s + path + "!");
+			}
+			if (!data.empty())
+			{
+				auto res = std::from_chars(data.c_str(), data.c_str() + data.size(), id);
+				if (res.ec != std::errc())
+				{
+					id = 0;
+				}
+			}
+		}
+	}
+
+	if (id == 0)
+		id = 1;
+
+	ret_id = id;
+	id += (runtime_transaction_id_t)count;
+
+	char buffer[0x20];
+	auto [ptr, ep] = std::to_chars(buffer, buffer + sizeof(buffer) / sizeof(buffer[0]), id);
+	*ptr = '\0';
+
+
+	rx_source_file file;
+	auto result = file.open_write(path.c_str());
+	if (result)
+	{
+		if (!file.write_string(buffer))
+		{
+			result = rx_result::create_from_last_os_error("Error writing file "s + path + "!");
+		}
+	}
+
+	return ret_id;
+}
+
+void file_system_storage::set_next_unique_id (runtime_transaction_id_t id)
+{
+	string_type path = rx_combine_paths(root_, RX_FILE_STORAGE_RUNTIME_DIR "/_db_status.");
+	char buffer[0x20];
+	auto [ptr, ep] = std::to_chars(buffer, buffer + sizeof(buffer) / sizeof(buffer[0]), id);
+	*ptr = '\0';
+
+
+	rx_source_file file;
+	auto result = file.open_write(path.c_str());
+	if (result)
+	{
+		if (!file.write_string(buffer))
+		{
+			result = rx_result::create_from_last_os_error("Error writing file "s + path + "!");
+		}
+	}
+}
+
 
 // Parameterized Class storage::files::rx_file_item 
 
-template <class fileT, class streamT>
-rx_file_item<fileT,streamT>::rx_file_item (const string_type& file_path, const meta_data& storage_meta, rx_storage_item_type storage_type)
+template <class fileT, class streamT, bool isStringBased>
+rx_file_item<fileT,streamT,isStringBased>::rx_file_item (const string_type& file_path, const meta_data& storage_meta, rx_storage_item_type storage_type)
       : valid_(false),
         storage_meta_(storage_meta),
         file_path_(file_path)
@@ -458,15 +528,15 @@ rx_file_item<fileT,streamT>::rx_file_item (const string_type& file_path, const m
 }
 
 
-template <class fileT, class streamT>
-rx_file_item<fileT,streamT>::~rx_file_item()
+template <class fileT, class streamT, bool isStringBased>
+rx_file_item<fileT,streamT,isStringBased>::~rx_file_item()
 {
 }
 
 
 
-template <class fileT, class streamT>
-values::rx_value rx_file_item<fileT,streamT>::get_value () const
+template <class fileT, class streamT, bool isStringBased>
+values::rx_value rx_file_item<fileT,streamT,isStringBased>::get_value () const
 {
 	values::rx_value temp;
 	temp.set_time(storage_meta_.created_time);
@@ -474,39 +544,39 @@ values::rx_value rx_file_item<fileT,streamT>::get_value () const
 	return temp;
 }
 
-template <class fileT, class streamT>
-rx_time rx_file_item<fileT,streamT>::get_created_time () const
+template <class fileT, class streamT, bool isStringBased>
+rx_time rx_file_item<fileT,streamT,isStringBased>::get_created_time () const
 {
 	return storage_meta_.created_time;
 }
 
-template <class fileT, class streamT>
-size_t rx_file_item<fileT,streamT>::get_size () const
+template <class fileT, class streamT, bool isStringBased>
+size_t rx_file_item<fileT,streamT,isStringBased>::get_size () const
 {
 	return 0;
 }
 
-template <class fileT, class streamT>
-rx_result rx_file_item<fileT,streamT>::delete_item ()
+template <class fileT, class streamT, bool isStringBased>
+rx_result rx_file_item<fileT,streamT,isStringBased>::delete_item ()
 {
 	int result = rx_file_delete(file_path_.c_str());
 	return result == RX_OK ? true : false;
 }
 
-template <class fileT, class streamT>
-string_type rx_file_item<fileT,streamT>::get_file_path () const
+template <class fileT, class streamT, bool isStringBased>
+string_type rx_file_item<fileT,streamT,isStringBased>::get_file_path () const
 {
 	return file_path_;
 }
 
-template <class fileT, class streamT>
-const string_type& rx_file_item<fileT,streamT>::get_item_reference () const
+template <class fileT, class streamT, bool isStringBased>
+const string_type& rx_file_item<fileT,streamT,isStringBased>::get_item_reference () const
 {
 	return file_path_;
 }
 
-template <class fileT, class streamT>
-bool rx_file_item<fileT,streamT>::preprocess_meta_data (meta_data& data)
+template <class fileT, class streamT, bool isStringBased>
+bool rx_file_item<fileT,streamT,isStringBased>::preprocess_meta_data (meta_data& data)
 {
 	bool ret = false;
 	if (!storage_meta_.name.empty() && storage_meta_.name!=data.name)
@@ -534,26 +604,26 @@ bool rx_file_item<fileT,streamT>::preprocess_meta_data (meta_data& data)
 	return ret;
 }
 
-template <class fileT, class streamT>
-base_meta_reader& rx_file_item<fileT,streamT>::read_stream ()
+template <class fileT, class streamT, bool isStringBased>
+base_meta_reader& rx_file_item<fileT,streamT,isStringBased>::read_stream ()
 {
 	return item_data_.read_stream();
 }
 
-template <class fileT, class streamT>
-base_meta_writer& rx_file_item<fileT,streamT>::write_stream ()
+template <class fileT, class streamT, bool isStringBased>
+base_meta_writer& rx_file_item<fileT,streamT,isStringBased>::write_stream ()
 {
 	return item_data_.write_stream();
 }
 
-template <class fileT, class streamT>
-rx_result rx_file_item<fileT,streamT>::open_for_read ()
+template <class fileT, class streamT, bool isStringBased>
+rx_result rx_file_item<fileT,streamT,isStringBased>::open_for_read ()
 {
 	fileT file;
 	auto result = file.open(file_path_.c_str());
 	if (result)
 	{
-		if constexpr (streamT::string_based)
+		if constexpr (isStringBased)
 		{
 			string_type data;
 			result = file.read_string(data);
@@ -587,62 +657,148 @@ rx_result rx_file_item<fileT,streamT>::open_for_read ()
 	return result;
 }
 
-template <class fileT, class streamT>
-rx_result rx_file_item<fileT,streamT>::open_for_write ()
+template <class fileT, class streamT, bool isStringBased>
+rx_result rx_file_item<fileT,streamT,isStringBased>::open_for_write ()
 {
 	auto result = item_data_.open_for_write(file_path_);
-	return result;
-}
-
-template <class fileT, class streamT>
-rx_result rx_file_item<fileT,streamT>::close_read ()
-{
-	return item_data_.close_read(file_path_);
-}
-
-template <class fileT, class streamT>
-rx_result rx_file_item<fileT,streamT>::commit_write ()
-{
-	fileT file;
-	auto result = file.open_write(file_path_.c_str());
 	if (result)
-	{
-		if constexpr (streamT::string_based)
+	{/*
+		fileT file;
+		auto result = file.open(file_path_.c_str());
+		if (result)
 		{
-			string_type data;
-			result = item_data_.get_data(data);
-			if (result)
+			if constexpr (isStringBased)
 			{
-				if (!file.write_string(data))
+				string_type data;
+				result = file.read_string(data);
+				if (result)
 				{
-					result = "Error writing file "s + file_path_ + "!";
+					item_cache_.value = std::move(data);
+				}
+				else
+				{
+					result.register_error("Error reading file "s + file_path_ + "!");
+				}
+			}
+			else
+			{
+				byte_string data;
+				result = file.read_data(data);
+				if (result)
+				{
+					item_cache_.value = std::move(data);
+				}
+				else
+				{
+					result.register_error("Error reading file "s + file_path_ + "!");
 				}
 			}
 		}
 		else
 		{
-			byte_string data;
-			result = item_data_.get_data(data);
-			if (result)
-			{
-				if (!file.write_data(data))
+			result.register_error("Unable to open file "s + file_path_ + "!");
+		}*/
+		return result;
+	}
+	return result;
+}
+
+template <class fileT, class streamT, bool isStringBased>
+rx_result rx_file_item<fileT,streamT,isStringBased>::close_read ()
+{
+	return item_data_.close_read(file_path_);
+}
+
+template <class fileT, class streamT, bool isStringBased>
+rx_result rx_file_item<fileT,streamT,isStringBased>::commit_write_sync ()
+{
+
+	if constexpr (streamT::string_based)
+	{
+		string_type data;
+		auto result = item_data_.get_data(data);
+		if (result)
+		{
+			byte_string buffer(data.size());
+			memcpy(&buffer[0], &data[0], data.size());
+			result = internal_save(std::move(buffer), file_path_);
+		}
+		return result;
+	}
+	else
+	{
+		byte_string data;
+		auto result = item_data_.get_data(data);
+		if (result)
+		{
+			result = internal_save(std::move(data), file_path_);
+		}
+		return result;
+	}
+
+}
+
+template <class fileT, class streamT, bool isStringBased>
+void rx_file_item<fileT,streamT,isStringBased>::commit_write (storage_callback_t callback, runtime_transaction_id_t trans_id)
+{
+}
+
+template <class fileT, class streamT, bool isStringBased>
+string_type rx_file_item<fileT,streamT,isStringBased>::get_item_path () const
+{
+	return storage_meta_.get_full_path();
+}
+
+template <class fileT, class streamT, bool isStringBased>
+rx_result rx_file_item<fileT,streamT,isStringBased>::save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback)
+{
+	auto exec = rx_thread_context();
+	rx_post_function_to(RX_DOMAIN_META, rx_reference_ptr(), [exec, trans_id](byte_string data, storage_callback_t callback, string_type path)
+		{
+			rx_result result = internal_save(std::move(data), path);
+
+			rx_post_function_to(exec, rx_reference_ptr(), [](runtime_transaction_id_t trans_id, storage_callback_t callback, rx_result result)
 				{
-					result = "Error writing file "s + file_path_ + "!";
-				}
+					callback(trans_id, std::move(result));
+
+				}, trans_id, std::move(callback), std::move(result));
+
+		}, std::move(data), std::move(callback), file_path_);
+	return true;
+}
+
+template <class fileT, class streamT, bool isStringBased>
+rx_result rx_file_item<fileT,streamT,isStringBased>::internal_save (byte_string data, const string_type& path)
+{
+	rx_result result;
+	{
+		fileT file;
+		result = file.open_write((path + "~").c_str());
+		if (result)
+		{
+			if (!file.write_data(data))
+			{
+				result = rx_result::create_from_last_os_error("Error writing file "s + path + "!");
+			}
+		}
+	}
+
+	if (result)
+	{// now do the move!!!!
+		if (!rx_file_rename((path + "~").c_str(), path.c_str()))
+		{
+			result = rx_result::create_from_last_os_error("Error renaming file "s + path + "!");
+			if (!rx_file_delete((path + "~").c_str()))
+			{
+				result = rx_result::create_from_last_os_error("Error deleting file "s + path + "~" + "!");
 			}
 		}
 	}
 	else
 	{
-		result = "Unable to open file "s + file_path_ + " for write!";
+		result = rx_result::create_from_last_os_error("Unable to open file "s + path + " for write!");
 	}
 	return result;
-}
-
-template <class fileT, class streamT>
-string_type rx_file_item<fileT,streamT>::get_item_path () const
-{
-	return storage_meta_.get_full_path();
 }
 
 

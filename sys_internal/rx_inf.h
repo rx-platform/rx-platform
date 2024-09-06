@@ -35,12 +35,12 @@
 #include "system/runtime/rx_value_templates.h"
 using namespace rx_platform::runtime;
 
+// rx_objbase
+#include "system/runtime/rx_objbase.h"
 // rx_job
 #include "system/threads/rx_job.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
-// rx_objbase
-#include "system/runtime/rx_objbase.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -308,6 +308,54 @@ class low_priority_house_keeping : public rx_platform::jobs::periodic_job
 
 
 
+class unique_ids_manager 
+{
+
+  public:
+      unique_ids_manager();
+
+      ~unique_ids_manager();
+
+
+      runtime_transaction_id_t get_new_unique_id ();
+
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data, rx_reference_ptr anchor);
+
+      void deinitialize ();
+
+
+  protected:
+
+  private:
+
+      void do_the_claim (size_t size);
+
+
+
+      runtime_transaction_id_t first_available_;
+
+      size_t list_size_;
+
+      locks::slim_lock lock_;
+
+      rx_reference_ptr anchor_;
+
+      size_t claim_size_;
+
+      size_t border_size_;
+
+      rx_storage_ptr storage_;
+
+      bool claiming_;
+
+
+};
+
+
+
+
+
+
 
 class server_runtime : public rx_platform::runtime::items::object_runtime  
 {
@@ -328,7 +376,7 @@ calculation ( normal priority)");
       ~server_runtime();
 
 
-      rx_result initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data);
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
 
       void deinitialize ();
 
@@ -381,6 +429,8 @@ calculation ( normal priority)");
       }
 
 
+      unique_ids_manager& get_ids_manager ();
+
 
   protected:
 
@@ -406,6 +456,8 @@ calculation ( normal priority)");
       rx_reference<server_dispatcher_object> slow_pool_;
 
       rx_reference<low_priority_house_keeping> low_priority_;
+
+      unique_ids_manager ids_manager_;
 
 
       threads::job_thread* extern_executer_;

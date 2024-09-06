@@ -45,10 +45,10 @@
 #include "system/runtime/rx_process_context.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-// rx_values
-#include "lib/rx_values.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_values
+#include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -137,9 +137,9 @@ class relation_value_data
 
       rx_value get_value (runtime_process_context* ctx) const;
 
-      rx_result write_value (context_write_data&& data, structure::write_task* task, runtime_process_context* ctx);
+      rx_result write_value (context_write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx);
 
-      rx_result execute (context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+      rx_result execute (context_execute_data&& data, std::unique_ptr<structure::execute_task> task, runtime_process_context* ctx);
 
 
       rx::values::rx_value value;
@@ -164,8 +164,8 @@ class relation_value_data
 
 class relation_connections 
 {
-    typedef std::map<runtime_transaction_id_t, structure::write_task*> pending_tasks_type;
-    typedef std::map<runtime_transaction_id_t, structure::execute_task*> pending_execute_tasks_type;
+    typedef std::map<runtime_transaction_id_t, std::unique_ptr<structure::write_task> > pending_tasks_type;
+    typedef std::map<runtime_transaction_id_t, std::unique_ptr<structure::execute_task> > pending_execute_tasks_type;
     // connection handles types
     typedef std::vector<std::unique_ptr<relation_value_data> > values_cache_type;
     typedef std::map<runtime_handle_t, relation_value_data*> handles_type;// target_handle -> value index
@@ -176,9 +176,9 @@ class relation_connections
 
       rx_result_with<relations::relation_value_data*> connect_tag (const string_type& path, runtime_handle_t handle);
 
-      rx_result write_tag (runtime_handle_t item, context_write_data&& data, structure::write_task* task, runtime_process_context* ctx);
+      rx_result write_tag (runtime_handle_t item, context_write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx);
 
-      rx_result execute_tag (runtime_handle_t item, context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+      rx_result execute_tag (runtime_handle_t item, context_execute_data&& data, std::unique_ptr<structure::execute_task> task, runtime_process_context* ctx);
 
       void browse (const string_type& prefix, const string_type& path, const string_type& filter, browse_result_callback_t callback);
 

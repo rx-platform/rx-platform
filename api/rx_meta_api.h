@@ -106,8 +106,7 @@ rx_result rx_update_data_type(basic_types::data_type::smart_ptr prototype, rx_up
 	, rx_result_with_callback<basic_types::data_type::smart_ptr>&& callback);
 
 
-rx_result rx_save_item(const string_type& ref
-	, rx_result_callback&& callback);
+rx_result rx_save_item(const string_type& path, rx_result_callback&& callback);
 
 template<class T>
 rx_result rx_get_type(const rx_item_reference& ref

@@ -333,6 +333,8 @@ rx_result serial_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 
     auto result = status.initialize(ctx);
+    if (!result)
+        return result;
 
     port_data_.port = rx_gate::instance().resolve_serial_alias(ctx.get_item_static("Options.Port", ""s));
     port_data_.baud_rate = ctx.get_item_static<uint32_t>("Options.BaudRate", 19200);

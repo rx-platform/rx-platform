@@ -430,6 +430,13 @@ class method_data_prototype
 
   public:
 
+      const rx_node_id get_inputs_id () const;
+      void set_inputs_id (rx_node_id value);
+
+      const rx_node_id& get_outputs_id () const;
+      void set_outputs_id (const rx_node_id& value);
+
+
       runtime::logic_blocks::method_data method;
 
       runtime_data_type runtime_data;
@@ -441,6 +448,11 @@ class method_data_prototype
   protected:
 
   private:
+
+
+      rx_node_id inputs_id_;
+
+      rx_node_id outputs_id_;
 
 
 };
@@ -574,11 +586,11 @@ class construct_context
 
       void start_program (const string_type& name);
 
-      void start_method (const string_type& name);
+      void start_method (const string_type& name, rx_node_id& inputs_id, rx_node_id& outputs_id);
 
       void end_program (runtime::logic_blocks::program_data data);
 
-      void end_method (runtime::logic_blocks::method_data data);
+      void end_method (runtime::logic_blocks::method_data data, rx_node_id inputs_id, rx_node_id outputs_id);
 
       runtime::logic_blocks::method_data& method_data ();
 
@@ -626,6 +638,10 @@ class construct_context
       warnings_type warnings_;
 
       int current_display_;
+
+      int current_program_;
+
+      int current_method_;
 
 
 };

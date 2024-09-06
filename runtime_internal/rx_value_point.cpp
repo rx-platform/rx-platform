@@ -577,7 +577,7 @@ void value_point_impl::write (rx_simple_value val, runtime_transaction_id_t id, 
 			}
 			else
 			{
-				runtime_transaction_id_t new_id = id ? platform_runtime_manager::get_new_transaction_id() : 0u;
+				runtime_transaction_id_t new_id = id ? rx_get_new_transaction_id() : 0u;
 				if (id)
 				{
 					auto res = pending_transactions_.emplace(new_id, id);
@@ -623,7 +623,7 @@ void value_point_impl::write (data::runtime_values_data val, runtime_transaction
 			}
 			else
 			{
-				runtime_transaction_id_t new_id = id ? platform_runtime_manager::get_new_transaction_id() : 0u;
+				runtime_transaction_id_t new_id = id ? rx_get_new_transaction_id() : 0u;
 				if (id)
 				{
 					auto res = pending_transactions_.emplace(new_id, id);
@@ -669,7 +669,7 @@ void value_point_impl::execute (values::rx_simple_value data, runtime_transactio
 			}
 			else
 			{
-				runtime_transaction_id_t new_id = id ? platform_runtime_manager::get_new_transaction_id() : 0u;
+				runtime_transaction_id_t new_id = id ? rx_get_new_transaction_id() : 0u;
 				if (id)
 				{
 					auto res = pending_transactions_.emplace(new_id, id);
@@ -715,7 +715,7 @@ void value_point_impl::execute (data::runtime_values_data data, runtime_transact
 			}
 			else
 			{
-				runtime_transaction_id_t new_id = id ? platform_runtime_manager::get_new_transaction_id() : 0u;
+				runtime_transaction_id_t new_id = id ? rx_get_new_transaction_id() : 0u;
 				if (id)
 				{
 					auto res = pending_transactions_.emplace(new_id, id);
@@ -1817,8 +1817,10 @@ void value_point_impl::set_context (rx_platform::runtime::runtime_process_contex
 
 // Class rx_internal::sys_runtime::data_source::callback_value_point 
 
-callback_value_point::callback_value_point (callback_t callback)
-      : callback_(callback)
+callback_value_point::callback_value_point (runtime::tag_blocks::binded_callback_t callback, runtime::tag_blocks::binded_write_result_callback_t write_callback, runtime::tag_blocks::binded_execute_result_callback_t execute_callback)
+      : callback_(callback),
+        write_callback_(write_callback),
+        execute_callback_(execute_callback)
 {
 }
 
@@ -1832,10 +1834,14 @@ void callback_value_point::value_changed (const rx_value& val)
 
 void callback_value_point::result_received (rx_result&& result, runtime_transaction_id_t id)
 {
+	if (write_callback_)
+		write_callback_(id, std::move(result));
 }
 
 void callback_value_point::execute_result_received (rx_result&& result, const values::rx_simple_value& data, runtime_transaction_id_t id)
 {
+	if (execute_callback_)
+		execute_callback_(id, std::move(result), rx_simple_value(data));
 }
 
 void callback_value_point::execute_result_received (rx_result&& result, const data::runtime_values_data& data, runtime_transaction_id_t id)

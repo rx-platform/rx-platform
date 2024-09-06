@@ -89,11 +89,13 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 
 	interactive_port_ = rx_create_reference<interactive_console_port>(this);
 
+
 	HOST_LOG_INFO("Main", 999, "Initializing Rx Engine...");
 	std::cout << "Initializing {rx-platform}...";
 	auto init_result = rx_platform::rx_gate::instance().initialize(this, config);
 	if (init_result)
 	{
+
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
 		std::cout << "Starting {rx-platform}...";

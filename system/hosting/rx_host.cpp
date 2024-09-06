@@ -258,8 +258,10 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.http_path = row.second;
 		else if (row.first == "http.user" && config.other.http_user.empty())
 			config.other.http_user = row.second;
-		else if (row.first == "py.resources" && config.other.py_path.empty())
-			config.other.py_path = row.second;
+		else if (row.first == "upy.resources" && config.other.upy_path.empty())
+			config.other.upy_path = row.second;
+		else if (row.first == "upy.user" && config.other.upy_user.empty())
+			config.other.upy_user = row.second;
 		else if (row.first == "rx.security" && config.other.rx_security.empty())
 			config.other.rx_security = row.second;
 		else if (row.first.size() > 8 && row.first.substr(0, 5) == "x509.")
@@ -434,6 +436,8 @@ rx_result rx_platform_host::parse_config_files (rx_platform::configuration_data_
 			config.other.manuals_path = host_directories_.manuals;
 		if (config.other.http_path.empty())
 			config.other.http_path = host_directories_.http;
+		if (config.other.upy_path.empty())
+			config.other.upy_path = host_directories_.upy;
 
 		if (config.log.log_level < 0 || config.log.log_level>5)
 			config.log.log_level = 1;
@@ -544,15 +548,16 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
 		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.instance.name))
 		("port", "UDP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.instance.port))
-		("group", "IP address of rx-protocol multicast group", cxxopts::value<string_type>(config.instance.group))
+		("group", "IP address of rx-protocol multi-cast group", cxxopts::value<string_type>(config.instance.group))
 		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.instance.plugin))
 		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
 		("http", "Location of the http user resource files", cxxopts::value<string_type>(config.other.http_user))
 		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
-		("py-path", "Location of the micropython files", cxxopts::value<string_type>(config.other.py_path))
+		("upy-path", "Location of the micropython files", cxxopts::value<string_type>(config.other.upy_path))
+		("upy", "Location of the micropython user program files", cxxopts::value<string_type>(config.other.upy_user))
 		("opc-port", "TCP/IP port for OPCUA binary server to listen to", cxxopts::value<uint16_t>(config.other.opcua_port))
 
-		("rx-port", "TCP/IP port for pltaform protocol", cxxopts::value<uint16_t>(config.other.rx_port))
+		("rx-port", "TCP/IP port for platform protocol", cxxopts::value<uint16_t>(config.other.rx_port))
 		("security", "Default security provider for {rx-platform}", cxxopts::value<string_type>(config.other.rx_security))
 
 		("log-test", "Test log at startup", cxxopts::value<bool>(config.log.test_log))

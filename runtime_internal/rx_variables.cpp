@@ -345,16 +345,16 @@ rx_value simple_variable<is_obsolite>::get_variable_input (runtime_process_conte
 }
 
 template <bool is_obsolite>
-rx_result simple_variable<is_obsolite>::variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources)
+rx_result simple_variable<is_obsolite>::variable_write (write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx, runtime_sources_type& sources)
 {
     rx_result ret = RX_NOT_SUPPORTED;
     if (sources.size() == 1)
     {
         if (sources[0].is_output())
         {
-            auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
+            auto new_trans = rx_get_new_transaction_id();
             write_task_data my_data;
-            my_data.task = task;
+            my_data.task = std::move(task);
             my_data.ref_count = 1;
             get_tasks().emplace(new_trans, std::move(my_data));
             data.transaction_id = new_trans;
@@ -365,9 +365,9 @@ rx_result simple_variable<is_obsolite>::variable_write (write_data&& data, struc
     }
     else if (!sources.empty())
     {
-        auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
+        auto new_trans = rx_get_new_transaction_id();
         write_task_data my_data;
-        my_data.task = task;
+        my_data.task = std::move(task);
         my_data.ref_count = 0;
         auto ins_result = get_tasks().emplace(new_trans, std::move(my_data));
         data.transaction_id = new_trans;
@@ -408,7 +408,7 @@ void simple_variable<is_obsolite>::process_result (runtime_transaction_id_t id, 
         {
             if (it->second.task)
             {
-                send_write_result(it->second.task, std::move(result));
+                send_write_result(it->second.task.get(), std::move(result));
             }
             get_tasks().erase(it);
         }
@@ -468,94 +468,6 @@ rx_value complex_inputs_variable::get_variable_input (runtime_process_context* c
 }
 
 
-// Class rx_internal::sys_runtime::variables::multiplexer_variable 
-
-multiplexer_variable::multiplexer_variable()
-      : selector_(-1)
-{
-}
-
-
-multiplexer_variable::~multiplexer_variable()
-{
-}
-
-
-
-rx_result multiplexer_variable::initialize_variable (runtime::runtime_init_context& ctx)
-{
-    runtime::runtime_process_context* rt_ctx = ctx.context;
-    auto result = selector_.bind(".Select", ctx, [this, rt_ctx](const uint8_t& val)
-        {
-            process_variable(rt_ctx);
-        });
-
-    return result;
-}
-
-rx_value multiplexer_variable::get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources)
-{
-    int8_t select = selector_;
-    if (select < 0 || select>=(int)sources.size())
-    {
-        return rx_value();
-    }
-    return std::move(sources[select]);
-}
-
-rx_result multiplexer_variable::variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources)
-{
-    int8_t select = selector_;
-    if (select < 0 || select >= (int)sources.size())
-    {
-        return "Invalid Selector Value";
-    }
-    auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
-    auto ins_result = get_tasks().emplace(new_trans, task);
-    data.transaction_id = new_trans;
-    for (auto& one : sources)
-    {
-        if (one.is_output())
-        {
-            if (select == 0)
-            {
-                auto ret = one.write_value(write_data(data));
-                if (!ret)
-                {
-                    get_tasks().erase(new_trans);
-                }
-                return ret;
-            }
-            else
-            {
-                select--;
-            }
-        }
-    }
-    return "Invalid Selector Value";
-}
-
-void multiplexer_variable::process_result (runtime_transaction_id_t id, rx_result&& result)
-{
-    auto it = get_tasks().find(id);
-    if (it != get_tasks().end())
-    {
-        if (it->second)
-        {
-            send_write_result(it->second, std::move(result));
-        }
-        get_tasks().erase(it);
-    }
-}
-
-std::map<runtime_transaction_id_t, structure::write_task*>& multiplexer_variable::get_tasks ()
-{
-    if (!pending_tasks_)
-        pending_tasks_ = std::make_unique< std::map<runtime_transaction_id_t, structure::write_task*> >();
-    return *pending_tasks_;
-}
-
-
 // Class rx_internal::sys_runtime::variables::complex_outputs_variable 
 
 complex_outputs_variable::complex_outputs_variable()
@@ -579,7 +491,7 @@ rx_value complex_outputs_variable::get_variable_input (runtime_process_context* 
     return get_variable_complex_input(input_selection_type::first_good, ctx, std::move(sources));
 }
 
-rx_result complex_outputs_variable::variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources)
+rx_result complex_outputs_variable::variable_write (write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx, runtime_sources_type& sources)
 {
     return RX_NOT_IMPLEMENTED;
 }
@@ -656,6 +568,94 @@ bridge_variable::~bridge_variable()
 rx_result bridge_variable::initialize_variable (runtime::runtime_init_context& ctx)
 {
     return RX_NOT_IMPLEMENTED;
+}
+
+
+// Class rx_internal::sys_runtime::variables::multiplexer_variable 
+
+multiplexer_variable::multiplexer_variable()
+      : selector_(-1)
+{
+}
+
+
+multiplexer_variable::~multiplexer_variable()
+{
+}
+
+
+
+rx_result multiplexer_variable::initialize_variable (runtime::runtime_init_context& ctx)
+{
+    runtime::runtime_process_context* rt_ctx = ctx.context;
+    auto result = selector_.bind(".Select", ctx, [this, rt_ctx](const uint8_t& val)
+        {
+            process_variable(rt_ctx);
+        });
+
+    return result;
+}
+
+rx_value multiplexer_variable::get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources)
+{
+    int8_t select = selector_;
+    if (select < 0 || select>=(int)sources.size())
+    {
+        return rx_value();
+    }
+    return std::move(sources[select]);
+}
+
+rx_result multiplexer_variable::variable_write (write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx, runtime_sources_type& sources)
+{
+    int8_t select = selector_;
+    if (select < 0 || select >= (int)sources.size())
+    {
+        return "Invalid Selector Value";
+    }
+    auto new_trans = rx_get_new_transaction_id();
+    auto ins_result = get_tasks().emplace(new_trans, std::move(task));
+    data.transaction_id = new_trans;
+    for (auto& one : sources)
+    {
+        if (one.is_output())
+        {
+            if (select == 0)
+            {
+                auto ret = one.write_value(write_data(data));
+                if (!ret)
+                {
+                    get_tasks().erase(new_trans);
+                }
+                return ret;
+            }
+            else
+            {
+                select--;
+            }
+        }
+    }
+    return "Invalid Selector Value";
+}
+
+void multiplexer_variable::process_result (runtime_transaction_id_t id, rx_result&& result)
+{
+    auto it = get_tasks().find(id);
+    if (it != get_tasks().end())
+    {
+        if (it->second)
+        {
+            send_write_result(it->second.get(), std::move(result));
+        }
+        get_tasks().erase(it);
+    }
+}
+
+std::map<runtime_transaction_id_t, std::unique_ptr<structure::write_task> >& multiplexer_variable::get_tasks ()
+{
+    if (!pending_tasks_)
+        pending_tasks_ = std::make_unique<pending_tasks_type::element_type>();
+    return *pending_tasks_;
 }
 
 

@@ -36,20 +36,20 @@
 using namespace rx_platform;
 
 
-namespace rx_platform {
-namespace runtime {
-class runtime_process_context;
-} // namespace runtime
-} // namespace rx_platform
-
 namespace rx_internal {
 namespace sys_runtime {
 namespace data_source {
 class data_controler;
-
 } // namespace data_source
 } // namespace sys_runtime
 } // namespace rx_internal
+
+namespace rx_platform {
+namespace runtime {
+class runtime_process_context;
+
+} // namespace runtime
+} // namespace rx_platform
 
 
 
@@ -204,10 +204,9 @@ class value_point_impl
 
 class callback_value_point : public value_point_impl  
 {
-    typedef std::function<void(const values::rx_value&)> callback_t;
 
   public:
-      callback_value_point (callback_t callback);
+      callback_value_point (runtime::tag_blocks::binded_callback_t callback, runtime::tag_blocks::binded_write_result_callback_t write_callback, runtime::tag_blocks::binded_execute_result_callback_t execute_callback);
 
 
   protected:
@@ -224,7 +223,11 @@ class callback_value_point : public value_point_impl
 
 
 
-      callback_t callback_;
+      runtime::tag_blocks::binded_callback_t callback_;
+
+      runtime::tag_blocks::binded_write_result_callback_t write_callback_;
+
+      runtime::tag_blocks::binded_execute_result_callback_t execute_callback_;
 
 
 };

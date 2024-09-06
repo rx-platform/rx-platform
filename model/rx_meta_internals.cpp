@@ -414,6 +414,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	}
 
 	create_runtime_result<typeT> ret;
+	//ret.runtime_data = std::move(runtime_data);
 	RImplPtr implementation_ptr;
 	RBeh behavior;
 	rx_node_id parent_id;
@@ -856,11 +857,31 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 		result = sys_runtime::platform_runtime_manager::instance().just_init_runtime<typeT>(one.second.target, init_data);
 		if (!result)
 		{
-			std::ostringstream ss;
-			ss << "Unable to init runtime "
-				<< one.second.target->meta_info().get_full_path()
-				<< " :" << result.errors_line();
-			META_LOG_ERROR("types_repository", 500, ss.str());
+			if (one.second.target->meta_info().is_system())
+			{
+				std::ostringstream ss;
+				ss << "Unable to initialize runtime "
+					<< one.second.target->meta_info().get_full_path()
+					<< " :" << result.errors_line();
+				MEAT_LOG_CRITICAL("types_repository", 500, ss.str());
+			}
+			else
+			{// regular class run but off
+				std::ostringstream ss;
+				ss << "Unable to initialize runtime "
+					<< one.second.target->meta_info().get_full_path()
+					<< " :" << result.errors_line();
+				META_LOG_ERROR("types_repository", 500, ss.str());
+
+				result = true;// clear the result
+
+				ns::rx_directory_resolver dirs;
+				dirs.add_paths({ one.second.target->meta_info().path });
+				auto res = rx_internal::model::algorithms::resolve_reference(one.second.target->meta_info().parent, dirs);
+				if (res)
+					platform_types_manager::instance().get_dependecies_cache().add_dependency(one.first, res.move_value());
+
+			}
 		}
 		else
 		{
@@ -887,19 +908,23 @@ rx_result types_repository<typeT>::start (hosting::rx_platform_host* host, const
 	{
 		pending_connections_type pending_connections;
 		const_callbacks_type callbacks;
-
+		status_data_type status;
 		auto it = init_data.find(one.first);
 		if (it != init_data.end())
 		{
 			callbacks = std::move(it->second.callbacks);
 			pending_connections = std::move(it->second.pending_connections);
+			status = std::move(it->second.status_data);
 		}
 		else
 		{
+			// this is a badly started object!!!
+			// start this with off state
 			RX_ASSERT(false);
+			status.mode.turn_off();
 		}
 		one.second.state = runtime_state::runtime_state_running;
-		sys_runtime::platform_runtime_manager::instance().just_start_runtime<typeT>(one.second.target, std::move(callbacks), std::move(pending_connections));
+		sys_runtime::platform_runtime_manager::instance().just_start_runtime<typeT>(one.second.target, std::move(callbacks), std::move(pending_connections), std::move(status));
 	}
 	return true;
 }
@@ -2453,7 +2478,7 @@ rx_result data_type_repository::register_constructor (const rx_node_id& id, std:
 	return true;
 }
 
-rx_result_with<runtime::structure::block_data_result_t> data_type_repository::create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs)
+rx_result_with<runtime::structure::block_data_result_t> data_type_repository::create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs, runtime::types_cache* types)
 {
 	block_data_result_t ret;
 	rx_node_ids base;
@@ -2530,6 +2555,8 @@ rx_result_with<runtime::structure::block_data_result_t> data_type_repository::cr
 			{// error constructing object
 				return result.errors();
 			}
+			if (types)
+				types->push_back(*it);
 
 			overrides.push_back(my_class.value()->complex_data.get_overrides());
 		}

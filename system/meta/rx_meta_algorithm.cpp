@@ -273,7 +273,7 @@ rx_result data_types_algorithm::construct_runtime (const data_type& whose, block
 					block_data child_data;
 					rx_node_id type_id;
 					ret = data_blocks_algorithm::construct_data_attribute(
-						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, type_id, ctx);
+						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, type_id, ctx, nullptr);
 					if (!ret)
 						return ret;
 					ret = what.add(one.first, std::move(child_data), type_id);
@@ -285,7 +285,7 @@ rx_result data_types_algorithm::construct_runtime (const data_type& whose, block
 					block_data child_data;
 					rx_node_id type_id;
 					ret = data_blocks_algorithm::construct_data_attribute(
-						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, type_id, ctx);
+						whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data, type_id, ctx, nullptr);
 					if (!ret)
 						return ret;
 					ret = what.add_empty_array(one.first, std::move(child_data), type_id);
@@ -300,7 +300,7 @@ rx_result data_types_algorithm::construct_runtime (const data_type& whose, block
 					for (auto i = 0; i < size; i++)
 					{
 						ret = data_blocks_algorithm::construct_data_attribute(
-							whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data[i], type_id, ctx);
+							whose.complex_data.children_[one.second & complex_data_type::index_mask], child_data[i], type_id, ctx, nullptr);
 						if (!ret)
 							return ret;
 					}
@@ -805,9 +805,13 @@ rx_result basic_types_algorithm<event_type>::construct(const event_type& whose, 
 					attr = std::move(data_attribute("Args", whose.arguments.get_path()));
 
 				rx_node_id type_id;
-				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, type_id, ctx);
+				runtime::types_cache types;
+				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, type_id, ctx, &types);
 				if (ret)
+				{
+					prototype.types = std::move(types);
 					prototype.arguments = std::move(data_proto);
+				}
 			}
 		}
 	}
@@ -833,7 +837,7 @@ rx_result basic_types_algorithm<method_type>::construct(const method_type& whose
 				else
 					attr = std::move(data_attribute("In", whose.inputs.get_path()));
 				rx_node_id type_id;
-				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, type_id, ctx);
+				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, type_id, ctx, nullptr);
 				if (ret)
 					prototype.inputs = std::move(data_proto);
 			}
@@ -847,7 +851,7 @@ rx_result basic_types_algorithm<method_type>::construct(const method_type& whose
 				else
 					attr = std::move(data_attribute("Out", whose.outputs.get_path()));
 
-				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, type_id, ctx);
+				ret = data_blocks_algorithm::construct_data_attribute(attr, data_proto, type_id, ctx, nullptr);
 				if (ret)
 					prototype.outputs = std::move(data_proto);
 			}

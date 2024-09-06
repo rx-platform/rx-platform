@@ -53,8 +53,9 @@ extern "C" {
 
 
 
-typedef struct rx_platform_init_data_t
+typedef RX_COMMON_API struct rx_platform_init_data_t
 {
+	uint64_t version;
 	int rx_hd_timer; // use high definition timer
 	int is_debug; // is this a debug instance, pure informatively, 
 				  // this is a best place to keep this information i think
@@ -63,12 +64,18 @@ typedef struct rx_platform_init_data_t
 	size_t rx_heap_alloc_trigger;
 	size_t rx_bucket_capacity;
 
+
+
 } rx_platform_init_data;
 
 
 
 typedef uint32_t runtime_handle_t;
 typedef uint32_t runtime_transaction_id_t;
+
+
+RX_COMMON_API runtime_transaction_id_t rx_get_new_transaction_id();
+RX_COMMON_API runtime_handle_t rx_get_new_handle();
 
 typedef intptr_t rx_security_handle_t;
 
@@ -77,7 +84,7 @@ RX_COMMON_API int rx_heap_free(void* ptr);
 RX_COMMON_API size_t rx_heap_house_keeping();
 
 
-typedef struct rx_platform_heap_status_t
+typedef RX_COMMON_API struct rx_platform_heap_status_t
 {
 	size_t bucket_size;
 	size_t occuupied;
@@ -111,12 +118,12 @@ RX_COMMON_API int rx_match_pattern(const char* string, const char* pattern, int 
 // time related functions
 typedef uint64_t rx_timer_ticks_t;
 
-typedef struct rx_time_struct_t
+typedef RX_COMMON_API struct rx_time_struct_t
 {
 	rx_timer_ticks_t t_value;
 } rx_time_struct;
 
-typedef struct rx_full_time_t
+typedef RX_COMMON_API struct rx_full_time_t
 {
 	uint32_t year;
 	uint32_t month;
@@ -133,7 +140,7 @@ typedef struct rx_full_time_t
 // TIMES FOR ASN1 MMS IEC TIME VALUES
 ///////////////////////////////////////////////////////////////
 
-typedef struct asn_generalized_time_t
+typedef RX_COMMON_API struct asn_generalized_time_t
 {
 	uint16_t year;
 	uint16_t month;
@@ -148,7 +155,7 @@ typedef struct asn_generalized_time_t
 } asn_generalized_time;
 
 
-typedef struct asn_binary_time_t
+typedef RX_COMMON_API struct asn_binary_time_t
 {
 	int full;
 	uint32_t mstime;
@@ -590,6 +597,10 @@ RX_COMMON_API int rx_init_struct_value_with_ptrs(struct typed_value_type* val, c
 
 RX_COMMON_API int rx_init_array_value(struct typed_value_type* val, rx_value_t type,  const union rx_value_union* data, size_t count);
 RX_COMMON_API int rx_init_array_value_with_ptrs(struct typed_value_type* val, rx_value_t type, const union rx_value_union** data, size_t count);
+
+RX_COMMON_API int rx_init_array_value_with_move(struct typed_value_type* val, rx_value_t type, union rx_value_union* data, size_t count);
+RX_COMMON_API int rx_init_array_value_with_ptrs_move(struct typed_value_type* val, rx_value_t type, union rx_value_union** data, size_t count);
+
 
 
 

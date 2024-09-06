@@ -35,12 +35,8 @@
 
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-// rx_values
-#include "lib/rx_values.h"
-// rx_rt_data
-#include "lib/rx_rt_data.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
+// rx_event_manager
+#include "system/runtime/rx_event_manager.h"
 
 
 
@@ -54,58 +50,9 @@ namespace event_blocks {
 
 
 
-class fired_event_data 
-{
-
-  public:
-
-      rx::values::rx_simple_value simple_value;
-
-      rx::data::runtime_values_data struct_value;
-
-
-      string_type event_id;
-
-      rx_time time;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class rx_events_callback : public rx::pointers::reference_object  
-{
-
-  public:
-
-      virtual void event_fired (const simple_event_item& data) = 0;
-
-      virtual void event_fired (const data_event_item& data) = 0;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
 class runtime_events 
 {
-    typedef std::map<structure::event_data*, fired_event_data> events_cache_type;
+    typedef std::map<structure::event_data*, events::fired_event_data> events_cache_type;
     typedef std::map<string_type, structure::event_data*> event_ids_type;
 
     typedef std::vector<int> subscribers_type;

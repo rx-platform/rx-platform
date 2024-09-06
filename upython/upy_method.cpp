@@ -60,11 +60,10 @@ upy_method::~upy_method()
 
 rx_result upy_method::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    auto result = script_.bind(".Code", ctx, [this](const string_type&)
-        {
-            my_module_ = upy_module_ptr::null_ptr;
-        });
-    return result;
+    inputs_ = get_method_inputs();
+    outputs_ = get_method_outputs();
+   
+    return true;
 }
 
 rx_result upy_method::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
@@ -74,68 +73,150 @@ rx_result upy_method::deinitialize_runtime (runtime::runtime_deinit_context& ctx
 
 rx_result upy_method::start_runtime (runtime::runtime_start_context& ctx)
 {
+    item_ = ctx.get_platform_item();
     return true;
 }
 
 rx_result upy_method::stop_runtime (runtime::runtime_stop_context& ctx)
 {
+    item_.reset();
     return true;
 }
 
-logic::method_execution_context* upy_method::create_execution_context (context_execute_data data)
+rx_result upy_method::execute (rx_platform::runtime::execute_data data, runtime::runtime_process_context* ctx)
 {
-    return new upy_method_execution_context(data, "funkcija");
-}
-
-rx_result upy_method::execute (data::runtime_values_data args, logic::method_execution_context* context)
-{
-    upy_method_execution_context* upy_ctx = reinterpret_cast<upy_method_execution_context*>(context);
+    
+    auto upy_ctx = std::make_unique<upy_method_execution_context>(data, "funkcija", smart_this());
     if (!my_module_)
     {
-        script_buffer_ = script_;
-        if (script_buffer_.empty())
-            return RX_INVALID_ARGUMENT " script is empty!";
-
-        std::istringstream in(script_buffer_);
+        string_type temp_str = get_code();
+        string_type func_str = get_function();
+        string_type module_str = get_module();
         std::ostringstream out;
 
-    //    out << "global _task_dusan\n";
-        out << "\n\nasync def funkcija(id";
-        for (const auto& one : args.values)
-            out << ", " << one.first;
-        out << "):\n";
-        char buff[0x100];
-        while (in.getline(buff, sizeof(buff) / sizeof(buff[0])))
+        if (!temp_str.empty())
         {
-            out << "\t" << buff << "\n";
-        }
-        out << "\t" << "rxplatform.execution_done(id)\n";
-     //   out << "\t" << "rxplatform.execution_done(1)\n";
-       // out << "def py_process(id):\n";
-    //    out << "create_task(funkcija, 99)\n";
-        out << "\n";
-   //     out << "var = funkcija()\n";
-   //     out << "_task_dusan.push(funkcija)\n";
+            script_buffer_ = script_;
+            if (script_buffer_.empty())
+                return RX_INVALID_ARGUMENT " script is empty!";
 
-        my_module_ = rx_create_reference<upy_module>(out.str(), "create_task(funkcija, 99)");
+            std::istringstream in(script_buffer_);
+
+            out << "current_id = 0\r\n";
+
+            out << "async def read_value(path):\r\n";
+            out << "\tresult = await rx_read_value(current_id, path)\r\n";
+            //out << "\tyield\r\n";
+            out << "\treturn result\r\n";
+
+            out << "async def write_value(path, val):\r\n";
+            out << "\tresult = await rx_write_value(current_id, path, val)\r\n";
+            //out << "\tyield\r\n";
+            out << "\treturn result\r\n";
+
+            out << "\n\nasync def funkcija_exec(";
+            bool first = true;
+            for (const auto& one : inputs_.elements)
+            {
+                if (first)
+                    first = false;
+                else
+                    out << ", ";
+                out << one.name;
+            }
+            out << "):\n";
+            char buff[0x100];
+            while (in.getline(buff, sizeof(buff) / sizeof(buff[0])))
+            {
+                out << "\t" << buff << "\n";
+            }
+            out << "\n";
+
+            func_str = "funkcija_exec";
+        }
+        if (!module_str.empty())
+        {
+            out << "import rxplatform\n";
+      //      out << "import " << module_str << "\n";
+
+          //  func_str = module_str + "." + func_str;
+        }
+        
+        out << "\n\nasync def funkcija(ctx";
+        for (const auto& one : inputs_.elements)
+            out << ", " << one.name;
+        out << "):\n";
+        out << "\ttry:\n";
+        //out << "\t\tprint(\"Pozvao\")\n";
+        out << "\t\tresult = await " << func_str << "(ctx";
+        for (const auto& one : inputs_.elements)
+        {
+            out << ", " << one.name;
+            
+        }
+        out << ")\n";
+        //out << "\t\tprint(\"gotovo\")\n";
+        out << "\t\trxplatform.execution_done(ctx, result)\n";
+        out << "\texcept Exception as ex:\n";
+        out << "\t\trxplatform.execution_done(ctx, ex)\n";
+        out << "\n";
+
+        string_type temp = out.str();
+        my_module_ = rx_create_reference<upy_module>(std::move(temp), "create_task(funkcija, 99)", item_->clone());
     }
     if (my_module_)
     {
-        upy_ctx->set_data(std::move(args));
-        my_module_->push_context(upy_ctx);
+        my_module_->push_context(std::move(upy_ctx));
         upy_thread::instance().include(my_module_);
     }
 
     return true;
 }
 
+void upy_method::send_execute_result (rx_simple_value out_val, rx_result&& result, runtime_transaction_id_t id)
+{
+    execute_result_received(std::move(out_val), std::move(result), id);
+}
+
+void upy_method::send_execute_result (data::runtime_values_data out_val, rx_result&& result, runtime_transaction_id_t id)
+{
+    if (!result)
+    {
+        execute_result_received(rx_simple_value(), std::move(result), id);
+    }
+    else
+    {
+        rx_simple_value val;
+        result = outputs_.fill_simple_value(val, out_val);
+        if (!result)
+        {
+            result.register_error("Error converting value!");
+            execute_result_received(rx_simple_value(), std::move(result), id);
+        }
+        else
+        {
+            execute_result_received(std::move(val), std::move(result), id);
+        }
+    }
+}
+
+void upy_method::read (const string_type& path, mp_obj_t iter, mp_obj_t func)
+{
+}
+
+void upy_method::reset_module ()
+{
+    my_module_ = upy_module_ptr::null_ptr;
+}
+
 
 // Class rx_platform::python::upy_method_execution_context 
 
-upy_method_execution_context::upy_method_execution_context (context_execute_data data, const string_type& func_name)
-      : func_name_(func_name)
+upy_method_execution_context::upy_method_execution_context (rx_platform::runtime::execute_data data, const string_type& func_name, rx_reference<upy_method> method)
+      : data_(data),
+        method_(method),
+        func_name_(func_name)
     , id_(data.transaction_id)
-    , logic::method_execution_context(data)
 {
 }
 
@@ -143,25 +224,134 @@ upy_method_execution_context::upy_method_execution_context (context_execute_data
 
 string_type upy_method_execution_context::get_eval_code () const
 {
+    
+    int struct_size = (int)data_.value.struct_size();
     std::ostringstream ss;
     ss << "create_task(" << func_name_ << ", " << id_;
-    for (const auto one : vals_.values)
+    for (int i=0 ; i< struct_size; i++)
     {
-        ss << ", " << get_python_value(one.second);
+        ss << ", " << get_python_value(data_.value[i]);
     }
     ss << ")";
     return ss.str();
 }
 
-void upy_method_execution_context::set_data (data::runtime_values_data data)
+void upy_method_execution_context::execution_complete (rx_result result)
 {
-    vals_ = std::move(data);
+    method_->send_execute_result(values::rx_simple_value(), std::move(result), id_);
+}
+
+void upy_method_execution_context::execution_complete (values::rx_simple_value data)
+{
+    method_->send_execute_result(std::move(data), true, id_);
+}
+
+void upy_method_execution_context::execution_complete (data::runtime_values_data data)
+{
+    method_->send_execute_result(std::move(data), true, id_);
 }
 
 
 const string_type& upy_method_execution_context::get_func_name () const
 {
   return func_name_;
+}
+
+
+// Class rx_platform::python::upy_module_method 
+
+upy_module_method::upy_module_method()
+{
+}
+
+
+upy_module_method::~upy_module_method()
+{
+}
+
+
+
+rx_result upy_module_method::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+    auto result = upy_method::initialize_runtime(ctx);
+    if (!result)
+        return result;
+
+    result = function_.bind(".Function", ctx, [this](const string_type& val)
+        {
+            reset_module();
+        });
+    if (!result)
+        return result;
+
+    result = module_.bind(".Module", ctx, [this](const string_type& val)
+        {
+            reset_module();
+        });
+    if (!result)
+        return result;
+
+    return true;
+}
+
+string_type upy_module_method::get_code ()
+{
+    return "";
+}
+
+string_type upy_module_method::get_function ()
+{
+    return function_;
+}
+
+string_type upy_module_method::get_module ()
+{
+    return module_;
+}
+
+
+// Class rx_platform::python::upy_script_method 
+
+upy_script_method::upy_script_method()
+{
+}
+
+
+upy_script_method::~upy_script_method()
+{
+}
+
+
+
+rx_result upy_script_method::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+    auto result = upy_method::initialize_runtime(ctx);
+    if (!result)
+        return result;
+
+    result = script_.bind(".Code", ctx, [this](const string_type& val)
+        {
+            reset_module();
+        });
+    if (!result)
+        return result;
+
+    return true;
+}
+
+string_type upy_script_method::get_code ()
+{
+    return script_;
+}
+
+string_type upy_script_method::get_function ()
+{
+    return "";
+}
+
+string_type upy_script_method::get_module ()
+{
+    return "";
 }
 
 

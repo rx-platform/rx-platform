@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  D:\RX\Native\Source\platform_api\rx_basic_types.cpp
+*  C:\RX\Native\Source\platform_api\rx_basic_types.cpp
 *
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -277,9 +277,9 @@ rx_result rx_event::deinitialize_event ()
     return true;
 }
 
-void rx_event::event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data)
+void rx_event::event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data, string_view_type queue, bool state, bool remove)
 {
-    impl_.host_def->event_fired(impl_.host, id, test ? 1 : 0, identity, data.move());
+    impl_.host_def->event_fired(impl_.host, id, test ? 1 : 0, identity, data.move(), string_type(queue).c_str(), state ? 1 : 0, remove ? 1 : 0);
 }
 
 data::runtime_data_model rx_event::get_arguemnts ()

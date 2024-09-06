@@ -38,6 +38,7 @@
 
 namespace rx_platform {
 
+typedef std::function<void(runtime_transaction_id_t, rx_result)> storage_callback_t;
 namespace ns
 {
 class rx_platform_item;
@@ -141,9 +142,12 @@ namespace structure
 {
 
 
-// value options bitset
+// value options bit-set
 constexpr static int value_opt_readonly = 0;
 constexpr static int value_opt_persistent = 1;
+
+// serialization stuff
+constexpr static int value_opt_default_value = 16;
 
 // internal status for state ignorant values (On, Test, Status Simulate)
 constexpr static int opt_state_ignorant = 30;
@@ -207,11 +211,11 @@ template <class typeT>
 class runtime_scan_algorithms;
 class runtime_relation_algorithms;
 }
-namespace event_blocks
+namespace events
 {
 class rx_events_callback;
-typedef rx_reference<rx_events_callback> events_callback_ptr;
 }
+typedef rx_reference<events::rx_events_callback> events_callback_ptr;
 
 namespace tag_blocks
 {
@@ -219,8 +223,8 @@ class rx_tags_callback;
 typedef rx_reference<rx_tags_callback> tags_callback_ptr;
 typedef std::function<void(const rx_value&)> binded_callback_t;
 typedef std::function<rx_result(const rx_simple_value&, runtime_process_context*)> write_callback_t;
-typedef std::function<void(rx_result)> binded_write_result_callback_t;
-typedef std::function<void(rx_result, rx_simple_value)> binded_execute_result_callback_t;
+typedef std::function<void(runtime_transaction_id_t, rx_result)> binded_write_result_callback_t;
+typedef std::function<void(runtime_transaction_id_t, rx_result, rx_simple_value)> binded_execute_result_callback_t;
 }
 using tag_blocks::tags_callback_ptr;
 

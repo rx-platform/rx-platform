@@ -418,7 +418,7 @@ rx_result delete_some_type(typeCache& cache, const rx_item_reference& rx_item_re
 		{
 			auto work_item = get_platform_item_sync(typeCache::HType::type_id, id);
 			if(work_item)
-				auto save_result = work_item.value()->save();
+				auto save_result = work_item.value()->save_sync();
 		}
 	});
 	auto ret = dir->delete_item(name);
@@ -536,7 +536,7 @@ rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, 
 			});
 		// we have to do save, we are running
 
-		auto save_result = prototype->get_item_ptr()->save();
+		auto save_result = prototype->get_item_ptr()->save_sync();
 		if (!save_result)
 		{
 			rx_result_with<typeType> ret(save_result.errors());
@@ -640,7 +640,7 @@ rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_upd
 
 	if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 	{
-		auto save_result = prototype->get_item_ptr()->save();
+		auto save_result = prototype->get_item_ptr()->save_sync();
 		if (!save_result)
 		{
 			rx_result_with<typeT> ret(save_result.errors());
@@ -731,7 +731,7 @@ rx_result delete_some_runtime(const rx_item_reference& rx_item_reference, rx_res
 				{
 					auto work_item = get_platform_item_sync(typeT::RImplType::type_id, id);
 					if (work_item)
-						auto save_result = work_item.value()->save();
+						auto save_result = work_item.value()->save_sync();
 				}
 				});
 			auto ret = dir->delete_item(name);
@@ -807,7 +807,7 @@ rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_ru
 	{
 
 		// we have to do save, we are running
-		auto save_result = ret_value.value().ptr->get_item_ptr()->save();
+		auto save_result = ret_value.value().ptr->get_item_ptr()->save_sync();
 		if (!save_result)
 		{
 			save_result.register_error("Error saving type item "s + ret_value.value().ptr->meta_info().get_full_path());

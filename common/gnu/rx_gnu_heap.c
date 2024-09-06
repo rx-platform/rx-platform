@@ -205,7 +205,7 @@ int initialize_chunk_list()
 	return RX_OK;
 }
 
-int rx_init_heap(size_t initial_heap, size_t alloc_size, size_t trigger, size_t bucket_size)
+size_t rx_init_heap(size_t initial_heap, size_t alloc_size, size_t trigger, size_t bucket_size)
 {
 	if (current_buffer == NULL)
 	{
@@ -260,9 +260,10 @@ int rx_init_heap(size_t initial_heap, size_t alloc_size, size_t trigger, size_t 
 		}
 
 	}
+	size_t ret = total_heap_bytes;
 	rx_slim_lock_release(&heap_lock);
 
-	return RX_OK;
+	return ret;
 }
 RX_COMMON_API void* rx_heap_alloc(size_t size)
 {

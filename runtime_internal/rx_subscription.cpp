@@ -34,6 +34,7 @@
 // rx_subscription
 #include "runtime_internal/rx_subscription.h"
 
+#include "system/runtime/rx_event_manager.h"
 #include "rx_runtime_internal.h"
 #include "sys_internal/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
@@ -659,7 +660,7 @@ subscription_write_transaction::subscription_write_transaction()
 
 runtime_transaction_id_t subscription_write_transaction::add_write (runtime_transaction_id_t master_id, transactions_map_type& map, runtime_handle_t handle)
 {
-	auto trans_id = platform_runtime_manager::get_new_transaction_id();
+	auto trans_id = rx_get_new_transaction_id();
 	writes_.emplace(trans_id, single_write_data{ handle, writes_.size(), rx_result() });
 	pending_count_++;
 	map.emplace(trans_id, master_id);
@@ -715,7 +716,7 @@ std::vector<write_result_item> subscription_write_transaction::get_results ()
 
 rx_result subscription_execute_manager::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, values::rx_simple_value data, rx_subscription& subs)
 {
-	runtime_transaction_id_t my_id = platform_runtime_manager::get_new_transaction_id();
+	runtime_transaction_id_t my_id = rx_get_new_transaction_id();
 	rx_result result(true);
 
 	locks::auto_lock_t _(&subs.items_lock_);
@@ -770,7 +771,7 @@ rx_result subscription_execute_manager::execute_item (runtime_transaction_id_t t
 
 rx_result subscription_execute_manager::execute_item (runtime_transaction_id_t transaction_id, runtime_handle_t handle, data::runtime_values_data data, rx_subscription& subs)
 {
-	runtime_transaction_id_t my_id = platform_runtime_manager::get_new_transaction_id();
+	runtime_transaction_id_t my_id = rx_get_new_transaction_id();
 	rx_result result(true);
 
 	locks::auto_lock_t _(&subs.items_lock_);
@@ -891,13 +892,16 @@ void subscription_execute_manager::process_results (rx_subscription& subs)
 
 void subscription_execute_manager::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, values::rx_simple_value data, rx_subscription& subs)
 {
-
+#ifdef _DEBUG
 	printf("\r\n*****Execute completed for handle %x, trans %x\r\n", (int)item, (int)transaction_id);
+#endif
 	locks::auto_lock_t _(&subs.items_lock_);
 	auto map_it = execute_transactions_.find(transaction_id);
 	if (map_it != execute_transactions_.end())
 	{
+#ifdef _DEBUG
 		printf("\r\n*****Execute for send for handle %x, trans %x\r\n", (int)map_it->second.client_handle, (int)map_it->second.client_transaction_id);
+#endif
 		pending_execute_results_.emplace_back(pending_execute_result{ map_it->second.client_transaction_id, map_it->second.client_handle, std::move(result), std::move(data) });
 		execute_transactions_.erase(map_it);
 		rx_post_function_to(subs.target_, subs.smart_this(), [](rx_subscription::smart_ptr whose) {
@@ -909,12 +913,16 @@ void subscription_execute_manager::execute_complete (runtime_transaction_id_t tr
 void subscription_execute_manager::execute_complete (runtime_transaction_id_t transaction_id, runtime_handle_t item, uint32_t signal_level, rx_result result, data::runtime_values_data data, rx_subscription& subs)
 {
 
+#ifdef _DEBUG
 	printf("\r\n*****Execute completed for handle %x, trans %x\r\n", (int)item, (int)transaction_id);
+#endif
 	locks::auto_lock_t _(&subs.items_lock_);
 	auto map_it = execute_transactions_.find(transaction_id);
 	if (map_it != execute_transactions_.end())
 	{
+#ifdef _DEBUG
 		printf("\r\n*****Execute for send name handle %x, trans %x\r\n", (int)map_it->second.client_handle, (int)map_it->second.client_transaction_id);
+#endif
 		pending_execute_results_.emplace_back(pending_execute_result{ map_it->second.client_transaction_id, map_it->second.client_handle, std::move(result), std::move(data) });
 		execute_transactions_.erase(map_it);
 		rx_post_function_to(subs.target_, subs.smart_this(), [](rx_subscription::smart_ptr whose) {
@@ -931,7 +939,7 @@ rx_result subscription_write_manager::write_items (runtime_transaction_id_t tran
 {
 	subscription_write_transaction transaction;
 	transaction.client_transaction_id = transaction_id;
-	runtime_transaction_id_t master_id = platform_runtime_manager::get_new_transaction_id();
+	runtime_transaction_id_t master_id = rx_get_new_transaction_id();
 	rx_result total_result(true);
 
 	result.reserve(values.size());
@@ -1000,7 +1008,7 @@ rx_result subscription_write_manager::write_items (runtime_transaction_id_t tran
 {
 	subscription_write_transaction transaction;
 	transaction.client_transaction_id = transaction_id;
-	runtime_transaction_id_t master_id = platform_runtime_manager::get_new_transaction_id();
+	runtime_transaction_id_t master_id = rx_get_new_transaction_id();
 	rx_result total_result(true);
 
 	result.reserve(values.size());
@@ -1263,7 +1271,7 @@ void rx_event_subscription::deactivate ()
 	}
 }
 
-rx_result_with<runtime_handle_t> rx_event_subscription::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+rx_result_with<runtime_handle_t> rx_event_subscription::connect_events (const event_filter& filter, events_callback_ptr monitor)
 {
 	// OutputDebugStringA("****************Something to connect\r\n");
 	for (const auto& one : filter.paths)
@@ -1327,7 +1335,7 @@ rx_result_with<runtime_handle_t> rx_event_subscription::connect_events (const ev
 	return true;
 }
 
-rx_result rx_event_subscription::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+rx_result rx_event_subscription::disconnect_events (runtime_handle_t hndl, events_callback_ptr monitor)
 {
 	return RX_NOT_IMPLEMENTED;
 }

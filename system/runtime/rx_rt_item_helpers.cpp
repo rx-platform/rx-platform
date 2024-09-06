@@ -83,7 +83,8 @@ rx_result collect_data_value(const string_type& name, int array_idx, data::runti
 			return RX_INVALID_PATH;
 
 		if (type != runtime_value_type::persistent_runtime_value
-			|| item.get_item()->value_opt[runtime::structure::value_opt_persistent])
+			|| (item.get_item()->value_opt[runtime::structure::value_opt_persistent]
+			&& !item.get_item()->value_opt[runtime::structure::value_opt_default_value]))
 			data.add_value(name, item.get_item()->value.to_simple());
 	}
 	else
@@ -95,18 +96,22 @@ rx_result collect_data_value(const string_type& name, int array_idx, data::runti
 			for (int i = 0; i < item.get_size(); i++)
 			{
 				if (type != runtime_value_type::persistent_runtime_value
-					|| item.get_item(i)->value_opt[runtime::structure::value_opt_persistent])
+					|| (item.get_item(i)->value_opt[runtime::structure::value_opt_persistent]
+						&& !item.get_item(i)->value_opt[runtime::structure::value_opt_default_value]))
 					temp_vals.push_back(item.get_item(i)->value.to_simple());
 			}
-			data.add_value(name, std::move(temp_vals));
+			if(!temp_vals.empty())
+				data.add_value(name, std::move(temp_vals));
 		}
 		else
 		{
 
 			if (array_idx >= (int)item.get_size())
 				return RX_OUT_OF_BOUNDS;
-
-			data.add_value(name, item.get_item(array_idx)->value.to_simple());
+			if (type != runtime_value_type::persistent_runtime_value
+				|| (item.get_item(array_idx)->value_opt[runtime::structure::value_opt_persistent]
+					&& !item.get_item(array_idx)->value_opt[runtime::structure::value_opt_default_value]))
+				data.add_value(name, item.get_item(array_idx)->value.to_simple());
 		}
 	}
 	return true;
@@ -489,7 +494,7 @@ void collect_value_const(std::vector<values::rx_simple_value>& data, runtime_val
 				temp_vals.push_back(item.get_item(i)->value);
 			}
 			rx_simple_value val;
-			val.assign_array(temp_vals);
+			val.assign_array(std::move(temp_vals));
 			data.push_back(std::move(val));
 		}
 	}
@@ -500,7 +505,9 @@ void collect_value_value(std::vector<values::rx_simple_value>& data, runtime_val
 	if (!item.is_array())
 	{
 		if (type != runtime_value_type::persistent_runtime_value
-			|| item.get_item()->value_opt[runtime::structure::value_opt_persistent])
+			|| (item.get_item()->value_opt[runtime::structure::value_opt_persistent]
+			&& !item.get_item()->value_opt[runtime::structure::value_opt_default_value]))
+
 			data.push_back(item.get_item()->value.to_simple());
 	}
 	else
@@ -510,11 +517,12 @@ void collect_value_value(std::vector<values::rx_simple_value>& data, runtime_val
 		for (int i = 0; i < item.get_size(); i++)
 		{
 			if (type != runtime_value_type::persistent_runtime_value
-				|| item.get_item(i)->value_opt[runtime::structure::value_opt_persistent])
+				|| (item.get_item(i)->value_opt[runtime::structure::value_opt_persistent]
+				&& !item.get_item(i)->value_opt[runtime::structure::value_opt_default_value]))
 				temp_vals.push_back(item.get_item(i)->value.to_simple());
 		}
 		rx_simple_value val;
-		val.assign_array(temp_vals);
+		val.assign_array(std::move(temp_vals));
 		data.push_back(std::move(val));
 	}
 }
@@ -546,7 +554,7 @@ void collect_value_variable(std::vector<values::rx_simple_value>& data, runtime_
 				temp_vals.push_back(item.get_item(i)->value.to_simple());
 			}
 			rx_simple_value val;
-			val.assign_array(temp_vals);
+			val.assign_array(std::move(temp_vals));
 			data.push_back(std::move(val));
 		}
 		else
@@ -563,7 +571,7 @@ void collect_value_variable(std::vector<values::rx_simple_value>& data, runtime_
 			if (!childs.empty())
 			{				
 				rx_simple_value val;
-				val.assign_array(childs);
+				val.assign_array(std::move(childs));
 				data.push_back(std::move(val));
 			}
 		}
@@ -594,7 +602,7 @@ void collect_value_arrayed(std::vector<values::rx_simple_value>& data, runtime_v
 		if (!childs.empty())
 		{
 			rx_simple_value val;
-			val.assign_array(childs);
+			val.assign_array(std::move(childs));
 			data.push_back(std::move(val));
 		}
 	}

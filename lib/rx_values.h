@@ -395,6 +395,8 @@ public:
 
       void assign_array (const std::vector<rx_simple_value>& from);
 
+      void assign_array (std::vector<rx_simple_value>&& from);
+
       bool is_struct () const;
 
       size_t struct_size () const;

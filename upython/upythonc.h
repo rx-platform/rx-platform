@@ -44,10 +44,11 @@
 extern "C" {
 #endif
 	
-typedef int (*pget_modules)(int timeout, size_t* count, mp_obj_t** objs);
-typedef void (*pmodule_done)(mp_obj_t result);
-typedef mp_obj_t(*pmodule_read_tag)(const char* path);
-typedef mp_obj_t(*pmodule_write_tag)(const char* path, mp_obj_t what);
+typedef int (*pget_modules)(int timeout, size_t* count, mp_obj_t** objs, size_t* ccaunt, mp_obj_t** cobjs);
+typedef void (*pmodule_done)(uint32_t id, mp_obj_t result);
+typedef mp_obj_t(*pmodule_read_tag)(uint32_t id, const char* path, mp_obj_t iter);
+typedef mp_obj_t(*pmodule_write_tag)(uint32_t id, const char* path, mp_obj_t what, mp_obj_t iter);
+typedef void(*pwrite_log)(const char* data, size_t len);
 
 typedef struct host_data_str
 {
@@ -56,6 +57,7 @@ typedef struct host_data_str
 	pmodule_done module_done;
 	pmodule_read_tag module_read;
 	pmodule_write_tag module_write;
+	pwrite_log write_log;
 
 } host_data;
 	

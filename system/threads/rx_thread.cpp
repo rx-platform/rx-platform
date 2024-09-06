@@ -417,6 +417,7 @@ uint32_t physical_job_thread::handler ()
 	std::vector<job_ptr> queued;
 	bool exit = false;
 
+
 	while (!exit)
 	{
 		queued.clear();

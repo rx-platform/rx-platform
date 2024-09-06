@@ -169,8 +169,11 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 										}
 										else
 										{
-											result = rt_result.errors();
-											result.register_error("Unable to open runtime file " + rt_it->second->get_item_reference());
+											BUILD_LOG_WARNING("configuration_storage_builder", 999,
+												("Unable to load runtime file!"s + rt_result.errors_line()).c_str());
+
+											rx_storage_item_ptr null_storage_ptr;
+											result = create_object_from_storage(item, null_storage_ptr, root);
 										}
 									}
 									else

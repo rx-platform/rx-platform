@@ -49,13 +49,27 @@ namespace files {
 string_type get_file_storage_info();
 
 
+template <bool isString>
+struct file_item_cache_holder_t { };
+
+template <> struct file_item_cache_holder_t<true>
+{
+    string_type value;
+};
+template <> struct file_item_cache_holder_t<false>
+{
+    byte_string value;
+};
 
 
 
 
-template <class fileT, class streamT>
+
+template <class fileT, class streamT, bool isStringBased = streamT::string_based>
 class rx_file_item : public rx_platform::storage_base::rx_storage_item  
 {
+    typedef file_item_cache_holder_t<isStringBased> cache_type;
+
 
   public:
       rx_file_item (const string_type& file_path, const meta_data& storage_meta, rx_storage_item_type storage_type = rx_storage_item_type::none);
@@ -87,14 +101,21 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
 
       rx_result close_read ();
 
-      rx_result commit_write ();
+      rx_result commit_write_sync ();
+
+      void commit_write (storage_callback_t callback, runtime_transaction_id_t trans_id);
 
       string_type get_item_path () const;
+
+      rx_result save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback);
 
 
   protected:
 
   private:
+
+      static rx_result internal_save (byte_string data, const string_type& path);
+
 
 
       bool valid_;
@@ -104,6 +125,8 @@ class rx_file_item : public rx_platform::storage_base::rx_storage_item
       streamT item_data_;
 
       string_type file_path_;
+
+      cache_type item_cache_;
 
 
 };
@@ -148,6 +171,10 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
       rx_result_with<rx_storage_item_ptr> get_runtime_storage (const meta_data& data, rx_item_type type);
 
       void preprocess_meta_data (meta_data& data);
+
+      runtime_transaction_id_t get_new_unique_ids (size_t count);
+
+      void set_next_unique_id (runtime_transaction_id_t id);
 
 
   protected:

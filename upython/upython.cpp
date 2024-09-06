@@ -31,6 +31,7 @@
 #include "pch.h"
 
 #ifdef UPYTHON_SUPPORT
+#include "system/hosting/rx_host.h"
 
 // upy_internal
 #include "upython/upy_internal.h"
@@ -62,15 +63,26 @@ upython::~upython()
 rx_result upython::register_logic_handlers ()
 {
     auto result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<method_type>().register_constructor(
-        RX_UPYTHON_METHOD_TYPE_ID, [] {
-            return rx_create_reference<upy_method>();
+        RX_UPYTHON_SCRIPT_METHOD_TYPE_ID, [] {
+            return rx_create_reference<upy_script_method>();
         });
+    if (!result)
+        return result;
+
+    result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<method_type>().register_constructor(
+        RX_UPYTHON_MODULE_METHOD_TYPE_ID, [] {
+            return rx_create_reference<upy_module_method>();
+        });
+    if (!result)
+        return result;
+
     return result;
 }
 
 rx_result upython::start_script (hosting::rx_platform_host* host, const configuration_data_t& data)
 {
-    string_type master_path = data.other.py_path;
+    UPYTHON_LOG_INFO("upython", 900, "Starting micropython module.");
+    string_type master_path = data.other.upy_path;
     if (!master_path.empty())
     {
         string_array files;
@@ -97,6 +109,7 @@ rx_result upython::start_script (hosting::rx_platform_host* host, const configur
             result = file.read_string(code);
             if (result)
             {
+                UPYTHON_LOG_TRACE("upython", 900, rx_create_string("micropython loaded module ", name, " from file ", path).c_str());
                 modules.emplace_back(name, code);
             }
             else
@@ -105,7 +118,44 @@ rx_result upython::start_script (hosting::rx_platform_host* host, const configur
                 return result;
             }
         }
-        return upy_thread::instance().start_script(modules);
+        master_path = data.other.upy_user;
+        if (!master_path.empty())
+        {
+            files.clear();
+            dirs.clear();
+            auto result = rx_list_files(master_path, "*.py", files, dirs);
+            if (!result)
+            {
+                result.register_error("Error listing user python files.");
+                return result;
+            }
+            for (const auto& one : files)
+            {
+                string_type name = one.substr(0, one.size() - 3);// exclude extension from module name
+                rx_source_file file;
+                string_type path = rx_combine_paths(master_path, one);
+                result = file.open(path.c_str());
+                if (!result)
+                {
+                    result.register_error("Error opening user python file:"s + path);
+                    return result;
+                }
+                string_type code;
+                result = file.read_string(code);
+                if (result)
+                {
+                    UPYTHON_LOG_TRACE("upython", 900, rx_create_string("micropython loaded module ", name, " from file ", path).c_str());
+                    modules.emplace_back(name, code);
+                }
+                else
+                {
+                    result.register_error("Error reading user python file:"s + path);
+                    return result;
+                }
+            }
+        }
+        auto ret = upy_thread::instance().start_script(modules);
+        return ret;
     }
     else
     {
@@ -115,6 +165,7 @@ rx_result upython::start_script (hosting::rx_platform_host* host, const configur
 
 void upython::stop_script ()
 {
+    UPYTHON_LOG_INFO("upython", 900, "Stopping micropython module.");
     upy_thread::instance().stop_script();
 }
 

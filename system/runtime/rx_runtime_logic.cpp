@@ -176,7 +176,6 @@ void logic_holder::fill_data (const data::runtime_values_data& data, runtime_pro
         if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
         {
             one.fill_data(std::get< data::runtime_values_data>(it->second));
-            break;
         }
         
     }
@@ -186,7 +185,6 @@ void logic_holder::fill_data (const data::runtime_values_data& data, runtime_pro
         if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
         {
             one.fill_data(std::get< data::runtime_values_data>(it->second));
-            break;
         }
     }
 }
@@ -466,7 +464,7 @@ method_data::method_data (structure::runtime_item::smart_ptr&& rt, method_runtim
     , outputs(prototype.outputs)
 {
     value.value.assign_static<int32_t>(0);
-    pending_tasks_ = std::make_unique<std::map<runtime_transaction_id_t, std::pair<bool, structure::execute_task*> > >();
+    pending_tasks_ = std::make_unique<std::map<runtime_transaction_id_t, std::pair<bool, std::unique_ptr<structure::execute_task> > > >();
 }
 
 
@@ -650,7 +648,7 @@ rx_value method_data::get_value (runtime_process_context* ctx) const
     }
 }
 
-rx_result method_data::execute (context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
+rx_result method_data::execute (context_execute_data&& data, std::unique_ptr<structure::execute_task> task, runtime_process_context* ctx)
 {
 
     rx_result result;
@@ -684,7 +682,7 @@ rx_result method_data::execute (context_execute_data&& data, structure::execute_
     security::secured_scope _(data.identity);
 
 
-    auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
+    auto new_trans = rx_get_new_transaction_id();
 
     execute_data send_data;
     send_data.test = data.test;
@@ -693,9 +691,17 @@ rx_result method_data::execute (context_execute_data&& data, structure::execute_
     send_data.transaction_id = new_trans;
     send_data.value = std::move(to_send);
 
-    pending_tasks_->emplace(new_trans, std::pair<bool, structure::execute_task*>{ named, task });
+    pending_tasks_->emplace(new_trans, std::pair<bool, std::unique_ptr<structure::execute_task> >{ named, std::move(task) });
 
-
+    if (rx_is_debug_instance())
+    {
+        std::ostringstream ss;
+        ss << "Method "
+            << full_path
+            << " started execute request with id:"
+            << data.transaction_id;
+        RUNTIME_LOG_DEBUG("method_data", 500, ss.str());
+    }
     result = method_ptr->execute(std::move(send_data), ctx);
     if (!result)
     {
@@ -719,6 +725,19 @@ void method_data::execution_complete (runtime_transaction_id_t id, rx_result&& r
     if (context_)
     {
 
+        if (rx_is_debug_instance())
+        {
+            std::ostringstream ss;
+            ss << "Method "
+                << full_path
+                << " execute completed for id, result:"
+                << id << " - ";
+            if (result)
+                ss << "OK";
+            else
+                ss << result.errors_line();
+            RUNTIME_LOG_DEBUG("method_data", 500, ss.str());
+        }
         method_execute_result_data result_data;
         result_data.result = std::move(result);
         result_data.transaction_id = id;
@@ -741,7 +760,7 @@ void method_data::process_execute_result (runtime_transaction_id_t id, rx_result
     auto it = pending_tasks_->find(id);
     if (it != pending_tasks_->end())
     {
-        auto task = it->second;
+        auto task = std::move(it->second);
         pending_tasks_->erase(it);
 
         if (task.second)
@@ -750,18 +769,13 @@ void method_data::process_execute_result (runtime_transaction_id_t id, rx_result
             {
                 data::runtime_values_data rt_data;
                 if (result)
-                {
-                    structure::block_data temp(outputs);
-                    rx_result temp_result = temp.fill_value(data);
+                {                    
+                    rx_result temp_result = outputs.create_safe_runtime_data(data, rt_data);
                     if (!temp_result)
                     {
                         temp_result.register_error("Error converting output parameters!");
                         RUNTIME_LOG_WARNING("method_data", 300, temp_result.errors_line());
                         result = std::move(temp_result);
-                    }
-                    else
-                    {
-                        temp.collect_data("", rt_data, runtime_value_type::simple_runtime_value);
                     }
                 }
                 task.second->process_result(std::move(result), std::move(rt_data));
@@ -805,6 +819,10 @@ rx_result method_data::initialize_runtime (runtime::runtime_init_context& ctx)
     ret = method_ptr->initialize_runtime(ctx);
     if (!ret)
         return ret;
+
+
+    if (rx_is_debug_instance())
+        full_path = ctx.meta.get_full_path() + RX_OBJECT_DELIMETER + ctx.path.get_current_path();
 
     ctx.method = nullptr;
     ctx.structure.pop_item();

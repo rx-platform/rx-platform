@@ -53,8 +53,10 @@ namespace rx_platform_api {
 
 intptr_t get_rx_plugin();
 intptr_t set_rx_plugin(intptr_t what);
-void copy_rt_to_rt4(const platform_runtime_api* src, platform_runtime_api4* dest);
-void copy_rt3_to_rt4(const platform_runtime_api3* src, platform_runtime_api4* dest);
+void copy_rt_to_rt6(const platform_runtime_api* src, platform_runtime_api6* dest);
+void copy_rt3_to_rt6(const platform_runtime_api3* src, platform_runtime_api6* dest);
+void copy_rt4_to_rt6(const platform_runtime_api4* src, platform_runtime_api6* dest);
+void copy_rt5_to_rt6(const platform_runtime_api5* src, platform_runtime_api6* dest);
 int get_binded_stream_version();
 
 }
@@ -66,50 +68,75 @@ int get_binded_stream_version();
 #define RX_DECLARE_PLUGIN2(class_name, deps) \
 std::unique_ptr<class_name> _g_plugin_obj_;\
 extern "C" {\
-platform_api4 api4;\
+platform_api6 api6;\
 uint32_t g_bind_version=0;\
 RX_PLUGIN_API rx_result_struct rxBindPlugin(const platform_api* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin)\
 {\
 	_g_plugin_obj_ = std::make_unique<class_name>();\
     rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
     *plugin = rx_platform_api::get_rx_plugin();\
-    memzero(&api4, sizeof(api4));\
-    rx_platform_api::copy_rt_to_rt4(&api->runtime, &api4.runtime);\
-    api4.general=api->general;\
+    memzero(&api6, sizeof(api6));\
+    rx_platform_api::copy_rt_to_rt6(&api->runtime, &api6.runtime);\
+    api6.general=api->general;\
     g_bind_version=1;\
-	return rx_platform_api::rx_bind_plugin(&api4, host_stream_version, plugin_stream_version);\
+	return rx_platform_api::rx_bind_plugin(&api6, host_stream_version, plugin_stream_version);\
 }\
 RX_PLUGIN_API rx_result_struct rxBindPlugin2(const platform_api2* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin)\
 {\
 	_g_plugin_obj_ = std::make_unique<class_name>();\
     rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
     *plugin = rx_platform_api::get_rx_plugin();\
-    memzero(&api4, sizeof(api4));\
-    rx_platform_api::copy_rt_to_rt4(&api->runtime, &api4.runtime);\
-    api4.general=api->general;\
-    api4.storage = api->storage;\
+    memzero(&api6, sizeof(api6));\
+    rx_platform_api::copy_rt_to_rt6(&api->runtime, &api6.runtime);\
+    api6.general=api->general;\
+    api6.storage = api->storage;\
     g_bind_version=2;\
-	return rx_platform_api::rx_bind_plugin(&api4, host_stream_version, plugin_stream_version);\
+	return rx_platform_api::rx_bind_plugin(&api6, host_stream_version, plugin_stream_version);\
 }\
 RX_PLUGIN_API rx_result_struct rxBindPlugin3(const platform_api3* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin)\
 {\
 	_g_plugin_obj_ = std::make_unique<class_name>();\
     rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
     *plugin = rx_platform_api::get_rx_plugin();\
-    memzero(&api4, sizeof(api4));\
-    rx_platform_api::copy_rt3_to_rt4(&api->runtime, &api4.runtime);\
-    api4.general=api->general;\
-    api4.storage = api->storage;\
-    g_bind_version=3;\
-	return rx_platform_api::rx_bind_plugin(&api4, host_stream_version, plugin_stream_version);\
+    memzero(&api6, sizeof(api6));\
+    rx_platform_api::copy_rt3_to_rt6(&api->runtime, &api6.runtime);\
+    api6.general=api->general;\
+    api6.storage = api->storage;\
+    g_bind_version=4;\
+	return rx_platform_api::rx_bind_plugin(&api6, host_stream_version, plugin_stream_version);\
 }\
 RX_PLUGIN_API rx_result_struct rxBindPlugin4(const platform_api4* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin, const char*** dependecies)\
 {\
 	_g_plugin_obj_ = std::make_unique<class_name>();\
     rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
     *plugin = rx_platform_api::get_rx_plugin();\
-    *dependecies = deps;\
+    memzero(&api6, sizeof(api6));\
+    rx_platform_api::copy_rt4_to_rt6(&api->runtime, &api6.runtime);\
+    api6.general=api->general;\
+    api6.storage = api->storage;\
     g_bind_version=4;\
+	return rx_platform_api::rx_bind_plugin(&api6, host_stream_version, plugin_stream_version);\
+}\
+RX_PLUGIN_API rx_result_struct rxBindPlugin5(const platform_api5* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin, const char*** dependecies)\
+{\
+	_g_plugin_obj_ = std::make_unique<class_name>();\
+    rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
+    *plugin = rx_platform_api::get_rx_plugin();\
+    memzero(&api6, sizeof(api6));\
+    rx_platform_api::copy_rt5_to_rt6(&api->runtime, &api6.runtime);\
+    api6.general=api->general;\
+    api6.storage = api->storage;\
+    *dependecies = deps;\
+    g_bind_version=5;\
+	return rx_platform_api::rx_bind_plugin(&api6, host_stream_version, plugin_stream_version);\
+}\
+RX_PLUGIN_API rx_result_struct rxBindPlugin6(const platform_api6* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin, const char*** dependecies)\
+{\
+	_g_plugin_obj_ = std::make_unique<class_name>();\
+    rx_platform_api::set_rx_plugin((uintptr_t)_g_plugin_obj_.get());\
+    *plugin = rx_platform_api::get_rx_plugin();\
+    *dependecies = deps;\
+    g_bind_version=6;\
 	return rx_platform_api::rx_bind_plugin(api, host_stream_version, plugin_stream_version);\
 }\
 RX_PLUGIN_API void rxGetPluginInfo(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver)\
@@ -206,7 +233,7 @@ class rx_platform_plugin
 
 };
 
-rx_result_struct rx_bind_plugin(const platform_api4* api, uint32_t host_stream_version, uint32_t* plugin_stream_version);
+rx_result_struct rx_bind_plugin(const platform_api6* api, uint32_t host_stream_version, uint32_t* plugin_stream_version);
 void rx_get_plugin_info(const char* name, int major, int minor, int build, string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver);
 rx_result_struct rx_init_plugin(rx_platform_plugin* plugin);
 rx_result_struct rx_deinit_plugin(rx_platform_plugin* plugin);

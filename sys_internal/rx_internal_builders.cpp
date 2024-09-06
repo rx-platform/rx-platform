@@ -425,6 +425,8 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 		builders.emplace_back(std::make_unique<opc_types_builder>());
 		builders.emplace_back(std::make_unique<mqtt_types_builder>());
 		builders.emplace_back(std::make_unique<simulation_types_builder>());
+		builders.emplace_back(std::make_unique<xml_types_builder>());
+		builders.emplace_back(std::make_unique<json_types_builder>());
 		//// objects builders
 		builders.emplace_back(std::make_unique<system_objects_builder>());
 		builders.emplace_back(std::make_unique<system_ports_builder>());
@@ -667,6 +669,10 @@ rx_result root_folder_builder::do_build (configuration_data_t& config)
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_OPC_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_MQTT_CLASSES_NAME
+			, rx_storage_ptr::null_ptr },
+		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_XML_CLASSES_NAME
+			, rx_storage_ptr::null_ptr },
+		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_JSON_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_SUPPORT_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
@@ -1352,6 +1358,16 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_FILE_PORT_TYPE_NAME
+			, RX_FILE_PORT_TYPE_ID
+			, RX_EXTERNAL_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Options", RX_FILE_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
 			RX_UDP_PORT_TYPE_NAME
 			, RX_UDP_PORT_TYPE_ID
 			, RX_EXTERNAL_PORT_TYPE_ID
@@ -1817,7 +1833,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_const_value_static("Path", "");
+		//src->complex_data.register_const_value_static("Path", "");
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
 		src = create_type<basic_types::source_type>(meta::type_creation_data{
@@ -2136,7 +2152,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		what = create_type<struct_type>(meta::type_creation_data{
 			RX_SERVER_TIMEOUTS_TYPE_NAME
 			, RX_SERVER_TIMEOUTS_TYPE_ID
-			, RX_CLASS_STRUCT_BASE_ID
+			, RX_TIMEOUTS_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
@@ -2253,6 +2269,17 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			});
 		what->complex_data.register_const_value_static("Port", "");
 		what->complex_data.register_const_value_static("EtherTypes", std::vector<uint16_t>());
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_FILE_PORT_OPTIONS_TYPE_NAME
+			, RX_FILE_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("DirectoryPath", "");
+		what->complex_data.register_simple_value_static("FileFilter", "*", false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		//
@@ -2456,6 +2483,24 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 				RX_UPYTHON_METHOD_TYPE_NAME
 				, RX_UPYTHON_METHOD_TYPE_ID
 				, RX_CLASS_METHOD_BASE_ID
+				, namespace_item_attributes::namespace_item_internal_access
+				, full_path
+			});
+		add_simple_type_to_configuration<basic_types::method_type>(dir, met, true);		
+		met = create_type<basic_types::method_type>(meta::type_creation_data{
+				RX_UPYTHON_MODULE_METHOD_TYPE_NAME
+				, RX_UPYTHON_MODULE_METHOD_TYPE_ID
+				, RX_UPYTHON_METHOD_TYPE_ID
+				, namespace_item_attributes::namespace_item_internal_access
+				, full_path
+			});
+		met->complex_data.register_simple_value_static("Module", ""s, false, true);
+		met->complex_data.register_simple_value_static("Function", ""s, false, true);
+		add_simple_type_to_configuration<basic_types::method_type>(dir, met, false);
+		met = create_type<basic_types::method_type>(meta::type_creation_data{
+				RX_UPYTHON_SCRIPT_METHOD_TYPE_NAME
+				, RX_UPYTHON_SCRIPT_METHOD_TYPE_ID
+				, RX_UPYTHON_METHOD_TYPE_ID
 				, namespace_item_attributes::namespace_item_internal_access
 				, full_path
 			});
@@ -3441,7 +3486,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 			});
 		what->complex_data.register_const_value_static("TopicBase", "");
 		what->complex_data.register_const_value_static("PublishTimeBuffer", (uint32_t)50);
-		what->complex_data.register_const_value_static("ClientID", "rx-platform");
+		what->complex_data.register_const_value_static("ClientID", "");
 		what->complex_data.register_const_value_static("KeepAlive", (uint16_t)0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
@@ -3528,6 +3573,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		map->complex_data.register_const_value_static("Topic", "");
+		map->complex_data.register_const_value_static("DataTopic", "");
 		map->complex_data.register_const_value_static<uint8_t>("QoS", 1);
 		map->complex_data.register_const_value_static("Retain", true);
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
@@ -3563,6 +3609,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		map->complex_data.register_const_value_static("Topic", "");
+		map->complex_data.register_const_value_static("DataTopic", "");
 		map->complex_data.register_const_value_static<uint8_t>("QoS", 1);
 		map->complex_data.register_const_value_static("Retain", true);
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
@@ -3574,7 +3621,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		map->complex_data.register_const_value_static("JSONFormat", "{ 'val' : @val }");
+		map->complex_data.register_const_value_static("Pretty", false);
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
 
@@ -3636,6 +3683,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		evt->complex_data.register_const_value_static("Topic", "");
+		map->complex_data.register_const_value_static("DataTopic", "");
 		evt->complex_data.register_const_value_static("DataTopic", "");
 		evt->complex_data.register_const_value_static<uint8_t>("QoS", 1);
 		add_simple_type_to_configuration<event_type>(dir, evt, true);
@@ -3662,6 +3710,85 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 	}
 
 	BUILD_LOG_INFO("mqtt_types_builder", 900, "MQTT types built.");
+	return true;
+}
+
+
+// Class rx_internal::builders::xml_types_builder 
+
+
+rx_result xml_types_builder::do_build (configuration_data_t& config)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_XML_CLASSES_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir_result = ns::rx_directory_cache::instance().get_directory(full_path);
+	if (dir_result)
+	{
+		auto dir = dir_result;
+
+		auto what = create_type<struct_type>(meta::type_creation_data{
+			RX_XML_PORT_OPTIONS_TYPE_NAME
+			, RX_XML_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("AddrXMLPath", "");
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		auto port = create_type<port_type>(meta::object_type_creation_data{
+			RX_XML_PORT_TYPE_NAME
+			, RX_XML_PORT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		/*port->complex_data.register_struct("Status", RX_MQTT_SERVER_PORT_STATUS_TYPE_ID);*/
+		port->complex_data.register_struct("Options", RX_XML_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_XML_SOURCE_TYPE_NAME
+			, RX_XML_SOURCE_TYPE_ID
+			, RX_EXTERN_SOURCE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static("XMLPath", "");
+		src->complex_data.register_const_value_static("XMLAddr", "");
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+	}
+	BUILD_LOG_INFO("xml_types_builder", 900, "XML types built.");
+	return true;
+}
+
+
+// Class rx_internal::builders::json_types_builder 
+
+
+rx_result json_types_builder::do_build (configuration_data_t& config)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_JSON_CLASSES_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir_result = ns::rx_directory_cache::instance().get_directory(full_path);
+	if (dir_result)
+	{
+		auto dir = dir_result;
+
+		auto port = create_type<port_type>(meta::object_type_creation_data{
+			RX_JSON_PORT_TYPE_NAME
+			, RX_JSON_PORT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		/*port->complex_data.register_struct("Status", RX_MQTT_SERVER_PORT_STATUS_TYPE_ID);
+		port->complex_data.register_struct("Options", RX_MQTT_SERVER_PORT_OPTIONS_TYPE_ID);*/
+		add_type_to_configuration(dir, port, false);
+
+	}
+	BUILD_LOG_INFO("json_types_builder", 900, "JSON types built.");
 	return true;
 }
 

@@ -38,6 +38,8 @@
 
 // rx_ns_resolver
 #include "system/server/rx_ns_resolver.h"
+// rx_job
+#include "system/threads/rx_job.h"
 // rx_tag_blocks
 #include "system/runtime/rx_tag_blocks.h"
 // rx_display_blocks
@@ -50,20 +52,17 @@
 #include "system/runtime/rx_operational.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_job
-#include "system/threads/rx_job.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
+// rx_event_manager
+#include "system/runtime/rx_event_manager.h"
 
 namespace rx_platform {
 namespace runtime {
 class runtime_process_context;
-namespace event_blocks {
-class runtime_events;
 
-} // namespace event_blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -241,8 +240,6 @@ public:
       display_blocks::displays_holder displays_;
 
       tag_blocks::tags_holder tags_;
-
-      std::unique_ptr<event_blocks::runtime_events> events_;
 
 
       meta_data meta_info_;

@@ -289,7 +289,7 @@ class extern_event_runtime : public event_runtime
 
       byte_string extern_get_arguments ();
 
-      void extern_event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data);
+      void extern_event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data, string_view_type queue, bool state, bool remove);
 
 
   protected:
@@ -337,7 +337,7 @@ class extern_variable_runtime : public variable_runtime
 
       rx_value get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources);
 
-      rx_result variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources);
+      rx_result variable_write (write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx, runtime_sources_type& sources);
 
 
 

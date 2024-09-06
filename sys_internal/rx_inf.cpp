@@ -44,6 +44,7 @@
 #include "model/rx_meta_internals.h"
 #include "runtime_internal/rx_runtime_internal.h"
 #include "upython/upy_internal.h"
+#include "sys_internal/rx_async_functions.h"
 
 
 namespace rx_internal {
@@ -68,7 +69,7 @@ server_runtime::~server_runtime()
 
 
 
-rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_data_t& data, const io_manager_data_t& io_data)
+rx_result server_runtime::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
 {
 	// register protocol constructors
 	char buff[0x100];
@@ -79,21 +80,21 @@ rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_d
 	rx_collect_processor_info(buff, sizeof(buff) / sizeof(buff[0]), &cpu_count);
 
 
-	if (data.io_pool_size <= 0)
-		data.io_pool_size = 1;
+	if (data.processor.io_pool_size <= 0)
+		data.processor.io_pool_size = 1;
 
-	data.io_pool_size = std::min((int)cpu_count, data.io_pool_size);
+	data.processor.io_pool_size = std::min((int)cpu_count, data.processor.io_pool_size);
 
 	if (cpu_count > 1)
 	{
-		cpu_mask = ~(((uint64_t)-1) << data.io_pool_size);
+		cpu_mask = ~(((uint64_t)-1) << data.processor.io_pool_size);
 	}
 
-	io_pool_ = server_dispatcher_object::smart_ptr(data.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO);
+	io_pool_ = server_dispatcher_object::smart_ptr(data.processor.io_pool_size, IO_POOL_NAME, RX_DOMAIN_IO);
 
-	if (cpu_count > (size_t)data.io_pool_size)
+	if (cpu_count > (size_t)data.processor.io_pool_size)
 	{
-		start_cpu = data.io_pool_size;
+		start_cpu = data.processor.io_pool_size;
 	}
 	end_cpu = (uint32_t)cpu_count - 1;
 
@@ -101,25 +102,25 @@ rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_d
 
 	meta_pool_ = rx_create_reference<physical_thread_object>(META_POOL_NAME, RX_DOMAIN_META);
 
-	if (data.has_unassigned_pool)
+	if (data.processor.has_unassigned_pool)
 	{
 		unassigned_pool_ = rx_create_reference<physical_thread_object>(UNASSIGNED_POOL_NAME, RX_DOMAIN_UNASSIGNED);
 	}
-	if (data.workers_pool_size > 0)
+	if (data.processor.workers_pool_size > 0)
 	{
 		for (auto& one : workers_)
 		{
-			one = domains_pool::smart_ptr(data.workers_pool_size, start_cpu, end_cpu);
+			one = domains_pool::smart_ptr(data.processor.workers_pool_size, start_cpu, end_cpu);
 			one->reserve();
 		}
 	}
 	general_timer_ = std::make_unique<threads::timer>("Timer", 0);
-	if (data.has_calculation_timer)
+	if (data.processor.has_calculation_timer)
 		calculation_timer_ = std::make_unique<threads::timer>("Calc",0);
 
-	extern_executer_ = data.extern_executer;
+	extern_executer_ = data.processor.extern_executer;
 
-	auto result = sys_runtime::platform_runtime_manager::instance().initialize(host, data);
+	auto result = sys_runtime::platform_runtime_manager::instance().initialize(host, data.processor);
 
 	// register I/O constructors
 	result = model::platform_types_manager::instance().get_type_repository<object_type>().register_constructor(
@@ -150,11 +151,15 @@ rx_result server_runtime::initialize (hosting::rx_platform_host* host, runtime_d
 			return ret;
 		});
 
+	result = ids_manager_.initialize(host, data, smart_this());
+
 	return result;
 }
 
 void server_runtime::deinitialize ()
 {
+	ids_manager_.deinitialize();
+
 	if (extern_executer_)
 		extern_executer_ = nullptr;
 
@@ -325,10 +330,10 @@ threads::job_thread* server_runtime::get_executer (rx_thread_handle_t domain)
 				return extern_executer_;
 			else
 				return &meta_pool_->get_pool();
-		case RX_DOMAIN_PYTHON:
-#ifdef UPYTHON_SUPPORT
-			return &rx_platform::python::upy_thread::instance();
-#endif
+//		case RX_DOMAIN_PYTHON:
+//#ifdef UPYTHON_SUPPORT
+//			return &rx_platform::python::upy_thread::instance();
+//#endif
 		default:
 			if (unassigned_pool_)
 				return &unassigned_pool_->get_pool();
@@ -449,6 +454,12 @@ runtime_data_t server_runtime::get_cpu_data ()
 	else
 		ret.workers_pool_size = 0;
 	return ret;
+}
+
+
+unique_ids_manager& server_runtime::get_ids_manager ()
+{
+  return ids_manager_;
 }
 
 
@@ -690,6 +701,87 @@ void low_priority_house_keeping::process ()
 			<< "KB of memory.";
 		HOST_LOG_INFO("low_priority_house_keeping", 900, ss.str());
 	}
+}
+
+
+// Class rx_internal::infrastructure::unique_ids_manager 
+
+unique_ids_manager::unique_ids_manager()
+      : first_available_(0),
+        list_size_(0),
+        claim_size_(0),
+        border_size_(0),
+        claiming_(false)
+{
+}
+
+
+unique_ids_manager::~unique_ids_manager()
+{
+}
+
+
+
+runtime_transaction_id_t unique_ids_manager::get_new_unique_id ()
+{
+	std::scoped_lock _(lock_);
+	if (first_available_ > 0 && list_size_ > 0)
+	{
+		runtime_transaction_id_t ret = first_available_;
+		first_available_++;
+		list_size_--;
+		if (list_size_ <= border_size_ && !claiming_)
+		{
+			do_the_claim(claim_size_ - list_size_);
+		}			
+		return ret;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+rx_result unique_ids_manager::initialize (hosting::rx_platform_host* host, configuration_data_t& data, rx_reference_ptr anchor)
+{
+	anchor_ = anchor;
+	auto ret = host->get_user_storage();
+	if (ret)
+	{
+		storage_ = ret.move_value();
+		first_available_ = 0;
+		list_size_ = 0;
+		claim_size_ = data.other.ids_prefetch;
+		border_size_ = data.other.ids_prefetch_sp;
+		do_the_claim(claim_size_);
+
+		return true;
+	}
+	ret.register_error("Ids Manager unable to get storage object");
+	return ret.errors();;
+}
+
+void unique_ids_manager::deinitialize ()
+{
+	if (storage_ && first_available_ > 0)
+		storage_->set_next_unique_id(first_available_);
+}
+
+void unique_ids_manager::do_the_claim (size_t size)
+{
+	claiming_ = true;
+	rx_post_function_to(RX_DOMAIN_SLOW, anchor_
+		, [this, size]() mutable
+		{
+			auto ret = storage_->get_new_unique_ids(size);
+			if (ret > 0)
+			{
+				std::scoped_lock _(lock_);
+				first_available_ = ret;
+				list_size_ += size;
+				claiming_ = false;
+			}
+		});
 }
 
 

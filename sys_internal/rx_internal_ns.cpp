@@ -47,6 +47,7 @@
 #include "lib/rx_ser_bin.h"
 #include "system/runtime/rx_event_blocks.h"
 #include "discovery/rx_discovery_items.h"
+#include "system/runtime/rx_runtime_holder.h"
 
 
 namespace rx_internal {
@@ -93,19 +94,6 @@ template <class TImpl>
 rx_node_id rx_item_implementation<TImpl>::get_node_id () const
 {
 	return impl_->meta_info().id;
-}
-
-template <class TImpl>
-rx_result rx_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
-{
-	auto ret = stream.write_header(STREAMING_TYPE_OBJECT, 0);
-	if (ret)
-	{
-		ret = impl_->serialize(stream, STREAMING_TYPE_OBJECT);
-		if (ret)
-			stream.write_footer();
-	}
-	return ret;
 }
 
 template <class TImpl>
@@ -219,10 +207,15 @@ rx_result rx_item_implementation<TImpl>::deserialize_value (base_meta_reader& st
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::save () const
+rx_result rx_item_implementation<TImpl>::save (storage_callback_t callback, runtime_transaction_id_t trans_id) const
 {
+	return rx_save_platform_item(impl_, std::move(callback), trans_id);
+}
 
-	return rx_save_platform_item(*this);
+template <class TImpl>
+rx_result rx_item_implementation<TImpl>::save_sync () const
+{
+	return rx_save_sync_platform_item(impl_);
 }
 
 template <class TImpl>
@@ -272,13 +265,13 @@ security::security_guard_ptr rx_item_implementation<TImpl>::get_security_guard (
 }
 
 template <class TImpl>
-rx_result_with<runtime_handle_t> rx_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+rx_result_with<runtime_handle_t> rx_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value)
 {
-	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::connect_events(filter, monitor, *impl_);
+	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::connect_events(filter, monitor, bin_value, *impl_);
 }
 
 template <class TImpl>
-rx_result rx_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+rx_result rx_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor)
 {
 	return runtime::algorithms::runtime_holder_algorithms<typename TImpl::pointee_type::DefType>::disconnect_events(hndl, monitor, *impl_);
 }
@@ -328,16 +321,6 @@ template <class TImpl>
 rx_node_id rx_meta_item_implementation<TImpl>::get_node_id () const
 {
 	return impl_->meta_info.id;
-}
-
-template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
-{
-	using algorithm_type = typename TImpl::pointee_type::algorithm_type;
-	stream.write_header(STREAMING_TYPE_TYPE, 0);
-	auto ret = algorithm_type::serialize_type(*impl_, stream, STREAMING_TYPE_TYPE);
-	stream.write_footer();
-	return ret;
 }
 
 template <class TImpl>
@@ -457,9 +440,15 @@ rx_result rx_meta_item_implementation<TImpl>::deserialize_value (base_meta_reade
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::save () const
+rx_result rx_meta_item_implementation<TImpl>::save (storage_callback_t callback, runtime_transaction_id_t trans_id) const
 {
-	return rx_save_platform_item(*this);
+	return rx_save_platform_meta_item(impl_, std::move(callback), trans_id);
+}
+
+template <class TImpl>
+rx_result rx_meta_item_implementation<TImpl>::save_sync () const
+{
+  return rx_save_sync_platform_meta_item(impl_);
 }
 
 template <class TImpl>
@@ -512,13 +501,13 @@ security::security_guard_ptr rx_meta_item_implementation<TImpl>::get_security_gu
 }
 
 template <class TImpl>
-rx_result_with<runtime_handle_t> rx_meta_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+rx_result_with<runtime_handle_t> rx_meta_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value)
 {
 	return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
-rx_result rx_meta_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+rx_result rx_meta_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -568,12 +557,6 @@ template <class TImpl>
 rx_node_id rx_other_implementation<TImpl>::get_node_id () const
 {
 	return impl_->meta_info().id;
-}
-
-template <class TImpl>
-rx_result rx_other_implementation<TImpl>::serialize (base_meta_writer& stream) const
-{
-	return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
@@ -684,9 +667,15 @@ rx_result rx_other_implementation<TImpl>::deserialize_value (base_meta_reader& s
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::save () const
+rx_result rx_other_implementation<TImpl>::save (storage_callback_t callback, runtime_transaction_id_t trans_id) const
 {
-	return rx_save_platform_item(*this);
+    return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+rx_result rx_other_implementation<TImpl>::save_sync () const
+{
+    return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
@@ -732,13 +721,13 @@ security::security_guard_ptr rx_other_implementation<TImpl>::get_security_guard 
 }
 
 template <class TImpl>
-rx_result_with<runtime_handle_t> rx_other_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+rx_result_with<runtime_handle_t> rx_other_implementation<TImpl>::connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value)
 {
 	return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
-rx_result rx_other_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+rx_result rx_other_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -782,12 +771,6 @@ template <class TImpl>
 rx_node_id rx_proxy_item_implementation<TImpl>::get_node_id () const
 {
   return rx_node_id();
-}
-
-template <class TImpl>
-rx_result rx_proxy_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
-{
-  return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
@@ -901,7 +884,13 @@ rx_result rx_proxy_item_implementation<TImpl>::deserialize_value (base_meta_read
 }
 
 template <class TImpl>
-rx_result rx_proxy_item_implementation<TImpl>::save () const
+rx_result rx_proxy_item_implementation<TImpl>::save (storage_callback_t callback, runtime_transaction_id_t trans_id) const
+{
+  return RX_NOT_IMPLEMENTED;
+}
+
+template <class TImpl>
+rx_result rx_proxy_item_implementation<TImpl>::save_sync () const
 {
   return RX_NOT_IMPLEMENTED;
 }
@@ -946,13 +935,13 @@ security::security_guard_ptr rx_proxy_item_implementation<TImpl>::get_security_g
 }
 
 template <class TImpl>
-rx_result_with<runtime_handle_t> rx_proxy_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+rx_result_with<runtime_handle_t> rx_proxy_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value)
 {
 	return RX_NOT_IMPLEMENTED;
 }
 
 template <class TImpl>
-rx_result rx_proxy_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+rx_result rx_proxy_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor)
 {
 	return RX_NOT_IMPLEMENTED;
 }
@@ -998,12 +987,6 @@ template <class TImpl>
 rx_node_id rx_relation_item_implementation<TImpl>::get_node_id () const
 {
 	return impl_->meta_info().id;
-}
-
-template <class TImpl>
-rx_result rx_relation_item_implementation<TImpl>::serialize (base_meta_writer& stream) const
-{
-	return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
@@ -1120,7 +1103,13 @@ rx_result rx_relation_item_implementation<TImpl>::deserialize_value (base_meta_r
 }
 
 template <class TImpl>
-rx_result rx_relation_item_implementation<TImpl>::save () const
+rx_result rx_relation_item_implementation<TImpl>::save (storage_callback_t callback, runtime_transaction_id_t trans_id) const
+{
+	return RX_NOT_VALID_TYPE;
+}
+
+template <class TImpl>
+rx_result rx_relation_item_implementation<TImpl>::save_sync () const
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -1168,13 +1157,13 @@ security::security_guard_ptr rx_relation_item_implementation<TImpl>::get_securit
 }
 
 template <class TImpl>
-rx_result_with<runtime_handle_t> rx_relation_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor)
+rx_result_with<runtime_handle_t> rx_relation_item_implementation<TImpl>::connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value)
 {
 	return RX_NOT_VALID_TYPE;
 }
 
 template <class TImpl>
-rx_result rx_relation_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor)
+rx_result rx_relation_item_implementation<TImpl>::disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor)
 {
 	return RX_NOT_VALID_TYPE;
 }
@@ -1209,3 +1198,15 @@ template class rx_internal::internal_ns::rx_meta_item_implementation<data_type_p
 template class rx_internal::internal_ns::rx_relation_item_implementation<rx_relation_ptr>;
 
 template class rx_internal::internal_ns::rx_proxy_item_implementation<rx_internal::discovery::peer_item::smart_ptr>;
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return RX_NOT_VALID_TYPE;
+
+  return RX_NOT_IMPLEMENTED;
+
+	return RX_NOT_VALID_TYPE;
+
+#endif

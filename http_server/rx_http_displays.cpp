@@ -328,7 +328,7 @@ rx_result rx_http_display_base::parse_display_data (runtime::runtime_init_contex
 			if (one_data.point_path.size() >= 1 && one_data.point_path[0]!='-')
 			{
 				char buff[0x20];
-				sprintf(buff, "rxPt%08x", rx_internal::sys_runtime::platform_runtime_manager::get_new_handle());
+				sprintf(buff, "rxPt%08x", rx_get_new_handle());
 				one_data.point_id = buff;
 				one_data.point = std::make_unique<http_display_point>();
 				connected_points_.push_back(std::move(one_data));

@@ -71,7 +71,7 @@ Simple Variable selects first with good quality inputs, writes to all outputs.")
     struct write_task_data
     {
         int ref_count;
-        structure::write_task* task;
+        std::unique_ptr<structure::write_task> task;
     };
     typedef std::unique_ptr<std::map<runtime_transaction_id_t, write_task_data> > pending_tasks_type;
 
@@ -90,7 +90,7 @@ Simple Variable selects first with good quality inputs, writes to all outputs.")
 
       rx_value get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources);
 
-      rx_result variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources);
+      rx_result variable_write (write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx, runtime_sources_type& sources);
 
       void process_result (runtime_transaction_id_t id, rx_result&& result);
 
@@ -151,51 +151,6 @@ Complex Inputs Variable, writes to all outputs.");
 
 
 
-class multiplexer_variable : public rx_platform::runtime::blocks::variable_runtime  
-{
-    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-Multiplexer Variable selects input and output by selector.");
-
-    DECLARE_REFERENCE_PTR(multiplexer_variable);
-    typedef std::unique_ptr<std::map<runtime_transaction_id_t, structure::write_task*> > pending_tasks_type;
-
-  public:
-      multiplexer_variable();
-
-      ~multiplexer_variable();
-
-
-      virtual rx_result initialize_variable (runtime::runtime_init_context& ctx);
-
-
-  protected:
-
-  private:
-
-      rx_value get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources);
-
-      rx_result variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources);
-
-      void process_result (runtime_transaction_id_t id, rx_result&& result);
-
-
-
-      std::map<runtime_transaction_id_t, structure::write_task*>& get_tasks ();
-
-
-      pending_tasks_type pending_tasks_;
-
-
-      runtime::local_value<int8_t> selector_;
-
-
-};
-
-
-
-
-
-
 class complex_outputs_variable : public rx_platform::runtime::blocks::variable_runtime  
 {
     DECLARE_CODE_INFO("rx", 1, 0, 0, "\
@@ -206,7 +161,7 @@ protected:
     struct write_task_data
     {
         int ref_count;
-        structure::write_task* task;
+        std::unique_ptr<structure::write_task> task;
     };
     typedef std::unique_ptr<std::map<runtime_transaction_id_t, write_task_data> > pending_tasks_type;
 
@@ -228,7 +183,7 @@ protected:
 
       rx_value get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources);
 
-      rx_result variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources);
+      rx_result variable_write (write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx, runtime_sources_type& sources);
 
       void process_result (runtime_transaction_id_t id, rx_result&& result);
 
@@ -294,6 +249,51 @@ class bridge_variable : public complex_io_variable
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class multiplexer_variable : public rx_platform::runtime::blocks::variable_runtime  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+Multiplexer Variable selects input and output by selector.");
+
+    DECLARE_REFERENCE_PTR(multiplexer_variable);
+    typedef std::unique_ptr<std::map<runtime_transaction_id_t, std::unique_ptr<structure::write_task> > > pending_tasks_type;
+
+  public:
+      multiplexer_variable();
+
+      ~multiplexer_variable();
+
+
+      virtual rx_result initialize_variable (runtime::runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_value get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources);
+
+      rx_result variable_write (write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx, runtime_sources_type& sources);
+
+      void process_result (runtime_transaction_id_t id, rx_result&& result);
+
+
+
+      std::map<runtime_transaction_id_t, std::unique_ptr<structure::write_task> >& get_tasks ();
+
+
+      pending_tasks_type pending_tasks_;
+
+
+      runtime::local_value<int8_t> selector_;
 
 
 };

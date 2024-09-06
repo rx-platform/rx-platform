@@ -95,6 +95,10 @@ rx_result port_instance_data::before_init_runtime (rx_port_ptr what, runtime::ru
     RX_ASSERT(what->get_instance_data().my_application_);
     if (what->get_instance_data().my_application_)
     {
+        ctx.context->set_events_manager(
+            &what->get_instance_data().my_application_->get_instance_data().get_events());
+
+
         what->get_instance_data().executer_ = what->get_instance_data().my_application_->get_executer();
 
         security::security_context_ptr sec_ctx;

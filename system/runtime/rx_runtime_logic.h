@@ -95,6 +95,8 @@ public:
 
       string_type name;
 
+      string_type full_path;
+
 
   protected:
 
@@ -111,7 +113,7 @@ public:
 class method_data 
 {
 
-    typedef std::unique_ptr<std::map<runtime_transaction_id_t, std::pair<bool, structure::execute_task*> > > pending_tasks_type;
+    typedef std::unique_ptr<std::map<runtime_transaction_id_t, std::pair<bool, std::unique_ptr<structure::execute_task> > > > pending_tasks_type;
 public:
     method_data() = default;
     ~method_data() = default;
@@ -142,7 +144,7 @@ public:
 
       rx_value get_value (runtime_process_context* ctx) const;
 
-      rx_result execute (context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx);
+      rx_result execute (context_execute_data&& data, std::unique_ptr<structure::execute_task> task, runtime_process_context* ctx);
 
       void execution_complete (runtime_transaction_id_t id, rx_result&& result, values::rx_simple_value&& data);
 
@@ -173,6 +175,8 @@ public:
       structure::runtime_item::smart_ptr item;
 
       string_type name;
+
+      string_type full_path;
 
 
   protected:

@@ -37,6 +37,7 @@
 //#include <winternl.h">
 #include "version/rx_version.h"
 #include "os_itf/rx_ositf.h"
+#include "common/rx_common_version.h"
 
 #include <process.h>
 #include <stdlib.h>
@@ -282,6 +283,9 @@ uint32_t tlc_max_token = 0;
 void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug, size_t initial_heap, size_t heap_alloc, size_t heap_trigger, size_t bucket_capacity)
 {
 	rx_platform_init_data common_data;
+	common_data.version = ((uint64_t)RX_COMMON_MAJOR_VERSION << 48)
+		| (((uint64_t)RX_COMMON_MINOR_VERSION & 0xffff) << 32)
+		| ((uint64_t)RX_COMMON_BUILD_NUMBER);
 	common_data.rx_hd_timer = hdt;
 	common_data.is_debug = is_debug;
 	common_data.rx_initial_heap_size = initial_heap;
@@ -1126,7 +1130,7 @@ int rx_file_delete(const char* path)
 
 int rx_file_rename(const char* old_path, const char* new_path)
 {
-	return MoveFileA(old_path, new_path);
+	return MoveFileExA(old_path, new_path, MOVEFILE_WRITE_THROUGH | MOVEFILE_REPLACE_EXISTING) != 0 ? RX_OK : RX_ERROR;
 }
 
 int rx_file_exsist(const char* path)

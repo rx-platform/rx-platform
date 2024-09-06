@@ -294,9 +294,8 @@ rx_result recursive_save_directory(rx_directory_ptr dir)
 		auto temp_result = rx_internal::model::algorithms::get_platform_item_sync(item.get_type(), item.get_meta().id);
 		if (!temp_result)
 			return "Error retrieving "s + item.get_meta().get_full_path() + " from it's parent's directory.";
-		auto result = temp_result.value()->save();
-		if (!result)
-			return result;
+		temp_result.value()->save_sync();
+		
 	}
 	return true;
 }
@@ -319,20 +318,19 @@ rx_result save_item_helper(string_type path)
 		auto temp_result = rx_internal::model::algorithms::get_platform_item_sync(item.get_type(), item.get_meta().id);
 		if (!temp_result)
 			return "Error retrieving "s + item.get_meta().get_full_path() + " from it's parent's directory.";
-		auto result = temp_result.value()->save();
+		auto result = temp_result.value()->save_sync();
 		return result;
 	}
 }
 
-rx_result rx_save_item(const string_type& path
-	, rx_result_callback&& callback)
+rx_result rx_save_item(const string_type& path, rx_result_callback&& callback)
 {
 	rx_post_function_to(RX_DOMAIN_META, callback.get_anchor(), [](string_type path, rx_result_callback&& callback)
 		{
 			auto result = save_item_helper(path);
 			callback(std::move(result));
 		}
-		, string_type(path), std::move(callback));
+	, string_type(path), std::move(callback));
 
 	return true;
 }

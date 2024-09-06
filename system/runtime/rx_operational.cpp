@@ -141,22 +141,25 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 						auto new_value = it_handles->second.ref_value_ptr.value->get_value(ctx);
 						value_change(it_handles->second.ref_value_ptr.value, new_value);
 						tags.binded_value_change(it_handles->second.ref_value_ptr.value, new_value);
-						if (callback)
-						{
-							callback(std::move(result));
-						}
+						
+					}
+					if (result && callback)
+					{
+						callback(0, true);
 					}
 				}
 				return result;
 			}
 		case rt_value_ref_type::rt_variable:
 			{
+				auto trans_id = rx_get_new_transaction_id();
 				write_data data;
 				data.internal = true;
-				data.transaction_id = 0;
+				data.transaction_id = trans_id;
 				data.value = std::move(val);
 				data.test = ctx->get_mode().is_test();
-				auto result = it_handles->second.ref_value_ptr.variable->write_value(std::move(data), nullptr, ctx);
+				auto result = it_handles->second.ref_value_ptr.variable->write_value(std::move(data),
+					std::make_unique<binded_write_task>(this, std::move(callback), trans_id, handle), ctx);
 				return result;
 			}
 		case rt_value_ref_type::rt_block_value:
@@ -181,6 +184,10 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 							block_value_change(it_handles->second.ref_value_ptr.block_value, new_value);
 							tags.binded_block_change(it_handles->second.ref_value_ptr.block_value, new_value);
 						}
+						if (result && callback)
+						{
+							callback(0, true);
+						}
 					}
 				}
 				return result;
@@ -190,12 +197,14 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 				auto result = it_handles->second.ref_value_ptr.block_value->prepare_value(val, nullptr, ctx);
 				if (result)
 				{
+					auto trans_id = rx_get_new_transaction_id();
 					write_data data;
 					data.internal = true;
-					data.transaction_id = 0;
+					data.transaction_id = trans_id;
 					data.value = std::move(val);
 					data.test = ctx->get_mode().is_test();
-					auto result = it_handles->second.ref_value_ptr.block_variable->write_value(std::move(data), nullptr, ctx);
+					auto result = it_handles->second.ref_value_ptr.block_variable->write_value(std::move(data),
+						std::make_unique<binded_write_task>(this, std::move(callback), trans_id, handle), ctx);
 				}
 				return result;
 			}
@@ -494,15 +503,16 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item_with_write (const string
 	return handle;
 }
 
-rx_result_with<runtime_handle_t> binded_tags::connect_item (const string_type& path, uint32_t rate, runtime_init_context& ctx, binded_callback_t callback)
+rx_result_with<runtime_handle_t> binded_tags::connect_item (const string_type& path, uint32_t rate, runtime_init_context& ctx, binded_callback_t callback, tag_blocks::binded_write_result_callback_t write_callback, tag_blocks::binded_execute_result_callback_t execute_callback)
 {
 	auto handle= ctx.get_new_handle();
 
-	auto pt = std::make_unique<rx_internal::sys_runtime::data_source::callback_value_point>(callback);
+	auto pt = std::make_unique<rx_internal::sys_runtime::data_source::callback_value_point>(
+		callback, write_callback, execute_callback);
 	pt->set_context(ctx.context);
 
 
-	//ctx.pending_connections.emplace(handle, pending_data_t { path, rate, std::move(pt) });
+	ctx.pending_connections.emplace(handle, pending_data_t { path, rate, std::move(pt) });
 
 	return handle;
 }
@@ -964,11 +974,19 @@ void binded_tags::block_variable_change (structure::variable_block_data* whose, 
 
 void binded_tags::write_result_arrived (binded_write_result_callback_t whose, write_result_data&& data)
 {
-	whose(std::move(data.result));
+	if(whose)
+		whose(data.transaction_id, std::move(data.result));
 }
 
-void binded_tags::execute_result_arrived (tags_callback_ptr whose, execute_result_data&& data)
+void binded_tags::execute_result_arrived (binded_execute_result_callback_t whose, execute_result_data&& data)
 {
+	if (whose)
+	{
+		if (std::holds_alternative<rx_simple_value>(data.data))
+			whose(data.transaction_id, std::move(data.result), std::move(std::get<rx_simple_value>(data.data)));
+		else
+			RX_ASSERT(false);
+	}
 }
 
 void binded_tags::runtime_stopped (runtime_stop_context& ctx)
@@ -1149,7 +1167,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 			// relation target
 			if (it->second->runtime_handle == 0)
 			{
-				auto handle = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
+				auto handle = rx_get_new_handle();
 
 				rt_value_ref reference;
 				reference.ref_type = rt_value_ref_type::rt_relation;
@@ -1166,7 +1184,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 		else
 		{
 			// relation value
-			auto handle = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
+			auto handle = rx_get_new_handle();
 
 			rx_result_with<relations::relation_value_data*> rel_result = it->second->connections.connect_tag(rest_path, handle);
 			if (rel_result)
@@ -1623,7 +1641,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 						data.test = test;
 						data.value = std::move(val);
 						result = it->second.reference.ref_value_ptr.variable->write_value(std::move(data)
-							, new connected_write_task(this, monitor, trans_id, item), context_);
+							, std::make_unique<connected_write_task>(this, monitor, trans_id, item), context_);
 					}
 				}
 				return result;
@@ -1652,7 +1670,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 						data.test = test;
 
 						result = it->second.reference.ref_value_ptr.block_variable->write_value(std::move(data)
-							, new connected_write_task(this, monitor, trans_id, item), context_);
+							, std::make_unique<connected_write_task>(this, monitor, trans_id, item), context_);
 
 					}
 				}
@@ -1672,7 +1690,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 				data.data = std::move(value);
 
 				auto result = it->second.reference.ref_value_ptr.relation_value->write_value(std::move(data)
-					, new connected_write_task(this, monitor, trans_id, item), context_);
+					, std::make_unique<connected_write_task>(this, monitor, trans_id, item), context_);
 				return result;
 			}
 		default:
@@ -1744,7 +1762,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 					data.test = test;
 
 					result = it->second.reference.ref_value_ptr.variable->write_value(std::move(data)
-						, new connected_write_task(this, monitor, trans_id, item), context_);
+						, std::make_unique<connected_write_task>(this, monitor, trans_id, item), context_);
 				}
 				return result;
 			}
@@ -1771,7 +1789,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 						data.test = test;
 
 						result = it->second.reference.ref_value_ptr.block_variable->write_value(std::move(data)
-							, new connected_write_task(this, monitor, trans_id, item), context_);
+							, std::make_unique<connected_write_task>(this, monitor, trans_id, item), context_);
 					}
 					return result;
 				}
@@ -1794,6 +1812,8 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 					for (const auto& one : it->second.monitors)
 						next_send_[one].insert_or_assign(item, val);
 					context_->tag_updates_pending();
+
+					return true;
 				}
 				return result;
 			}
@@ -1807,7 +1827,7 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 				data.test = test;
 
 				auto result = it->second.reference.ref_value_ptr.relation_value->write_value(std::move(data)
-					, new connected_write_task(this, monitor, trans_id, item), context_);
+					, std::make_unique<connected_write_task>(this, monitor, trans_id, item), context_);
 				return result;
 			}
 		case rt_value_ref_type::rt_block_value:
@@ -1883,13 +1903,13 @@ rx_result connected_tags::internal_execute_tag (runtime_transaction_id_t trans_i
 		case rt_value_ref_type::rt_method:
 			{
 				auto result = it->second.reference.ref_value_ptr.method->execute(std::move(data)
-					, new connected_execute_task(this, monitor, trans_id, item), context_);
+					, std::make_unique<connected_execute_task>(this, monitor, trans_id, item), context_);
 				return result;
 			}
 		case rt_value_ref_type::rt_relation_value:
 			{
 				auto result = it->second.reference.ref_value_ptr.relation_value->execute(std::move(data)
-					, new connected_execute_task(this, monitor, trans_id, item), context_);
+					, std::make_unique<connected_execute_task>(this, monitor, trans_id, item), context_);
 				return result;
 			}
 		default:
@@ -1926,13 +1946,13 @@ rx_result connected_tags::internal_execute_tag (runtime_transaction_id_t trans_i
 		case rt_value_ref_type::rt_method:
 			{
 				auto result = it->second.reference.ref_value_ptr.method->execute(std::move(data)
-					, new connected_execute_task(this, monitor, trans_id, item), context_);
+					, std::make_unique<connected_execute_task>(this, monitor, trans_id, item), context_);
 				return result;
 			}
 		case rt_value_ref_type::rt_relation_value:
 			{
 				auto result = it->second.reference.ref_value_ptr.relation_value->execute(std::move(data)
-					, new connected_execute_task(this, monitor, trans_id, item), context_);
+					, std::make_unique<connected_execute_task>(this, monitor, trans_id, item), context_);
 				return result;
 			}
 		default:
@@ -1963,7 +1983,7 @@ void connected_tags::target_relation_removed (relation_ptr&& whose)
 rx_result_with<runtime_handle_t> connected_tags::register_new_tag_ref (const string_type& path, rt_value_ref ref, tags_callback_ptr monitor)
 {
 	// fill out the data
-	auto handle = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
+	auto handle = rx_get_new_handle();
 	switch (ref.ref_type)
 	{
 	case rt_value_ref_type::rt_const_value:
@@ -2173,16 +2193,16 @@ binded_execute_task::binded_execute_task (binded_tags* parent, binded_execute_re
 
 void binded_execute_task::process_result (rx_result&& result, values::rx_simple_value&& data)
 {
+	parent_->execute_result_arrived(callback_, execute_result_data{ id_, item_, std::move(result), std::move(data)});
 }
 
 void binded_execute_task::process_result (rx_result&& result, data::runtime_values_data&& data)
 {
+	RX_ASSERT(false);
 }
 
 
 } // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
-
-
 

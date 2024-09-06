@@ -43,6 +43,7 @@
 #include "rx_udp.h"
 #include "rx_serial.h"
 #include "rx_ethernet.h"
+#include "rx_file_ports.h"
 #include "rx_inverter_ports.h"
 #include "rx_tcp_client.h"
 #include "sys_internal/rx_async_functions.h"
@@ -59,6 +60,7 @@
 #include "interfaces/rx_stxetx.h"
 #include "interfaces/rx_size_limiter.h"
 #include "protocols/opcua/rx_opcua_resources.h"
+#include "protocols/xml/rx_xml_parsing.h"
 
 
 namespace rx_internal {
@@ -170,6 +172,10 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configurat
 			RX_ETHERNET_PORT_TYPE_ID, [] {
 				return rx_create_reference<ethernet::ethernet_port>();
 			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_FILE_PORT_TYPE_ID, [] {
+				return rx_create_reference<file_endpoints::file_port>();
+			});
         result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
             RX_TCP_SERVER_PORT_TYPE_ID, [] {
                 return rx_create_reference<ip_endpoints::tcp_server_port>();
@@ -233,6 +239,14 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configurat
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 			RX_STXETX_TYPE_ID, [] {
 				return rx_create_reference<rx_internal::interfaces::ports_lib::stxetx_port>();
+			});
+		result = rx_internal::model::register_internal_constructor<port_type, protocols::rx_xml::rx_xml_port>(
+			nullptr, RX_XML_PORT_TYPE_ID, [] {
+				return rx_create_reference<protocols::rx_xml::rx_xml_port>();
+			});
+		result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
+			RX_XML_SOURCE_TYPE_ID, [] {
+				return rx_create_reference<protocols::rx_xml::rx_xml_source>();
 			});
 
         rx_internal::terminal::commands::server_command_manager::instance()->register_internal_commands();

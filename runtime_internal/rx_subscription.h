@@ -33,12 +33,12 @@
 
 
 
-// rx_event_blocks
-#include "system/runtime/rx_event_blocks.h"
-// rx_operational
-#include "system/runtime/rx_operational.h"
 // rx_job
 #include "system/threads/rx_job.h"
+// rx_operational
+#include "system/runtime/rx_operational.h"
+// rx_event_manager
+#include "system/runtime/rx_event_manager.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -532,7 +532,7 @@ class runtime_event_connection_data
 
 
 
-class rx_event_subscription : public rx_platform::runtime::event_blocks::rx_events_callback  
+class rx_event_subscription : public rx_platform::runtime::events::rx_events_callback  
 {
     DECLARE_REFERENCE_PTR(rx_event_subscription);
 
@@ -554,9 +554,9 @@ class rx_event_subscription : public rx_platform::runtime::event_blocks::rx_even
 
       void deactivate ();
 
-      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, events_callback_ptr monitor);
 
-      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result disconnect_events (runtime_handle_t hndl, events_callback_ptr monitor);
 
 
   protected:

@@ -68,6 +68,8 @@ rx_dynamic_plugin::rx_dynamic_plugin (const string_type& lib_path)
         prxBindPlugin2_(nullptr),
         prxBindPlugin3_(nullptr),
         prxBindPlugin4_(nullptr),
+        prxBindPlugin5_(nullptr),
+        prxBindPlugin6_(nullptr),
         prxGetPluginInfo_(nullptr),
         prxGetPluginInfo2_(nullptr),
         prxGetPluginName_(nullptr),
@@ -90,14 +92,24 @@ rx_dynamic_plugin::~rx_dynamic_plugin()
 
 rx_result rx_dynamic_plugin::bind_plugin ()
 {
-    if (prxBindPlugin4_ || prxBindPlugin3_ || prxBindPlugin2_ || prxBindPlugin_)
+    if (prxBindPlugin6_ || prxBindPlugin5_ || prxBindPlugin4_ || prxBindPlugin3_ || prxBindPlugin2_ || prxBindPlugin_)
     {
         uintptr_t plugin_id;
         uint32_t plugin_version;
         uint32_t bind_version = 0;
         const char** dependencies = NULL;
         rx_result ret;
-        if (prxBindPlugin4_ != nullptr)
+        if (prxBindPlugin6_ != nullptr)
+        {
+            bind_version = 6;
+            ret = prxBindPlugin6_(rx_platform::api::get_plugins_dynamic_api6(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id, &dependencies);
+        }
+        else if (prxBindPlugin5_ != nullptr)
+        {
+            bind_version = 5;
+            ret = prxBindPlugin5_(rx_platform::api::get_plugins_dynamic_api5(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id, &dependencies);
+        }
+        else if (prxBindPlugin4_ != nullptr)
         {
             bind_version = 4;
             ret = prxBindPlugin4_(rx_platform::api::get_plugins_dynamic_api4(), RX_CURRENT_SERIALIZE_VERSION, &plugin_version, &plugin_id, &dependencies);
@@ -165,6 +177,16 @@ rx_result rx_dynamic_plugin::load_plugin ()
     module_ = rx_load_library(lib_path_.c_str());
     if (module_)
     {
+        prxBindPlugin6_ = (rxBindPlugin6_t)rx_get_func_address(module_, "rxBindPlugin6");
+        if (prxBindPlugin6_)
+        {
+            return true;
+        }
+        prxBindPlugin5_ = (rxBindPlugin5_t)rx_get_func_address(module_, "rxBindPlugin5");
+        if (prxBindPlugin5_)
+        {
+            return true;
+        }
         prxBindPlugin4_ = (rxBindPlugin4_t)rx_get_func_address(module_, "rxBindPlugin4");
         if (prxBindPlugin4_)
         {
@@ -234,7 +256,7 @@ rx_plugin_info rx_dynamic_plugin::get_plugin_info () const
 
 rx_result rx_dynamic_plugin::init_plugin ()
 {
-    if (prxBindPlugin_ || prxBindPlugin2_ || prxBindPlugin3_ || prxBindPlugin4_)
+    if (prxBindPlugin_ || prxBindPlugin2_ || prxBindPlugin3_ || prxBindPlugin4_ || prxBindPlugin5_ || prxBindPlugin6_)
     {
         if (prxInitPlugin_)
         {

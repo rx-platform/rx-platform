@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  D:\RX\Native\Source\platform_api\rx_basic_types.h
+*  C:\RX\Native\Source\platform_api\rx_basic_types.h
 *
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -161,7 +161,7 @@ class rx_event : public rx_runtime
       static constexpr rx_item_type type_id = rx_item_type::rx_event_type;
   protected:
 
-      void event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data);
+      void event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data, string_view_type queue, bool state, bool remove);
 
       data::runtime_data_model get_arguemnts ();
 

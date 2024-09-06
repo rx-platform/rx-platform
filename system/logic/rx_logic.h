@@ -199,6 +199,10 @@ class method_runtime : public rx::pointers::reference_object
 
       void execute_result_received (rx_simple_value out_val, rx_result&& result, runtime_transaction_id_t id);
 
+      data::runtime_data_model get_method_inputs ();
+
+      data::runtime_data_model get_method_outputs ();
+
 
   private:
 

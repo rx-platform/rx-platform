@@ -62,7 +62,11 @@ udp_port::~udp_port()
 
 rx_result udp_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+
     auto result = status.initialize(ctx);
+    if (!result)
+        return result;
+
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
     addr = rx_gate::instance().resolve_ip4_alias(addr);
     uint16_t port = ctx.structure.get_root().get_local_as<uint16_t>("Bind.IPPort", 0);

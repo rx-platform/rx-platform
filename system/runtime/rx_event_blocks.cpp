@@ -64,12 +64,6 @@ void runtime_events::event_fired (const structure::event_data* whose, rx_simple_
 }
 
 
-// Class rx_platform::runtime::event_blocks::fired_event_data 
-
-
-// Class rx_platform::runtime::event_blocks::rx_events_callback 
-
-
 } // namespace event_blocks
 } // namespace runtime
 } // namespace rx_platform

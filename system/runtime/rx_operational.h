@@ -298,7 +298,7 @@ class binded_tags
 
       rx_result_with<runtime_handle_t> bind_item_with_write (const string_type& path, runtime_init_context& ctx, binded_callback_t callback, write_callback_t write_callback);
 
-      rx_result_with<runtime_handle_t> connect_item (const string_type& path, uint32_t rate, runtime_init_context& ctx, binded_callback_t callback);
+      rx_result_with<runtime_handle_t> connect_item (const string_type& path, uint32_t rate, runtime_init_context& ctx, binded_callback_t callback, tag_blocks::binded_write_result_callback_t write_callback, tag_blocks::binded_execute_result_callback_t execute_callback);
 
       rx_result write_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id);
 
@@ -334,7 +334,7 @@ class binded_tags
 
       void write_result_arrived (binded_write_result_callback_t whose, write_result_data&& data);
 
-      void execute_result_arrived (tags_callback_ptr whose, execute_result_data&& data);
+      void execute_result_arrived (binded_execute_result_callback_t whose, execute_result_data&& data);
 
       void runtime_stopped (runtime_stop_context& ctx);
 

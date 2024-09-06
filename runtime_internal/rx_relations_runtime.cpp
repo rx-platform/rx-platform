@@ -166,7 +166,7 @@ std::vector<rx_result_with<runtime_handle_t> > remote_relation_connector::connec
         ret_values.reserve(count);
         for (size_t i = 0; i < count; i++)
         {
-            auto my_handle = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
+            auto my_handle = rx_get_new_handle();
             auto vp_smart_ptr = std::make_unique<relation_value_point>(this, my_handle);
             auto vp_ptr = vp_smart_ptr.get();
             path_buffer = "{";

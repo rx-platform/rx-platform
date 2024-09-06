@@ -79,6 +79,7 @@ rx_result relation_data::initialize_relation (runtime::runtime_init_context& ctx
 	object_directory = ctx.meta.path;
 	resolver_user_.my_relation = smart_this();
 	context_ = ctx.context;
+	value.value_opt[structure::value_opt_persistent] = true;
 	connections.context = context_;
 	auto result = implementation_->initialize_relation(ctx);
 	if (result)
@@ -388,7 +389,6 @@ rx_result relation_data::write_value (write_data&& data, runtime_process_context
 	auto result =  value.write_value(std::move(data), ctx, changed);
 	if (result && changed)
 	{
-		ctx->runtime_dirty();
 		if (my_state_ == relation_state::local_domain
 			|| my_state_ == relation_state::same_domain
 			|| my_state_ == relation_state::remote)
@@ -927,7 +927,7 @@ rx_value relation_value_data::get_value (runtime_process_context* ctx) const
 		return value;
 }
 
-rx_result relation_value_data::write_value (context_write_data&& data, structure::write_task* task, runtime_process_context* ctx)
+rx_result relation_value_data::write_value (context_write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx)
 {
 	if (ctx->get_mode().is_off())
 		return "Runtime if in Off state!";
@@ -936,13 +936,13 @@ rx_result relation_value_data::write_value (context_write_data&& data, structure
 		return "Test mode mismatch!";
 
 	security::secured_scope _(data.identity);
-	return parent->write_tag(handle, std::move(data), task, ctx);
+	return parent->write_tag(handle, std::move(data), std::move(task), ctx);
 }
 
-rx_result relation_value_data::execute (context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
+rx_result relation_value_data::execute (context_execute_data&& data, std::unique_ptr<structure::execute_task> task, runtime_process_context* ctx)
 {
 	security::secured_scope _(data.identity);
-	return parent->execute_tag(handle, std::move(data), task, ctx);
+	return parent->execute_tag(handle, std::move(data), std::move(task), ctx);
 }
 
 
@@ -980,12 +980,12 @@ rx_result_with<relations::relation_value_data*> relation_connections::connect_ta
 	return emplace_result;
 }
 
-rx_result relation_connections::write_tag (runtime_handle_t item, context_write_data&& data, structure::write_task* task, runtime_process_context* ctx)
+rx_result relation_connections::write_tag (runtime_handle_t item, context_write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx)
 {
 	if (connector_)
 	{
-		auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
-		pending_tasks_.emplace(new_trans, task);
+		auto new_trans = rx_get_new_transaction_id();
+		pending_tasks_.emplace(new_trans, std::move(task));
 		data.transaction_id = new_trans;
 		rx_result result;
 		if (std::holds_alternative<rx_simple_value>(data.data))
@@ -1006,12 +1006,12 @@ rx_result relation_connections::write_tag (runtime_handle_t item, context_write_
 	}
 }
 
-rx_result relation_connections::execute_tag (runtime_handle_t item, context_execute_data&& data, structure::execute_task* task, runtime_process_context* ctx)
+rx_result relation_connections::execute_tag (runtime_handle_t item, context_execute_data&& data, std::unique_ptr<structure::execute_task> task, runtime_process_context* ctx)
 {
 	if (connector_)
 	{
-		auto new_trans = rx_internal::sys_runtime::platform_runtime_manager::get_new_transaction_id();
-		pending_execute_tasks_.emplace(new_trans, task);
+		auto new_trans = rx_get_new_transaction_id();
+		pending_execute_tasks_.emplace(new_trans, std::move(task));
 		data.transaction_id = new_trans;
 		rx_result result;
 		if(std::holds_alternative<rx_simple_value>(data.data))

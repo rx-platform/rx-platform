@@ -78,6 +78,7 @@ rx_result mqtt_json_mapper::initialize_mapper (runtime::runtime_init_context& ct
 		return result;
 
 
+	data_topic_ = ctx.get_item_static(".DataTopic", ""s);
 	model_ = get_data_type();
 
 	return true;
@@ -98,7 +99,7 @@ void mqtt_json_mapper::update_publish_from_value (rx_value&& val, mqtt_common::m
 	}
 	else
 	{
-		auto result = model_.fill_runtime_value(rt, model_, val);
+		auto result = model_.fill_runtime_value(rt, val);
 		if (!result)
 		{
 			MQTT_LOG_WARNING("mqtt_json_mapper", 200, "Mapped value in wrong format!"s + result.errors_line());
@@ -231,6 +232,8 @@ rx_port_impl_ptr mqtt_simple_client_endpoint::get_port ()
 
 rx_protocol_result_t mqtt_simple_client_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
 {
+
+
 	mqtt_simple_client_endpoint* me = (mqtt_simple_client_endpoint*)reference->user_data;
 
 	me->decoder_.init_decoder([me](recv_protocol_packet packet)
@@ -257,6 +260,8 @@ rx_protocol_result_t mqtt_simple_client_endpoint::connected_function (rx_protoco
 
 rx_protocol_result_t mqtt_simple_client_endpoint::disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason)
 {
+
+
 	mqtt_simple_client_endpoint* me = (mqtt_simple_client_endpoint*)reference->user_data;
 	if (me->port_)
 		me->port_->disconnected();
@@ -286,6 +291,8 @@ rx_protocol_result_t mqtt_simple_client_endpoint::received_function (rx_protocol
 
 uint16_t mqtt_simple_client_endpoint::start_transaction (mqtt_common::mqtt_transaction* trans)
 {
+
+
 	if (is_connected_ || connect_transaction_ && trans->get_trans_id() == 0)
 	{
 		auto alloc_result = port_->alloc_io_buffer();
@@ -315,7 +322,7 @@ uint16_t mqtt_simple_client_endpoint::start_transaction (mqtt_common::mqtt_trans
 
 				auto send_packet = rx_create_send_packet(0, &buff, 0, 0);
 				auto result = rx_move_packet_down(&stack_, send_packet);
-
+				
 				if (port_)
 					port_->status.sent_packet();
 
@@ -384,6 +391,7 @@ rx_protocol_result_t mqtt_simple_client_endpoint::received_packet (rx_protocol_s
 
 
 		mqtt_message_type msg_type = (mqtt_message_type)(ctrl >> 4);
+
 
 		if (connect_transaction_)
 		{
@@ -561,7 +569,9 @@ rx_result mqtt_simple_client_port::initialize_runtime (runtime::runtime_init_con
 	published_.bind("Status.Published", ctx);
 	received_.bind("Status.Received", ctx);
 
-	client_id = ctx.get_item_static("Options.ClientID", "rx-platform"s);
+	client_id = ctx.get_item_static("Options.ClientID", ""s);
+	if (client_id.empty())
+		client_id = "rx-platform:"s + rx_gate::instance().get_instance_name() + ":" + rx_gate::instance().get_node_name();
 	keep_alive = ctx.get_item_static<uint16_t>("Options.KeepAlive", 0);
 
 	return true;
@@ -1036,7 +1046,7 @@ void mqtt_simple_event_mapper::port_disconnected (port_ptr_t port)
 {
 }
 
-void mqtt_simple_event_mapper::mapped_event_fired (rx_timed_value val, runtime_process_context* ctx)
+void mqtt_simple_event_mapper::mapped_event_fired (rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx)
 {
 	mqtt_publish_data data;
 	string_type topic_add;
@@ -1045,10 +1055,12 @@ void mqtt_simple_event_mapper::mapped_event_fired (rx_timed_value val, runtime_p
 	{
 		data.retain = retain_;
 		data.qos = qos_;
-		if(topic_add.empty())
-			data.topic = topic_;
-		else
-			data.topic = topic_ + "/" + topic_add;
+		data.topic = topic_;
+
+		if(!queue.empty())
+			data.topic += "/" + string_type(queue);
+		if(!topic_add.empty())
+			data.topic += "/" + topic_add;
 		
 		if (my_port_)
 			my_port_->publish(std::move(data));
@@ -1061,6 +1073,7 @@ void mqtt_simple_event_mapper::mapped_event_fired (rx_timed_value val, runtime_p
 // Class protocols::mqtt::mqtt_simple::mqtt_json_event_mapper 
 
 mqtt_json_event_mapper::mqtt_json_event_mapper()
+      : pretty_(false)
 {
 }
 
@@ -1077,7 +1090,8 @@ rx_result mqtt_json_event_mapper::initialize_mapper (runtime::runtime_init_conte
 	if (!result)
 		return result;
 
-
+	data_topic_ = ctx.get_item_static(".DataTopic", ""s);
+	pretty_ = ctx.get_item_static(".Pretty", false);
 	model_ = get_event_arguments();
 
 	return true;
@@ -1098,7 +1112,7 @@ void mqtt_json_event_mapper::update_publish_from_value (rx_timed_value val, mqtt
 	}
 	else
 	{
-		auto result = model_.fill_runtime_value(rt, model_, val);
+		auto result = model_.fill_runtime_value(rt, val);
 		if (!result)
 		{
 			MQTT_LOG_WARNING("mqtt_json_mapper", 200, "Mapped event in wrong format!"s + result.errors_line());
@@ -1109,23 +1123,50 @@ void mqtt_json_event_mapper::update_publish_from_value (rx_timed_value val, mqtt
 	data.content_type = "application/json";
 	data.utf_string = true;
 
-	serialization::json_writer writer;
-
-	writer.write_header(STREAMING_TYPE_MESSAGE, 0);
-	auto result = writer.write_init_values(nullptr, rt);
-	if (result)
+	if (pretty_)
 	{
-		result = writer.write_footer();
+		serialization::pretty_json_writer writer;
+
+		writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+		auto result = writer.write_init_values(nullptr, rt);
 		if (result)
 		{
-			topic_add = rt.get_value_static("Identity", ""s);
-			string_type expr = writer.get_string();
-			if (!expr.empty())
+			result = writer.write_footer();
+			if (result)
 			{
-				data.data.resize(expr.size());
-				memcpy(&data.data[0], &expr[0], expr.size());
-			}
+				if (!data_topic_.empty())
+					topic_add = rt.get_value_static(data_topic_, ""s);
+				string_type expr = writer.get_string();
+				if (!expr.empty())
+				{
+					data.data.resize(expr.size());
+					memcpy(&data.data[0], &expr[0], expr.size());
+				}
 
+			}
+		}
+	}
+	else
+	{
+		serialization::json_writer_type<serialization::json_writer_data> writer;
+
+		writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+		auto result = writer.write_init_values(nullptr, rt);
+		if (result)
+		{
+			result = writer.write_footer();
+			if (result)
+			{
+				if (!data_topic_.empty())
+					topic_add = rt.get_value_static(data_topic_, ""s);
+				string_type expr = writer.get_string();
+				if (!expr.empty())
+				{
+					data.data.resize(expr.size());
+					memcpy(&data.data[0], &expr[0], expr.size());
+				}
+
+			}
 		}
 	}
 }

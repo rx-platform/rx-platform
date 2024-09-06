@@ -116,6 +116,9 @@ int init_common_result = RX_ERROR;
 void rx_initialize_os(int rt, int hdt, rx_thread_data_t tls, int is_debug, size_t initial_heap, size_t heap_alloc, size_t heap_trigger, size_t bucket_capacity)
 {
     rx_platform_init_data common_data;
+    common_data.version = ((uint64_t)RX_COMMON_MAJOR_VERSION << 48)
+        | (((uint64_t)RX_COMMON_MINOR_VERSION & 0xffff) << 32)
+        | ((uint64_t)RX_COMMON_BUILD_NUMBER);
     common_data.rx_hd_timer = hdt;
     common_data.is_debug = is_debug;
     common_data.rx_initial_heap_size = initial_heap;
@@ -375,28 +378,28 @@ int lookup(char *line, char *pattern, char **value)
 }
 
 
-#define _PATH_PROC_CPUINFO	"/proc/cpuinfo"
+#define _PATH_PROC_CPUINFO	"lscpu"
 
 void rx_collect_processor_info(char* buffer, size_t buffer_size, size_t* count)
 {
-    FILE *fp = fopen(_PATH_PROC_CPUINFO,"r");
+    FILE* fp = popen(_PATH_PROC_CPUINFO, "r");
     char buf[BUFSIZ];
-    char* model_name=NULL;
+    char* model_name = NULL;
     /* details */
     while (fgets(buf, sizeof(buf), fp) != NULL) {
-        if (lookup(buf, "model name", &model_name)) ;
+        if (lookup(buf, "Model name", &model_name));
         //else if (lookup(buf, "cpu cores", &cores)) ;
         else
             continue;
     }
-    if(model_name!=NULL)
+    if (model_name != NULL)
     {
-        strcpy(buffer,model_name);
+        strcpy(buffer, model_name);
         rx_heap_free(model_name);
     }
     else
     {
-        buffer[0]='\0';
+        buffer[0] = '\0';
     }
     *count = (size_t)get_nprocs_conf();
 }
@@ -708,13 +711,22 @@ int rx_file_delete(const char* path)
 	{
 		return RX_ERROR;
 	}
-	else
-		return RX_OK;
+    else
+    {
+        return RX_OK;
+    }
 }
 
 int rx_file_rename(const char* old_path, const char* new_path)
 {
-	return RX_ERROR;
+    if (rename(old_path, new_path) > 0)
+    {
+        return RX_ERROR;
+    }
+    else
+    {
+        return RX_OK;
+    }
 }
 
 
@@ -723,10 +735,12 @@ int rx_file_exsist(const char* path)
     int ret = access(path, F_OK);
     if(ret<0)
     {
-        return 0;
+        return RX_ERROR;
     }
     else
-        return 1;
+    {
+        return RX_OK;
+    }
 }
 // xstat stuff
 

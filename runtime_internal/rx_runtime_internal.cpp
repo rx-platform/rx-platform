@@ -210,26 +210,6 @@ void platform_runtime_manager::get_applications (api::query_result& result, cons
 	}
 }
 
-runtime_handle_t platform_runtime_manager::get_new_handle ()
-{
-	static std::atomic<runtime_handle_t> g_handle(1);
-	runtime_handle_t ret = g_handle++;
-	if (!ret)// avoid zero
-		return get_new_handle();
-	else
-		return ret;
-}
-
-runtime_transaction_id_t platform_runtime_manager::get_new_transaction_id ()
-{
-	static std::atomic<runtime_transaction_id_t> g_trans_id(1);
-	runtime_transaction_id_t ret = g_trans_id++;
-	if (!ret)// avoid zero
-		return get_new_handle();
-	else
-		return ret;
-}
-
 void platform_runtime_manager::stop_all ()
 {
 	std::map<rx_thread_handle_t, std::vector<rx_application_ptr> > apps;

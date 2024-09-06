@@ -345,6 +345,11 @@ extern "C" {
 	{
 		g_runtime_lock->unlock();
 	}
+	RX_PLATFORM_API runtime_transaction_id_t rxGetNewUniqueId()
+	{
+		
+		return rx_gate::instance().get_new_unique_id();
+	}
 
 	RX_PLATFORM_API rx_result_struct rxRegisterSourceRuntime(uintptr_t plugin, const rx_node_id_struct* id, plugin_source_register_data construct_data)
 	{
@@ -667,11 +672,37 @@ extern "C" {
 	{
 		runtime::runtime_init_context* self = (runtime::runtime_init_context*)ctx;
 		*rt_ctx = self->context;
-		auto result = self->connect_item(path,  rate
-			, callback ? [callback](const rx_value& val)
+		tag_blocks::binded_callback_t callback_f;
+		tag_blocks::binded_write_result_callback_t write_callback_f;
+		tag_blocks::binded_execute_result_callback_t execute_callback_f;
+
+		if (callback)
+		{
+			if (callback->callback)
 			{
-				callback->callback(callback->target, val.c_ptr());
-			} : runtime::tag_blocks::binded_callback_t());
+				callback_f = [callback](const rx_value& val)
+					{
+						callback->callback(callback->target, val.c_ptr());
+					};
+			}
+			if (callback->write_callback)
+			{
+				write_callback_f = [callback](runtime_transaction_id_t id, rx_result result)
+					{
+						callback->write_callback(callback->target, id, result.move());
+					};
+			}
+			if (callback->execute_callback)
+			{
+				execute_callback_f = [callback](runtime_transaction_id_t id, rx_result result, rx_simple_value output)
+					{
+						callback->execute_callback(callback->target, output.move(), id, result.move());
+					};
+			}
+		}
+
+		auto result = self->connect_item(path, rate
+			, callback_f, write_callback_f, execute_callback_f);
 		if (result)
 		{
 			*handle = result.value();
@@ -812,6 +843,12 @@ extern "C" {
 		return self->execute_connected(handle, values::rx_simple_value(std::move(va)), trans_id).move();
 	}
 
+	RX_PLATFORM_API rx_result_struct rxCtxWriteBinded(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id)
+	{
+		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
+		return self->set_value(handle, values::rx_simple_value(std::move(va)), tag_blocks::binded_write_result_callback_t()).move();
+	}
+
 	RX_PLATFORM_API void rxCtxSetRemotePending(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val)
 	{
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
@@ -901,6 +938,8 @@ platform_api g_api;
 platform_api2 g_api2;
 platform_api3 g_api3;
 platform_api4 g_api4;
+platform_api5 g_api5;
+platform_api6 g_api6;
 
 namespace api
 {
@@ -1079,6 +1118,7 @@ void bind_plugins_dynamic_api()
 	g_api4.runtime.prxInitCtxGetSourceValues = rxInitCtxGetSourceValues;
 	g_api4.runtime.prxInitCtxGetItemMeta = rxInitCtxGetItemMeta;
 	g_api4.runtime.prxInitCtxGetDataType = rxInitCtxGetDataType;
+	g_api4.runtime.prxInitCtxConnectItem = rxInitCtxConnectItem;
 
 
 	g_api4.runtime.prxStartCtxGetCurrentPath = rxStartCtxGetCurrentPath;
@@ -1089,8 +1129,120 @@ void bind_plugins_dynamic_api()
 	g_api4.runtime.prxCtxGetValue = rxCtxGetValue;
 	g_api4.runtime.prxCtxSetValue = rxCtxSetValue;
 	g_api4.runtime.prxCtxSetAsyncPending = rxCtxSetAsyncPending;
+	g_api4.runtime.prxCtxWriteConnected = rxCtxWriteConnected;
+	g_api4.runtime.prxCtxExecuteConnected = rxCtxExecuteConnected;
 
 	g_api4.storage.prxRegisterStorageType = rxRegisterStorageType;
+
+
+	g_api5.general.pWriteLog = rxWriteLog;
+	g_api5.general.pRegisterItem = rxRegisterItem;
+	g_api5.general.prxRegisterRuntimeItem = rxRegisterRuntimeItem;
+
+	g_api5.general.prxLockRuntimeManager = rxLockRuntimeManager;
+	g_api5.general.prxUnlockRuntimeManager = rxUnlockRuntimeManager;
+
+	g_api5.runtime.prxRegisterSourceRuntime = rxRegisterSourceRuntime;
+	g_api5.runtime.prxRegisterMapperRuntime = rxRegisterMapperRuntime;
+	g_api5.runtime.prxRegisterMapperRuntime3 = rxRegisterMapperRuntime3;
+	g_api5.runtime.prxRegisterFilterRuntime = rxRegisterFilterRuntime;
+	g_api5.runtime.prxRegisterStructRuntime = rxRegisterStructRuntime;
+	g_api5.runtime.prxRegisterVariableRuntime = rxRegisterVariableRuntime;
+	g_api5.runtime.prxRegisterEventRuntime = rxRegisterEventRuntime;
+
+	g_api5.runtime.prxRegisterMethodRuntime = rxRegisterMethodRuntime;
+	g_api5.runtime.prxRegisterDisplayRuntime = rxRegisterDisplayRuntime;
+	g_api5.runtime.prxRegisterProgramRuntime = rxRegisterProgramRuntime;
+
+	g_api5.runtime.prxRegisterObjectRuntime = rxRegisterObjectRuntime;
+	g_api5.runtime.prxRegisterDomainRuntime = rxRegisterDomainRuntime;
+	g_api5.runtime.prxRegisterApplicationRuntime = rxRegisterApplicationRuntime;
+	g_api5.runtime.prxRegisterPortRuntime = rxRegisterPortRuntime;
+
+	g_api5.runtime.prxRegisterRelationRuntime = rxRegisterRelationRuntime;
+	g_api5.runtime.prxRegisterDataTypeRuntime = rxRegisterDataTypeRuntime;
+
+	g_api5.runtime.prxInitCtxBindItem = rxInitCtxBindItem;
+	g_api5.runtime.prxInitCtxGetCurrentPath = rxInitCtxGetCurrentPath;
+	g_api5.runtime.prxInitCtxGetLocalValue = rxInitCtxGetLocalValue;
+	g_api5.runtime.prxInitCtxSetLocalValue = rxInitCtxSetLocalValue;
+	g_api5.runtime.prxInitCtxGetMappingValues = rxInitCtxGetMappingValues;
+	g_api5.runtime.prxInitCtxGetSourceValues = rxInitCtxGetSourceValues;
+	g_api5.runtime.prxInitCtxGetItemMeta = rxInitCtxGetItemMeta;
+	g_api5.runtime.prxInitCtxGetDataType = rxInitCtxGetDataType;
+	g_api5.runtime.prxInitCtxConnectItem = rxInitCtxConnectItem;
+
+
+	g_api5.runtime.prxStartCtxGetCurrentPath = rxStartCtxGetCurrentPath;
+	g_api5.runtime.prxStartCtxCreateTimer = rxStartCtxCreateTimer;
+	g_api5.runtime.prxStartCtxGetLocalValue = rxStartCtxGetLocalValue;
+	g_api5.runtime.prxStartCtxSubscribeRelation = rxStartCtxSubscribeRelation;
+
+	g_api5.runtime.prxCtxGetValue = rxCtxGetValue;
+	g_api5.runtime.prxCtxSetValue = rxCtxSetValue;
+	g_api5.runtime.prxCtxSetAsyncPending = rxCtxSetAsyncPending;
+	g_api5.runtime.prxCtxWriteConnected = rxCtxWriteConnected;
+	g_api5.runtime.prxCtxExecuteConnected = rxCtxExecuteConnected;
+	g_api5.runtime.prxCtxWriteBinded = rxCtxWriteBinded;
+
+	g_api5.storage.prxRegisterStorageType = rxRegisterStorageType;
+
+
+
+	g_api6.general.pWriteLog = rxWriteLog;
+	g_api6.general.pRegisterItem = rxRegisterItem;
+	g_api6.general.prxRegisterRuntimeItem = rxRegisterRuntimeItem;
+
+	g_api6.general.prxLockRuntimeManager = rxLockRuntimeManager;
+	g_api6.general.prxUnlockRuntimeManager = rxUnlockRuntimeManager;
+
+	g_api6.runtime.prxRegisterSourceRuntime = rxRegisterSourceRuntime;
+	g_api6.runtime.prxRegisterMapperRuntime = rxRegisterMapperRuntime;
+	g_api6.runtime.prxRegisterMapperRuntime3 = rxRegisterMapperRuntime3;
+	g_api6.runtime.prxRegisterFilterRuntime = rxRegisterFilterRuntime;
+	g_api6.runtime.prxRegisterStructRuntime = rxRegisterStructRuntime;
+	g_api6.runtime.prxRegisterVariableRuntime = rxRegisterVariableRuntime;
+	g_api6.runtime.prxRegisterEventRuntime = rxRegisterEventRuntime;
+
+	g_api6.runtime.prxRegisterMethodRuntime = rxRegisterMethodRuntime;
+	g_api6.runtime.prxRegisterDisplayRuntime = rxRegisterDisplayRuntime;
+	g_api6.runtime.prxRegisterProgramRuntime = rxRegisterProgramRuntime;
+
+	g_api6.runtime.prxRegisterObjectRuntime = rxRegisterObjectRuntime;
+	g_api6.runtime.prxRegisterDomainRuntime = rxRegisterDomainRuntime;
+	g_api6.runtime.prxRegisterApplicationRuntime = rxRegisterApplicationRuntime;
+	g_api6.runtime.prxRegisterPortRuntime = rxRegisterPortRuntime;
+
+	g_api6.runtime.prxRegisterRelationRuntime = rxRegisterRelationRuntime;
+	g_api6.runtime.prxRegisterDataTypeRuntime = rxRegisterDataTypeRuntime;
+
+	g_api6.runtime.prxInitCtxBindItem = rxInitCtxBindItem;
+	g_api6.runtime.prxInitCtxGetCurrentPath = rxInitCtxGetCurrentPath;
+	g_api6.runtime.prxInitCtxGetLocalValue = rxInitCtxGetLocalValue;
+	g_api6.runtime.prxInitCtxSetLocalValue = rxInitCtxSetLocalValue;
+	g_api6.runtime.prxInitCtxGetMappingValues = rxInitCtxGetMappingValues;
+	g_api6.runtime.prxInitCtxGetSourceValues = rxInitCtxGetSourceValues;
+	g_api6.runtime.prxInitCtxGetItemMeta = rxInitCtxGetItemMeta;
+	g_api6.runtime.prxInitCtxGetDataType = rxInitCtxGetDataType;
+	g_api6.runtime.prxInitCtxConnectItem = rxInitCtxConnectItem;
+
+
+	g_api6.runtime.prxStartCtxGetCurrentPath = rxStartCtxGetCurrentPath;
+	g_api6.runtime.prxStartCtxCreateTimer = rxStartCtxCreateTimer;
+	g_api6.runtime.prxStartCtxGetLocalValue = rxStartCtxGetLocalValue;
+	g_api6.runtime.prxStartCtxSubscribeRelation = rxStartCtxSubscribeRelation;
+
+	g_api6.runtime.prxCtxGetValue = rxCtxGetValue;
+	g_api6.runtime.prxCtxSetValue = rxCtxSetValue;
+	g_api6.runtime.prxCtxSetAsyncPending = rxCtxSetAsyncPending;
+	g_api6.runtime.prxCtxWriteConnected = rxCtxWriteConnected;
+	g_api6.runtime.prxCtxExecuteConnected = rxCtxExecuteConnected;
+	g_api6.runtime.prxCtxWriteBinded = rxCtxWriteBinded;
+	g_api6.runtime.rxGetNewUniqueId = rxGetNewUniqueId;
+
+	g_api6.storage.prxRegisterStorageType = rxRegisterStorageType;
+
+
 }
 
 const platform_api_t* get_plugins_dynamic_api()
@@ -1115,6 +1267,14 @@ const platform_api3_t* get_plugins_dynamic_api3()
 const platform_api4_t* get_plugins_dynamic_api4()
 {
 	return &g_api4;
+}
+const platform_api5_t* get_plugins_dynamic_api5()
+{
+	return &g_api5;
+}
+const platform_api6_t* get_plugins_dynamic_api6()
+{
+	return &g_api6;
 }
 
 
@@ -1151,7 +1311,7 @@ extern_timers& extern_timers::instance ()
 
 runtime_handle_t extern_timers::create_timer (plugin_job_struct* job_impl, uint32_t period, threads::job_thread* pool)
 {
-	runtime_handle_t ret = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
+	runtime_handle_t ret = rx_get_new_handle();
 	extern_timer_job::smart_ptr job_ptr = rx_create_reference<extern_timer_job>(job_impl);
 	{
 		locks::auto_lock_t _(&lock_);
@@ -1167,7 +1327,7 @@ runtime_handle_t extern_timers::create_timer (plugin_job_struct* job_impl, uint3
 
 runtime_handle_t extern_timers::create_calc_timer (plugin_job_struct* job_impl, uint32_t period, threads::job_thread* pool)
 {
-	runtime_handle_t ret = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
+	runtime_handle_t ret = rx_get_new_handle();
 	extern_timer_job::smart_ptr job_ptr = rx_create_reference<extern_timer_job>(job_impl);
 	{
 		locks::auto_lock_t _(&lock_);
@@ -1183,7 +1343,7 @@ runtime_handle_t extern_timers::create_calc_timer (plugin_job_struct* job_impl, 
 
 runtime_handle_t extern_timers::create_io_timer (plugin_job_struct* job_impl, uint32_t period)
 {
-	runtime_handle_t ret = rx_internal::sys_runtime::platform_runtime_manager::get_new_handle();
+	runtime_handle_t ret = rx_get_new_handle();
 	extern_timer_job::smart_ptr job_ptr = rx_create_reference<extern_timer_job>(job_impl);
 	{
 		locks::auto_lock_t _(&lock_);

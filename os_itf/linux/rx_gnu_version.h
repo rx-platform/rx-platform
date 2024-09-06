@@ -3,7 +3,7 @@
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 2
 #define RX_HAL_MINOR_VERSION 1
-#define RX_HAL_BUILD_NUMBER 0
+#define RX_HAL_BUILD_NUMBER 1
 
 /*********************************************************************************
 
@@ -36,4 +36,5 @@
 2.0.0 added TLS to platform
 2.0.2 resolved year 2038 _TIME_BITS 64
 2.1.0 Included IP table in Ethernet Cards list, added Multi-cast
+2.1.1 Implemented rx_file_rename
 *********************************************************************************/

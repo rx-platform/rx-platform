@@ -135,9 +135,11 @@ class runtime_data_model
 
   public:
 
-      rx_result fill_runtime_value (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_value& val) const;
+      rx_result fill_runtime_value (data::runtime_values_data& data, const values::rx_value& val) const;
 
-      rx_result fill_runtime_value (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_simple_value& val) const;
+      rx_result fill_runtime_value (data::runtime_values_data& data, const values::rx_simple_value& val) const;
+
+      rx_result fill_simple_value (values::rx_simple_value& out_val, const data::runtime_values_data& in_data) const;
 
 
       elements_type elements;
@@ -150,10 +152,10 @@ class runtime_data_model
   protected:
 
   private:
+      
+      rx_result fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_value& val, std::vector<size_t>& indexes, string_array& paths) const;
 
-      rx_result fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_value& val, std::vector<size_t>& indexes) const;
-
-      rx_result fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_simple_value& val, std::vector<size_t>& indexes) const;
+      rx_result fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_simple_value& val, std::vector<size_t>& indexes, string_array& paths) const;
 
 
 

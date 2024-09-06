@@ -160,7 +160,6 @@ void displays_holder::fill_data (const data::runtime_values_data& data, runtime_
         if (it != data.children.end() && std::holds_alternative<data::runtime_values_data>(it->second))
         {
             one.fill_data(std::get< data::runtime_values_data>(it->second));
-            break;
         }
     }
 }

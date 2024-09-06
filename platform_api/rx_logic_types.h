@@ -131,10 +131,10 @@ public:
     {
     }
     template<std::size_t... I>
-    void invoke_helper(runtime_transaction_id_t id, std::vector<rx_simple_value> const& inputs,
+    void invoke_helper(runtime_transaction_id_t id, std::vector<rx_simple_value> inputs,
         std::index_sequence<I...>)
     {
-        execute(id, from_arg<Args>(inputs.at(I))...);
+        execute(id, from_arg<Args>(std::move(inputs.at(I)))...);
     }
     virtual void execute(runtime_transaction_id_t id, Args... args) = 0;
     rx_result call_value(runtime_transaction_id_t id, rx_simple_value args)
@@ -147,7 +147,7 @@ public:
             {
                 inputs.push_back(args[(int)i]);
             }
-            invoke_helper(id, inputs, std::index_sequence_for<Args...>{});
+            invoke_helper(id, std::move(inputs), std::index_sequence_for<Args...>{});
             return true;
         }
         else

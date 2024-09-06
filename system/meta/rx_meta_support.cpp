@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -106,7 +106,7 @@ rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data)
 
 namespace meta {
 
-// Class rx_platform::meta::type_check_context
+// Class rx_platform::meta::type_check_context 
 
 type_check_context::type_check_context ()
 {
@@ -201,12 +201,14 @@ rx_result_erros_t type_check_context::get_errors () const
 }
 
 
-// Class rx_platform::meta::construct_context
+// Class rx_platform::meta::construct_context 
 
 construct_context::construct_context (const string_type& name)
       : now(rx_time::now()),
         state_(active_state_t::regular),
-        current_display_(-1)
+        current_display_(-1),
+        current_program_(-1),
+        current_method_(-1)
 {
 	rt_names_.push_back(name);
 	runtime_data_.runtime_data.push_back(runtime_data_prototype());
@@ -282,12 +284,16 @@ runtime_data_type& construct_context::runtime_stack ()
 	case active_state_t::regular:
 		return runtime_data_.runtime_data;
 	case active_state_t::in_method:
-		return runtime_data_.methods.rbegin()->runtime_data;
+		RX_ASSERT(current_method_ >= 0);
+		RX_ASSERT(current_method_ < runtime_data_.methods.size());
+		return runtime_data_.methods[current_method_].runtime_data;
 	case active_state_t::in_program:
-		return runtime_data_.programs.rbegin()->runtime_data;
+		RX_ASSERT(current_program_ >= 0);
+		RX_ASSERT(current_program_ < runtime_data_.programs.size());
+		return runtime_data_.programs[current_program_].runtime_data;
 	case active_state_t::in_display:
 		RX_ASSERT(current_display_ >= 0);
-		RX_ASSERT(current_display_ <= 1);
+		RX_ASSERT(current_display_ < runtime_data_.displays.size());
 		return runtime_data_.displays[current_display_].runtime_data;
 	default:
 		RX_ASSERT(false);
@@ -300,45 +306,83 @@ void construct_context::start_program (const string_type& name)
 	RX_ASSERT(state_ == active_state_t::regular);
 	program_data_prototype temp;
 	temp.name = name;
+	int programs_size = (int)runtime_data_.programs.size();
+	for (int i = 0; i < programs_size; i++)
+	{
+		if (runtime_data_.programs[i].name == name)
+		{// override of method
+			runtime_data_.programs[i] = std::move(temp);
+			state_ = active_state_t::in_program;
+			current_program_ = i;
+			return;
+		}
+	}
+	// new method so we're good
+	current_program_ = programs_size;
 	runtime_data_.programs.emplace_back(std::move(temp));
 	state_ = active_state_t::in_program;
 }
 
-void construct_context::start_method (const string_type& name)
+void construct_context::start_method (const string_type& name, rx_node_id& inputs_id, rx_node_id& outputs_id)
 {
 	RX_ASSERT(state_ == active_state_t::regular);
 	method_data_prototype temp;
 	temp.name = name;
-	runtime_data_.methods.emplace_back(std::move(temp));
+	int methods_size = (int)runtime_data_.methods.size();
+	for (int i = 0; i < methods_size; i++)
+	{
+		if (runtime_data_.methods[i].name == name)
+		{// override of method
+			inputs_id = runtime_data_.methods[i].get_inputs_id();
+			outputs_id = runtime_data_.methods[i].get_inputs_id();
+			runtime_data_.methods[i] = std::move(temp);
+			state_ = active_state_t::in_method;
+			current_method_ = i;
+			return;
+		}
+	}
+	// new method so we're good
+	inputs_id = rx_node_id();
+	outputs_id = rx_node_id();
+	current_method_ = methods_size;
+	runtime_data_.methods.push_back(std::move(temp));
 	state_ = active_state_t::in_method;
 }
 
 void construct_context::end_program (runtime::logic_blocks::program_data data)
 {
 	RX_ASSERT(state_ == active_state_t::in_program);
-	data.name = runtime_data_.programs.rbegin()->name;
-	runtime_data_.programs.rbegin()->program = std::move(data);
+	RX_ASSERT(current_program_ >= 0 && current_program_ < runtime_data_.programs.size());
+	data.name = runtime_data_.programs[current_program_].name;
+	runtime_data_.programs[current_method_].program = std::move(data);
+	current_program_ = -1;
 	state_ = active_state_t::regular;
 }
 
-void construct_context::end_method (runtime::logic_blocks::method_data data)
+void construct_context::end_method (runtime::logic_blocks::method_data data, rx_node_id inputs_id, rx_node_id outputs_id)
 {
 	RX_ASSERT(state_ == active_state_t::in_method);
-	data.name = runtime_data_.methods.rbegin()->name;
-	runtime_data_.methods.rbegin()->method = std::move(data);
+	RX_ASSERT(current_method_ >= 0 && current_method_ < runtime_data_.methods.size());
+	data.name = runtime_data_.methods[current_method_].name;
+	runtime_data_.methods[current_method_].method = std::move(data);
+	runtime_data_.methods[current_method_].set_inputs_id(inputs_id);
+	runtime_data_.methods[current_method_].set_outputs_id(outputs_id);
+	current_method_ = -1;
 	state_ = active_state_t::regular;
 }
 
 runtime::logic_blocks::method_data& construct_context::method_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_method);
-	return runtime_data_.methods.rbegin()->method;
+	RX_ASSERT(current_method_ >= 0 && current_method_ < runtime_data_.methods.size());
+	return runtime_data_.methods[current_method_].method;
 }
 
 runtime::logic_blocks::program_data& construct_context::program_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_program);
-	return runtime_data_.programs.rbegin()->program;
+	RX_ASSERT(current_program_ >= 0 && current_program_ < runtime_data_.programs.size());
+	return runtime_data_.programs[current_program_].program;
 }
 
 void construct_context::start_display (const string_type& name)
@@ -366,7 +410,7 @@ void construct_context::start_display (const string_type& name)
 void construct_context::end_display (runtime::display_blocks::display_data data)
 {
 	RX_ASSERT(state_ == active_state_t::in_display);
-	RX_ASSERT(current_display_ >= 0);
+	RX_ASSERT(current_display_ >= 0 && current_display_ < runtime_data_.displays.size());
 	data.name = runtime_data_.displays[current_display_].name;
 	runtime_data_.displays[current_display_].display = std::move(data);
 	current_display_ = -1;
@@ -376,7 +420,7 @@ void construct_context::end_display (runtime::display_blocks::display_data data)
 runtime::display_blocks::display_data& construct_context::display_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_display);
-	RX_ASSERT(current_display_ >= 0);
+	RX_ASSERT(current_display_ >= 0 && current_display_ < runtime_data_.displays.size());
 	return runtime_data_.displays[current_display_].display;
 }
 
@@ -396,7 +440,7 @@ object_data_prototype& construct_context::object_data ()
 }
 
 
-// Class rx_platform::meta::runtime_data_prototype
+// Class rx_platform::meta::runtime_data_prototype 
 
 
 rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_simple_value value, const std::bitset<32>& value_opt)
@@ -1787,13 +1831,13 @@ bool runtime_data_prototype::check_read_only(const std::bitset<32>& to, const st
 		to[runtime::structure::value_opt_readonly] ||
 		 !from[runtime::structure::value_opt_readonly];
 }
-// Class rx_platform::meta::object_type_creation_data
+// Class rx_platform::meta::object_type_creation_data 
 
 
-// Class rx_platform::meta::type_creation_data
+// Class rx_platform::meta::type_creation_data 
 
 
-// Class rx_platform::meta::type_create_context
+// Class rx_platform::meta::type_create_context 
 
 type_create_context::type_create_context ()
 {
@@ -1817,10 +1861,10 @@ void type_create_context::reinit ()
 }
 
 
-// Class rx_platform::meta::check_record
+// Class rx_platform::meta::check_record 
 
 
-// Class rx_platform::meta::type_check_source
+// Class rx_platform::meta::type_check_source 
 
 type_check_source::type_check_source (const string_type& source, type_check_context* ctx)
       : ctx_(ctx)
@@ -1836,22 +1880,43 @@ type_check_source::~type_check_source()
 
 
 
-// Class rx_platform::meta::object_data_prototype
+// Class rx_platform::meta::object_data_prototype 
 
 
-// Class rx_platform::meta::method_data_prototype
+// Class rx_platform::meta::method_data_prototype 
 
 
-// Class rx_platform::meta::program_data_prototype
+const rx_node_id method_data_prototype::get_inputs_id () const
+{
+  return inputs_id_;
+}
+
+void method_data_prototype::set_inputs_id (rx_node_id value)
+{
+  inputs_id_ = value;
+}
+
+const rx_node_id& method_data_prototype::get_outputs_id () const
+{
+  return outputs_id_;
+}
+
+void method_data_prototype::set_outputs_id (const rx_node_id& value)
+{
+  outputs_id_ = value;
+}
 
 
-// Class rx_platform::meta::display_data_prototype
+// Class rx_platform::meta::program_data_prototype 
 
 
-// Class rx_platform::meta::dependencies_context
+// Class rx_platform::meta::display_data_prototype 
 
 
-// Class rx_platform::meta::config_part_container
+// Class rx_platform::meta::dependencies_context 
+
+
+// Class rx_platform::meta::config_part_container 
 
 
 rx_result config_part_container::serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const
@@ -2029,7 +2094,7 @@ rx_result config_part_container::deserialize (const string_type& name, base_meta
 }
 
 
-// Class rx_platform::meta::block_data_prototype
+// Class rx_platform::meta::block_data_prototype 
 
 
 rx_result block_data_prototype::add_value (const string_type& name, rx_simple_value value)

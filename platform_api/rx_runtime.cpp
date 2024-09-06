@@ -76,6 +76,9 @@ rxCtxSetValue_t api_set_value_func;
 rxCtxWriteConnected_t api_write_connected_func;
 rxCtxExecuteConnected_t api_execute_connected_func;
 rxCtxSetAsyncPending_t api_set_async_pending_func;
+rxCtxWriteBinded_t api_write_binded_func;
+
+rxGetNewUniqueId_t api_get_new_unique_id_func;
 
 
 extern "C"
@@ -766,6 +769,14 @@ void rx_runtime::destroy_timer (runtime_handle_t handle)
 {
     if (target_ && impl_)
     impl_->destroy_timer(target_, handle);
+}
+
+runtime_transaction_id_t rx_runtime::get_new_unique_id ()
+{
+    if (api_get_new_unique_id_func)
+        return api_get_new_unique_id_func();
+    else
+        return 0;
 }
 
 void rx_runtime::bind_runtime (host_runtime_def_struct* impl, void* target)

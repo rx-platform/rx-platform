@@ -134,6 +134,7 @@ rx_result build_directories(hosting::rx_host_directories& data)
 	data.manuals = "/usr/share/man/rx-platform";
 	data.license_file = "/etc/rx-platform/storage/rx-system-storage/license.txt";
 	data.http = "/etc/rx-platform/http";
+	data.upy = "/etc/rx-platform/upy";
 	if (getcwd(buff, sizeof(buff)) == NULL)
 	{
 		return rx_result::create_from_last_os_error("Error reading current directory!");

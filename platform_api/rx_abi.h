@@ -45,6 +45,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+	typedef void* runtime_ctx_ptr;
+
+
 	RX_PLATFORM_API void rxWriteLog(uintptr_t plugin, int type, const char* library, const char* source, uint16_t level, const char* code, const char* message);
 	RX_PLATFORM_API rx_result_struct rxRegisterItem(uintptr_t plugin, uint8_t item_type, const char* name, const char* path
 		, const rx_node_id_struct* id, const rx_node_id_struct* parent
@@ -54,6 +59,7 @@ extern "C" {
 		, uint32_t version, rx_time_struct modified, uint32_t stream_version, const uint8_t* data, size_t count);
 	RX_PLATFORM_API void rxLockRuntimeManager();
 	RX_PLATFORM_API void rxUnlockRuntimeManager();
+
 
 
 	typedef void(*rxWriteLog_t)(uintptr_t plugin, int type, const char* library, const char* source, uint16_t level, const char* code, const char* message);
@@ -82,7 +88,6 @@ extern "C" {
 
 
 
-	typedef void* runtime_ctx_ptr;
 
 	typedef void(*process_func_t)(void* whose);
 
@@ -312,6 +317,9 @@ extern "C" {
 	RX_PLATFORM_API rx_result_struct rxCtxExecuteConnected(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id);
 	typedef rx_result_struct(*rxCtxExecuteConnected_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, runtime_transaction_id_t trans_id);
 
+	RX_PLATFORM_API rx_result_struct rxCtxWriteBinded(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id);
+	typedef rx_result_struct(*rxCtxWriteBinded_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, runtime_transaction_id_t trans_id);
+
 
 	RX_PLATFORM_API void rxCtxSetRemotePending(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
 	typedef void(*rxCtxSetRemotePending_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
@@ -333,6 +341,11 @@ extern "C" {
 	RX_PLATFORM_API rx_result_struct rxStartCtxSubscribeRelation(start_ctx_ptr ctx, const char* name, relation_subscriber_data* callback);
 	typedef rx_result_struct(*rxStartCtxSubscribeRelation_t)(start_ctx_ptr ctx, const char* name, relation_subscriber_data* callback);
 
+
+	RX_PLATFORM_API runtime_transaction_id_t rxGetNewUniqueId();
+
+
+	typedef runtime_transaction_id_t(*rxGetNewUniqueId_t)();
 
 	typedef struct platform_runtime_api_t
 	{
@@ -372,6 +385,7 @@ extern "C" {
 		rxCtxGetValue_t prxCtxGetValue;
 		rxCtxSetValue_t prxCtxSetValue;
 		rxCtxSetRemotePending_t prxCtxSetRemotePending;
+
 
 	} platform_runtime_api;
 
@@ -474,6 +488,117 @@ extern "C" {
 	} platform_runtime_api4;
 
 
+	typedef struct platform_runtime_api5_t
+	{
+
+		rxRegisterSourceRuntime_t prxRegisterSourceRuntime;
+		rxRegisterMapperRuntime_t prxRegisterMapperRuntime;
+		rxRegisterMapperRuntime3_t prxRegisterMapperRuntime3;
+		rxRegisterFilterRuntime_t prxRegisterFilterRuntime;
+		rxRegisterStructRuntime_t prxRegisterStructRuntime;
+		rxRegisterVariableRuntime_t prxRegisterVariableRuntime;
+		rxRegisterEventRuntime_t prxRegisterEventRuntime;
+
+		rxRegisterMethodRuntime_t prxRegisterMethodRuntime;
+		rxRegisterProgramRuntime_t prxRegisterProgramRuntime;
+		rxRegisterDisplayRuntime_t prxRegisterDisplayRuntime;
+
+		rxRegisterObjectRuntime_t prxRegisterObjectRuntime;
+		rxRegisterApplicationRuntime_t prxRegisterApplicationRuntime;
+		rxRegisterDomainRuntime_t prxRegisterDomainRuntime;
+		rxRegisterPortRuntime_t prxRegisterPortRuntime;
+
+		rxRegisterRelationRuntime_t prxRegisterRelationRuntime;
+
+		rxInitCtxBindItem_t prxInitCtxBindItem;
+		rxInitCtxGetCurrentPath_t prxInitCtxGetCurrentPath;
+		rxInitCtxGetLocalValue_t prxInitCtxGetLocalValue;
+		rxInitCtxSetLocalValue_t prxInitCtxSetLocalValue;
+		rxInitCtxGetMappingValues_t prxInitCtxGetMappingValues;
+		rxInitCtxGetSourceValues_t prxInitCtxGetSourceValues;
+		rxInitCtxGetItemMeta_t prxInitCtxGetItemMeta;
+
+		rxStartCtxGetCurrentPath_t prxStartCtxGetCurrentPath;
+		rxStartCtxCreateTimer_t prxStartCtxCreateTimer;
+		rxStartCtxGetLocalValue_t prxStartCtxGetLocalValue;
+		rxStartCtxSetLocalValue_t prxStartCtxSetLocalValue;
+		rxStartCtxSubscribeRelation_t prxStartCtxSubscribeRelation;
+
+		rxCtxGetValue_t prxCtxGetValue;
+		rxCtxSetValue_t prxCtxSetValue;
+		rxCtxSetAsyncPending_t prxCtxSetAsyncPending;
+
+		rxInitCtxConnectItem_t prxInitCtxConnectItem;
+		rxCtxWriteConnected_t prxCtxWriteConnected;
+		rxCtxExecuteConnected_t prxCtxExecuteConnected;
+
+		rxInitCtxGetDataType_t prxInitCtxGetDataType;
+
+		// bind version 4
+		rxRegisterDataTypeRuntime_t prxRegisterDataTypeRuntime;
+
+		// bind version 5
+		rxCtxWriteBinded_t prxCtxWriteBinded;
+
+	} platform_runtime_api5;
+
+
+	typedef struct platform_runtime_api6_t
+	{
+
+		rxRegisterSourceRuntime_t prxRegisterSourceRuntime;
+		rxRegisterMapperRuntime_t prxRegisterMapperRuntime;
+		rxRegisterMapperRuntime3_t prxRegisterMapperRuntime3;
+		rxRegisterFilterRuntime_t prxRegisterFilterRuntime;
+		rxRegisterStructRuntime_t prxRegisterStructRuntime;
+		rxRegisterVariableRuntime_t prxRegisterVariableRuntime;
+		rxRegisterEventRuntime_t prxRegisterEventRuntime;
+
+		rxRegisterMethodRuntime_t prxRegisterMethodRuntime;
+		rxRegisterProgramRuntime_t prxRegisterProgramRuntime;
+		rxRegisterDisplayRuntime_t prxRegisterDisplayRuntime;
+
+		rxRegisterObjectRuntime_t prxRegisterObjectRuntime;
+		rxRegisterApplicationRuntime_t prxRegisterApplicationRuntime;
+		rxRegisterDomainRuntime_t prxRegisterDomainRuntime;
+		rxRegisterPortRuntime_t prxRegisterPortRuntime;
+
+		rxRegisterRelationRuntime_t prxRegisterRelationRuntime;
+
+		rxInitCtxBindItem_t prxInitCtxBindItem;
+		rxInitCtxGetCurrentPath_t prxInitCtxGetCurrentPath;
+		rxInitCtxGetLocalValue_t prxInitCtxGetLocalValue;
+		rxInitCtxSetLocalValue_t prxInitCtxSetLocalValue;
+		rxInitCtxGetMappingValues_t prxInitCtxGetMappingValues;
+		rxInitCtxGetSourceValues_t prxInitCtxGetSourceValues;
+		rxInitCtxGetItemMeta_t prxInitCtxGetItemMeta;
+
+		rxStartCtxGetCurrentPath_t prxStartCtxGetCurrentPath;
+		rxStartCtxCreateTimer_t prxStartCtxCreateTimer;
+		rxStartCtxGetLocalValue_t prxStartCtxGetLocalValue;
+		rxStartCtxSetLocalValue_t prxStartCtxSetLocalValue;
+		rxStartCtxSubscribeRelation_t prxStartCtxSubscribeRelation;
+
+		rxCtxGetValue_t prxCtxGetValue;
+		rxCtxSetValue_t prxCtxSetValue;
+		rxCtxSetAsyncPending_t prxCtxSetAsyncPending;
+
+		rxInitCtxConnectItem_t prxInitCtxConnectItem;
+		rxCtxWriteConnected_t prxCtxWriteConnected;
+		rxCtxExecuteConnected_t prxCtxExecuteConnected;
+
+		rxInitCtxGetDataType_t prxInitCtxGetDataType;
+
+		// bind version 4
+		rxRegisterDataTypeRuntime_t prxRegisterDataTypeRuntime;
+
+		// bind version 5
+		rxCtxWriteBinded_t prxCtxWriteBinded;
+
+		rxGetNewUniqueId_t rxGetNewUniqueId;
+
+	} platform_runtime_api6;
+
 	typedef struct platform_api_t
 	{
 		platform_general_api general;
@@ -517,6 +642,24 @@ extern "C" {
 		platform_storage_api storage;
 
 	} platform_api4;
+
+
+	typedef struct platform_api5_t
+	{
+		platform_general_api general;
+		platform_runtime_api5 runtime;
+		platform_storage_api storage;
+
+	} platform_api5;
+
+
+	typedef struct platform_api6_t
+	{
+		platform_general_api general;
+		platform_runtime_api6 runtime;
+		platform_storage_api storage;
+
+	} platform_api6;
 
 
 	// common host stuff, timers...
@@ -564,6 +707,10 @@ extern "C" {
 	typedef rx_result_struct(*rxBindPlugin3_t)(const struct platform_api3_t* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin);
 
 	typedef rx_result_struct(*rxBindPlugin4_t)(const struct platform_api4_t* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin, const char*** dependecies);
+	
+	typedef rx_result_struct(*rxBindPlugin5_t)(const struct platform_api5_t* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin, const char*** dependecies);
+
+	typedef rx_result_struct(*rxBindPlugin6_t)(const struct platform_api6_t* api, uint32_t host_stream_version, uint32_t* plugin_stream_version, uintptr_t* plugin, const char*** dependecies);
 
 
 
@@ -651,7 +798,7 @@ extern "C" {
 	typedef void(*rx_mapper_result_received_t)(void* whose, rx_result_struct result, runtime_transaction_id_t id, runtime_ctx_ptr ctx);
 	typedef void(*rx_mapper_execute_result_received_t)(void* whose, rx_result_struct result, runtime_transaction_id_t id, struct typed_value_type out_val, runtime_ctx_ptr ctx);
 	typedef void(*rx_mapper_event_fired_t)(void* whose, runtime_transaction_id_t id, int test
-		, rx_security_handle_t identity, struct timed_value_type data, runtime_ctx_ptr ctx);
+		, rx_security_handle_t identity, struct timed_value_type data, const char* queue, int state_machine, int remove, runtime_ctx_ptr ctx);
 
 	typedef struct plugin_mapper_def_struct_t
 	{
@@ -901,7 +1048,7 @@ extern "C" {
 	} plugin_event_def_struct;
 
 	typedef void(*rx_event_fired_t)(void* whose, runtime_transaction_id_t id, int test
-		, rx_security_handle_t identity, struct timed_value_type data);
+		, rx_security_handle_t identity, struct timed_value_type data, const char* queue, int state_machine, int remove);
 	typedef void(*rx_event_get_model_t)(void* whose, struct bytes_value_struct_t* data);
 
 	typedef struct host_event_def_struct_t

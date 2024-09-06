@@ -106,9 +106,15 @@ STATIC mp_obj_t example_awaited_add_ints(mp_obj_t a_obj, mp_obj_t b_obj)
     // Calculate the addition and convert to MicroPython object.
     return mp_obj_new_int(a + b);
 }
-STATIC mp_obj_t execution_done(mp_obj_t result_obj)
+
+// This is used to adapt a stream object to an mp_print_t interface
+void mp_stream_write_adaptor(void* self, const char* buf, size_t len) {
+    host_obj->write_log(buf, len);
+}
+STATIC mp_obj_t execution_done(mp_obj_t pid, mp_obj_t result_obj)
 {
-    host_obj->module_done(result_obj);
+    uint32_t id = mp_obj_int_get_uint_checked(pid);
+    host_obj->module_done(id, result_obj);
     return mp_obj_new_bool(1);
 }
 // This is the function which will be called from Python as cexample.add_ints(a, b).
@@ -116,22 +122,35 @@ STATIC mp_obj_t loop_function(mp_obj_t timeout_obj)
 {
     // Extract the ints from the micropython input objects.
     int timeout = mp_obj_get_int(timeout_obj);
-    size_t count, i;
+    size_t rcount, count, i;
     mp_obj_t* objs;
+    mp_obj_t* results;
     //WaitForSingleObject(host_obj->hevent, INFINITE);
-    if(!host_obj->modules_callback(timeout, &count, &objs))
+    if(!host_obj->modules_callback(timeout, &count, &objs, &rcount, &results))
     {
-        return mp_obj_new_bool(0);
+        return mp_obj_new_int(-1);
     }
     else
     {
+        for (i = 0; i < rcount; i++)
+        {
+            nlr_buf_t nlr;
+            if (nlr_push(&nlr) == 0)
+            {
+                mp_call_function_2(results[i * 3], results[i * 3 + 1], results[i * 3 + 2]);
+                nlr_pop();
+            }
+            else
+            { // uncaught exception
+                mp_obj_print_exception(&mp_plat_print, MP_OBJ_FROM_PTR(nlr.ret_val));
+            }
+        }
         runing_tasks = true;
         for (i = 0; i < count; i++)
         {
             nlr_buf_t nlr;
             if (nlr_push(&nlr) == 0)
             {
-                //mp_sched_schedule(objs[i], 0);
                 mp_call_function_0(objs[i]);
                 nlr_pop();
             }
@@ -142,24 +161,36 @@ STATIC mp_obj_t loop_function(mp_obj_t timeout_obj)
         }
         runing_tasks = false;
 
-        return mp_obj_new_bool(1);
+        return mp_obj_new_int((int)count);
     }
 }
 
 
-// This is the function which will be called from Python as cexample.add_ints(a, b).
-STATIC mp_obj_t rx_read_function(mp_obj_t ppath)
+STATIC mp_obj_t rx_write_function(mp_uint_t n_args, const mp_obj_t* args)
+{
+    mp_obj_t pid = args[0];
+    mp_obj_t ppath = args[1];
+    mp_obj_t val = args[2];
+    mp_obj_t iter = args[3];
+    const char* path = mp_obj_str_get_str(ppath);
+    uint32_t id = mp_obj_int_get_uint_checked(pid);
+    return host_obj->module_write(id, path, val, iter);
+
+}
+
+STATIC mp_obj_t rx_read_function(mp_obj_t pid, mp_obj_t ppath, mp_obj_t iter)
 {
     const char* path = mp_obj_str_get_str(ppath);
-    printf("****Primio %s\r\n", path);
-    return host_obj->module_read(path);
+    uint32_t id = mp_obj_int_get_uint_checked(pid);
+    return host_obj->module_read(id, path, iter);
 
 }
 // Define a Python reference to the function above.
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(loop_main_obj, loop_function);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(example_awaited_add_ints_obj, example_awaited_add_ints);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(execution_done_obj, execution_done);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(rx_read_function_obj, rx_read_function);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(execution_done_obj, execution_done);
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(rx_read_function_obj, rx_read_function);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(rx_write_function_obj, 4, 4, rx_write_function);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,6 +280,7 @@ STATIC const mp_rom_map_elem_t rxplatform_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_example_awaited_add_ints), MP_ROM_PTR(&example_awaited_add_ints_obj) },
     { MP_ROM_QSTR(MP_QSTR_execution_done), MP_ROM_PTR(&execution_done_obj) },
     { MP_ROM_QSTR(MP_QSTR_rx_read), MP_ROM_PTR(&rx_read_function_obj) },
+    { MP_ROM_QSTR(MP_QSTR_rx_write), MP_ROM_PTR(&rx_write_function_obj) },
     { MP_ROM_QSTR(MP_QSTR_TestHello), MP_ROM_PTR(&test_hello_type) },
 };
 STATIC MP_DEFINE_CONST_DICT(rxplatform_module_globals, rxplatform_module_globals_table);

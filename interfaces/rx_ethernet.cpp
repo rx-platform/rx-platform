@@ -372,6 +372,8 @@ rx_result ethernet_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 
     auto result = status.initialize(ctx);
+    if (!result)
+        return result; 
 
     port_name_ = rx_gate::instance().resolve_ethernet_alias(ctx.get_item_static("Options.Port", ""s));
     ether_types_ = ctx.get_item_static("Options.EtherTypes", std::vector<uint16_t>());

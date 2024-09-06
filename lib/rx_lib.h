@@ -531,6 +531,10 @@ public:
 #define RX_MODE_MASK_SIMULATE	0x04
 #define RX_MODE_MASK_OFF		0x08
 #define RX_MODE_MASK_UNASSIGNED	0x10
+#define RX_MODE_MASK_IN_ERROR	0x20
+
+#define RX_MODE_OFF_TEST_MASK (RX_MODE_MASK_IN_ERROR | RX_MODE_MASK_OFF)
+#define RX_MODE_GOOD_TEST_MASK (RX_MODE_OFF_TEST_MASK | RX_MODE_MASK_UNASSIGNED)
 
 
 struct rx_mode_type
@@ -557,6 +561,8 @@ struct rx_mode_type
 	bool reset_blocked();
 	bool turn_on();
 	bool turn_off();
+	bool set_error();
+	bool is_in_error() const;
 };
 
 ///////////////////////////////////////////////////////////////

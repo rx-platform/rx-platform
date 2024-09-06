@@ -235,10 +235,6 @@ class platform_runtime_manager
 
       void get_applications (api::query_result& result, const string_type& path);
 
-      static runtime_handle_t get_new_handle ();
-
-      static runtime_transaction_id_t get_new_transaction_id ();
-
       void stop_all ();
 
       void deinitialize ();
@@ -269,19 +265,18 @@ class platform_runtime_manager
           {
               auto ctx = runtime::algorithms::runtime_holder_algorithms<typeT>::create_init_context(*what);
               result = algorithms::just_init_runtime<typeT>(what, ctx);
-              if (result)
-              {
-                  init_data.emplace(what->meta_info().id
-                      , initialize_data_t{std::move(ctx.const_callbacks), std::move(ctx.pending_connections)});
-              }
+              if (!result)
+                  RX_ASSERT(false);
+              init_data.emplace(what->meta_info().id
+                  , initialize_data_t{ std::move(ctx.const_callbacks), std::move(ctx.pending_connections), std::move(ctx.status_data) });
           }
           return result;
       }
 
       template<class typeT>
-      void just_start_runtime(typename typeT::RTypePtr what, const_callbacks_type callbacks, pending_connections_type pending_connections)
+      void just_start_runtime(typename typeT::RTypePtr what, const_callbacks_type callbacks, pending_connections_type pending_connections, status_data_type status)
       {
-          algorithms::just_start_runtime<typeT>(what, std::move(callbacks), std::move(pending_connections));
+          algorithms::just_start_runtime<typeT>(what, std::move(callbacks), std::move(pending_connections), std::move(status));
       }
 	  template<class typeT>
 	  rx_result deinit_runtime(typename typeT::RTypePtr what, rx_result_callback&& callback)

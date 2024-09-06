@@ -41,18 +41,24 @@
 #include "upythonc.h"
 #include "upy_method.h"
 #include "model/rx_meta_internals.h"
+#include "upy_values.h"
+#include "sys_internal/rx_async_functions.h"
+#include "upython.h"
 
 host_data g_host_data{};
 
 #include "upy_method.h"
 using rx_platform::python::upy_method_execution_context;
 
-std::vector<mp_obj_t> g_modules;
 
-int get_modules(uint32_t timeout, size_t* count, mp_obj_t** objs)
+std::vector<mp_obj_t> g_modules;
+std::vector<mp_obj_t> g_results;
+
+int get_modules(uint32_t timeout, size_t* count, mp_obj_t** objs, size_t* ccaunt, mp_obj_t** cobjs)
 {
     g_modules.clear();
-    bool ret = rx_platform::python::upy_thread::instance().get_modules(timeout, g_modules);
+    g_results.clear();
+    bool ret = rx_platform::python::upy_thread::instance().get_modules(timeout, g_modules, g_results);
     if (!ret)
         return 0;
     if (!g_modules.empty())
@@ -64,42 +70,62 @@ int get_modules(uint32_t timeout, size_t* count, mp_obj_t** objs)
     {
         *count = 0;
     }
+    if (!g_results.empty())
+    {
+        *cobjs = &g_results[0];
+        *ccaunt = g_results.size()/3;
+    }
+    else
+    {
+        *ccaunt = 0;
+    }
     return 1;
 }
-void module_done(mp_obj_t result)
+void module_done(uint32_t id, mp_obj_t result)
 {
-    uint32_t id = (uint32_t)mp_obj_get_int(result);
-    bool ret = rx_platform::python::upy_thread::instance().transaction_ended(id, 0, 0);
+    if(mp_obj_is_exception_instance(result))
+        bool ret = rx_platform::python::upy_thread::instance().transaction_ended(id, 0, result);
+    else
+        bool ret = rx_platform::python::upy_thread::instance().transaction_ended(id, result, 0);
 }
 
-mp_obj_t module_read(const char* path)
+mp_obj_t module_read(uint32_t id, const char* path, mp_obj_t iter)
 {
-    rx_platform::python::upy_thread::instance().read(path);
-    return mp_const_none;
+    return rx_platform::python::upy_thread::instance().read(id, path, iter);
 }
-mp_obj_t module_write(const char* path, mp_obj_t what)
+mp_obj_t module_write(uint32_t id, const char* path, mp_obj_t what, mp_obj_t iter)
 {
-    return mp_obj_new_bool(0);
+    return rx_platform::python::upy_thread::instance().write(id, path, what, iter);
+}
+void log_write(const char* data, size_t size)
+{
+    string_type temp("upyhton:");
+    temp+=string_type(data, size);
+    rx_platform::log::log_object::instance().log_event_fast(log::log_event_type::trace, "upython", "python", 100, "", nullptr, temp);
 }
 
 extern "C"
 {
-    int c_get_modules(int timeout, size_t* count, mp_obj_t** objs)
+    int c_get_modules(int timeout, size_t* count, mp_obj_t** objs, size_t* ccaunt, mp_obj_t** cobjs)
     {
-        return get_modules((uint32_t)timeout, count, objs);
+        return get_modules((uint32_t)timeout, count, objs, ccaunt, cobjs);
     }
 
-    void c_module_done(mp_obj_t result)
+    void c_module_done(uint32_t id, mp_obj_t result)
     {
-        return module_done(result);
+        return module_done(id, result);
     }
-    mp_obj_t c_module_read(const char* path)
+    mp_obj_t c_module_read(uint32_t id, const char* path, mp_obj_t iter)
     {
-        return module_read(path);
+        return module_read(id, path, iter);
     }
-    mp_obj_t c_module_write(const char* path, mp_obj_t what)
+    mp_obj_t c_module_write(uint32_t id, const char* path, mp_obj_t what, mp_obj_t iter)
     {
-        return module_write(path, what);
+        return module_write(id, path, what, iter);
+    }
+    void c_log_write(const char* data, size_t size)
+    {
+        return log_write(data, size);
     }
 }
 
@@ -171,27 +197,25 @@ string_type get_exception_string(mp_obj_t exc)
 
 rx_result_with<mp_obj_t> compile_from_str(const char* name, const char* str)
 {
-    //nlr_buf_t nlr;
-    //if (nlr_push(&nlr) == 0) {
-        mp_obj_t ret = nullptr;
-        qstr src_name = qstr_from_str(name);// 1/*MP_QSTR_*/;//MP_QSTR__lt_string_gt_;
+    nlr_buf_t nlr;
+    if (nlr_push(&nlr) == 0)
+    {
+        qstr src_name = 1/*MP_QSTR_*/;
+        if (name)
+            qstr src_name = qstr_from_str(name);
         mp_lexer_t* lex = mp_lexer_new_from_str_len(src_name, str, strlen(str), false);
-        mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_FILE_INPUT);// MP_PARSE_EVAL_INPUT);
-        ret = mp_compile(&pt, src_name, true);
-        return ret;
-   // }
-   // else {
+        mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_FILE_INPUT);
+        mp_obj_t module_fun = mp_compile(&pt, src_name, false);
+        
+        nlr_pop();
+        return module_fun;
+    }
+    else
+    {
         // uncaught exception
-       /* mp_obj_t exc = MP_OBJ_FROM_PTR(nlr.ret_val);
-        if (exc)
-        {
-            return get_exception_string(exc);
-        }
-        else
-        {
-            return "Internal error occurred";
-        }*/
-   // }
+        mp_obj_t exc = MP_OBJ_FROM_PTR(nlr.ret_val);
+        return get_exception_string(exc);
+    }
 }
 
 
@@ -211,26 +235,39 @@ mp_obj_t execute_function(mp_obj_t py_module)
 
 
 mp_obj_t eval_str(const char* name, const char* str) {
-
-    qstr src_name = 1/*MP_QSTR_*/;
-    if (name)
-        qstr src_name = qstr_from_str(name);
-    mp_lexer_t* lex = mp_lexer_new_from_str_len(src_name, str, strlen(str), false);
-    mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_EVAL_INPUT);
-    mp_obj_t module_fun = mp_compile(&pt, src_name, false);
-    mp_call_function_0(module_fun);
-    return 0;
+    nlr_buf_t nlr;
+    if (nlr_push(&nlr) == 0)
+    {
+        qstr src_name = 1/*MP_QSTR_*/;
+        if (name)
+            qstr src_name = qstr_from_str(name);
+        mp_lexer_t* lex = mp_lexer_new_from_str_len(src_name, str, strlen(str), false);
+        mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_EVAL_INPUT);
+        mp_obj_t module_fun = mp_compile(&pt, src_name, false);
+        mp_call_function_0(module_fun);
+        nlr_pop();
+        return 0;
+    }
+    else
+    {
+        // uncaught exception
+        mp_obj_t exc = MP_OBJ_FROM_PTR(nlr.ret_val);
+        mp_obj_print_exception(&mp_plat_print, exc);
+        return (mp_obj_t)nlr.ret_val;
+    }
 }
 
 mp_obj_t execute_from_str(const char* name, const char* str) {
     nlr_buf_t nlr;
     if (nlr_push(&nlr) == 0)
     {
-        qstr src_name = 1/*MP_QSTR_*/;
-        if(name)
-            qstr src_name = qstr_from_str(name);
-        mp_lexer_t* lex = mp_lexer_new_from_str_len(src_name, str, strlen(str), false);
+       /* mp_lexer_t* lex = mp_lexer_new_from_file("C:\\RX\\Native\\Storage\\upy_app\\cvejo.py");
+	    mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_FILE_INPUT);
+	    mp_obj_t module_fun = mp_compile(&pt, lex->source_name, false);
+	    mp_call_function_0(module_fun);*/
+        mp_lexer_t* lex = mp_lexer_new_from_str_len(MP_QSTR__lt_stdin_gt_, str, strlen(str), false);
         mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_FILE_INPUT);
+        qstr src_name = lex->source_name;
         mp_obj_t module_fun = mp_compile(&pt, src_name, false);
         mp_call_function_0(module_fun);
         nlr_pop();
@@ -346,6 +383,14 @@ string_type get_python_value(const std::variant<rx_simple_value, std::vector<rx_
         {
             return "\""s + rx_val.get_string() + "\"";
         }
+        else if (rx_val.get_type() == RX_BOOL_TYPE)
+        {
+            return rx_val.get_bool() ? "True" : "False";
+        }
+        else
+        {
+            return rx_val.to_string();
+        }
     }
     return "None";
 }
@@ -353,7 +398,8 @@ string_type get_python_value(const std::variant<rx_simple_value, std::vector<rx_
 // Class rx_platform::python::upy_thread 
 
 upy_thread::upy_thread()
-      : has_job_(false)
+      : has_job_(false),
+        single_result_callback_(0)
     , threads::thread("upython", RX_DOMAIN_PYTHON)
 {
 }
@@ -367,7 +413,12 @@ upy_thread::~upy_thread()
 
 uint32_t upy_thread::handler ()
 {
+
+    UPYTHON_LOG_INFO("upy_thread", 900, "Starting micropython thread.");
+
     register_host(&g_host_data);
+
+
     init_script_engine();
 
     nlr_buf_t nlr;
@@ -382,6 +433,7 @@ uint32_t upy_thread::handler ()
 
             execute_from_str(one.first.c_str(), one.second.c_str());
         }
+        single_result_callback_ = mp_load_global(qstr_from_str("internal_set_rx_platform_result"));
 
         for (const auto& one : file_modules_)
         {
@@ -391,15 +443,19 @@ uint32_t upy_thread::handler ()
 
             execute_from_str(nullptr, one.second.c_str());
         }
-
+        nlr_pop();
     }
     else
     {
         // uncaught exception
         mp_obj_t exc = MP_OBJ_FROM_PTR(nlr.ret_val);
+        string_type err = get_exception_string(exc);
         mp_obj_print_exception(&mp_plat_print, exc);
         return -1;// (mp_obj_t)nlr.ret_val;
     }
+
+    UPYTHON_LOG_INFO("upy_thread", 900, "Exiting micropython thread.");
+
 
     return 0;
 }
@@ -409,7 +465,7 @@ void upy_thread::include (upy_module_ptr what)
     bool was_empty = false;
     {
         locks::auto_lock_t dummy(&jobs_lock_);
-        was_empty = modules_.empty();
+        was_empty = modules_.empty() && results_.empty();
         modules_.push_back(what);
     }
 
@@ -433,6 +489,7 @@ rx_result upy_thread::start_script (const std::vector<std::pair<string_type, str
     g_host_data.module_done = c_module_done;
     g_host_data.module_read = c_module_read;
     g_host_data.module_write = c_module_write;
+    g_host_data.write_log = c_log_write;
     register_host(&g_host_data);
 
     start();
@@ -451,28 +508,47 @@ void upy_thread::stop_script ()
         CloseHandle(g_host_data.hevent);
 }
 
-bool upy_thread::wait (std::vector<upy_module_ptr>& queued, uint32_t timeout)
+bool upy_thread::wait (modules_type& queued, results_type& results, uint32_t timeout)
 {
     if (RX_WAIT_0 != has_job_.wait_handle(timeout))
         return false;
 
     locks::auto_lock_t dummy(&jobs_lock_);
 
-    RX_ASSERT(!modules_.empty());
+    RX_ASSERT(!(modules_.empty() && results_.empty()));
     queued.assign(modules_.begin(), modules_.end());
     modules_.clear();
+    results = std::move(results_);
+    results_ = results_type();
 
     return true;
 }
 
-bool upy_thread::get_modules (uint32_t timeout, std::vector<mp_obj_t>& modules)
+bool upy_thread::get_modules (uint32_t timeout, std::vector<mp_obj_t>& modules, std::vector<mp_obj_t>& results)
 {
-    std::vector<upy_module_ptr> queued;
+
+    modules_type queued;
+    results_type queued_results;
 
     modules.clear();
 
-    if (wait(queued, timeout))
+    if (wait(queued, queued_results, timeout))
     {
+
+        for (auto& obj : queued_results)
+        {
+            auto module_result = obj->process_module();
+            if (module_result.func && module_result.iter)
+            {
+                results.push_back(module_result.func);
+                results.push_back(module_result.iter);
+                results.push_back(module_result.value);
+            }
+            else
+            {
+                RX_ASSERT(false);
+            }
+        }
         for (auto& obj : queued)
         {
             if (!obj)
@@ -519,21 +595,47 @@ upy_thread& upy_thread::instance ()
     return g_obj;
 }
 
-void upy_thread::append (job_ptr pjob)
+void upy_thread::append_result (upy_callback_ptr data)
 {
+    bool was_empty = false;
+    {
+        locks::auto_lock_t dummy(&jobs_lock_);
+        was_empty = modules_.empty() && results_.empty();
+        results_.push_back(std::move(data));
+    }
+
+    if (was_empty)
+        has_job_.set();
 }
 
-void upy_thread::read (const string_type& path)
+mp_obj_t upy_thread::read (runtime_transaction_id_t id, const string_type& path, mp_obj_t iter)
 {
+    auto it = waited_modules_.find(id);
+    if (it != waited_modules_.end())
+    {
+        it->second->read(path, iter, single_result_callback_);
+    }
+    return 0;
+}
+
+mp_obj_t upy_thread::write (runtime_transaction_id_t id, const string_type& path, mp_obj_t val, mp_obj_t iter)
+{
+    auto it = waited_modules_.find(id);
+    if (it != waited_modules_.end())
+    {
+        it->second->write(path, val, iter, single_result_callback_);
+    }
+    return 0;
 }
 
 
 // Class rx_platform::python::upy_module 
 
-upy_module::upy_module (const string_type& script, const string_type& eval_script)
+upy_module::upy_module (const string_type& script, const string_type& eval_script, platform_item_ptr item)
       : script_(script),
         eval_script_(eval_script),
-        py_module_(0)
+        py_module_(0),
+        item_(std::move(item))
 {
 }
 
@@ -558,47 +660,29 @@ upy_module_process_data upy_module::process_module ()
             if (exc)
             {
                 result = get_exception_string(exc);
-                std::vector<upy_method_execution_context*> temp_array;
+                contexts_type temp_array;
                 {
                     locks::auto_lock_t _(&contexts_lock_);
-                    temp_array = contexts_;
-                    contexts_.clear();
+                    temp_array = std::move(contexts_);
+                    contexts_ = contexts_type();
                 }
-                for (auto ctx : temp_array)
+                for (auto& ctx : temp_array)
                 {
                     ctx->execution_complete(rx_result(result.errors()));
                 }
             }
-            //mp_map_t* map = &mp_obj_module_get_globals(py_module_)->map;
-            //for (size_t i = 0; i < map->alloc; i++) {
-            //    if (mp_map_slot_is_filled(map, i)) {
-            //        // Entry in module global scope may be generated programmatically
-            //        // (and thus be not a qstr for longer names). Avoid turning it in
-            //        // qstr if it has '_' and was used exactly to save memory.
-            //        const char* name = mp_obj_str_get_str(map->table[i].key);
-            //        if (*name != '_') {
-            //            qstr qname = mp_obj_str_get_qstr(map->table[i].key);
-            //            mp_store_name(qname, map->table[i].value);
-            //        }
-            //    }
-            //}
-
-       //     mp_obj_t func = 0;
-       //     mp_load_method(py_module_, qstr_from_str("py_process"), &func);
-       //     auto gl = mp_obj_module_get_globals(py_module_);
-       ////     auto fn = mp_obj_dict_get(gl, mp_obj_new_str_via_qstr("py_process", strlen("py_process")));
-       //     mp_obj_t py_func =  mp_obj_dict_get(py_module_, mp_obj_new_str("py_process", strlen("py_process")));
         }
         else
         {
             result = cp_result.errors();
-            std::vector<upy_method_execution_context*> temp_array;
+            exception_text_ = result.errors_line();
+            contexts_type temp_array;
             {
                 locks::auto_lock_t _(&contexts_lock_);
-                temp_array = contexts_;
-                contexts_.clear();
+                temp_array = std::move(contexts_);
+                contexts_ = contexts_type();
             }
-            for (auto ctx : temp_array)
+            for (auto& ctx : temp_array)
             {
                 ctx->execution_complete(rx_result(result.errors()));
             }
@@ -608,18 +692,31 @@ upy_module_process_data upy_module::process_module ()
    // return py_module_;
     if (py_module_)
     {
-        std::vector<upy_method_execution_context*> temp_array;
+        contexts_type temp_array;
         {
             locks::auto_lock_t _(&contexts_lock_);
-            temp_array = contexts_;
-            contexts_.clear();
+            temp_array = std::move(contexts_);
+            contexts_ = contexts_type();
         }
-        for (auto ctx : temp_array)
+        for (auto& ctx : temp_array)
         {
            auto id = ctx->get_id();
-           pending_contexts_.emplace(id, ctx);
-           eval_str("source1", ctx->get_eval_code().c_str());
+           auto ret = pending_contexts_.emplace(id, std::move(ctx));
+           eval_str("source1", ret.first->second->get_eval_code().c_str());
            ret_data.trans_ids.push_back(id);
+        }
+    }
+    else
+    {
+        contexts_type temp_array;
+        {
+            locks::auto_lock_t _(&contexts_lock_);
+            temp_array = std::move(contexts_);
+            contexts_ = contexts_type();
+        }
+        for (auto& ctx : temp_array)
+        {
+            ctx->execution_complete(rx_result(exception_text_));
         }
     }
     return ret_data;
@@ -627,19 +724,216 @@ upy_module_process_data upy_module::process_module ()
 
 bool upy_module::transaction_ended (runtime_transaction_id_t id, mp_obj_t result, mp_obj_t exc)
 {
+
     auto it = pending_contexts_.find(id);
     if (it != pending_contexts_.end())
     {
-        it->second->execution_complete(true);
+        if (exc)
+        {
+            string_type ex = get_exception_string(exc);
+            it->second->execution_complete(rx_result(ex));
+
+        }
+        else if (result)
+        {
+            if (result == mp_const_none)
+            {
+                rx_simple_value ret_val;
+                ret_val.assign_static(std::vector<rx_simple_value>());
+                it->second->execution_complete(std::move(ret_val));
+            }
+            else if (mp_obj_is_type(result, &mp_type_tuple) || mp_obj_is_type(result, &mp_type_list))
+            {
+                size_t len;
+                mp_obj_t* items;
+                mp_obj_get_array(result, &len, &items);
+                std::vector<rx_simple_value> vals;
+                rx_result conv_result(true);
+                for (int i = 0; i < len; i++)
+                {
+                    rx_simple_value temp_val;
+                    conv_result = upy_convertor::upy_to_simple(items[i], temp_val);
+                    if (conv_result)
+                    {
+                        vals.push_back(std::move(temp_val));
+                    }
+                    else
+                    {
+                        conv_result.register_error(rx_create_string("Error converting argument ", i + 1));
+                        break;
+                    }
+                }
+                if (conv_result)
+                {
+                    rx_simple_value ret_val;
+                    ret_val.assign_static(std::move(vals));
+                    it->second->execution_complete(std::move(ret_val));
+                }
+                else
+                {
+                    it->second->execution_complete(std::move(conv_result));
+                }
+            }
+            else if (mp_obj_is_dict_or_ordereddict(result))
+            {
+                size_t len = mp_obj_dict_len(result);
+                mp_map_t* map = mp_obj_dict_get_map(result);
+
+                data::runtime_values_data data;
+                rx_result conv_result(true);
+                for (int i = 0; i < len; i++)
+                {
+                    string_type key_str;
+                    string_type val_str;
+
+                    mp_obj_t key = map->table[i].key;
+                    mp_obj_t value = map->table[i].value;
+
+                    if (mp_obj_is_qstr(key) || mp_obj_is_str(key))
+                    {
+                        key_str = mp_obj_str_get_str(key);
+                    }
+                    else
+                    {
+                        conv_result = "Dictionary is supported only with string keys!";
+                        break;
+                    }
+                    rx_simple_value temp_val;
+                    conv_result = upy_convertor::upy_to_simple(value, temp_val);
+                    if (conv_result)
+                    {
+                        data.add_value(key_str, std::move(temp_val));
+                    }
+                    else
+                    {
+                        conv_result.register_error(rx_create_string("Error converting argument ", key_str));
+                        break;
+                    }
+
+                }
+                if (conv_result)
+                {
+                    it->second->execution_complete(std::move(data));
+                }
+                else
+                {
+                    it->second->execution_complete(std::move(conv_result));
+                }
+            }
+            else
+            {
+                it->second->execution_complete(rx_result("Invalid return format"));
+            }
+        }
+        else
+        {
+            it->second->execution_complete(rx_result("Empty return value"));
+        }
+
         pending_contexts_.erase(it);
     }
     return true;
 }
 
-void upy_module::push_context (upy_method_execution_context* ctx)
+void upy_module::push_context (std::unique_ptr<upy_method_execution_context> ctx)
 {
     locks::auto_lock_t _(&contexts_lock_);
-    contexts_.push_back(ctx);
+    contexts_.push_back(std::move(ctx));
+}
+
+void upy_module::read (const string_type& path, mp_obj_t iter, mp_obj_t func)
+{
+    if (item_)
+    {
+        rx_post_function_to(item_->get_executer(), smart_this(), [this](string_type path, mp_obj_t iter, mp_obj_t func)
+            {
+                item_->read_value(path, read_result_callback_t(smart_this(), [this, iter, func](rx_result&& result, rx_value&& value)
+                    {
+                        auto callback = std::make_unique<upy_read_callback>();
+                        callback->func = func;
+                        callback->iter = iter;
+                        callback->value = std::move(value);
+                        callback->result = std::move(result);
+                        upy_thread::instance().append_result(std::move(callback));
+
+                    }));
+            }, path, iter, func);
+    }
+}
+
+void upy_module::write (const string_type& path, mp_obj_t val, mp_obj_t iter, mp_obj_t func)
+{
+    if (item_)
+    {
+        rx_simple_value temp;
+        auto result = upy_convertor::upy_to_simple(val, temp);
+        rx_post_function_to(item_->get_executer(), smart_this(), [this](string_type path, rx_simple_value value, mp_obj_t iter, mp_obj_t func)
+            {
+                item_->write_value(path, false, std::move(value), write_result_callback_t(smart_this(), [this, iter, func](uint32_t signal_level, rx_result&& result)
+                    {
+                        auto callback = std::make_unique<upy_write_callback>();
+                        callback->func = func;
+                        callback->iter = iter;
+                        callback->result = std::move(result);
+                        upy_thread::instance().append_result(std::move(callback));
+
+                    }));
+            }, path, std::move(temp), iter, func);
+    }
+}
+
+void upy_module::deinit ()
+{
+}
+
+
+// Class rx_platform::python::upy_callback_module 
+
+upy_callback_module::upy_callback_module()
+{
+}
+
+
+upy_callback_module::~upy_callback_module()
+{
+}
+
+
+
+// Class rx_platform::python::upy_read_callback 
+
+
+upy_callback_data upy_read_callback::process_module ()
+{
+    upy_callback_data ret;
+    ret.func = func;
+    ret.iter = iter;
+    ret.value = mp_const_none;
+    if (result && value.is_good())
+    {
+        auto result = upy_convertor::value_to_upy(value, &ret.value);
+        if (!result)
+        {
+            ret.value = mp_const_none;
+        }
+    }
+    return ret;
+}
+
+
+// Class rx_platform::python::upy_write_callback 
+
+
+upy_callback_data upy_write_callback::process_module ()
+{
+    upy_callback_data ret;
+    ret.func = func;
+    ret.iter = iter;
+    if (result)
+        ret.value = mp_obj_new_bool(1);
+    else
+        ret.value = mp_obj_new_bool(0);
+    return ret;
 }
 
 

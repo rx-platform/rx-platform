@@ -93,11 +93,11 @@ class upy_module : public rx::pointers::reference_object
 {
     DECLARE_REFERENCE_PTR(upy_module);
 
-    typedef std::vector<upy_method_execution_context*> contexts_type;
-    typedef std::map<runtime_transaction_id_t, upy_method_execution_context*> pending_contexts_type;
+    typedef std::vector <std::unique_ptr<upy_method_execution_context> > contexts_type;
+    typedef std::map<runtime_transaction_id_t, std::unique_ptr<upy_method_execution_context> > pending_contexts_type;
 
   public:
-      upy_module (const string_type& script, const string_type& eval_script);
+      upy_module (const string_type& script, const string_type& eval_script, platform_item_ptr item);
 
       ~upy_module();
 
@@ -106,7 +106,13 @@ class upy_module : public rx::pointers::reference_object
 
       virtual bool transaction_ended (runtime_transaction_id_t id, mp_obj_t result, mp_obj_t exc);
 
-      void push_context (upy_method_execution_context* ctx);
+      void push_context (std::unique_ptr<upy_method_execution_context> ctx);
+
+      void read (const string_type& path, mp_obj_t iter, mp_obj_t func);
+
+      void write (const string_type& path, mp_obj_t val, mp_obj_t iter, mp_obj_t func);
+
+      void deinit ();
 
 
   protected:
@@ -126,20 +132,55 @@ class upy_module : public rx::pointers::reference_object
 
       locks::slim_lock contexts_lock_;
 
+      platform_item_ptr item_;
+
+      string_type exception_text_;
+
 
 };
 
 typedef upy_module::smart_ptr upy_module_ptr;
 
+struct upy_callback_data
+{
+    mp_obj_t func;
+    mp_obj_t iter;
+    mp_obj_t value;
+};
+
+
+
+
+class upy_callback_module 
+{
+
+  public:
+      upy_callback_module();
+
+      virtual ~upy_callback_module();
+
+
+      virtual upy_callback_data process_module () = 0;
+
+
+  protected:
+
+  private:
+
+
+};
+
+typedef std::unique_ptr<upy_callback_module> upy_callback_ptr;
 
 
 
 
 
-class upy_thread : public threads::thread, 
-                   	public threads::job_thread  
+
+class upy_thread : public threads::thread  
 {
     typedef std::vector<upy_module_ptr> modules_type;
+    typedef std::vector<std::unique_ptr<upy_callback_module> > results_type;
     typedef std::map<runtime_transaction_id_t, upy_module_ptr> waited_modules_type;
 
   public:
@@ -154,22 +195,24 @@ class upy_thread : public threads::thread,
 
       void stop_script ();
 
-      bool get_modules (uint32_t timeout, std::vector<mp_obj_t>& modules);
+      bool get_modules (uint32_t timeout, std::vector<mp_obj_t>& modules, std::vector<mp_obj_t>& results);
 
       bool transaction_ended (runtime_transaction_id_t id, mp_obj_t result, mp_obj_t exc);
 
       static upy_thread& instance ();
 
-      void append (job_ptr pjob);
+      void append_result (upy_callback_ptr data);
 
-      void read (const string_type& path);
+      mp_obj_t read (runtime_transaction_id_t id, const string_type& path, mp_obj_t iter);
+
+      mp_obj_t write (runtime_transaction_id_t id, const string_type& path, mp_obj_t val, mp_obj_t iter);
 
 
   protected:
 
       uint32_t handler ();
 
-      bool wait (std::vector<upy_module_ptr>& queued, uint32_t timeout = RX_INFINITE);
+      bool wait (modules_type& queued, results_type& results, uint32_t timeout = RX_INFINITE);
 
 
   private:
@@ -187,6 +230,66 @@ class upy_thread : public threads::thread,
       locks::event has_job_;
 
       std::vector<std::pair<string_type, string_type> > file_modules_;
+
+      mp_obj_t single_result_callback_;
+
+      results_type results_;
+
+
+};
+
+
+
+
+
+
+class upy_read_callback : public upy_callback_module  
+{
+
+  public:
+
+      upy_callback_data process_module ();
+
+
+      mp_obj_t func;
+
+      mp_obj_t iter;
+
+      rx_value value;
+
+      rx_result result;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class upy_write_callback : public upy_callback_module  
+{
+
+  public:
+
+      upy_callback_data process_module ();
+
+
+      mp_obj_t func;
+
+      mp_obj_t iter;
+
+      rx_result result;
+
+
+  protected:
+
+  private:
 
 
 };

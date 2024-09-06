@@ -232,7 +232,7 @@ mapper runtime. basic implementation of an mapper runtime");
 
       virtual void mapper_result_received (rx_result&& result, runtime_transaction_id_t id, runtime_process_context* ctx);
 
-      virtual void mapped_event_fired (rx_timed_value val, runtime_process_context* ctx);
+      virtual void mapped_event_fired (rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx);
 
       virtual void mapper_execute_result_received (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id, runtime_process_context* ctx);
 
@@ -508,7 +508,7 @@ variable runtime. basic implementation of an variable runtime");
 
       virtual rx_value get_variable_input (runtime_process_context* ctx, std::vector<rx_value> sources) = 0;
 
-      virtual rx_result variable_write (write_data&& data, structure::write_task* task, runtime_process_context* ctx, runtime_sources_type& sources) = 0;
+      virtual rx_result variable_write (write_data&& data, std::unique_ptr<structure::write_task> task, runtime_process_context* ctx, runtime_sources_type& sources) = 0;
 
       virtual void process_result (runtime_transaction_id_t id, rx_result&& result);
 

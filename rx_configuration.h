@@ -28,6 +28,8 @@
 #define RX_NS_PLUGINS_NAME "plugins"
 #define RX_NS_HOST_NAME "host"
 #define RX_NS_HTTP_CLASSES_NAME "http"
+#define RX_NS_XML_CLASSES_NAME "xml"
+#define RX_NS_JSON_CLASSES_NAME "json"
 
 #define RX_NULL_ITEM_NAME "<nullptr>"
 
@@ -252,6 +254,18 @@
 #define RX_TCP_CLIENT_PORT_TYPE_ID 0xc000015
 #define RX_ETHERNET_PORT_TYPE_NAME "EthernetPort"
 #define RX_ETHERNET_PORT_TYPE_ID 0xc000016
+#define RX_FILE_PORT_TYPE_NAME "FilePort"
+#define RX_FILE_PORT_TYPE_ID 0xc0000fc
+#define RX_JSON_PORT_TYPE_NAME "JSONPort"
+#define RX_JSON_PORT_TYPE_ID 0xc0000fe
+#define RX_XML_PORT_TYPE_NAME "XMLPort"
+#define RX_XML_PORT_TYPE_ID 0xc0000ff
+
+
+#define RX_JSON_SOURCE_TYPE_NAME "JSONSource"
+#define RX_JSON_SOURCE_TYPE_ID 0xc000102
+#define RX_XML_SOURCE_TYPE_NAME "XMLSource"
+#define RX_XML_SOURCE_TYPE_ID 0xc000103
 
 
 #define RX_IP4_ROUTER_TYPE_NAME "IP4RouterPort"
@@ -341,6 +355,15 @@
 
 #define RX_ETHERNET_PORT_OPTIONS_TYPE_NAME "EthernetPortOptions"
 #define RX_ETHERNET_PORT_OPTIONS_TYPE_ID 0xc0000aa
+
+#define RX_FILE_PORT_OPTIONS_TYPE_NAME "FilePortOptions"
+#define RX_FILE_PORT_OPTIONS_TYPE_ID 0xc0000fd
+
+#define RX_JSON_PORT_OPTIONS_TYPE_NAME "JSONPortOptions"
+#define RX_JSON_PORT_OPTIONS_TYPE_ID 0xc000100
+
+#define RX_XML_PORT_OPTIONS_TYPE_NAME "XMLPortOptions"
+#define RX_XML_PORT_OPTIONS_TYPE_ID 0xc000101
 
 // runtime support structures
 #define RX_POOL_DATA_TYPE_NAME "PoolData"
@@ -735,9 +758,13 @@
 #define RX_MAIN_HTTP_DISPLAY_TYPE_ID 0xc0000b3
 #define RX_MAIN_HTTP_DISPLAY_TYPE_NAME "MainHttpDisplay"
 
-// python stuff
-#define RX_UPYTHON_METHOD_TYPE_NAME "uPtyMethod"
+// upython stuff
+#define RX_UPYTHON_METHOD_TYPE_NAME "uPyMethod"
 #define RX_UPYTHON_METHOD_TYPE_ID 0xc0000a9
+#define RX_UPYTHON_MODULE_METHOD_TYPE_NAME "uPyModuleMethod"
+#define RX_UPYTHON_MODULE_METHOD_TYPE_ID 0xc0000fa
+#define RX_UPYTHON_SCRIPT_METHOD_TYPE_NAME "uPyScriptMethod"
+#define RX_UPYTHON_SCRIPT_METHOD_TYPE_ID 0xc0000fb
 
 // discovery stuff
 #define RX_PEER_CONNECTION_TYPE_NAME "PeerConnection"
@@ -752,7 +779,7 @@
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc0000f9!!!! 
+// last is 0xc000103!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

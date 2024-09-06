@@ -532,7 +532,7 @@ void memory_object::memory_tick ()
         });
 
 
-   //heap_status_.commit(std::move(full));
+   heap_status_.commit(std::move(full));
 
 }
 

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -64,7 +64,7 @@ namespace rx_platform {
 
 namespace storage_base {
 
-// Class rx_platform::storage_base::rx_platform_storage
+// Class rx_platform::storage_base::rx_platform_storage 
 
 rx_platform_storage::rx_platform_storage()
 {
@@ -83,7 +83,7 @@ rx_result rx_platform_storage::list_storage_roles (std::vector<rx_roles_storage_
 }
 
 
-// Class rx_platform::storage_base::rx_storage_item
+// Class rx_platform::storage_base::rx_storage_item 
 
 rx_storage_item::rx_storage_item (rx_storage_item_type storage_type)
       : storage_type_(storage_type)
@@ -104,7 +104,7 @@ bool rx_storage_item::is_read_only () const
 }
 
 
-// Class rx_platform::storage_base::rx_platform_storage_type
+// Class rx_platform::storage_base::rx_platform_storage_type 
 
 rx_platform_storage_type::rx_platform_storage_type()
 {
@@ -117,7 +117,7 @@ rx_platform_storage_type::~rx_platform_storage_type()
 
 
 
-// Class rx_platform::storage_base::rx_code_storage_item
+// Class rx_platform::storage_base::rx_code_storage_item 
 
 rx_code_storage_item::rx_code_storage_item()
     : rx_storage_item(rx_storage_item_type::none)
@@ -159,9 +159,14 @@ rx_result rx_code_storage_item::close_read ()
     return "Storage can not be defined for this item";
 }
 
-rx_result rx_code_storage_item::commit_write ()
+void rx_code_storage_item::commit_write (storage_callback_t callback, runtime_transaction_id_t trans_id)
 {
-    return "Storage can not be defined for this item";
+    callback(trans_id,  "Storage can not be defined for this item");
+}
+
+rx_result rx_code_storage_item::commit_write_sync ()
+{
+    return  "Storage can not be defined for this item";
 }
 
 const string_type& rx_code_storage_item::get_item_reference () const
@@ -186,8 +191,13 @@ string_type rx_code_storage_item::get_item_path () const
     return name;
 }
 
+rx_result rx_code_storage_item::save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback)
+{
+    return RX_NOT_IMPLEMENTED;
+}
 
-// Class rx_platform::storage_base::rx_code_storage
+
+// Class rx_platform::storage_base::rx_code_storage 
 
 rx_code_storage::rx_code_storage()
 {
@@ -230,6 +240,15 @@ void rx_code_storage::preprocess_meta_data (meta_data& data)
 {
 }
 
+runtime_transaction_id_t rx_code_storage::get_new_unique_ids (size_t count)
+{
+    return 0;
+}
+
+void rx_code_storage::set_next_unique_id (runtime_transaction_id_t id)
+{
+}
+
 rx_result split_storage_reference(const string_type full_ref, string_type& type, string_type& reference)
 {
     if (full_ref.empty())
@@ -251,7 +270,7 @@ rx_result split_storage_reference(const string_type full_ref, string_type& type,
     }
     return true;
 }
-// Class rx_platform::storage_base::rx_storage_connection
+// Class rx_platform::storage_base::rx_storage_connection 
 
 
 rx_result_with<rx_storage_ptr> rx_storage_connection::get_storage (const string_type& name, hosting::rx_platform_host* host)
@@ -307,7 +326,7 @@ rx_result rx_storage_connection::list_storage_roles (std::vector<rx_roles_storag
 }
 
 
-// Class rx_platform::storage_base::rx_empty_storage
+// Class rx_platform::storage_base::rx_empty_storage 
 
 
 string_type rx_empty_storage::get_storage_info ()
@@ -349,8 +368,17 @@ void rx_empty_storage::preprocess_meta_data (meta_data& data)
 {
 }
 
+runtime_transaction_id_t rx_empty_storage::get_new_unique_ids (size_t count)
+{
+    return 0;
+}
 
-// Class rx_platform::storage_base::rx_empty_storage_connection
+void rx_empty_storage::set_next_unique_id (runtime_transaction_id_t id)
+{
+}
+
+
+// Class rx_platform::storage_base::rx_empty_storage_connection 
 
 
 string_type rx_empty_storage_connection::get_storage_reference () const
@@ -370,7 +398,7 @@ string_type rx_empty_storage_connection::get_storage_info () const
 }
 
 
-// Class rx_platform::storage_base::rx_plugin_storage
+// Class rx_platform::storage_base::rx_plugin_storage 
 
 rx_plugin_storage::rx_plugin_storage (plugin_storage_struct* impl)
       : impl_(impl)
@@ -425,8 +453,17 @@ void rx_plugin_storage::preprocess_meta_data (meta_data& data)
 {
 }
 
+runtime_transaction_id_t rx_plugin_storage::get_new_unique_ids (size_t count)
+{
+    return 0;
+}
 
-// Class rx_platform::storage_base::rx_plugin_storage_connection
+void rx_plugin_storage::set_next_unique_id (runtime_transaction_id_t id)
+{
+}
+
+
+// Class rx_platform::storage_base::rx_plugin_storage_connection 
 
 rx_plugin_storage_connection::rx_plugin_storage_connection (rx_storage_constructor_t construct_func)
       : constructor_(construct_func)
@@ -467,7 +504,7 @@ rx_result rx_plugin_storage_connection::init_connection (const string_type& stor
 }
 
 
-// Class rx_platform::storage_base::rx_plugin_storage_item
+// Class rx_platform::storage_base::rx_plugin_storage_item 
 
 rx_plugin_storage_item::rx_plugin_storage_item()
     : rx_storage_item(rx_storage_item_type::none)
@@ -514,6 +551,11 @@ rx_result rx_plugin_storage_item::commit_write ()
     return RX_NOT_IMPLEMENTED;
 }
 
+rx_result rx_plugin_storage_item::commit_write_sync ()
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
 const string_type& rx_plugin_storage_item::get_item_reference () const
 {
     static string_type ret = "Borisa!!!";
@@ -535,8 +577,13 @@ string_type rx_plugin_storage_item::get_item_path () const
     return "Borisa!!!";
 }
 
+rx_result rx_plugin_storage_item::save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback)
+{
+    return RX_NOT_IMPLEMENTED;
+}
 
-// Class rx_platform::storage_base::rx_plugin_storage_type
+
+// Class rx_platform::storage_base::rx_plugin_storage_type 
 
 rx_plugin_storage_type::rx_plugin_storage_type (const string_type& prefix, rx_storage_constructor_t construct_func)
       : prefix_(prefix),
@@ -562,7 +609,7 @@ string_type rx_plugin_storage_type::get_reference_prefix () const
 }
 
 
-// Class rx_platform::storage_base::rx_roles_storage_item
+// Class rx_platform::storage_base::rx_roles_storage_item 
 
 rx_roles_storage_item::rx_roles_storage_item()
 {
@@ -575,7 +622,7 @@ rx_roles_storage_item::~rx_roles_storage_item()
 
 
 
-// Class rx_platform::storage_base::rx_others_storage
+// Class rx_platform::storage_base::rx_others_storage 
 
 rx_others_storage::rx_others_storage()
 {
@@ -621,8 +668,17 @@ void rx_others_storage::preprocess_meta_data (meta_data& data)
 {
 }
 
+runtime_transaction_id_t rx_others_storage::get_new_unique_ids (size_t count)
+{
+    return 0;
+}
 
-// Class rx_platform::storage_base::rx_other_storage_item
+void rx_others_storage::set_next_unique_id (runtime_transaction_id_t id)
+{
+}
+
+
+// Class rx_platform::storage_base::rx_other_storage_item 
 
 rx_other_storage_item::rx_other_storage_item()
     : rx_storage_item(rx_storage_item_type::none)
@@ -664,7 +720,12 @@ rx_result rx_other_storage_item::close_read ()
     return "Storage is read-only!";
 }
 
-rx_result rx_other_storage_item::commit_write ()
+void rx_other_storage_item::commit_write (storage_callback_t callback, runtime_transaction_id_t trans_id)
+{
+    callback(trans_id, "Storage is read-only!");
+}
+
+rx_result rx_other_storage_item::commit_write_sync ()
 {
     return "Storage is read-only!";
 }
@@ -693,6 +754,11 @@ string_type rx_other_storage_item::get_item_path () const
 bool rx_other_storage_item::is_read_only () const
 {
     return true;
+}
+
+rx_result rx_other_storage_item::save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback)
+{
+    return RX_NOT_IMPLEMENTED;
 }
 
 

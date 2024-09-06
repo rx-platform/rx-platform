@@ -400,6 +400,46 @@ class mqtt_types_builder : public rx_platform_builder
 };
 
 
+
+
+
+
+class xml_types_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (configuration_data_t& config);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class json_types_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (configuration_data_t& config);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace builders
 } // namespace rx_internal
 

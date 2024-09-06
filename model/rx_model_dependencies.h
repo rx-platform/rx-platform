@@ -136,7 +136,7 @@ class local_dependecy_builder : public rx::pointers::reference_object
 
     struct builder_state
     {
-        builder_phase phase;
+        builder_phase phase = builder_phase::idle;
         objects_type::iterator objects_it;
         ports_type::iterator ports_it;
         domains_type::iterator domains_it;

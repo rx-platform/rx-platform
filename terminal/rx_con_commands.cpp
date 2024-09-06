@@ -441,6 +441,11 @@ log_command::log_command()
 {
 }
 
+log_command::log_command (const string_type& name)
+	: server_command(name)
+{
+}
+
 
 log_command::~log_command()
 {
@@ -604,7 +609,7 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 	{
 		if (help)
 		{
-			parser.print_help("log read", out);
+			parser.print_help("(log read|ll)", out);
 			return true;
 		}
 		else if(version)
@@ -1204,6 +1209,26 @@ bool copyright_command::do_console_command (std::istream& in, std::ostream& out,
 		out << lic_info;
 		return true;
 	}
+}
+
+
+// Class rx_internal::terminal::console::console_commands::ll_command 
+
+ll_command::ll_command()
+	: log_command("ll")
+{
+}
+
+
+ll_command::~ll_command()
+{
+}
+
+
+
+bool ll_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	return do_read_command(in, out, err, ctx);
 }
 
 

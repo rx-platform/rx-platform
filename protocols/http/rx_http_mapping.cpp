@@ -426,7 +426,11 @@ void rx_http_port::stack_assembled ()
 
 rx_result rx_http_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+
 	auto result = status.initialize(ctx);
+	if (!result)
+		return result;
+
 
 	return result;
 }

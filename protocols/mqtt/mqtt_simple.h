@@ -327,6 +327,8 @@ class mqtt_json_mapper : public mqtt_simple_mapper
 
       data::runtime_data_model model_;
 
+      string_type data_topic_;
+
 
 };
 
@@ -436,7 +438,7 @@ class mqtt_simple_event_mapper : public mqtt_simple_mapper_base
 
   private:
 
-      virtual void mapped_event_fired (rx_timed_value val, runtime_process_context* ctx);
+      virtual void mapped_event_fired (rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx);
 
 
 
@@ -476,6 +478,10 @@ class mqtt_json_event_mapper : public mqtt_simple_event_mapper
 
 
       data::runtime_data_model model_;
+
+      string_type data_topic_;
+
+      bool pretty_;
 
 
 };

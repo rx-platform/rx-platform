@@ -144,7 +144,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 	host_ = host;
 	rx_name_ = data.instance.name.empty() ? node_name_ : data.instance.name;
 
-	auto result = rx_internal::infrastructure::server_runtime::instance().initialize(host, data.processor, data.io);
+	auto result = rx_internal::infrastructure::server_runtime::instance().initialize(host, data);
 	if (result)
 	{
 		result = io_manager_->initialize(host, data);
@@ -407,6 +407,27 @@ string_type rx_gate::resolve_serial_alias (const string_type& what) const
 string_type rx_gate::resolve_ethernet_alias (const string_type& what) const
 {
 	return io_manager_->resolve_ethernet_alias(what);
+}
+
+runtime_transaction_id_t rx_gate::get_new_unique_id ()
+{
+	return rx_internal::infrastructure::server_runtime::instance().get_ids_manager().get_new_unique_id();
+	/*auto anchor = callback.get_anchor();
+
+	auto storage = this->host_->get_user_storage();
+	if (!storage)
+		return false;
+
+	rx_post_function_to(RX_DOMAIN_SLOW, anchor
+		, [storage= storage.move_value()]  (callback::rx_any_callback<runtime_transaction_id_t>&& callback) mutable
+		{
+			auto ret = storage->get_new_unique_id();
+
+			callback(std::move(ret));
+
+		}, std::move(callback));
+
+	return true;*/
 }
 
 

@@ -167,7 +167,7 @@ void enterprise_handler_callback::query_complete (uint64_t trans_id, uint32_t re
 
 uint64_t enterprise_handler_callback::register_request (http_request& req, http_response& resp)
 {
-	auto trans_id = sys_runtime::platform_runtime_manager::instance().get_new_transaction_id();
+	auto trans_id = rx_get_new_transaction_id();
 	enterprise_request_type trans;
 	trans.request = req;
 	trans.response = resp;

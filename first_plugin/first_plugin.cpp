@@ -959,7 +959,7 @@ void first_event::timer_tick ()
 	rx_timed_value timed;
 	timed.assign(rx_create_value_static(78.9, 66));
 	timed.set_time(rx_time::now());
-	event_fired(99, false, 0, std::move(timed));
+	event_fired(99, false, 0, std::move(timed), "theQueue", false, false);
 }
 
 

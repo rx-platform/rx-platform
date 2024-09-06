@@ -51,6 +51,7 @@
 #include "rx_configuration.h"
 #include "sys_internal/rx_inf.h"
 #include "rx_rt_item_types.h"
+#include "runtime_internal/rx_runtime_internal.h"
 
 
 namespace rx_platform {
@@ -162,12 +163,12 @@ rx_result runtime_init_context::get_item (const string_type& path, rx_simple_val
 	return tags->get_item(path, val, *this);
 }
 
-rx_result_with<runtime_handle_t> runtime_init_context::connect_item (const string_type& path, uint32_t rate, tag_blocks::binded_callback_t callback)
+rx_result_with<runtime_handle_t> runtime_init_context::connect_item (const string_type& path, uint32_t rate, tag_blocks::binded_callback_t callback, tag_blocks::binded_write_result_callback_t write_callback, tag_blocks::binded_execute_result_callback_t execute_callback)
 {
-	if(!path.empty() && path[0]=='.')
-		return tags->connect_item("."s + path, rate, *this, callback);
+	if(!path.empty() && path[0]!='.')
+		return tags->connect_item("."s + path, rate, *this, callback, write_callback, execute_callback);
 
-	return tags->connect_item(path, rate, *this, callback);
+	return tags->connect_item(path, rate, *this, callback, write_callback, execute_callback);
 }
 
 rx_time runtime_init_context::now ()

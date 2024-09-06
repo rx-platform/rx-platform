@@ -267,7 +267,7 @@ void mapper_runtime::mapper_result_received (rx_result&& result, runtime_transac
 {
 }
 
-void mapper_runtime::mapped_event_fired (rx_timed_value val, runtime_process_context* ctx)
+void mapper_runtime::mapped_event_fired (rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx)
 {
 }
 

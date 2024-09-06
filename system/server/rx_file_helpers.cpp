@@ -147,6 +147,14 @@ rx_result rx_source_file::open_write(const char* file_name)
 	else
 		return rx_result::create_from_last_os_error("Error opening file "s + file_name + " for write");
 }
+rx_result rx_source_file::open_read_write(const char* file_name)
+{
+	m_handle = rx_file(file_name, RX_FILE_OPEN_BOTH, RX_FILE_CREATE_ALWAYS);
+	if (m_handle != 0)
+		return true;
+	else
+		return rx_result::create_from_last_os_error("Error opening file "s + file_name + " for write");
+}
 rx_result rx_source_file::read_string(std::string& buff)
 {
 	if (m_handle == 0)

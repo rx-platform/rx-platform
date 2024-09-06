@@ -319,6 +319,10 @@ public:
 	  {
 		  return this->ptr_;
 	  }
+	  const ptrT* unsafe_ptr() const
+	  {
+		  return this->ptr_;
+	  }
   protected:
 
   private:

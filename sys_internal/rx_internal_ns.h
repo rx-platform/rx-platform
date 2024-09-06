@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,15 +49,15 @@ using namespace rx_platform::ns;
 namespace rx_internal {
 
 namespace internal_ns {
-template<class itemT>
-rx_result rx_save_platform_item(itemT& item)
+template<class itemTptr>
+rx_result rx_save_sync_platform_item(itemTptr item)
 {
     //rx_internal::model::algorithms::do_with_item_storage()
-    const auto& meta = item.meta_info();
+    const auto& meta = item->meta_info();
     auto storage_result = resolve_storage(meta);
     if (storage_result)
     {
-        auto item_result = storage_result.value()->get_item_storage(meta, item.get_type_id());
+        auto item_result = storage_result.value()->get_item_storage(meta, item->get_type_id());
         if (!item_result)
         {
             item_result.register_error("Error saving item "s + meta.path);
@@ -68,9 +68,57 @@ rx_result rx_save_platform_item(itemT& item)
             auto result = item_result.value()->open_for_write();
             if (result)
             {
-                result = item.serialize(item_result.value()->write_stream());
+                result = item_result.value()->write_stream().write_header(STREAMING_TYPE_OBJECT, 0);
                 if (result)
-                    result = item_result.value()->commit_write();
+                {
+                    result = item->serialize(item_result.value()->write_stream(), STREAMING_TYPE_OBJECT);
+                    if (result)
+                        item_result.value()->write_stream().write_footer();
+                }
+                if (result)
+                    result = item_result.value()->commit_write_sync();
+            }
+            return result;
+        }
+        else
+        {
+            return true;
+        }
+    }
+    else // !storage_result
+    {
+        rx_result result(storage_result.errors());
+        storage_result.register_error("Error saving item "s + meta.path);
+        return result;
+    }
+}
+template<class itemTptr>
+rx_result rx_save_platform_item(itemTptr item, storage_callback_t callback, runtime_transaction_id_t trans_id)
+{
+    const auto& meta = item->meta_info();
+    auto storage_result = resolve_storage(meta);
+    if (storage_result)
+    {
+        auto item_result = storage_result.value()->get_item_storage(meta, item->get_type_id());
+        if (!item_result)
+        {
+            item_result.register_error("Error saving item "s + meta.path);
+            return item_result.errors();
+        }
+        if (!item_result.value()->is_read_only())
+        {
+            auto result = item_result.value()->open_for_write();
+            if (result)
+            {
+                result = item_result.value()->write_stream().write_header(STREAMING_TYPE_OBJECT, 0);
+                if (result)
+                {
+                    result = item->serialize(item_result.value()->write_stream(), STREAMING_TYPE_OBJECT);
+                    if (result)
+                        item_result.value()->write_stream().write_footer();
+                }
+                if (result)
+                    item_result.value()->commit_write(std::move(callback), trans_id);
             }
             return result;
         }
@@ -87,6 +135,92 @@ rx_result rx_save_platform_item(itemT& item)
     }
 }
 
+template<class itemTptr>
+rx_result rx_save_sync_platform_meta_item(itemTptr item)
+{
+    using algorithm_type = typename itemTptr::pointee_type::algorithm_type;
+    const auto& meta = item->meta_info;
+    auto storage_result = resolve_storage(meta);
+    if (storage_result)
+    {
+        auto item_result = storage_result.value()->get_item_storage(meta, item->type_id);
+        if (!item_result)
+        {
+            item_result.register_error("Error saving item "s + meta.path);
+            return item_result.errors();
+        }
+        if (!item_result.value()->is_read_only())
+        {
+            auto result = item_result.value()->open_for_write();
+            if (result)
+            {
+                result = item_result.value()->write_stream().write_header(STREAMING_TYPE_TYPE, 0);
+                if (result)
+                {
+                    result = algorithm_type::serialize_type(*item, item_result.value()->write_stream(), STREAMING_TYPE_TYPE);
+                    if (result)
+                        item_result.value()->write_stream().write_footer();
+                }
+                if (result)
+                    result = item_result.value()->commit_write_sync();
+            }
+            return result;
+        }
+        else
+        {
+            return true;
+        }
+    }
+    else // !storage_result
+    {
+        rx_result result(storage_result.errors());
+        storage_result.register_error("Error saving item "s + meta.path);
+        return result;
+    }
+}
+template<class itemTptr>
+rx_result rx_save_platform_meta_item(itemTptr item, storage_callback_t callback, runtime_transaction_id_t trans_id)
+{
+    using algorithm_type = typename itemTptr::pointee_type::algorithm_type;
+    const auto& meta = item->meta_info;
+    auto storage_result = resolve_storage(meta);
+    if (storage_result)
+    {
+        auto item_result = storage_result.value()->get_item_storage(meta, item->type_id);
+        if (!item_result)
+        {
+            item_result.register_error("Error saving item "s + meta.path);
+            return item_result.errors();
+        }
+        if (!item_result.value()->is_read_only())
+        {
+            auto result = item_result.value()->open_for_write();
+            if (result)
+            {
+                result = item_result.value()->write_stream().write_header(STREAMING_TYPE_TYPE, 0);
+                if (result)
+                {
+                    result = algorithm_type::serialize_type(*item, item_result.value()->write_stream(), STREAMING_TYPE_TYPE);
+                    if (result)
+                        item_result.value()->write_stream().write_footer();
+                }
+                if (result)
+                    item_result.value()->commit_write(std::move(callback), trans_id);
+            }
+            return result;
+        }
+        else
+        {
+            return true;
+        }
+    }
+    else // !storage_result
+    {
+        rx_result result(storage_result.errors());
+        storage_result.register_error("Error saving item "s + meta.path);
+        return result;
+    }
+}
 
 
 
@@ -113,8 +247,6 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
       string_type get_name () const;
 
       rx_node_id get_node_id () const;
-
-      rx_result serialize (base_meta_writer& stream) const;
 
       const meta_data& meta_info () const;
 
@@ -150,7 +282,9 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
-      rx_result save () const;
+      rx_result save (storage_callback_t callback, runtime_transaction_id_t trans_id) const;
+
+      rx_result save_sync () const;
 
       void read_struct (string_view_type path, read_struct_data data) const;
 
@@ -166,9 +300,9 @@ class rx_item_implementation : public rx_platform::ns::rx_platform_item
 
       security::security_guard_ptr get_security_guard ();
 
-      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value);
 
-      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor);
 
 
   protected:
@@ -210,8 +344,6 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_node_id get_node_id () const;
 
-      rx_result serialize (base_meta_writer& stream) const;
-
       const meta_data& meta_info () const;
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
@@ -244,7 +376,9 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
-      rx_result save () const;
+      rx_result save (storage_callback_t callback, runtime_transaction_id_t trans_id) const;
+
+      rx_result save_sync () const;
 
       void read_struct (string_view_type path, read_struct_data data) const;
 
@@ -260,9 +394,9 @@ class rx_meta_item_implementation : public rx_platform::ns::rx_platform_item
 
       security::security_guard_ptr get_security_guard ();
 
-      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value);
 
-      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor);
 
 
   protected:
@@ -304,8 +438,6 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       rx_node_id get_node_id () const;
 
-      rx_result serialize (base_meta_writer& stream) const;
-
       const meta_data& meta_info () const;
 
       void read_value (const string_type& path, read_result_callback_t callback) const;
@@ -338,7 +470,9 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
-      rx_result save () const;
+      rx_result save (storage_callback_t callback, runtime_transaction_id_t trans_id) const;
+
+      rx_result save_sync () const;
 
       void read_struct (string_view_type path, read_struct_data data) const;
 
@@ -354,9 +488,9 @@ class rx_other_implementation : public rx_platform::ns::rx_platform_item
 
       security::security_guard_ptr get_security_guard ();
 
-      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value);
 
-      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor);
 
 
   protected:
@@ -392,8 +526,6 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_node_id get_node_id () const;
 
-      rx_result serialize (base_meta_writer& stream) const;
-
       const meta_data& meta_info () const;
 
       void fill_code_info (std::ostream& info, const string_type& name);
@@ -428,7 +560,9 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
-      rx_result save () const;
+      rx_result save (storage_callback_t callback, runtime_transaction_id_t trans_id) const;
+
+      rx_result save_sync () const;
 
       void read_struct (string_view_type path, read_struct_data data) const;
 
@@ -444,9 +578,9 @@ class rx_proxy_item_implementation : public rx_platform::ns::rx_platform_item
 
       security::security_guard_ptr get_security_guard ();
 
-      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value);
 
-      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor);
 
 
   protected:
@@ -482,8 +616,6 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_node_id get_node_id () const;
 
-      rx_result serialize (base_meta_writer& stream) const;
-
       const meta_data& meta_info () const;
 
       void fill_code_info (std::ostream& info, const string_type& name);
@@ -518,7 +650,9 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
 
       rx_result deserialize_value (base_meta_reader& stream, runtime_value_type type);
 
-      rx_result save () const;
+      rx_result save (storage_callback_t callback, runtime_transaction_id_t trans_id) const;
+
+      rx_result save_sync () const;
 
       void read_struct (string_view_type path, read_struct_data data) const;
 
@@ -534,9 +668,9 @@ class rx_relation_item_implementation : public rx_platform::ns::rx_platform_item
 
       security::security_guard_ptr get_security_guard ();
 
-      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, runtime::events_callback_ptr monitor, bool bin_value);
 
-      rx_result disconnect_events (runtime_handle_t hndl, runtime::event_blocks::events_callback_ptr monitor);
+      rx_result disconnect_events (runtime_handle_t hndl, runtime::events_callback_ptr monitor);
 
 
   protected:

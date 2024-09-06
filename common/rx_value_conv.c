@@ -42,6 +42,7 @@ int is_delim(char c)
 double complex_amplitude_helper(const complex_value_struct* val);
 void destroy_union_value(union rx_value_union* who, rx_value_t type);
 void assign_value(union rx_value_union* left, const union rx_value_union* right, rx_value_t type);
+void move_value(union rx_value_union* left, union rx_value_union* right, rx_value_t type);
 
 int strmultiequal(const char* str, const char* vals[], size_t vals_count, int* help_buffer)
 {

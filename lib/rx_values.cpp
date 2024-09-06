@@ -3353,6 +3353,32 @@ void rx_simple_value::assign_array (const std::vector<rx_simple_value>& from)
 	}
 }
 
+void rx_simple_value::assign_array (std::vector<rx_simple_value>&& from)
+{
+	if (from.empty())
+	{
+		rx_destroy_value(&data_);
+		rx_init_array_value_with_ptrs(&data_, RX_STRUCT_TYPE, NULL, 0);
+	}
+	else
+	{
+		rx_value_t type = from[0].data_.value_type;
+		for (const auto& val : from)
+		{
+			if (val.data_.value_type != type)
+				return;
+		}
+		std::vector<rx_value_union*> data(from.size());
+		int idx = 0;
+		for (auto& val : from)
+		{
+			data[idx++] = &val.data_.value;
+		}
+		rx_destroy_value(&data_);
+		rx_init_array_value_with_ptrs_move(&data_, type, &data[0], data.size());
+	}
+}
+
 bool rx_simple_value::is_struct () const
 {
 	return rx_is_struct(&data_);
