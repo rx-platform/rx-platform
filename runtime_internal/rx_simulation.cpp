@@ -65,17 +65,28 @@ rx_result local_register_source::source_write (write_data&& data, runtime_proces
 {
     
     rx_value value(std::move(data.value), rx_time::now());
-    value.set_quality(RX_GOOD_QUALITY);
-    value = ctx->adapt_value(value);
-    source_value_changed(std::move(value));
-    source_result_received(true, data.transaction_id);
-    return true;
+    if (value.convert_to(get_value_type()))
+    {
+        value.set_quality(RX_GOOD_QUALITY);
+
+        value = ctx->adapt_value(value);
+        source_value_changed(std::move(value));
+        source_result_received(true, data.transaction_id);
+        return true;
+    }
+    else
+    {
+        return RX_INVALID_CONVERSION;
+    }
 }
 
 rx_result local_register_source::start_source (runtime::runtime_start_context& ctx)
 {
     rx_value value = ctx.get_current_variable_value();
-    value.set_quality(RX_GOOD_QUALITY);
+    if(value.convert_to(get_value_type()))
+        value.set_quality(RX_GOOD_QUALITY);
+    else
+        value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
     value = ctx.context->adapt_value(value);
     source_value_changed(std::move(value));
     return true;

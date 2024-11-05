@@ -327,6 +327,16 @@ extern "C" {
 	RX_PLATFORM_API void rxCtxSetAsyncPending(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
 	typedef void(*rxCtxSetAsyncPending_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val);
 
+	typedef void(*value_write_callback_t)(void* target, runtime_transaction_id_t trans_id);
+	typedef void(*value_execute_callback_t)(void* target, struct typed_value_type output, rx_result_struct result);
+
+
+	RX_PLATFORM_API rx_result_struct rxCtxWriteValue(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, value_write_callback_t callback);
+	typedef rx_result_struct(*rxCtxWriteValue_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, value_write_callback_t callback);
+
+	RX_PLATFORM_API rx_result_struct rxCtxExecuteValue(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, value_execute_callback_t callback);
+	typedef rx_result_struct(*rxCtxExecuteValue_t)(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, value_execute_callback_t callback);
+
 
 	typedef void(*relation_subscriber_connected_callback_t)(void* target, const char* name, const rx_node_id_struct* id);
 	typedef void(*relation_subscriber_disconnected_callback_t)(void* target, const char* name);
@@ -599,6 +609,67 @@ extern "C" {
 
 	} platform_runtime_api6;
 
+
+	typedef struct platform_runtime_api7_t
+	{
+
+		rxRegisterSourceRuntime_t prxRegisterSourceRuntime;
+		rxRegisterMapperRuntime_t prxRegisterMapperRuntime;
+		rxRegisterMapperRuntime3_t prxRegisterMapperRuntime3;
+		rxRegisterFilterRuntime_t prxRegisterFilterRuntime;
+		rxRegisterStructRuntime_t prxRegisterStructRuntime;
+		rxRegisterVariableRuntime_t prxRegisterVariableRuntime;
+		rxRegisterEventRuntime_t prxRegisterEventRuntime;
+
+		rxRegisterMethodRuntime_t prxRegisterMethodRuntime;
+		rxRegisterProgramRuntime_t prxRegisterProgramRuntime;
+		rxRegisterDisplayRuntime_t prxRegisterDisplayRuntime;
+
+		rxRegisterObjectRuntime_t prxRegisterObjectRuntime;
+		rxRegisterApplicationRuntime_t prxRegisterApplicationRuntime;
+		rxRegisterDomainRuntime_t prxRegisterDomainRuntime;
+		rxRegisterPortRuntime_t prxRegisterPortRuntime;
+
+		rxRegisterRelationRuntime_t prxRegisterRelationRuntime;
+
+		rxInitCtxBindItem_t prxInitCtxBindItem;
+		rxInitCtxGetCurrentPath_t prxInitCtxGetCurrentPath;
+		rxInitCtxGetLocalValue_t prxInitCtxGetLocalValue;
+		rxInitCtxSetLocalValue_t prxInitCtxSetLocalValue;
+		rxInitCtxGetMappingValues_t prxInitCtxGetMappingValues;
+		rxInitCtxGetSourceValues_t prxInitCtxGetSourceValues;
+		rxInitCtxGetItemMeta_t prxInitCtxGetItemMeta;
+
+		rxStartCtxGetCurrentPath_t prxStartCtxGetCurrentPath;
+		rxStartCtxCreateTimer_t prxStartCtxCreateTimer;
+		rxStartCtxGetLocalValue_t prxStartCtxGetLocalValue;
+		rxStartCtxSetLocalValue_t prxStartCtxSetLocalValue;
+		rxStartCtxSubscribeRelation_t prxStartCtxSubscribeRelation;
+
+		rxCtxGetValue_t prxCtxGetValue;
+		rxCtxSetValue_t prxCtxSetValue;
+		rxCtxSetAsyncPending_t prxCtxSetAsyncPending;
+
+		rxInitCtxConnectItem_t prxInitCtxConnectItem;
+		rxCtxWriteConnected_t prxCtxWriteConnected;
+		rxCtxExecuteConnected_t prxCtxExecuteConnected;
+
+		rxInitCtxGetDataType_t prxInitCtxGetDataType;
+
+		// bind version 4
+		rxRegisterDataTypeRuntime_t prxRegisterDataTypeRuntime;
+
+		// bind version 5
+		rxCtxWriteBinded_t prxCtxWriteBinded;
+
+		rxGetNewUniqueId_t rxGetNewUniqueId;
+
+		// bind version ?
+		rxCtxWriteValue_t prxCtxWriteValue;
+		rxCtxExecuteValue_t prxCtxExecuteValue;
+
+	} platform_runtime_api7;
+
 	typedef struct platform_api_t
 	{
 		platform_general_api general;
@@ -660,6 +731,14 @@ extern "C" {
 		platform_storage_api storage;
 
 	} platform_api6;
+
+	typedef struct platform_api7_t
+	{
+		platform_general_api general;
+		platform_runtime_api7 runtime;
+		platform_storage_api storage;
+
+	} platform_api7;
 
 
 	// common host stuff, timers...

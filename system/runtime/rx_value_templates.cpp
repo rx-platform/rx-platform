@@ -40,11 +40,11 @@ namespace rx_platform
 namespace runtime
 {
 
-void owned_complex_value::internal_commit()
+void owned_complex_value::internal_commit(tag_blocks::binded_write_result_callback_t callback)
 {
     if (ctx_ && handle_)// just in case both of them...
     {
-        ctx_->set_value(handle_, rx_simple_value(val_), tag_blocks::binded_write_result_callback_t());
+        ctx_->set_value(handle_, rx_simple_value(val_), callback);
     }
 }
 rx_result owned_complex_value::bind(const string_type& path, runtime_init_context& ctx)
@@ -78,19 +78,15 @@ rx_simple_value& owned_complex_value::value()
     return val_;
 }
 
-void owned_complex_value::commit(const rx_simple_value& val)
+void owned_complex_value::commit(const rx_simple_value& val, tag_blocks::binded_write_result_callback_t callback)
 {
     val_ = val;
-    internal_commit();
+    internal_commit(callback);
 }
-void commit(rx_simple_value&& val)
-{
-
-}
-void owned_complex_value::owned_complex_value::commit(rx_simple_value&& val)
+void owned_complex_value::owned_complex_value::commit(rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback)
 {
     val_ = std::move(val);
-    internal_commit();
+    internal_commit(callback);
 }
 
 rx_result local_complex_value::bind(const string_type& path, runtime_init_context& ctx, callback_t callback)

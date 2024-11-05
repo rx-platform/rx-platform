@@ -258,6 +258,7 @@ string_type http_server::get_dynamic_content (const string_type& path)
 
 void http_server::register_standard_filters ()
 {
+	filters_.emplace_back(std::make_unique<http_path_filter>());
 	filters_.emplace_back(std::make_unique<standard_request_filter>());
 }
 
@@ -386,6 +387,116 @@ rx_result http_display_handler::handle_request (http_request& req, http_response
 const char* http_display_handler::get_extension ()
 {
 	return "disp";
+}
+
+size_t process_next_find(const string_view_type& view, size_t from, size_t& size, size_t& to_copy, char& ending)
+{
+	auto idx1 = view.find("href=\"/", from);
+	auto idx2= view.find("src=\"/", from);
+	auto idx3 = view.find("\"~", from);
+	auto idx4 = view.find("'~", from);
+	
+	auto ret = std::min(std::min(idx1, idx2), std::min(idx3, idx4));
+	if (ret == string_view_type::npos)
+	{
+		size = 0;
+		to_copy = 0;
+		ending = '\0';
+	}
+	else if (ret == idx1)
+	{
+		size = 7;
+		to_copy = 6;
+		ending = '\"';
+	}
+	else if (ret == idx2)
+	{
+		size = 6;
+		to_copy = 5;
+		ending = '\"';
+	}
+	else if (ret == idx3)
+	{
+		size = 2;
+		to_copy = 1;
+		if (view[ret + size] == '/')
+			size++;
+		ending = '\"';
+	}
+	else if (ret == idx4)
+	{
+		size = 2; 
+		to_copy = 1;
+		if (view[ret + size] == '/')
+			size++;
+		ending = '\'';
+	}
+	else
+	{
+		RX_ASSERT(false);
+		ret = string_view_type::npos;
+		size = 0;
+		to_copy = 0;
+		ending = '\0';
+	}
+
+	return ret;
+}
+
+// Class rx_internal::rx_http_server::http_path_filter 
+
+
+rx_result http_path_filter::handle_request_after (http_request& req, http_response& resp)
+{
+	auto it = resp.headers.find("Content-Type");
+	if (it != resp.headers.end()
+		&& it->second == "text/html"
+		&& resp.content.size() > 0x20 /*just about right*/)
+	{
+		int sub_count = 0;
+		string_view_type path = req.path;
+		auto in_path = path.rfind('/');
+		while (in_path != 0 && in_path != string_view_type::npos)
+		{
+			sub_count++;
+			in_path = path.rfind('/', in_path - 1);
+		}
+		string_type to_replace = "";
+		while (sub_count > 0)
+		{
+			to_replace += "../";
+			sub_count--;
+		}
+		string_view_type view((const char*)&resp.content[0], resp.content.size());
+		
+		char ending = '\0';
+		size_t to_copy = 0;
+		size_t found_size = 0;
+		size_t idx = process_next_find(view, 0, found_size, to_copy, ending);
+		size_t idx2 = 0;
+		string_type new_buffer;
+		while (idx != string_view_type::npos)
+		{
+			new_buffer+=(view.substr(idx2, idx - idx2 + to_copy));
+			idx2 = view.find(ending, idx + found_size + 1);
+			if (idx2 != string_view_type::npos)
+			{
+				new_buffer += to_replace;
+				size_t temp = idx2 + 1;
+				idx2 = idx;
+				idx2 += (found_size);
+				idx = process_next_find(view, temp, found_size, to_copy, ending);
+			}
+		}
+		new_buffer += (view.substr(idx2));
+		resp.set_string_content(new_buffer);
+	}
+	return true;
+}
+
+rx_result http_path_filter::handle_request_before (http_request& req, http_response& resp)
+{
+	return true;
 }
 
 

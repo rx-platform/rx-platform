@@ -305,6 +305,7 @@ extern "C" {
 	int rx_is_auth_context_complete(rx_auth_context_t* ctx);
 	int rx_deinit_auth_context(rx_auth_context_t* ctx);
 	int rx_accept_credentials(rx_cred_t* cred, rx_auth_context_t* ctx, const void* data, size_t size, void* out_data, size_t* out_size);
+	int rx_connect_credentials(rx_cred_t* cred, rx_auth_context_t* ctx, const void* data, size_t size, void* out_data, size_t* out_size);
 	int rx_decrypt_message(rx_auth_context_t* ctx, const void* data, size_t size, void* out_data, size_t* out_size);
 	int rx_encrypt_message(rx_auth_context_t* ctx, const void* data, size_t size, size_t* processed_count, void* out_data, size_t* out_size);
 

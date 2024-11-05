@@ -671,6 +671,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				ret = initialize_runtime_arrayed(one.name, ctx, blocks.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
+				// point_count!!!!
+				//ctx.points_count++;
 				continue;
 			}
 		}
@@ -681,6 +683,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				ret = initialize_runtime_arrayed(one.name, ctx, variables.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
+				ctx.points_count++;
 				continue;
 			}
 		}
@@ -691,6 +694,7 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				ret = initialize_runtime_arrayed(one.name, ctx, variable_blocks.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
+				ctx.points_count++;
 				continue;
 			}
 		}
@@ -708,9 +712,13 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		{
 			if ((one.index & rt_type_mask) == rt_mapper_index_type)
 			{
+				ctx.mappers.mapper = &mappers.collection[one.index >> rt_type_shift];
 				ret = initialize_runtime_plain(one.name, ctx, mappers.collection[one.index >> rt_type_shift]);
+				ctx.mappers.mapper = nullptr;
 				if (!ret)
 					return ret;
+				// point_count!!!!
+				//ctx.points_count++;
 				continue;
 			}
 		}
@@ -721,6 +729,8 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 				ret = initialize_runtime_plain(one.name, ctx, filters.collection[one.index >> rt_type_shift]);
 				if (!ret)
 					return ret;
+				// point_count!!!!
+				//ctx.points_count++;
 				continue;
 			}
 		}
@@ -737,8 +747,12 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 		if constexpr (has_sources())
 		{
 			if ((one.index & rt_type_mask) == rt_source_index_type)
-			{
+			{				
+				ctx.sources.source = &sources.collection[one.index >> rt_type_shift];
 				ret = initialize_runtime_plain(one.name, ctx, sources.collection[one.index >> rt_type_shift]);
+				ctx.sources.source = nullptr;
+				// point_count!!!!
+				//ctx.points_count++;
 				if (!ret)
 					return ret;
 				continue;
@@ -759,6 +773,10 @@ rx_result runtime_data<variables_type,structs_type,sources_type,mappers_type,fil
 			ctx.sources.pop_source(one.source_id);
 		}
 	}
+	// point_count!!!!
+	//ctx.points_count += values.size();
+	// point_count!!!!
+	//ctx.points_count += const_values.size();
 	return ret;
 }
 

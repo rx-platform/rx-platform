@@ -249,6 +249,7 @@ rx_result file_port::initialize_runtime (runtime::runtime_init_context& ctx)
         {
 
         });
+    file_timeout_.bind("Options.FileTimeout", ctx);
 
     return true;
 }

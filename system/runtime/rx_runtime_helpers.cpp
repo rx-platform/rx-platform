@@ -111,6 +111,26 @@ bool io_capabilities::get_in_event () const
 	return settings_.test(4);
 }
 
+void io_capabilities::set_in_source (bool val)
+{
+	settings_[5] = val;
+}
+
+bool io_capabilities::get_in_source () const
+{
+	return settings_.test(5);
+}
+
+void io_capabilities::set_in_mapper (bool val)
+{
+	settings_[6] = val;
+}
+
+bool io_capabilities::get_in_mapper () const
+{
+	return settings_.test(6);
+}
+
 
 // Class rx_platform::runtime::runtime_deinit_context 
 
@@ -130,7 +150,8 @@ runtime_init_context::runtime_init_context (structure::runtime_item& root, const
         directories(directories),
         item_type(type),
         method(nullptr),
-        event(nullptr)
+        event(nullptr),
+        points_count(0)
     , structure(root)
     , tags(binded)
 {
@@ -413,6 +434,12 @@ variable_stack_entry variables_stack::get_current_variable () const
 
 // Class rx_platform::runtime::mappers_stack 
 
+mappers_stack::mappers_stack()
+      : mapper(nullptr)
+{
+}
+
+
 
 void mappers_stack::push_mapper (const rx_node_id& id, structure::mapper_data* what)
 {
@@ -459,6 +486,12 @@ std::vector<rx_simple_value> mappers_stack::get_mapping_values (const rx_node_id
 
 
 // Class rx_platform::runtime::sources_stack 
+
+sources_stack::sources_stack()
+      : source(nullptr)
+{
+}
+
 
 
 void sources_stack::push_source (const rx_node_id& id, structure::source_data* what)

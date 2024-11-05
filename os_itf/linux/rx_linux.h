@@ -180,6 +180,7 @@ typedef struct rx_cred
 {
     SSL_CTX* ssl_ctx;
 	uint32_t buffer_size;
+	int32_t client;
 } rx_cred_t;
 
 
@@ -194,7 +195,7 @@ extern "C" {
 
 #include "common/rx_common.h"
 
-int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert);
+int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert, int client);
 
 
 

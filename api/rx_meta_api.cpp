@@ -68,6 +68,24 @@ template rx_result rx_delete_runtime<domain_type>(const rx_item_reference& ref
 template rx_result rx_delete_runtime<application_type>(const rx_item_reference& ref
 	, rx_result_callback&& callback);
 
+
+template<class typeT>
+rx_result rx_reload_runtime(const rx_item_reference& ref
+	, rx_result_with_callback<typename typeT::RTypePtr>&& callback)
+{
+	rx_internal::model::algorithms::runtime_model_algorithm<typeT>::reload_runtime(
+		ref, std::move(callback));
+	return true;
+}
+template rx_result rx_reload_runtime<object_type>(const rx_item_reference& ref
+	, rx_result_with_callback<rx_object_ptr>&& callback);
+template rx_result rx_reload_runtime<port_type>(const rx_item_reference& ref
+	, rx_result_with_callback<rx_port_ptr>&& callback);
+template rx_result rx_reload_runtime<domain_type>(const rx_item_reference& ref
+	, rx_result_with_callback<rx_domain_ptr>&& callback);
+template rx_result rx_reload_runtime<application_type>(const rx_item_reference& ref
+	, rx_result_with_callback<rx_application_ptr>&& callback);
+
 template<class typeT>
 rx_result rx_create_runtime(
 	typename typeT::instance_data_t instance_data

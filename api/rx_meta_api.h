@@ -63,6 +63,10 @@ rx_result rx_update_runtime(
 
 
 template<class typeT>
+rx_result rx_reload_runtime(const rx_item_reference& ref
+	, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
+
+template<class typeT>
 rx_result rx_create_prototype(
 	typename typeT::instance_data_t instance_data
 	, rx_result_with_callback<typename typeT::RTypePtr>&& callback);

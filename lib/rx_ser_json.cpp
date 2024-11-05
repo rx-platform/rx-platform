@@ -204,6 +204,7 @@ struct json_reader_data
 		{
 			rapidjson::Value& temp = it->value;
 			const char* name = it->name.GetString();
+			RX_ASSERT(name != "Conn");
 			if (temp.IsBool())
 			{
 				values.add_value_static(name, temp.GetBool());

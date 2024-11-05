@@ -47,90 +47,6 @@ namespace runtime {
 
 namespace blocks {
 
-// Class rx_platform::runtime::blocks::filter_runtime 
-
-string_type filter_runtime::type_name = RX_CPP_FILTER_TYPE_NAME;
-
-filter_runtime::filter_runtime()
-      : container_(nullptr)
-{
-}
-
-filter_runtime::filter_runtime (lock_reference_struct* extern_data)
-      : container_(nullptr)
-    , reference_object(extern_data)
-{
-}
-
-
-filter_runtime::~filter_runtime()
-{
-}
-
-
-
-string_type filter_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-rx_result filter_runtime::initialize_filter (runtime::runtime_init_context& ctx)
-{
-	return true;
-}
-
-rx_result filter_runtime::start_filter (runtime::runtime_start_context& ctx)
-{
-	return true;
-}
-
-rx_result filter_runtime::stop_filter (runtime::runtime_stop_context& ctx)
-{
-	return true;
-}
-
-rx_result filter_runtime::deinitialize_filter (runtime::runtime_deinit_context& ctx)
-{
-	return true;
-}
-
-bool filter_runtime::supports_input () const
-{
-  return true;
-
-}
-
-bool filter_runtime::supports_output () const
-{
-  return true;
-
-}
-
-rx_result filter_runtime::filter_input (rx_value& val)
-{
-    return true;
-}
-
-rx_result filter_runtime::filter_output (rx_simple_value& val)
-{
-    return true;
-}
-
-rx_result filter_runtime::filter_changed ()
-{
-    if (container_)
-    {
-        return container_->filter_changed();
-    }
-    else
-    {
-        RX_ASSERT(false);
-        return "Context not binded!";
-    }
-}
-
-
 // Class rx_platform::runtime::blocks::mapper_runtime 
 
 string_type mapper_runtime::type_name = RX_CPP_MAPPER_TYPE_NAME;
@@ -540,6 +456,11 @@ string_type event_runtime::get_type_name () const
 
 }
 
+rx_result event_runtime::initialize_event_internal (runtime::runtime_init_context& ctx)
+{
+    return true;
+}
+
 rx_result event_runtime::initialize_event (runtime::runtime_init_context& ctx)
 {
 	return true;
@@ -691,6 +612,90 @@ rx_result data_type_runtime::stop_data_type (runtime::runtime_stop_context& ctx)
 rx_result data_type_runtime::deinitialize_data_type (runtime::runtime_deinit_context& ctx)
 {
     return true;
+}
+
+
+// Class rx_platform::runtime::blocks::filter_runtime 
+
+string_type filter_runtime::type_name = RX_CPP_FILTER_TYPE_NAME;
+
+filter_runtime::filter_runtime()
+      : container_(nullptr)
+{
+}
+
+filter_runtime::filter_runtime (lock_reference_struct* extern_data)
+      : container_(nullptr)
+    , reference_object(extern_data)
+{
+}
+
+
+filter_runtime::~filter_runtime()
+{
+}
+
+
+
+string_type filter_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+rx_result filter_runtime::initialize_filter (runtime::runtime_init_context& ctx)
+{
+	return true;
+}
+
+rx_result filter_runtime::start_filter (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result filter_runtime::stop_filter (runtime::runtime_stop_context& ctx)
+{
+	return true;
+}
+
+rx_result filter_runtime::deinitialize_filter (runtime::runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+bool filter_runtime::supports_input () const
+{
+  return true;
+
+}
+
+bool filter_runtime::supports_output () const
+{
+  return true;
+
+}
+
+rx_result filter_runtime::filter_input (rx_value& val)
+{
+    return true;
+}
+
+rx_result filter_runtime::filter_output (rx_simple_value& val)
+{
+    return true;
+}
+
+rx_result filter_runtime::filter_changed ()
+{
+    if (container_)
+    {
+        return container_->filter_changed();
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return "Context not binded!";
+    }
 }
 
 

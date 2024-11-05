@@ -830,7 +830,16 @@ extern "C" {
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;
 		return self->set_value(handle, values::rx_simple_value(std::move(val)), tag_blocks::binded_write_result_callback_t()).move();
 	}
-
+	RX_PLATFORM_API rx_result_struct rxCtxWriteValue(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, value_write_callback_t callback)
+	{
+		return rx_result(RX_NOT_IMPLEMENTED).move();
+	}
+	
+	RX_PLATFORM_API rx_result_struct rxCtxExecuteValue(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type val, value_execute_callback_t callback)
+	{
+		return rx_result(RX_NOT_IMPLEMENTED).move();
+	}
+	
 	RX_PLATFORM_API rx_result_struct rxCtxWriteConnected(runtime_ctx_ptr ctx, runtime_handle_t handle, struct typed_value_type va, runtime_transaction_id_t trans_id)
 	{
 		runtime::runtime_process_context* self = (runtime::runtime_process_context*)ctx;

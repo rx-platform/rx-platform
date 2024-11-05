@@ -92,6 +92,8 @@
 #define RX_NS_SYSTEM_DOM_ID 0x0000000c
 #define RX_NS_OBJECT_DATA_NAME "ObjectData"
 #define RX_NS_OBJECT_DATA_ID 0x0000000d
+#define RX_NS_OBJECT_CHANGED_NAME "ObjectChanged"
+#define RX_NS_OBJECT_CHANGED_ID 0x0000001c
 
 
 #define RX_HOST_OBJ_ID 0xc00006f
@@ -336,6 +338,8 @@
 
 #define RX_PORT_OPTIONS_TYPE_NAME "PortOptions"
 #define RX_PORT_OPTIONS_TYPE_ID 0xc000061
+#define RX_TCP_PORT_OPTIONS_TYPE_NAME "TcpPortOptions"
+#define RX_TCP_PORT_OPTIONS_TYPE_ID 0xc000104
 #define RX_ROUTER_PORT_OPTIONS_TYPE_NAME "RouterPortOptions"
 #define RX_ROUTER_PORT_OPTIONS_TYPE_ID 0xc000062
 #define RX_BRIDGE_PORT_OPTIONS_TYPE_NAME "BridgePortOptions"
@@ -529,6 +533,8 @@
 
 #define TLS_PORT_TYPE_NAME "TlsPortType"
 #define TLS_PORT_TYPE_ID 0xc0000b6
+#define TLS_CLIENT_PORT_TYPE_NAME "TlsClientPortType"
+#define TLS_CLIENT_PORT_TYPE_ID 0xc000107
 
 #define TLS_PORT_OPTIONS_TYPE_NAME "TlsPortOptions"
 #define TLS_PORT_OPTIONS_TYPE_ID 0xc0000b7
@@ -748,6 +754,13 @@
 #define RX_STATIC_HTTP_DISPLAY_TYPE_NAME "StaticHttpDisplay"
 
 
+#define RX_MQTT_HTTP_DISPLAY_TYPE_ID 0xc000105
+#define RX_MQTT_HTTP_DISPLAY_TYPE_NAME "MqttHttpDisplay"
+
+#define RX_MQTT_HTTP_DISPLAY_OPTIONS_TYPE_ID 0xc000106
+#define RX_MQTT_HTTP_DISPLAY_OPTIONS_TYPE_NAME "MqttDisplayOptions"
+
+
 #define RX_STANDARD_HTTP_DISPLAY_TYPE_ID 0xc000079
 #define RX_STANDARD_HTTP_DISPLAY_TYPE_NAME "StandardHttpDisplay"
 
@@ -779,7 +792,7 @@
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc000103!!!! 
+// last is 0xc000107!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

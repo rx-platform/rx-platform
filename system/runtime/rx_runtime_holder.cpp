@@ -67,7 +67,8 @@ namespace_item_attributes create_attributes_from_creation_data(const CT& data)
 
 template <class typeT>
 runtime_holder<typeT>::runtime_holder (const meta_data& meta, const typename typeT::instance_data_t& instance, typename typeT::runtime_behavior_t&& rt_behavior)
-      : job_pending_(false)
+      : job_pending_(false),
+        points_count(0)
     , meta_info_(meta)
     , instance_data_(instance.instance_data, std::move(rt_behavior))
     , security_guard_(rx_create_reference<security::security_guard>(meta, security::rx_security_null))
@@ -159,6 +160,12 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
     if (result)
     {
         result = implementation_->initialize_runtime(ctx);
+
+        if (result)
+        {
+            // point_count!!!!
+            points_count = ctx.points_count;// +1;
+        }
     }
     ctx.structure.pop_item();
     job_pending_ = false;
@@ -214,9 +221,11 @@ rx_result runtime_holder<typeT>::start_runtime (runtime_start_context& ctx)
     }
     if (result)
     {
+        tags_.collect_data(runtime_data_cache_, runtime_value_type::simple_runtime_value);
         result = implementation_->start_runtime(ctx);
         if (result)
         {
+            context_->started(rx_time::now());
             tags_.runtime_started(ctx);
         }
     }
@@ -228,6 +237,7 @@ template <class typeT>
 rx_result runtime_holder<typeT>::stop_runtime (runtime_stop_context& ctx)
 {
     string_type rt_path = meta_info_.get_full_path();
+    context_->runtime_stopping();
     rx_result result = implementation_->stop_runtime(ctx);
     if (result)
     {

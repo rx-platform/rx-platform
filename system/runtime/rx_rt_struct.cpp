@@ -102,8 +102,7 @@ rx_result variable_data::collect_data (string_view_type path, data::runtime_valu
 	if (path.empty())
 	{
 		if (type != runtime_value_type::persistent_runtime_value
-			|| (value_opt[runtime::structure::value_opt_persistent]
-			&& !value_opt[runtime::structure::value_opt_default_value]))
+			|| (value_opt[runtime::structure::value_opt_persistent]))
 			data.add_value(RX_DEFAULT_VARIABLE_NAME, value.to_simple());
 	}
 	return item->collect_data(path, data, type);
@@ -124,8 +123,7 @@ void variable_data::fill_data (const data::runtime_values_data& data)
 rx_result variable_data::collect_value (values::rx_simple_value& data, runtime_value_type type) const
 {
 	if (type != runtime_value_type::persistent_runtime_value
-		|| (value_opt[runtime::structure::value_opt_persistent]
-		&& !value_opt[runtime::structure::value_opt_default_value]))
+		|| (value_opt[runtime::structure::value_opt_persistent]))
 	{
 		std::vector<rx_simple_value> temp(2);
 		temp[0] = value.to_simple();
@@ -165,15 +163,6 @@ void variable_data::set_value (rx_simple_value&& val)
 rx_result variable_data::write_value (write_data&& data, std::unique_ptr<write_task> task, runtime_process_context* ctx)
 {
 
-	if (rx_is_debug_instance())
-	{
-		std::ostringstream ss;
-		ss << "Variable "
-			<< full_path
-			<< " received write request with id:"
-			<< data.transaction_id;
-		RUNTIME_LOG_DEBUG("variable_data", 500, ss.str());
-	}
 
 	rx_result result;
 
@@ -195,6 +184,19 @@ rx_result variable_data::write_value (write_data&& data, std::unique_ptr<write_t
 			if (!result)
 			{
 				result.register_error("Unable to filter write value.");
+
+				if (rx_is_debug_instance())
+				{
+					std::ostringstream ss;
+					ss << "Variable "
+						<< full_path
+						<< " returned write result for id:"
+						<< data.transaction_id
+						<< " - " << result.errors_line();
+
+					RUNTIME_LOG_DEBUG("variable_data", 500, ss.str());
+				}
+
 				return result;
 			}
 		}
@@ -419,35 +421,33 @@ bool variable_data::prepare_value (rx_value& prepared_value, runtime_process_con
 		temp_val.set_time(prepared_value.get_time());
 		prepared_value = std::move(temp_val);
 	}
-	if (ctx->get_mode().can_callculate(prepared_value))
+	if (!ctx->get_mode().is_off() && (prepared_value.is_test() == ctx->get_mode().is_test()))
 	{
+		string_type time_str1 = prepared_value.get_time().get_string();
 		prepared_value = ctx->adapt_value(prepared_value);
-		if (prepared_value.convert_to(value.get_type()))
+		string_type time_str2 = prepared_value.get_time().get_string();
+
+		rx_result result;
+		auto& filters = item->get_filters();
+		if (!filters.empty())
 		{
-			if (ctx->get_mode().can_callculate(prepared_value))
+			for (auto& filter : filters)
 			{
-				rx_result result;
-				auto& filters = item->get_filters();
-				if (!filters.empty())
+				if (filter.is_input())
 				{
-					for (auto& filter : filters)
-					{
-						if (filter.is_input())
-						{
-							result = filter.filter_input(prepared_value);
-							if (!result)
-								break;
-						}
-					}
+					result = filter.filter_input(prepared_value);
 					if (!result)
-					{
-						result.register_error("Unable to filter read value.");
-						prepared_value.set_quality(RX_BAD_QUALITY_SYNTAX_ERROR);
-					}
+						break;
 				}
 			}
+			if (!result)
+			{
+				result.register_error("Unable to filter read value.");
+				prepared_value.set_quality(RX_BAD_QUALITY_SYNTAX_ERROR);
+			}
 		}
-		else
+
+		if (!prepared_value.convert_to(value.get_type()))
 		{
 			prepared_value = value;
 			prepared_value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
@@ -472,6 +472,16 @@ void variable_data::update_prepared (rx_value prepared_value, runtime_process_co
 	value = prepared_value;
 	// send subscription update
 	ctx->variable_value_changed(this, prepared_value);
+	if (value_opt[value_opt_persistent])
+	{
+		ctx->runtime_dirty([ctx, prepared_value = prepared_value, this](rx_result result)
+			{
+				if (result)
+				{
+				}
+			});
+	}
+
 	// send update to mappers
 	if (!ctx->get_mode().is_blocked())
 	{
@@ -512,16 +522,13 @@ rx_result variable_data::check_set_value (runtime_process_context* ctx, bool int
 
 void variable_data::send_write_result (write_task* task, rx_result result)
 {
-	if (rx_is_debug_instance())
+	if (rx_is_debug_instance() && !result)
 	{
 		std::ostringstream ss;
 		ss << "Variable "
 			<< full_path
 			<< " sending write result for id:"
 			<< task->get_id() << " - ";
-		if (result)
-			ss << "OK";
-		else
 			ss << result.errors_line();
 
 		RUNTIME_LOG_DEBUG("variable_runtime", 500, ss.str());
@@ -816,66 +823,50 @@ void mapper_data::process_write (write_data&& data)
 {
 	if (!io_.get_in_method() && !io_.get_in_event())
 	{
-		if (my_owner_.variable_ptr)
+		if (!can_write())
 		{
-			auto trans_id = data.transaction_id;
-			rx_value prepared_value = rx_value(std::move(data.value), rx_time());
-			if (!prepared_value.convert_to(get_variable_value().get_type()))
+			mapper_ptr->mapper_result_received(RX_NOT_SUPPORTED, data.transaction_id, context_);
+		}
+		else
+		{
+			if (my_owner_.variable_ptr)
 			{
-				if (rx_is_debug_instance())
-				{
-					std::ostringstream ss;
-					ss << "Mapper "
-						<< full_path
-						<< " sending write result for id:"
-						<< trans_id << " - " RX_INVALID_CONVERSION;
-
-					RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
-				}
-				mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, trans_id, context_);
-			}
-			else
-			{
-				rx_result result;
-				auto& filters = item->get_filters();
-				if (!filters.empty())
-				{
-					for (auto& filter : filters)
-					{
-						if (filter.is_input())
-						{
-							result = filter.filter_input(prepared_value);
-							if (!result)
-								break;
-						}
-					}
-					if (!result)
-					{
-						result.register_error("Unable to filter output value.");
-					}
-				}
-				if (!result)
+				auto trans_id = data.transaction_id;
+				rx_value prepared_value = rx_value(std::move(data.value), rx_time());
+				if (!prepared_value.convert_to(get_variable_value().get_type()))
 				{
 					if (rx_is_debug_instance())
 					{
 						std::ostringstream ss;
 						ss << "Mapper "
 							<< full_path
-							<< " sent write result for id:"
-							<< trans_id
-							<< " - " << result.errors_line();
+							<< " sending write result for id:"
+							<< trans_id << " - " RX_INVALID_CONVERSION;
 
 						RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 					}
-					mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
+					mapper_ptr->mapper_result_received(RX_INVALID_CONVERSION, trans_id, context_);
 				}
 				else
 				{
-					data.value = prepared_value.to_simple();
-					if (io_.get_complex())
-						result = my_owner_.block_ptr->write_value(std::move(data), std::make_unique<mapper_write_task>(this, trans_id), context_);
-					else
-						result = my_owner_.variable_ptr->write_value(std::move(data), std::make_unique<mapper_write_task>(this, trans_id), context_);
+					rx_result result;
+					auto& filters = item->get_filters();
+					if (!filters.empty())
+					{
+						for (auto& filter : filters)
+						{
+							if (filter.is_input())
+							{
+								result = filter.filter_input(prepared_value);
+								if (!result)
+									break;
+							}
+						}
+						if (!result)
+						{
+							result.register_error("Unable to filter output value.");
+						}
+					}
 					if (!result)
 					{
 						if (rx_is_debug_instance())
@@ -883,12 +874,35 @@ void mapper_data::process_write (write_data&& data)
 							std::ostringstream ss;
 							ss << "Mapper "
 								<< full_path
-								<< " sending write result for id:"
-								<< trans_id << " - " << result.errors_line();
+								<< " sent write result for id:"
+								<< trans_id
+								<< " - " << result.errors_line();
 
 							RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 						}
 						mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
+					}
+					else
+					{
+						data.value = prepared_value.to_simple();
+						if (io_.get_complex())
+							result = my_owner_.block_ptr->write_value(std::move(data), std::make_unique<mapper_write_task>(this, trans_id), context_);
+						else
+							result = my_owner_.variable_ptr->write_value(std::move(data), std::make_unique<mapper_write_task>(this, trans_id), context_);
+						if (!result)
+						{
+							if (rx_is_debug_instance())
+							{
+								std::ostringstream ss;
+								ss << "Mapper "
+									<< full_path
+									<< " sending write result for id:"
+									<< trans_id << " - " << result.errors_line();
+
+								RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
+							}
+							mapper_ptr->mapper_result_received(std::move(result), trans_id, context_);
+						}
 					}
 				}
 			}
@@ -1201,6 +1215,11 @@ data::runtime_data_model mapper_data::get_data_type ()
 	}
 }
 
+rx_result mapper_data::filter_changed ()
+{
+	return true;
+}
+
 
 // Class rx_platform::runtime::structure::source_data 
 
@@ -1344,27 +1363,27 @@ void source_data::process_update (values::rx_value&& value)
 	if (source_ptr && context_
 		&& my_variable_.variable_ptr /*this union is plain union of two pointers so test one of them is enough*/)
 	{
-		if (value != current_value_)
+		input_value.set_value(value, context_);
+		rx_result result;
+		auto& filters = item->get_filters();
+		if (!filters.empty())
 		{
-			input_value.set_value(value, context_);
-			rx_result result;
-			auto& filters = item->get_filters();
-			if (!filters.empty())
+			for (auto& filter : filters)
 			{
-				for (auto& filter : filters)
+				if (filter.is_input())
 				{
-					if (filter.is_input())
-					{
-						result = filter.filter_input(value);
-						if (!result)
-							break;
-					}
-				}
-				if (!result)
-				{
-					result.register_error("Unable to filter input value.");
+					result = filter.filter_input(value);
+					if (!result)
+						break;
 				}
 			}
+			if (!result)
+			{
+				result.register_error("Unable to filter input value.");
+			}
+		}
+		if (value != current_value_)
+		{
 			current_value_ = value;
 			if (io_.get_complex())
 			{
@@ -1389,15 +1408,7 @@ void source_data::process_write (write_data&& data)
 	RX_ASSERT(source_ptr);
 	if (source_ptr && context_)
 	{
-		if (rx_is_debug_instance())
-		{
-			std::ostringstream ss;
-			ss << "Source "
-				<< full_path
-				<< " received write request with id:"
-				<< data.transaction_id;
-			RUNTIME_LOG_DEBUG("source_data", 500, ss.str());
-		}
+		
 		rx_result result;
 		auto& filters = item->get_filters();
 		if (!filters.empty())
@@ -1421,7 +1432,19 @@ void source_data::process_write (write_data&& data)
 			result = source_ptr->source_write(std::move(data), context_);
 		}
 		if (!result)
+		{
+			if (rx_is_debug_instance())
+			{
+				std::ostringstream ss;
+				ss << "Source "
+					<< full_path
+					<< " sending write result with id:"
+					<< data.transaction_id << "->"
+					<< result.errors_line();
+				RUNTIME_LOG_DEBUG("source_data", 500, ss.str());
+			}
 			source_result_pending(std::move(result), data.transaction_id);
+		}
 	}
 }
 
@@ -1450,19 +1473,19 @@ void source_data::source_result_pending (rx_result&& result, runtime_transaction
 {
 	if (context_)
 	{
-
 		if (rx_is_debug_instance())
 		{
-			std::ostringstream ss;
-			ss << "Source "
-				<< full_path
-				<< " sending write result id:"
-				<< id << " - ";
-			if (result)
-				ss << "OK";
-			else
+
+			if (!result)
+			{
+				std::ostringstream ss;
+				ss << "Source "
+					<< full_path
+					<< " sending write result id:"
+					<< id << " - ";
 				ss << result.errors_line();
-			RUNTIME_LOG_DEBUG("source_data", 500, ss.str());
+				RUNTIME_LOG_DEBUG("source_data", 500, ss.str());
+			}
 		}
 
 		write_result_struct<structure::source_data> data;
@@ -1572,6 +1595,16 @@ data::runtime_data_model source_data::get_data_type ()
 	}
 }
 
+rx_result source_data::filter_changed ()
+{
+	if (context_)
+	{
+		context_->source_update_pending({ this, input_value.get_value(nullptr)});
+	}
+
+	return true;
+}
+
 
 // Class rx_platform::runtime::structure::event_data 
 
@@ -1628,14 +1661,31 @@ rx_result event_data::fill_value (const values::rx_simple_value& data)
 
 rx_result event_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-	event_ptr->container_ = this;
+	if(event_ptr)
+		event_ptr->container_ = this;
 	ctx.event = this;
 	ctx.structure.push_item(*item);
-	auto result = item->initialize_runtime(ctx);
+	auto result = event_ptr->initialize_event_internal(ctx);
 	if (result)
-		result = event_ptr->initialize_event(ctx);
+	{
+		if (ctx.context->object_changed == this && ctx.model)
+		{
+			arguments = std::move(*ctx.model);
+			ctx.model.reset();
+		}
+	}
+	if (result)
+	{
+		result = item->initialize_runtime(ctx);
+		if (result)
+		{			
+			result = event_ptr->initialize_event(ctx);
+		}
+	}
 	ctx.structure.pop_item();
 	ctx.event = nullptr;
+	// point_count!!!!
+	//ctx.points_count++;
 	return result;
 }
 
@@ -1683,31 +1733,26 @@ void event_data::process_runtime (runtime_process_context* ctx, event_fired_data
 		rest_data.test = data.test;
 		rest_data.time = data.value.get_time();
 		
-		arguments.create_safe_runtime_data(rest_data.simple_value, rest_data.struct_value);
-
-		auto& mappers = item->get_mappers();
-		if (mappers.empty())
+		if (arguments.create_safe_runtime_data(rest_data.simple_value, rest_data.struct_value))
 		{
-			rest_data.queue = std::move(data.queue);
-			rest_data.types = std::move(data.types);
-
-			ctx->get_events_manager()->event_fired(std::move(rest_data));
-		}
-		else
-		{
+			auto& mappers = item->get_mappers();
+			
 			rest_data.queue = data.queue;
 			rest_data.types = data.types;
 
 			ctx->get_events_manager()->event_fired(std::move(rest_data));
-			if (mappers.size() == 1)
+			if (!mappers.empty())
 			{
-				mappers[0].process_event(std::move(data));
-			}
-			else
-			{
-				for (auto& one : mappers)
+				if (mappers.size() == 1)
 				{
-					one.process_event(data);
+					mappers[0].process_event(std::move(data));
+				}
+				else
+				{
+					for (auto& one : mappers)
+					{
+						one.process_event(data);
+					}
 				}
 			}
 		}
@@ -1848,6 +1893,30 @@ void event_data::event_fired (event_fired_data&& data)
 		context_->event_pending(std::move(reg_data));
 }
 
+void event_data::event_fired (data::runtime_values_data data)
+{
+	RX_ASSERT(context_);
+	if (context_)
+	{
+		event_fired_struct<event_data> reg_data;
+		reg_data.whose = this;
+		reg_data.data.identity = rx_security_context();
+		reg_data.data.types = types;
+		reg_data.data.internal = true;
+		reg_data.data.test = context_->get_mode().is_test();
+		reg_data.data.transaction_id = 0;
+		rx_simple_value val;
+		block_data temp = arguments;
+		temp.fill_data(data);
+		temp.collect_value(val, runtime_value_type::simple_runtime_value);
+		reg_data.data.value = rx_timed_value(std::move(val), context_->now());
+		reg_data.data.state_machine = false;
+		reg_data.data.remove_queue = true;
+
+		context_->event_pending(std::move(reg_data));
+	}
+}
+
 
 // Class rx_platform::runtime::structure::filter_data 
 
@@ -1891,25 +1960,47 @@ rx_result filter_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	filter_ptr->container_ = this;
 
+
+
 	auto cur_var = ctx.variables.get_current_variable();
 
 	if (cur_var.index() == 0)
 	{
-		
-		io_.set_complex(false);
-		my_variable_.variable_ptr = std::get<0>(cur_var);
-		filtered_value_.value.convert_to(my_variable_.variable_ptr->value.get_type());
+		filtered_value_.value.convert_to(std::get<0>(cur_var)->value.get_type());
 	}
 	else if (cur_var.index() == 1)
 	{
-		io_.set_complex(true);
-		my_variable_.block_ptr = std::get<1>(cur_var);
 		filtered_value_.value.convert_to(RX_STRUCT_TYPE);
+
+	}
+
+	if (ctx.sources.source)
+	{
+		io_.set_in_source(true);
+		my_owner_.source_ptr = ctx.sources.source;
+	}
+	else if (ctx.mappers.mapper)
+	{
+		io_.set_in_mapper(true);
+		my_owner_.mapper_ptr = ctx.mappers.mapper;
 	}
 	else
 	{
-		RX_ASSERT(false);// shouldn't happen
-		return RX_INTERNAL_ERROR;
+		if (cur_var.index() == 0)
+		{
+			io_.set_complex(false);
+			my_owner_.variable_ptr = std::get<0>(cur_var);
+		}
+		else if (cur_var.index() == 1)
+		{
+			io_.set_complex(true);
+			my_owner_.block_ptr = std::get<1>(cur_var);
+		}
+		else
+		{
+			RX_ASSERT(false);// shouldn't happen
+			return RX_INTERNAL_ERROR;
+		}
 	}
 	ctx.structure.push_item(*item);
 	auto result = item->initialize_runtime(ctx);
@@ -2028,18 +2119,32 @@ rx_result filter_data::get_local_value (string_view_type path, rx_simple_value& 
 
 rx_result filter_data::filter_changed ()
 {
-	if (io_.get_complex())
+	if (io_.get_in_source())
 	{
-		if (my_variable_.block_ptr)
+		if (my_owner_.source_ptr)
 		{
-			context_->variable_pending(my_variable_.block_ptr);
+			my_owner_.source_ptr->filter_changed();
+		}
+	}
+	else if (io_.get_in_mapper())
+	{
+		if (my_owner_.mapper_ptr)
+		{
+			my_owner_.mapper_ptr->filter_changed();
+		}
+	}
+	else if (io_.get_complex())
+	{
+		if (my_owner_.block_ptr)
+		{
+			context_->variable_pending(my_owner_.block_ptr);
 		}
 	}
 	else
 	{
-		if (my_variable_.variable_ptr)
+		if (my_owner_.variable_ptr)
 		{
-			context_->variable_pending(my_variable_.variable_ptr);
+			context_->variable_pending(my_owner_.variable_ptr);
 		}
 	}
 	return true;
@@ -2048,6 +2153,11 @@ rx_result filter_data::filter_changed ()
 void filter_data::object_state_changed (runtime_process_context* ctx)
 {
 	item->object_state_changed(ctx);
+}
+
+bool filter_data::supports_quality () const
+{
+	return false;
 }
 
 
@@ -2174,7 +2284,6 @@ rx_result value_data::write_value (write_data&& data, runtime_process_context* c
 				if (!value_opt[runtime::structure::value_opt_default_value])
 					value_opt[runtime::structure::value_opt_default_value] = false;
 				value = std::move(temp);
-				ctx->value_changed(this);
 				ctx->runtime_dirty([ctx, temp = std::move(temp), this](rx_result result)
 					{
 						if (result)
@@ -3701,6 +3810,7 @@ data::runtime_data_model block_data::create_runtime_model ()
 	{
 		data::runtime_model_element element;
 		element.name = one.name;
+		bool to_add = true;
 
 		switch (one.index & rt_type_mask)
 		{
@@ -3726,20 +3836,28 @@ data::runtime_data_model block_data::create_runtime_model ()
 		case rt_data_index_type:
 			{
 				auto& this_val = children[(one.index >> rt_type_shift)];
-				if (this_val.is_array())
+				if (!this_val.get_prototype()->items.empty())
 				{
-					element.value = data::rt_model_wrapper<true> {this_val.get_prototype()->create_runtime_model()};
+					if (this_val.is_array())
+					{
+						element.value = data::rt_model_wrapper<true>{ this_val.get_prototype()->create_runtime_model() };
+					}
+					else
+					{
+						element.value = data::rt_model_wrapper<false>{ this_val.get_item()->create_runtime_model() };
+					}
 				}
 				else
 				{
-					element.value = data::rt_model_wrapper<false> {this_val.get_item()->create_runtime_model()};
+					to_add = false;
 				}
 			}
 			break;
 		default:
 			RX_ASSERT(false);
 		}
-		ret.elements.push_back(std::move(element));
+		if(to_add)
+			ret.elements.push_back(std::move(element));
 	}
 	return ret;
 }
@@ -4050,6 +4168,7 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 				{
 					changed = true;
 					struct_value.value = std::move(temp);
+					ctx->value_changed(&struct_value);
 
 					if (struct_value.value_opt[runtime::structure::value_opt_persistent])
 					{
@@ -4060,6 +4179,8 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 							{
 								if (result)
 								{
+									if (this->struct_value.value_opt[runtime::structure::opt_is_in_model])
+										ctx->simple_value_changed();
 									if (tag_references_)
 										tag_references_->block_data_changed(block, ctx);
 								}

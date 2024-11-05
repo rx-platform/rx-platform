@@ -217,10 +217,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
                 {
                     for (auto callback : it->second)
                     {
-                        if (result)
-                            callback(true);
-                        else
-                            callback(result.errors());
+                        callback(result.errors());
                     }
                     whose.context_->serialize_callbacks_.erase(it);
                 }
@@ -239,10 +236,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
             {
                 for (auto callback : it->second)
                 {
-                    if (item_result)
-                        callback(true);
-                    else
-                        callback(item_result.errors());
+                    callback(item_result.errors());
                 }
                 whose.context_->serialize_callbacks_.erase(it);
             }
@@ -259,10 +253,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
         {
             for (auto callback : it->second)
             {
-                if (storage_result)
-                    callback(true);
-                else
-                    callback(storage_result.errors());
+                callback(storage_result.errors());
             }
             whose.context_->serialize_callbacks_.erase(it);
         }
@@ -517,13 +508,7 @@ void runtime_holder_algorithms<typeT>::read_struct (string_view_type path, read_
     data::runtime_values_data collected_data;
     if (path.empty())
     {// our value
-        whose.tags_.collect_data(collected_data, data.type);
-        if (data.type != runtime_value_type::simple_runtime_value)
-        {
-            whose.relations_.collect_data(collected_data, data.type);
-            whose.logic_.collect_data(collected_data, data.type);
-            whose.displays_.collect_data(collected_data, data.type);
-        }
+        collected_data = whose.runtime_data_cache_;
         result = true;
     }
     else if (path == "Storage")

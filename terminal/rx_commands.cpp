@@ -61,6 +61,7 @@
 #include "protocols/tls/rx_tls_mapping.h"
 #include "protocols/mqtt/mqtt_simple.h"
 #include "protocols/mqtt/mqtt_simple_server.h"
+#include "protocols/mqtt/mqtt_display.h"
 
 
 namespace rx_internal {
@@ -247,6 +248,10 @@ void server_command_manager::register_internal_commands ()
 	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
 		RX_MQTT_SIMPLE_BROKER_SOURCE_TYPE_ID, [] {
 			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_broker_source>();
+		});
+	result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
+		RX_MQTT_HTTP_DISPLAY_TYPE_ID, [] {
+			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_http_display>();
 		});
 
 	//

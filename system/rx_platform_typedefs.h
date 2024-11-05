@@ -152,6 +152,7 @@ constexpr static int value_opt_default_value = 16;
 // internal status for state ignorant values (On, Test, Status Simulate)
 constexpr static int opt_state_ignorant = 30;
 constexpr static int opt_is_constant = 29;
+constexpr static int opt_is_in_model = 28;
 
 // typedefs for masks
 constexpr uint_fast8_t rt_const_index_type = 0x01;

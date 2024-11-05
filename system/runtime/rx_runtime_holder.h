@@ -36,10 +36,6 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_value_templates.h"
 
-// rx_ns_resolver
-#include "system/server/rx_ns_resolver.h"
-// rx_job
-#include "system/threads/rx_job.h"
 // rx_tag_blocks
 #include "system/runtime/rx_tag_blocks.h"
 // rx_display_blocks
@@ -52,12 +48,16 @@
 #include "system/runtime/rx_operational.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_ns_resolver
+#include "system/server/rx_ns_resolver.h"
+// rx_job
+#include "system/threads/rx_job.h"
+// rx_event_manager
+#include "system/runtime/rx_event_manager.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
-// rx_event_manager
-#include "system/runtime/rx_event_manager.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -211,6 +211,9 @@ public:
       }
 
 
+
+      size_t points_count;
+
       constexpr static rx_item_type get_type_id()
       {
           return typeT::RImplType::type_id;
@@ -255,6 +258,8 @@ public:
       string_type json_cache_;
 
       memory::std_buffer binary_cache_;
+
+      data::runtime_values_data runtime_data_cache_;
 
 
 };

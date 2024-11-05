@@ -3,8 +3,8 @@
 
 #define RX_HAL_NAME "Windows"
 #define RX_HAL_MAJOR_VERSION 2
-#define RX_HAL_MINOR_VERSION 2
-#define RX_HAL_BUILD_NUMBER 1
+#define RX_HAL_MINOR_VERSION 3
+#define RX_HAL_BUILD_NUMBER 0
 
 /*********************************************************************************
 
@@ -50,4 +50,6 @@
 2.1.0 Included IP table in Ethernet Cards list, added Multi-cast
 2.2.0 VS 2022 compiler
 2.2.1 implemented rx_file_rename
+2.2.2 implemented rx_file_rename with MoveFileWithTransactionA
+2.3.0 added TLS client to platform
 *********************************************************************************/

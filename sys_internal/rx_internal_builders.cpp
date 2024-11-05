@@ -862,6 +862,7 @@ void basic_types_builder::build_object_data_struct_type(rx_directory_ptr dir, st
 	what->complex_data.register_simple_value_static("Blocked", false, false, true);
 	what->complex_data.register_const_value_static("Simulate", false);
 	what->complex_data.register_const_value_static("SimActive", false);
+	what->complex_data.register_event("Changed", RX_NS_OBJECT_CHANGED_ID, RX_CLASS_DATA_BASE_ID);
 	add_simple_type_to_configuration<struct_type>(dir, what, false);
 }
 
@@ -1384,7 +1385,8 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 			, RX_EXTERNAL_PORT_TYPE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
-			});
+			}); 
+		port->complex_data.register_struct("Options", RX_TCP_PORT_OPTIONS_TYPE_ID);
 		port->complex_data.register_struct("Bind", RX_IP_BIND_TYPE_ID);
 		port->complex_data.register_struct("Timeouts", RX_SERVER_TIMEOUTS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
@@ -1396,6 +1398,7 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		port->complex_data.register_struct("Options", RX_TCP_PORT_OPTIONS_TYPE_ID);
 		port->complex_data.register_struct("Connect", RX_IP_BIND_TYPE_ID);
 		port->complex_data.register_struct("Bind", RX_IP_BIND_TYPE_ID);
 		port->complex_data.register_struct("Timeouts", RX_CLIENT_TIMEOUTS_TYPE_ID);
@@ -2203,6 +2206,16 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
+			RX_TCP_PORT_OPTIONS_TYPE_NAME
+			, RX_TCP_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static<uint32_t>("KeepAlive", 0);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_LIMITER_PORT_OPTIONS_TYPE_NAME
 			, RX_LIMITER_PORT_OPTIONS_TYPE_ID
 			, RX_PORT_OPTIONS_TYPE_ID
@@ -2280,6 +2293,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			});
 		what->complex_data.register_const_value_static("DirectoryPath", "");
 		what->complex_data.register_simple_value_static("FileFilter", "*", false, true);
+		what->complex_data.register_simple_value_static("FileTimeout", 300'000, false, true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		//
@@ -2361,6 +2375,8 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		what->complex_data.register_const_value_static<string_type>("Certificate", "host");
+		what->complex_data.register_const_value_static<bool>("RequireClientAuth", true);
+		what->complex_data.register_const_value_static<bool>("Initiator", true);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 
@@ -2476,6 +2492,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		what->complex_data.register_const_value_static<uint16_t>("IOThreads", 0);
 		what->complex_data.register_const_value_static<uint16_t>("Workers", 0);
 		what->complex_data.register_const_value_static<bool>("CalcTimer", false);
+		what->complex_data.register_simple_value_static<uint32_t>("PointsCount", 0, true, false);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 
@@ -3057,6 +3074,15 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 			});
 		build_basic_type<basic_types::display_type>(dir, disp);
 
+		auto ev = create_type<event_type>(meta::object_type_creation_data{
+			RX_NS_OBJECT_CHANGED_NAME
+			, RX_NS_OBJECT_CHANGED_ID
+			, RX_CLASS_EVENT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		ev->arguments = rx_node_id(RX_CLASS_DATA_BASE_ID);
+		add_simple_type_to_configuration(dir, ev, false);
 		//build general data for runtime objects
 		str = create_type<basic_types::struct_type>(meta::type_creation_data{
 			RX_NS_OBJECT_DATA_NAME
@@ -3576,6 +3602,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 		map->complex_data.register_const_value_static("DataTopic", "");
 		map->complex_data.register_const_value_static<uint8_t>("QoS", 1);
 		map->complex_data.register_const_value_static("Retain", true);
+		map->complex_data.register_const_value_static<uint32_t>("HoldTime", 0);
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
 		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
@@ -3612,6 +3639,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 		map->complex_data.register_const_value_static("DataTopic", "");
 		map->complex_data.register_const_value_static<uint8_t>("QoS", 1);
 		map->complex_data.register_const_value_static("Retain", true);
+		map->complex_data.register_const_value_static<uint32_t>("HoldTime", 0);
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
 		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
@@ -3684,7 +3712,6 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 			});
 		evt->complex_data.register_const_value_static("Topic", "");
 		map->complex_data.register_const_value_static("DataTopic", "");
-		evt->complex_data.register_const_value_static("DataTopic", "");
 		evt->complex_data.register_const_value_static<uint8_t>("QoS", 1);
 		add_simple_type_to_configuration<event_type>(dir, evt, true);
 
@@ -3705,6 +3732,32 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		add_simple_type_to_configuration<event_type>(dir, evt, true);
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_MQTT_HTTP_DISPLAY_OPTIONS_TYPE_NAME
+			, RX_MQTT_HTTP_DISPLAY_OPTIONS_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("Topic", "");
+		what->complex_data.register_const_value_static<uint8_t>("QoS", 0);
+		what->complex_data.register_const_value_static("Retain", true);
+		what->complex_data.register_const_value_static<uint32_t>("HoldTime", 200);
+		what->complex_data.register_const_value_static("Port", "");
+		what->complex_data.register_const_value_static("BrokerUrl", "");
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		// http display based stuff
+		auto disp  = create_type<basic_types::display_type>(meta::type_creation_data{
+			RX_MQTT_HTTP_DISPLAY_TYPE_NAME
+			, RX_MQTT_HTTP_DISPLAY_TYPE_ID
+			, RX_STATIC_HTTP_DISPLAY_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		disp->complex_data.register_struct("Mqtt", RX_MQTT_HTTP_DISPLAY_OPTIONS_TYPE_ID);
+		add_simple_type_to_configuration<display_type>(dir, disp, true);
 
 
 	}

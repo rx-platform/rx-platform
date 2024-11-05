@@ -50,17 +50,29 @@ namespace algorithms {
 template <class typeT>
 void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& whose)
 {
+
     whose.job_lock_.lock();
     whose.job_pending_ = false;
     whose.job_lock_.unlock();
-    whose.json_cache_.clear();
-    whose.context_->init_context();
+
+    if (!whose.context_->is_started())
+    {
+        whose.context_->fire_callback_();
+        return;
+    }
+
+    whose.context_->init_context(false);
 
     string_type full_path = whose.meta_info().get_full_path();
 
     security::secured_scope _(whose.instance_data_.get_security_context());
     whose.tags_.common_tags_.loop_count_.commit();
     whose.tags_.common_tags_.last_scan_time_.commit();
+
+    if (whose.tags_.common_tags_.loop_count_ == 0)
+    {
+        whose.context_->simple_value_changed_ = true;
+    }
 
     check_context(whose, *whose.context_);
 
@@ -156,6 +168,20 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
         lap_count++;
 
     } while (whose.context_->should_repeat());
+    if (whose.context_->simple_value_changed_)
+    {
+        whose.context_->simple_value_changed_ = false;
+        if (whose.context_->object_changed)
+        {
+            data::runtime_values_data dt;
+            if (whose.tags_.get_struct_value("", dt, runtime_value_type::simple_runtime_value, whose.context_.get()))
+            {
+                whose.runtime_data_cache_ = dt;
+                whose.json_cache_.clear();
+                whose.context_->object_changed->event_fired(std::move(dt));
+            }
+        }
+    }
 
     auto diff = rx_get_us_ticks() - old_tick;
     whose.tags_.common_tags_.last_scan_time_ = (double)diff / 1000.0;

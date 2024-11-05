@@ -1105,10 +1105,6 @@ void mqtt_json_event_mapper::update_publish_from_value (rx_timed_value val, mqtt
 	{
 		rt.add_value("val", val.to_simple());
 
-		rx_simple_value vlsv;
-		string_type very_large_string(32000, 'F');
-		vlsv.assign_static(very_large_string);
-		rt.add_value("vls", std::move(vlsv));
 	}
 	else
 	{
@@ -1135,7 +1131,11 @@ void mqtt_json_event_mapper::update_publish_from_value (rx_timed_value val, mqtt
 			if (result)
 			{
 				if (!data_topic_.empty())
+				{
 					topic_add = rt.get_value_static(data_topic_, ""s);
+					if(topic_add.empty())
+						return;
+				}
 				string_type expr = writer.get_string();
 				if (!expr.empty())
 				{
@@ -1158,7 +1158,11 @@ void mqtt_json_event_mapper::update_publish_from_value (rx_timed_value val, mqtt
 			if (result)
 			{
 				if (!data_topic_.empty())
+				{
 					topic_add = rt.get_value_static(data_topic_, ""s);
+					if (topic_add.empty())
+						return;
+				}
 				string_type expr = writer.get_string();
 				if (!expr.empty())
 				{

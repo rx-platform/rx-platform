@@ -76,106 +76,19 @@ rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data);
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 
+namespace rx_platform {
+namespace meta {
+class construct_context;
+
+} // namespace meta
+} // namespace rx_platform
+
+
 
 
 namespace rx_platform {
 
 namespace meta {
-
-
-
-
-
-
-class runtime_data_prototype 
-{
-	typedef std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > const_values_type;
-    typedef std::vector<std::bitset<32> > const_values_opts_type;
-	typedef std::vector< runtime::structure::array_wrapper<runtime::structure::value_data> > values_type;
-	typedef std::vector<std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::variable_data> > > variables_type;
-	typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::struct_data> > > structs_type;
-	typedef std::vector< std::pair<rx_node_id, runtime::structure::source_data> > sources_type;
-	typedef std::vector< std::pair<rx_node_id, runtime::structure::mapper_data> > mappers_type;
-	typedef std::vector< std::pair<rx_node_id, runtime::structure::filter_data> > filters_type;
-	typedef std::vector< std::pair<rx_node_id, runtime::structure::event_data> > events_type;
-    typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::variable_block_data> > > variable_blocks_type;
-    typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::value_block_data> > > blocks_type;
-
-	typedef std::vector<runtime::structure::index_data> items_type;
-
-  public:
-
-      rx_result add_const_value (const string_type& name, rx_simple_value value, const std::bitset<32>& value_opt);
-
-      rx_result add_const_value (const string_type& name, std::vector<values::rx_simple_value> value, const std::bitset<32>& value_opt);
-
-      rx_result add_value (const string_type& name, rx_timed_value value, const std::bitset<32>& value_opt);
-
-      rx_result add_value (const string_type& name, std::vector<rx_timed_value> value, const std::bitset<32>& value_opt);
-
-      rx_result add (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id);
-
-      rx_result add (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id);
-
-      rx_result add (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id);
-
-      rx_result add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_node_id id);
-
-      rx_result add_variable (const string_type& name, std::vector<runtime::structure::variable_data> value, rx_node_id id);
-
-      rx_result add (const string_type& name, runtime::structure::source_data&& value, rx_node_id id);
-
-      rx_result add (const string_type& name, runtime::structure::filter_data&& value, rx_node_id id);
-
-      rx_result add (const string_type& name, runtime::structure::event_data&& value, rx_node_id id);
-
-      rx_result add_variable_block (const string_type& name, runtime::structure::variable_block_data&& value, rx_node_id id);
-
-      rx_result add_variable_block (const string_type& name, std::vector<runtime::structure::variable_block_data> value, rx_node_id id);
-
-      rx_result add_value_block (const string_type& name, runtime::structure::value_block_data&& value, rx_node_id id);
-
-      rx_result add_value_block (const string_type& name, std::vector<runtime::structure::value_block_data> value, rx_node_id id);
-
-      runtime_data_prototype strip_normalized_prototype ();
-
-
-      items_type items;
-
-      const_values_type const_values;
-
-      values_type values;
-
-      variables_type variables;
-
-      structs_type structs;
-
-      sources_type sources;
-
-      mappers_type mappers;
-
-      filters_type filters;
-
-      events_type events;
-
-      const_values_opts_type const_values_opts;
-
-      blocks_type blocks;
-
-      variable_blocks_type variable_blocks;
-
-
-  protected:
-
-  private:
-
-      int check_member_name (const string_type& name) const;
-
-
-      bool check_read_only(const std::bitset<32>& to, const std::bitset<32>& from);
-};
-
-typedef std::vector<runtime_data_prototype> runtime_data_type;
 
 
 
@@ -425,6 +338,231 @@ class type_check_source
 
 
 
+class dependencies_context 
+{
+
+  public:
+
+      ns::rx_directory_resolver directories;
+
+      std::set<rx_node_id> cache;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class config_part_container 
+{
+public:
+    typedef std::vector<std::unique_ptr<runtime_data::object_runtime_data> > objects_type;
+    typedef std::vector<std::unique_ptr<runtime_data::domain_runtime_data> > domains_type;
+    typedef std::vector<std::unique_ptr<runtime_data::port_runtime_data> > ports_type;
+    typedef std::vector<std::unique_ptr<runtime_data::application_runtime_data> > apps_type;
+
+
+    typedef std::vector<rx_object_type_ptr> object_types_type;
+    typedef std::vector<rx_port_type_ptr> port_types_type;
+    typedef std::vector<rx_domain_type_ptr> domain_types_type;
+    typedef std::vector<rx_application_type_ptr> app_types_type;
+
+    typedef std::vector<struct_type_ptr> struct_types_type;
+    typedef std::vector<variable_type_ptr> variable_types_type;
+
+  public:
+
+      rx_result serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const;
+
+      rx_result deserialize (const string_type& name, base_meta_reader& stream, uint8_t type);
+
+
+      objects_type objects;
+
+      domains_type domains;
+
+      ports_type ports;
+
+      apps_type apps;
+
+      object_types_type object_types;
+
+      port_types_type port_types;
+
+      domain_types_type domain_types;
+
+      app_types_type app_types;
+
+      struct_types_type struct_types;
+
+      variable_types_type variable_types;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class block_data_prototype 
+{
+    typedef std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > values_type;
+    typedef std::vector<std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::block_data> > > children_type;
+
+    typedef std::vector<runtime::structure::index_data> items_type;
+
+  public:
+
+      rx_result add_value (const string_type& name, rx_simple_value value);
+
+      rx_result add_empty_array_value (const string_type& name, rx_simple_value value);
+
+      rx_result add_value (const string_type& name, std::vector<values::rx_simple_value> value);
+
+      rx_result add (const string_type& name, runtime::structure::block_data&& value, rx_node_id id);
+
+      rx_result add_empty_array (const string_type& name, runtime::structure::block_data&& value, rx_node_id id);
+
+      rx_result add (const string_type& name, std::vector<runtime::structure::block_data>&& value, rx_node_id id);
+
+      runtime::structure::block_data create_block ();
+
+
+      items_type items;
+
+      values_type values;
+
+      children_type children;
+
+
+  protected:
+
+  private:
+
+      int check_member_name (const string_type& name) const;
+
+
+
+};
+
+
+
+
+
+
+
+class runtime_data_prototype 
+{
+	typedef std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > const_values_type;
+    typedef std::vector<std::bitset<32> > const_values_opts_type;
+	typedef std::vector< runtime::structure::array_wrapper<runtime::structure::value_data> > values_type;
+	typedef std::vector<std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::variable_data> > > variables_type;
+    typedef std::vector<runtime::structure::block_data> struct_blocks_type;
+	typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::struct_data> > > structs_type;
+	typedef std::vector< std::pair<rx_node_id, runtime::structure::source_data> > sources_type;
+	typedef std::vector< std::pair<rx_node_id, runtime::structure::mapper_data> > mappers_type;
+	typedef std::vector< std::pair<rx_node_id, runtime::structure::filter_data> > filters_type;
+	typedef std::vector< std::pair<rx_node_id, runtime::structure::event_data> > events_type;
+    typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::variable_block_data> > > variable_blocks_type;
+    typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::value_block_data> > > blocks_type;
+
+	typedef std::vector<runtime::structure::index_data> items_type;
+
+  public:
+
+      rx_result add_const_value (const string_type& name, rx_simple_value value, const std::bitset<32>& value_opt);
+
+      rx_result add_const_value (const string_type& name, std::vector<values::rx_simple_value> value, const std::bitset<32>& value_opt);
+
+      rx_result add_value (const string_type& name, rx_timed_value value, const std::bitset<32>& value_opt);
+
+      rx_result add_value (const string_type& name, std::vector<rx_timed_value> value, const std::bitset<32>& value_opt);
+
+      rx_result add (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id);
+
+      rx_result add_struct (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id, runtime::structure::block_data block);
+
+      rx_result add_struct (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id, runtime::structure::block_data block);
+
+      rx_result add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_node_id id);
+
+      rx_result add_variable (const string_type& name, std::vector<runtime::structure::variable_data> value, rx_node_id id);
+
+      rx_result add (const string_type& name, runtime::structure::source_data&& value, rx_node_id id);
+
+      rx_result add (const string_type& name, runtime::structure::filter_data&& value, rx_node_id id);
+
+      rx_result add (const string_type& name, runtime::structure::event_data&& value, rx_node_id id);
+
+      rx_result add_variable_block (const string_type& name, runtime::structure::variable_block_data&& value, rx_node_id id);
+
+      rx_result add_variable_block (const string_type& name, std::vector<runtime::structure::variable_block_data> value, rx_node_id id);
+
+      rx_result add_value_block (const string_type& name, runtime::structure::value_block_data&& value, rx_node_id id);
+
+      rx_result add_value_block (const string_type& name, std::vector<runtime::structure::value_block_data> value, rx_node_id id);
+
+      runtime_data_prototype strip_normalized_prototype ();
+
+      runtime::structure::block_data create_block_data ();
+
+
+      items_type items;
+
+      const_values_type const_values;
+
+      values_type values;
+
+      variables_type variables;
+
+      structs_type structs;
+
+      struct_blocks_type struct_blocks;
+
+      sources_type sources;
+
+      mappers_type mappers;
+
+      filters_type filters;
+
+      events_type events;
+
+      const_values_opts_type const_values_opts;
+
+      blocks_type blocks;
+
+      variable_blocks_type variable_blocks;
+
+
+  protected:
+
+  private:
+
+      int check_member_name (const string_type& name) const;
+
+
+      bool check_read_only(const std::bitset<32>& to, const std::bitset<32>& from);
+};
+
+typedef std::vector<runtime_data_prototype> runtime_data_type;
+
+
+
+
+
 class method_data_prototype 
 {
 
@@ -553,6 +691,7 @@ class construct_context
         in_program = 2,
         in_display = 3
     };
+    typedef std::stack<runtime::structure::block_data*, std::vector<runtime::structure::block_data*> > block_stack_type;
     typedef std::stack<data::runtime_values_data*, std::vector<data::runtime_values_data*> > override_stack_type;
     typedef std::vector<runtime_status_data> warnings_type;
  public:
@@ -606,6 +745,12 @@ class construct_context
 
       object_data_prototype& object_data ();
 
+      bool out_of_model ();
+
+      void end_of_model_out (bool prev);
+
+      bool is_in_model () const;
+
 
       ns::rx_directory_resolver& get_directories ()
       {
@@ -615,6 +760,12 @@ class construct_context
 
 
       rx_time now;
+
+      runtime::structure::block_data changed_data_block;
+
+      block_stack_type block_stack;
+
+      runtime::structure::event_data* changed_event;
 
 
   protected:
@@ -643,130 +794,7 @@ class construct_context
 
       int current_method_;
 
-
-};
-
-
-
-
-
-
-class dependencies_context 
-{
-
-  public:
-
-      ns::rx_directory_resolver directories;
-
-      std::set<rx_node_id> cache;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class config_part_container 
-{
-public:
-    typedef std::vector<std::unique_ptr<runtime_data::object_runtime_data> > objects_type;
-    typedef std::vector<std::unique_ptr<runtime_data::domain_runtime_data> > domains_type;
-    typedef std::vector<std::unique_ptr<runtime_data::port_runtime_data> > ports_type;
-    typedef std::vector<std::unique_ptr<runtime_data::application_runtime_data> > apps_type;
-
-
-    typedef std::vector<rx_object_type_ptr> object_types_type;
-    typedef std::vector<rx_port_type_ptr> port_types_type;
-    typedef std::vector<rx_domain_type_ptr> domain_types_type;
-    typedef std::vector<rx_application_type_ptr> app_types_type;
-
-    typedef std::vector<struct_type_ptr> struct_types_type;
-    typedef std::vector<variable_type_ptr> variable_types_type;
-
-  public:
-
-      rx_result serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const;
-
-      rx_result deserialize (const string_type& name, base_meta_reader& stream, uint8_t type);
-
-
-      objects_type objects;
-
-      domains_type domains;
-
-      ports_type ports;
-
-      apps_type apps;
-
-      object_types_type object_types;
-
-      port_types_type port_types;
-
-      domain_types_type domain_types;
-
-      app_types_type app_types;
-
-      struct_types_type struct_types;
-
-      variable_types_type variable_types;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class block_data_prototype 
-{
-    typedef std::vector<runtime::structure::array_wrapper<runtime::structure::const_value_data> > values_type;
-    typedef std::vector<std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::block_data> > > children_type;
-
-    typedef std::vector<runtime::structure::index_data> items_type;
-
-  public:
-
-      rx_result add_value (const string_type& name, rx_simple_value value);
-
-      rx_result add_empty_array_value (const string_type& name, rx_simple_value value);
-
-      rx_result add_value (const string_type& name, std::vector<values::rx_simple_value> value);
-
-      rx_result add (const string_type& name, runtime::structure::block_data&& value, rx_node_id id);
-
-      rx_result add_empty_array (const string_type& name, runtime::structure::block_data&& value, rx_node_id id);
-
-      rx_result add (const string_type& name, std::vector<runtime::structure::block_data>&& value, rx_node_id id);
-
-      runtime::structure::block_data create_block ();
-
-
-      items_type items;
-
-      values_type values;
-
-      children_type children;
-
-
-  protected:
-
-  private:
-
-      int check_member_name (const string_type& name) const;
-
+      bool in_model_;
 
 
 };
@@ -778,6 +806,7 @@ class block_data_prototype
 namespace rx_platform {
 namespace meta {
 runtime::structure::runtime_item::smart_ptr create_runtime_data(runtime_data_prototype& prototype);
+void create_changed_data_block(runtime_data_prototype& vprototype);
 }
 }
 

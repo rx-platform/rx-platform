@@ -96,7 +96,7 @@ class tcp_server_endpoint
       ~tcp_server_endpoint();
 
 
-      rx_result_with<tcp_server_endpoint::socket_ptr> open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, security::security_context_ptr identity);
+      rx_result_with<tcp_server_endpoint::socket_ptr> open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, security::security_context_ptr identity, uint32_t keep_alive);
 
       rx_result close ();
 
@@ -157,7 +157,7 @@ class tcp_server_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< tcp_server_endpoint  > tcp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< rx_internal::interfaces::ip_endpoints::tcp_server_endpoint  > tcp_server_base;
 
 
 
@@ -207,6 +207,8 @@ TCP Server port class. implementation of an TCP/IP4 server side, listen, accept,
       runtime::local_value<uint32_t> recv_timeout_;
 
       runtime::local_value<uint32_t> send_timeout_;
+
+      runtime::local_value<uint32_t> keep_alive_;
 
       free_buffers_type free_buffers_;
 

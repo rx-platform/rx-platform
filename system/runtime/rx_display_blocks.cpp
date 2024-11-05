@@ -113,6 +113,7 @@ rx_result displays_holder::start_displays (runtime::runtime_start_context& ctx, 
         string_type sub_path = rt_path + RX_OBJECT_DELIMETER;
         for (auto& one : displays_)
         {
+            ctx.structure.push_item(*one.item);
             ret = one.item->start_runtime(ctx);
             if (!ret)
                 return ret;
@@ -123,6 +124,7 @@ rx_result displays_holder::start_displays (runtime::runtime_start_context& ctx, 
             ret = one.display_ptr->register_display(ctx, disp_path);
             if (!ret)
                 return ret;
+            ctx.structure.pop_item();
 
         }
     }

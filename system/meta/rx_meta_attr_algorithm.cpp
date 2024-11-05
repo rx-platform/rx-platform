@@ -142,12 +142,13 @@ rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
+	runtime::structure::block_data block;
 	if (whose.array_size_ < 0)
 	{
-		auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::struct_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+		auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::struct_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 		if (temp)
 		{
-			return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
+			return ctx.runtime_data().add_struct(whose.name_, std::move(temp.value()), target, std::move(block));
 		}
 		else
 		{
@@ -160,7 +161,7 @@ rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::construct_complex
 		data.reserve(whose.array_size_);
 		for (int i = 0; i < whose.array_size_; i++)
 		{
-			auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::struct_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+			auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::struct_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 			if (temp)
 			{
 				data.push_back(temp.move_value());
@@ -170,7 +171,7 @@ rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::construct_complex
 				return temp.errors();
 			}
 		}
-		return ctx.runtime_data().add(whose.name_, std::move(data), target);
+		return ctx.runtime_data().add_struct(whose.name_, std::move(data), target, std::move(block));
 	}
 }
 
@@ -345,6 +346,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 				temp.value().value = whose.get_value(ctx.now);
 				temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 				temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+				temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
 				return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target);
 			}
 			else
@@ -372,6 +374,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 						temp.value().value = first;
 					temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 					temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+					temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
 					data.push_back(temp.move_value());
 				}
 				else
@@ -406,6 +409,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 					temp.value().value = whose.get_value(ctx.now);
 					temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 					temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+					temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
 					runtime::structure::variable_block_data block;
 					block.variable = temp.move_value();
 					block.type_ptr = std::move(temp_data.value().type_ptr);
@@ -445,6 +449,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 							temp.value().value = first;
 						temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 						temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+						temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
 						runtime::structure::variable_block_data block;
 						block.variable = temp.move_value();
 						block.type_ptr = std::move(temp_data.value().type_ptr);
@@ -1310,11 +1315,12 @@ rx_result complex_data_algorithm::get_depends (const complex_data_type& whose, d
 	return true;
 }
 
-std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool persistent)
+std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool persistent, bool in_model)
 {
 	std::bitset<32> ret;
 	ret[runtime::structure::value_opt_readonly] = read_only;
 	ret[runtime::structure::value_opt_persistent] = persistent;
+	ret[runtime::structure::opt_is_in_model] = in_model;
 	return ret;
 }
 
@@ -1329,7 +1335,8 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 				whose.get_value(),
 				get_value_opt(
 					whose.get_read_only(),
-					whose.get_persistent()));
+					whose.get_persistent(),
+					ctx.is_in_model()));
 			if (!ret)
 			{
 				ret.register_error("Unable to add const value "s + whose.get_name() + "!");
@@ -1343,7 +1350,8 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 				whose.get_values(),
 				get_value_opt(
 					whose.get_read_only(),
-					whose.get_persistent()));
+					whose.get_persistent(),
+					ctx.is_in_model()));
 			if (!ret)
 			{
 				ret.register_error("Unable to add const value "s + whose.get_name() + "!");
@@ -1372,7 +1380,8 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 
 				data.struct_value.value_opt = get_value_opt(
 					whose.get_read_only(),
-					whose.get_persistent());
+					whose.get_persistent(),
+					ctx.is_in_model());
 				data.struct_value.value_opt[opt_is_constant] = true;
 				data.block = std::move(temp.value().runtime);
 				data.timestamp = ctx.now;
@@ -1394,7 +1403,8 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 
 						temp_data.struct_value.value_opt = get_value_opt(
 							whose.get_read_only(),
-							whose.get_persistent());
+							whose.get_persistent(),
+							ctx.is_in_model());
 						temp_data.struct_value.value_opt[opt_is_constant] = true;
 						temp_data.block = std::move(temp.value().runtime);
 						temp_data.timestamp = ctx.now;
@@ -1426,7 +1436,8 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 				whose.get_value(ctx.now),
 				get_value_opt(
 					whose.get_read_only(),
-					whose.get_persistent()));
+					whose.get_persistent(),
+					ctx.is_in_model()));
 			if (!ret)
 			{
 				ret.register_error("Unable to add simple value "s + whose.get_name() + "!");
@@ -1440,7 +1451,8 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 				whose.get_values(ctx.now),
 				get_value_opt(
 					whose.get_read_only(),
-					whose.get_persistent()));
+					whose.get_persistent(),
+					ctx.is_in_model()));
 			if (!ret)
 			{
 				ret.register_error("Unable to add simple value "s + whose.get_name() + "!");
@@ -1469,7 +1481,8 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 
 				data.struct_value.value_opt = get_value_opt(
 					whose.get_read_only(),
-					whose.get_persistent());
+					whose.get_persistent(),
+					ctx.is_in_model());
 				data.block = std::move(temp.value().runtime);
 				data.timestamp = ctx.now;
 				data.struct_value.value = whose.get_value(ctx.now);
@@ -1494,7 +1507,8 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 
 					temp_data.struct_value.value_opt = get_value_opt(
 						whose.get_read_only(),
-						whose.get_persistent());
+						whose.get_persistent(),
+						ctx.is_in_model());
 					temp_data.block = std::move(temp.value().runtime);
 					temp_data.timestamp = ctx.now;
 					temp_data.type_ptr = std::move(temp.value().type_ptr);

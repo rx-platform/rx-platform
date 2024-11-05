@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -41,8 +41,9 @@
 namespace rx_internal {
 
 namespace enterprise {
+extern const char* c_json_content_type;
 
-// Class rx_internal::enterprise::enterprise_handler
+// Class rx_internal::enterprise::enterprise_handler 
 
 
 void enterprise_handler::begin_read (uint64_t trans_id, string_view_type path, runtime_value_type type, enterprise_interface_callback* callback)
@@ -62,7 +63,7 @@ void enterprise_handler::begin_query (uint64_t trans_id, string_view_type path, 
 }
 
 
-// Class rx_internal::enterprise::enterprise_interface_callback
+// Class rx_internal::enterprise::enterprise_interface_callback 
 
 enterprise_interface_callback::~enterprise_interface_callback()
 {
@@ -70,7 +71,7 @@ enterprise_interface_callback::~enterprise_interface_callback()
 
 
 
-// Class rx_internal::enterprise::std_enterprise_interface
+// Class rx_internal::enterprise::std_enterprise_interface 
 
 std_enterprise_interface::std_enterprise_interface()
       : g_last_id_(1)
@@ -100,6 +101,50 @@ void std_enterprise_interface::begin_read (uint64_t trans_id, string_view_type p
 	{
 		rx_directory_resolver directories;
 		directories.add_paths({ "/world" , "/" });
+		if (item_path.empty())
+		{
+			auto dir_ptr = directories.resolve_directory(whose);
+			if (dir_ptr)
+			{
+
+				uint64_t my_id = register_transaction(trans_id, callback, anchor);
+
+				rx_post_function_to(RX_DOMAIN_META, rx_reference_ptr(),
+					[this, trans_id = my_id, args, sub_item = std::move(item_path)](rx_directory_ptr dir_ptr, rx_reference_ptr anchor)
+					{
+						string_type type;
+						auto it = args.find("type");
+						if (it != args.end())
+						{
+							type = it->second;
+						}
+
+						rx_item_type type_type;
+						rx_node_id type_id;
+
+						if (!type.empty())
+						{
+							rx_directory_resolver directories;
+							directories.add_paths({ "/world" , "/", dir_ptr->meta_info().get_full_path()});
+
+							auto resolve_result = api::ns::rx_resolve_reference(rx_item_reference(type), type_type, directories);
+							if (!resolve_result.name.empty())
+							{
+								type_id = resolve_result.id;
+								sync_read(trans_id, dir_ptr, type_id, type_type, args, anchor);
+								return;
+							}
+						}
+						string_type content = create_error_response(2, "Error finding type "s + type);
+						uint32_t http_result = 400;
+						finish_read_transaction(trans_id, http_result, c_json_content_type, content);
+
+					}, std::move(dir_ptr), std::move(anchor));
+
+				return;
+
+			}
+		}
 
 		auto resolve_result = api::ns::rx_resolve_reference(whose, directories);
 		if (resolve_result)
@@ -337,11 +382,3 @@ uint64_t std_enterprise_interface::register_transaction (uint64_t trans_id, ente
 } // namespace enterprise
 } // namespace rx_internal
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return "json";
-
-#endif

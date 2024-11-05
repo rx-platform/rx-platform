@@ -45,10 +45,14 @@ class runtime_events_manager;
 } // namespace events
 
 namespace tag_blocks {
-class binded_tags;
 class connected_tags;
-
+class binded_tags;
 } // namespace tag_blocks
+
+namespace structure {
+class event_data;
+
+} // namespace structure
 } // namespace runtime
 } // namespace rx_platform
 
@@ -489,17 +493,36 @@ class runtime_process_context
 
     typedef std::function<void()> fire_callback_func_t;
     typedef std::map<runtime_transaction_id_t, std::vector<serialize_callback_t> > serialize_callbacks_type;
+    enum class runtime_context_state : int_fast8_t
+    {
+        idle = 0,
+        initialized = 1,
+        starting = 2,
+        started = 3,
+        stopping = 4,
+        stopped = 5,
+
+        max_value = 5
+    };
     //typedef std::vector<context_value_point*> points_type;
 
   public:
       runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, security::security_guard_ptr guard, events::runtime_events_manager* events);
 
 
-      rx_result init_context ();
+      rx_result init_context (bool in_loop);
 
       void init_state (fire_callback_func_t fire_callback);
 
       void start_state (status_data_type status_data);
+
+      void started (rx_time time);
+
+      bool is_started ();
+
+      bool is_starting ();
+
+      void runtime_stopping ();
 
       void runtime_stopped ();
 
@@ -577,7 +600,7 @@ class runtime_process_context
 
       events_type& get_events_for_process ();
 
-      void struct_pending (structure::event_data* whose);
+      void struct_pending (structure::struct_data* whose);
 
       structs_type& get_structs_for_process ();
 
@@ -599,6 +622,8 @@ class runtime_process_context
 
       bool should_save ();
 
+      bool register_save_callback (serialize_callback_t callback);
+
       async_values_type& get_async_values ();
 
       void full_value_changed (structure::full_value_data* whose);
@@ -616,6 +641,10 @@ class runtime_process_context
       rx_result execute_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id);
 
       rx_time now ();
+
+      void simple_value_changed ();
+
+      bool in_scan () const;
 
 
       events::runtime_events_manager * get_events_manager ()
@@ -647,6 +676,9 @@ class runtime_process_context
         return directory_resolver_;
       }
 
+
+
+      structure::event_data *object_changed;
 
 
       const meta_data& meta_info;
@@ -755,7 +787,7 @@ class runtime_process_context
 
       double_collection<async_values_type> async_values_;
 
-      bool stopping_;
+      runtime_context_state state_;
 
       double_collection<method_results_type> method_results_;
 
@@ -766,6 +798,8 @@ class runtime_process_context
       security::security_guard_ptr security_guard_;
 
       serialize_callbacks_type serialize_callbacks_;
+
+      bool simple_value_changed_;
 
       template<runtime_process_step step>
       void turn_on_pending();

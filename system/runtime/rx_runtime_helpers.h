@@ -62,15 +62,19 @@ class callback_value_point;
 
 
 namespace rx_platform {
+namespace runtime {
+namespace tag_blocks {
+class binded_tags;
+} // namespace tag_blocks
+} // namespace runtime
+
 namespace ns {
 class rx_directory_resolver;
 } // namespace ns
 
 namespace runtime {
-namespace tag_blocks {
-class binded_tags;
-} // namespace tag_blocks
-
+class relation_subscriber;
+class runtime_process_context;
 namespace structure {
 class mapper_data;
 class variable_data;
@@ -84,11 +88,8 @@ template <class typeT> class runtime_holder;
 
 namespace relations {
 class relations_holder;
+
 } // namespace relations
-
-class relation_subscriber;
-class runtime_process_context;
-
 } // namespace runtime
 } // namespace rx_platform
 
@@ -98,7 +99,10 @@ class runtime_process_context;
 namespace rx_platform {
 
 namespace runtime {
-
+namespace structure
+{
+class block_data;
+}
 
 struct update_item
 {
@@ -195,6 +199,14 @@ class io_capabilities
       void set_in_event (bool val);
 
       bool get_in_event () const;
+
+      void set_in_source (bool val);
+
+      bool get_in_source () const;
+
+      void set_in_mapper (bool val);
+
+      bool get_in_mapper () const;
 
 
   protected:
@@ -511,12 +523,17 @@ class mappers_stack
     typedef std::map<rx_node_id, std::vector<structure::mapper_data*> > mappers_type;
 
   public:
+      mappers_stack();
+
 
       void push_mapper (const rx_node_id& id, structure::mapper_data* what);
 
       void pop_mapper (const rx_node_id& id);
 
       std::vector<rx_simple_value> get_mapping_values (const rx_node_id& id, const string_type& path);
+
+
+      structure::mapper_data* mapper;
 
 
   protected:
@@ -540,12 +557,17 @@ class sources_stack
     typedef std::map<rx_node_id, std::vector<structure::source_data*> > sources_type;
 
   public:
+      sources_stack();
+
 
       void push_source (const rx_node_id& id, structure::source_data* what);
 
       void pop_source (const rx_node_id& id);
 
       std::vector<rx_simple_value> get_source_values (const rx_node_id& id, const string_type& path);
+
+
+      structure::source_data* source;
 
 
   protected:
@@ -622,6 +644,10 @@ struct runtime_init_context
       pending_connections_type pending_connections;
 
       status_data_type status_data;
+
+      std::unique_ptr<structure::block_data> model;
+
+      size_t points_count;
 
   public:
       runtime_init_context(const runtime_init_context&) = delete;

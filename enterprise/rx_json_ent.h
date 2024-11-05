@@ -57,6 +57,8 @@ class json_enterprise_interface : public std_enterprise_interface
 
       void sync_read (uint64_t trans_id, platform_item_ptr item, string_view_type sub_path, const enterprise_args_t& args, rx_reference_ptr anchor);
 
+      void sync_read (uint64_t trans_id, rx_directory_ptr dir, const rx_node_id& type_id, rx_item_type type_type, const enterprise_args_t& args, rx_reference_ptr anchor);
+
       void sync_write (uint64_t trans_id, platform_item_ptr item, string_view_type sub_path, string_view_type data, const enterprise_args_t& args, rx_reference_ptr anchor);
 
       void sync_execute (uint64_t trans_id, platform_item_ptr item, string_view_type sub_path, string_view_type data, const enterprise_args_t& args, rx_reference_ptr anchor);
@@ -71,6 +73,9 @@ class json_enterprise_interface : public std_enterprise_interface
   protected:
 
   private:
+
+      rx_result recursive_list_directory (rx_directory_ptr item, std::vector<platform_item_ptr>& rt_items, const std::set<rx_node_id>& by_type);
+
 
 
 };

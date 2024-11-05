@@ -115,7 +115,7 @@ class file_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< rx_internal::interfaces::file_endpoints::file_endpoint  > file_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_singleton_port_impl< file_endpoint  > file_port_base;
 
 
 struct dmon_initializer
@@ -165,6 +165,8 @@ File port class. implementation of file share communication port");
       string_type dir_path_;
 
       local_value<string_type> file_filter_;
+
+      local_value<uint32_t> file_timeout_;
 
 
 };

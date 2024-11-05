@@ -201,7 +201,8 @@ rx_result runtime_item_resolver::start_resolver (const rx_item_reference& ref, i
     directories_ = dirs;
     runtime_reference_ = ref;
     my_state_ = resolver_state::waiting;
-    rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().register_subscriber(runtime_reference_, this);
+    if(!runtime_reference_.is_null())
+        rx_internal::sys_runtime::platform_runtime_manager::instance().get_cache().register_subscriber(runtime_reference_, this);
     return true;
 }
 

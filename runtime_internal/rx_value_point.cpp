@@ -68,9 +68,10 @@ namespace data_source {
 #define ASIN_CODE	ABS_CODE-1
 #define ACOS_CODE	ASIN_CODE-1
 #define ATAN_CODE	ACOS_CODE-1
+#define LEN_CODE	ATAN_CODE-1
 
 
-#define MAX_BI_CODE ATAN_CODE-1
+#define MAX_BI_CODE LEN_CODE-1
 
 // binary operations
 #define GE_CODE		MAX_BI_CODE-1
@@ -109,7 +110,8 @@ oper_struct operations[] = {
 	{ EXP_CODE,"exp",3},
 	{ ASIN_CODE,"asin",4},
 	{ ACOS_CODE,"acos",4},
-	{ ATAN_CODE,"atan",4}
+	{ ATAN_CODE,"atan",4},
+	{ LEN_CODE,"len",3}
 };
 
 #define POINT_LOCAL_VAR_NAME "x"
@@ -1657,8 +1659,21 @@ void value_point_impl::unary (uint8_t o, rx_value& r, char*& prog, char*& token,
 		else
 			throw std::runtime_error("Parser error, invalid op!");
 	}
+	else if (o == LEN_CODE)
+	{
+		if (r.is_array())
+		{
+			uint32_t len = 
+				(uint32_t)/*This has to be uniquely defined function and 64 is an overkill by me*/r.array_size();
+			r.assign_static(len);
+		}
+		else
+			throw std::runtime_error("Parser error, invalid op!");
+	}
 	else
+	{
 		RX_ASSERT(false);
+	}
 }
 
 void value_point_impl::arith (uint8_t o, rx_value& r, rx_value& h, char*& prog, char*& token, char& tok_type, char*& expres)

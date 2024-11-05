@@ -802,6 +802,9 @@ void method_data::process_execute_result (runtime_transaction_id_t id, rx_result
 
 rx_result method_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+
+    // point_count!!!!
+    //ctx.points_count += 2;
     ctx.structure.push_item(*item);
     ctx.method = this;
     method_ptr->container_ = this;

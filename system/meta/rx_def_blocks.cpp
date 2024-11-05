@@ -97,6 +97,17 @@ rx_result complex_data_type::register_event (const def_blocks::event_attribute& 
 	return ret;
 }
 
+rx_result complex_data_type::register_event (const string_type& name, const rx_node_id& id, const rx_node_id& data_id)
+{
+	def_blocks::event_attribute temp(name, id, data_id);
+	auto ret = check_name(temp.get_name(), (static_cast<int>(events_.size() | complex_data_type::events_mask)));
+	if (ret)
+	{
+		events_.emplace_back(std::move(temp));
+	}
+	return ret;
+}
+
 rx_result complex_data_type::register_simple_value (const string_type& name, rx_simple_value&& val, bool read_only, bool persistent)
 {
 	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
@@ -397,9 +408,10 @@ std::vector<values::rx_simple_value> const_value_def::get_values () const
 
 // Class rx_platform::meta::def_blocks::event_attribute 
 
-event_attribute::event_attribute (const string_type& name, const rx_node_id& id)
+event_attribute::event_attribute (const string_type& name, const rx_node_id& id, const rx_node_id& data_id)
       : name_(name)
 	, target_(id)
+	, arguments_(data_id)
 {
 }
 

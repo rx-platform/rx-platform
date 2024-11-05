@@ -45,10 +45,10 @@ using rx_internal::rx_security::x509::x509_security_context;
 #define TLS_LOG_TRACE(src,lvl,msg) RX_TRACE("TLS",src,lvl,msg)
 
 
-// dummy
-#include "dummy.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+// dummy
+#include "dummy.h"
 
 namespace protocols {
 namespace rx_tls {
@@ -74,7 +74,7 @@ class tls_transport_endpoint
 {
 
   public:
-      tls_transport_endpoint (tls_transport_port* port, x509_certificate_ptr& cert);
+      tls_transport_endpoint (tls_transport_port* port, x509_certificate_ptr& cert, bool initiator);
 
       ~tls_transport_endpoint();
 
@@ -112,6 +112,10 @@ class tls_transport_endpoint
 
       static rx_protocol_result_t transport_connected (rx_protocol_stack_endpoint* reference, const protocol_address* local_address, const protocol_address* remote_address);
 
+      static rx_protocol_result_t connected_function (rx_protocol_stack_endpoint* reference, rx_session* session);
+
+      static rx_protocol_result_t disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason);
+
 
 
       rx_protocol_stack_endpoint stack_entry_;
@@ -133,6 +137,8 @@ class tls_transport_endpoint
 
       void* out_buffer_;
 
+      bool initiator_;
+
 
 };
 
@@ -142,7 +148,7 @@ class tls_transport_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< tls_transport_endpoint  > tls_transport_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< protocols::rx_tls::tls_transport_endpoint  > tls_transport_port_base;
 
 
 
@@ -151,7 +157,7 @@ typedef rx_platform::runtime::io_types::ports_templates::connection_transport_po
 
 class tls_transport_port : public tls_transport_port_base  
 {
-    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+    DECLARE_CODE_INFO("rx", 0, 6, 0, "\
 TLS protocol port class. Implementation of a rx-platform TLS protocol");
 
     DECLARE_REFERENCE_PTR(tls_transport_port);
@@ -175,6 +181,10 @@ TLS protocol port class. Implementation of a rx-platform TLS protocol");
       rx_cred_t cred_;
 
       x509_certificate_ptr cert_;
+
+      bool req_client_;
+
+      bool initiator_;
 
 
 };

@@ -152,43 +152,51 @@ bool assemble_sender_subscriber::is_application ()
 
 rx_result stack_builder::connect_stack_top (rx_port_ptr top, rx_port_ptr who)
 {
-    auto& top_build_kind = top->get_instance_data().behavior.build_behavior;
-    auto& who_build_kind = who->get_instance_data().behavior.build_behavior;
-    // check to see if we support it
-    if (!top_build_kind || top_build_kind->is_application())
+
+    if (who->get_context().get_mode().is_on() && top->get_context().get_mode().is_on())
     {
-        // can't put anything on top of the application port
-        return RX_NOT_SUPPORTED;
-    }
-    if (!who_build_kind || who_build_kind->is_external())
-    {
-        // can't put external on top
-        return RX_NOT_SUPPORTED;
-    }
-    // collect instance data and do the connection
-    auto& top_data = top->get_instance_data().stack_data;
-    auto& who_data = who->get_instance_data().stack_data;
-    if (who_data.build_map.stack_top)
-    {
-        RX_ASSERT(false);// this shouldn't happen
-        return RX_ALREADY_CONNECTED;
-    }
-    who_data.build_map.stack_top = top;
-    auto result = top_data.build_map.register_port(who, top);
-    if (result)
-    {
-        if (top_build_kind->is_assemble_sender() || top_data.build_map.stack_ready)
+        auto& top_build_kind = top->get_instance_data().behavior.build_behavior;
+        auto& who_build_kind = who->get_instance_data().behavior.build_behavior;
+        // check to see if we support it
+        if (!top_build_kind || top_build_kind->is_application())
         {
-            if (!top_data.build_map.stack_ready)
-                top_data.build_map.stack_ready = true;
-            stack_builder::recursive_send_stack_assembled(who);
+            // can't put anything on top of the application port
+            return RX_NOT_SUPPORTED;
         }
+        if (!who_build_kind || who_build_kind->is_external())
+        {
+            // can't put external on top
+            return RX_NOT_SUPPORTED;
+        }
+        // collect instance data and do the connection
+        auto& top_data = top->get_instance_data().stack_data;
+        auto& who_data = who->get_instance_data().stack_data;
+        if (who_data.build_map.stack_top)
+        {
+            RX_ASSERT(false);// this shouldn't happen
+            return RX_ALREADY_CONNECTED;
+        }
+        who_data.build_map.stack_top = top;
+        auto result = top_data.build_map.register_port(who, top);
+        if (result)
+        {
+            if (top_build_kind->is_assemble_sender() || top_data.build_map.stack_ready)
+            {
+                if (!top_data.build_map.stack_ready)
+                    top_data.build_map.stack_ready = true;
+                stack_builder::recursive_send_stack_assembled(who);
+            }
+        }
+        else
+        {
+            who_data.build_map.stack_top = rx_port_ptr::null_ptr;
+        }
+        return result;
     }
     else
     {
-        who_data.build_map.stack_top = rx_port_ptr::null_ptr;
+        return RX_INVALID_STATE;
     }
-    return result;
 }
 
 rx_result stack_builder::disconnect_stack (rx_port_ptr who)
@@ -251,7 +259,8 @@ void stack_builder::recursive_send_stack_assembled (rx_port_ptr who)
             ss << one->meta_info().name;
         }
         RUNTIME_LOG_INFO("stack_builder", 900, ss.str());
-        who->get_implementation()->stack_assembled();
+        if(who->get_context().get_mode().is_on())
+            who->get_implementation()->stack_assembled();
         return;
     }
     auto up_stack = who_data.build_map.get_registered();

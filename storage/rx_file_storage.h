@@ -181,7 +181,7 @@ class file_system_storage : public rx_platform::storage_base::rx_platform_storag
 
   private:
 
-      rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items);
+      rx_result recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items, bool rt);
 
       rx_storage_item_ptr get_storage_item_from_file_path (const string_type& path, const meta_data& storage_meta);
 

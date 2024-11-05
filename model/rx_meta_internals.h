@@ -381,6 +381,7 @@ public:
 
 	struct runtime_data_t
 	{
+        runtime::structure::block_data model;
 		RTypePtr target;
 		runtime_state state;
         rx_node_id type;
@@ -410,6 +411,8 @@ public:
       rx_result_with<create_runtime_result<typeT> > create_runtime (typename typeT::instance_data_t&& instance_data, data::runtime_values_data&& runtime_data, bool prototype = false);
 
       rx_result_with<typename types_repository<typeT>::RTypePtr> get_runtime (const rx_node_id& id, bool only_running = true) const;
+
+      runtime::structure::block_data get_runtime_model (const rx_node_id& id, bool only_running = true) const;
 
       rx_result delete_runtime (rx_node_id id);
 
@@ -444,6 +447,10 @@ public:
       bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
 
       bool is_instanced_from (rx_node_id id, rx_node_id base_id) const;
+
+      bool is_the_same (const rx_node_id& id, typename types_repository<typeT>::Tptr what);
+
+      bool is_the_same (const rx_node_id& id, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data& runtime_data);
 
 
   protected:
@@ -512,7 +519,7 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
-      rx_result_with<typename simple_types_repository<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx) const;
+      rx_result_with<typename simple_types_repository<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, runtime::structure::block_data* block_ptr = nullptr) const;
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -533,6 +540,8 @@ public:
       rx_result register_peer_type (rx_reference<discovery::peer_item> what);
 
       rx_result delete_peer_type (const rx_node_id& id);
+
+      bool is_the_same (const rx_node_id& id, typename simple_types_repository<typeT>::Tptr what);
 
 
   protected:
@@ -718,6 +727,8 @@ public:
 
       bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
 
+      bool is_the_same (const rx_node_id& id, relations_type_repository::Tptr what);
+
 
   protected:
 
@@ -780,7 +791,7 @@ public:
       rx_result register_type (data_type_repository::Tptr what);
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
-      
+
       rx_result_with<runtime::structure::block_data_result_t> create_data_type (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, const rx_directory_resolver& dirs, runtime::types_cache* types);
 
       api::query_result get_derived_types (const rx_node_id& id) const;
@@ -798,6 +809,8 @@ public:
       rx_result type_exists (rx_node_id id) const;
 
       bool is_derived_from (rx_node_id id, rx_node_id base_id) const;
+
+      bool is_the_same (const rx_node_id& id, data_type_repository::Tptr what);
 
 
   protected:

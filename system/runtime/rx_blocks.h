@@ -55,63 +55,6 @@ namespace blocks {
 
 
 
-class filter_runtime : public rx::pointers::reference_object  
-{
-	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-filter runtime. basic implementation of an filter runtime");
-
-	DECLARE_REFERENCE_PTR(filter_runtime);
-    friend class structure::filter_data;
-
-  public:
-      filter_runtime();
-
-      filter_runtime (lock_reference_struct* extern_data);
-
-      virtual ~filter_runtime();
-
-
-      string_type get_type_name () const;
-
-      virtual rx_result initialize_filter (runtime::runtime_init_context& ctx);
-
-      virtual rx_result start_filter (runtime::runtime_start_context& ctx);
-
-      virtual rx_result stop_filter (runtime::runtime_stop_context& ctx);
-
-      virtual rx_result deinitialize_filter (runtime::runtime_deinit_context& ctx);
-
-
-      static string_type type_name;
-
-
-  protected:
-
-      rx_result filter_changed ();
-
-
-  private:
-
-      virtual bool supports_input () const;
-
-      virtual bool supports_output () const;
-
-      virtual rx_result filter_input (rx_value& val);
-
-      virtual rx_result filter_output (rx_simple_value& val);
-
-
-
-      structure::filter_data* container_;
-
-
-};
-
-
-
-
-
-
 class mapper_runtime : public rx::pointers::reference_object  
 {
 	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
@@ -437,6 +380,8 @@ event runtime. basic implementation of an event runtime");
 
       string_type get_type_name () const;
 
+      virtual rx_result initialize_event_internal (runtime::runtime_init_context& ctx);
+
       virtual rx_result initialize_event (runtime::runtime_init_context& ctx);
 
       virtual rx_result start_event (runtime::runtime_start_context& ctx);
@@ -559,6 +504,63 @@ data type runtime. basic implementation of an data runtime");
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class filter_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+filter runtime. basic implementation of an filter runtime");
+
+	DECLARE_REFERENCE_PTR(filter_runtime);
+    friend class structure::filter_data;
+
+  public:
+      filter_runtime();
+
+      filter_runtime (lock_reference_struct* extern_data);
+
+      virtual ~filter_runtime();
+
+
+      string_type get_type_name () const;
+
+      virtual rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+      virtual rx_result start_filter (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_filter (runtime::runtime_stop_context& ctx);
+
+      virtual rx_result deinitialize_filter (runtime::runtime_deinit_context& ctx);
+
+
+      static string_type type_name;
+
+
+  protected:
+
+      rx_result filter_changed ();
+
+
+  private:
+
+      virtual bool supports_input () const;
+
+      virtual bool supports_output () const;
+
+      virtual rx_result filter_input (rx_value& val);
+
+      virtual rx_result filter_output (rx_simple_value& val);
+
+
+
+      structure::filter_data* container_;
 
 
 };

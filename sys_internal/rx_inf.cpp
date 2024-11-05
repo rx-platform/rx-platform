@@ -58,7 +58,8 @@ server_runtime* g_object = nullptr;
 // Class rx_internal::infrastructure::server_runtime 
 
 server_runtime::server_runtime()
-      : extern_executer_(nullptr)
+      : extern_executer_(nullptr),
+        points_count_(0)
 {
 }
 
@@ -432,8 +433,32 @@ rx_result server_runtime::initialize_runtime (runtime::runtime_init_context& ctx
 		ctx.tags->set_item_static("Runtime.IOThreads", io_pool_->get_pool_size(), ctx);
 		ctx.tags->set_item_static("Runtime.Workers", workers_[0] ? workers_[0]->get_pool_size() : (uint16_t)0, ctx);
 		ctx.tags->set_item_static("Runtime.CalcTimer", calculation_timer_.operator bool(), ctx);
+
+		result = points_count_.bind("Runtime.PointsCount", ctx);
 	}
 	return result;
+}
+
+rx_result server_runtime::start_runtime (runtime::runtime_start_context& ctx)
+{
+	timer_ = create_timer_function([this]()
+		{
+			system_tick();
+		});
+	if (timer_)
+	{
+		timer_->start(1770, false);
+	}
+	return true;
+}
+
+rx_result server_runtime::stop_runtime (runtime::runtime_stop_context& ctx)
+{
+	if (timer_)
+	{
+		timer_->cancel();
+	}
+	return true;
 }
 
 server_runtime& server_runtime::instance ()
@@ -441,6 +466,12 @@ server_runtime& server_runtime::instance ()
 	if (g_object == nullptr)
 		g_object = new server_runtime();
 	return *g_object;
+}
+
+void server_runtime::system_tick ()
+{
+	uint32_t count = (uint32_t)sys_runtime::platform_runtime_manager::instance().get_points_count();
+	points_count_ = count;
 }
 
 runtime_data_t server_runtime::get_cpu_data ()

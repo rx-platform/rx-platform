@@ -35,6 +35,8 @@
 #include "system/runtime/rx_operational.h"
 // rx_event_manager
 #include "system/runtime/rx_event_manager.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
 
@@ -100,15 +102,17 @@ runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binde
       : tags_(tags),
         binded_(binded),
         events_manager_(events),
+        object_changed(nullptr),
         current_step_(runtime_process_step::idle),
         now_(rx_time::now().c_data().t_value),
         meta_info(info),
         directory_resolver_(dirs),
         serialize_trans_id_(0),
-        stopping_(false),
+        state_(runtime_context_state::idle),
         job_queue_(nullptr),
         anchor_(anchor),
-        security_guard_(guard)
+        security_guard_(guard),
+        simple_value_changed_(true)
 {
     mode_.turn_off();
     mode_time_ = rx_time_struct_t{ now_ };
@@ -116,28 +120,65 @@ runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binde
 
 
 
-rx_result runtime_process_context::init_context ()
+rx_result runtime_process_context::init_context (bool in_loop)
 {
     now_ = rx_time::now().c_data().t_value;
     current_step_ = runtime_process_step::async_values;
+   // if (!in_loop)
+   //     simple_value_changed_ = false;
+
     return true;
 }
 
 void runtime_process_context::init_state (fire_callback_func_t fire_callback)
 {
+    locks::auto_lock_t _(&context_lock_);
+    RX_ASSERT(state_ == runtime_context_state::idle);
+    state_ = runtime_context_state::initialized;
     fire_callback_ = fire_callback;
     mode_.turn_on();
 }
 
 void runtime_process_context::start_state (status_data_type status_data)
 {
+    locks::auto_lock_t _(&context_lock_);
+    RX_ASSERT(state_ == runtime_context_state::initialized);
+    state_ = runtime_context_state::starting;
     mode_ = status_data.mode;
+}
+
+void runtime_process_context::started (rx_time time)
+{
+    locks::auto_lock_t _(&context_lock_);
+    RX_ASSERT(state_ == runtime_context_state::starting);
+    state_ = runtime_context_state::started;
+}
+
+bool runtime_process_context::is_started ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    return state_ == runtime_context_state::started;
+}
+
+bool runtime_process_context::is_starting ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    return state_ == runtime_context_state::starting;
+}
+
+void runtime_process_context::runtime_stopping ()
+{
+    locks::auto_lock_t _(&context_lock_);
+    RX_ASSERT(state_ == runtime_context_state::started);
+    state_ = runtime_context_state::stopping;
 }
 
 void runtime_process_context::runtime_stopped ()
 {
     locks::auto_lock_t _(&context_lock_);
-    stopping_ = true;
+    RX_ASSERT(state_ == runtime_context_state::stopping);
+    state_ = runtime_context_state::stopped;
+    state_ = runtime_context_state::idle;
 }
 
 void runtime_process_context::runtime_deinitialized ()
@@ -171,7 +212,7 @@ bool runtime_process_context::should_repeat ()
     RX_ASSERT(current_step_ == runtime_process_step::beyond_last);
     bool ret =  pending_steps_.to_ulong() != 0;
     if (ret)
-        return init_context();
+        return init_context(true);
     else
         current_step_ = runtime_process_step::idle;
     return ret;
@@ -180,7 +221,7 @@ bool runtime_process_context::should_repeat ()
 void runtime_process_context::async_value_pending (async_data data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::async_values>();
     async_values_.emplace_back(std::move(data));
@@ -189,7 +230,7 @@ void runtime_process_context::async_value_pending (async_data data)
 void runtime_process_context::status_change_pending ()
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::status_change>();
 }
@@ -197,7 +238,7 @@ void runtime_process_context::status_change_pending ()
 void runtime_process_context::source_result_pending (write_result_struct<structure::source_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::source_inputs>();
     source_results_.emplace_back(std::move(data));
@@ -206,7 +247,7 @@ void runtime_process_context::source_result_pending (write_result_struct<structu
 void runtime_process_context::source_update_pending (update_data_struct<structure::source_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::source_inputs>();
     source_inputs_.emplace_back(std::move(data));
@@ -215,7 +256,7 @@ void runtime_process_context::source_update_pending (update_data_struct<structur
 void runtime_process_context::mapper_write_pending (write_data_struct<structure::mapper_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::mapper_inputs>();
     mapper_inputs_.emplace_back(std::move(data));
@@ -224,7 +265,7 @@ void runtime_process_context::mapper_write_pending (write_data_struct<structure:
 void runtime_process_context::mapper_execute_pending (execute_data_struct<structure::mapper_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::mapper_inputs>();
     mapper_executes_.emplace_back(std::move(data));
@@ -232,7 +273,7 @@ void runtime_process_context::mapper_execute_pending (execute_data_struct<struct
 
 void runtime_process_context::tag_writes_pending ()
 {
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::tag_inputs>();
 }
@@ -241,7 +282,7 @@ void runtime_process_context::variable_pending (structure::variable_data* whose)
 {
     RX_ASSERT(whose->value.get_type() != RX_STRUCT_TYPE);
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::variables>();
     variables_.emplace_back(std::move(whose));
@@ -250,7 +291,7 @@ void runtime_process_context::variable_pending (structure::variable_data* whose)
 void runtime_process_context::variable_result_pending (write_result_struct<structure::variable_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::variables>();
     variable_results_.emplace_back(std::move(data));
@@ -259,7 +300,7 @@ void runtime_process_context::variable_result_pending (write_result_struct<struc
 void runtime_process_context::variable_pending (structure::variable_block_data* whose)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::variables>();
     block_variables_.emplace_back(std::move(whose));
@@ -268,7 +309,7 @@ void runtime_process_context::variable_pending (structure::variable_block_data* 
 void runtime_process_context::variable_result_pending (write_result_struct<structure::variable_block_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::variables>();
     block_variable_results_.emplace_back(std::move(data));
@@ -277,7 +318,7 @@ void runtime_process_context::variable_result_pending (write_result_struct<struc
 void runtime_process_context::method_result_pending (method_execute_result_data data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::programs>();
     method_results_.emplace_back(std::move(data));
@@ -286,7 +327,7 @@ void runtime_process_context::method_result_pending (method_execute_result_data 
 void runtime_process_context::program_pending (logic_blocks::program_data* whose)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::programs>();
     programs_.emplace_back(whose);
@@ -295,7 +336,7 @@ void runtime_process_context::program_pending (logic_blocks::program_data* whose
 void runtime_process_context::filter_pending (structure::filter_data* whose)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::filters>();
     filters_.emplace_back(whose);
@@ -304,7 +345,7 @@ void runtime_process_context::filter_pending (structure::filter_data* whose)
 void runtime_process_context::own_pending (job_ptr what)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::own>();
     owns_.emplace_back(std::move(what));
@@ -313,7 +354,7 @@ void runtime_process_context::own_pending (job_ptr what)
 void runtime_process_context::tag_updates_pending ()
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::tag_outputs>();
 }
@@ -321,7 +362,7 @@ void runtime_process_context::tag_updates_pending ()
 void runtime_process_context::mapper_update_pending (update_data_struct<structure::mapper_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::mapper_outputs>();
     mapper_outputs_.emplace_back(std::move(data));
@@ -330,7 +371,7 @@ void runtime_process_context::mapper_update_pending (update_data_struct<structur
 void runtime_process_context::source_write_pending (write_data_struct<structure::source_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::source_outputs>();
     source_outputs_.emplace_back(std::move(data));
@@ -413,24 +454,28 @@ filters_type& runtime_process_context::get_filters_for_process ()
 
 void runtime_process_context::variable_value_changed (structure::variable_data* whose, const values::rx_value& val)
 {
+    if (whose->value_opt[runtime::structure::opt_is_in_model])
+    {
+        simple_value_changed();
+    }
     rx_value adapted_val = adapt_value(val);
-    /*if(is_mine_value(val))
-        binded_.variable_change(whose, adapted_val);*/
     tags_.variable_change(whose, std::move(adapted_val));
 }
 
 void runtime_process_context::variable_block_value_changed (structure::variable_block_data* whose, const values::rx_value& val)
 {
+    if (whose->variable.value_opt[runtime::structure::opt_is_in_model])
+    {
+        simple_value_changed();
+    }
     rx_value adapted_val = adapt_value(val);
-    /*if (is_mine_value(val))
-        binded_.block_variable_change(whose, adapted_val);*/
     tags_.variable_block_change(whose, std::move(adapted_val));
 }
 
 void runtime_process_context::event_pending (event_fired_struct<structure::event_data> data)
 {
     locks::auto_lock_t _(&context_lock_);
-    if (stopping_)
+    if (state_ >= runtime_context_state::stopping)
         return;
     turn_on_pending<runtime_process_step::events>();
     events_.emplace_back(std::move(data));
@@ -445,7 +490,7 @@ events_type& runtime_process_context::get_events_for_process ()
         return g_empty_events;
 }
 
-void runtime_process_context::struct_pending (structure::event_data* whose)
+void runtime_process_context::struct_pending (structure::struct_data* whose)
 {
 }
 
@@ -461,14 +506,14 @@ structs_type& runtime_process_context::get_structs_for_process ()
 rx_value runtime_process_context::adapt_value (const rx_value& from) const
 {
     rx_value ret(from);
-    from.get_value(ret, mode_time_, mode_);
+    from.get_value(ret, std::max(mode_time_, from.get_time()), mode_);
     return ret;
 }
 
 rx_value runtime_process_context::adapt_value (const rx_timed_value& from) const
 {
     rx_value ret;
-    from.get_value(ret, mode_time_, mode_);
+    from.get_value(ret, std::max(mode_time_, from.get_time()), mode_);
     return ret;
 }
 
@@ -597,6 +642,20 @@ bool runtime_process_context::should_save ()
     return serialize_trans_id_ != 0;
 }
 
+bool runtime_process_context::register_save_callback (serialize_callback_t callback)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (serialize_trans_id_ != 0)
+    {
+        serialize_callbacks_[serialize_trans_id_].emplace_back(std::move(callback));
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 async_values_type& runtime_process_context::get_async_values ()
 {
     locks::auto_lock_t _(&context_lock_);
@@ -639,6 +698,10 @@ bool runtime_process_context::is_mine_value (const rx_value& from) const
 
 void runtime_process_context::value_changed (structure::value_data* whose)
 {
+    if (whose->value_opt[runtime::structure::opt_is_in_model])
+    {
+        simple_value_changed();
+    }
     binded_.value_change(whose, whose->get_value(this));
     tags_.binded_value_change(whose, whose->get_value(this));
 }
@@ -664,6 +727,18 @@ rx_time runtime_process_context::now ()
         return rx_time::now();
     else
         return rx_time_struct_t{ now_ };
+}
+
+void runtime_process_context::simple_value_changed ()
+{
+    simple_value_changed_ = true;
+    if (!in_scan())
+        fire_callback_();
+}
+
+bool runtime_process_context::in_scan () const
+{
+    return current_step_ != runtime_process_step::idle;
 }
 
 

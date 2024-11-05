@@ -138,6 +138,8 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 
 					if (result && changed)
 					{
+						if (it_handles->second.ref_value_ptr.value->value_opt[runtime::structure::opt_is_in_model])
+							ctx->simple_value_changed();
 						auto new_value = it_handles->second.ref_value_ptr.value->get_value(ctx);
 						value_change(it_handles->second.ref_value_ptr.value, new_value);
 						tags.binded_value_change(it_handles->second.ref_value_ptr.value, new_value);
@@ -177,9 +179,11 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 						data.value = std::move(val);
 						data.test = ctx->get_mode().is_test();
 						result = it_handles->second.ref_value_ptr.block_value->write_value(std::move(data), ctx, changed);
-
+						
 						if (result && changed)
 						{
+							if (it_handles->second.ref_value_ptr.block_value->struct_value.value_opt[runtime::structure::opt_is_in_model])
+								ctx->simple_value_changed();
 							auto new_value = it_handles->second.ref_value_ptr.block_value->get_value(ctx);
 							block_value_change(it_handles->second.ref_value_ptr.block_value, new_value);
 							tags.binded_block_change(it_handles->second.ref_value_ptr.block_value, new_value);
@@ -1566,6 +1570,8 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 						result = it->second.reference.ref_value_ptr.value->write_value(std::move(data), context_, changed);
 						if (result && changed)
 						{
+							if (it->second.reference.ref_value_ptr.value->value_opt[runtime::structure::opt_is_in_model])
+								context_->simple_value_changed();
 							auto val = it->second.reference.ref_value_ptr.value->get_value(context_);
 							for (const auto& one : it->second.monitors)
 								next_send_[one].insert_or_assign(item, val);
@@ -1599,6 +1605,8 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 						result = it->second.reference.ref_value_ptr.block_value->write_value(std::move(data), context_, changed);
 						if (result && changed)
 						{
+							if (it->second.reference.ref_value_ptr.value->value_opt[runtime::structure::opt_is_in_model])
+								context_->simple_value_changed();
 							auto val = it->second.reference.ref_value_ptr.block_value->get_value(context_);
 							for (const auto& one : it->second.monitors)
 								next_send_[one].insert_or_assign(item, val);
@@ -1733,6 +1741,8 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 					result = it->second.reference.ref_value_ptr.value->write_value(std::move(data), context_, changed);
 					if (result && changed)
 					{
+						if (it->second.reference.ref_value_ptr.value->value_opt[runtime::structure::opt_is_in_model])
+							context_->simple_value_changed();
 						auto val = it->second.reference.ref_value_ptr.value->get_value(context_);
 						for (const auto& one : it->second.monitors)
 							next_send_[one].insert_or_assign(item, val);
@@ -1849,6 +1859,8 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 						result = it->second.reference.ref_value_ptr.block_value->write_value(std::move(data), context_, changed);
 						if (result && changed)
 						{
+							if (it->second.reference.ref_value_ptr.value->value_opt[runtime::structure::opt_is_in_model])
+								context_->simple_value_changed();
 							auto val = it->second.reference.ref_value_ptr.block_value->get_value(context_);
 							for (const auto& one : it->second.monitors)
 								next_send_[one].insert_or_assign(item, val);

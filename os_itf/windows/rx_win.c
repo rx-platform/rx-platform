@@ -1130,7 +1130,19 @@ int rx_file_delete(const char* path)
 
 int rx_file_rename(const char* old_path, const char* new_path)
 {
-	return MoveFileExA(old_path, new_path, MOVEFILE_WRITE_THROUGH | MOVEFILE_REPLACE_EXISTING) != 0 ? RX_OK : RX_ERROR;
+	HANDLE trans = CreateTransaction(NULL, 0, TRANSACTION_DO_NOT_PROMOTE, 0, 0, INFINITE, NULL);
+	if (trans == INVALID_HANDLE_VALUE)
+		return RX_OK;
+	
+	int ret = RX_ERROR;
+	if (MoveFileTransactedA(old_path, new_path, NULL, NULL, MOVEFILE_WRITE_THROUGH | MOVEFILE_REPLACE_EXISTING, trans))
+	{
+		if (CommitTransaction(trans))
+			ret = RX_OK;
+	}
+	CloseHandle(trans);
+
+	return ret;
 }
 
 int rx_file_exsist(const char* path)

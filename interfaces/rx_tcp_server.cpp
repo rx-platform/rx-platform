@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -55,7 +55,7 @@ namespace interfaces {
 
 namespace ip_endpoints {
 
-// Class rx_internal::interfaces::ip_endpoints::tcp_server_endpoint
+// Class rx_internal::interfaces::ip_endpoints::tcp_server_endpoint 
 
 tcp_server_endpoint::tcp_server_endpoint()
       : my_port_(nullptr),
@@ -73,8 +73,8 @@ tcp_server_endpoint::tcp_server_endpoint()
         if (me->tcp_socket_)
         {
             me->close();
+            rx_notify_closed(&me->stack_endpoint_, 0);
         }
-        rx_notify_closed(&me->stack_endpoint_, 0);
         return RX_PROTOCOL_OK;
     };
 }
@@ -95,7 +95,7 @@ tcp_server_endpoint::~tcp_server_endpoint()
 
 
 
-rx_result_with<tcp_server_endpoint::socket_ptr> tcp_server_endpoint::open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, security::security_context_ptr identity)
+rx_result_with<tcp_server_endpoint::socket_ptr> tcp_server_endpoint::open (tcp_server_port* my_port, sys_handle_t handle, sockaddr_in* addr, sockaddr_in* local_addr, threads::dispatcher_pool& dispatcher, security::security_context_ptr identity, uint32_t keep_alive)
 {
     identity_ = identity;
     my_port_ = my_port;
@@ -298,7 +298,7 @@ void tcp_server_endpoint::socket_holder_t::detach()
 {
     whose = nullptr;
 }
-// Class rx_internal::interfaces::ip_endpoints::tcp_server_port
+// Class rx_internal::interfaces::ip_endpoints::tcp_server_port 
 
 
 rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -310,7 +310,10 @@ rx_result tcp_server_port::initialize_runtime (runtime::runtime_init_context& ct
 
     auto bind_result = recv_timeout_.bind("Timeouts.ReceiveTimeout", ctx);
     if (!bind_result)
-        RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
+        RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout"); ;
+    bind_result = keep_alive_.bind("Options.KeepAlive", ctx);
+    if (!bind_result)
+        RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Options.KeepAlive");
     bind_result = send_timeout_.bind("Timeouts.SendTimeout", ctx);
     if (!bind_result)
         RUNTIME_LOG_ERROR("tcp_server_port", 200, "Unable to bind to value Timeouts.ReceiveTimeout");
@@ -330,7 +333,7 @@ rx_result tcp_server_port::start_listen (const protocol_address* local_address, 
         {
              auto new_endpoint = std::make_unique<tcp_server_endpoint>();
              auto sec_ctx = get_security_context();
-            auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), sec_ctx);
+            auto ret_ptr = new_endpoint->open(this, handle, his, mine, rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), sec_ctx, keep_alive_);
             if (ret_ptr)
             {
                 new_endpoint->set_receive_timeout(recv_timeout_);
@@ -349,7 +352,7 @@ rx_result tcp_server_port::start_listen (const protocol_address* local_address, 
         });
     if (!bind_address_.is_null())
     {
-        auto result = listen_socket_->start_tcpip_4(bind_address_.get_ip4_address(), rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool());
+        auto result = listen_socket_->start_tcpip_4(bind_address_.get_ip4_address(), rx_internal::infrastructure::server_runtime::instance().get_io_pool()->get_pool(), keep_alive_);
         if (!result)
         {
             char buff[0x100];
@@ -428,7 +431,7 @@ buffer_ptr tcp_server_port::get_buffer ()
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_http_port
+// Class rx_internal::interfaces::ip_endpoints::system_http_port 
 
 
 uint16_t system_http_port::get_configuration_port () const
@@ -440,7 +443,7 @@ uint16_t system_http_port::get_configuration_port () const
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_rx_port
+// Class rx_internal::interfaces::ip_endpoints::system_rx_port 
 
 
 uint16_t system_rx_port::get_configuration_port () const
@@ -452,7 +455,7 @@ uint16_t system_rx_port::get_configuration_port () const
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_server_port_base
+// Class rx_internal::interfaces::ip_endpoints::system_server_port_base 
 
 
 rx_result system_server_port_base::initialize_runtime (runtime::runtime_init_context& ctx)
@@ -567,7 +570,7 @@ void system_server_port_base::extract_bind_address (const data::runtime_values_d
 }
 
 
-// Class rx_internal::interfaces::ip_endpoints::system_opcua_port
+// Class rx_internal::interfaces::ip_endpoints::system_opcua_port 
 
 
 uint16_t system_opcua_port::get_configuration_port () const

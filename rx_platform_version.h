@@ -4,8 +4,8 @@
 
 #define RX_SERVER_NAME "Molecule"
 #define RX_SERVER_MAJOR_VERSION 2
-#define RX_SERVER_MINOR_VERSION 5
-#define RX_SERVER_BUILD_NUMBER 5
+#define RX_SERVER_MINOR_VERSION 6
+#define RX_SERVER_BUILD_NUMBER 2
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -53,4 +53,6 @@
 // version 2.3.0 resolved execute for both methods
 // version 2.4.0 model transactions done
 // version 2.5.0 heap implementation
+// version 2.6.0 add object changed event
+// version 2.6.1 added support for differences for version control, git friendly, len function
 

@@ -71,13 +71,16 @@ void handle_error(const char* file, int lineno, const char* msg) {
 
 #define int_error(msg) handle_error(__FILE__, __LINE__, msg)
 
-
-int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert)
+int rx_connect_credentials(rx_cred_t* cred, rx_auth_context_t* ctx, const void* data, size_t size, void* out_data, size_t* out_size)
+{
+	return RX_ERROR;
+}
+int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert, int client)
 {
 
     /* create the SSL server context */
     cred->ssl_ctx = g_ssl_ctx;
-
+	cred->client = client;
 
     cred->buffer_size = 0x4000;
 	return RX_OK;

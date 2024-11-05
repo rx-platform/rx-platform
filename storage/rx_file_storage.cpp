@@ -119,12 +119,12 @@ void file_system_storage::deinit_storage ()
 
 rx_result file_system_storage::list_storage (std::vector<rx_storage_item_ptr>& items)
 {
-	auto result = recursive_list_storage("/", root_, items);
+	auto result = recursive_list_storage("/", root_, items, false);
 	if (result)
 	{
 		auto rt_path = rx_combine_paths(root_, RX_FILE_STORAGE_RUNTIME_DIR);
 		if(rx_file_exsist(rt_path.c_str()))
-			result = recursive_list_storage("/", rt_path, items);
+			result = recursive_list_storage("/", rt_path, items, true);
 	}
 	return result;
 }
@@ -139,7 +139,7 @@ rx_result file_system_storage::list_storage_roles (std::vector<rx_roles_storage_
 	return true;
 }
 
-rx_result file_system_storage::recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items)
+rx_result file_system_storage::recursive_list_storage (const string_type& path, const string_type& file_path, std::vector<rx_storage_item_ptr>& items, bool rt)
 {
 	string_type result_path;
 	string_array file_names, directory_names;
@@ -151,7 +151,7 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 			if (one.empty() || one[0] == '.')
 				continue;// skip specific folders
 			result_path = rx_combine_paths(file_path, one);
-			auto ret = recursive_list_storage(path + one + RX_DIR_DELIMETER, result_path, items);
+			auto ret = recursive_list_storage(path + one + RX_DIR_DELIMETER, result_path, items, rt);
 			if (!ret)
 				return ret;
 		}
@@ -175,7 +175,9 @@ rx_result file_system_storage::recursive_list_storage (const string_type& path, 
 				storage_meta.modified_time = modified;
 			}
 			rx_storage_item_ptr storage_item = get_storage_item_from_file_path(result_path, storage_meta);
-			if(storage_item)
+			if (storage_item
+				&& ((!rt && storage_item->get_storage_type() != rx_storage_item_type::runtime)
+				|| (rt && storage_item->get_storage_type() == rx_storage_item_type::runtime)))
 				items.emplace_back(std::move(storage_item));
 		}
 	}

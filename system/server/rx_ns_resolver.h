@@ -49,7 +49,7 @@ namespace ns {
 
 class rx_names_cache 
 {
-    typedef std::map<string_type, rx_namespace_item> name_items_hash_type;
+    typedef std::map<string_type, std::list<rx_namespace_item> > name_items_hash_type;
 
   public:
       rx_names_cache();
@@ -63,7 +63,7 @@ class rx_names_cache
 
       static bool should_cache (const rx_namespace_item& item);
 
-      rx_result removed_cached_item (const string_type& name);
+      rx_result removed_cached_item (const string_type& name, const rx_node_id& id);
 
       void clear ();
 
@@ -74,6 +74,8 @@ class rx_names_cache
 
 
       name_items_hash_type name_items_hash_;
+
+      locks::slim_lock lock_;
 
 
 };

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -42,26 +42,33 @@ namespace protocols {
 
 namespace rx_tls {
 
-// Class protocols::rx_tls::tls_transport_endpoint
+// Class protocols::rx_tls::tls_transport_endpoint 
 
-tls_transport_endpoint::tls_transport_endpoint (tls_transport_port* port, x509_certificate_ptr& cert)
+tls_transport_endpoint::tls_transport_endpoint (tls_transport_port* port, x509_certificate_ptr& cert, bool initiator)
       : port_(port),
         executer_(-1),
         connected_(false),
         aquired_(false),
-        out_buffer_(nullptr)
+        out_buffer_(nullptr),
+        initiator_(initiator)
 {
     TLS_LOG_DEBUG("tls_transport_endpoint", 200, "TLS communication server endpoint created.");
 
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.received_function = &tls_transport_endpoint::received_function;
     stack_entry_.send_function = &tls_transport_endpoint::send_function;
+    stack_entry_.connected_function = &tls_transport_endpoint::connected_function;
+    stack_entry_.disconnected_function = &tls_transport_endpoint::disconnected_function;
 
 	executer_ = port->get_executer();
 
-
+    rx_certificate_t* cert_p = NULL;
+    if (cert != NULL)
+    {
+        cert_p = cert->get_certificate_object();
+    }
     rx_time_struct time;
-    if (RX_OK == rx_aquire_cert_credentials(&cred_, &time, cert->get_certificate_object()))
+    if (RX_OK == rx_aquire_cert_credentials(&cred_, &time, cert_p, initiator ? 1 : 0))
     {
         rx_init_auth_context(&auth_ctx_);
         aquired_ = true;
@@ -97,52 +104,109 @@ rx_protocol_result_t tls_transport_endpoint::received_function (rx_protocol_stac
     tls_transport_endpoint* me = reinterpret_cast<tls_transport_endpoint*>(reference->user_data);
     if (!me->connected_)
     {
-        size_t out_size = me->cred_.buffer_size;
-        auto res = rx_accept_credentials(&me->cred_, &me->auth_ctx_, packet.buffer->buffer_ptr, rx_get_packet_available_data(packet.buffer), me->out_buffer_, &out_size);
-        if (res == RX_OK)
+        if (me->initiator_)
         {
-            rx_protocol_result_t result = RX_PROTOCOL_OK;
-            if (out_size > 0)
+            size_t out_size = me->cred_.buffer_size;
+            auto res = rx_connect_credentials(&me->cred_, &me->auth_ctx_, packet.buffer->buffer_ptr, rx_get_packet_available_data(packet.buffer), me->out_buffer_, &out_size);
+            if (res == RX_OK)
             {
-                auto buffer = me->port_->alloc_io_buffer();
-                if (buffer)
+                rx_protocol_result_t result = RX_PROTOCOL_OK;
+                if (out_size > 0)
                 {
-                    buffer.value().write(me->out_buffer_, out_size);
-                    auto send_packet = rx_create_send_packet(0, &buffer.value(), 0, 0);
-                    result = rx_move_packet_down(reference, send_packet);
-
-                    me->port_->release_io_buffer(buffer.move_value());
-                }
-                else
-                {
-                    return RX_PROTOCOL_OUT_OF_MEMORY;
-                }
-            }
-            if (result == RX_PROTOCOL_OK && rx_is_auth_context_complete(&me->auth_ctx_))
-            {
-                rx_certificate_t cert;
-                if (RX_OK == rx_get_peer_certificate(&me->auth_ctx_, &cert))
-                {
-                    auto cert_ctx = rx_create_reference<x509_security_context>();
-                    cert_ctx->set_certificate(&cert);
-                    if (cert_ctx->login())
+                    auto buffer = me->port_->alloc_io_buffer();
+                    if (buffer)
                     {
-                        me->peer_context_ = cert_ctx;
+                        buffer.value().write(me->out_buffer_, out_size);
+                        auto send_packet = rx_create_send_packet(0, &buffer.value(), 0, 0);
+                        result = rx_move_packet_down(reference, send_packet);
+
+                        me->port_->release_io_buffer(buffer.move_value());
+                    }
+                    else
+                    {
+                        return RX_PROTOCOL_OUT_OF_MEMORY;
                     }
                 }
-                security::secured_scope _(me->peer_context_);
-                res = transport_connected(reference, packet.to_addr, packet.from_addr);
-                if (res != RX_PROTOCOL_OK)
-                    return res;
-                me->connected_ = true;
+                if (result == RX_PROTOCOL_OK && rx_is_auth_context_complete(&me->auth_ctx_))
+                {
+                    rx_certificate_t cert;
+                    if (RX_OK == rx_get_peer_certificate(&me->auth_ctx_, &cert))
+                    {
+                        auto cert_ctx = rx_create_reference<x509_security_context>();
+                        cert_ctx->set_certificate(&cert);
+                        if (cert_ctx->login())
+                        {
+                            me->peer_context_ = cert_ctx;
+                        }
+                    }
+                    me->connected_ = true;
+                    security::secured_scope _(me->peer_context_);
+                    res = transport_connected(reference, packet.to_addr, packet.from_addr);
+                    if (res != RX_PROTOCOL_OK)
+                    {
+                        me->connected_ = false;
+                        return res;
+                    }
 
 
+
+                }
+                return RX_PROTOCOL_OK;
             }
-            return RX_PROTOCOL_OK;
+            else
+            {
+                return RX_PROTOCOL_INSUFFICIENT_DATA;
+            }
         }
         else
         {
-            return RX_PROTOCOL_INSUFFICIENT_DATA;
+            size_t out_size = me->cred_.buffer_size;
+            auto res = rx_accept_credentials(&me->cred_, &me->auth_ctx_, packet.buffer->buffer_ptr, rx_get_packet_available_data(packet.buffer), me->out_buffer_, &out_size);
+            if (res == RX_OK)
+            {
+                rx_protocol_result_t result = RX_PROTOCOL_OK;
+                if (out_size > 0)
+                {
+                    auto buffer = me->port_->alloc_io_buffer();
+                    if (buffer)
+                    {
+                        buffer.value().write(me->out_buffer_, out_size);
+                        auto send_packet = rx_create_send_packet(0, &buffer.value(), 0, 0);
+                        result = rx_move_packet_down(reference, send_packet);
+
+                        me->port_->release_io_buffer(buffer.move_value());
+                    }
+                    else
+                    {
+                        return RX_PROTOCOL_OUT_OF_MEMORY;
+                    }
+                }
+                if (result == RX_PROTOCOL_OK && rx_is_auth_context_complete(&me->auth_ctx_))
+                {
+                    rx_certificate_t cert;
+                    if (RX_OK == rx_get_peer_certificate(&me->auth_ctx_, &cert))
+                    {
+                        auto cert_ctx = rx_create_reference<x509_security_context>();
+                        cert_ctx->set_certificate(&cert);
+                        if (cert_ctx->login())
+                        {
+                            me->peer_context_ = cert_ctx;
+                        }
+                    }
+                    security::secured_scope _(me->peer_context_);
+                    res = transport_connected(reference, packet.to_addr, packet.from_addr);
+                    if (res != RX_PROTOCOL_OK)
+                        return res;
+                    me->connected_ = true;
+
+
+                }
+                return RX_PROTOCOL_OK;
+            }
+            else
+            {
+                return RX_PROTOCOL_INSUFFICIENT_DATA;
+            }
         }
     }
     else
@@ -229,37 +293,115 @@ void tls_transport_endpoint::close_endpoint ()
 rx_protocol_result_t tls_transport_endpoint::transport_connected (rx_protocol_stack_endpoint* reference, const protocol_address* local_address, const protocol_address* remote_address)
 {
     tls_transport_endpoint* me = reinterpret_cast<tls_transport_endpoint*>(reference->user_data);
-    if (local_address)
+
+    if (me->initiator_)
     {
-        const char* addr = nullptr;
-        rx_extract_string_address(local_address, &addr);
-        if (addr)
-        {
-        }
+        auto session = rx_create_session(local_address, remote_address, 0, 0, NULL);
+        return rx_notify_connected(reference, &session);
     }
-    io::string_address addr("");
-    auto result = me->port_->stack_endpoint_connected(reference, &addr, remote_address);
-    if (!result)
+    else
     {
-        std::ostringstream ss;
-        ss << "Error binding connected endpoint ";
-        ss << result.errors_line();
-        //OPCUA_LOG_ERROR("opcua_sec_none_endpoint", 200, ss.str().c_str());
-        return RX_PROTOCOL_INVALID_ADDR;
+        if (local_address)
+        {
+            const char* addr = nullptr;
+            rx_extract_string_address(local_address, &addr);
+            if (addr)
+            {
+            }
+        }
+        io::string_address addr("");
+        auto result = me->port_->stack_endpoint_connected(reference, &addr, remote_address);
+        if (!result)
+        {
+            std::ostringstream ss;
+            ss << "Error binding connected endpoint ";
+            ss << result.errors_line();
+            //OPCUA_LOG_ERROR("opcua_sec_none_endpoint", 200, ss.str().c_str());
+            return RX_PROTOCOL_INVALID_ADDR;
+        }
+        return RX_PROTOCOL_OK;
+    }
+}
+
+rx_protocol_result_t tls_transport_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
+{
+    tls_transport_endpoint* me = reinterpret_cast<tls_transport_endpoint*>(reference->user_data);
+    size_t out_size = me->cred_.buffer_size;
+    auto res = rx_connect_credentials(&me->cred_, &me->auth_ctx_, NULL, 0, me->out_buffer_, &out_size);
+    if (res == RX_OK)
+    {
+        rx_protocol_result_t result = RX_PROTOCOL_OK;
+        if (out_size > 0)
+        {
+            auto buffer = me->port_->alloc_io_buffer();
+            if (buffer)
+            {
+                buffer.value().write(me->out_buffer_, out_size);
+                auto send_packet = rx_create_send_packet(0, &buffer.value(), 0, 0);
+                result = rx_move_packet_down(reference, send_packet);
+
+                me->port_->release_io_buffer(buffer.move_value());
+            }
+            else
+            {
+                return RX_PROTOCOL_OUT_OF_MEMORY;
+            }
+        }
+        if (result == RX_PROTOCOL_OK && rx_is_auth_context_complete(&me->auth_ctx_))
+        {
+            rx_certificate_t cert;
+            if (RX_OK == rx_get_peer_certificate(&me->auth_ctx_, &cert))
+            {
+                auto cert_ctx = rx_create_reference<x509_security_context>();
+                cert_ctx->set_certificate(&cert);
+                if (cert_ctx->login())
+                {
+                    me->peer_context_ = cert_ctx;
+                }
+            }
+            security::secured_scope _(me->peer_context_);
+            res = transport_connected(reference, session->local_addr, session->remote_addr);
+            if (res != RX_PROTOCOL_OK)
+                return res;
+            me->connected_ = true;
+
+
+        }
+        return RX_PROTOCOL_OK;
+    }
+    else
+    {
+        return RX_PROTOCOL_INSUFFICIENT_DATA;
+    }
+}
+
+rx_protocol_result_t tls_transport_endpoint::disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason)
+{
+    tls_transport_endpoint* me = reinterpret_cast<tls_transport_endpoint*>(reference->user_data);
+    if (me->peer_context_)
+    {
+        me->peer_context_->logout();
+        me->peer_context_ = x509_security_context::smart_ptr::null_ptr;
+    }
+    if (rx_is_auth_context_complete(&me->auth_ctx_))
+    {
+        rx_deinit_auth_context(&me->auth_ctx_);
     }
     return RX_PROTOCOL_OK;
 }
 
 
-// Class protocols::rx_tls::tls_transport_port
+// Class protocols::rx_tls::tls_transport_port 
 
 tls_transport_port::tls_transport_port()
+      : req_client_(true),
+        initiator_(true)
 {
 	construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
 	{
-        if (cert_)
-        {
-            auto rt = std::make_unique<tls_transport_endpoint>(this, cert_);
+        /*if (cert_)
+        {*/
+            auto rt = std::make_unique<tls_transport_endpoint>(this, cert_, initiator_);
             auto entry = rt->bind_endpoint([this](int64_t count)
                 {
                 },
@@ -267,14 +409,14 @@ tls_transport_port::tls_transport_port()
                 {
                 });
             return construct_func_type::result_type{ entry, std::move(rt) };
-        }
+        /*}
         else
         {
             io::any_address temp_addr1(remote_address);
             io::any_address temp_addr2(local_address);
             TLS_LOG_ERROR("", 300, "No valid certificate defined on endpoint "s + temp_addr2.to_string() + " for remote client "s + temp_addr1.to_string());
             return construct_func_type::result_type{ nullptr, std::unique_ptr<tls_transport_endpoint>() };
-        }
+        }*/
 	};
 }
 
@@ -287,6 +429,8 @@ tls_transport_port::~tls_transport_port()
 
 rx_result tls_transport_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+    req_client_ = ctx.get_item_static<bool>("Options.RequireClientAuth", true);
+    initiator_ = ctx.get_item_static<bool>("Options.Initiator", true);
     string_type cert_name = ctx.get_item_static<string_type>("Options.Certificate", "");
     if (!cert_name.empty())
     {

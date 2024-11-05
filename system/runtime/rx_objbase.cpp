@@ -336,12 +336,18 @@ rx_protocol_stack_endpoint* port_runtime::construct_initiator_endpoint (const pr
 
 rx_result port_runtime::add_stack_endpoint (rx_protocol_stack_endpoint* what, const io::any_address& local_addr, const io::any_address& remote_addr)
 {
-	return rx_internal::interfaces::port_stack::stack_active::active_builder::add_stack_endpoint(runtime_, what, local_addr, remote_addr);
+	if (context_->get_mode().is_on())
+		return rx_internal::interfaces::port_stack::stack_active::active_builder::add_stack_endpoint(runtime_, what, local_addr, remote_addr);
+	else
+		return RX_INVALID_STATE;
 }
 
 rx_result port_runtime::register_routing_endpoint (rx_protocol_stack_endpoint* what)
 {
-	return rx_internal::interfaces::port_stack::stack_active::active_builder::register_routing_endpoint(runtime_, what);
+	if (context_->get_mode().is_on())
+		return rx_internal::interfaces::port_stack::stack_active::active_builder::register_routing_endpoint(runtime_, what);
+	else
+		return RX_INVALID_STATE;
 }
 
 rx_result port_runtime::close_all_endpoints ()

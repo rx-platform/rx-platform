@@ -49,7 +49,8 @@ namespace ip_endpoints {
 tcp_client_endpoint::tcp_client_endpoint()
       : my_port_(nullptr),
         current_state_(tcp_state::not_active),
-        identity_(security::security_context_ptr::null_ptr)
+        identity_(security::security_context_ptr::null_ptr),
+        keep_alive_(0)
 {
     ITF_LOG_DEBUG("tcp_client_endpoint", 200, "TCP client endpoint created.");
     rx_protocol_stack_endpoint* mine_entry = &stack_endpoint_;
@@ -250,9 +251,9 @@ bool tcp_client_endpoint::tick ()
             temp_socket = rx_create_reference<socket_holder_t>(this);
             temp_socket->set_identity(stack_endpoint_.identity);
             if(local_addr_.is_empty_ip4())
-                result = temp_socket->bind_socket_tcpip_4(nullptr);
+                result = temp_socket->bind_socket_tcpip_4(nullptr, keep_alive_);
             else
-                result = temp_socket->bind_socket_tcpip_4(local_addr_.get_ip4_address());
+                result = temp_socket->bind_socket_tcpip_4(local_addr_.get_ip4_address(), keep_alive_);
             if (result)
             {
                 temp_socket->set_connect_timeout(my_port_->get_connect_timeout());
@@ -308,13 +309,14 @@ bool tcp_client_endpoint::tick ()
     }
 }
 
-rx_result tcp_client_endpoint::open (const protocol_address* addr, const protocol_address* remote_addr, security::security_context_ptr identity, tcp_client_port* port)
+rx_result tcp_client_endpoint::open (const protocol_address* addr, const protocol_address* remote_addr, security::security_context_ptr identity, tcp_client_port* port, uint32_t keep_alive)
 {
     identity_ = identity;
     identity_->login();
     my_port_ = port;
     local_addr_.parse(addr);
     remote_addr_.parse(remote_addr);
+    keep_alive_ = keep_alive;
 
     if (remote_addr_.is_empty_ip4())
     {
@@ -424,7 +426,8 @@ tcp_client_port::tcp_client_port()
       : recv_timeout_(2000),
         send_timeout_(1000),
         connect_timeout_(2000),
-        reconnect_timeout_(5000)
+        reconnect_timeout_(5000),
+        keep_alive_(0)
 {
 }
 
@@ -448,7 +451,10 @@ rx_result tcp_client_port::initialize_runtime (runtime::runtime_init_context& ct
         ITF_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ConnectTimeout");
     bind_result = reconnect_timeout_.bind("Timeouts.ReconnectTimeout", ctx);
     if (!bind_result)
-        ITF_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReconnectTimeout");
+        ITF_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Timeouts.ReconnectTimeout"); ;
+    bind_result = keep_alive_.bind("Options.KeepAlive", ctx);
+    if (!bind_result)
+        ITF_LOG_ERROR("tcp_client_port", 200, "Unable to bind to value Options.KeepAlive");
 
     string_type addr = ctx.structure.get_root().get_local_as<string_type>("Bind.IPAddress", "");
     addr = rx_gate::instance().resolve_ip4_alias(addr);
@@ -502,7 +508,7 @@ rx_result_with<port_connect_result> tcp_client_port::start_connect (const protoc
 
         return RX_PROTOCOL_OK;
     };
-    auto result = endpoint_->open(&bind_address_, &connect_address_, sec_ctx, this);
+    auto result = endpoint_->open(&bind_address_, &connect_address_, sec_ctx, this, keep_alive_);
     if (!result)
     {
         stop_passive();

@@ -410,9 +410,11 @@ class runtime_model_algorithm
 
       static void update_runtime (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
+      static void reload_runtime (const rx_item_reference& item_reference, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
+
       static void delete_runtime (const rx_item_reference& item_reference, rx_result_callback&& callback);
 
-      static rx_result init_runtime (typename typeT::RTypePtr what);
+      static rx_result init_runtime (typename typeT::RTypePtr what, structure::block_data model);
 
       static rx_result_with<typename typeT::RTypePtr> create_runtime_sync (instanceT&& instance_data, data::runtime_values_data&& runtime_data, bool temp = false);
 
@@ -428,6 +430,8 @@ class runtime_model_algorithm
       static rx_result_with<typename typeT::RTypePtr> create_prototype_sync (instanceT&& instance_data);
 
       static void update_runtime_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target, bool temp = false);
+
+      static void reload_runtime_sync (const rx_item_reference& item_reference, rx_thread_handle_t result_target, rx_result_with_callback<typename typeT::RTypePtr>&& callback);
 
       static void update_runtime_with_depends_sync (instanceT&& instance_data, rx_update_runtime_data update_data, rx_result_with_callback<typename typeT::RTypePtr>&& callback, rx_thread_handle_t result_target, bool temp = false);
 

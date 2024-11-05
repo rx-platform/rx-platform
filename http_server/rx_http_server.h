@@ -199,6 +199,28 @@ class http_server
 };
 
 
+
+
+
+
+class http_path_filter : public rx_platform::http::http_request_filter  
+{
+
+  public:
+
+      rx_result handle_request_after (http_request& req, http_response& resp);
+
+      rx_result handle_request_before (http_request& req, http_response& resp);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace rx_http_server
 } // namespace rx_internal
 

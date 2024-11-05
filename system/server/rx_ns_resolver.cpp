@@ -54,10 +54,12 @@ rx_names_cache::rx_names_cache()
 
 rx_namespace_item rx_names_cache::get_cached_item (const string_type& name) const
 {
+	locks::const_auto_lock_t _(&lock_);
+
 	const auto it = name_items_hash_.find(name);
-	if (it != name_items_hash_.end())
+	if (it != name_items_hash_.end() && it->second.size() == 1)
 	{
-		return it->second;
+		return *it->second.begin();
 	}
 	else
 	{
@@ -67,14 +69,17 @@ rx_namespace_item rx_names_cache::get_cached_item (const string_type& name) cons
 
 rx_result rx_names_cache::insert_cached_item (const string_type& name, const rx_namespace_item& item)
 {
+	std::scoped_lock _(lock_);
+
 	auto it = name_items_hash_.find(name);
 	if (it != name_items_hash_.end())
 	{
-		return name + "is already registered name.";
+		it->second.push_back(item);
+		return true;
 	}
 	else
 	{
-		name_items_hash_.emplace(name, item);
+		name_items_hash_[name] = { item };
 		return true;
 	}
 }
@@ -82,35 +87,51 @@ rx_result rx_names_cache::insert_cached_item (const string_type& name, const rx_
 bool rx_names_cache::should_cache (const platform_item_ptr& item)
 {
 	// stupid algorithm here, should be checked!!!
-	if (item->meta_info().attributes & namespace_item_system_mask)
+	//if (item->meta_info().attributes & namespace_item_system_mask)
 	{
 		return true;
 	}
-	else
+	//else
 	{
-		return false;
+	//	return false;
 	}
 }
 
 bool rx_names_cache::should_cache (const rx_namespace_item& item)
 {
-	if (item.get_meta().attributes & namespace_item_system_mask)
+	//if (item.get_meta().attributes & namespace_item_system_mask)
 	{
 		return true;
 	}
-	else
+	//else
 	{
 		return false;
 	}
 }
 
-rx_result rx_names_cache::removed_cached_item (const string_type& name)
+rx_result rx_names_cache::removed_cached_item (const string_type& name, const rx_node_id& id)
 {
-	return RX_NOT_IMPLEMENTED;
+	std::scoped_lock _(lock_);
+
+	auto it = name_items_hash_.find(name);
+	if (it != name_items_hash_.end())
+	{
+		for (auto it_items = it->second.begin(); it_items != it->second.end(); it_items++)
+		{
+			if (it_items->get_meta().id == id)
+			{
+				it->second.erase(it_items);
+				return true;
+			}
+		}
+	}
+	return RX_INVALID_ARGUMENT;
 }
 
 void rx_names_cache::clear ()
 {
+	std::scoped_lock _(lock_);
+
 	name_items_hash_.clear();
 }
 

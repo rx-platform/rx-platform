@@ -239,6 +239,8 @@ class platform_runtime_manager
 
       void deinitialize ();
 
+      size_t get_points_count ();
+
 
       runtime_cache& get_cache ()
       {
@@ -247,28 +249,35 @@ class platform_runtime_manager
 
 
 	  template<class typeT>
-	  rx_result init_runtime(typename typeT::RTypePtr what)
+	  rx_result init_runtime(typename typeT::RTypePtr what, structure::block_data model)
 	  {
           auto result = algorithms::create_runtime_structure<typeT>(what);
           if (result)
           {
               auto ctx = runtime::algorithms::runtime_holder_algorithms<typeT>::create_init_context(*what);
+              ctx.model = std::make_unique<structure::block_data>(std::move(model));
               result = algorithms::init_runtime<typeT>(what, ctx);
+              if (result)
+                  points_count_ += what->points_count;
           }
 		  return result;
 	  }
       template<class typeT>
-      rx_result just_init_runtime(typename typeT::RTypePtr what, initialize_data_type& init_data)
+      rx_result just_init_runtime(typename typeT::RTypePtr what, initialize_data_type& init_data, structure::block_data model)
       {
           auto result = algorithms::create_runtime_structure<typeT>(what);
           if (result)
           {
               auto ctx = runtime::algorithms::runtime_holder_algorithms<typeT>::create_init_context(*what);
+              ctx.model = std::make_unique<structure::block_data>(std::move(model));
               result = algorithms::just_init_runtime<typeT>(what, ctx);
               if (!result)
                   RX_ASSERT(false);
               init_data.emplace(what->meta_info().id
-                  , initialize_data_t{ std::move(ctx.const_callbacks), std::move(ctx.pending_connections), std::move(ctx.status_data) });
+                  , initialize_data_t{ std::unique_ptr<runtime::structure::block_data>(),  std::move(ctx.const_callbacks), std::move(ctx.pending_connections), std::move(ctx.status_data) });
+
+              if (result)
+                  points_count_ += what->points_count;
           }
           return result;
       }
@@ -282,6 +291,8 @@ class platform_runtime_manager
 	  rx_result deinit_runtime(typename typeT::RTypePtr what, rx_result_callback&& callback)
 	  {
 		  auto result = algorithms::deinit_runtime<typeT>(what, std::move(callback));
+          if (result)
+              points_count_ -= what->points_count;
 		  return result;
 	  }
   protected:
@@ -304,6 +315,8 @@ class platform_runtime_manager
       rx_thread_handle_t first_cpu_;
 
       rx_thread_handle_t last_cpu_;
+
+      std::atomic<size_t> points_count_;
 
 
 };

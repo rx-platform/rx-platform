@@ -44,6 +44,8 @@
 #include "system/meta/rx_meta_algorithm.h"
 #include "security/rx_security.h"
 #include "system/runtime/rx_rt_struct.h"
+#include "lib/rx_ser_bin.h"
+#include "system/meta/rx_meta_algorithm.h"
 using namespace rx;
 
 
@@ -553,6 +555,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	opts[runtime::structure::value_opt_readonly] = true;
 	opts[runtime::structure::value_opt_persistent] = false;
 	rt_data.add_const_value("_Name", name_value, opts);
+	auto block_data = rt_data.create_block_data();
 	ret.ptr->tags_.set_runtime_data(create_runtime_data(rt_data));
 	// now handle methods, programs and rest of the stuff
 
@@ -599,7 +602,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	if (!prototype)
 	{
 		platform_types_manager::instance().get_dependecies_cache().add_dependency(meta.id, parent_id);
-		registered_objects_.emplace(meta.id, runtime_data_t{ ret.ptr, runtime_state::runtime_state_created, parent_id });
+		registered_objects_.emplace(meta.id, runtime_data_t{ std::move(block_data), ret.ptr, runtime_state::runtime_state_created, parent_id });
 		//if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 			instance_hash_.add_to_hash_data(meta.id, parent_id, base);
 		auto type_ret = platform_types_manager::instance().get_types_resolver().add_id(meta.id, typeT::RImplType::type_id, meta);
@@ -614,11 +617,25 @@ rx_result_with<typename types_repository<typeT>::RTypePtr> types_repository<type
 	auto it = registered_objects_.find(id);
 	if (it != registered_objects_.end() && (!only_running || it->second.state == runtime_state::runtime_state_running))
 	{
-		return it->second.target;
+		return std::move(it->second.target);
 	}
 	else
 	{
 		return "Runtime not registered";
+	}
+}
+
+template <class typeT>
+runtime::structure::block_data types_repository<typeT>::get_runtime_model (const rx_node_id& id, bool only_running) const
+{
+	auto it = registered_objects_.find(id);
+	if (it != registered_objects_.end() && (!only_running || it->second.state == runtime_state::runtime_state_running))
+	{
+		return it->second.model;
+	}
+	else
+	{
+		return runtime::structure::block_data();
 	}
 }
 
@@ -854,7 +871,7 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 
 	for (auto& one : registered_objects_)
 	{
-		result = sys_runtime::platform_runtime_manager::instance().just_init_runtime<typeT>(one.second.target, init_data);
+		result = sys_runtime::platform_runtime_manager::instance().just_init_runtime<typeT>(one.second.target, init_data, get_runtime_model(one.second.target->meta_info().id));
 		if (!result)
 		{
 			if (one.second.target->meta_info().is_system())
@@ -1151,6 +1168,82 @@ bool types_repository<typeT>::is_instanced_from (rx_node_id id, rx_node_id base_
 			}
 		}
 	}
+	return false;
+}
+
+template <class typeT>
+bool types_repository<typeT>::is_the_same (const rx_node_id& id, typename types_repository<typeT>::Tptr what)
+{
+	memory::std_buffer buffer1;
+	size_t buffer1_size = 0;
+
+	memory::std_buffer buffer2;
+	size_t buffer2_size = 0;
+
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		serialization::std_buffer_writer writer1(buffer1);
+
+		meta::meta_algorithm::object_types_algorithm<typeT>::serialize_type(*what, writer1, STREAMING_TYPE_MESSAGE);
+		buffer1_size = buffer1.get_size();
+
+
+		serialization::std_buffer_writer writer2(buffer2);
+
+		meta::meta_algorithm::object_types_algorithm<typeT>::serialize_type(*it->second.type_ptr, writer2, STREAMING_TYPE_MESSAGE);
+		buffer2_size = buffer2.get_size();
+
+		if (buffer1_size != buffer2_size)
+			return false;
+		else // buffer1_size == buffer2_size !!!
+			return memcmp(buffer1.get_data(), buffer2.get_data(), buffer1_size) == 0;
+	}
+	// !! NOT FOUND IS "NOT THE SAME" !!
+	return false;
+}
+
+template <class typeT>
+bool types_repository<typeT>::is_the_same (const rx_node_id& id, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data& runtime_data)
+{
+	memory::std_buffer buffer1;
+	size_t buffer1_size = 0;
+
+	memory::std_buffer buffer2;
+	size_t buffer2_size = 0;
+	/*
+	
+
+	struct runtime_data_t
+	{
+        runtime::structure::block_data model;
+		RTypePtr target;
+		runtime_state state;
+        rx_node_id type;
+        checkout_data checkout;
+	};
+	*/
+	auto it = registered_objects_.find(id);
+	if (it != registered_objects_.end())
+	{
+		serialization::std_buffer_writer writer1(buffer1);
+
+		instance_data.instance_data.serialize(writer1, STREAMING_TYPE_MESSAGE);
+		writer1.write_init_values("overrides", runtime_data);
+		buffer1_size = buffer1.get_size();
+
+		serialization::std_buffer_writer writer2(buffer2);
+
+		it->second.target->get_instance_data().get_data().serialize(writer2, STREAMING_TYPE_MESSAGE);
+		writer2.write_init_values("overrides", it->second.target->get_overrides());
+		buffer2_size = buffer2.get_size();
+
+		if (buffer1_size != buffer2_size)
+			return false;
+		else // buffer1_size == buffer2_size !!!
+			return memcmp(buffer1.get_data(), buffer2.get_data(), buffer1_size) == 0;
+	}
+	// !! NOT FOUND IS "NOT THE SAME" !!
 	return false;
 }
 
@@ -1525,8 +1618,18 @@ rx_result simple_types_repository<typeT>::register_constructor (const rx_node_id
 }
 
 template <class typeT>
-rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_repository<typeT>::create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx) const
+rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_repository<typeT>::create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, runtime::structure::block_data* block_ptr) const
 {
+	bool was_in_model = false;
+	if constexpr (!std::is_same<typeT, meta::basic_types::struct_type>())
+	{
+		was_in_model = ctx.out_of_model();
+	}
+	else
+	{
+		if(!rt_name.empty() && rt_name[0]=='_')
+			was_in_model = ctx.out_of_model();
+	}
 	RTypePtr ret;
 	rx_node_ids base;
 	base.emplace_back(type_id);
@@ -1617,6 +1720,8 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 	}
 
 	runtime_data_prototype rt = ctx.pop_rt_name();
+	if (block_ptr)
+		*block_ptr = rt.create_block_data();
 	auto runtime = create_runtime_data(rt);
 	// go reverse with overrides
 	for (auto it = overrides.rbegin(); it != overrides.rend(); it++)
@@ -1624,6 +1729,17 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 		if (!it->empty())
 			runtime->fill_data(*it);
 	}
+
+	if constexpr (!std::is_same<typeT, meta::basic_types::struct_type>())
+	{
+		ctx.end_of_model_out(was_in_model);
+	}
+	else
+	{
+		if (!rt_name.empty() && rt_name[0] == '_')
+			ctx.end_of_model_out(was_in_model);
+	}
+
 	return RDataType(std::move(runtime), std::move(ret), std::move(rt_prototype));
 }
 
@@ -1876,6 +1992,37 @@ rx_result simple_types_repository<typeT>::delete_peer_type (const rx_node_id& id
 	{
 		return "Node id not found";
 	}
+}
+
+template <class typeT>
+bool simple_types_repository<typeT>::is_the_same (const rx_node_id& id, typename simple_types_repository<typeT>::Tptr what)
+{
+	memory::std_buffer buffer1;
+	size_t buffer1_size = 0;
+
+	memory::std_buffer buffer2;
+	size_t buffer2_size = 0;
+
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		serialization::std_buffer_writer writer1(buffer1);
+
+		meta::meta_algorithm::basic_types_algorithm<typeT>::serialize_type(*what, writer1, STREAMING_TYPE_MESSAGE);
+		buffer1_size = buffer1.get_size();
+
+		serialization::std_buffer_writer writer2(buffer2);
+
+		meta::meta_algorithm::basic_types_algorithm<typeT>::serialize_type(*it->second.type_ptr, writer2, STREAMING_TYPE_MESSAGE);
+		buffer2_size = buffer2.get_size();
+
+		if (buffer1_size != buffer2_size)
+			return false;
+		else // buffer1_size == buffer2_size !!!
+			return memcmp(buffer1.get_data(), buffer2.get_data(), buffer1_size) == 0;
+	}
+	// !! NOT FOUND IS "NOT THE SAME" !!
+	return false;
 }
 
 
@@ -2409,6 +2556,40 @@ bool relations_type_repository::is_derived_from (rx_node_id id, rx_node_id base_
 	return false;
 }
 
+bool relations_type_repository::is_the_same (const rx_node_id& id, relations_type_repository::Tptr what)
+{
+	memory::std_buffer dummy_buffer;
+	std::byte* buffer1 = nullptr;
+	size_t buffer1_size = 0;
+
+	std::byte* buffer2 = nullptr;
+	size_t buffer2_size = 0;
+
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		serialization::std_buffer_writer writer1(dummy_buffer);
+
+		meta::meta_algorithm::relation_type_algorithm::serialize_type(*what, writer1, STREAMING_TYPE_MESSAGE);
+		buffer1 = dummy_buffer.get_buffer<std::byte>();
+		buffer1_size = dummy_buffer.get_size();
+
+
+		serialization::std_buffer_writer writer2(dummy_buffer);
+
+		meta::meta_algorithm::relation_type_algorithm::serialize_type(*it->second.type_ptr, writer2, STREAMING_TYPE_MESSAGE);
+		buffer2 = dummy_buffer.get_buffer<std::byte>();
+		buffer2_size = dummy_buffer.get_size();
+
+		if (buffer1_size != buffer2_size)
+			return false;
+		else // buffer1_size == buffer2_size !!!
+			return memcmp(buffer1, buffer2, buffer1_size) == 0;
+	}
+	// !! NOT FOUND IS "NOT THE SAME" !!
+	return false;
+}
+
 
 // Class rx_internal::model::data_type_repository 
 
@@ -2765,6 +2946,37 @@ bool data_type_repository::is_derived_from (rx_node_id id, rx_node_id base_id) c
 			}
 		}
 	}
+	return false;
+}
+
+bool data_type_repository::is_the_same (const rx_node_id& id, data_type_repository::Tptr what)
+{
+	memory::std_buffer buffer1;
+	size_t buffer1_size = 0;
+
+	memory::std_buffer buffer2;
+	size_t buffer2_size = 0;
+
+	auto it = registered_types_.find(id);
+	if (it != registered_types_.end())
+	{
+		serialization::std_buffer_writer writer1(buffer1);
+
+		meta::meta_algorithm::data_types_algorithm::serialize_type(*what, writer1, STREAMING_TYPE_MESSAGE);
+		buffer1_size = buffer1.get_size();
+
+
+		serialization::std_buffer_writer writer2(buffer2);
+
+		meta::meta_algorithm::data_types_algorithm::serialize_type(*it->second.type_ptr, writer2, STREAMING_TYPE_MESSAGE);
+		buffer2_size = buffer2.get_size();
+
+		if (buffer1_size != buffer2_size)
+			return false;
+		else // buffer1_size == buffer2_size !!!
+			return memcmp(buffer1.get_data(), buffer2.get_data(), buffer1_size) == 0;
+	}
+	// !! NOT FOUND IS "NOT THE SAME" !!
 	return false;
 }
 

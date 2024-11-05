@@ -234,7 +234,10 @@ template <class portT>
 void extern_mapper_impl<portT>::internal_port_disconnected ()
 {
     if (my_port_)
+    {
         this->port_disconnected(my_port_);
+        my_port_ = port_ptr_t::null_ptr;
+    }
 }
 
 

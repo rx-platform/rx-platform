@@ -192,7 +192,7 @@ public:
       ~tcp_listen_socket();
 
 
-      rx_result start_tcpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher);
+      rx_result start_tcpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher, uint32_t keep_alive);
 
       void stop ();
 
@@ -241,9 +241,9 @@ class tcp_client_socket : public tcp_socket<buffT>
       ~tcp_client_socket();
 
 
-      rx_result bind_socket_tcpip_4 (const sockaddr_in* addr);
+      rx_result bind_socket_tcpip_4 (const sockaddr_in* addr, uint32_t keep_alive);
 
-      rx_result bind_socket_tcpip_4 (uint16_t port);
+      rx_result bind_socket_tcpip_4 (uint16_t port, uint32_t keep_alive);
 
       rx_result connect_to (const sockaddr* addr, size_t addrsize, threads::dispatcher_pool& dispatcher);
 
@@ -257,9 +257,9 @@ class tcp_client_socket : public tcp_socket<buffT>
 
       virtual bool connect_complete (sockaddr_in* addr, sockaddr_in* local_addr);
 
-      rx_result bind_socket_tcpip_4 ();
+      rx_result bind_socket_tcpip_4 (uint32_t keep_alive);
 
-      rx_result bind_socket_tcpip_4 (const string_type& addr, uint16_t port);
+      rx_result bind_socket_tcpip_4 (const string_type& addr, uint16_t port, uint32_t keep_alive);
 
 
       void set_connect_timeout (uint32_t value)
@@ -697,10 +697,10 @@ int tcp_listen_socket<buffT>::internal_accept_callback (sys_handle_t handle, soc
 }
 
 template <class buffT>
-rx_result tcp_listen_socket<buffT>::start_tcpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher)
+rx_result tcp_listen_socket<buffT>::start_tcpip_4 (const sockaddr_in* addr, threads::dispatcher_pool& dispatcher, uint32_t keep_alive)
 {
     rx_transaction_type trans;
-    this->dispatcher_data_.handle = ::rx_create_and_bind_ip4_tcp_socket(addr, 10000);
+    this->dispatcher_data_.handle = ::rx_create_and_bind_ip4_tcp_socket(addr, keep_alive);
     if (this->dispatcher_data_.handle)
     {
         trans.push([this]() {
@@ -791,7 +791,7 @@ tcp_client_socket<buffT>::~tcp_client_socket()
 
 
 template <class buffT>
-rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (const sockaddr_in* addr)
+rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (const sockaddr_in* addr, uint32_t keep_alive)
 {
 
     struct sockaddr_in any;
@@ -802,7 +802,7 @@ rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (const sockaddr_in* addr
     if (!addr)
         addr = &any;
 
-    this->dispatcher_data_.handle = rx_create_and_bind_ip4_tcp_socket(addr, 7000);
+    this->dispatcher_data_.handle = rx_create_and_bind_ip4_tcp_socket(addr, keep_alive);
     if (this->dispatcher_data_.handle)
     {
         return true;
@@ -811,13 +811,13 @@ rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (const sockaddr_in* addr
 }
 
 template <class buffT>
-rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (uint16_t port)
+rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (uint16_t port, uint32_t keep_alive)
 {
     struct sockaddr_in temp_addr;
     memzero(&temp_addr, sizeof(temp_addr));
     temp_addr.sin_port = htons(port);
     temp_addr.sin_addr.s_addr = INADDR_ANY;
-    return bind_socket_tcpip_4(&temp_addr);
+    return bind_socket_tcpip_4(&temp_addr, keep_alive);
 }
 
 template <class buffT>
@@ -929,13 +929,13 @@ bool tcp_client_socket<buffT>::connect_complete (sockaddr_in* addr, sockaddr_in*
 }
 
 template <class buffT>
-rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 ()
+rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (uint32_t keep_alive)
 {
-    return this->bind_socket_tcpip_4((uint16_t)0);
+    return this->bind_socket_tcpip_4((uint16_t)0, keep_alive);
 }
 
 template <class buffT>
-rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (const string_type& addr, uint16_t port)
+rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (const string_type& addr, uint16_t port, uint32_t keep_alive)
 {
     struct sockaddr_in temp_addr;
     memzero(&temp_addr, sizeof(temp_addr));
@@ -951,7 +951,7 @@ rx_result tcp_client_socket<buffT>::bind_socket_tcpip_4 (const string_type& addr
     {
         temp_addr.sin_addr.s_addr = INADDR_ANY;
     }
-    return bind_socket_tcpip_4(&temp_addr);
+    return bind_socket_tcpip_4(&temp_addr, keep_alive);
 }
 
 

@@ -49,7 +49,7 @@ extern uint32_t tlc_max_token;
 	return RX_ERROR;
 }
 
-int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert)
+int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert, int client)
 {
 
 	TimeStamp lt;
@@ -59,12 +59,26 @@ int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_ti
 	SCHANNEL_CRED cert_cred;
 	memzero(&cert_cred, sizeof(cert_cred));
 	cert_cred.dwVersion = SCHANNEL_CRED_VERSION;
-	cert_cred.dwFlags = SCH_CRED_AUTO_CRED_VALIDATION;
-	cert_cred.cCreds = 1;
-	cert_cred.paCred = &cert->ctx;
-	cert_cred.grbitEnabledProtocols = SP_PROT_TLS1_1_SERVER | SP_PROT_TLS1_2_SERVER | SP_PROT_TLS1_3_SERVER | SCH_USE_STRONG_CRYPTO;
+	cert_cred.dwFlags = SCH_CRED_MANUAL_CRED_VALIDATION | SCH_CRED_SNI_CREDENTIAL | SCH_CRED_SNI_ENABLE_OCSP;
+	if (cert != NULL)
+	{
+		cert_cred.cCreds = 1;
+		cert_cred.paCred = &cert->ctx;
+	}
+	else
+	{
+		cert_cred.cCreds = 0;
+		cert_cred.paCred = NULL;
+	}		
+	if(client)
+		cert_cred.grbitEnabledProtocols = SP_PROT_TLS1_1_CLIENT | SP_PROT_TLS1_2_CLIENT | SP_PROT_TLS1_3_CLIENT | SCH_USE_STRONG_CRYPTO;
+	else
+		cert_cred.grbitEnabledProtocols = SP_PROT_TLS1_1_SERVER | SP_PROT_TLS1_2_SERVER | SP_PROT_TLS1_3_SERVER | SCH_USE_STRONG_CRYPTO;
+		
 
-	SECURITY_STATUS ss = AcquireCredentialsHandleA(NULL, SCHANNEL_NAME_A, SECPKG_CRED_BOTH, NULL, &cert_cred, NULL, NULL, &cred->handle, &lt);
+	SECURITY_STATUS ss = AcquireCredentialsHandleA(NULL, SCHANNEL_NAME_A, 
+		cert!=NULL ? SECPKG_CRED_BOTH : SECPKG_CRED_OUTBOUND
+		, NULL, &cert_cred, NULL, NULL, &cred->handle, &lt);
 	cred->buffer_size = tlc_max_token;
 
 	if (ss == SEC_E_OK)
@@ -230,6 +244,117 @@ int rx_accept_credentials(rx_cred_t* cred, rx_auth_context_t* ctx, const void* d
 			}
 		}
 		
+	}
+
+	return RX_OK;
+
+}
+
+int rx_connect_credentials(rx_cred_t* cred, rx_auth_context_t* ctx, const void* data, size_t size, void* out_data, size_t* out_size)
+{
+	SECURITY_STATUS    ss;
+	SecBufferDesc      outSecBufDesc;
+	SecBuffer          outSecBuf[1];
+	SecBufferDesc      inSecBufDesc;
+	SecBuffer          inSecBuf[1];
+
+	// Prepare output buffer
+	//
+	outSecBufDesc.ulVersion = 0;
+	outSecBufDesc.cBuffers = 1;
+	outSecBufDesc.pBuffers = outSecBuf;
+	outSecBuf[0].cbBuffer = 0;
+	outSecBuf[0].BufferType = SECBUFFER_TOKEN;
+	outSecBuf[0].pvBuffer = NULL;
+
+	inSecBufDesc.ulVersion = 0;
+	inSecBufDesc.cBuffers = 1;
+	inSecBufDesc.pBuffers = inSecBuf;
+	inSecBuf[0].cbBuffer = (DWORD)size;
+	inSecBuf[0].BufferType = SECBUFFER_TOKEN;
+	inSecBuf[0].pvBuffer = (void*)data;
+
+	DWORD m_ctxtAttr;
+	TimeStamp m_ctxtLifetime;
+
+	DWORD dwSSPIFlags = ASC_REQ_SEQUENCE_DETECT |
+		ASC_REQ_REPLAY_DETECT |
+		ASC_REQ_CONFIDENTIALITY |
+		ASC_REQ_EXTENDED_ERROR |
+		ASC_REQ_ALLOCATE_MEMORY |
+		ASC_REQ_STREAM;
+
+	ss = InitializeSecurityContextA(
+		&cred->handle,
+		ctx->has_handle ? &ctx->handle : NULL,
+		NULL,//(SECURITY_PSTR)"03b8734622694a5f94f5075661240e01.s1.eu.hivemq.cloud:8883",
+		dwSSPIFlags, //ASC_REQ_CONNECTION,
+		0,
+		SECURITY_NETWORK_DREP,
+		ctx->has_handle ? &inSecBufDesc : NULL,
+		0,
+		&ctx->handle,
+		&outSecBufDesc,
+		&m_ctxtAttr,
+		&m_ctxtLifetime);
+
+	printf("\r\n*** Accept sec handle called result = 0x%08x\r\n", ss);
+
+	if (!SEC_SUCCESS(ss))
+	{
+		return RX_ERROR;
+	}
+
+	ctx->has_handle = TRUE;
+	ctx->has_context = !((SEC_I_CONTINUE_NEEDED == ss) ||
+		(SEC_I_COMPLETE_AND_CONTINUE == ss));
+
+	*out_size = outSecBuf[0].cbBuffer;
+	if (*out_size && outSecBuf[0].pvBuffer != out_data)
+	{
+		memmove(out_data, outSecBuf[0].pvBuffer, *out_size);
+	}
+
+	if (ctx->has_context)
+	{
+		SecPkgCredentials_NamesA names;
+
+		names.sUserName = NULL;// ;
+		*cred->name_buffer = '\0';
+		auto ssret = QueryCredentialsAttributesA(&cred->handle, SECPKG_CRED_ATTR_NAMES, &names);
+		if (ssret == SEC_E_OK && names.sUserName)
+		{
+			handle_name(cred->name_buffer, names.sUserName);
+			printf("\r\n*** My User is: %s\r\n", cred->name_buffer);
+		}
+
+		names.sUserName = NULL;
+		*ctx->name_buffer = '\0';
+		ssret = QueryContextAttributesA(&ctx->handle, SECPKG_CRED_ATTR_NAMES, &names);
+		if (ssret == SEC_E_OK && names.sUserName)
+		{
+			handle_name(ctx->name_buffer, names.sUserName);
+			printf("\r\n*** His User is: %s\r\n", ctx->name_buffer);
+		}
+		SecPkgContext_SubjectAttributes subj;
+		subj.AttributeInfo = NULL;
+		PCERT_CONTEXT remote_ctx = NULL;
+		ssret = QueryContextAttributesA(&ctx->handle, SECPKG_ATTR_REMOTE_CERT_CONTEXT, &remote_ctx);
+		if (ssret == SEC_E_OK && remote_ctx)
+		{
+			BYTE pdata[0x100];
+			DWORD cdata = sizeof(pdata);
+			if (CertGetCertificateContextProperty(remote_ctx, CERT_HASH_PROP_ID, pdata, &cdata))
+			{
+				printf("\r\nHis hash is:");
+				for (DWORD i = 0; i < cdata; i++)
+				{
+					printf("%02x", (int)pdata[i]);
+				}
+				printf("\r\n");
+			}
+		}
+
 	}
 
 	return RX_OK;

@@ -99,6 +99,14 @@ union variable_owner_ptr
     variable_block_data* block_ptr;
 };
 
+union filter_owner_ptr
+{
+    variable_data* variable_ptr;
+    variable_block_data* block_ptr;
+    source_data* source_ptr;
+    mapper_data* mapper_ptr;
+};
+
 union mapped_owner_ptr
 {
     variable_data* variable_ptr;
@@ -638,6 +646,8 @@ public:
 
       data::runtime_data_model get_data_type ();
 
+      rx_result filter_changed ();
+
 
       full_value_data mapped_value;
 
@@ -751,6 +761,8 @@ class source_data
 
       data::runtime_data_model get_data_type ();
 
+      rx_result filter_changed ();
+
 
       full_value_data input_value;
 
@@ -854,6 +866,8 @@ public:
 
       void object_state_changed (runtime_process_context* ctx);
 
+      bool supports_quality () const;
+
 
       runtime_item::smart_ptr item;
 
@@ -874,7 +888,7 @@ public:
 
       runtime_process_context* context_;
 
-      variable_owner_ptr my_variable_;
+      filter_owner_ptr my_owner_;
 
 
 };
@@ -1176,6 +1190,8 @@ public:
       data::runtime_data_model get_arguments ();
 
       void event_fired (event_fired_data&& data);
+
+      void event_fired (data::runtime_values_data data);
 
 
       block_data arguments;

@@ -49,99 +49,6 @@ namespace rx_http_server {
 
 namespace http_displays {
 
-// Class rx_internal::rx_http_server::http_displays::rx_http_static_display 
-
-rx_http_static_display::rx_http_static_display()
-{
-}
-
-rx_http_static_display::rx_http_static_display (const string_type& name, const rx_node_id& id)
-{
-}
-
-
-rx_http_static_display::~rx_http_static_display()
-{
-}
-
-
-
-rx_result rx_http_static_display::initialize_display (runtime::runtime_init_context& ctx, const string_type& disp_path)
-{
-	http_display_custom_content content;
-	fill_contents(content, ctx, disp_path);
-	content.body_begin_content += "\r\n"
-		"<script>\r\n"
-		"var rx_rt_path = '";
-	content.body_begin_content += ctx.meta.get_full_path();
-	content.body_begin_content += "';\r\n"
-		"</script>\r\n";
-
-	content.body_end_content += "\r\n"
-		"<script>\r\n"
-		"setInterval(function () {\r\n"
-		"  $.getJSON('";
-	content.body_end_content += disp_path;
-	content.body_end_content += ".disp?data', function( data ) {\r\n"
-		"	  update_rx_content(data);\r\n"
-		"  }).fail(rx_offline);\r\n"
-		"}, 1000);\r\n"
-		"</script>";
-	auto result = parse_display_data(ctx, disp_path, html_data_, content);
-	if (!result)
-	{
-		html_data_ = "Error while parsing display data:\r\n";
-		html_data_ += result.errors_line();
-	}
-	return true;
-}
-
-rx_result rx_http_static_display::deinitialize_display (runtime::runtime_deinit_context& ctx, const string_type& disp_path)
-{
-	return true;
-}
-
-rx_result rx_http_static_display::start_display (runtime::runtime_start_context& ctx, const string_type& disp_path)
-{
-	auto result = connect_points(ctx, disp_path);
-	if (!result)
-		html_data_ = "E jebi ga puta 2!!!";
-	return true;
-}
-
-rx_result rx_http_static_display::stop_display (runtime::runtime_stop_context& ctx, const string_type& disp_path)
-{
-	auto result = disconnect_points(ctx, disp_path);
-
-	return true;
-}
-
-rx_result rx_http_static_display::handle_request_internal (rx_platform::http::http_request& req, rx_platform::http::http_response& resp)
-{
-	if (req.params.find("data") != req.params.end())
-	{
-		resp.set_string_content(collect_json_data());
-		resp.headers["Content-Type"] = "application/json";
-		resp.result = 200;
-	}
-	else if(req.params.empty())
-	{
-		resp.set_string_content(get_dynamic_content(html_data_));
-		resp.headers["Content-Type"] = "text/html";
-		resp.result = 200;
-	}
-	else
-	{
-		return "Invalid URL parameters";
-	}
-	return true;
-}
-
-void rx_http_static_display::fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path)
-{
-}
-
-
 // Class rx_internal::rx_http_server::http_displays::http_displays_repository 
 
 http_displays_repository::http_displays_repository()
@@ -213,8 +120,9 @@ rx_result_with<rx_http_display_base::smart_ptr> http_displays_repository::get_di
 
 // Class rx_internal::rx_http_server::http_displays::http_display_point 
 
-http_display_point::http_display_point()
-      : str_value_("-")
+http_display_point::http_display_point (rx_http_display_base* disp)
+      : my_display_(disp),
+        str_value_("-")
 {
 }
 
@@ -222,21 +130,26 @@ http_display_point::http_display_point()
 
 void http_display_point::value_changed (const rx_value& val)
 {
+	string_type temp_val = "X";
 	if (val.is_good())
 	{
 		if (val.is_float())
 		{
 			char buff[0x40];
 			sprintf(buff, "%g", val.get_float());
-			str_value_ = buff;
+			temp_val = buff;
 		}
 		else
 		{
-			str_value_ = val.to_string();
+			temp_val = val.to_string();
 		}
 	}
-	else
-		str_value_ = "-";
+	if (temp_val != str_value_)
+	{
+		str_value_ = temp_val;
+		my_display_->point_changed();
+	}
+	
 }
 
 
@@ -330,7 +243,7 @@ rx_result rx_http_display_base::parse_display_data (runtime::runtime_init_contex
 				char buff[0x20];
 				sprintf(buff, "rxPt%08x", rx_get_new_handle());
 				one_data.point_id = buff;
-				one_data.point = std::make_unique<http_display_point>();
+				one_data.point = std::make_unique<http_display_point>(this);
 				connected_points_.push_back(std::move(one_data));
 			}
 
@@ -678,6 +591,10 @@ void rx_http_display_base::fill_globals ()
 		globals_.emplace("host", *hosts.rbegin());
 }
 
+void rx_http_display_base::point_changed ()
+{
+}
+
 const char* system_paths[] = {
 	"On",
 	"Test",
@@ -868,6 +785,99 @@ void rx_http_main_display::fill_contents (http_display_custom_content& content, 
 }
 
 void rx_http_main_display::fill_div (std::ostream& stream, const string_type& rt_name, const string_type& path, const data::runtime_values_data& data)
+{
+}
+
+
+// Class rx_internal::rx_http_server::http_displays::rx_http_static_display 
+
+rx_http_static_display::rx_http_static_display()
+{
+}
+
+rx_http_static_display::rx_http_static_display (const string_type& name, const rx_node_id& id)
+{
+}
+
+
+rx_http_static_display::~rx_http_static_display()
+{
+}
+
+
+
+rx_result rx_http_static_display::initialize_display (runtime::runtime_init_context& ctx, const string_type& disp_path)
+{
+	http_display_custom_content content;
+	fill_contents(content, ctx, disp_path);
+	content.body_begin_content += "\r\n"
+		"<script>\r\n"
+		"var rx_rt_path = '";
+	content.body_begin_content += ctx.meta.get_full_path();
+	content.body_begin_content += "';\r\n"
+		"</script>\r\n";
+
+	content.body_end_content += "\r\n"
+		"<script>\r\n"
+		"setInterval(function () {\r\n"
+		"  $.getJSON('~";
+	content.body_end_content += disp_path;
+	content.body_end_content += ".disp?data', function( data ) {\r\n"
+		"	  update_rx_content(data);\r\n"
+		"  }).fail(rx_offline);\r\n"
+		"}, 1000);\r\n"
+		"</script>";
+	auto result = parse_display_data(ctx, disp_path, html_data_, content);
+	if (!result)
+	{
+		html_data_ = "Error while parsing display data:\r\n";
+		html_data_ += result.errors_line();
+	}
+	return true;
+}
+
+rx_result rx_http_static_display::deinitialize_display (runtime::runtime_deinit_context& ctx, const string_type& disp_path)
+{
+	return true;
+}
+
+rx_result rx_http_static_display::start_display (runtime::runtime_start_context& ctx, const string_type& disp_path)
+{
+	auto result = connect_points(ctx, disp_path);
+	if (!result)
+		html_data_ = "E jebi ga puta 2!!!";
+	return true;
+}
+
+rx_result rx_http_static_display::stop_display (runtime::runtime_stop_context& ctx, const string_type& disp_path)
+{
+	auto result = disconnect_points(ctx, disp_path);
+
+	return true;
+}
+
+rx_result rx_http_static_display::handle_request_internal (rx_platform::http::http_request& req, rx_platform::http::http_response& resp)
+{
+	if (req.params.find("data") != req.params.end())
+	{
+		resp.set_string_content(collect_json_data());
+		resp.headers["Content-Type"] = "application/json";
+		resp.result = 200;
+	}
+	else if(req.params.empty())
+	{
+		resp.set_string_content(get_dynamic_content(html_data_));
+		resp.headers["Content-Type"] = "text/html";
+		resp.result = 200;
+	}
+	else
+	{
+		return "Invalid URL parameters";
+	}
+	return true;
+}
+
+void rx_http_static_display::fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path)
 {
 }
 

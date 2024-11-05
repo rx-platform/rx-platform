@@ -208,10 +208,13 @@ construct_context::construct_context (const string_type& name)
         state_(active_state_t::regular),
         current_display_(-1),
         current_program_(-1),
-        current_method_(-1)
+        current_method_(-1),
+        changed_event(nullptr),
+        in_model_(true)
 {
 	rt_names_.push_back(name);
 	runtime_data_.runtime_data.push_back(runtime_data_prototype());
+	block_stack.push(&changed_data_block);
 }
 
 
@@ -314,12 +317,14 @@ void construct_context::start_program (const string_type& name)
 			runtime_data_.programs[i] = std::move(temp);
 			state_ = active_state_t::in_program;
 			current_program_ = i;
+			block_stack.push(nullptr);
 			return;
 		}
 	}
 	// new method so we're good
 	current_program_ = programs_size;
 	runtime_data_.programs.emplace_back(std::move(temp));
+	block_stack.push(nullptr);
 	state_ = active_state_t::in_program;
 }
 
@@ -337,6 +342,7 @@ void construct_context::start_method (const string_type& name, rx_node_id& input
 			outputs_id = runtime_data_.methods[i].get_inputs_id();
 			runtime_data_.methods[i] = std::move(temp);
 			state_ = active_state_t::in_method;
+			block_stack.push(nullptr);
 			current_method_ = i;
 			return;
 		}
@@ -346,6 +352,7 @@ void construct_context::start_method (const string_type& name, rx_node_id& input
 	outputs_id = rx_node_id();
 	current_method_ = methods_size;
 	runtime_data_.methods.push_back(std::move(temp));
+	block_stack.push(nullptr);
 	state_ = active_state_t::in_method;
 }
 
@@ -356,6 +363,7 @@ void construct_context::end_program (runtime::logic_blocks::program_data data)
 	data.name = runtime_data_.programs[current_program_].name;
 	runtime_data_.programs[current_method_].program = std::move(data);
 	current_program_ = -1;
+	block_stack.pop();
 	state_ = active_state_t::regular;
 }
 
@@ -368,6 +376,7 @@ void construct_context::end_method (runtime::logic_blocks::method_data data, rx_
 	runtime_data_.methods[current_method_].set_inputs_id(inputs_id);
 	runtime_data_.methods[current_method_].set_outputs_id(outputs_id);
 	current_method_ = -1;
+	block_stack.pop();
 	state_ = active_state_t::regular;
 }
 
@@ -398,12 +407,14 @@ void construct_context::start_display (const string_type& name)
 			runtime_data_.displays[i] = std::move(temp);
 			current_display_ = i;
 			state_ = active_state_t::in_display;
+			block_stack.push(nullptr);
 			return;
 		}
 	}
 	// new display so we're good
 	current_display_ = displays_size;
 	runtime_data_.displays.push_back(std::move(temp));
+	block_stack.push(nullptr);
 	state_ = active_state_t::in_display;
 }
 
@@ -414,6 +425,7 @@ void construct_context::end_display (runtime::display_blocks::display_data data)
 	data.name = runtime_data_.displays[current_display_].name;
 	runtime_data_.displays[current_display_].display = std::move(data);
 	current_display_ = -1;
+	block_stack.pop();
 	state_ = active_state_t::regular;
 }
 
@@ -437,6 +449,24 @@ void construct_context::register_warining (runtime_status_record data)
 object_data_prototype& construct_context::object_data ()
 {
 	return runtime_data_;
+}
+
+bool construct_context::out_of_model ()
+{
+	bool ret = in_model_;
+	in_model_ = false;
+	return ret;
+}
+
+void construct_context::end_of_model_out (bool prev)
+{
+	if (prev)
+		in_model_ = true;
+}
+
+bool construct_context::is_in_model () const
+{
+	return in_model_;
 }
 
 
@@ -787,13 +817,14 @@ rx_result runtime_data_prototype::add (const string_type& name, runtime::structu
 	}
 }
 
-rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id)
+rx_result runtime_data_prototype::add_struct (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id, runtime::structure::block_data block)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(structs.size());
 		structs.emplace_back(std::move(id), std::move(value));
+		struct_blocks.emplace_back(block);
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_struct_index_type });
 		return true;
 	}
@@ -811,6 +842,7 @@ rx_result runtime_data_prototype::add (const string_type& name, runtime::structu
 				return "Can't override struct, wrong struct type!";
 			members_index_type new_idx = static_cast<members_index_type>(structs.size());
 			structs.emplace_back(std::move(id), std::move(value));
+			struct_blocks.emplace_back(block);
 			elem.index = (new_idx << rt_type_shift) | rt_struct_index_type;
 			return true;
 		}
@@ -821,13 +853,14 @@ rx_result runtime_data_prototype::add (const string_type& name, runtime::structu
 	}
 }
 
-rx_result runtime_data_prototype::add (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id)
+rx_result runtime_data_prototype::add_struct (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id, runtime::structure::block_data block)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(structs.size());
 		structs.emplace_back(std::move(id), std::move(value));
+		struct_blocks.emplace_back(block);
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_struct_index_type });
 		return true;
 	}
@@ -847,6 +880,7 @@ rx_result runtime_data_prototype::add (const string_type& name, std::vector<runt
 					return "Can't override struct, wrong struct type!";
 				members_index_type new_idx = static_cast<members_index_type>(structs.size());
 				structs.emplace_back(std::move(id), std::move(value));
+				struct_blocks.emplace_back(block);
 				elem.index = (new_idx << rt_type_shift) | rt_struct_index_type;
 			}
 			break;
@@ -1214,6 +1248,7 @@ runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
 			{
 				members_index_type new_idx = static_cast<members_index_type>(ret.structs.size());
 				ret.structs.push_back(std::move(structs[idx]));
+				ret.struct_blocks.push_back(std::move(struct_blocks[idx]));
 				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_struct_index_type });
 			}
 			break;
@@ -1262,6 +1297,100 @@ runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
 		}
 	}
 	return ret;
+}
+
+runtime::structure::block_data runtime_data_prototype::create_block_data ()
+{
+	block_data_prototype block_proto;
+	for (auto& item : items)
+	{
+		if (!item.name.empty() && item.name[0] != '_')
+		{
+			size_t idx = (item.index >> rt_type_shift);
+			switch (item.index & rt_type_mask)
+			{
+				case rt_const_index_type:
+					{
+						if (const_values[idx].is_array())
+						{
+							block_proto.add_empty_array_value(item.name, const_values[idx].get_prototype()->simple_get_value());
+						}
+						else
+						{
+							block_proto.add_value(item.name, const_values[idx].get_item()->simple_get_value());
+						}
+					}
+					break;
+				case rt_value_index_type:
+					{
+						if (values[idx].is_array())
+						{
+							block_proto.add_empty_array_value(item.name, values[idx].get_prototype()->simple_get_value());
+						}
+						else
+						{
+							block_proto.add_value(item.name, values[idx].get_item()->simple_get_value());
+						}
+					}
+					break;
+				case rt_variable_index_type:
+					{
+						if (variables[idx].second.is_array())
+						{
+							block_proto.add_empty_array_value(item.name, variables[idx].second.get_prototype()->simple_get_value());
+						}
+						else
+						{
+							block_proto.add_value(item.name, variables[idx].second.get_item()->simple_get_value());
+						}
+					}
+					break;
+				case rt_struct_index_type:
+					{
+						if (!struct_blocks[idx].items.empty())
+						{
+							block_data_prototype block_struck;
+							if (structs[idx].second.is_array())
+							{
+								block_proto.add_empty_array(item.name, runtime::structure::block_data(struct_blocks[idx]), rx_node_id());
+							}
+							else
+							{
+								block_proto.add(item.name, runtime::structure::block_data(struct_blocks[idx]), rx_node_id());
+							}
+						}
+					}
+					break;
+				case rt_value_data_index_type:
+					{
+						if (blocks[idx].second.is_array())
+						{
+							block_proto.add_empty_array(item.name, runtime::structure::block_data(blocks[idx].second.get_prototype()->block), rx_node_id());
+						}
+						else
+						{
+							block_proto.add(item.name, runtime::structure::block_data(blocks[idx].second.get_item()->block), rx_node_id());
+						}
+					}
+					break;
+				case rt_variable_data_index_type:
+					{
+						if (variable_blocks[idx].second.is_array())
+						{
+							block_proto.add_empty_array(item.name, runtime::structure::block_data(variable_blocks[idx].second.get_prototype()->block), rx_node_id());
+						}
+						else
+						{
+							block_proto.add(item.name, runtime::structure::block_data(variable_blocks[idx].second.get_item()->block), rx_node_id());
+						}
+					}
+					break;
+				default:
+					;
+			}
+		}
+	}
+	return block_proto.create_block();
 }
 
 template <class runtime_data_type>
@@ -1831,6 +1960,8 @@ bool runtime_data_prototype::check_read_only(const std::bitset<32>& to, const st
 		to[runtime::structure::value_opt_readonly] ||
 		 !from[runtime::structure::value_opt_readonly];
 }
+
+
 // Class rx_platform::meta::object_type_creation_data 
 
 

@@ -80,6 +80,8 @@
 
 #include <windows.h>
 
+#include <ktmw32.h>
+
 
 #define RX_COMPILER_NAME "MSVC"
 #define RX_COMPILER_VERSION (_MSC_VER/100-5)

@@ -38,6 +38,16 @@
 // rx_value_point
 #include "runtime_internal/rx_value_point.h"
 
+namespace rx_internal {
+namespace rx_http_server {
+namespace http_displays {
+class rx_http_display_base;
+
+} // namespace http_displays
+} // namespace rx_http_server
+} // namespace rx_internal
+
+
 #include "system/runtime/rx_value_templates.h"
 using namespace rx_platform::runtime;
 using namespace rx_platform;
@@ -58,7 +68,7 @@ class http_display_point : public sys_runtime::data_source::value_point_impl
 {
 
   public:
-      http_display_point();
+      http_display_point (rx_http_display_base* disp);
 
 
       const string_type& get_str_value () const;
@@ -70,6 +80,9 @@ class http_display_point : public sys_runtime::data_source::value_point_impl
 
       void value_changed (const rx_value& val);
 
+
+
+      rx_http_display_base *my_display_;
 
 
       string_type str_value_;
@@ -142,6 +155,8 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
       static void fill_globals ();
 
+      virtual void point_changed ();
+
 
   protected:
 
@@ -189,6 +204,46 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
 
 
+class http_displays_repository 
+{
+    struct display_data_t
+    {
+        rx_http_display_base::smart_ptr display_ptr;
+        rx_thread_handle_t executer;
+    };
+    typedef std::map<string_type, display_data_t> registered_displays_type;
+
+  public:
+      http_displays_repository();
+
+      ~http_displays_repository();
+
+
+      rx_result register_display (const string_type& path, rx_http_display_base::smart_ptr who);
+
+      rx_result unregister_display (const string_type& path, rx_http_display_base::smart_ptr who);
+
+      rx_result_with<rx_http_display_base::smart_ptr> get_display (const string_type& path, rx_thread_handle_t& executer);
+
+
+  protected:
+
+  private:
+
+
+      registered_displays_type registered_displays_;
+
+
+      locks::slim_lock displays_lock_;
+
+
+};
+
+
+
+
+
+
 class rx_http_static_display : public rx_http_display_base  
 {
     DECLARE_REFERENCE_PTR(rx_http_static_display);
@@ -225,46 +280,6 @@ actuality first display implemented good for testing.)");
 
 
       string_type html_data_;
-
-
-};
-
-
-
-
-
-
-class http_displays_repository 
-{
-    struct display_data_t
-    {
-        rx_http_display_base::smart_ptr display_ptr;
-        rx_thread_handle_t executer;
-    };
-    typedef std::map<string_type, display_data_t> registered_displays_type;
-
-  public:
-      http_displays_repository();
-
-      ~http_displays_repository();
-
-
-      rx_result register_display (const string_type& path, rx_http_display_base::smart_ptr who);
-
-      rx_result unregister_display (const string_type& path, rx_http_display_base::smart_ptr who);
-
-      rx_result_with<rx_http_display_base::smart_ptr> get_display (const string_type& path, rx_thread_handle_t& executer);
-
-
-  protected:
-
-  private:
-
-
-      registered_displays_type registered_displays_;
-
-
-      locks::slim_lock displays_lock_;
 
 
 };

@@ -44,6 +44,7 @@
 #include "rx_simulation.h"
 #include "rx_filters.h"
 #include "rx_variables.h"
+#include "rx_events.h"
 #include "rx_runtime_relations.h"
 #include "sys_internal/rx_async_functions.h"
 
@@ -85,7 +86,8 @@ platform_runtime_manager* g_instance = nullptr;
 
 platform_runtime_manager::platform_runtime_manager()
       : first_cpu_(0),
-        last_cpu_(0)
+        last_cpu_(0),
+        points_count_(0)
 {
 }
 
@@ -161,6 +163,7 @@ rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host,
 		result = simulation::register_simulation_constructors();
 		result = relations_runtime::register_internal_relations_constructors();
 		result = filters::register_filter_constructors();
+		result = events::register_event_constructors();
 		result = variables::register_variables_constructors();
 	}
 	return result;
@@ -255,6 +258,11 @@ void platform_runtime_manager::deinitialize ()
 {
 	data_source::data_source_factory::instance().deinitialize();
 	delete this;
+}
+
+size_t platform_runtime_manager::get_points_count ()
+{
+	return points_count_;
 }
 
 
@@ -489,6 +497,7 @@ void runtime_cache::register_subscriber (const rx_item_reference& ref, runtime::
 			if (ref.is_node_id())
 			{
 				id = ref.get_node_id();
+				RX_ASSERT(id);
 				auto it_subs = id_subscribers_.find(id);
 				if (it_subs != id_subscribers_.end())
 				{

@@ -412,6 +412,10 @@ calculation ( normal priority)");
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
 
+      rx_result start_runtime (runtime::runtime_start_context& ctx);
+
+      rx_result stop_runtime (runtime::runtime_stop_context& ctx);
+
       static server_runtime& instance ();
 
       runtime_data_t get_cpu_data ();
@@ -438,6 +442,9 @@ calculation ( normal priority)");
       server_runtime();
 
 
+      void system_tick ();
+
+
 
       std::unique_ptr<rx_platform::threads::timer> general_timer_;
 
@@ -461,6 +468,10 @@ calculation ( normal priority)");
 
 
       threads::job_thread* extern_executer_;
+
+      runtime::owned_value<uint32_t> points_count_;
+
+      rx_timer_ptr timer_;
 
 
 };

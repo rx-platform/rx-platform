@@ -455,6 +455,19 @@ public:
         }
         return *this;
     }
+    rx_result write(typeT right, tag_blocks::binded_write_result_callback_t callback)
+    {
+        if constexpr (!manual)
+        {
+            if (ctx_ && handle_)// just in case both of them...
+            {
+                values::rx_simple_value temp_val;
+                temp_val.assign_static<typeT>(std::forward<typeT>(right));
+                ctx_->set_value(handle_, std::move(temp_val), callback);
+            }
+            return *this;
+        }
+    }
     owned_value& operator=(typeT&& right)
     {
         if (ctx_ && handle_)// just in case both of them...
@@ -518,7 +531,7 @@ struct owned_complex_value
     runtime_handle_t handle_ = 0;
     runtime_process_context* ctx_ = nullptr;
 
-    void internal_commit();
+    void internal_commit(tag_blocks::binded_write_result_callback_t callback);
 public:
     owned_complex_value() = default;
     ~owned_complex_value() = default;
@@ -530,8 +543,10 @@ public:
     owned_complex_value(const rx_simple_value& right);
     owned_complex_value(rx_simple_value&& right);
     rx_simple_value& value();
-    void commit(const rx_simple_value& val);
-    void commit(rx_simple_value&& val);
+    void commit(const rx_simple_value& val, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t());
+    void commit(rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t());
+
+
 };
 
 struct local_complex_value

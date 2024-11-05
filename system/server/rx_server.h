@@ -182,9 +182,17 @@ enum class rx_platform_status
 	deinitializing
 };
 
+namespace runtime
+{
+namespace structure
+{
+class block_data;
+}
+}
 
 struct initialize_data_t
 {
+    std::unique_ptr<runtime::structure::block_data> block;
     runtime::const_callbacks_type callbacks;
     runtime::pending_connections_type pending_connections;
     runtime::status_data_type status_data;

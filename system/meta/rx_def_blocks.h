@@ -41,9 +41,9 @@
 namespace rx_platform {
 namespace meta {
 namespace def_blocks {
-class mapper_attribute;
 class variable_attribute;
 class struct_attribute;
+class mapper_attribute;
 
 } // namespace def_blocks
 } // namespace meta
@@ -271,7 +271,7 @@ class event_attribute
 	  ~event_attribute() = default;
 
   public:
-      event_attribute (const string_type& name, const rx_node_id& id);
+      event_attribute (const string_type& name, const rx_node_id& id, const rx_node_id& data_id = rx_node_id());
 
       event_attribute (const string_type& name, const string_type& target_name);
 
@@ -435,6 +435,8 @@ class complex_data_type
       rx_result register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only, bool persistent);
 
       rx_result register_event (const def_blocks::event_attribute& what);
+
+      rx_result register_event (const string_type& name, const rx_node_id& id, const rx_node_id& data_id);
 
       rx_result register_simple_value (const string_type& name, rx_simple_value&& val, bool read_only, bool persistent);
 

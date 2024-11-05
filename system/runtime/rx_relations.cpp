@@ -76,6 +76,8 @@ relation_data::relation_data()
 
 rx_result relation_data::initialize_relation (runtime::runtime_init_context& ctx)
 {
+	// point_count!!!!
+	//ctx.points_count++;
 	object_directory = ctx.meta.path;
 	resolver_user_.my_relation = smart_this();
 	context_ = ctx.context;
@@ -180,6 +182,9 @@ void relation_data::fill_data (const data::runtime_values_data& data, runtime_pr
 
 void relation_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
+	if (type == runtime_value_type::persistent_runtime_value && value.value_opt[runtime::structure::value_opt_readonly])
+		return;
+
 	rx_simple_value temp;
 	temp.assign_static(target_path.c_str());
 	data.add_value(name, std::move(temp));

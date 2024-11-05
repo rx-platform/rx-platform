@@ -200,7 +200,7 @@ extern "C" {
 
 #include "common/rx_common.h"
 
-int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert);
+int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time, rx_certificate_t* cert, int client);
 int rx_aquire_ntlm_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_time
 	, const char* user, const char* domain, const char* pass);
 

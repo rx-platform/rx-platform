@@ -34,12 +34,12 @@
 
 #include "system/runtime/rx_value_templates.h"
 
-// rx_ports_templates
-#include "system/runtime/rx_ports_templates.h"
 // dummy
 #include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
+// rx_ports_templates
+#include "system/runtime/rx_ports_templates.h"
 // rx_stream_io
 #include "interfaces/rx_stream_io.h"
 
@@ -109,7 +109,7 @@ public:
 
       bool tick ();
 
-      rx_result open (const protocol_address* addr, const protocol_address* remote_addr, security::security_context_ptr identity, tcp_client_port* port);
+      rx_result open (const protocol_address* addr, const protocol_address* remote_addr, security::security_context_ptr identity, tcp_client_port* port, uint32_t keep_alive);
 
       rx_protocol_stack_endpoint* get_stack_endpoint ();
 
@@ -156,6 +156,8 @@ public:
       io::ip4_address remote_addr_;
 
       security::security_context_ptr identity_;
+
+      uint32_t keep_alive_;
 
 
 };
@@ -225,6 +227,8 @@ TCP Server port class. implementation of an TCP/IP4 client side, connect...");
       runtime::local_value<uint32_t> connect_timeout_;
 
       runtime::local_value<uint32_t> reconnect_timeout_;
+
+      runtime::local_value<uint32_t> keep_alive_;
 
       io::ip4_address bind_address_;
 

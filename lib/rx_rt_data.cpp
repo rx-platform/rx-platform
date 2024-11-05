@@ -649,11 +649,7 @@ rx_result runtime_data_model::fill_runtime_value (data::runtime_values_data& dat
 					ss << one;
 				}
 				return rx_result(ss.str());
-			}
-			indexes.pop_back();
-			paths.pop_back();
-			return result;
-		
+			}	
 
 			data.add_child(str.name, std::move(one_val));
 		}
@@ -788,6 +784,7 @@ rx_result runtime_data_model::fill_runtime_value_recursive (data::runtime_values
 	string_type path;
 	for (const auto& str : model.elements)
 	{
+//		RX_ASSERT(str.name != "Temperature");
 		indexes.push_back(idx);
 		path = str.name;
 		paths.push_back(path);
@@ -813,7 +810,6 @@ rx_result runtime_data_model::fill_runtime_value_recursive (data::runtime_values
 
 			data.add_child(str.name, std::move(one_val));
 
-			paths.pop_back();
 		}
 		else // if(str.is_complex_array())
 		{
