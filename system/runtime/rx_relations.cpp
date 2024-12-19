@@ -456,15 +456,19 @@ rx_result relations_holder::initialize_relations (runtime::runtime_init_context&
 	rx_result result = true;
 	for (auto& one : source_relations_)
 	{
+		ctx.path.push_to_path(one->name);
 		result = one->initialize_relation(ctx);
 		if (!result)
 			break;
+		ctx.path.pop_from_path();
 	}
 	for (auto& one : implicit_relations_)
 	{
+		ctx.path.push_to_path(one->name);
 		result = one->initialize_relation(ctx);
 		if (!result)
 			break;
+		ctx.path.pop_from_path();
 	}
 	return result;
 }

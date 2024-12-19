@@ -101,9 +101,11 @@ rx_result tcp_client_endpoint::close ()
 void tcp_client_endpoint::disconnected (rx_security_handle_t identity)
 {
     tcp_state temp_state;
+    bool has_port;
     socket_holder_t::smart_ptr temp_socket;
     {
         locks::auto_lock_t _(&state_lock_);
+        has_port = my_port_;
         temp_socket = tcp_socket_;
         temp_state = current_state_;
         tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
@@ -126,12 +128,15 @@ void tcp_client_endpoint::disconnected (rx_security_handle_t identity)
         << ".";
     ITF_LOG_TRACE("tcp_client_port", 500, ss.str());
 
-    locks::auto_lock_t _(&state_lock_);
-    if (current_state_ == tcp_state::connected || current_state_ == tcp_state::connecting)
+    if (has_port)
     {
-        suspend_timer();
-        current_state_ = tcp_state::not_connected;
-        start_timer(false);
+        locks::auto_lock_t _(&state_lock_);
+        if (current_state_ == tcp_state::connected || current_state_ == tcp_state::connecting)
+        {
+            suspend_timer();
+            current_state_ = tcp_state::not_connected;
+            start_timer(false);
+        }
     }
 }
 
@@ -235,6 +240,8 @@ bool tcp_client_endpoint::tick ()
     {
         locks::auto_lock_t _(&state_lock_);
         temp_state = current_state_;
+        if (!my_port_)
+            return false;
     }
     if (remote_addr_.is_empty_ip4())
     {

@@ -301,7 +301,7 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 
 		else if (row.first == "log.level" && config.log.log_level < 0)
 			config.log.log_level = atoi(row.second.c_str());
-		else if (row.first == "log.cachesize" && config.log.cache_size == 0)
+		else if (row.first == "log.cachesize")
 			config.log.cache_size = atoi(row.second.c_str());
 		else if (row.first == "log.directory" && config.log.directory.empty())
 			config.log.directory = row.second;
@@ -578,6 +578,8 @@ void rx_platform_host::get_host_info (hosts_type& hosts)
 
 void rx_platform_host::server_started_event ()
 {
+	if (startup_log_)
+		startup_log_->started();
 }
 
 void rx_platform_host::server_stopping_event ()

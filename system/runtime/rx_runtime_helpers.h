@@ -63,6 +63,16 @@ class callback_value_point;
 
 namespace rx_platform {
 namespace runtime {
+namespace algorithms {
+template <class typeT> class runtime_holder;
+} // namespace algorithms
+
+namespace relations {
+class relations_holder;
+} // namespace relations
+
+class relation_subscriber;
+class runtime_process_context;
 namespace tag_blocks {
 class binded_tags;
 } // namespace tag_blocks
@@ -73,23 +83,13 @@ class rx_directory_resolver;
 } // namespace ns
 
 namespace runtime {
-class relation_subscriber;
-class runtime_process_context;
 namespace structure {
 class mapper_data;
 class variable_data;
 class runtime_item;
 class source_data;
+
 } // namespace structure
-
-namespace algorithms {
-template <class typeT> class runtime_holder;
-} // namespace algorithms
-
-namespace relations {
-class relations_holder;
-
-} // namespace relations
 } // namespace runtime
 } // namespace rx_platform
 
@@ -207,6 +207,10 @@ class io_capabilities
       void set_in_mapper (bool val);
 
       bool get_in_mapper () const;
+
+      void set_is_root (bool val);
+
+      bool get_is_root () const;
 
 
   protected:

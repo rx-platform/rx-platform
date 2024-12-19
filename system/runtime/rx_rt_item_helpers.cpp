@@ -49,6 +49,7 @@ rx_result collect_data_const(const string_type& name, int array_idx, data::runti
 		{
 			if (array_idx >= 0)
 				return RX_INVALID_PATH;
+			
 			data.add_value(name, item.get_item()->value);
 		}
 		else

@@ -235,13 +235,15 @@ struct json_reader_data
 			}
 			else if (temp.IsArray())
 			{
+				auto subArray = temp.GetArray();
 				auto len = temp.Size();
 				if (len > 0)
 				{
 					bool is_bool = true;
 					for (decltype(len) i = 0; i < len; i++)
 					{
-						if (!temp[i].IsBool())
+						const auto& tempVal = subArray[i];
+						if (!subArray[i].IsBool())
 						{
 							is_bool = false;
 							break;
@@ -250,7 +252,7 @@ struct json_reader_data
 					bool is_uint = true;
 					for (decltype(len) i = 0; i < len; i++)
 					{
-						if (!temp[i].IsUint())
+						if (!subArray[i].IsUint())
 						{
 							is_uint = false;
 							break;
@@ -259,7 +261,7 @@ struct json_reader_data
 					bool is_int = true;
 					for (decltype(len) i = 0; i < len; i++)
 					{
-						if (!temp[i].IsInt())
+						if (!subArray[i].IsInt())
 						{
 							is_int = false;
 							break;
@@ -268,7 +270,7 @@ struct json_reader_data
 					bool is_uint64 = true;
 					for (decltype(len) i = 0; i < len; i++)
 					{
-						if (!temp[i].IsUint64())
+						if (!subArray[i].IsUint64())
 						{
 							is_uint64 = false;
 							break;
@@ -277,7 +279,7 @@ struct json_reader_data
 					bool is_int64 = true;
 					for (decltype(len) i = 0; i < len; i++)
 					{
-						if (!temp[i].IsInt64())
+						if (!subArray[i].IsInt64())
 						{
 							is_int64 = false;
 							break;
@@ -286,7 +288,7 @@ struct json_reader_data
 					bool is_float = true;
 					for (decltype(len) i = 0; i < len; i++)
 					{
-						if (!temp[i].IsDouble())
+						if (!subArray[i].IsDouble())
 						{
 							is_float = false;
 							break;
@@ -295,7 +297,8 @@ struct json_reader_data
 					bool is_string = true;
 					for (decltype(len) i = 0; i < len; i++)
 					{
-						if (!temp[i].IsString())
+						const auto& tempVal = subArray[i];
+						if (!subArray[i].IsString())
 						{
 							is_string = false;
 							break;
@@ -304,7 +307,7 @@ struct json_reader_data
 					bool is_object = true;
 					for (decltype(len) i = 0; i < len; i++)
 					{
-						if (!temp[i].IsObject())
+						if (!subArray[i].IsObject())
 						{
 							is_object = false;
 							break;
@@ -316,7 +319,7 @@ struct json_reader_data
 						arr.reserve(len);
 						for (decltype(len) i = 0; i < len; i++)
 						{
-							arr.push_back(temp[i].GetBool());
+							arr.push_back(subArray[i].GetBool());
 						}
 						values.add_value_static(name, arr);
 					}
@@ -326,7 +329,7 @@ struct json_reader_data
 						arr.reserve(len);
 						for (decltype(len) i = 0; i < len; i++)
 						{
-							arr.push_back(temp[i].GetUint());
+							arr.push_back(subArray[i].GetUint());
 						}
 						values.add_value_static(name, arr);
 					}
@@ -336,7 +339,7 @@ struct json_reader_data
 						arr.reserve(len);
 						for (decltype(len) i = 0; i < len; i++)
 						{
-							arr.push_back(temp[i].GetInt());
+							arr.push_back(subArray[i].GetInt());
 						}
 						values.add_value_static(name, arr);
 					}
@@ -346,7 +349,7 @@ struct json_reader_data
 						arr.reserve(len);
 						for (decltype(len) i = 0; i < len; i++)
 						{
-							arr.push_back(temp[i].GetUint64());
+							arr.push_back(subArray[i].GetUint64());
 						}
 						values.add_value_static(name, arr);
 					}
@@ -356,7 +359,7 @@ struct json_reader_data
 						arr.reserve(len);
 						for (decltype(len) i = 0; i < len; i++)
 						{
-							arr.push_back(temp[i].GetInt64());
+							arr.push_back(subArray[i].GetInt64());
 						}
 						values.add_value_static(name, arr);
 					}
@@ -366,7 +369,7 @@ struct json_reader_data
 						arr.reserve(len);
 						for (decltype(len) i = 0; i < len; i++)
 						{
-							arr.push_back(temp[i].GetDouble());
+							arr.push_back(subArray[i].GetDouble());
 						}
 						values.add_value_static(name, arr);
 					}
@@ -376,7 +379,7 @@ struct json_reader_data
 						arr.reserve(len);
 						for (decltype(len) i = 0; i < len; i++)
 						{
-							arr.emplace_back(temp[i].GetString());
+							arr.emplace_back(subArray[i].GetString());
 						}
 						values.add_value_static(name, arr);
 					}
@@ -387,7 +390,7 @@ struct json_reader_data
 						for (decltype(len) i = 0; i < len; i++)
 						{
 							data::runtime_values_data temp_child;
-							if (!internal_read_init_values(temp_child, temp[i]))
+							if (!internal_read_init_values(temp_child, subArray[i]))
 								return false;
 							arr.push_back(std::move(temp_child));
 						}
@@ -396,7 +399,9 @@ struct json_reader_data
 				}
 				else
 				{
-					values.add_value(name, rx_simple_value());// add empty value to clear array
+					rx_simple_value temp;
+					temp.assign_array({});
+					values.add_value(name, std::move(temp));// add empty value to clear array
 				}
 			}
 			else if (temp.IsObject())

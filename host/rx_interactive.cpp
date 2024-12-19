@@ -113,6 +113,9 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 				rx_dump_error_result(std::cout, result);
 			}
 			std::cout << "Stopping {rx-platform}...";
+
+			rx_process_stopping();
+
 			result = rx_platform::rx_gate::instance().stop();
 			if(result)
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";

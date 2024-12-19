@@ -99,9 +99,26 @@ mp_obj_t module_write(uint32_t id, const char* path, mp_obj_t what, mp_obj_t ite
 }
 void log_write(const char* data, size_t size)
 {
-    string_type temp("upyhton:");
-    temp+=string_type(data, size);
-    rx_platform::log::log_object::instance().log_event_fast(log::log_event_type::trace, "upython", "python", 100, "", nullptr, temp);
+    bool found = false;
+    string_type str_data;
+    while (size > 0)
+    {
+        if (found || *data > ' ')
+        {
+            if (str_data.empty())
+                str_data.reserve(size);
+            found = true;
+            str_data += *data;
+        }
+        size--;
+        data++;
+    }
+    if (!str_data.empty())
+    {
+        string_type temp("upyhton:");
+        temp += str_data;
+        rx_platform::log::log_object::instance().log_event_fast(log::log_event_type::trace, "upython", "python", 100, "", nullptr, temp);
+    }
 }
 
 extern "C"

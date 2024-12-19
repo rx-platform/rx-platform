@@ -743,6 +743,9 @@ rx_value value_point_impl::calculate_local_var (const rx_value& val, char* token
 
 void value_point_impl::parse_and_connect (const char* path, char* tbuff, const rx_time& now, data_controler* controler)
 {
+	string_type jbg(path);
+	auto ttt = jbg.find("PumpVolume");
+	//RX_ASSERT(ttt == string_type::npos);
 	char* token_buff = tbuff;
 	auto path_len = strlen(path);
 	if (path_len == 0)
@@ -767,7 +770,7 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 	while (*prog != '\0')
 	{
 		// skip blanks first
-		if (iswhite(*prog))
+		while (iswhite(*prog))
 			prog++;
 		if (*prog == '\0')
 			break;
@@ -812,7 +815,7 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 			*write_to++ = *prog++;
 		else if (iswdigit(*prog))
 		{// found number here
-			while (!isdelim(*prog))
+			while (iswdigit(*prog) || *prog == '.')
 				*write_to++ = *prog++;
 		}
 		else if (*prog == '\"')
@@ -843,7 +846,8 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 				dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
 				dummy.set_time(now);
 				tag_variables.push_back(dummy);
-				*temp_ptr = current_var++;
+				*temp_ptr = (current_var++);
+				RX_ASSERT(!var_name.empty());
 				vars.emplace(var_name, *temp_ptr);
 			}
 			else
@@ -860,6 +864,7 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 			bool found = false;
 			size_t count = sizeof(operations) / sizeof(operations[0]);
 			size_t my_size = write_to - temp_ptr;
+			RX_ASSERT(my_size != 0);
 			for (size_t idx = 0; idx < count; idx++)
 			{
 				if (my_size == operations[idx].len && memcmp(temp_ptr, operations[idx].name, operations[idx].len) == 0)
@@ -884,7 +889,8 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 					dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
 					dummy.set_time(now);
 					tag_variables.push_back(dummy);
-					*temp_ptr = current_var++;
+					*temp_ptr = (current_var++);
+					RX_ASSERT(!var_name.empty());
 					vars.emplace(var_name, *temp_ptr);
 				}
 				else
@@ -922,6 +928,7 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 				{
 					mode = context_->get_mode();
 				}
+				RX_ASSERT(!it->first.empty());
 				if (translate_path(it->first, buffer))
 					temp = controler->add_item(buffer, rate_, mode);
 				else

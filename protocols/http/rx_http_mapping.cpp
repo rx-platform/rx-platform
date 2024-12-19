@@ -344,12 +344,14 @@ rx_result rx_http_endpoint::send_response (http_response response)
 	ss << "HTTP/1.1 " << response.result_string << "\r\n";
 	for (auto& one : response.headers)
 	{
+
 		ss << one.first
 			<< ": "
 			<< one.second
 			<< "\r\n";
 	}
 	ss << "\r\n";
+
 
 	string_type pack_text(ss.str());
 

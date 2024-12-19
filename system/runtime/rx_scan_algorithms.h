@@ -55,8 +55,7 @@ class runtime_scan_algorithms
     static constexpr bool C_has_remote_updates  = true;
     static constexpr bool C_has_status_response = true;
 
-    static constexpr bool C_has_source_results  = true;
-    static constexpr bool C_has_source_updates  = true;
+    static constexpr bool C_has_source_inputs   = true;
     static constexpr bool C_has_mapper_writes   = true;
     static constexpr bool C_has_tag_writes      = true;
 

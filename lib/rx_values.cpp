@@ -2920,6 +2920,7 @@ rx_value::rx_value()
 }
 rx_value::rx_value(full_value_type&& right) noexcept
 {
+	data_.value.value_type = 0;
 	rx_move_value(&data_.value, &right.value);
 	data_.origin = right.origin;
 	data_.quality = right.quality;
@@ -2927,6 +2928,7 @@ rx_value::rx_value(full_value_type&& right) noexcept
 }
 rx_value::rx_value(rx_value&& right) noexcept
 {
+	data_.value.value_type = 0;
 	rx_move_value(&data_.value, &right.data_.value);
 	data_.origin = right.data_.origin;
 	data_.quality = right.data_.quality;
@@ -2963,6 +2965,7 @@ rx_value& rx_value::operator=(const rx_value& right)
 rx_value::rx_value(rx_simple_value&& right, rx_time ts, uint32_t quality) noexcept
 {
 	typed_value_type temp = right.move();
+	data_.value.value_type = 0;
 	rx_move_value(&data_.value, &temp);
 	data_.time = ts.c_data();
 	data_.quality = quality;
@@ -2978,6 +2981,7 @@ rx_value::rx_value(const rx_simple_value& right, rx_time ts, uint32_t quality)
 
 rx_value::rx_value(rx_timed_value&& right, uint32_t quality) noexcept
 {
+	data_.value.value_type = 0;
 	timed_value_type temp = right.move();
 	rx_move_value(&data_.value, &temp.value);
 	data_.time = temp.time;
@@ -3005,6 +3009,7 @@ bool rx_value::operator!=(const rx_value& right) const
 full_value_type rx_value::move() noexcept
 {
 	full_value_type ret;
+	ret.value.value_type = 0;
 	rx_move_value(&ret.value, &data_.value);
 	ret.time = data_.time;
 	ret.origin = data_.origin;
@@ -3025,6 +3030,7 @@ rx_simple_value::rx_simple_value (const typed_value_type* storage)
 
 rx_simple_value::~rx_simple_value()
 {
+
 	rx_destroy_value(&data_);
 	static_assert(sizeof(rx_simple_value) == sizeof(typed_value_type), "Memory size has to be the same, no virtual functions or members");
 }
@@ -3358,7 +3364,7 @@ void rx_simple_value::assign_array (std::vector<rx_simple_value>&& from)
 	if (from.empty())
 	{
 		rx_destroy_value(&data_);
-		rx_init_array_value_with_ptrs(&data_, RX_STRUCT_TYPE, NULL, 0);
+		rx_init_array_value_with_ptrs(&data_, RX_NULL_TYPE, NULL, 0);
 	}
 	else
 	{
@@ -3444,16 +3450,19 @@ rx_simple_value::rx_simple_value()
 }
 rx_simple_value::rx_simple_value(typed_value_type&& val) noexcept
 {
+	data_.value_type = 0;
 	rx_move_value(&data_, &val);
 }
 rx_simple_value::rx_simple_value(rx_simple_value&& right) noexcept
 {
+	data_.value_type = 0;
 	rx_move_value(&data_, &right.data_);
 }
 
 rx_simple_value& rx_simple_value::operator=(rx_simple_value&& right) noexcept
 {
 	rx_destroy_value(&data_);
+	RX_ASSERT(data_.value_type == 0);
 	rx_move_value(&data_, &right.data_);
 	return *this;
 }
@@ -3471,6 +3480,7 @@ rx_simple_value & rx_simple_value::operator=(const rx_simple_value &right)
 typed_value_type rx_simple_value::move() noexcept
 {
 	typed_value_type ret;
+	ret.value_type = 0;
 	rx_move_value(&ret, &data_);
 	return ret;
 }
@@ -3894,12 +3904,14 @@ rx_timed_value::rx_timed_value()
 
 rx_timed_value::rx_timed_value(timed_value_type&& right) noexcept
 {
+	data_.value.value_type = 0;
 	rx_move_value(&data_.value, &right.value);
 	data_.time = right.time;
 }
 
 rx_timed_value::rx_timed_value(rx_timed_value&& right) noexcept
 {
+	data_.value.value_type = 0;
 	rx_move_value(&data_.value, &right.data_.value);
 	data_.time = right.data_.time;
 }
@@ -3907,6 +3919,7 @@ rx_timed_value::rx_timed_value(rx_timed_value&& right) noexcept
 rx_timed_value& rx_timed_value::operator=(rx_timed_value&& right) noexcept
 {
 	rx_destroy_value(&data_.value);
+	RX_ASSERT(data_.value.value_type == 0);
 	rx_move_value(&data_.value, &right.data_.value);
 	data_.time = right.data_.time;
 	return *this;
@@ -3928,7 +3941,8 @@ rx_timed_value & rx_timed_value::operator=(const rx_timed_value &right)
 
 rx_timed_value::rx_timed_value(rx_simple_value&& right, rx_time ts) noexcept
 {
-	typed_value_type temp = right.move();
+	data_.value.value_type = 0;
+	typed_value_type temp = right.move();	
 	rx_move_value(&data_.value, &temp);
 	data_.time = ts.c_data();
 }
@@ -3942,6 +3956,7 @@ rx_timed_value::rx_timed_value(const rx_simple_value& right, rx_time ts)
 timed_value_type rx_timed_value::move() noexcept
 {
 	timed_value_type ret;
+	ret.value.value_type = 0;
 	rx_move_value(&ret.value, &data_.value);
 	ret.time = data_.time;
 	return ret;

@@ -131,6 +131,16 @@ bool io_capabilities::get_in_mapper () const
 	return settings_.test(6);
 }
 
+void io_capabilities::set_is_root (bool val)
+{
+	settings_[7] = val;
+}
+
+bool io_capabilities::get_is_root () const
+{
+	return settings_.test(7);
+}
+
 
 // Class rx_platform::runtime::runtime_deinit_context 
 
@@ -476,6 +486,9 @@ std::vector<rx_simple_value> mappers_stack::get_mapping_values (const rx_node_id
 	{
 		for (const auto& one : it->second)
 		{
+			if (one->is_root())
+				ret_value.clear();
+
 			rx_simple_value val;
 			if (one->item->get_local_value(path, val))
 				ret_value.emplace_back(std::move(val));
@@ -529,6 +542,8 @@ std::vector<rx_simple_value> sources_stack::get_source_values (const rx_node_id&
 	{
 		for (const auto& one : it->second)
 		{
+			if (one->is_root())
+				ret_value.clear();
 			rx_simple_value val;
 			if (one->item->get_local_value(path, val))
 				ret_value.emplace_back(std::move(val));

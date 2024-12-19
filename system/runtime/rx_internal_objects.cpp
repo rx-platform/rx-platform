@@ -40,6 +40,8 @@
 using namespace rx_platform::runtime;
 
 
+
+
 namespace rx_platform {
 
 namespace sys_objects {
@@ -420,6 +422,8 @@ void host_application::deinitialize ()
 // Class rx_platform::sys_objects::memory_object 
 
 memory_object::memory_object()
+      : last_used_(0),
+        last_count_(0)
 {
 }
 
@@ -498,6 +502,13 @@ void memory_object::memory_tick ()
 
     rx_heap_status(status, &total_heap, &heap_used, &heap_trigger, &heap_alloc);
 
+    size_t delta = heap_used - last_used_;
+    last_used_ = heap_used;
+
+    size_t tmp = rx_get_values_count();
+    size_t delta_vals = tmp - last_count_;
+    last_count_ = tmp;
+
     std::vector<rx_simple_value> buckets_data;
 
     int idx = 0;
@@ -517,9 +528,14 @@ void memory_object::memory_tick ()
     rx_simple_value rx_tot;
     rx_simple_value rx_used;
     rx_simple_value rx_perc;
+    rx_simple_value rx_delta;
+    rx_simple_value rx_dbg_count;
     rx_simple_value rx_buckets;
     rx_tot.assign_static(total_heap);
     rx_used.assign_static(heap_used);
+    rx_delta.assign_static(delta);
+    rx_dbg_count.assign_static(delta_vals);
+
     rx_perc.assign_static((double)heap_used / (double)total_heap * 100.0);
     rx_buckets.assign_array(buckets_data);
 
@@ -528,6 +544,8 @@ void memory_object::memory_tick ()
             rx_tot,
             rx_used,
             rx_perc,
+            rx_delta,
+            rx_dbg_count,
             rx_buckets
         });
 

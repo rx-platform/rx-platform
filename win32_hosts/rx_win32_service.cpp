@@ -158,7 +158,7 @@ rx_result win32_service_host::stop_service ()
 	else
 	{
 		printf("Stopping process...\r\n");
-		stop_platform();
+		stop_platform2(1);
 		deinitialize_platform();
 		finished_.set();
 	}

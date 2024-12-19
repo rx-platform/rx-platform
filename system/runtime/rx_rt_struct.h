@@ -648,6 +648,8 @@ public:
 
       rx_result filter_changed ();
 
+      bool is_root () const;
+
 
       full_value_data mapped_value;
 
@@ -762,6 +764,8 @@ class source_data
       data::runtime_data_model get_data_type ();
 
       rx_result filter_changed ();
+
+      bool is_root () const;
 
 
       full_value_data input_value;

@@ -527,6 +527,10 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 			return create_result.errors();
 		}
 	}
+	else
+	{
+		RX_ASSERT(false);
+	}
 	return result;
 }
 

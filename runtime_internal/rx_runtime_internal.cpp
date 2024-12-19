@@ -430,6 +430,9 @@ void runtime_cache::remove_functions (const rx_node_id& id)
 
 void runtime_cache::unregister_subscriber (const rx_item_reference& ref, runtime::resolvers::runtime_subscriber* whose)
 {
+	if (ref.is_null())
+		return;
+
 	string_type name;
 	if (!ref.is_node_id())
 	{

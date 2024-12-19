@@ -686,6 +686,9 @@ rx_result mapper_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	ctx.structure.push_item(*item);
 
+
+	bool root = ctx.structure.get_current_item().get_local_as<bool>("Root", false);
+	io_.set_is_root(root);
 	rx_value_t val_type=ctx.structure.get_current_item().get_local_as<rx_value_t>("ValueType", RX_NULL_TYPE);
 	if(val_type!= RX_NULL_TYPE)
 		mapped_value.value.convert_to(val_type);
@@ -1220,6 +1223,11 @@ rx_result mapper_data::filter_changed ()
 	return true;
 }
 
+bool mapper_data::is_root () const
+{
+	return io_.get_is_root();
+}
+
 
 // Class rx_platform::runtime::structure::source_data 
 
@@ -1263,6 +1271,8 @@ rx_result source_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	ctx.structure.push_item(*item);
 
+	bool root = ctx.structure.get_current_item().get_local_as<bool>("Root", false);
+	io_.set_is_root(root);
 	rx_value_t val_type = ctx.structure.get_current_item().get_local_as<rx_value_t>("ValueType", RX_NULL_TYPE);
 	if (val_type != RX_NULL_TYPE)
 		input_value.value.convert_to(val_type);
@@ -1603,6 +1613,11 @@ rx_result source_data::filter_changed ()
 	}
 
 	return true;
+}
+
+bool source_data::is_root () const
+{
+	return io_.get_is_root();
 }
 
 
@@ -3635,9 +3650,19 @@ rx_result block_data::fill_value_internal (rx_value_t val_type, const rx_value_u
 		auto& item = items[i];
 		if (data.struct_value.values[i].value_type & RX_ARRAY_VALUE_MASK)
 		{// array value
-			switch (data.struct_value.values[i].value_type & RX_STRIP_ARRAY_MASK)
+			rx_value_t in_switch = data.struct_value.values[i].value_type & RX_STRIP_ARRAY_MASK;
+			if (in_switch == RX_NULL_TYPE
+				&& data.struct_value.values[i].value.array_value.size == 0)
+			{
+				if ((item.index & rt_type_mask) == rt_data_index_type)
+				{
+					in_switch = RX_STRUCT_TYPE;
+				}
+			}
+			switch (in_switch)
 			{
 			case RX_NULL_TYPE:
+				RX_ASSERT(false);
 				continue;
 			case RX_STRUCT_TYPE:
 				{
@@ -3689,7 +3714,7 @@ rx_result block_data::fill_value_internal (rx_value_t val_type, const rx_value_u
 										RX_ASSERT(this_val.get_prototype());
 										prototype = this_val.get_prototype();
 									}
-									block_data one_block(std::move(*prototype));
+									block_data one_block(*prototype);
 									auto result = one_block.fill_value_internal(
 										RX_STRUCT_TYPE
 										, data.struct_value.values[i].value.array_value.values[j]);
@@ -4167,14 +4192,16 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 				if (!temp.compare(struct_value.value, time_compare_type::skip))
 				{
 					changed = true;
+					
 					struct_value.value = std::move(temp);
+					
 					ctx->value_changed(&struct_value);
 
 					if (struct_value.value_opt[runtime::structure::value_opt_persistent])
 					{
 						if (!struct_value.value_opt[runtime::structure::value_opt_default_value])
 							struct_value.value_opt[runtime::structure::value_opt_default_value] = false;
-						changed = false;
+						//changed = false;
 						ctx->runtime_dirty([this, ctx](rx_result result)
 							{
 								if (result)
@@ -4190,8 +4217,7 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 					{
 						if (tag_references_)
 							tag_references_->block_data_changed(block, ctx);
-					}
-
+					}					
 				}
 				else
 				{

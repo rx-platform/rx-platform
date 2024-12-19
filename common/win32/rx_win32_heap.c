@@ -58,6 +58,8 @@ slim_lock_t  heap_lock;
 size_t total_heap_bytes = 0;
 size_t used_heap_bytes = 0;
 
+int process_stopping = 0;
+
 void claim_from_memory(size_t size)
 {
 	if (next_buffer && next_buffer_size && next_buffer != HEAP_NEXT_BUFFER_CLAIMING)
@@ -70,7 +72,9 @@ void claim_from_memory(size_t size)
 	}
 	else
 	{
-		size_t total_to_commit = size;
+		size_t total_to_commit = heap_alloc;
+		while (total_to_commit < size)
+			total_to_commit += heap_alloc;
 		current_buffer_size = total_to_commit;
 		current_buffer = (uint8_t*)rx_allocate_os_memory(total_to_commit);
 		memzero(current_buffer, total_to_commit);// claim it in memory
@@ -83,7 +87,7 @@ uint8_t* alloc_from_buffer(size_t size)
 {
 	if (current_buffer)
 	{
-		if (next_free_index + size < current_buffer_size)
+		if (next_free_index + size <= current_buffer_size)
 		{
 			uint8_t* ret = &current_buffer[next_free_index];
 			next_free_index += size;
@@ -92,7 +96,7 @@ uint8_t* alloc_from_buffer(size_t size)
 		}
 		else
 		{
-			claim_from_memory(heap_alloc);
+			claim_from_memory(size);
 			return alloc_from_buffer(size);
 		}
 	}
@@ -200,6 +204,10 @@ int initialize_chunk_list()
 	return RX_OK;
 }
 
+void rx_heap_process_stopping()
+{
+	process_stopping = 1;
+}
 size_t rx_init_heap(size_t initial_heap, size_t alloc_size, size_t trigger, size_t bucket_size)
 {
 	if (current_buffer == NULL)
@@ -331,20 +339,37 @@ RX_COMMON_API int rx_heap_free(void* ptr)
 
 		struct my_heap_chunk* my_chunk = &g_chunks[chunk];
 
-		my_chunk->array[my_chunk->next_index++] = mem;
-		if (my_chunk->next_index == my_chunk->size)
-		{// we should do realloc becouse we are out of limit
-			void* old_data = my_chunk->array;
-			size_t new_size = ((my_chunk->size) << 1);
-			my_chunk->array = (uint64_t**)alloc_from_buffer(new_size * sizeof(uint64_t*));
-			memcpy(my_chunk->array, old_data, my_chunk->size * sizeof(uint64_t*));
-			my_chunk->size = new_size;
-		}
-		if (my_chunk->max_buckets < my_chunk->next_index)
-			my_chunk->max_buckets = my_chunk->next_index;
-		my_chunk->free += 1;
+		if (process_stopping == 1)
+		{
+			if (my_chunk->next_index < my_chunk->size)
+			{
+				my_chunk->array[my_chunk->next_index++] = mem;		
 
-		my_chunk->occupied -= 1;
+				if (my_chunk->max_buckets < my_chunk->next_index)
+					my_chunk->max_buckets = my_chunk->next_index;
+				my_chunk->free += 1;
+				my_chunk->occupied -= 1;
+			}
+		}
+		else
+		{
+			my_chunk->array[my_chunk->next_index++] = mem;
+			if (my_chunk->next_index == my_chunk->size)
+			{// we should do realloc becouse we are out of limit
+
+				void* old_data = my_chunk->array;
+				size_t new_size = ((my_chunk->size) << 1);
+				my_chunk->array = (uint64_t**)alloc_from_buffer(new_size * sizeof(uint64_t*));
+				memcpy(my_chunk->array, old_data, my_chunk->size * sizeof(uint64_t*));
+				my_chunk->size = new_size;
+			}
+
+			if (my_chunk->max_buckets < my_chunk->next_index)
+				my_chunk->max_buckets = my_chunk->next_index;
+			my_chunk->free += 1;
+
+			my_chunk->occupied -= 1;
+		}
 
 		rx_slim_lock_release(&heap_lock);
 	}

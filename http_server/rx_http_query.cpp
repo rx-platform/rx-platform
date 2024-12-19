@@ -179,6 +179,7 @@ uint64_t enterprise_handler_callback::register_request (http_request& req, http_
 
 void enterprise_handler_callback::request_complete (uint64_t trans_id, uint32_t result, string_view_type cont_type, string_view_type data)
 {
+
 	enterprise_request_type trans;
 	{
 		std::scoped_lock _(requests_lock_);
@@ -190,6 +191,7 @@ void enterprise_handler_callback::request_complete (uint64_t trans_id, uint32_t 
 			trans.response.result = result;
 			trans.response.headers["Content-Type"] = string_type(cont_type);
 			trans.response.set_string_content(string_type(data));
+
 
 			pending_requests_.erase(it);
 		}

@@ -107,6 +107,9 @@ void data_controler::unregister_value (value_handle_type handle, value_point_imp
 
 value_handle_type data_controler::add_item (const string_type& path, uint32_t rate, rx_mode_type mode)
 {
+	if (path.empty())
+		return 0;
+
 	string_type source;
 	string_type concrete;
 

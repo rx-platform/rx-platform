@@ -100,6 +100,8 @@ extern HCERTSTORE hcert_store_machine;
 
 int g_is_debug_instance;
 
+void rx_heap_process_stopping();
+
 size_t rx_init_heap(size_t initial_heap, size_t heap_alloc, size_t heap_trigger, size_t bucket_size);
 
 const uint64_t g_my_version = ((uint64_t)RX_COMMON_MAJOR_VERSION << 48)
@@ -155,6 +157,10 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
 	{
 		return RX_ERROR;
 	}
+}
+RX_COMMON_API void rx_process_stopping()
+{
+	rx_heap_process_stopping();
 }
 RX_COMMON_API void rx_deinit_common_library()
 {

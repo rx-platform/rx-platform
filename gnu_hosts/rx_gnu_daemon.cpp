@@ -120,7 +120,7 @@ int gnu_daemon_host::headless_main (int argc, char* argv[], std::vector<library:
         {
             stop_.wait_handle();
 
-            stop_platform();
+            stop_platform2(1);
         }
         deinitialize_platform();
     }

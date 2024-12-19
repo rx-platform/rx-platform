@@ -455,6 +455,7 @@ int headless_platform_host::start_platform ()
 int headless_platform_host::stop_platform ()
 {
 	std::cout << "Stopping {rx-platform} ...";
+
 	auto result = rx_platform::rx_gate::instance().stop();
 	if (result)
 		std::cout << "OK\r\n";
@@ -477,6 +478,24 @@ string_type headless_platform_host::get_host_instance ()
 		return host_instance_;
 	else
 		return rx_platform::hosting::rx_platform_host::get_host_instance();
+}
+
+int headless_platform_host::stop_platform2 (bool process_exiting)
+{
+	std::cout << "Stopping {rx-platform} ...";
+
+	if(process_exiting)
+		rx_process_stopping();
+
+	auto result = rx_platform::rx_gate::instance().stop();
+	if (result)
+		std::cout << "OK\r\n";
+	else
+	{
+		std::cout << "ERROR\r\nError stopping {rx-platform}:\r\n";
+		rx_dump_error_result(std::cout, result);
+	}
+	return 1;
 }
 
 

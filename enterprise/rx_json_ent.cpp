@@ -107,6 +107,11 @@ void json_enterprise_interface::sync_read (uint64_t trans_id, platform_item_ptr 
 			content = create_error_response(2, result.errors_line());
 			http_result = 400;
 		}
+
+
+		/*string_type temp = "Content type is:"s + string_type(c_json_content_type);
+		OutputDebugStringA(temp.c_str());*/
+
 		finish_read_transaction(trans_id, http_result, c_json_content_type, content);
 	});
 

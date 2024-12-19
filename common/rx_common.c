@@ -182,7 +182,7 @@ RX_COMMON_API int rx_copy_string_value(string_value_struct* dest, const string_v
 }
 RX_COMMON_API void rx_destory_string_value_struct(string_value_struct* data)
 {
-	if (data->size > sizeof(data->value))
+	if (data->size + 1 > sizeof(data->value))
 	{
 		RX_ASSERT(data->value);
 		rx_heap_free(data->value);

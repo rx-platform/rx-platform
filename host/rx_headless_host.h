@@ -33,10 +33,10 @@
 
 
 
-// rx_thread
-#include "system/threads/rx_thread.h"
 // rx_host
 #include "system/hosting/rx_host.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 
 #include "system/server/rx_server.h"
 using rx_platform::hosting::hosts_type;
@@ -141,6 +141,8 @@ class headless_platform_host : public rx_platform::hosting::rx_platform_host
       virtual rx_result register_constructors ();
 
       string_type get_host_instance ();
+
+      int stop_platform2 (bool process_exiting);
 
 
   protected:

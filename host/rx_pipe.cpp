@@ -368,6 +368,9 @@ void rx_pipe_host::pipe_loop (configuration_data_t& config, const pipe_client_t&
 			stdout_log_->suspend_log();
 
 			std::cout << "Stopping {rx-platform} ...";
+
+			rx_process_stopping();
+
 			result = rx_platform::rx_gate::instance().stop();
 			if (result)
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";

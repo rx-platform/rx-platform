@@ -309,6 +309,7 @@ void std_enterprise_interface::begin_query (uint64_t trans_id, string_view_type 
 
 void std_enterprise_interface::finish_read_transaction (uint64_t trans_id, uint32_t result, string_view_type cont_type, string_view_type data)
 {
+
 	enterprise_callback* callback = nullptr;
 	uint64_t caller_id = 0;
 	{

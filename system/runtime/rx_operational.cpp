@@ -1686,7 +1686,36 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 			}
 		case rt_value_ref_type::rt_relation:
 			{
-				return RX_NOT_SUPPORTED;
+
+				rx_simple_value val;
+				rx_result result;
+				
+				val = value.get_value("val");
+
+				if (val.is_null())
+				{
+					result = "Conversion from data to value not implemented";
+				}
+				else
+				{
+					write_data data;
+					data.transaction_id = trans_id;
+					data.value = std::move(val);
+					data.internal = false;
+					data.identity = identity;
+					data.test = test;
+
+					auto result = it->second.reference.ref_value_ptr.relation->write_value(std::move(data), context_);
+					if (result)
+					{
+						auto new_val = it->second.reference.ref_value_ptr.relation->value.get_value(context_);
+						write_results_[monitor].emplace_back(write_result_data{ trans_id, item, std::move(result) });
+						for (const auto& one : it->second.monitors)
+							next_send_[one].insert_or_assign(item, new_val);
+						context_->tag_updates_pending();
+					}
+				}
+				return result;
 			}
 		case rt_value_ref_type::rt_relation_value:
 			{
@@ -1801,10 +1830,9 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 						result = it->second.reference.ref_value_ptr.block_variable->write_value(std::move(data)
 							, std::make_unique<connected_write_task>(this, monitor, trans_id, item), context_);
 					}
-					return result;
 				}
+				return result;
 			}
-
 		case rt_value_ref_type::rt_relation:
 			{
 				write_data data;

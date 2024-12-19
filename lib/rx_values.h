@@ -178,6 +178,7 @@ class rx_simple_value
           fill_array_internal(arr, arr_idx + 1, types...);
       }
 public:
+
       static constexpr size_t npos = (size_t)(-1);
       template<typename... Ts>
       void assign(rx_simple_value val, Ts... types)

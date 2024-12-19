@@ -146,7 +146,7 @@ struct log_data_t
 {
     string_type directory;
     int log_level = -1;
-    uint32_t cache_size = 0;
+    uint32_t cache_size = 8192;
     bool test_log = false;
 };
 

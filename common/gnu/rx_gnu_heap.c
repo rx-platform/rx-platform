@@ -58,6 +58,7 @@ size_t next_free_index = 0;
 slim_lock_t  heap_lock;
 size_t total_heap_bytes = 0;
 size_t used_heap_bytes = 0;
+int process_stopping = 0;
 
 
 size_t initial_list_size = sizeof(uint8_t*) * INITIAL_CHUNK_SIZE;
@@ -75,7 +76,9 @@ void claim_from_memory(size_t size)
 	}
 	else
 	{
-		size_t total_to_commit = size;
+		size_t total_to_commit = heap_alloc;
+		while (total_to_commit < size)
+			total_to_commit += heap_alloc;
 		current_buffer_size = total_to_commit;
 		current_buffer = (uint8_t*)rx_allocate_os_memory(total_to_commit);
 		memzero(current_buffer, total_to_commit);// claim it in memory
@@ -97,7 +100,7 @@ uint8_t* alloc_from_buffer(size_t size)
 		}
 		else
 		{
-			claim_from_memory(heap_alloc);
+			claim_from_memory(size);
 			return alloc_from_buffer(size);
 		}
 	}
@@ -205,6 +208,10 @@ int initialize_chunk_list()
 	return RX_OK;
 }
 
+void rx_heap_process_stopping()
+{
+	process_stopping = 1;
+}
 size_t rx_init_heap(size_t initial_heap, size_t alloc_size, size_t trigger, size_t bucket_size)
 {
 	if (current_buffer == NULL)

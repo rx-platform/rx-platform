@@ -281,6 +281,10 @@ int parse_bytes(const char* str, bytes_value_struct* val)
 		if (pbuffer == NULL)
 			return RX_ERROR;
 	}
+	else
+	{
+		memzero(static_buff, sizeof(static_buff));
+	}
 
 	for (size_t i = 0; i < len; i += 2)
 	{
@@ -423,28 +427,34 @@ int uint32_to_str(uint32_t val, string_value_struct* str)
 }
 int uint64_to_str(uint64_t val, string_value_struct* str)
 {
-	char buff[0x20];
+	char buff[0x80];
 	sprintf(buff, "%"  PRIu64, val);
 	return rx_init_string_value_struct(str, buff, -1);
 }
 
 int float_to_str(float val, string_value_struct* str)
 {
-	char buff[0x200];
-	gcvt(val, 200, buff);
-	return rx_init_string_value_struct(str, buff, -1);
+	char buff[0x80];
+	char* digits = gcvt(val, 16, buff);
+	if(digits)
+        return rx_init_string_value_struct(str, digits, -1);
+    else
+        return RX_ERROR;
 }
 
 int double_to_str(double val, string_value_struct* str)
 {
-	char buff[0x200];
-	gcvt(val, 200, buff);
-	return rx_init_string_value_struct(str, buff, -1);
+	char buff[0x80];
+	char* digits = gcvt(val, 16, buff);
+	if(digits)
+        return rx_init_string_value_struct(str, digits, -1);
+    else
+        return RX_ERROR;
 }
 
 int complex_to_str(complex_value_struct* val, string_value_struct* str)
 {
-	char buff[0x200];
+	char buff[0x100];
 	sprintf(buff, "%g+%gi", val->real, val->imag);
 	return rx_init_string_value_struct(str, buff, -1);
 }
@@ -562,7 +572,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 				}
 			case RX_UUID_TYPE:
 				{
-					uint_fast8_t temp = !rx_is_null_uuid(what->uuid_value);
+					uint_fast8_t temp = !rx_is_null_uuid(&what->uuid_value);
 					what->bool_value = temp;
 					return RX_OK;
 				}
@@ -1885,7 +1895,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					int ret = rx_uuid_to_string(&temp, buff);
 					if (ret)
 					{
-						rx_init_string_value_struct(&what->string_value, buff);
+						rx_init_string_value_struct(&what->string_value, buff, -1);
 					}
 					return ret;
 				}

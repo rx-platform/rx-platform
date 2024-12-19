@@ -73,7 +73,6 @@ tcp_server_endpoint::tcp_server_endpoint()
         if (me->tcp_socket_)
         {
             me->close();
-            rx_notify_closed(&me->stack_endpoint_, 0);
         }
         return RX_PROTOCOL_OK;
     };

@@ -989,6 +989,8 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 		dtype->complex_data.register_value_static<uint64_t>("Total", 0);
 		dtype->complex_data.register_value_static<uint64_t>("Used", 0);
 		dtype->complex_data.register_value_static<double>("Percent", 0);
+		dtype->complex_data.register_value_static<uint64_t>("Delta", 0);
+		dtype->complex_data.register_value_static<uint64_t>("DbgVal", 0);
 		dtype->complex_data.register_child("Buckets", rx_node_id(RX_NS_BUCKET_STATUS_TYPE_ID), true);
 		add_data_type_to_configuration(dir, dtype);
 
@@ -1780,6 +1782,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		map->complex_data.register_const_value_static("Root", false);
 		add_simple_type_to_configuration<mapper_type>(dir, map, true);
 
 		map = create_type<basic_types::mapper_type>(meta::type_creation_data{
@@ -1836,6 +1839,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		src->complex_data.register_const_value_static("Root", false);
 		//src->complex_data.register_const_value_static("Path", "");
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
@@ -1856,7 +1860,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		src->complex_data.register_simple_value_static("Path", "", false, true);
+		src->complex_data.register_const_value_static("Path", "");
 		add_simple_type_to_configuration<source_type>(dir, src, false);
 
 		/*src = create_type<basic_types::source_type>(meta::type_creation_data{

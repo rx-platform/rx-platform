@@ -83,6 +83,7 @@ RX_COMMON_API void* rx_heap_alloc(size_t size);
 RX_COMMON_API int rx_heap_free(void* ptr);
 RX_COMMON_API size_t rx_heap_house_keeping();
 
+RX_COMMON_API size_t rx_get_values_count();
 
 typedef RX_COMMON_API struct rx_platform_heap_status_t
 {
@@ -96,6 +97,7 @@ typedef RX_COMMON_API struct rx_platform_heap_status_t
 RX_COMMON_API int rx_heap_status(struct rx_platform_heap_status_t* buffer, size_t* total, size_t* used, size_t* trigger, size_t* alloc);
 
 RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data);
+RX_COMMON_API void rx_process_stopping();
 RX_COMMON_API void rx_deinit_common_library();
 
 RX_COMMON_API int rx_is_debug_instance();

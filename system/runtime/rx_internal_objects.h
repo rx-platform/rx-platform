@@ -372,6 +372,10 @@ Memory object implementation");
 
       runtime::owned_complex_value heap_status_;
 
+      size_t last_used_;
+
+      size_t last_count_;
+
 
 };
 
