@@ -308,16 +308,30 @@ opcua_basic_client_endpoint::~opcua_basic_client_endpoint()
 
 rx_protocol_result_t opcua_basic_client_endpoint::connected_function (rx_protocol_stack_endpoint* reference, rx_session* session)
 {
-	opcua_basic_client_endpoint* me = (opcua_basic_client_endpoint*)reference->user_data;
-	me->port_->status.set_connected();
-	return me->client_connected(reference, session);
+	if (reference->user_data)
+	{
+		opcua_basic_client_endpoint* me = (opcua_basic_client_endpoint*)reference->user_data;
+		me->port_->status.set_connected();
+		return me->client_connected(reference, session);
+	}
+	else
+	{
+		return RX_PROTOCOL_EMPTY;
+	}
 }
 
 rx_protocol_result_t opcua_basic_client_endpoint::disconnected_function (rx_protocol_stack_endpoint* reference, rx_session* session, rx_protocol_result_t reason)
 {
-	opcua_basic_client_endpoint* me = (opcua_basic_client_endpoint*)reference->user_data;
-	me->port_->status.set_disconnected();
-	return RX_PROTOCOL_OK;
+	if (reference->user_data)
+	{
+		opcua_basic_client_endpoint* me = (opcua_basic_client_endpoint*)reference->user_data;
+		me->port_->status.set_disconnected();
+		return RX_PROTOCOL_OK;
+	}
+	else
+	{
+		return RX_PROTOCOL_EMPTY;
+	}
 }
 
 rx_protocol_result_t opcua_basic_client_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)

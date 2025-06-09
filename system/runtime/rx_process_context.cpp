@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_process_context.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -98,7 +98,7 @@ bool runtime_process_context::should_do_step()
 
 // Class rx_platform::runtime::runtime_process_context 
 
-runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, security::security_guard_ptr guard, events::runtime_events_manager* events)
+runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, const_size_vector<security::security_guard>* guards, events::runtime_events_manager* events)
       : tags_(tags),
         binded_(binded),
         events_manager_(events),
@@ -111,7 +111,7 @@ runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binde
         state_(runtime_context_state::idle),
         job_queue_(nullptr),
         anchor_(anchor),
-        security_guard_(guard),
+        security_guards_(guards),
         simple_value_changed_(true)
 {
     mode_.turn_off();
@@ -671,9 +671,12 @@ void runtime_process_context::full_value_changed (structure::full_value_data* wh
     binded_.full_value_changed(whose, whose->get_value(this), tags_);
 }
 
-security::security_guard_ptr runtime_process_context::get_security_guard ()
+security::security_guard_ptr runtime_process_context::get_security_guard (uint32_t idx)
 {
-    return security_guard_;
+    if (security_guards_ && idx < security_guards_->size())
+        return &(*security_guards_)[idx];
+
+    return nullptr;
 }
 
 bool runtime_process_context::is_mine_value (const rx_value& from) const

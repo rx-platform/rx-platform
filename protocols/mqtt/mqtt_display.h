@@ -4,7 +4,7 @@
 *
 *  protocols\mqtt\mqtt_display.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -93,7 +93,7 @@ private:
 
       rx_result stop_display (runtime::runtime_stop_context& ctx, const string_type& disp_path);
 
-      void point_changed ();
+      virtual void point_changed ();
 
       void timer_tick ();
 
@@ -110,7 +110,7 @@ private:
 
       void internal_port_disconnected ();
 
-      void fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path);
+      virtual void fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path);
 
 
 

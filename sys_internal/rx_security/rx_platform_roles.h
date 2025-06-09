@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_security\rx_platform_roles.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -75,8 +75,8 @@ class platform_role
     struct role_permission
     {
         string_type path;
-        security::security_mask_t allow_access;
-        security::security_mask_t deny_access;
+        security_mask_t allow_access;
+        security_mask_t deny_access;
     };
 
     typedef std::map<string_type, platform_principal_ref> users_type;
@@ -90,7 +90,7 @@ class platform_role
 
       bool is_in_role (security::security_context_ptr& ctx);
 
-      std::optional<bool> check_permissions (security::security_mask_t mask, const string_type& obj_path, security::security_context_ptr ctx);
+      std::optional<bool> check_permissions (security_mask_t mask, const string_type& obj_path, security::security_context_ptr ctx);
 
       rx_result serialize_role (base_meta_writer& stream);
 
@@ -130,7 +130,7 @@ class platform_roles
 
       rx_result initialize_roles (std::vector<rx_roles_storage_item_ptr> storages);
 
-      bool check_permissions (security::security_mask_t mask, const string_type& path, security::security_context_ptr ctx);
+      bool check_permissions (security_mask_t mask, const string_type& path, security::security_context_ptr ctx);
 
 
   protected:

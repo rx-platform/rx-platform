@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_support.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -203,7 +203,7 @@ rx_result_erros_t type_check_context::get_errors () const
 
 // Class rx_platform::meta::construct_context 
 
-construct_context::construct_context (const string_type& name)
+construct_context::construct_context (const meta_data& meta)
       : now(rx_time::now()),
         state_(active_state_t::regular),
         current_display_(-1),
@@ -212,7 +212,8 @@ construct_context::construct_context (const string_type& name)
         changed_event(nullptr),
         in_model_(true)
 {
-	rt_names_.push_back(name);
+	rt_names_.push_back(meta.name);
+	access_guards_.emplace("", security::security_guard(meta, rx_security_null));
 	runtime_data_.runtime_data.push_back(runtime_data_prototype());
 	block_stack.push(&changed_data_block);
 }
@@ -467,6 +468,33 @@ void construct_context::end_of_model_out (bool prev)
 bool construct_context::is_in_model () const
 {
 	return in_model_;
+}
+
+string_type construct_context::get_current_path () const
+{
+	string_type ret;
+	size_t size = rt_names_.size();
+	if (size > 1)
+	{
+		for (size_t i = 1; i < size; i++)
+		{
+			if (!ret.empty())
+				ret += RX_OBJECT_DELIMETER;
+			ret += rt_names_[i];
+		}
+	}
+	if (!ret.empty())
+		ret += RX_OBJECT_DELIMETER;
+	return ret;
+}
+
+std::map<string_type, security::security_guard> construct_context::normalize_security_guards ( security::security_guard root)
+{
+	if (!root.is_null() && access_guards_.size() > 0)
+	{// no guard so use root one
+		access_guards_[""] = std::move(root);
+	}
+	return access_guards_;
 }
 
 
@@ -790,7 +818,7 @@ int runtime_data_prototype::check_member_name (const string_type& name) const
 	return -1;
 }
 
-rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id)
+rx_result runtime_data_prototype::add_mapper (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -1023,7 +1051,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, std::ve
 	}
 }
 
-rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::source_data&& value, rx_node_id id)
+rx_result runtime_data_prototype::add_source (const string_type& name, runtime::structure::source_data&& value, rx_node_id id, const security::security_guard& sec)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -1050,7 +1078,7 @@ rx_result runtime_data_prototype::add (const string_type& name, runtime::structu
 	}
 }
 
-rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::filter_data&& value, rx_node_id id)
+rx_result runtime_data_prototype::add_filter (const string_type& name, runtime::structure::filter_data&& value, rx_node_id id)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -1080,7 +1108,7 @@ rx_result runtime_data_prototype::add (const string_type& name, runtime::structu
 	}
 }
 
-rx_result runtime_data_prototype::add (const string_type& name, runtime::structure::event_data&& value, rx_node_id id)
+rx_result runtime_data_prototype::add_event (const string_type& name, runtime::structure::event_data&& value, rx_node_id id)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -1195,7 +1223,6 @@ rx_result runtime_data_prototype::add_value_block (const string_type& name, runt
 			default:
 				return name + " has invalid type to override";
 		}
-		return true;
 	}
 }
 

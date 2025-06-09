@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_operational.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -44,16 +44,15 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace tag_blocks {
-class binded_tags;
-} // namespace tag_blocks
-
+class runtime_process_context;
 namespace logic_blocks {
 class method_data;
 } // namespace logic_blocks
 
-class runtime_process_context;
+namespace tag_blocks {
+class binded_tags;
 
+} // namespace tag_blocks
 } // namespace runtime
 } // namespace rx_platform
 
@@ -124,6 +123,7 @@ class connected_tags
 		rt_value_ref reference;
 		uint32_t reference_count;
 		std::set<tags_callback_ptr> monitors;
+        uint32_t security_guard = 0;
 	};
 	typedef std::map<runtime_handle_t, one_tag_data> handles_map_type;	
 	typedef std::map<string_type, runtime_handle_t> referenced_tags_type;
@@ -139,6 +139,9 @@ class connected_tags
     typedef std::map<string_type, relation_ptr> mapped_relations_type;
 
     friend class algorithms::runtime_relation_algorithms;
+
+    template <class typeT>
+    friend class algorithms::runtime_holder_algorithms;
 
   public:
       connected_tags();
@@ -197,6 +200,10 @@ class connected_tags
 
       rx_result_with<runtime_handle_t> connect_tag_from_relations (const string_type& path, structure::runtime_item& item, tags_callback_ptr monitor);
 
+      rx_result write_tag_internal (write_tag_data write_data);
+
+      rx_result execute_tag_internal (execute_tag_data execute_data);
+
       rx_result internal_write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, data::runtime_values_data value, tags_callback_ptr monitor, rx_security_handle_t identity);
 
       rx_result internal_write_tag (runtime_transaction_id_t trans_id, bool test, runtime_handle_t item, rx_simple_value&& value, tags_callback_ptr monitor, rx_security_handle_t identity);
@@ -208,6 +215,8 @@ class connected_tags
       connected_tags::relation_ptr get_parent_relation (const string_type& name);
 
       rx_result_with<runtime_handle_t> register_new_tag_ref (const string_type& path, rt_value_ref ref, tags_callback_ptr monitor);
+
+      uint32_t resolve_security_index (const string_type& path);
 
 
 
@@ -253,6 +262,8 @@ class connected_tags
       logic_blocks::logic_holder* parent_logic_;
 
       display_blocks::displays_holder* parent_displays_;
+
+      std::map<string_type, uint32_t> security_guards_map_;
 
 
 };
@@ -408,7 +419,7 @@ class connected_write_task : public structure::write_task
 
       runtime_transaction_id_t get_id () const;
 
-
+      connected_write_task(connected_write_task&&) noexcept = default;
   protected:
 
   private:

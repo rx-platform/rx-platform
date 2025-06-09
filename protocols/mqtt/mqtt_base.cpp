@@ -1211,12 +1211,12 @@ rx_protocol_result_t mqtt_connect_transaction::process_initiator_result (uint8_t
             {
             case 0x11://Session Expiry Interval
                 {
-                    uint16_t temp;
+                    uint32_t temp;
                     ret = buffer.read_from_buffer(temp);
                     if (!ret)
                         return RX_PROTOCOL_INVALID_SEQUENCE;
                     data_.session_expiry = ntohs(temp);
-                    props_len -= 3;
+                    props_len -= 5;
                 }
                 break;
             case 0x21://Receive Maximum
@@ -1453,7 +1453,7 @@ rx_protocol_result_t mqtt_connect_transaction::process_initiator_result (uint8_t
                 RX_ASSERT(false);
                 std::ostringstream ss;
                 ss << "Error reading property. Unknown or unexpected Id "
-                    << prop_id
+                    << std::hex << prop_id
                     << " from CONNECTREQ.";
                 MQTT_LOG_ERROR("mqtt_simple_client_endpoint", 200, ss.str());
                 return RX_PROTOCOL_INVALID_ARG;
@@ -1500,12 +1500,12 @@ rx_protocol_result_t mqtt_connect_transaction::start_listener_step (uint8_t ctrl
             {
             case 0x11://Session Expiry Interval
                 {
-                    uint16_t temp;
+                    uint32_t temp;
                     ret = buffer.read_from_buffer(temp);
                     if (!ret)
                         return RX_PROTOCOL_INVALID_SEQUENCE;
                     data_.session_expiry = ntohs(temp);
-                    props_len -= 3;
+                    props_len -= 5;
                 }
                 break;
             case 0x21://Receive Maximum
@@ -1615,7 +1615,6 @@ rx_protocol_result_t mqtt_connect_transaction::start_listener_step (uint8_t ctrl
                     data_.auth_data = std::move(str);
                 }
                 break;
-
             default:
                 RX_ASSERT(false);
                 std::ostringstream ss;

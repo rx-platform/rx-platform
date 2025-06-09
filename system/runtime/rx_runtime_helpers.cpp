@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -138,6 +138,7 @@ void io_capabilities::set_is_root (bool val)
 
 bool io_capabilities::get_is_root () const
 {
+	
 	return settings_.test(7);
 }
 
@@ -196,8 +197,8 @@ rx_result runtime_init_context::get_item (const string_type& path, rx_simple_val
 
 rx_result_with<runtime_handle_t> runtime_init_context::connect_item (const string_type& path, uint32_t rate, tag_blocks::binded_callback_t callback, tag_blocks::binded_write_result_callback_t write_callback, tag_blocks::binded_execute_result_callback_t execute_callback)
 {
-	if(!path.empty() && path[0]!='.')
-		return tags->connect_item("."s + path, rate, *this, callback, write_callback, execute_callback);
+	/*if (!path.empty() && path[0] != '.')
+		return tags->connect_item("."s + path, rate, *this, callback, write_callback, execute_callback);*/
 
 	return tags->connect_item(path, rate, *this, callback, write_callback, execute_callback);
 }

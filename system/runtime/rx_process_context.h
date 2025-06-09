@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_process_context.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -507,7 +507,7 @@ class runtime_process_context
     //typedef std::vector<context_value_point*> points_type;
 
   public:
-      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, security::security_guard_ptr guard, events::runtime_events_manager* events);
+      runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, const_size_vector<security::security_guard>* guards, events::runtime_events_manager* events);
 
 
       rx_result init_context (bool in_loop);
@@ -628,7 +628,7 @@ class runtime_process_context
 
       void full_value_changed (structure::full_value_data* whose);
 
-      security::security_guard_ptr get_security_guard ();
+      security::security_guard_ptr get_security_guard (uint32_t idx);
 
       bool is_mine_value (const rx_value& from) const;
 
@@ -795,7 +795,7 @@ class runtime_process_context
 
       rx_reference_ptr anchor_;
 
-      security::security_guard_ptr security_guard_;
+      const_size_vector<security::security_guard>* security_guards_;
 
       serialize_callbacks_type serialize_callbacks_;
 

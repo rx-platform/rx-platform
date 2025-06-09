@@ -4,7 +4,7 @@
 *
 *  security\rx_security.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -105,6 +105,12 @@ bool security_context::is_hosted () const
 }
 
 bool security_context::is_interactive () const
+{
+  return false;
+
+}
+
+bool security_context::is_in_role (string_view_type role, security_mask_t access) const
 {
   return false;
 
@@ -253,6 +259,16 @@ security_context_ptr unauthorized_context()
 {
 	return security_context_helper(true);
 }
+
+bool is_in_role(string_view_type role, security_mask_t mask)
+{
+	security_context_ptr ctx = security_context_helper(false);
+	if (ctx)
+	{
+		return ctx->is_in_role(role, mask);
+	}
+	return false;
+}
 security_context_ptr active_security()
 {
 	return security_context_helper(false);
@@ -267,24 +283,33 @@ void pop_security()
 }
 // Class rx_platform::security::security_guard 
 
+security_guard::security_guard()
+	: access_mask_(rx_security_full)
+	, extended_mask_(rx_security_ext_null)
+{
+}
+
 security_guard::security_guard (const meta_data& data, security_mask_t access)
 	: access_mask_((security_mask_t)(data.attributes&namespace_item_full_access))
 	, extended_mask_(rx_security_ext_null)
-	, path_base_(data.get_full_path())
 {
 	/*if (data.attributes | namespace_item_internal_access)
 		extended_mask_ = extended_mask_ | rx_security_requires_internal;
 	if (data.attributes | namespace_item_system_access)
 		extended_mask_ = extended_mask_ | rx_security_requires_system;*/
 	if (access)
-		access_mask_ = access_mask_ | access;
+		access_mask_ = access_mask_ & access;
 }
 
-security_guard::security_guard (security_mask_t access, const string_type& path, extended_security_mask_t extended)
+security_guard::security_guard (security_mask_t access, extended_security_mask_t extended)
 	: access_mask_(access)
 	, extended_mask_(extended)
-	, path_base_(path)
 {
+}
+
+security_guard::security_guard (std::vector<role_access_t> data)
+{
+	roles_ = std::move(data);
 }
 
 
@@ -293,6 +318,79 @@ security_guard::~security_guard()
 }
 
 
+
+rx_result security_guard::serialize (const string_type& name, base_meta_writer& stream) const
+{
+	if (!name.empty())
+	{
+		if (!stream.start_object(name.c_str()))
+			return false;
+	}
+	if (!stream.start_array("roles", roles_.size()))
+		return false;
+
+	for (const auto& one : roles_)
+	{
+		if (!stream.start_object("item"))
+			return false;
+		if (!stream.write_string("role", one.role.c_str()))
+			return false;
+		if (!stream.write_uint("access", one.access))
+			return false;
+		if (!stream.write_uint("deny", one.deny))
+			return false;
+		if (!stream.end_object())
+			return false;
+	}
+
+	if (!stream.end_array())
+		return false;
+
+	if (!name.empty())
+	{
+		if (!stream.end_object())
+			return false;
+	}
+	return true;
+}
+
+rx_result security_guard::deserialize (const string_type& name, base_meta_reader& stream)
+{
+	if (!name.empty())
+	{
+		if (!stream.start_object(name.c_str()))
+			return false;
+	}
+	if (!stream.start_array("roles"))
+		return false;
+
+	while (!stream.array_end())
+	{
+		security::role_access_t temp;
+
+		if (!stream.start_object("item"))
+			return false;
+		if (!stream.read_string("role", temp.role))
+			return false;
+		uint32_t temp_access;
+		if (!stream.read_uint("access", temp_access))
+			return false;
+		temp.access = (security_mask_t)temp_access;
+		if (!stream.read_uint("deny", temp_access))
+			return false;
+		temp.deny = (security_mask_t)temp_access;
+		if (!stream.end_object())
+			return false;
+
+		roles_.push_back(std::move(temp));
+	}
+	if (!name.empty())
+	{
+		if (!stream.end_object())
+			return false;
+	}
+	return true;
+}
 
 bool security_guard::check_permission (security_mask_t access)
 {
@@ -329,10 +427,67 @@ bool security_guard::check_permission (security_mask_t mask, security_context_pt
 		{
 			return false;
 		}
+		if (roles_.empty())
+			return true;// Default empty security Guard
 
-		return rx_internal::rx_security::platform_security::instance().check_permissions(
-			mask, path_base_, ctx);
+		std::map<string_type, bool> roles_map;
+		for (const auto& one : roles_)
+		{
+			if (!one.role.empty() && one.role != "*")
+			{					
+				if (!ctx->is_in_role(one.role, one.access))
+				{
+					roles_map[one.role] = false;
+				}
+				else
+				{
+					roles_map[one.role] = true;
+				}
+			}
+		}
+		// first do the denied stuff
+		for (const auto& one : roles_)
+		{
+			if(one.role.empty() || one.role == "*" || roles_map[one.role])
+			{// if role is empty or wild-card, then check access only
+				if ((mask & one.deny) != rx_security_null)
+				{
+					return false;
+				}
+			}
+		}
+		// now do the access stuff
+		for (const auto& one : roles_)
+		{
+			if (one.role.empty() || one.role == "*" || roles_map[one.role])
+			{// if role is empty or wild-card, then check access only
+				if ((mask & one.access) != rx_security_null)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
+}
+
+bool security_guard::is_null () const
+{
+	return (access_mask_ & rx_security_full) == rx_security_full
+		&& (extended_mask_ & rx_security_ext_null) == rx_security_ext_null
+		&& roles_.empty();
+}
+
+bool security_guard::is_slow () const
+{
+	for (const auto& one : roles_)
+	{
+		if (!one.role.empty() && one.role != "*")
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 

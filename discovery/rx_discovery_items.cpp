@@ -4,7 +4,7 @@
 *
 *  discovery\rx_discovery_items.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -51,7 +51,7 @@ peer_item::peer_item (rx_item_type t, meta_data m, peer_connection_ptr conn)
       : type(t),
         meta(std::move(m)),
         connection(std::move(conn))
-    , security_guard_(rx_create_reference<security::security_guard>(meta, security::rx_security_null))
+    , security_guard_(meta, rx_security_null)
 {
     DISCOVERY_LOG_DEBUG("peer_object", 200, "{rx-platform} discovery peer item "s + meta.get_full_path() + " created.");
 }
@@ -66,7 +66,7 @@ peer_item::~peer_item()
 
 security::security_guard_ptr peer_item::get_security_guard ()
 {
-    return security_guard_;
+    return &security_guard_;
 }
 
 platform_item_ptr peer_item::get_item_ptr () const

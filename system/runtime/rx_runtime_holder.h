@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_holder.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,6 +36,12 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_value_templates.h"
 
+// rx_ns_resolver
+#include "system/server/rx_ns_resolver.h"
+// rx_job
+#include "system/threads/rx_job.h"
+// rx_event_manager
+#include "system/runtime/rx_event_manager.h"
 // rx_tag_blocks
 #include "system/runtime/rx_tag_blocks.h"
 // rx_display_blocks
@@ -48,12 +54,6 @@
 #include "system/runtime/rx_operational.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
-// rx_ns_resolver
-#include "system/server/rx_ns_resolver.h"
-// rx_job
-#include "system/threads/rx_job.h"
-// rx_event_manager
-#include "system/runtime/rx_event_manager.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 // rx_ptr
@@ -140,6 +140,8 @@ class runtime_holder : public rx::pointers::reference_object
     friend class rx_internal::model::algorithms::runtime_model_algorithm<typeT>;
     friend class rx_internal::model::types_repository<typeT>;
 
+    typedef const_size_vector<security::security_guard> security_gurads_type;
+
 public:
     typedef typeT DefType;
     typedef typename typeT::RImplPtr ImplPtr;
@@ -186,15 +188,15 @@ public:
       security::security_guard_ptr get_security_guard ();
 
 
-      rx::data::runtime_values_data& get_overrides ()
-      {
-        return overrides_;
-      }
-
-
       const ns::rx_directory_resolver& get_directories () const
       {
         return directories_;
+      }
+
+
+      rx::data::runtime_values_data& get_overrides ()
+      {
+        return overrides_;
       }
 
 
@@ -214,6 +216,8 @@ public:
 
       size_t points_count;
 
+      security::security_guard stored_security_guard;
+
       constexpr static rx_item_type get_type_id()
       {
           return typeT::RImplType::type_id;
@@ -222,15 +226,13 @@ public:
 
   private:
 
-      security::security_guard_ptr security_guard_;
+      security_gurads_type security_guards_;
 
 
 
       logic_blocks::logic_holder logic_;
 
       relations::relations_holder relations_;
-
-      rx::data::runtime_values_data overrides_;
 
       typename process_runtime_job<typeT>::smart_ptr my_job_ptr_;
 
@@ -243,6 +245,8 @@ public:
       display_blocks::displays_holder displays_;
 
       tag_blocks::tags_holder tags_;
+
+      rx::data::runtime_values_data overrides_;
 
 
       meta_data meta_info_;

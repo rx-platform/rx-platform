@@ -533,13 +533,20 @@ public:
 #define RX_MODE_MASK_UNASSIGNED	0x10
 #define RX_MODE_MASK_IN_ERROR	0x20
 
+
+#define RX_MODE_ERROR_OFF_MASK (RX_MODE_MASK_IN_ERROR | RX_MODE_MASK_OFF)
 #define RX_MODE_OFF_TEST_MASK (RX_MODE_MASK_IN_ERROR | RX_MODE_MASK_OFF)
 #define RX_MODE_GOOD_TEST_MASK (RX_MODE_OFF_TEST_MASK | RX_MODE_MASK_UNASSIGNED)
 
 
 struct rx_mode_type
 {
-	rx_mode_type();
+	rx_mode_type() noexcept;
+	rx_mode_type(const rx_mode_type& right) noexcept = default;
+	rx_mode_type(rx_mode_type&& right) noexcept = default;
+	rx_mode_type& operator=(const rx_mode_type& right) noexcept = default;
+	rx_mode_type& operator=(rx_mode_type&& right) noexcept = default;
+
 	uint32_t raw_format;
 	uint32_t create_origin(uint32_t from) const;
 	bool can_callculate(uint32_t quality) const;

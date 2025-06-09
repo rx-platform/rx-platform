@@ -965,6 +965,11 @@ rx_value value_point_impl::internal_calculate (char* token_buff)
 		res.set_quality(RX_BAD_QUALITY_OFFLINE);
 		return res;
 	}
+	if (state_ == value_point_connected_simple)
+	{// simple just tag here
+		RX_ASSERT(tag_variables_.size() == 1);
+		return tag_variables_[0];
+	}
 	uint32_t quality = 0;
 	uint32_t origin = context_->get_mode().create_origin(RX_ALWAYS_ORIGIN);
 	uint32_t bad_quality = 0;
@@ -1005,6 +1010,7 @@ rx_value value_point_impl::internal_calculate (char* token_buff)
 		last_time = rx_time::now();
 	if (bad)
 	{
+		res = rx_value();
 		res.set_quality(bad_quality);
 		res.set_time(last_time);
 		res.set_origin(origin);

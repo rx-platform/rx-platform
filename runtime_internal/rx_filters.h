@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_filters.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -451,6 +451,38 @@ Implementation of cumulative speed filter.\r\n\
       rx_timer_ptr timer_;
 
       runtime::local_value<uint32_t> period_;
+
+
+};
+
+
+
+
+
+
+class round_filter : public rx_platform::runtime::blocks::filter_runtime  
+{
+
+  public:
+      round_filter ();
+
+
+      rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+
+  protected:
+
+  private:
+
+      rx_result filter_input (rx_value& val);
+
+      bool supports_output () const;
+
+
+
+      runtime::local_value<int> decimal_places_;
+
+      double multiply_arg_;
 
 
 };

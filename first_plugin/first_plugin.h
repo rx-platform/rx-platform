@@ -232,6 +232,7 @@ First Object. Object implementation in test plugin.");
 
       rx_result deinitialize_object ();
 
+	  static std::map<rx_node_id, first_object::smart_ptr> runtime_instances;
 
   protected:
 

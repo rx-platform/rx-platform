@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_def_blocks.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -406,6 +406,12 @@ std::vector<values::rx_simple_value> const_value_def::get_values () const
 }
 
 
+const security::security_guard& const_value_def::get_security_guard () const
+{
+  return security_guard;
+}
+
+
 // Class rx_platform::meta::def_blocks::event_attribute 
 
 event_attribute::event_attribute (const string_type& name, const rx_node_id& id, const rx_node_id& data_id)
@@ -540,6 +546,13 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream) cons
 				return stream.get_error();
 			if (!stream.write_string("description", description_.c_str()))
 				return stream.get_error();
+
+			if (stream.get_version() >= RX_SECURITY_GUARDS2_VERSION)
+			{
+				if (!security_guard.serialize("access", stream))
+					return stream.get_error();
+			}
+
 			return true;
 		}
 	}
@@ -592,6 +605,11 @@ rx_result simple_value_def::serialize_definition (base_meta_writer& stream) cons
 		if (!stream.write_string("description", description_.c_str()))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS2_VERSION)
+	{
+		if (!security_guard.serialize("access", stream))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -615,6 +633,12 @@ rx_result simple_value_def::deserialize_definition (base_meta_reader& stream)
 				return stream.get_error();
 			if (!stream.read_string("description", description_))
 				return stream.get_error();
+
+			if (stream.get_version() >= RX_SECURITY_GUARDS2_VERSION)
+			{
+				if (!security_guard.deserialize("access", stream))
+					return stream.get_error();
+			}
 			return true;
 		}
 	}
@@ -661,6 +685,11 @@ rx_result simple_value_def::deserialize_definition (base_meta_reader& stream)
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.read_string("description", description_))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS2_VERSION)
+	{
+		if (!security_guard.deserialize("access", stream))
 			return stream.get_error();
 	}
 	return true;
@@ -1042,3 +1071,11 @@ rx_result mapped_data_type::register_mapper (const string_type& name, const rx_n
 } // namespace meta
 } // namespace rx_platform
 
+
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
+	return &security_;
+
+#endif

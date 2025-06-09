@@ -292,22 +292,17 @@ rx_result_struct rx_bind_plugin(const platform_api6* api, uint32_t host_stream_v
 	return rx_result(true).move();
 }
 
-void rx_get_plugin_info(const char* name, int major, int minor, int build, string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver)
+void rx_get_plugin_info(const char* info
+	, string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver)
 {
-	static char buff[0x60] = { 0 };
-	if (!buff[0])
-	{
-		ASSIGN_MODULE_VERSION(buff, name, major, minor, build);
-	}
-	string_type info = buff;
-	rx_init_string_value_struct(plugin_ver, info.c_str(), -1);
+	rx_init_string_value_struct(plugin_ver, info, -1);
 	rx_init_string_value_struct(lib_ver, lib_version_.c_str(), -1);
 	rx_init_string_value_struct(sys_ver, rx_version_.c_str(), -1);
 	rx_init_string_value_struct(comp_ver, comp_version_.c_str(), -1);
 }
 
 
-void rx_get_plugin_info2(const char* name, int major, int minor, int build
+void rx_get_plugin_info2(const char* info
 	, string_value_struct* plugin_ver
 	, string_value_struct* lib_ver
 	, string_value_struct* sys_ver
@@ -315,13 +310,7 @@ void rx_get_plugin_info2(const char* name, int major, int minor, int build
 	, string_value_struct* abi_ver
 	, string_value_struct* common_ver)
 {
-	static char buff[0x60] = { 0 };
-	if (!buff[0])
-	{
-		ASSIGN_MODULE_VERSION(buff, name, major, minor, build);
-	}
-	string_type info = buff;
-	rx_init_string_value_struct(plugin_ver, info.c_str(), -1);
+	rx_init_string_value_struct(plugin_ver, info, -1);
 	rx_init_string_value_struct(lib_ver, lib_version_.c_str(), -1);
 	rx_init_string_value_struct(sys_ver, rx_version_.c_str(), -1);
 	rx_init_string_value_struct(comp_ver, comp_version_.c_str(), -1);

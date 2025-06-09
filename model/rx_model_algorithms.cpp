@@ -1512,9 +1512,10 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 		instance_data.meta_info = old_meta;
 		instance_data.overrides = obj_ptr.value()->get_overrides();
 		instance_data.instance_data = obj_ptr.value()->get_instance_data().get_data();
+		instance_data.security_guard = obj_ptr.value()->stored_security_guard;
 	}
 	bool is_same = platform_types_manager::instance().get_type_repository<typeT>().is_the_same(
-		instance_data.meta_info.id, instance_data, instance_data.overrides);
+		instance_data.meta_info.id, instance_data, instance_data.overrides, instance_data.security_guard);
 
 	// now remove old runtime from platform if needed
 	///////////////////////////////////////////////////////////////////////////

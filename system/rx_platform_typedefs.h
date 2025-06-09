@@ -147,7 +147,7 @@ constexpr static int value_opt_readonly = 0;
 constexpr static int value_opt_persistent = 1;
 
 // serialization stuff
-constexpr static int value_opt_default_value = 16;
+constexpr static int value_opt_default_value = 2;
 
 // internal status for state ignorant values (On, Test, Status Simulate)
 constexpr static int opt_state_ignorant = 30;
@@ -327,6 +327,7 @@ struct rt_value_ref
 {
     rt_value_ref_type ref_type;
     rt_value_ref_union ref_value_ptr;
+    uint32_t security_index;
 };
 
 typedef std::unique_ptr<structure::runtime_item> rx_runtime_item_ptr;

@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_server.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -40,6 +40,7 @@
 #include "lib/rx_ser_json.h"
 #include "sys_internal/rx_async_functions.h"
 #include "system/server/rx_file_helpers.h"
+#include "rx_aspnet.h"
 
 
 namespace rx_internal {
@@ -84,6 +85,10 @@ rx_result http_server::initialize (hosting::rx_platform_host* host, configuratio
 	auto result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
 		RX_STATIC_HTTP_DISPLAY_TYPE_ID, [] {
 			return rx_create_reference<http_displays::rx_http_static_display>();
+		});
+	result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
+		rx_node_id::from_string("g:80956ABB-34ED-4F7F-BE09-BFB9C6E0ACF2"), [] {
+			return rx_create_reference<aspnet::aspnet_logon_display>();
 		});
 	result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
 		RX_STANDARD_HTTP_DISPLAY_TYPE_ID, [] {
@@ -136,6 +141,22 @@ rx_result http_server::handle_request (http_request req)
 	auto handler = handlers_.get_handler(req.extension);
 	if (handler)
 	{
+		rx_security_handle_t ident = 0;
+		if (req.request_identity)
+		{
+			if (req.request_identity->login())
+			{
+				ident = req.request_identity->get_handle();
+				req.identity = ident;
+			}
+		}
+		/*else if (req.identity)
+		{
+			ident = req.identity;
+		}*/
+
+		security::secured_scope _(ident);
+
 		auto result = handler->handle_request(req, response);
 		if (!result)
 		{
@@ -161,6 +182,11 @@ void http_server::send_response (http_request& request, http_response response)
 	for (auto& one : filters_)
 	{
 		one->handle_request_after(request, response);
+	}
+	if (request.request_identity)
+	{
+		request.request_identity->logout();
+		request.request_identity = security::security_context_ptr::null_ptr;
 	}
 	if (response.cache_me && request.method == rx_http_method::get)
 	{
@@ -204,7 +230,7 @@ void http_server::deinitialize ()
 	delete this;
 }
 
-string_type http_server::get_global_content (const string_type& path)
+string_type http_server::get_global_content1 (const string_type& path)
 {
 	{
 		locks::auto_lock_t _(&cache_lock_);
@@ -260,6 +286,7 @@ void http_server::register_standard_filters ()
 {
 	filters_.emplace_back(std::make_unique<http_path_filter>());
 	filters_.emplace_back(std::make_unique<standard_request_filter>());
+	filters_.emplace_back(std::make_unique<aspnet::aspnet_authorizer>());
 }
 
 
@@ -442,7 +469,6 @@ size_t process_next_find(const string_view_type& view, size_t from, size_t& size
 
 	return ret;
 }
-
 // Class rx_internal::rx_http_server::http_path_filter 
 
 

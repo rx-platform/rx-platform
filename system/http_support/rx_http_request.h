@@ -4,7 +4,7 @@
 *
 *  system\http_support\rx_http_request.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,6 +32,7 @@
 #define rx_http_request_h 1
 
 
+#include "security/rx_security.h"
 
 
 namespace protocols {
@@ -90,6 +91,10 @@ struct http_request
       rx_http_params_type params;
 
       byte_string content;
+
+      rx_security_handle_t identity;
+
+      security::security_context_ptr request_identity;
 
   public:
 

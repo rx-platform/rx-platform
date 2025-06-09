@@ -4,7 +4,7 @@
 *
 *  system\server\rx_server.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -69,7 +69,7 @@ rx_gate::rx_gate()
       : host_(nullptr),
         started_(rx_time::now()),
         pid_(0),
-        security_guard_(rx_create_reference<security::security_guard>(security::rx_security_read_access | security::rx_security_delete_access, "@gate")),
+        security_guard_(rx_security_read_access | rx_security_delete_access),
         shutting_down_(false),
         platform_status_(rx_platform_status::initializing)
 {
@@ -173,7 +173,9 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 						for (auto one : scripts_)
 							one.second->initialize();
 
-						result = rx_internal::discovery::discovery_manager::instance().initialize(host, data);
+						if (!data.instance.group.empty())
+							result = rx_internal::discovery::discovery_manager::instance().initialize(host, data);
+
 						if (result)
 						{
 							init_data_ = std::make_unique<initialize_data_type>();
@@ -261,7 +263,10 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 #ifdef UPYTHON_SUPPORT
 		result = python::upython::start_script(host, data);
 #endif
-		result = rx_internal::discovery::discovery_manager::instance().start(host, data);
+		if (!data.instance.group.empty())
+		{
+			result = rx_internal::discovery::discovery_manager::instance().start(host, data);
+		}
 		if (result)
 		{
 			if (init_data_)
@@ -349,7 +354,7 @@ rx_result_with<rx_directory_ptr> rx_gate::add_directory (const string_type& path
 
 bool rx_gate::shutdown (const string_type& msg)
 {
-	if (!security_guard_->check_permission(security::rx_security_delete_access))
+	if (!security_guard_.check_permission(rx_security_delete_access))
 	{
 		return false;
 	}
@@ -373,7 +378,7 @@ bool rx_gate::read_log (const string_type& log, const log::log_query_type& query
 
 bool rx_gate::do_host_command (const string_type& line, memory::buffer_ptr out_buffer, memory::buffer_ptr err_buffer, security::security_context_ptr ctx)
 {
-	if (security_guard_->check_permission(security::rx_security_execute_access))
+	if (security_guard_.check_permission(rx_security_execute_access))
 	{
 		return host_->do_host_command(line, out_buffer, err_buffer, ctx);
 	}

@@ -4,7 +4,7 @@
 *
 *  system\server\rx_server.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -388,7 +388,7 @@ class rx_gate
 
       rx_pid_t pid_;
 
-      security::security_guard_ptr security_guard_;
+      security::security_guard security_guard_;
 
       bool shutting_down_;
 

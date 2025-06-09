@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_runtime_data.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,6 +33,8 @@
 
 
 
+// rx_security
+#include "security/rx_security.h"
 // rx_meta_data
 #include "lib/rx_meta_data.h"
 // rx_rt_data
@@ -182,6 +184,8 @@ struct basic_runtime_data
       rx::data::runtime_values_data overrides;
 
       rx::meta_data meta_info;
+
+      security::security_guard security_guard;
 
   public:
 

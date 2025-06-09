@@ -98,36 +98,50 @@ rx_result interactive_console_host::console_loop (configuration_data_t& config, 
 
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
-		std::cout << "Starting {rx-platform}...";
-		result = rx_platform::rx_gate::instance().start(this, config);
+		std::cout << "Starting Security Providers...";
+		auto result = rx_internal::rx_security::platform_security::instance().start(this);
 		if (result)
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-
-			std::cout << "Starting interactive console...";
-
-			result = interactive_port_->run_interactive(this);
-			if (!result)
+			std::cout << "Starting {rx-platform}...";
+			result = rx_platform::rx_gate::instance().start(this, config);
+			if (result)
 			{
-				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Interactive Console:\r\n";
-				rx_dump_error_result(std::cout, result);
-			}
-			std::cout << "Stopping {rx-platform}...";
-
-			rx_process_stopping();
-
-			result = rx_platform::rx_gate::instance().stop();
-			if(result)
 				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+
+				std::cout << "Starting interactive console...";
+
+				result = interactive_port_->run_interactive(this);
+				if (!result)
+				{
+					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError running Interactive Console:\r\n";
+					rx_dump_error_result(std::cout, result);
+				}
+				std::cout << "Stopping {rx-platform}...";
+
+				rx_process_stopping();
+
+				result = rx_platform::rx_gate::instance().stop();
+				if (result)
+					std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+				else
+				{
+					std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError stopping {rx-platform}:\r\n";
+					rx_dump_error_result(std::cout, result);
+				}
+			}
 			else
 			{
-				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError stopping {rx-platform}:\r\n";
+				std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
 				rx_dump_error_result(std::cout, result);
 			}
+			std::cout << "Stopping Security Providers...";
+			rx_internal::rx_security::platform_security::instance().stop();
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		}
 		else
 		{
-			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting security:\r\n";
 			rx_dump_error_result(std::cout, result);
 		}
 		std::cout << "De-initializing {rx-platform}...";

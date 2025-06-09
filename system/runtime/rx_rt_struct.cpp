@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_rt_struct.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -69,6 +69,15 @@ runtime_mappers_type g_empty_mappers;
 runtime_events_type g_empty_events;
 runtime_structs_type g_empty_structs;
 runtime_variables_type g_empty_variables;
+
+
+uint32_t get_value_security1(const std::bitset<32>& value_options)
+{
+	unsigned long sec = value_options.to_ulong();
+	uint32_t ret = (sec >> 8) & 0xFFFF;
+	//printf("\r\n******%08x  %08x\r\n", sec, ret);
+	return ret;
+}
 
 }
 
@@ -1225,7 +1234,11 @@ rx_result mapper_data::filter_changed ()
 
 bool mapper_data::is_root () const
 {
-	return io_.get_is_root();
+	if (io_.get_is_root())
+		return true;
+	return item->get_local_as("Root", false);
+	/*RX_ASSERT(!io_.get_is_root());
+	return io_.get_is_root();*/
 }
 
 
@@ -1418,7 +1431,7 @@ void source_data::process_write (write_data&& data)
 	RX_ASSERT(source_ptr);
 	if (source_ptr && context_)
 	{
-		
+
 		rx_result result;
 		auto& filters = item->get_filters();
 		if (!filters.empty())
@@ -1617,7 +1630,9 @@ rx_result source_data::filter_changed ()
 
 bool source_data::is_root () const
 {
-	return io_.get_is_root();
+	if (io_.get_is_root())
+		return true;
+	return item->get_local_as("Root", false);
 }
 
 
@@ -1693,7 +1708,7 @@ rx_result event_data::initialize_runtime (runtime::runtime_init_context& ctx)
 	{
 		result = item->initialize_runtime(ctx);
 		if (result)
-		{			
+		{
 			result = event_ptr->initialize_event(ctx);
 		}
 	}
@@ -1747,11 +1762,11 @@ void event_data::process_runtime (runtime_process_context* ctx, event_fired_data
 		rest_data.simple_value = data.value.to_simple();
 		rest_data.test = data.test;
 		rest_data.time = data.value.get_time();
-		
+
 		if (arguments.create_safe_runtime_data(rest_data.simple_value, rest_data.struct_value))
 		{
 			auto& mappers = item->get_mappers();
-			
+
 			rest_data.queue = data.queue;
 			rest_data.types = data.types;
 
@@ -2277,7 +2292,7 @@ void value_data::object_state_changed (runtime_process_context* ctx)
 	}
 }
 
-rx_result value_data::write_value (write_data&& data, runtime_process_context* ctx, bool& changed)
+rx_result value_data::write_value (write_data&& data, runtime_process_context* ctx, bool& changed, std::unique_ptr<write_task> task)
 {
 	security::secured_scope _(data.identity);
 	/*std::ostringstream ss;
@@ -2298,24 +2313,45 @@ rx_result value_data::write_value (write_data&& data, runtime_process_context* c
 			{
 				if (!value_opt[runtime::structure::value_opt_default_value])
 					value_opt[runtime::structure::value_opt_default_value] = false;
-				value = std::move(temp);
-				ctx->runtime_dirty([ctx, temp = std::move(temp), this](rx_result result)
+				rx_simple_value temp_value = value.to_simple();
+				// make the pack to go
+				// Function objects used to initialize a std::function must be CopyConstructible (per C++17 [func.wrap.func.con]/7),
+				auto data = std::make_shared<value_data_transaction_type>();
+				data->ctx = ctx;
+				data->old_value = std::move(temp_value);
+				data->task = std::move(task);
+				data->whose = this;
+
+				serialize_callback_t serialize_callback = [data = std::move(data)](rx_result result) mutable
 					{
-						if (result)
+						if (!result)
 						{
+							// restore old value
+							data->whose->value = rx_timed_value(std::move(data->old_value), rx_time::now());
 						}
-					});
-				changed = true;
+						if (data->whose->value_opt[runtime::structure::opt_is_in_model])
+							data->ctx->simple_value_changed();
+						data->ctx->value_changed(data->whose);
+						if (data->task)
+							data->task->process_result(std::move(result));
+					};
+				value = std::move(temp);
+				ctx->runtime_dirty(std::move(serialize_callback));
+				changed = false;
 			}
 			else
 			{
 				changed = true;
 				value = std::move(temp);
+				if (task)
+					task->process_result(true);
 			}
 		}
 		else
 		{
 			changed = false;
+			if (task)
+				task->process_result(true);
 		}
 		return true;
 	}
@@ -3941,7 +3977,7 @@ rx_result value_block_data::collect_data (string_view_type path, data::runtime_v
 		}
 		else
 		{
-			if (!struct_value.value_opt[opt_is_constant] 
+			if (!struct_value.value_opt[opt_is_constant]
 				&& struct_value.value_opt[runtime::structure::value_opt_persistent]
 				&& !struct_value.value_opt[runtime::structure::value_opt_default_value])
 				block.collect_data(path, data, type);
@@ -4168,7 +4204,7 @@ rx_result value_block_data::check_set_value (runtime_process_context* ctx, bool 
 	return true;
 }
 
-rx_result value_block_data::write_value (write_data&& data, runtime_process_context* ctx, bool& changed)
+rx_result value_block_data::write_value (write_data&& data, runtime_process_context* ctx, bool& changed, std::unique_ptr<write_task> task)
 {
 	security::secured_scope _(data.identity);
 	/*std::ostringstream ss;
@@ -4192,36 +4228,55 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 				if (!temp.compare(struct_value.value, time_compare_type::skip))
 				{
 					changed = true;
-					
+
+					rx_simple_value old_val;
+					if (struct_value.value_opt[runtime::structure::value_opt_persistent])
+						old_val = struct_value.value.to_simple();
+
 					struct_value.value = std::move(temp);
-					
-					ctx->value_changed(&struct_value);
 
 					if (struct_value.value_opt[runtime::structure::value_opt_persistent])
 					{
 						if (!struct_value.value_opt[runtime::structure::value_opt_default_value])
 							struct_value.value_opt[runtime::structure::value_opt_default_value] = false;
-						//changed = false;
-						ctx->runtime_dirty([this, ctx](rx_result result)
+						changed = false;
+
+						auto data = std::make_shared<value_block_transaction_type>();
+						data->ctx = ctx;
+						data->old_value = std::move(old_val);
+						data->task = std::move(task);
+						data->whose = this;
+
+						ctx->runtime_dirty([data = std::move(data)](rx_result result)
 							{
-								if (result)
+								if (!result)
 								{
-									if (this->struct_value.value_opt[runtime::structure::opt_is_in_model])
-										ctx->simple_value_changed();
-									if (tag_references_)
-										tag_references_->block_data_changed(block, ctx);
+									auto result1 = data->whose->block.fill_value(data->old_value);
+									RX_ASSERT(result1);
+									data->whose->struct_value.value = std::move(data->old_value);
 								}
+								if (data->whose->struct_value.value_opt[runtime::structure::opt_is_in_model])
+									data->ctx->simple_value_changed();
+								if (data->whose->tag_references_)
+									data->whose->tag_references_->block_data_changed(data->whose->block, data->ctx);
+
+								data->ctx->value_changed(&data->whose->struct_value);
+
+								if (data->task)
+									data->task->process_result(std::move(result));
 							});
 					}
 					else
 					{
 						if (tag_references_)
 							tag_references_->block_data_changed(block, ctx);
-					}					
+					}
 				}
 				else
 				{
 					changed = false;
+					if(task)
+						task->process_result(true);
 				}
 				return true;
 			}
@@ -4392,7 +4447,7 @@ rx_result variable_block_data::get_value_ref (string_view_type path, rt_value_re
 				, variable.value.get_time()
 				, variable.value.get_quality()
 				, variable.value.get_origin());
-		}		
+		}
 
 		return ret;
 
@@ -4506,7 +4561,7 @@ rx_result variable_block_data::prepare_value (rx_simple_value& val, data::runtim
 
 rx_result variable_block_data::write_value (write_data&& data, std::unique_ptr<write_task> task, runtime_process_context* ctx)
 {
-	
+
 	auto ret = variable.write_value(std::move(data), std::move(task), ctx);
 
 	return ret;
@@ -4660,7 +4715,7 @@ rx_result variable_block_data_references::get_value_ref (block_data& data, strin
 
 void variable_block_data_references::block_data_changed (const block_data& data, runtime::runtime_process_context* ctx, uint32_t quality, uint32_t origin)
 {
-	
+
 	for (auto& one : references_)
 	{
 		rx_simple_value temp;

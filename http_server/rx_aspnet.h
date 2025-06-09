@@ -2,7 +2,7 @@
 
 /****************************************************************************
 *
-*  runtime_internal\rx_simulation.h
+*  http_server\rx_aspnet.h
 *
 *  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
@@ -28,63 +28,77 @@
 ****************************************************************************/
 
 
-#ifndef rx_simulation_h
-#define rx_simulation_h 1
+#ifndef rx_aspnet_h
+#define rx_aspnet_h 1
 
 
 
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
+// rx_http
+#include "system/http_support/rx_http.h"
+// rx_http_displays
+#include "http_server/rx_http_displays.h"
 
-#include "system/runtime/rx_runtime_helpers.h"
-using namespace rx_platform::runtime;
+using namespace rx_platform::http;
 
 
 namespace rx_internal {
 
-namespace sys_runtime {
+namespace rx_http_server {
 
-namespace simulation {
-
-rx_result register_simulation_constructors();
+namespace aspnet {
 
 
 
 
-class local_register_source : public rx_platform::runtime::blocks::source_runtime  
+
+class aspnet_authorizer : public rx_platform::http::http_request_filter  
 {
-    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-Local Register Source. Source implementation for register.");
-
-    DECLARE_REFERENCE_PTR(local_register_source);
 
   public:
-      local_register_source();
 
+      rx_result handle_request_after (http_request& req, http_response& resp);
 
-      rx_result start_source (runtime::runtime_start_context& ctx);
-
-      rx_result initialize_source (runtime::runtime_init_context& ctx);
+      rx_result handle_request_before (http_request& req, http_response& resp);
 
 
   protected:
 
   private:
 
-      rx_result source_write (write_data&& data, runtime_process_context* ctx);
+
+};
 
 
 
-      bool persistent_;
 
-      rx_simple_value current_value_;
+
+
+class aspnet_logon_display : public http_displays::rx_http_static_display  
+{
+
+  public:
+      aspnet_logon_display();
+
+      ~aspnet_logon_display();
+
+
+      rx_result initialize_display (runtime::runtime_init_context& ctx, const string_type& disp_path);
+
+      rx_result deinitialize_display (runtime::runtime_deinit_context& ctx, const string_type& disp_path);
+
+      rx_result handle_request (rx_platform::http::http_request& req, rx_platform::http::http_response& resp);
+
+
+  protected:
+
+  private:
 
 
 };
 
 
-} // namespace simulation
-} // namespace sys_runtime
+} // namespace aspnet
+} // namespace rx_http_server
 } // namespace rx_internal
 
 

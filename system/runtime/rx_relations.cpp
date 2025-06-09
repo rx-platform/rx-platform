@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_relations.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -151,8 +151,11 @@ rx_result relation_data::start_relation (runtime::runtime_start_context& ctx)
 			ref = parent_path;
 		else
 			ref = target_id;
-		my_state_  = relation_state::querying;
-		resolver_.start_resolver(ref, &resolver_user_, context_->get_directory_resolver());
+		if (context_)
+		{
+			my_state_ = relation_state::querying;
+			resolver_.start_resolver(ref, &resolver_user_, context_->get_directory_resolver());
+		}
 	}
 	return result;
 }
@@ -387,36 +390,37 @@ rx_result relation_data::resolve_inverse_name ()
 	return true;
 }
 
-rx_result relation_data::write_value (write_data&& data, runtime_process_context* ctx)
+rx_result relation_data::write_value (write_data&& data, runtime_process_context* ctx, std::unique_ptr<structure::write_task> task)
 {
 	
 	bool changed = false;
-	auto result =  value.write_value(std::move(data), ctx, changed);
-	if (result && changed)
+	auto result =  value.write_value(std::move(data), ctx, changed, std::move(task));
+	if (result)
 	{
-		if (my_state_ == relation_state::local_domain
-			|| my_state_ == relation_state::same_domain
-			|| my_state_ == relation_state::remote)
-		{
-			runtime_disconnected();
-		}
-
-
 		auto val = value.simple_get_value();
-		target_path = val.get_string();
-
-		if (!target_path.empty())
+		if (target_path != val.get_string())
 		{
-			resolve_inverse_name();
+			if (my_state_ == relation_state::local_domain
+				|| my_state_ == relation_state::same_domain
+				|| my_state_ == relation_state::remote)
+			{
+				runtime_disconnected();
+			}
+			target_path = val.get_string();
 
-			rx_item_reference ref;
-			if (target_id.is_null() && !parent_path.empty())
-				ref = parent_path;
-			else
-				ref = target_id;
+			if (!target_path.empty())
+			{
+				resolve_inverse_name();
 
-			my_state_ = relation_state::querying;
-			result = resolver_.start_resolver(ref, &resolver_user_, context_->get_directory_resolver());
+				rx_item_reference ref;
+				if (target_id.is_null() && !parent_path.empty())
+					ref = parent_path;
+				else
+					ref = target_id;
+
+				my_state_ = relation_state::querying;
+				result = resolver_.start_resolver(ref, &resolver_user_, context_->get_directory_resolver());
+			}
 		}
 	}
 	return result;
@@ -444,7 +448,7 @@ const string_type& relation_data::get_name () const
 
 security::security_guard_ptr relation_data::get_security_guard ()
 {
-	return context_->get_security_guard();
+	return context_->get_security_guard(0);//sec warning
 }
 
 

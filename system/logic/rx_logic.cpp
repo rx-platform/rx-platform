@@ -44,24 +44,36 @@ extern "C"
 
 	void c_method_start_timer(void* whose, runtime_handle_t timer, uint32_t period)
 	{
-		rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
-		self->start_timer(timer, period);
+		if (whose != nullptr)
+		{
+			rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
+			self->start_timer(timer, period);
+		}
 	}
 	void c_method_suspend_timer(void* whose, runtime_handle_t timer)
 	{
-		rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
-		self->suspend_timer(timer);
+		if (whose != nullptr)
+		{
+			rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
+			self->suspend_timer(timer);
+		}
 	}
 	void c_method_destroy_timer(void* whose, runtime_handle_t timer)
 	{
-		rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
-		self->destroy_timer(timer);
+		if (whose != nullptr)
+		{
+			rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
+			self->destroy_timer(timer);
+		}
 	}
 
 	void c_method_result(void* whose, rx_result_struct result, runtime_transaction_id_t id, struct typed_value_type out_val)
 	{
-		rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
-		self->method_result(result, id, std::move(out_val));
+		if (whose != nullptr)
+		{
+			rx_platform::logic::extern_method_runtime* self = (rx_platform::logic::extern_method_runtime*)whose;
+			self->method_result(result, id, std::move(out_val));
+		}
 	}
 
 	host_method_def_struct _g_method_def_

@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_rt_struct.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -209,45 +209,6 @@ class const_value_data
 
 
 
-class value_data 
-{
-
-  public:
-
-      rx_value get_value (runtime_process_context* ctx) const;
-
-      void set_value (rx_simple_value&& val, const rx_time& time);
-
-      void object_state_changed (runtime_process_context* ctx);
-
-      rx_result write_value (write_data&& data, runtime_process_context* ctx, bool& changed);
-
-      rx_simple_value simple_get_value () const;
-
-      rx_result check_set_value (runtime_process_context* ctx, bool internal, bool test);
-
-
-      rx::values::rx_timed_value value;
-
-
-      static string_type type_name;
-
-      std::bitset<32> value_opt;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
 class runtime_item 
 {
   public:
@@ -406,7 +367,8 @@ class write_task
 
       virtual runtime_transaction_id_t get_id () const = 0;
 
-
+	  write_task() = default;
+	  write_task(write_task&&) noexcept = default;
   protected:
 
   private:
@@ -514,6 +476,52 @@ class variable_data
       std::bitset<32> value_opt;
 
       string_type full_path;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class value_data 
+{
+    struct value_data_transaction_type
+    {
+        runtime_process_context* ctx;
+        rx_simple_value old_value;
+        std::unique_ptr<write_task> task;
+        value_data* whose;
+    };
+
+  public:
+
+      rx_value get_value (runtime_process_context* ctx) const;
+
+      void set_value (rx_simple_value&& val, const rx_time& time);
+
+      void object_state_changed (runtime_process_context* ctx);
+
+      rx_result write_value (write_data&& data, runtime_process_context* ctx, bool& changed, std::unique_ptr<write_task> task);
+
+      rx_simple_value simple_get_value () const;
+
+      rx_result check_set_value (runtime_process_context* ctx, bool internal, bool test);
+
+
+      rx::values::rx_timed_value value;
+
+
+      static string_type type_name;
+
+      std::bitset<32> value_opt;
 
 
   protected:
@@ -1256,6 +1264,13 @@ class block_data_references
 
 class value_block_data 
 {
+    struct value_block_transaction_type
+    {
+        runtime_process_context* ctx;
+        rx_simple_value old_value;
+        std::unique_ptr<write_task> task;
+        value_block_data* whose;
+    };
 public:
     static constexpr bool has_own_value = true;
     static constexpr rx_attribute_type plain_attribute_type = rx_attribute_type::value_data_attribute_type;
@@ -1307,7 +1322,7 @@ public:
 
       rx_result check_set_value (runtime_process_context* ctx, bool internal, bool test) const;
 
-      rx_result write_value (write_data&& data, runtime_process_context* ctx, bool& changed);
+      rx_result write_value (write_data&& data, runtime_process_context* ctx, bool& changed, std::unique_ptr<write_task> task);
 
 
       block_data block;

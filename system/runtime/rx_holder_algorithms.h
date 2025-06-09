@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_holder_algorithms.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -108,6 +108,8 @@ class runtime_holder_algorithms
       static rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, events_callback_ptr monitor, bool bin_value, typename typeT::RType& whose);
 
       static rx_result disconnect_events (runtime_handle_t hndl, events_callback_ptr monitor, typename typeT::RType& whose);
+
+      static void fill_access_guards (meta::construct_context& data, typename typeT::RType& whose, security::security_guard root);
 
 
   protected:

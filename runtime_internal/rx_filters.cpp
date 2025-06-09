@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_filters.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -87,6 +87,10 @@ rx_result register_filter_constructors()
 	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
 		RX_CALC_FILTER_TYPE_ID, [] {
 			return rx_create_reference<calculation_filter>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<filter_type>().register_constructor(
+		RX_ROUND_FILTER_TYPE_ID, [] {
+			return rx_create_reference<round_filter>();
 		});
 	return true;
 }
@@ -713,6 +717,60 @@ void cumulative_speed_filter::timer_tick ()
 	my_value_.set_time(rx_time::now());
 	my_value_.set_good_locally();
 	filter_changed();
+}
+
+
+// Class rx_internal::sys_runtime::filters::round_filter 
+
+round_filter::round_filter ()
+      : decimal_places_(2),
+        multiply_arg_(100)
+{
+}
+
+
+
+rx_result round_filter::initialize_filter (runtime::runtime_init_context& ctx)
+{
+	auto result = decimal_places_.bind(".DecimalPlaces", ctx, [this](int val)
+		{
+			if (val >= 0)
+			{
+				multiply_arg_ = 1;
+				for (int i = 0; i < val; i++)
+					multiply_arg_ *= 10.0;
+			}
+			else
+			{
+				val = -val;
+				multiply_arg_ = 1;
+				for (int i = 0; i < val; i++)
+					multiply_arg_ /= 10.0;
+			}
+			filter_changed();
+		});
+	if (!result)
+		return result.errors();
+	return true;
+}
+
+rx_result round_filter::filter_input (rx_value& val)
+{
+	if (val.is_numeric() && multiply_arg_ > 0.000000001)
+	{
+		auto type = val.get_type();
+		double to_filter = val.get_float();
+		to_filter = round(to_filter * multiply_arg_) / multiply_arg_;
+
+		val.set_float(to_filter, type);
+	}
+	return true;
+}
+
+bool round_filter::supports_output () const
+{
+  return false;
+
 }
 
 

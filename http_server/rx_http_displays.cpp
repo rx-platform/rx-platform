@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_displays.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,6 +34,8 @@
 // rx_http_displays
 #include "http_server/rx_http_displays.h"
 
+#include "third-party/rapidjson/include/rapidjson/document.h"
+#include "third-party/rapidjson/include/rapidjson/writer.h"
 #include "terminal/rx_vt100.h"
 #include "sys_internal/rx_inf.h"
 #include "rx_http_server.h"
@@ -48,6 +50,131 @@ namespace rx_internal {
 namespace rx_http_server {
 
 namespace http_displays {
+
+// Class rx_internal::rx_http_server::http_displays::rx_http_static_display 
+
+rx_http_static_display::rx_http_static_display()
+{
+}
+
+rx_http_static_display::rx_http_static_display (const string_type& name, const rx_node_id& id)
+{
+}
+
+
+rx_http_static_display::~rx_http_static_display()
+{
+}
+
+
+
+rx_result rx_http_static_display::initialize_display (runtime::runtime_init_context& ctx, const string_type& disp_path)
+{
+	http_display_custom_content content;
+	fill_contents(content, ctx, disp_path);
+	content.body_begin_content += "\r\n"
+		"<script>\r\n"
+		"var rx_rt_path = '";
+	content.body_begin_content += ctx.meta.get_full_path();
+	content.body_begin_content += "';\r\n"
+		"</script>\r\n";
+
+	content.body_end_content += "\r\n"
+		"<script>\r\n"
+		"setInterval(function () {\r\n"
+		"  $.getJSON('~";
+	content.body_end_content += disp_path;
+	content.body_end_content += ".disp?data', function( data ) {\r\n"
+		"	  update_rx_content(data);\r\n"
+		"  }).fail(rx_offline);\r\n"
+		"}, 1000);\r\n"
+		"</script>";
+	auto result = parse_display_data(ctx, disp_path, html_data_, content);
+	if (!result)
+	{
+		html_data_ = "Error while parsing display data:\r\n";
+		html_data_ += result.errors_line();
+	}
+	return true;
+}
+
+rx_result rx_http_static_display::deinitialize_display (runtime::runtime_deinit_context& ctx, const string_type& disp_path)
+{
+	return true;
+}
+
+rx_result rx_http_static_display::start_display (runtime::runtime_start_context& ctx, const string_type& disp_path)
+{
+	auto result = connect_points(ctx, disp_path);
+	if (!result)
+		html_data_ = "E jebi ga puta 2!!!";
+	return true;
+}
+
+rx_result rx_http_static_display::stop_display (runtime::runtime_stop_context& ctx, const string_type& disp_path)
+{
+	auto result = disconnect_points(ctx, disp_path);
+
+	return true;
+}
+
+rx_result rx_http_static_display::handle_request_internal (rx_platform::http::http_request& req, rx_platform::http::http_response& resp)
+{
+	if (req.method == rx_http_method::get)
+	{
+		if (req.params.find("data") != req.params.end())
+		{
+			resp.set_string_content(collect_json_data());
+			resp.headers["Content-Type"] = "application/json";
+			resp.result = 200;
+		}
+		else if (req.params.empty())
+		{
+			resp.set_string_content(get_dynamic_content(html_data_));
+			resp.headers["Content-Type"] = "text/html";
+			resp.result = 200;
+		}
+		else
+		{
+			return "Invalid URL parameters";
+		}
+	}
+	else if (req.method == rx_http_method::put)
+	{
+		string_type str(req.get_content_as_string());
+		rapidjson::Document doc;
+		doc.Parse(str.c_str());
+		if (doc.IsObject())
+		{
+			int cnt = doc.MemberCount();
+			if (cnt == 1)
+			{
+				string_type name = doc.MemberBegin()->name.GetString();
+				string_type val = doc.MemberBegin()->value.GetString();
+
+				if (!name.empty())
+				{
+					auto result = write_point(name, val);
+					if (result)
+					{
+						resp.set_string_content("OK");
+						resp.headers["Content-Type"] = "text/plain";
+						resp.result = 200;
+
+						return true;
+					}
+				}
+			}
+		}
+		return "Invalid parameters";
+	}
+	return true;
+}
+
+void rx_http_static_display::fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path)
+{
+}
+
 
 // Class rx_internal::rx_http_server::http_displays::http_displays_repository 
 
@@ -130,7 +257,7 @@ http_display_point::http_display_point (rx_http_display_base* disp)
 
 void http_display_point::value_changed (const rx_value& val)
 {
-	string_type temp_val = "X";
+	string_type temp_val = "-";
 	if (val.is_good())
 	{
 		if (val.is_float())
@@ -149,7 +276,7 @@ void http_display_point::value_changed (const rx_value& val)
 		str_value_ = temp_val;
 		my_display_->point_changed();
 	}
-	
+
 }
 
 
@@ -192,37 +319,23 @@ rx_result rx_http_display_base::parse_display_data (runtime::runtime_init_contex
 	failed_.bind(".Status.Failed", ctx);
 	last_req_time_.bind(".Status.LastReqTime", ctx);
 	max_req_time_.bind(".Status.MaxReqTime", ctx);
-	string_type path = ctx.structure.get_current_item().get_local_as<string_type>("Resources.DisplayFile", "");
-	string_type header_path = ctx.structure.get_current_item().get_local_as<string_type>("Resources.HeaderFile", "");
-	string_type footer_path = ctx.structure.get_current_item().get_local_as<string_type>("Resources.FooterFile", "");
+	string_array paths = ctx.structure.get_current_item().get_local_as<string_array>("Resources.DisplayFiles", {});
 	string_type temp_str;
 
 	html_data.clear();// just in case
 
-	if (!header_path.empty())
+	for(const auto& path : paths)
 	{
-		temp_str = http_server::instance().get_global_content(header_path);
+		if (path.empty())
+			continue;
+
+		temp_str = http_server::instance().get_dynamic_content(path);
+
 		if (temp_str.empty())
-			return "Error in header reading!";
+			return "Error in reading file: " + path;
 		html_data += temp_str;
 	}
-	temp_str = http_server::instance().get_dynamic_content(path);
-	if (temp_str.empty())
-	{
-		html_data.clear();
-		return "Error in body reading!";
-	}
-	html_data += temp_str;
-	if (!footer_path.empty())
-	{
-		temp_str = http_server::instance().get_global_content(footer_path);
-		if (temp_str.empty())
-		{
-			html_data.clear();
-			return "Error in footer reading!";
-		}
-		html_data += temp_str;
-	}
+
 	// preprocess static data
 	html_data = preprocess_static(html_data, custom, ctx.meta);
 
@@ -391,10 +504,13 @@ string_type rx_http_display_base::preprocess_static (const string_type& content,
 
 rx_result rx_http_display_base::connect_points (runtime::runtime_start_context& ctx, const string_type& disp_path)
 {
+	size_t idx = 0;
 	for (auto& one : connected_points_)
 	{
 		one.point->set_context(ctx.context);
 		one.point->connect(one.point_path, 200, nullptr, points_buffer_);
+		points_hash_.emplace(one.point_id, idx);
+		idx++;
 	}
 	return true;
 }
@@ -443,26 +559,23 @@ string_type rx_http_display_base::get_dynamic_content (const string_type& html_d
 
 string_type rx_http_display_base::collect_json_data ()
 {
-	std::ostringstream stream;
-	stream << '{';
-	stream << "\"ver\":\"";
-	stream << version_check_;
-	stream << "\", \"data\":{";
-	bool first = true;
-	for (const auto& one : connected_points_)
-	{
-		if (first)
-			first = false;
-		else
-			stream << ",";
-		stream << '"'
-			<< one.point_id
-			<< "\":\""
-			<< one.point->get_str_value()
-			<< "\" ";
-	}
-	stream << "}}";
-	return stream.str();
+	rapidjson::StringBuffer buffer;
+	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+
+	writer.StartObject();
+		writer.Key("ver");
+		writer.String(version_check_.c_str());
+		writer.Key("data");
+		writer.StartObject();
+			for (const auto& one : connected_points_)
+			{
+				writer.Key(one.point_id.c_str());
+				string_type val = one.point->get_str_value();
+				writer.String(val.c_str());
+			}
+		writer.EndObject();
+	writer.EndObject();
+	return string_type(buffer.GetString());
 }
 
 rx_result rx_http_display_base::handle_request (rx_platform::http::http_request& req, rx_platform::http::http_response& resp)
@@ -593,6 +706,19 @@ void rx_http_display_base::fill_globals ()
 
 void rx_http_display_base::point_changed ()
 {
+}
+
+rx_result rx_http_display_base::write_point (const string_type& id, const string_type& val)
+{
+	auto it = points_hash_.find(id);
+	if (it != points_hash_.end() && connected_points_.size() > it->second)
+	{
+		rx_simple_value rval;
+		rval.assign_static(val);
+		connected_points_[it->second].point->write(std::move(rval), 0);
+		return true;
+	}
+	return RX_INVALID_ARGUMENT;
 }
 
 const char* system_paths[] = {
@@ -785,99 +911,6 @@ void rx_http_main_display::fill_contents (http_display_custom_content& content, 
 }
 
 void rx_http_main_display::fill_div (std::ostream& stream, const string_type& rt_name, const string_type& path, const data::runtime_values_data& data)
-{
-}
-
-
-// Class rx_internal::rx_http_server::http_displays::rx_http_static_display 
-
-rx_http_static_display::rx_http_static_display()
-{
-}
-
-rx_http_static_display::rx_http_static_display (const string_type& name, const rx_node_id& id)
-{
-}
-
-
-rx_http_static_display::~rx_http_static_display()
-{
-}
-
-
-
-rx_result rx_http_static_display::initialize_display (runtime::runtime_init_context& ctx, const string_type& disp_path)
-{
-	http_display_custom_content content;
-	fill_contents(content, ctx, disp_path);
-	content.body_begin_content += "\r\n"
-		"<script>\r\n"
-		"var rx_rt_path = '";
-	content.body_begin_content += ctx.meta.get_full_path();
-	content.body_begin_content += "';\r\n"
-		"</script>\r\n";
-
-	content.body_end_content += "\r\n"
-		"<script>\r\n"
-		"setInterval(function () {\r\n"
-		"  $.getJSON('~";
-	content.body_end_content += disp_path;
-	content.body_end_content += ".disp?data', function( data ) {\r\n"
-		"	  update_rx_content(data);\r\n"
-		"  }).fail(rx_offline);\r\n"
-		"}, 1000);\r\n"
-		"</script>";
-	auto result = parse_display_data(ctx, disp_path, html_data_, content);
-	if (!result)
-	{
-		html_data_ = "Error while parsing display data:\r\n";
-		html_data_ += result.errors_line();
-	}
-	return true;
-}
-
-rx_result rx_http_static_display::deinitialize_display (runtime::runtime_deinit_context& ctx, const string_type& disp_path)
-{
-	return true;
-}
-
-rx_result rx_http_static_display::start_display (runtime::runtime_start_context& ctx, const string_type& disp_path)
-{
-	auto result = connect_points(ctx, disp_path);
-	if (!result)
-		html_data_ = "E jebi ga puta 2!!!";
-	return true;
-}
-
-rx_result rx_http_static_display::stop_display (runtime::runtime_stop_context& ctx, const string_type& disp_path)
-{
-	auto result = disconnect_points(ctx, disp_path);
-
-	return true;
-}
-
-rx_result rx_http_static_display::handle_request_internal (rx_platform::http::http_request& req, rx_platform::http::http_response& resp)
-{
-	if (req.params.find("data") != req.params.end())
-	{
-		resp.set_string_content(collect_json_data());
-		resp.headers["Content-Type"] = "application/json";
-		resp.result = 200;
-	}
-	else if(req.params.empty())
-	{
-		resp.set_string_content(get_dynamic_content(html_data_));
-		resp.headers["Content-Type"] = "text/html";
-		resp.result = 200;
-	}
-	else
-	{
-		return "Invalid URL parameters";
-	}
-	return true;
-}
-
-void rx_http_static_display::fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path)
 {
 }
 

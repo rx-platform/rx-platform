@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_tcp_server.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -59,7 +59,7 @@ namespace ip_endpoints {
 
 tcp_server_endpoint::tcp_server_endpoint()
       : my_port_(nullptr),
-        identity_(security::security_context_ptr::null_ptr)
+        closing_(false)
 {
     ITF_LOG_DEBUG("tcp_server_endpoint", 200, "TCP server endpoint created.");
     rx_protocol_stack_endpoint* mine_entry = &stack_endpoint_;
@@ -67,10 +67,21 @@ tcp_server_endpoint::tcp_server_endpoint()
     mine_entry->send_function = &tcp_server_endpoint::send_function;
 
 
+    mine_entry->disconnect_function = []  (struct rx_protocol_stack_endpoint* reference
+        , struct rx_session_def* session
+        , rx_protocol_result_t reason) -> rx_protocol_result_t
+        {
+            tcp_server_endpoint* me = reinterpret_cast<tcp_server_endpoint*>(reference->user_data);
+			if (me->tcp_socket_)
+			{
+				me->tcp_socket_->write(buffer_ptr::null_ptr);
+			}
+            return RX_PROTOCOL_OK;
+        };
     mine_entry->close_function = [] (rx_protocol_stack_endpoint* ref, rx_protocol_result_t reason) ->rx_protocol_result_t
     {
         tcp_server_endpoint* me = reinterpret_cast<tcp_server_endpoint*>(ref->user_data);
-        if (me->tcp_socket_)
+        if (me->tcp_socket_ || me->closing_)
         {
             me->close();
         }
@@ -116,23 +127,23 @@ rx_result_with<tcp_server_endpoint::socket_ptr> tcp_server_endpoint::open (tcp_s
 
 rx_result tcp_server_endpoint::close ()
 {
-    if (tcp_socket_)
+    if (tcp_socket_ || closing_)
     {
         socket_holder_t::smart_ptr temp_socket;
         {
             locks::auto_lock_t _(&state_lock_);
+            closing_ = false;
             temp_socket = tcp_socket_;
-            if (tcp_socket_)
-            {
-                tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
-            }
+            if(temp_socket)
+                temp_socket->whose = nullptr;
+            tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
         }
         if (temp_socket)
         {
             temp_socket->write(buffer_ptr::null_ptr);
             //temp_socket->detach();
-            rx_notify_closed(&stack_endpoint_, 0);
         }
+        rx_notify_closed(&stack_endpoint_, 0);
     }
     return true;
 }
@@ -143,12 +154,15 @@ void tcp_server_endpoint::disconnected (rx_security_handle_t identity)
     {
         locks::auto_lock_t _(&state_lock_);
         temp_socket = tcp_socket_;
+        if (temp_socket)
+        {
+            closing_ = true;
+            temp_socket->whose = nullptr;
+        }
         tcp_socket_ = socket_holder_t::smart_ptr::null_ptr;
     }
     if (temp_socket)
     {
-        tcp_socket_ = socket_ptr::null_ptr;
-
         std::ostringstream ss;
         ss << "Client from IP4:"
             << remote_address_.to_string()

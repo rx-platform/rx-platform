@@ -135,7 +135,7 @@ void platform_runtime_manager::remove_one (rx_thread_handle_t from_where)
 rx_result platform_runtime_manager::initialize (hosting::rx_platform_host* host, runtime_data_t& data)
 {
 	size_t cpu_count = 1;
-	char buff[0x40];
+	char buff[0x100];
 	rx_collect_processor_info(buff, sizeof(buff), &cpu_count);
 	std::ostringstream ss;
 	ss << "Detected "

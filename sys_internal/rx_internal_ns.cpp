@@ -497,7 +497,7 @@ byte_string rx_meta_item_implementation<TImpl>::get_definition_as_bytes () const
 template <class TImpl>
 security::security_guard_ptr rx_meta_item_implementation<TImpl>::get_security_guard ()
 {
-	return impl_->security_guard;
+	return &impl_->complex_data.security_guard;
 }
 
 template <class TImpl>
@@ -1171,6 +1171,22 @@ rx_result rx_relation_item_implementation<TImpl>::disconnect_events (runtime_han
 
 } // namespace internal_ns
 } // namespace rx_internal
+
+
+
+template <>
+security::security_guard_ptr rx_meta_item_implementation<data_type_ptr>::get_security_guard()
+{
+	return nullptr;
+}
+
+template <>
+security::security_guard_ptr rx_meta_item_implementation<relation_type_ptr>::get_security_guard()
+{
+	return &impl_->relation_data.security_guard;
+}
+
+
 
 template class rx_internal::internal_ns::rx_item_implementation<rx_domain_ptr>;
 template class rx_internal::internal_ns::rx_item_implementation<rx_application_ptr>;

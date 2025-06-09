@@ -1353,6 +1353,17 @@ extern "C" {
 
 	} plugin_object_runtime_struct;
 
+
+	typedef struct plugin_object_runtime_struct2_t
+	{
+		lock_reference_struct anchor;
+		lock_reference_struct host;
+		plugin_object_def_struct* def;
+		host_object_def_struct* host_def;
+		uint32_t io_data;
+
+	} plugin_object_runtime_struct2;
+
 	// Domain ABI interface
 	typedef rx_result_struct(*rx_init_domain_t)(void* whose, init_ctx_ptr ctx);
 	typedef rx_result_struct(*rx_start_domain_t)(void* whose, start_ctx_ptr ctx);

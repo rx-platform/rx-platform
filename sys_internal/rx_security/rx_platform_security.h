@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_security\rx_platform_security.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,15 +33,16 @@
 
 
 
-// rx_platform_roles
-#include "sys_internal/rx_security/rx_platform_roles.h"
 // rx_security
 #include "security/rx_security.h"
+// rx_platform_roles
+#include "sys_internal/rx_security/rx_platform_roles.h"
 
 #include "system/hosting/rx_host.h"
 
 #define RX_NONE_SECURITY_NAME "none"
 #define RX_CERT_SECURITY_NAME "x509"
+#define RX_ASP_SECURITY_NAME "ASPForm"
 
 
 namespace rx_internal {
@@ -183,6 +184,10 @@ class platform_security_provider
 
       virtual rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data) = 0;
 
+      virtual rx_result start (hosting::rx_platform_host* host) = 0;
+
+      virtual void stop () = 0;
+
       virtual void deinitialize () = 0;
 
       virtual rx_result_with<security::security_context_ptr> create_host_context (hosting::rx_platform_host* host, configuration_data_t& data) = 0;
@@ -221,6 +226,10 @@ class platform_security
 
       rx_result initialize_roles (std::vector<rx_roles_storage_item_ptr> storages);
 
+      rx_result start (hosting::rx_platform_host* host);
+
+      void stop ();
+
       void deinitialize ();
 
       rx_result register_role (const string_type& role, const string_type& parent_role, hosting::rx_platform_host* host);
@@ -229,7 +238,9 @@ class platform_security
 
       platform_security_provider* get_provider (const string_type& name);
 
-      bool check_permissions (security::security_mask_t mask, const string_type& path, security::security_context_ptr ctx);
+      bool check_permissions (security_mask_t mask, const string_type& path, security::security_context_ptr ctx);
+
+      bool check_role (security_mask_t mask, const string_type& role, security::security_context_ptr ctx);
 
       security::security_context_ptr get_world_context ();
 
@@ -285,6 +296,10 @@ class none_security_provider : public platform_security_provider
       rx_result_with<security::security_context_ptr> create_system_context (hosting::rx_platform_host* host, configuration_data_t& data);
 
       rx_result_with<security::security_context_ptr> create_world_context (hosting::rx_platform_host* host, configuration_data_t& data);
+
+      rx_result start (hosting::rx_platform_host* host);
+
+      void stop ();
 
 
   protected:

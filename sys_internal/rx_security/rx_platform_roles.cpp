@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_security\rx_platform_roles.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -58,7 +58,7 @@ bool platform_role::is_in_role (security::security_context_ptr& ctx)
 	return false;
 }
 
-std::optional<bool> platform_role::check_permissions (security::security_mask_t mask, const string_type& obj_path, security::security_context_ptr ctx)
+std::optional<bool> platform_role::check_permissions (security_mask_t mask, const string_type& obj_path, security::security_context_ptr ctx)
 {
 	bool got_true = false;
 	for (auto& one : permissions_)
@@ -102,10 +102,10 @@ rx_result platform_role::deserialize_role (base_meta_reader& stream)
 		uint32_t temp;
 		if (!stream.read_uint("allow", temp))
 			return stream.get_error();
-		perm.allow_access = ((security::security_mask_t)temp);
+		perm.allow_access = ((security_mask_t)temp);
 		if (!stream.read_uint("deny", temp))
 			return stream.get_error();
-		perm.deny_access = ((security::security_mask_t)temp);
+		perm.deny_access = ((security_mask_t)temp);
 
 		permissions_.push_back(std::move(perm));
 
@@ -165,24 +165,24 @@ rx_result platform_roles::initialize (hosting::rx_platform_host* host, configura
 	role_users.users_.emplace("*@*", platform_principal_ref());
 
 	perm.path = "/world*";
-	perm.allow_access = security::rx_security_full;
-	perm.deny_access = security::rx_security_null;
+	perm.allow_access = rx_security_full;
+	perm.deny_access = rx_security_null;
 	role_users.permissions_.push_back(std::move(perm));
 
 	perm.path = "/sys/*";
 	perm.allow_access =
-		security::rx_security_read_access
-		| security::rx_security_poll_access
-		| security::rx_security_execute_access;
-	perm.deny_access = security::rx_security_null;
+		rx_security_read_access
+		| rx_security_poll_access
+		| rx_security_execute_access;
+	perm.deny_access = rx_security_null;
 	role_users.permissions_.push_back(std::move(perm));
 
 	perm.path = "@*";
 	perm.allow_access =
-		security::rx_security_read_access
-		| security::rx_security_poll_access
-		| security::rx_security_execute_access;
-	perm.deny_access = security::rx_security_null;
+		rx_security_read_access
+		| rx_security_poll_access
+		| rx_security_execute_access;
+	perm.deny_access = rx_security_null;
 	role_users.permissions_.push_back(std::move(perm));
 
 	roles_.push_back(std::move(role_users));
@@ -195,13 +195,13 @@ rx_result platform_roles::initialize (hosting::rx_platform_host* host, configura
 	role_system.users_.emplace("system@"s + node_name, platform_principal_ref());
 
 	perm.path = "/*";
-	perm.allow_access =	security::rx_security_full;
-	perm.deny_access = security::rx_security_null;
+	perm.allow_access =	rx_security_full;
+	perm.deny_access = rx_security_null;
 	role_system.permissions_.push_back(std::move(perm));
 
 	perm.path = "@*";
-	perm.allow_access = security::rx_security_full;
-	perm.deny_access = security::rx_security_null;
+	perm.allow_access = rx_security_full;
+	perm.deny_access = rx_security_null;
 	role_system.permissions_.push_back(std::move(perm));
 
 	roles_.push_back(std::move(role_system));
@@ -248,7 +248,7 @@ rx_result platform_roles::initialize_roles (std::vector<rx_roles_storage_item_pt
 	return result;
 }
 
-bool platform_roles::check_permissions (security::security_mask_t mask, const string_type& path, security::security_context_ptr ctx)
+bool platform_roles::check_permissions (security_mask_t mask, const string_type& path, security::security_context_ptr ctx)
 {
 	std::scoped_lock _(roles_lock_);
 	auto& roles = get_roles_for_user(ctx);

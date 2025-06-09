@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -37,6 +37,7 @@
 #include "system/server/rx_log_macros.h"
 #include "system/threads/rx_job.h"
 #include "platform_api/rx_abi.h"
+#include "security/rx_security.h"
 using namespace rx::values;
 /////////////////////////////////////////////////////////////
 // logging macros for console library
@@ -62,6 +63,10 @@ class callback_value_point;
 
 
 namespace rx_platform {
+namespace ns {
+class rx_directory_resolver;
+} // namespace ns
+
 namespace runtime {
 namespace algorithms {
 template <class typeT> class runtime_holder;
@@ -76,13 +81,7 @@ class runtime_process_context;
 namespace tag_blocks {
 class binded_tags;
 } // namespace tag_blocks
-} // namespace runtime
 
-namespace ns {
-class rx_directory_resolver;
-} // namespace ns
-
-namespace runtime {
 namespace structure {
 class mapper_data;
 class variable_data;
@@ -652,6 +651,8 @@ struct runtime_init_context
       std::unique_ptr<structure::block_data> model;
 
       size_t points_count;
+
+      std::map<string_type, security::security_guard> guards;
 
   public:
       runtime_init_context(const runtime_init_context&) = delete;

@@ -170,6 +170,7 @@ void peer_refresh_algorithm::item_changed (const rx_node_id& id, const string_ty
 rx_result peer_discovery_algorithms::start_register (discovery_register& who, hosting::rx_platform_host* host, const configuration_data_t& config)
 {
 	auto ips = interfaces::ethernet::get_ip_addresses(nullptr);
+	who.identity_ = rx_uuid::create_new();
 	who.my_data_.instance = config.instance.name;
 	who.my_data_.node = rx_gate::instance().get_node_name();
 	who.my_data_.id = who.identity_;
@@ -181,7 +182,8 @@ rx_result peer_discovery_algorithms::start_register (discovery_register& who, ho
 		port = 0x7ABC;
 
 	who.comm_point_->default_port_ = port;
-	who.comm_point_->multicast_address_ = io::ip4_address(config.instance.group.empty() ? "224.0.0.213" : config.instance.group, port);
+	if (!config.instance.group.empty())
+		who.comm_point_->multicast_address_ = io::ip4_address(config.instance.group, port);
 	who.multicast_address_ = who.comm_point_->multicast_address_;
 	who.comm_point_->activate();
 	return true;
@@ -189,7 +191,6 @@ rx_result peer_discovery_algorithms::start_register (discovery_register& who, ho
 
 void peer_discovery_algorithms::stop_register (discovery_register& who)
 {
-	RX_ASSERT(who.comm_point_);
 	if (who.comm_point_)// just on the safe side
 	{
 		who.comm_point_->deactivate();

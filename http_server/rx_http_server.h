@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_server.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -145,7 +145,7 @@ class http_server
 
       void deinitialize ();
 
-      string_type get_global_content (const string_type& path);
+      string_type get_global_content1 (const string_type& path);
 
       string_type get_dynamic_content (const string_type& path);
 

@@ -141,11 +141,21 @@ RX_PLUGIN_API rx_result_struct rxBindPlugin6(const platform_api6* api, uint32_t 
 }\
 RX_PLUGIN_API void rxGetPluginInfo(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver)\
 {\
-	rx_platform_api::rx_get_plugin_info(RX_PLUGIN_NAME, RX_PLUGIN_MAJOR_VERSION, RX_PLUGIN_MINOR_VERSION, RX_PLUGIN_BUILD_NUMBER, plugin_ver, lib_ver, sys_ver, comp_ver);\
+    static char buff[0x60] = { 0 };\
+    if (!buff[0])\
+    {\
+        ASSIGN_MODULE_VERSION(buff, RX_PLUGIN_NAME, RX_PLUGIN_MAJOR_VERSION, RX_PLUGIN_MINOR_VERSION, RX_PLUGIN_BUILD_NUMBER);\
+    }\
+	rx_platform_api::rx_get_plugin_info(buff, plugin_ver, lib_ver, sys_ver, comp_ver);\
 }\
 RX_PLUGIN_API void rxGetPluginInfo2(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver, string_value_struct* abi_ver, string_value_struct* common_ver)\
 {\
-	rx_platform_api::rx_get_plugin_info2(RX_PLUGIN_NAME, RX_PLUGIN_MAJOR_VERSION, RX_PLUGIN_MINOR_VERSION, RX_PLUGIN_BUILD_NUMBER, plugin_ver, lib_ver, sys_ver, comp_ver, abi_ver, common_ver);\
+    static char buff[0x60] = { 0 };\
+    if (!buff[0])\
+    {\
+        ASSIGN_MODULE_VERSION(buff, RX_PLUGIN_NAME, RX_PLUGIN_MAJOR_VERSION, RX_PLUGIN_MINOR_VERSION, RX_PLUGIN_BUILD_NUMBER);\
+    }\
+	rx_platform_api::rx_get_plugin_info2(buff, plugin_ver, lib_ver, sys_ver, comp_ver, abi_ver, common_ver);\
 }\
 RX_PLUGIN_API void rxGetPluginName(string_value_struct* name)\
 {\
@@ -234,13 +244,18 @@ class rx_platform_plugin
 };
 
 rx_result_struct rx_bind_plugin(const platform_api6* api, uint32_t host_stream_version, uint32_t* plugin_stream_version);
-void rx_get_plugin_info(const char* name, int major, int minor, int build, string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver);
+void rx_get_plugin_info(const char* info
+    , string_value_struct* plugin_ver
+    , string_value_struct* lib_ver
+    , string_value_struct* sys_ver
+    , string_value_struct* comp_ver);
+
 rx_result_struct rx_init_plugin(rx_platform_plugin* plugin);
 rx_result_struct rx_deinit_plugin(rx_platform_plugin* plugin);
 rx_result_struct rx_build_plugin(rx_platform_plugin* plugin, const char* root);
 uint32_t rx_get_plugin_bind_version();
 
-void rx_get_plugin_info2(const char* name, int major, int minor, int build
+void rx_get_plugin_info2(const char* info
     , string_value_struct* plugin_ver
     , string_value_struct* lib_ver
     , string_value_struct* sys_ver

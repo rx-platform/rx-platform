@@ -69,7 +69,7 @@ tcp_client_endpoint::tcp_client_endpoint()
 
 tcp_client_endpoint::~tcp_client_endpoint()
 {
-    ITF_LOG_DEBUG("tcp_server_endpoint", 200, "TCP client endpoint destroyed.");
+    ITF_LOG_DEBUG("tcp_client_endpoint", 200, "TCP client endpoint destroyed.");
 }
 
 
@@ -93,7 +93,7 @@ rx_result tcp_client_endpoint::close ()
     }
     if (temp_socket)
     {
-        temp_socket->disconnect();
+        temp_socket->write(buffer_ptr::null_ptr);
     }
     return true;
 }
@@ -157,7 +157,7 @@ bool tcp_client_endpoint::readed (const void* data, size_t count, rx_security_ha
         if (res != RX_PROTOCOL_OK)
         {
             std::ostringstream ss;
-            ss << "TCP server endpoint ["
+            ss << "TCP client endpoint ["
                 << local_addr_.to_string()
                 << ", "
                 << remote_addr_.to_string()
@@ -661,7 +661,6 @@ uint16_t system_mqtt_client::get_configuration_port () const
 string_type system_mqtt_client::get_configuration_address () const
 {
     auto ret = rx_gate::instance().get_configuration().other.mqtt_address;
-
     return ret;
 }
 

@@ -489,9 +489,7 @@ void test_case::async_test_end (test_program_context* ctx)
 
 security::security_guard_ptr test_case::get_security_guard ()
 {
-	return rx_create_reference<security::security_guard>(
-		security::rx_security_read_access| security::rx_security_read_access
-		, "$test:"s + name_);
+	return nullptr;
 }
 
 

@@ -2,8 +2,8 @@
 
 
 #define RX_COMMON_MAJOR_VERSION 3
-#define RX_COMMON_MINOR_VERSION 2
-#define RX_COMMON_BUILD_NUMBER 2
+#define RX_COMMON_MINOR_VERSION 3
+#define RX_COMMON_BUILD_NUMBER 0
 
 // Ver 1.0.1 added RX_STRUCT_TYPE support
 // Ver 2.0.0 added meta data to rx-common
@@ -21,3 +21,4 @@
 // Ver 3.2.0 added rx_get_new_transaction_id and rx_get_new_handle
 // Ver 3.2.1 added rx_init_array_value_with_move and rx_init_array_value_with_ptrs_move
 // Ver 3.2.2 corrected memory leak for strings of length 8
+// Ver 3.3.0 added weak pointer support for shared references

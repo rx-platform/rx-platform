@@ -410,37 +410,47 @@ string_type headless_platform_host::get_host_manual () const
 int headless_platform_host::start_platform ()
 {
 	HOST_LOG_INFO("Main", 999, "Starting Rx Engine...");
-	std::cout << "Starting {rx-platform} ...";
-	auto result = rx_platform::rx_gate::instance().start(this, config_);
+
+	std::cout << "Starting Security Providers...\r\n";
+	auto result = rx_internal::rx_security::platform_security::instance().start(this);
 	if (result)
 	{
-		result = set_headless_thread_security();
+		std::cout << "Starting {rx-platform} ...\r\n";
+		auto result = rx_platform::rx_gate::instance().start(this, config_);
 		if (result)
 		{
-			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
-
-			//if (dump_storage_references_)
+			result = set_headless_thread_security();
+			if (result)
 			{
-				dump_storage_references(std::cout);
-				
+				std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+
+				//if (dump_storage_references_)
+				{
+					dump_storage_references(std::cout);
+
+				}
+
+				std::cout << "\r\n{rx-platform} Headless Module is running.";
+				std::cout << "\r\n=============================================>>\r\n";
+
+				host_started();
+
+				return 1;
 			}
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
+			rx_dump_error_result(std::cout, result);
 
-			std::cout << "\r\n{rx-platform} Headless Module is running.";
-			std::cout << "\r\n=============================================>>\r\n";
-
-			host_started();
-
-			return 1;
+			std::cout << "Stopping Security Providers...\r\n";
+			rx_internal::rx_security::platform_security::instance().stop();
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		}
-		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
-		rx_dump_error_result(std::cout, result);
+		else
+		{
+			std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
+			rx_dump_error_result(std::cout, result);
+		}
 	}
-	else
-	{
-		std::cout << SAFE_ANSI_STATUS_ERROR << "\r\nError starting {rx-platform}:\r\n";
-		rx_dump_error_result(std::cout, result);
-	}
-	std::cout << "De-initializing {rx-platform} ...";
+	std::cout << "De-initializing {rx-platform} ...\r\n";
 	result = rx_platform::rx_gate::instance().deinitialize();
 	if (result)
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
@@ -454,7 +464,11 @@ int headless_platform_host::start_platform ()
 
 int headless_platform_host::stop_platform ()
 {
-	std::cout << "Stopping {rx-platform} ...";
+
+	std::cout << "Stopping Security Providers...\r\n";
+	rx_internal::rx_security::platform_security::instance().stop();
+
+	std::cout << "Stopping {rx-platform} ...\r\n";
 
 	auto result = rx_platform::rx_gate::instance().stop();
 	if (result)

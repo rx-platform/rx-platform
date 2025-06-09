@@ -484,7 +484,7 @@ namespace_item_attributes server_command::get_attributes () const
 
 bool server_command::console_execute (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
 {
-	if (ctx->get_security_guard()->check_permission(security::rx_security_execute_access))
+	if (ctx->get_security_guard()->check_permission(rx_security_execute_access))
 	{
 		return do_console_command(in, out, err, ctx);
 	}
@@ -562,7 +562,7 @@ rx_result server_command::execute (execute_data data, runtime::runtime_process_c
 					rx_simple_value out_result = rx_create_value_static(out_str, err_str, result);
 					this->execute_result_received(std::move(out_result), result, data.transaction_id);
 				}
-			}, ctx->get_security_guard());
+			}, ctx->get_security_guard(0));//sec warning
 		console_program->do_command(line, security::active_security());
 		return true;
 	}

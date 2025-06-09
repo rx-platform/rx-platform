@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_support.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -481,6 +481,13 @@ class runtime_data_prototype
 
 	typedef std::vector<runtime::structure::index_data> items_type;
 
+	typedef std::map<string_type, security::security_guard> security_guards_type;
+
+public:
+	runtime_data_prototype() = default;
+	runtime_data_prototype(const runtime_data_prototype&) = delete;
+	runtime_data_prototype(runtime_data_prototype&&) noexcept = default;
+
   public:
 
       rx_result add_const_value (const string_type& name, rx_simple_value value, const std::bitset<32>& value_opt);
@@ -491,7 +498,7 @@ class runtime_data_prototype
 
       rx_result add_value (const string_type& name, std::vector<rx_timed_value> value, const std::bitset<32>& value_opt);
 
-      rx_result add (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id);
+      rx_result add_mapper (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id);
 
       rx_result add_struct (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id, runtime::structure::block_data block);
 
@@ -501,11 +508,11 @@ class runtime_data_prototype
 
       rx_result add_variable (const string_type& name, std::vector<runtime::structure::variable_data> value, rx_node_id id);
 
-      rx_result add (const string_type& name, runtime::structure::source_data&& value, rx_node_id id);
+      rx_result add_source (const string_type& name, runtime::structure::source_data&& value, rx_node_id id, const security::security_guard& sec);
 
-      rx_result add (const string_type& name, runtime::structure::filter_data&& value, rx_node_id id);
+      rx_result add_filter (const string_type& name, runtime::structure::filter_data&& value, rx_node_id id);
 
-      rx_result add (const string_type& name, runtime::structure::event_data&& value, rx_node_id id);
+      rx_result add_event (const string_type& name, runtime::structure::event_data&& value, rx_node_id id);
 
       rx_result add_variable_block (const string_type& name, runtime::structure::variable_block_data&& value, rx_node_id id);
 
@@ -694,6 +701,7 @@ class construct_context
     typedef std::stack<runtime::structure::block_data*, std::vector<runtime::structure::block_data*> > block_stack_type;
     typedef std::stack<data::runtime_values_data*, std::vector<data::runtime_values_data*> > override_stack_type;
     typedef std::vector<runtime_status_data> warnings_type;
+    typedef std::map<string_type, security::security_guard> access_guards_type;
  public:
     ~construct_context() = default;
     construct_context(const construct_context&) = delete;
@@ -702,7 +710,7 @@ class construct_context
     construct_context& operator=(construct_context&&) = delete;
 
   public:
-      construct_context (const string_type& name);
+      construct_context (const meta_data& meta);
 
 
       void reinit ();
@@ -751,10 +759,20 @@ class construct_context
 
       bool is_in_model () const;
 
+      string_type get_current_path () const;
+
+      std::map<string_type, security::security_guard> normalize_security_guards ( security::security_guard root);
+
 
       ns::rx_directory_resolver& get_directories ()
       {
         return directories_;
+      }
+
+
+      access_guards_type& get_access_guards ()
+      {
+        return access_guards_;
       }
 
 
@@ -795,6 +813,8 @@ class construct_context
       int current_method_;
 
       bool in_model_;
+
+      access_guards_type access_guards_;
 
 
 };

@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_security\rx_platform_security.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,6 +36,7 @@
 
 #include "system/runtime/rx_internal_objects.h"
 #include "rx_x509_security.h"
+#include "rx_aspnet_security.h"
 namespace rx_platform
 {
 rx_security_handle_t rx_security_context();
@@ -211,6 +212,36 @@ rx_result platform_security::initialize_roles (std::vector<rx_roles_storage_item
     return roles_manager_.initialize_roles(std::move(storages));
 }
 
+rx_result platform_security::start (hosting::rx_platform_host* host)
+{
+    for(auto& one : providers_)
+    {
+        auto result = one.second->start(host);
+        if (!result)
+        {
+            std::ostringstream ss;
+            ss << "Error starting security provider: "
+                << one.second->get_info()
+                << " - "
+                << result.errors_line();
+            SECURITY_LOG_ERROR("platform_security", 999, ss.str());
+            return result;
+        }
+        else
+        {
+            std::ostringstream ss;
+            ss << "Started security provider: "
+                << one.second->get_info();
+            SECURITY_LOG_INFO("platform_security", 500, ss.str());
+        }
+	}
+    return true;
+}
+
+void platform_security::stop ()
+{
+}
+
 void platform_security::deinitialize ()
 {
     if (host_ctx_)
@@ -311,12 +342,26 @@ std::vector<std::unique_ptr<platform_security_provider> > platform_security::col
     std::vector<std::unique_ptr<platform_security_provider> > ret;
     ret.push_back(std::make_unique<none_security_provider>());
     ret.push_back(std::make_unique<x509::certificate_security_provider>());
+    ret.push_back(std::make_unique<aspnet_forms::aspnet_security_provider>());
     return ret;
 }
 
-bool platform_security::check_permissions (security::security_mask_t mask, const string_type& path, security::security_context_ptr ctx)
+bool platform_security::check_permissions (security_mask_t mask, const string_type& path, security::security_context_ptr ctx)
 {
     return roles_manager_.check_permissions(mask, path, ctx);
+}
+
+bool platform_security::check_role (security_mask_t mask, const string_type& role, security::security_context_ptr ctx)
+{
+    if (ctx->is_in_role(role, mask))
+    {
+        return true;
+    }
+	else
+	{
+		SECURITY_LOG_WARNING("platform_security", 999, "Role "s + role + " not found in " + ctx->get_full_name());
+		return false;
+	}
 }
 
 security::security_context_ptr platform_security::get_world_context ()
@@ -468,6 +513,15 @@ rx_result_with<security::security_context_ptr> none_security_provider::create_wo
 {
     security::security_context_ptr ret = rx_create_reference<process_context>(data.instance.name);
     return ret;
+}
+
+rx_result none_security_provider::start (hosting::rx_platform_host* host)
+{
+    return true;
+}
+
+void none_security_provider::stop ()
+{
 }
 
 

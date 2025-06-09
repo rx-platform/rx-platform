@@ -4,7 +4,7 @@
 *
 *  model\rx_meta_internals.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -67,7 +67,7 @@ using namespace rx_platform::meta::object_types;
 #define META_LOG_INFO(src,lvl,msg) RX_LOG_INFO("Meta",src,lvl,msg)
 #define META_LOG_WARNING(src,lvl,msg) RX_LOG_WARNING("Meta",src,lvl,msg)
 #define META_LOG_ERROR(src,lvl,msg) RX_LOG_ERROR("Meta",src,lvl,msg)
-#define MEAT_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Meta",src,lvl,msg)
+#define META_LOG_CRITICAL(src,lvl,msg) RX_LOG_CRITICAL("Meta",src,lvl,msg)
 #define META_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("Meta",src,lvl,msg)
 #define META_LOG_TRACE(src,lvl,msg) RX_TRACE("Meta",src,lvl,msg)
 
@@ -330,6 +330,7 @@ class instance_hash
 template <class typeT>
 struct create_runtime_result
 {
+	std::map<string_type, security::security_guard> guards;
     std::vector<runtime_status_data> statuses;
     typename typeT::RTypePtr ptr;
     std::function<void(const rx_node_id&)> register_f;
@@ -450,7 +451,7 @@ public:
 
       bool is_the_same (const rx_node_id& id, typename types_repository<typeT>::Tptr what);
 
-      bool is_the_same (const rx_node_id& id, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data& runtime_data);
+      bool is_the_same (const rx_node_id& id, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data& runtime_data, const security::security_guard& guard);
 
 
   protected:

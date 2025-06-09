@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_relations.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -37,6 +37,8 @@
 #include "rx_rt_struct.h"
 #include "rx_operational.h"
 
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_relation_impl
 #include "system/runtime/rx_relation_impl.h"
 // rx_resolvers
@@ -45,22 +47,20 @@
 #include "system/runtime/rx_process_context.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_values
 #include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace runtime {
-namespace algorithms {
-template <class typeT> class runtime_holder_algorithms;
-} // namespace algorithms
-
 namespace relations {
 class relation_connections;
 class relation_connector;
-
 } // namespace relations
+
+namespace algorithms {
+template <class typeT> class runtime_holder_algorithms;
+
+} // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
 
@@ -294,7 +294,7 @@ class relation_data : public rx::pointers::reference_object
 
       virtual rx_result stop_target_relation (runtime::runtime_stop_context& ctx);
 
-      rx_result write_value (write_data&& data, runtime_process_context* ctx);
+      rx_result write_value (write_data&& data, runtime_process_context* ctx, std::unique_ptr<structure::write_task> task);
 
       platform_item_ptr get_item_ptr () const;
 

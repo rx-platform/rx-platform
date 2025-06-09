@@ -32,7 +32,6 @@
 #define rx_platform_item_h 1
 
 
-#include "security/rx_security.h"
 
 // rx_values
 #include "lib/rx_values.h"
@@ -45,6 +44,8 @@ class rx_platform_directory;
 } // namespace rx_platform
 
 
+#include "security/rx_security.h"
+#include "../rx_platform_typedefs.h"
 #include "system/callbacks/rx_callback.h"
 //#include "api/rx_platform_api.h"
 

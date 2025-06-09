@@ -2086,7 +2086,7 @@ RX_COMMON_API int rx_convert_value(struct typed_value_type* val, rx_value_t type
 			if (ret == RX_OK)
 			{
 				// everything is OK so destroy previous and assign new ones
-				for (int j = 0; j < val->value.array_value.size; j++)
+				for (size_t j = 0; j < val->value.array_value.size; j++)
 				{
 					destroy_union_value(&val->value.array_value.values[j], val->value_type & RX_STRIP_ARRAY_MASK);
 					val->value.array_value.values[j] = temp[j];
@@ -2095,7 +2095,7 @@ RX_COMMON_API int rx_convert_value(struct typed_value_type* val, rx_value_t type
 			}
 			else if(i > 0)
 			{
-				for (int j = 0; j < i; j++)
+				for (size_t j = 0; j < i; j++)
 				{
 					destroy_union_value(&temp[j], type & RX_STRIP_ARRAY_MASK);
 				}

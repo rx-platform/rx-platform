@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_def_blocks.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,6 +33,8 @@
 
 
 
+// rx_security
+#include "security/rx_security.h"
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
 // rx_rt_data
@@ -223,10 +225,15 @@ public:
       }
 
 
+      const security::security_guard& get_security_guard () const;
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       string_type name_;
@@ -300,10 +307,19 @@ class event_attribute
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       string_type name_;
@@ -383,10 +399,19 @@ public:
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       string_type name_;
@@ -474,6 +499,8 @@ class complex_data_type
 
 
       rx::data::runtime_values_data overrides;
+
+      security::security_guard security_guard;
 
 
       bool is_sealed;
@@ -579,10 +606,19 @@ class struct_attribute
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       string_type name_;
@@ -667,10 +703,19 @@ class variable_attribute
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       string_type name_;
@@ -769,10 +814,19 @@ class filter_attribute
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       io_attribute io_;
@@ -836,10 +890,19 @@ class mapper_attribute
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       io_attribute io_;
@@ -903,10 +966,19 @@ class source_attribute
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       io_attribute io_;
@@ -1132,10 +1204,19 @@ public:
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       string_type name_;
@@ -1193,10 +1274,19 @@ public:
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       string_type name_;
@@ -1250,10 +1340,19 @@ public:
       }
 
 
+      const security::security_guard& get_security_guard () const
+      {
+        return security_guard;
+      }
+
+
 
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
       string_type name_;

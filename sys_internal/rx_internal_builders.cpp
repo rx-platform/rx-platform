@@ -878,26 +878,26 @@ void basic_object_types_builder::build_standard_basic_object_type(configuration_
 }
 void basic_object_types_builder::build_basic_object_type(configuration_data_t& config, rx_directory_ptr dir, rx_object_type_ptr what)
 {
-	what->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "object_index.html");
+	what->complex_data.overrides.add_value_static<string_array>("index.Resources.DisplayFiles", { "object_index.html" });
 	build_standard_basic_object_type(config, dir, what);
 }
 void basic_object_types_builder::build_basic_domain_type(configuration_data_t& config, rx_directory_ptr dir, rx_domain_type_ptr what)
 {
 	what->complex_data.register_const_value_static("CPU", -1);
-	what->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "domain_index.html");
+	what->complex_data.overrides.add_value_static<string_array>("index.Resources.DisplayFiles", { "domain_index.html" });
 	build_standard_basic_object_type(config, dir, what);
 }
 void basic_object_types_builder::build_basic_application_type(configuration_data_t& config, rx_directory_ptr dir, rx_application_type_ptr what)
 {
 	what->complex_data.register_const_value_static("CPU", -1);
-	what->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "app_index.html");
+	what->complex_data.overrides.add_value_static<string_array>("index.Resources.DisplayFiles", { "app_index.html" });
 	build_standard_basic_object_type(config , dir, what);
 }
 void basic_object_types_builder::build_basic_port_type(configuration_data_t& config, rx_directory_ptr dir, rx_port_type_ptr what)
 {
 	what->complex_data.register_struct("Options", RX_PORT_OPTIONS_TYPE_ID);
 	what->complex_data.register_struct("Status", RX_PORT_STATUS_TYPE_ID);
-	what->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "port_index.html");
+	what->complex_data.overrides.add_value_static<string_array>("index.Resources.DisplayFiles", { "port_index.html" });
 	build_standard_basic_object_type(config, dir, what);
 }
 template<class T>
@@ -933,7 +933,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			});
 		obj->complex_data.register_struct("Info", RX_NS_SYSTEM_INFO_TYPE_ID);
 		obj->object_data.register_display(def_blocks::display_attribute("index", RX_MAIN_HTTP_DISPLAY_TYPE_ID), obj->complex_data);
-		obj->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "index.html");
+		obj->complex_data.overrides.add_value_static<string_array>("index.Resources.DisplayFiles", { "index.html" });
 		add_type_to_configuration(dir, obj, false);
 
 		obj = create_type<object_type>(meta::object_type_creation_data{
@@ -1647,7 +1647,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
-		instance_data.overrides.add_value_static("index.Resources.DisplayFile", "index.html");
+		instance_data.overrides.add_value_static<string_array >("index.Resources.DisplayFiles", { "index.html" });
 		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
 
 		instance_data = runtime_data::object_runtime_data();
@@ -2063,6 +2063,17 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 				});
 		filter->complex_data.register_simple_value_static("InPath", "x", false, true);
 		filter->complex_data.register_simple_value_static("OutPath", "x", false, true);
+		add_simple_type_to_configuration<filter_type>(dir, filter, false);
+
+
+		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
+			RX_ROUND_FILTER_TYPE_NAME
+			, RX_ROUND_FILTER_TYPE_ID
+			, RX_CLASS_FILTER_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		filter->complex_data.register_simple_value_static("DecimalPlaces", 2, false, true);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		auto what = create_type<struct_type>(meta::type_creation_data{
@@ -2905,7 +2916,7 @@ rx_result http_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		str->complex_data.register_const_value_static<string_type>("DisplayFile", "");
+		str->complex_data.register_const_value_static<string_array>("DisplayFiles", {});
 		add_simple_type_to_configuration<struct_type>(dir, str, false);
 
 
@@ -2929,8 +2940,6 @@ rx_result http_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		str->complex_data.register_const_value_static<string_type>("HeaderFile", "static_header.html");
-		str->complex_data.register_const_value_static<string_type>("FooterFile", "static_footer.html");
 		add_simple_type_to_configuration<struct_type>(dir, str, false);
 
 		disp = create_type<basic_types::display_type>(meta::type_creation_data{
@@ -2941,6 +2950,16 @@ rx_result http_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		disp->complex_data.register_struct("Resources", RX_STATIC_HTTP_DISPLAY_RESOURCE_TYPE_ID);
+		disp->complex_data.register_struct("Status", RX_HTTP_DISPLAY_STATUS_TYPE_ID);
+		add_simple_type_to_configuration<display_type>(dir, disp, true);
+
+		disp = create_type<basic_types::display_type>(meta::type_creation_data{
+			"RNPLognDisplay"
+			, rx_node_id::from_string("g:80956ABB-34ED-4F7F-BE09-BFB9C6E0ACF2")
+			, RX_HTTP_DISPLAY_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
 		disp->complex_data.register_struct("Status", RX_HTTP_DISPLAY_STATUS_TYPE_ID);
 		add_simple_type_to_configuration<display_type>(dir, disp, true);
 
@@ -2970,7 +2989,7 @@ rx_result http_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		disp->complex_data.register_const_value_static<string_type>("Content", "");
-		disp->complex_data.overrides.add_value_static("index.Resources.DisplayFile", "simple.html");
+		disp->complex_data.overrides.add_value_static<string_array>("index.Resources.DisplayFiles", { "simple.html" });
 		add_simple_type_to_configuration<display_type>(dir, disp, true);
 
 	}
@@ -3749,7 +3768,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 		what->complex_data.register_const_value_static("Retain", true);
 		what->complex_data.register_const_value_static<uint32_t>("HoldTime", 200);
 		what->complex_data.register_const_value_static("Port", "");
-		what->complex_data.register_const_value_static("BrokerUrl", "");
+		what->complex_data.register_const_value_static("BrokerUrl", "ws://~/mqtt");
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		// http display based stuff
@@ -3762,6 +3781,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 			});
 		disp->complex_data.register_struct("Mqtt", RX_MQTT_HTTP_DISPLAY_OPTIONS_TYPE_ID);
 		add_simple_type_to_configuration<display_type>(dir, disp, true);
+
 
 
 	}

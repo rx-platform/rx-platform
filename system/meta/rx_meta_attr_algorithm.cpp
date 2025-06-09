@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_attr_algorithm.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -48,6 +48,8 @@ namespace meta {
 namespace meta_algorithm {
 namespace
 {
+
+
 rx_subitem_type parse_subitem_type(const string_type& name)
 {
 	if (name == RX_CONST_VALUE_TYPE_NAME)
@@ -104,6 +106,11 @@ rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::serialize_complex
 		if (!stream.write_string("description", whose.description_.c_str()))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.serialize("access", stream))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -128,6 +135,11 @@ rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::deserialize_compl
 		if (!stream.read_string("description", whose.description_))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.deserialize("access", stream))
+			return stream.get_error();
+	}
 	return true;
 }
 template <>
@@ -148,6 +160,11 @@ rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::construct_complex
 		auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::struct_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 		if (temp)
 		{
+			if (!whose.security_guard.is_null())
+			{
+				string_type path = ctx.get_current_path() + whose.name_;
+				ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
+			}
 			return ctx.runtime_data().add_struct(whose.name_, std::move(temp.value()), target, std::move(block));
 		}
 		else
@@ -170,6 +187,11 @@ rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::construct_complex
 			{
 				return temp.errors();
 			}
+		}
+		if (!whose.security_guard.is_null())
+		{
+			string_type path = ctx.get_current_path() + whose.name_;
+			ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
 		}
 		return ctx.runtime_data().add_struct(whose.name_, std::move(data), target, std::move(block));
 	}
@@ -248,6 +270,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::serialize_compl
 		if (!stream.write_bool("persist", whose.persistent_))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.serialize("access", stream))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -321,6 +348,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::deserialize_com
 		if (!stream.read_bool("persist", whose.persistent_))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.deserialize("access", stream))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -347,6 +379,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 				temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 				temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
 				temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
+				if (!whose.security_guard.is_null())
+				{
+					string_type path = ctx.get_current_path() + whose.name_;
+					ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
+				}
 				return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target);
 			}
 			else
@@ -382,6 +419,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 					return temp.errors();
 				}
 			}
+			if (!whose.security_guard.is_null())
+			{
+				string_type path = ctx.get_current_path() + whose.name_;
+				ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
+			}
 			return ctx.runtime_data().add_variable(whose.name_, std::move(data), target);
 		}
 	}
@@ -414,6 +456,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 					block.variable = temp.move_value();
 					block.type_ptr = std::move(temp_data.value().type_ptr);
 					block.block = std::move(temp_data.value().runtime);
+					if (!whose.security_guard.is_null())
+					{
+						string_type path = ctx.get_current_path() + whose.name_;
+						ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
+					}
 					return ctx.runtime_data().add_variable_block(whose.name_, std::move(block), target);
 				}
 				else
@@ -466,6 +513,11 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 					return temp_data.errors();
 				}
 			}
+			if (!whose.security_guard.is_null())
+			{
+				string_type path = ctx.get_current_path() + whose.name_;
+				ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
+			}
 			return ctx.runtime_data().add_variable_block(whose.name_, std::move(data), target);
 		}
 	}
@@ -492,6 +544,11 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::serialize_complex
 		if (!stream.write_bool("sim", whose.io_.simulation))
 			return stream.get_error();
 		if (!stream.write_bool("proc", whose.io_.process))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.serialize("access", stream))
 			return stream.get_error();
 	}
 	return true;
@@ -524,6 +581,11 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::deserialize_compl
 		whose.io_.simulation = true;
 		whose.io_.process = true;
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.deserialize("access", stream))
+			return stream.get_error();
+	}
 
 	return true;
 }
@@ -542,12 +604,17 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::source_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
+		if (!whose.security_guard.is_null())
+		{
+			string_type path = ctx.get_current_path() + whose.name_;
+			ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
+		}
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
 		temp.value().source_id = target;
 		temp.value().input_value.value.set_time(ctx.now);
 		temp.value().input_value.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
-		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
+		return ctx.runtime_data().add_source(whose.name_, std::move(temp.value()), target, whose.security_guard);
 	}
 	else
 	{
@@ -577,6 +644,11 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::serialize_complex
 		if (!stream.write_bool("sim", whose.io_.simulation))
 			return stream.get_error();
 		if (!stream.write_bool("proc", whose.io_.process))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.serialize("access", stream))
 			return stream.get_error();
 	}
 	return true;
@@ -609,7 +681,12 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::deserialize_compl
 		whose.io_.simulation = true;
 		whose.io_.process = true;
 	}
-		
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.deserialize("access", stream))
+			return stream.get_error();
+	}
+
 	return true;
 }
 template<>
@@ -630,12 +707,22 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
+		if (!whose.security_guard.is_null())
+		{
+			string_type path = ctx.get_current_path() + whose.name_;
+			ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
+		}
 		temp.value().io_.set_input(whose.io_.input);
 		temp.value().io_.set_output(whose.io_.output);
 		temp.value().mapper_id = target;
 		temp.value().mapped_value.value.set_time(ctx.now);
 		temp.value().mapped_value.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
-		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
+		if (!whose.security_guard.is_null())
+		{
+			string_type path = ctx.get_current_path() + whose.name_;
+			ctx.get_access_guards().emplace(path, whose.security_guard);
+		}
+		return ctx.runtime_data().add_mapper(whose.name_, std::move(temp.value()), target);
 	}
 	else
 	{
@@ -669,6 +756,11 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::serialize_complex
 		if (!stream.write_bool("proc", whose.io_.process))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.serialize("access", stream))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -699,6 +791,11 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::deserialize_compl
 		whose.io_.simulation = true;
 		whose.io_.process = true;
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.deserialize("access", stream))
+			return stream.get_error();
+	}
 	return true;
 }
 template<>
@@ -720,7 +817,12 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::construct_complex
 		temp.value().io_.set_output(whose.io_.output);
 		temp.value().filtered_value_.value.set_time(ctx.now);
 		temp.value().filtered_value_.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
-		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
+		if (!whose.security_guard.is_null())
+		{
+			string_type path = ctx.get_current_path() + whose.name_;
+			ctx.get_access_guards().emplace(path, whose.security_guard);
+		}
+		return ctx.runtime_data().add_filter(whose.name_, std::move(temp.value()), target);
 	}
 	else
 	{
@@ -756,9 +858,14 @@ rx_result meta_blocks_algorithm<def_blocks::event_attribute>::construct_complex_
 			{
 				result.register_error("Unable to resolve inputs data type"s + whose.arguments_.to_string());
 			}
-			
+
 		}
-		return ctx.runtime_data().add(whose.name_, temp.move_value(), target);
+		if (!whose.security_guard.is_null())
+		{
+			string_type path = ctx.get_current_path() + whose.name_;
+			ctx.get_access_guards().emplace(path, whose.security_guard);
+		}
+		return ctx.runtime_data().add_event(whose.name_, temp.move_value(), target);
 	}
 	else
 	{
@@ -782,6 +889,11 @@ rx_result meta_blocks_algorithm<def_blocks::program_attribute>::construct_comple
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::program_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
+		if (!whose.security_guard.is_null())
+		{
+			string_type path = ctx.get_current_path() + whose.name_;
+			ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
+		}
 		ctx.end_program(temp.move_value());
 		return true;
 	}
@@ -808,6 +920,11 @@ rx_result meta_blocks_algorithm<def_blocks::display_attribute>::construct_comple
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::display_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
+		if (!whose.security_guard.is_null())
+		{
+			string_type path = ctx.get_current_path() + whose.name_;
+			ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
+		}
 		ctx.end_display(temp.move_value());
 		return true;
 	}
@@ -925,7 +1042,7 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 		return stream.get_error();
 
 	if (!stream.start_array("items"
-		, whose.const_values_.size() + whose.simple_values_.size() + whose.variables_.size() 
+		, whose.const_values_.size() + whose.simple_values_.size() + whose.variables_.size()
 		+ whose.structs_.size() + whose.events_.size()))
 		return stream.get_error();
 	for (const auto& one : whose.names_cache_)
@@ -1047,6 +1164,12 @@ rx_result complex_data_algorithm::serialize_complex_attribute (const complex_dat
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.write_string("description", whose.description.c_str()))
+			return stream.get_error();
+	}
+
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.serialize("access", stream))
 			return stream.get_error();
 	}
 
@@ -1175,6 +1298,12 @@ rx_result complex_data_algorithm::deserialize_complex_attribute (complex_data_ty
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.read_string("description", whose.description))
+			return stream.get_error();
+	}
+
+	if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION)
+	{
+		if (!whose.security_guard.deserialize("access", stream))
 			return stream.get_error();
 	}
 
@@ -1315,9 +1444,9 @@ rx_result complex_data_algorithm::get_depends (const complex_data_type& whose, d
 	return true;
 }
 
-std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool persistent, bool in_model)
+std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool persistent, bool in_model, uint32_t sec_idx)
 {
-	std::bitset<32> ret;
+	std::bitset<32> ret((uint64_t)(sec_idx << 8));
 	ret[runtime::structure::value_opt_readonly] = read_only;
 	ret[runtime::structure::value_opt_persistent] = persistent;
 	ret[runtime::structure::opt_is_in_model] = in_model;
@@ -1328,15 +1457,22 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 {
 	if (whose.get_data_type_ref().is_null())
 	{
+		uint32_t sec_idx = 0;
 		if (whose.get_array_size() < 0)
 		{
+			if (!whose.get_security_guard().is_null())
+			{
+				string_type path = ctx.get_current_path() + whose.get_name();
+				ctx.get_access_guards().insert_or_assign(path, whose.get_security_guard());
+				sec_idx = (uint32_t)ctx.get_access_guards().size();
+			}
 			rx_result ret = ctx.runtime_data().add_const_value(
 				whose.get_name(),
 				whose.get_value(),
 				get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
-					ctx.is_in_model()));
+					ctx.is_in_model(), sec_idx));
 			if (!ret)
 			{
 				ret.register_error("Unable to add const value "s + whose.get_name() + "!");
@@ -1345,13 +1481,19 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 		}
 		else
 		{
+			if (!whose.get_security_guard().is_null())
+			{
+				string_type path = ctx.get_current_path() + whose.get_name();
+				ctx.get_access_guards().insert_or_assign(path, whose.get_security_guard());
+				sec_idx = (uint32_t)ctx.get_access_guards().size();
+			}
 			rx_result ret = ctx.runtime_data().add_const_value(
 				whose.get_name(),
 				whose.get_values(),
 				get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
-					ctx.is_in_model()));
+					ctx.is_in_model(), sec_idx));
 			if (!ret)
 			{
 				ret.register_error("Unable to add const value "s + whose.get_name() + "!");
@@ -1374,20 +1516,28 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 		auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
 		if (temp)
 		{
+			uint32_t sec_idx = 0;
 			if (whose.get_array_size() < 0)
 			{
 				value_block_data data;
+				if (!whose.get_security_guard().is_null())
+				{
+					string_type path = ctx.get_current_path() + whose.get_name();
+					ctx.get_access_guards().insert_or_assign(path, whose.get_security_guard());
+					sec_idx = (uint32_t)ctx.get_access_guards().size();
+				}
 
 				data.struct_value.value_opt = get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
-					ctx.is_in_model());
+					ctx.is_in_model(), sec_idx);
 				data.struct_value.value_opt[opt_is_constant] = true;
 				data.block = std::move(temp.value().runtime);
 				data.timestamp = ctx.now;
 				data.struct_value.value = whose.get_value();
 				data.struct_value.value.set_time(ctx.now);
 				data.type_ptr = std::move(temp.value().type_ptr);
+				
 				return ctx.runtime_data().add_value_block(whose.get_name(), std::move(data), target);
 			}
 			else
@@ -1395,16 +1545,22 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 				std::vector<value_block_data> data;
 				//if (whose.get_array_size() > 0)
 				{
+					if (!whose.get_security_guard().is_null())
+					{
+						string_type path = ctx.get_current_path() + whose.get_name();
+						ctx.get_access_guards().insert_or_assign(path, whose.get_security_guard());
+						sec_idx = (uint32_t)ctx.get_access_guards().size();
+					}
 					data.reserve(whose.get_array_size());
 					for (int i = 0; i < whose.get_array_size(); i++)
 					{
-					
+
 						value_block_data temp_data;
 
 						temp_data.struct_value.value_opt = get_value_opt(
 							whose.get_read_only(),
 							whose.get_persistent(),
-							ctx.is_in_model());
+							ctx.is_in_model(), sec_idx);
 						temp_data.struct_value.value_opt[opt_is_constant] = true;
 						temp_data.block = std::move(temp.value().runtime);
 						temp_data.timestamp = ctx.now;
@@ -1429,15 +1585,22 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 {
 	if (whose.get_data_type_ref().is_null())
 	{
+		uint32_t sec_idx = 0;
 		if (whose.get_array_size() < 0)
 		{
+			if (!whose.get_security_guard().is_null())
+			{
+				string_type path = ctx.get_current_path() + whose.get_name();
+				ctx.get_access_guards().insert_or_assign(path, whose.get_security_guard());
+				sec_idx = (uint32_t)ctx.get_access_guards().size();
+			}
 			rx_result ret = ctx.runtime_data().add_value(
 				whose.get_name(),
 				whose.get_value(ctx.now),
 				get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
-					ctx.is_in_model()));
+					ctx.is_in_model(), sec_idx));
 			if (!ret)
 			{
 				ret.register_error("Unable to add simple value "s + whose.get_name() + "!");
@@ -1446,13 +1609,19 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 		}
 		else
 		{
+			if (!whose.get_security_guard().is_null())
+			{
+				string_type path = ctx.get_current_path() + whose.get_name();
+				ctx.get_access_guards().insert_or_assign(path, whose.get_security_guard());
+				sec_idx = (uint32_t)ctx.get_access_guards().size();
+			}
 			rx_result ret = ctx.runtime_data().add_value(
 				whose.get_name(),
 				whose.get_values(ctx.now),
 				get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
-					ctx.is_in_model()));
+					ctx.is_in_model(), sec_idx));
 			if (!ret)
 			{
 				ret.register_error("Unable to add simple value "s + whose.get_name() + "!");
@@ -1462,7 +1631,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 	}
 	else
 	{
-
+		uint32_t sec_idx = 0;
 		rx_node_id target;
 		auto resolve_result = rx_internal::model::algorithms::resolve_data_type_reference(whose.get_data_type_ref(), ctx.get_directories());
 		if (!resolve_result)
@@ -1477,16 +1646,23 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 			auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
 			if (temp)
 			{
-				value_block_data data;
+				value_block_data data; 
+				if (!whose.get_security_guard().is_null())
+				{
+					string_type path = ctx.get_current_path() + whose.get_name();
+					ctx.get_access_guards().insert_or_assign(path, whose.get_security_guard());
+					sec_idx = (uint32_t)ctx.get_access_guards().size();
+				}
 
 				data.struct_value.value_opt = get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
-					ctx.is_in_model());
+					ctx.is_in_model(), sec_idx);
 				data.block = std::move(temp.value().runtime);
 				data.timestamp = ctx.now;
 				data.struct_value.value = whose.get_value(ctx.now);
 				data.type_ptr = std::move(temp.value().type_ptr);
+				
 				return ctx.runtime_data().add_value_block(whose.get_name(), std::move(data), target);
 			}
 			else
@@ -1498,6 +1674,14 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 		{
 			std::vector<value_block_data> data;
 			data.reserve(whose.get_array_size());
+
+			if (!whose.get_security_guard().is_null())
+			{
+				string_type path = ctx.get_current_path() + whose.get_name();
+				ctx.get_access_guards().insert_or_assign(path, whose.get_security_guard());
+				sec_idx = (uint32_t)ctx.get_access_guards().size();
+			}
+
 			for (int i = 0; i < whose.get_array_size(); i++)
 			{
 				auto temp = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
@@ -1508,7 +1692,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 					temp_data.struct_value.value_opt = get_value_opt(
 						whose.get_read_only(),
 						whose.get_persistent(),
-						ctx.is_in_model());
+						ctx.is_in_model(), sec_idx);
 					temp_data.block = std::move(temp.value().runtime);
 					temp_data.timestamp = ctx.now;
 					temp_data.type_ptr = std::move(temp.value().type_ptr);
@@ -1898,7 +2082,7 @@ rx_result data_blocks_algorithm::deserialize_data_attribute (def_blocks::data_at
 	if (!stream.read_string("name", whose.name_))
 		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
-		return stream.get_error(); 
+		return stream.get_error();
 	if (stream.get_version() >= RX_ARRAYS_VERSION)
 	{
 		if (!stream.read_int("array", whose.array_size_))
@@ -1984,6 +2168,11 @@ rx_result event_blocks_algorithm::serialize_complex_attribute (const def_blocks:
 			if (!stream.write_item_reference("args", whose.arguments_))
 				return stream.get_error();
 		}
+		if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION && stream.get_version() < RX_SECURITY_GUARDS3_VERSION)
+		{
+			if (!whose.security_guard.serialize("access", stream))
+				return stream.get_error();
+		}
 	}
 	return ret;
 }
@@ -1996,6 +2185,11 @@ rx_result event_blocks_algorithm::deserialize_complex_attribute (def_blocks::eve
 		if (stream.get_version() >= RX_EVENT_METHOD_DATA_VERSION)
 		{
 			if (!stream.read_item_reference("args", whose.arguments_))
+				return stream.get_error();
+		}
+		if (stream.get_version() >= RX_SECURITY_GUARDS_VERSION && stream.get_version() < RX_SECURITY_GUARDS3_VERSION)
+		{
+			if (!whose.security_guard.deserialize("access", stream))
 				return stream.get_error();
 		}
 	}
@@ -2046,6 +2240,11 @@ rx_result meta_blocks_algorithm<typeT>::serialize_complex_attribute (const typeT
 		if (!stream.write_string("description", whose.description_.c_str()))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+	{
+		if (!whose.security_guard.serialize("access", stream))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -2059,6 +2258,11 @@ rx_result meta_blocks_algorithm<typeT>::deserialize_complex_attribute (typeT& wh
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.read_string("description", whose.description_))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+	{
+		if (!whose.security_guard.deserialize("access", stream))
 			return stream.get_error();
 	}
 	return true;
@@ -2104,7 +2308,7 @@ rx_result meta_blocks_algorithm<typeT>::construct_complex_attribute (const typeT
 	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<typename typeT::TargetType>().create_simple_runtime(target, whose.name_, ctx);
 	if (temp)
 	{
-		return ctx.runtime_data().add(whose.name_, std::move(temp.value()), target);
+		return ctx.runtime_data().add_source(whose.name_, std::move(temp.value()), target, whose.security_guard);
 	}
 	else
 	{
@@ -2208,7 +2412,7 @@ rx_result method_blocks_algorithm::construct_complex_attribute (const def_blocks
 			auto result = data_blocks_algorithm::construct_data_block(whose.inputs_, "In", temp.value().inputs, id, ctx, nullptr);
 			if (!result)
 			{
-				result.register_error("Unable to resolve inputs data type"s + whose.inputs_.to_string());				
+				result.register_error("Unable to resolve inputs data type"s + whose.inputs_.to_string());
 				return result;
 			}
 			else if (!input_id.is_null() && !id.is_null())
@@ -2258,6 +2462,11 @@ rx_result method_blocks_algorithm::construct_complex_attribute (const def_blocks
 				result.register_error("Unable to resolve inputs data type"s + whose.inputs_.to_string());
 				return result;
 			}
+		}
+		if (!whose.get_security_guard().is_null())
+		{
+			string_type path = ctx.get_current_path() + whose.get_name();
+			ctx.get_access_guards().insert_or_assign(path, whose.get_security_guard());
 		}
 		ctx.end_method(temp.move_value(), input_id, output_id);
 		return true;

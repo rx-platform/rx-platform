@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_holder.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -71,11 +71,10 @@ runtime_holder<typeT>::runtime_holder (const meta_data& meta, const typename typ
         points_count(0)
     , meta_info_(meta)
     , instance_data_(instance.instance_data, std::move(rt_behavior))
-    , security_guard_(rx_create_reference<security::security_guard>(meta, security::rx_security_null))
 {
     using rimpl_t = typename typeT::RImplType;
     context_ = runtime_holder_algorithms<typeT>::create_context(*this, nullptr);
-    
+
     RUNTIME_LOG_DEBUG("runtime_holder", 900, (rx_item_type_name(rimpl_t::type_id) + " constructor, for " + meta.get_full_path()));
 }
 
@@ -106,10 +105,9 @@ runtime_process_context& runtime_holder<typeT>::get_context ()
 template <class typeT>
 rx_result runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t type) const
 {
-    rx_result ret;
     if (type != STREAMING_TYPE_MESSAGE)
     {
-        ret = meta_info_.serialize_meta_data(stream, type, typeT::RImplType::type_id);
+        auto ret = meta_info_.serialize_meta_data(stream, type, typeT::RImplType::type_id);
         if (!ret)
             return ret;
     }
@@ -125,7 +123,14 @@ rx_result runtime_holder<typeT>::serialize (base_meta_writer& stream, uint8_t ty
 
     if (!logic_.serialize(stream, type))
         return stream.get_error();
-    
+
+
+    if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+    {
+        if (!stored_security_guard.serialize("access", stream))
+            return stream.get_error();
+    }
+
     if (!stream.end_object())
         return stream.get_error();
 
@@ -137,7 +142,7 @@ rx_result runtime_holder<typeT>::initialize_runtime (runtime_init_context& ctx)
 {
     my_job_ptr_ = rx_create_reference<process_runtime_job<typeT> >(smart_this());
     ctx.anchor = smart_this();
-    job_pending_ = true;// this is a false stuff to pause execution untill the end of initialization
+    job_pending_ = true;// this is a false stuff to pause execution until the end of initialization
     context_->init_state([this]
         {
             runtime_holder_algorithms<typeT>::fire_job(*this);
@@ -179,7 +184,7 @@ rx_result runtime_holder<typeT>::deinitialize_runtime (runtime_deinit_context& c
     rx_result result = implementation_->deinitialize_runtime(ctx);
     if (result)
     {
-        
+
         result = displays_.deinitialize_displays(ctx, rt_path);
         if (result)
         {
@@ -327,6 +332,7 @@ typename typeT::instance_data_t runtime_holder<typeT>::get_definition_data ()
     def_data.meta_info = meta_info_;
     def_data.instance_data = instance_data_.get_data();
     def_data.overrides = overrides_;
+	def_data.security_guard = stored_security_guard;
     return def_data;
 }
 
@@ -339,7 +345,11 @@ rx_result runtime_holder<typeT>::add_implicit_relation (relations::relation_data
 template <class typeT>
 security::security_guard_ptr runtime_holder<typeT>::get_security_guard ()
 {
-    return security_guard_;
+    static security::security_guard g_empty;
+    if (!security_guards_.empty())
+        return &security_guards_[0];
+    else
+        return &g_empty;
 }
 
 template class runtime_holder<object_types::object_type>;

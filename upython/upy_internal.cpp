@@ -269,7 +269,8 @@ mp_obj_t eval_str(const char* name, const char* str) {
     {
         // uncaught exception
         mp_obj_t exc = MP_OBJ_FROM_PTR(nlr.ret_val);
-        mp_obj_print_exception(&mp_plat_print, exc);
+        string_type ex = get_exception_string(exc);
+        UPYTHON_LOG_ERROR("execute_from_str", 900, ex);
         return (mp_obj_t)nlr.ret_val;
     }
 }
@@ -294,7 +295,8 @@ mp_obj_t execute_from_str(const char* name, const char* str) {
     {
         // uncaught exception
         mp_obj_t exc= MP_OBJ_FROM_PTR(nlr.ret_val);
-        mp_obj_print_exception(&mp_plat_print, exc);
+        string_type ex = get_exception_string(exc);
+        UPYTHON_LOG_ERROR("execute_from_str", 900, ex);
         return (mp_obj_t)nlr.ret_val;
     }
 }
@@ -448,6 +450,7 @@ uint32_t upy_thread::handler ()
             if (one.first == "main")
                 continue;
 
+            UPYTHON_LOG_INFO("upy_thread", 900, "Starting Python module:"s + one.first);
             execute_from_str(one.first.c_str(), one.second.c_str());
         }
         single_result_callback_ = mp_load_global(qstr_from_str("internal_set_rx_platform_result"));
@@ -839,7 +842,19 @@ bool upy_module::transaction_ended (runtime_transaction_id_t id, mp_obj_t result
             }
             else
             {
-                it->second->execution_complete(rx_result("Invalid return format"));
+                rx_simple_value val;
+                auto conv_result = upy_convertor::upy_to_simple(result, val);
+                if (conv_result)
+                {
+
+                    rx_simple_value ret_val;
+                    ret_val.assign_static(std::vector<rx_simple_value>{ val });
+                    it->second->execution_complete(std::move(ret_val));
+                }
+                else
+                {
+                    it->second->execution_complete(rx_result(std::move(conv_result)));
+                }
             }
         }
         else

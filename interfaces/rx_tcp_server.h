@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_tcp_server.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -144,9 +144,11 @@ class tcp_server_endpoint
 
       io::ip4_address local_address_;
 
-      security::security_context_ptr identity_;
-
       locks::slim_lock state_lock_;
+
+      bool closing_;
+
+      security::security_context_ptr identity_;
 
 
 };

@@ -167,12 +167,28 @@ peer_connection_ptr discovery_manager::get_peer (const rx_uuid& id)
 
 uint32_t discovery_manager::subscribe_to_port (std::function<void(uint16_t)> callback, rx_reference_ptr anchor)
 {
-	return peers_register_.comm_point_->subscribe_to_port(callback, anchor);
+	if (peers_register_.comm_point_)
+	{
+		return peers_register_.comm_point_->subscribe_to_port(callback, anchor);
+	}
+	else
+	{
+		auto port = rx_gate::instance().get_configuration().other.rx_port;
+		if (port == 0)
+			port = 0x7ABC;
+		callback(port);
+
+		return 0;
+	}
 }
 
 void discovery_manager::unsubscribe_from_port (uint32_t id)
 {
-	peers_register_.comm_point_->unsubscribe_from_port(id);
+	if (id)
+	{
+		if (peers_register_.comm_point_)
+			peers_register_.comm_point_->unsubscribe_from_port(id);
+	}
 }
 
 std::vector<discovery::discovered_peer_data> discovery_manager::get_peers_network ()

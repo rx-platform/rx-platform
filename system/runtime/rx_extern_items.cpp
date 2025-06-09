@@ -41,6 +41,10 @@ extern "C"
 {
     rx_result_struct c_object_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
+        if (whose == nullptr)
+        {
+            return rx_result(RX_ERROR_STOPPED).move();
+        }
         rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
         switch (type)
         {
@@ -61,6 +65,10 @@ extern "C"
     }
     runtime_handle_t c_object_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
+        if (whose == nullptr)
+        {
+            return 0;
+        }
         rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
         switch (type)
         {
@@ -76,18 +84,27 @@ extern "C"
     }
     void c_object_start_timer(void* whose, runtime_handle_t timer, uint32_t period)
     {
-        rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
-        self->start_timer(timer, period);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
+            self->start_timer(timer, period);
+        }
     }
     void c_object_suspend_timer(void* whose, runtime_handle_t timer)
     {
-        rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
-        self->suspend_timer(timer);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
+            self->suspend_timer(timer);
+        }
     }
     void c_object_destroy_timer(void* whose, runtime_handle_t timer)
     {
-        rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
-        self->destroy_timer(timer);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_object_runtime* self = (rx_platform::runtime::items::extern_object_runtime*)whose;
+            self->destroy_timer(timer);
+        }
     }
 
     host_object_def_struct _g_object_def_
@@ -102,6 +119,10 @@ extern "C"
     };
     rx_result_struct c_application_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
+        if (whose == nullptr)
+        {
+            return rx_result(RX_ERROR_STOPPED).move();
+        }
         rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
         switch (type)
         {
@@ -122,6 +143,10 @@ extern "C"
     }
     runtime_handle_t c_application_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
+        if (whose == nullptr)
+        {
+            return 0;
+        }
         rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
         switch (type)
         {
@@ -137,18 +162,27 @@ extern "C"
     }
     void c_application_start_timer(void* whose, runtime_handle_t timer, uint32_t period)
     {
-        rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
-        self->start_timer(timer, period);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
+            self->start_timer(timer, period);
+        }
     }
     void c_application_suspend_timer(void* whose, runtime_handle_t timer)
     {
-        rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
-        self->suspend_timer(timer);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
+            self->suspend_timer(timer);
+        }
     }
     void c_application_destroy_timer(void* whose, runtime_handle_t timer)
     {
-        rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
-        self->destroy_timer(timer);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_application_runtime* self = (rx_platform::runtime::items::extern_application_runtime*)whose;
+            self->destroy_timer(timer);
+        }
     }
 
     host_application_def_struct _g_application_def_
@@ -164,6 +198,10 @@ extern "C"
 
     rx_result_struct c_domain_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
+        if (whose == nullptr)
+        {
+            return rx_result(RX_ERROR_STOPPED).move();
+        }
         rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
         switch (type)
         {
@@ -184,6 +222,10 @@ extern "C"
     }
     runtime_handle_t c_domain_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
+        if (whose == nullptr)
+        {
+            return 0;
+        }
         rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
         switch (type)
         {
@@ -199,18 +241,27 @@ extern "C"
     }
     void c_domain_start_timer(void* whose, runtime_handle_t timer, uint32_t period)
     {
-        rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
-        self->start_timer(timer, period);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
+            self->start_timer(timer, period);
+        }
     }
     void c_domain_suspend_timer(void* whose, runtime_handle_t timer)
     {
-        rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
-        self->suspend_timer(timer);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
+            self->suspend_timer(timer);
+        }
     }
     void c_domain_destroy_timer(void* whose, runtime_handle_t timer)
     {
-        rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
-        self->destroy_timer(timer);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_domain_runtime* self = (rx_platform::runtime::items::extern_domain_runtime*)whose;
+            self->destroy_timer(timer);
+        }
     }
 
     host_domain_def_struct _g_domain_def_
@@ -242,39 +293,66 @@ extern "C"
 
     rx_result_struct c_listen(void* whose, const struct protocol_address_def* local_address, const struct protocol_address_def* remote_address)
     {
+        if (whose == nullptr)
+        {
+            return rx_result(RX_ERROR_STOPPED).move();
+        }
         rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
         return self->listen_extern(local_address, remote_address).move();
     }
     rx_result_struct c_connect(void* whose, const struct protocol_address_def* local_address, const struct protocol_address_def* remote_address)
     {
+        if (whose == nullptr)
+        {
+            return rx_result(RX_ERROR_STOPPED).move();
+        }
         rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
         return self->connect_extern(local_address, remote_address).move();
     }
     rx_result_struct c_unbind_stack_endpoint(void* whose, struct rx_protocol_stack_endpoint* what)
     {
+        if (whose == nullptr)
+        {
+            return rx_result(RX_ERROR_STOPPED).move();
+        }
         rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
         return self->unbind_stack_endpoint(what).move();
     }
     rx_result_struct c_disconnect_stack_endpoint(void* whose, struct rx_protocol_stack_endpoint* what)
     {
+        if (whose == nullptr)
+        {
+            return rx_result(RX_ERROR_STOPPED).move();
+        }
         rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
         return self->disconnect_stack_endpoint(what).move();
     }
     rx_result_struct c_bind_listener_endpoint(void* whose, struct rx_protocol_stack_endpoint* what, const struct protocol_address_def* local_address, const struct protocol_address_def* remote_address)
     {
+        if (whose == nullptr)
+        {
+            return rx_result(RX_ERROR_STOPPED).move();
+        }
         rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
         return self->bind_listener_endpoint(what, local_address, remote_address).move();
     }
 
     void c_release_buffer(void* whose, rx_packet_buffer buffer)
     {
-        rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
-        rx::io::rx_io_buffer temp;
-        temp.attach(&buffer);
-        self->release_io_buffer(std::move(temp));
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
+            rx::io::rx_io_buffer temp;
+            temp.attach(&buffer);
+            self->release_io_buffer(std::move(temp));
+        }
     }
     rx_result_struct c_port_post_job(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
+        if (whose == nullptr)
+        {
+            return rx_result(RX_ERROR_STOPPED).move();
+        }
         rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
         switch (type)
         {
@@ -295,6 +373,10 @@ extern "C"
 
     runtime_handle_t c_port_create_timer(void* whose, int type, plugin_job_struct* job, uint32_t period)
     {
+        if (whose == nullptr)
+        {
+            return 0;
+        }
         rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
         switch (type)
         {
@@ -310,18 +392,27 @@ extern "C"
     }
     void c_port_start_timer(void* whose, runtime_handle_t timer, uint32_t period)
     {
-        rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
-        self->start_timer(timer, period);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
+            self->start_timer(timer, period);
+        }
     }
     void c_port_suspend_timer(void* whose, runtime_handle_t timer)
     {
-        rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
-        self->suspend_timer(timer);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
+            self->suspend_timer(timer);
+        }
     }
     void c_port_destroy_timer(void* whose, runtime_handle_t timer)
     {
-        rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
-        self->destroy_timer(timer);
+        if (whose != nullptr)
+        {
+            rx_platform::runtime::items::extern_port_runtime* self = (rx_platform::runtime::items::extern_port_runtime*)whose;
+            self->destroy_timer(timer);
+        }
     }
 
     host_port_def_struct _g_port_def_
@@ -366,6 +457,7 @@ extern_object_runtime::extern_object_runtime (plugin_object_runtime_struct* impl
 
 extern_object_runtime::~extern_object_runtime()
 {
+    rx_release_lock_reference(&impl_->anchor);
 }
 
 
@@ -397,7 +489,9 @@ rx_result extern_object_runtime::start_runtime (runtime_start_context& ctx)
 
 rx_result extern_object_runtime::deinitialize_runtime (runtime_deinit_context& ctx)
 {
-    return impl_->def->deinit_object(impl_->anchor.target);
+    auto ret = impl_->def->deinit_object(impl_->anchor.target);
+    impl_->host = nullptr;
+    return ret;
 }
 
 rx_result extern_object_runtime::stop_runtime (runtime_stop_context& ctx)
@@ -435,6 +529,7 @@ extern_port_runtime::extern_port_runtime (plugin_port_runtime_struct* impl)
 
 extern_port_runtime::~extern_port_runtime()
 {
+    rx_release_lock_reference(&impl_->anchor);
 }
 
 
@@ -554,6 +649,7 @@ extern_application_runtime::extern_application_runtime (plugin_application_runti
 
 extern_application_runtime::~extern_application_runtime()
 {
+    rx_release_lock_reference(&impl_->anchor);
 }
 
 
@@ -613,6 +709,7 @@ extern_domain_runtime::extern_domain_runtime (plugin_domain_runtime_struct* impl
 
 extern_domain_runtime::~extern_domain_runtime()
 {
+    rx_release_lock_reference(&impl_->anchor);
 }
 
 

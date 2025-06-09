@@ -95,7 +95,7 @@ rx_result logic_holder::initialize_logic (runtime::runtime_init_context& ctx)
         if (!ret)
             return ret;
         ctx.path.pop_from_path();
-        one.context = one.program_ptr->create_program_context(nullptr, ctx.context->get_security_guard());
+        one.context = one.program_ptr->create_program_context(nullptr, ctx.context->get_security_guard(0));//sec warning
     }
     for (auto& one : runtime_methods_)
     {
@@ -680,7 +680,6 @@ rx_result method_data::execute (context_execute_data&& data, std::unique_ptr<str
 
 
     security::secured_scope _(data.identity);
-
 
     auto new_trans = rx_get_new_transaction_id();
 

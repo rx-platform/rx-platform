@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_simulation.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -56,6 +56,7 @@ rx_result register_simulation_constructors()
 // Class rx_internal::sys_runtime::simulation::local_register_source 
 
 local_register_source::local_register_source()
+      : persistent_(false)
 {
 }
 
@@ -66,12 +67,44 @@ rx_result local_register_source::source_write (write_data&& data, runtime_proces
     
     rx_value value(std::move(data.value), rx_time::now());
     if (value.convert_to(get_value_type()))
-    {
+    {        
         value.set_quality(RX_GOOD_QUALITY);
-
         value = ctx->adapt_value(value);
+		rx_simple_value old_value = current_value_;
+        current_value_ = value.to_simple();
+		if (current_value_ == old_value)
+		{
+			source_result_received(true, data.transaction_id);
+			return true;
+		}
         source_value_changed(std::move(value));
-        source_result_received(true, data.transaction_id);
+        if (persistent_)
+        {
+            ctx->runtime_dirty([ctx, this, old_value = std::move(old_value), trans_id = data.transaction_id](rx_result result)
+                {
+                    if (!result)
+                    {
+                        current_value_ = old_value;
+                        rx_value value(std::move(old_value), rx_time::now());
+                        if (value.convert_to(get_value_type()))
+                        {
+                            value.set_quality(RX_GOOD_QUALITY);
+                            value = ctx->adapt_value(value);
+                            source_value_changed(std::move(value));
+						}
+						else
+						{
+							RX_ASSERT(false);// shouldn't happen
+						}
+
+                    }
+                    source_result_received(std::move(result), trans_id);
+                });
+		}
+        else
+        {
+            source_result_received(true, data.transaction_id);
+        }
         return true;
     }
     else
@@ -82,13 +115,29 @@ rx_result local_register_source::source_write (write_data&& data, runtime_proces
 
 rx_result local_register_source::start_source (runtime::runtime_start_context& ctx)
 {
+    auto cur_var = ctx.variables.get_current_variable();
+    if (cur_var.index() == 0)
+    {
+        persistent_ |= std::get<0>(cur_var)->value_opt[value_opt_persistent];
+    }
+    else if (cur_var.index() == 1)
+    {
+		persistent_ |= std::get<1>(cur_var)->variable.value_opt[value_opt_persistent];
+    }
     rx_value value = ctx.get_current_variable_value();
     if(value.convert_to(get_value_type()))
         value.set_quality(RX_GOOD_QUALITY);
     else
         value.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
     value = ctx.context->adapt_value(value);
+    current_value_ = value.to_simple();
     source_value_changed(std::move(value));
+    return true;
+}
+
+rx_result local_register_source::initialize_source (runtime::runtime_init_context& ctx)
+{
+    persistent_ = ctx.get_item_static(".Persist", false);
     return true;
 }
 

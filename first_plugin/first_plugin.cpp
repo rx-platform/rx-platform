@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2024 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -170,7 +170,7 @@ static const uint8_t c_def_mojEvent[] = {
 
 
 
-// Class first_filter 
+// Class first_filter
 
 first_filter::first_filter()
       : timer_(0)
@@ -243,7 +243,7 @@ void first_filter::timer_tick ()
 }
 
 
-// Class first_mapper 
+// Class first_mapper
 
 first_mapper::first_mapper()
       : timer_(0)
@@ -299,7 +299,7 @@ void first_mapper::timer_tick ()
 }
 
 
-// Class first_plugin 
+// Class first_plugin
 
 
 rx_result first_plugin::init_plugin ()
@@ -318,7 +318,7 @@ rx_result first_plugin::init_plugin ()
 	if (!result)
 		return result;
 
-	result = rx_platform_api::register_object_runtime<first_object>(rx_node_id(20, 8));
+	result = rx_platform_api::register_monitored_object_runtime<first_object>(rx_node_id(20, 8));
 	if (!result)
 		return result;
 	result = rx_platform_api::register_domain_runtime<first_domain>(rx_node_id(21, 8));
@@ -463,7 +463,7 @@ rx_result first_plugin::build_plugin ()
 }
 
 
-// Class first_source 
+// Class first_source
 
 first_source::first_source()
       : timer_(0),
@@ -557,17 +557,19 @@ void first_source::timer_tick ()
 }
 
 
-// Class first_object 
+// Class first_object
 
 first_object::first_object()
       : timer_(0),
         const_value_("test1")
 {
+	RX_PLUGIN_LOG_DEBUG("first_object", 100, _rx_func_);
 }
 
 
 first_object::~first_object()
 {
+	RX_PLUGIN_LOG_DEBUG("first_object", 100, _rx_func_);
 }
 
 
@@ -586,12 +588,20 @@ rx_result first_object::initialize_object (rx_platform_api::rx_init_context& ctx
 rx_result first_object::start_object (rx_platform_api::rx_start_context& ctx)
 {
 	RX_PLUGIN_LOG_DEBUG("first_object", 100, _rx_func_);
-	timer_ = create_calc_timer([this]() {timer_tick(); }, 1000);
+	timer_ = create_calc_timer([this]() {timer_tick(); }, 5000);
+	auto pthread = new std::thread([ptr = first_object::smart_this()]()
+		mutable {
+			rx_ms_sleep(20000);
+			printf("Tajmer THR!!!");
+			ptr->post_job([] {}, 0);
+		});
+
 	return true;
 }
 
 rx_result first_object::stop_object ()
 {
+
 	RX_PLUGIN_LOG_DEBUG("first_object", 100, _rx_func_);
 	if (timer_)
 		destroy_timer(timer_);
@@ -606,13 +616,16 @@ rx_result first_object::deinitialize_object ()
 
 void first_object::timer_tick ()
 {
+	printf("Tajmer GA!!!");
 	RX_PLUGIN_LOG_DEBUG("first_object", 100, _rx_func_);
 	destroy_timer(timer_);
+
 	timer_ = 0;
 }
 
+std::map<rx_node_id, first_object::smart_ptr> first_object::runtime_instances;
 
-// Class first_domain 
+// Class first_domain
 
 first_domain::first_domain()
       : timer_(0)
@@ -661,7 +674,7 @@ void first_domain::timer_tick ()
 }
 
 
-// Class first_application 
+// Class first_application
 
 first_application::first_application()
       : timer_(0)
@@ -710,7 +723,7 @@ void first_application::timer_tick ()
 }
 
 
-// Class first_struct 
+// Class first_struct
 
 first_struct::first_struct()
       : timer_(0)
@@ -759,7 +772,7 @@ void first_struct::timer_tick ()
 }
 
 
-// Class first_relation 
+// Class first_relation
 
 first_relation::first_relation()
 {
@@ -813,7 +826,7 @@ rx_relation::smart_ptr first_relation::make_target_relation ()
 }
 
 
-// Class first_singleton 
+// Class first_singleton
 
 first_singleton::first_singleton()
       : timer_(0)
@@ -870,7 +883,7 @@ first_singleton::smart_ptr first_singleton::instance ()
 }
 
 
-// Class first_data_type 
+// Class first_data_type
 
 first_data_type::first_data_type()
 {
@@ -908,7 +921,7 @@ rx_result first_data_type::stop_data_type ()
 }
 
 
-// Class first_event 
+// Class first_event
 
 first_event::first_event()
       : timer_(0)
@@ -955,7 +968,7 @@ rx_result first_event::deinitialize_event ()
 void first_event::timer_tick ()
 {
 	RX_PLUGIN_LOG_DEBUG("first_mapper", 100, _rx_func_);
-	
+
 	rx_timed_value timed;
 	timed.assign(rx_create_value_static(78.9, 66));
 	timed.set_time(rx_time::now());

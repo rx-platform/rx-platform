@@ -957,7 +957,7 @@ void vt100_port::stack_assembled ()
 
 rx_result vt100_port::initialize_runtime (runtime_init_context& ctx)
 {
-	security_guard_ = ctx.context->get_security_guard();
+	security_guard_ = ctx.context->get_security_guard(0);
 	return true;
 }
 

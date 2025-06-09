@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_runtime_data.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -73,6 +73,13 @@ rx_result serialize_runtime_data(const typeT& what,base_meta_writer& stream, uin
     if (!stream.end_array())
         return stream.get_error();
 
+
+    if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+    {
+        if (!what.security_guard.serialize("access", stream))
+            return stream.get_error();
+    }
+
     if (!stream.end_object())
         return stream.get_error();
 
@@ -96,6 +103,12 @@ rx_result deserialize_runtime_data(typeT& what, base_meta_reader& stream, uint8_
 
     if (!stream.array_end())
         return RX_NOT_IMPLEMENTED;
+
+    if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+    {
+        if (!what.security_guard.deserialize("access", stream))
+            return stream.get_error();
+    }
 
     if (!stream.end_object())
         return stream.get_error();
@@ -129,6 +142,12 @@ rx_result deserialize_runtime_data(typeT& what, base_meta_reader& stream, rx_ite
 
     if (!stream.array_end())
         return RX_NOT_IMPLEMENTED;
+
+    if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+    {
+        if (!what.security_guard.deserialize("access", stream))
+            return stream.get_error();
+    }
 
     if (!stream.end_object())
         return stream.get_error();

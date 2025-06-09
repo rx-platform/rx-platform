@@ -4,7 +4,7 @@
 *
 *  discovery\rx_discovery_items.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -40,8 +40,8 @@
 
 namespace rx_internal {
 namespace discovery {
-class peer_connection;
 class peer_item_stub;
+class peer_connection;
 
 } // namespace discovery
 } // namespace rx_internal
@@ -83,7 +83,7 @@ class peer_item : public rx::pointers::reference_object
 
   private:
 
-      security::security_guard_ptr security_guard_;
+      security::security_guard security_guard_;
 
 
 

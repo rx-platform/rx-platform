@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Molecule"
 #define RX_SERVER_MAJOR_VERSION 2
 #define RX_SERVER_MINOR_VERSION 6
-#define RX_SERVER_BUILD_NUMBER 3
+#define RX_SERVER_BUILD_NUMBER 7
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -56,4 +56,7 @@
 // version 2.6.0 add object changed event
 // version 2.6.1 added support for differences for version control, git friendly, len 
 // version 2.6.3 added "Root" for struct mappers
+// version 2.6.4 added RoundFilter
+// version 2.6.6 write result for persistent values is after storage write
+// version 2.6.7 circular references not implemented for extern objects but should work for now
 

@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_obj_types.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -37,14 +37,16 @@
 // rx_logic
 #include "system/logic/rx_logic.h"
 
+// rx_security
+#include "security/rx_security.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
 // rx_def_blocks
 #include "system/meta/rx_def_blocks.h"
 // rx_meta_data
 #include "lib/rx_meta_data.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 #include "system/runtime/rx_rt_struct.h"
 #include "system/meta/rx_runtime_data.h"
@@ -118,6 +120,9 @@ public:
   protected:
 
   private:
+
+      security::security_guard security_guard;
+
 
 
 };
@@ -249,8 +254,6 @@ public:
 
       static rx_item_type runtime_type_id;
 
-      security::security_guard_ptr security_guard;
-
 
   protected:
 
@@ -297,8 +300,6 @@ public:
       static rx_item_type type_id;
 
       static rx_item_type runtime_type_id;
-
-      security::security_guard_ptr security_guard;
 
 
   protected:
@@ -349,8 +350,6 @@ public:
 
       static rx_item_type runtime_type_id;
 
-      security::security_guard_ptr security_guard;
-
 
   protected:
 
@@ -398,8 +397,6 @@ public:
 
       static rx_item_type runtime_type_id;
 
-      security::security_guard_ptr security_guard;
-
 
   protected:
 
@@ -419,6 +416,9 @@ class relation_type_data
   public:
 
       rx::data::runtime_values_data& get_overrides () const;
+
+
+      security::security_guard security_guard;
 
 
       bool sealed_type;
@@ -484,8 +484,6 @@ public:
 
 
       static rx_item_type type_id;
-
-      security::security_guard_ptr security_guard;
 
 
   protected:

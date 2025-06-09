@@ -4,7 +4,7 @@
 *
 *  C:\RX\Native\Source\platform_api\rx_runtime.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -97,6 +97,13 @@ extern "C"
 
     rx_result_struct c_init_port(rx_platform_api::rx_port* self, init_ctx_ptr ctx);
     rx_result_struct c_start_port(rx_platform_api::rx_port* self, start_ctx_ptr ctx);
+
+
+    rx_result_struct c_deinit_object(rx_platform_api::rx_object* self);
+    rx_result_struct c_deinit_domain(rx_platform_api::rx_domain* self);
+    rx_result_struct c_deinit_application(rx_platform_api::rx_application* self);
+
+    rx_result_struct c_deinit_port(rx_platform_api::rx_port* self);
 
 
     rx_result_struct c_init_relation(rx_platform_api::rx_relation* self, init_ctx_ptr ctx);
@@ -588,6 +595,8 @@ class rx_runtime : public rx::pointers::reference_object
 
       void bind_runtime (host_runtime_def_struct* impl, void* target);
 
+      void release_runtime ();
+
 
 
       host_runtime_def_struct* impl_;
@@ -608,6 +617,12 @@ class rx_runtime : public rx::pointers::reference_object
       friend rx_result_struct(::c_init_application)(rx_platform_api::rx_application* self, init_ctx_ptr ctx);
 
       friend rx_result_struct(::c_init_port)(rx_platform_api::rx_port* self, init_ctx_ptr ctx);
+      
+      friend rx_result_struct (::c_deinit_object)(rx_platform_api::rx_object* self);
+      friend rx_result_struct(::c_deinit_domain)(rx_platform_api::rx_domain* self);
+      friend rx_result_struct(::c_deinit_application)(rx_platform_api::rx_application* self);
+
+      friend rx_result_struct(::c_deinit_port)(rx_platform_api::rx_port* self);
 
       friend rx_result_struct(::c_init_relation)(rx_platform_api::rx_relation* self, init_ctx_ptr ctx);
       friend rx_result_struct(::c_init_data_type)(rx_platform_api::rx_data_type* self, init_ctx_ptr ctx, const struct bytes_value_struct_t* data);

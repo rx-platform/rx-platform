@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_displays.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -135,6 +135,7 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
         std::unique_ptr<http_display_point> point;
     };
     typedef std::vector<one_point_data> connected_points_type;
+    typedef std::map<string_type, size_t> points_hash_type;
     friend class ::rx_internal::rx_http_server::http_display_handler;
 
   public:
@@ -170,6 +171,8 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
       string_type collect_json_data ();
 
+      rx_result write_point (const string_type& id, const string_type& val);
+
 
   private:
 
@@ -196,45 +199,7 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
       string_type version_check_;
 
-
-};
-
-
-
-
-
-
-class http_displays_repository 
-{
-    struct display_data_t
-    {
-        rx_http_display_base::smart_ptr display_ptr;
-        rx_thread_handle_t executer;
-    };
-    typedef std::map<string_type, display_data_t> registered_displays_type;
-
-  public:
-      http_displays_repository();
-
-      ~http_displays_repository();
-
-
-      rx_result register_display (const string_type& path, rx_http_display_base::smart_ptr who);
-
-      rx_result unregister_display (const string_type& path, rx_http_display_base::smart_ptr who);
-
-      rx_result_with<rx_http_display_base::smart_ptr> get_display (const string_type& path, rx_thread_handle_t& executer);
-
-
-  protected:
-
-  private:
-
-
-      registered_displays_type registered_displays_;
-
-
-      locks::slim_lock displays_lock_;
+      points_hash_type points_hash_;
 
 
 };
@@ -280,6 +245,46 @@ actuality first display implemented good for testing.)");
 
 
       string_type html_data_;
+
+
+};
+
+
+
+
+
+
+class http_displays_repository 
+{
+    struct display_data_t
+    {
+        rx_http_display_base::smart_ptr display_ptr;
+        rx_thread_handle_t executer;
+    };
+    typedef std::map<string_type, display_data_t> registered_displays_type;
+
+  public:
+      http_displays_repository();
+
+      ~http_displays_repository();
+
+
+      rx_result register_display (const string_type& path, rx_http_display_base::smart_ptr who);
+
+      rx_result unregister_display (const string_type& path, rx_http_display_base::smart_ptr who);
+
+      rx_result_with<rx_http_display_base::smart_ptr> get_display (const string_type& path, rx_thread_handle_t& executer);
+
+
+  protected:
+
+  private:
+
+
+      registered_displays_type registered_displays_;
+
+
+      locks::slim_lock displays_lock_;
 
 
 };

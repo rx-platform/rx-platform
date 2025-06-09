@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_attr_algorithm.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -98,8 +98,8 @@ class complex_data_algorithm
       static rx_result construct_complex_attribute (const complex_data_type& whose, construct_context& ctx);
 
       static rx_result get_depends (const complex_data_type& whose, dependencies_context& ctx);
-
-      static std::bitset<32> get_value_opt (bool read_only, bool persistent, bool in_model);
+      
+      static std::bitset<32> get_value_opt (bool read_only, bool persistent, bool in_model, uint32_t sec_idx);
 
 
   protected:

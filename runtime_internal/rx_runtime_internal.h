@@ -272,7 +272,16 @@ class platform_runtime_manager
               ctx.model = std::make_unique<structure::block_data>(std::move(model));
               result = algorithms::just_init_runtime<typeT>(what, ctx);
               if (!result)
-                  RX_ASSERT(false);
+              {
+                  if (!ctx.context)
+                  {
+                      // no context created!!!!
+                      return result;
+                  }
+					  
+                  ctx.status_data.mode.set_error();
+                  ctx.status_data.mode.turn_off();
+              }
               init_data.emplace(what->meta_info().id
                   , initialize_data_t{ std::unique_ptr<runtime::structure::block_data>(),  std::move(ctx.const_callbacks), std::move(ctx.pending_connections), std::move(ctx.status_data) });
 

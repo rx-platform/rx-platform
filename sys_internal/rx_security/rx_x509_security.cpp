@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_security\rx_x509_security.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -56,81 +56,6 @@ string_type g_cert_security_name = RX_CERT_SECURITY_NAME;
 }
 
 namespace x509 {
-
-// Class rx_internal::rx_security::x509::certificate_security_provider 
-
-
-const string_type& certificate_security_provider::get_name ()
-{
-    return g_cert_security_name;
-}
-
-string_type certificate_security_provider::get_info ()
-{
-    return RX_CERT_SECURITY_INFO;
-}
-
-rx_result certificate_security_provider::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
-{
-    auto result = x509_certificates::instance().initialize(host, data);
-    if (!result)
-        return result;
-
-    return true;
-}
-
-void certificate_security_provider::deinitialize ()
-{
-    x509_certificates::instance().deinitialize();
-}
-
-rx_result_with<security::security_context_ptr> certificate_security_provider::create_host_context (hosting::rx_platform_host* host, configuration_data_t& data)
-{
-    auto result = x509_certificates::instance().get_certificate("host");
-    if (result)
-    {
-        X509_LOG_INFO("certificate_security_provider", 999, "Logginig in using certificate as "s 
-            + result.value()->get_principal_name());
-        x509_security_context::smart_ptr ret_ptr = rx_create_reference< x509_security_context>("host", rx_gate::instance().get_node_name());
-        ret_ptr->set_certificate(result.move_value());
-        return security::security_context_ptr(ret_ptr);
-    }
-    else
-    {
-        return result.errors();
-    }
-}
-
-rx_result_with<security::security_context_ptr> certificate_security_provider::create_system_context (hosting::rx_platform_host* host, configuration_data_t& data)
-{
-    auto result = x509_certificates::instance().get_certificate("system");
-    if (result)
-    {
-        auto ret_ptr = rx_create_reference< x509_security_context>("system", rx_gate::instance().get_node_name());
-        ret_ptr->set_certificate(result.move_value());
-        return security::security_context_ptr(ret_ptr);
-    }
-    else
-    {
-        return result.errors();
-    }
-}
-
-rx_result_with<security::security_context_ptr> certificate_security_provider::create_world_context (hosting::rx_platform_host* host, configuration_data_t& data)
-{
-    auto result = x509_certificates::instance().get_certificate("world");
-    if (result)
-    {
-        auto ret_ptr = rx_create_reference<x509_security_context>(rx_gate::instance().get_instance_name(), rx_gate::instance().get_node_name());
-        ret_ptr->set_certificate(result.move_value());
-        return security::security_context_ptr(ret_ptr);
-    }
-    else
-    {
-        return result.errors();
-    }
-}
-
 
 // Class rx_internal::rx_security::x509::x509_security_context 
 
@@ -438,6 +363,90 @@ x509_certificate& x509_certificate::operator=(x509_certificate&& right)noexcept
     rx_init_certificate_struct(&right.cert_);
     return *this;
 }
+// Class rx_internal::rx_security::x509::certificate_security_provider 
+
+
+const string_type& certificate_security_provider::get_name ()
+{
+    return g_cert_security_name;
+}
+
+string_type certificate_security_provider::get_info ()
+{
+    return RX_CERT_SECURITY_INFO;
+}
+
+rx_result certificate_security_provider::initialize (hosting::rx_platform_host* host, configuration_data_t& data)
+{
+    auto result = x509_certificates::instance().initialize(host, data);
+    if (!result)
+        return result;
+
+    return true;
+}
+
+void certificate_security_provider::deinitialize ()
+{
+    x509_certificates::instance().deinitialize();
+}
+
+rx_result_with<security::security_context_ptr> certificate_security_provider::create_host_context (hosting::rx_platform_host* host, configuration_data_t& data)
+{
+    auto result = x509_certificates::instance().get_certificate("host");
+    if (result)
+    {
+        X509_LOG_INFO("certificate_security_provider", 999, "Logginig in using certificate as "s 
+            + result.value()->get_principal_name());
+        x509_security_context::smart_ptr ret_ptr = rx_create_reference< x509_security_context>("host", rx_gate::instance().get_node_name());
+        ret_ptr->set_certificate(result.move_value());
+        return security::security_context_ptr(ret_ptr);
+    }
+    else
+    {
+        return result.errors();
+    }
+}
+
+rx_result_with<security::security_context_ptr> certificate_security_provider::create_system_context (hosting::rx_platform_host* host, configuration_data_t& data)
+{
+    auto result = x509_certificates::instance().get_certificate("system");
+    if (result)
+    {
+        auto ret_ptr = rx_create_reference< x509_security_context>("system", rx_gate::instance().get_node_name());
+        ret_ptr->set_certificate(result.move_value());
+        return security::security_context_ptr(ret_ptr);
+    }
+    else
+    {
+        return result.errors();
+    }
+}
+
+rx_result_with<security::security_context_ptr> certificate_security_provider::create_world_context (hosting::rx_platform_host* host, configuration_data_t& data)
+{
+    auto result = x509_certificates::instance().get_certificate("world");
+    if (result)
+    {
+        auto ret_ptr = rx_create_reference<x509_security_context>(rx_gate::instance().get_instance_name(), rx_gate::instance().get_node_name());
+        ret_ptr->set_certificate(result.move_value());
+        return security::security_context_ptr(ret_ptr);
+    }
+    else
+    {
+        return result.errors();
+    }
+}
+
+rx_result certificate_security_provider::start (hosting::rx_platform_host* host)
+{
+    return true;
+}
+
+void certificate_security_provider::stop ()
+{
+}
+
+
 } // namespace x509
 } // namespace rx_security
 } // namespace rx_internal

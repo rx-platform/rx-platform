@@ -4,7 +4,7 @@
 *
 *  protocols\http\rx_http_mapping.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,6 +34,7 @@
 // rx_http_mapping
 #include "protocols/http/rx_http_mapping.h"
 
+#include "security/rx_security.h"
 
 
 namespace protocols {
@@ -84,13 +85,13 @@ rx_http_endpoint::rx_http_endpoint (rx_reference<rx_http_port> port)
 	HTTP_LOG_DEBUG("rx_http_endpoint", 200, "HTTP communication server endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.received_function = &rx_http_endpoint::received_function;
-
 	executer_ = port->get_executer();
 }
 
 
 rx_http_endpoint::~rx_http_endpoint()
 {
+	
 	HTTP_LOG_DEBUG("rx_http_endpoint", 200, "HTTP communication server endpoint destroyed.");
 }
 
@@ -316,7 +317,6 @@ rx_protocol_result_t rx_http_endpoint::create_and_forward_request (const char* m
 		content_left_ = content_len - content_max_size;
 		return RX_PROTOCOL_OK;
 	}
-
 	request.whose = smart_this();
 	std::scoped_lock _(port_lock_);
 	if (port_)
@@ -379,7 +379,8 @@ rx_result rx_http_endpoint::send_response (http_response response)
 	}
 	else
 	{
-		port_->status.sent_packet();
+		if(port_)
+			port_->status.sent_packet();
 	}
 	return true;
 }
@@ -399,6 +400,10 @@ void rx_http_endpoint::send_current_request ()
 		}
 	}
 	prepared_request_ = http_request();
+}
+
+void rx_http_endpoint::set_identity (security::security_context_ptr ctx)
+{
 }
 
 

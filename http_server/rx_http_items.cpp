@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_items.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -31,8 +31,6 @@
 #include "pch.h"
 
 
-// rx_http_mapping
-#include "protocols/http/rx_http_mapping.h"
 // rx_http_items
 #include "http_server/rx_http_items.h"
 
@@ -156,16 +154,16 @@ rx_result http_rx_item_handler::handle_request (http_request& req, http_response
 }
 
 
-// Class rx_internal::rx_http_server::http_json_object_reader 
+} // namespace rx_http_server
+} // namespace rx_internal
 
 
-const char* http_json_object_reader::get_content_type ()
-{
+
+// Detached code regions:
+// WARNING: this code will be lost if code is regenerated.
+#if 0
 	return "application/json";
-}
 
-rx_result http_json_object_reader::do_with_item (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, platform_item_ptr item)
-{
 	if (req.method == rx_http_method::post)
 	{
 		string_type path(sub_item), str_val;
@@ -305,10 +303,7 @@ rx_result http_json_object_reader::do_with_item (string_view_type sub_item, rx_i
 	{
 		return "Method not supported";
 	}
-}
 
-rx_result http_json_object_reader::do_with_directory (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, rx_directory_ptr item)
-{
 	read_struct_data read_data;
 	rx_reference_ptr anchor = req.whose;
 
@@ -417,15 +412,9 @@ rx_result http_json_object_reader::do_with_directory (string_view_type sub_item,
 		http_server::instance().send_response(req, resp);
 
 	return true;
-}
 
-const char* http_json_object_reader::get_extension ()
-{
 	return "json";
-}
 
-rx_result http_json_object_reader::recursive_list_directory (rx_directory_ptr item, std::vector<platform_item_ptr>& rt_items, const std::set<rx_node_id>& by_type)
-{
 
 	platform_directories_type dirs;
 	platform_items_type sub_items;
@@ -446,19 +435,9 @@ rx_result http_json_object_reader::recursive_list_directory (rx_directory_ptr it
 	}
 	return true;
 
-}
 
-
-// Class rx_internal::rx_http_server::http_object_writer 
-
-
-const char* http_object_writer::get_content_type ()
-{
 	return "application/json";
-}
 
-rx_result http_object_writer::do_with_item (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, platform_item_ptr item)
-{
 	string_type path(sub_item), str_val;
 	rx_reference_ptr anchor = req.whose;
 
@@ -563,29 +542,13 @@ rx_result http_object_writer::do_with_item (string_view_type sub_item, rx_item_t
 		}));
 		return true;
 	}
-}
 
-rx_result http_object_writer::do_with_directory (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, rx_directory_ptr item)
-{
 	return RX_NOT_SUPPORTED;
-}
 
-const char* http_object_writer::get_extension ()
-{
 	return "write";
-}
 
-
-// Class rx_internal::rx_http_server::http_json_object_executer 
-
-
-const char* http_json_object_executer::get_content_type ()
-{
 	return "application/json";
-}
 
-rx_result http_json_object_executer::do_with_item (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, platform_item_ptr item)
-{
 	string_type path(sub_item), str_val;
 	rx_reference_ptr anchor = req.whose;
 
@@ -648,19 +611,9 @@ rx_result http_json_object_executer::do_with_item (string_view_type sub_item, rx
 
 	}
 	return RX_NOT_SUPPORTED;
-}
 
-rx_result http_json_object_executer::do_with_directory (string_view_type sub_item, rx_item_type type_type, rx_node_id type_id, http_request& req, http_response& resp, rx_directory_ptr item)
-{
 	return RX_NOT_SUPPORTED;
-}
 
-const char* http_json_object_executer::get_extension ()
-{
 	return "exec";
-}
 
-
-} // namespace rx_http_server
-} // namespace rx_internal
-
+#endif

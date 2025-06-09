@@ -175,6 +175,7 @@ class port_behaviors
 
       std::unique_ptr<interfaces::port_stack::port_active_behavior> active_behavior;
 
+	  port_behaviors(int arg) {} // Constructor for initializing with an integer, if needed
       port_behaviors() = default;
       ~port_behaviors() = default;
       port_behaviors(port_behaviors&&) noexcept = default;

@@ -4,7 +4,7 @@
 *
 *  C:\RX\Native\Source\platform_api\rx_runtime.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -783,6 +783,11 @@ void rx_runtime::bind_runtime (host_runtime_def_struct* impl, void* target)
 {
     target_ = target;
     impl_ = impl;
+}
+
+void rx_runtime::release_runtime ()
+{
+    target_ = nullptr;
 }
 
 rx_result rx_runtime::post_job_internal (int type, callback_data::smart_ptr callback, uint32_t period)

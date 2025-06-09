@@ -4,7 +4,7 @@
 *
 *  protocols\mqtt\mqtt_display.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -66,6 +66,14 @@ rx_result mqtt_http_display::initialize_display (runtime::runtime_init_context& 
 	if (topic_.empty())
 		topic_ = disp_path;
 	broker_url_ = ctx.get_item_static(".Mqtt.BrokerUrl", ""s);
+	auto idx = broker_url_.find('~');
+	if (idx != string_type::npos)
+	{
+		broker_url_ = rx_create_string(
+			broker_url_.substr(0, idx)
+			, "' + window.location.host + '"
+			, broker_url_.substr(idx + 1));
+	}
 
 	auto result = rx_http_static_display::initialize_display(ctx, disp_path);
 	if (!result)
@@ -93,18 +101,21 @@ rx_result mqtt_http_display::start_display (runtime::runtime_start_context& ctx,
 		return result;
 	}
 	string_type port_reference = ctx.get_item_static<string_type>(".Mqtt.Port", "");
-	auto rel_result = ctx.register_relation_subscriber(port_reference, &resolver_user_);
-	if (!rel_result)
+	if (!port_reference.empty())
 	{
-		MQTT_LOG_WARNING("mqtt_http_display", 900, "Error starting mapper "
-			+ ctx.context->meta_info.get_full_path() + "." + ctx.path.get_current_path() + " " + rel_result.errors_line());
-	}
-
-	timer_ = ctx.create_timer_function(rx_reference_ptr(), [this]()
+		auto rel_result = ctx.register_relation_subscriber(port_reference, &resolver_user_);
+		if (!rel_result)
 		{
-			timer_tick();
-		});
-	timer_->start(ctx.get_item_static<uint32_t>(".Mqtt.HoldTime", 200));
+			MQTT_LOG_WARNING("mqtt_http_display", 900, "Error starting mapper "
+				+ ctx.context->meta_info.get_full_path() + "." + ctx.path.get_current_path() + " " + rel_result.errors_line());
+		}
+
+		timer_ = ctx.create_timer_function(rx_reference_ptr(), [this]()
+			{
+				timer_tick();
+			});
+		timer_->start(ctx.get_item_static<uint32_t>(".Mqtt.HoldTime", 200));
+	}
 
 	return result;
 }

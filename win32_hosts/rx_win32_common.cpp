@@ -54,7 +54,7 @@ string_type get_full_path_from_relative(const string_type& path)
 void fill_plugin_paths(string_array& paths)
 {
 #ifdef _DEBUG
-	paths.emplace_back("C:\\RX\\Native\\VS\\RxMainSolution\\x64\\Debug\\rx-first-plugin.dll");
+	paths.emplace_back("C:\\RX\\Native\\VS\\RxMainSolution\\x64\\DebugPy\\rx-first-plugin.dll");
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Modbus\\x64\\Debug\\rx-modbus.dll");
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Siemens\\x64\\Debug\\rx-siemens.dll");
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Filters\\x64\\Debug\\rx-filters.dll");

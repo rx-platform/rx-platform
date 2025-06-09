@@ -96,32 +96,16 @@ rx_result upy_method::execute (rx_platform::runtime::execute_data data, runtime:
 
         if (!temp_str.empty())
         {
-            script_buffer_ = script_;
+            script_buffer_ = temp_str;
             if (script_buffer_.empty())
                 return RX_INVALID_ARGUMENT " script is empty!";
 
             std::istringstream in(script_buffer_);
 
-            out << "current_id = 0\r\n";
-
-            out << "async def read_value(path):\r\n";
-            out << "\tresult = await rx_read_value(current_id, path)\r\n";
-            //out << "\tyield\r\n";
-            out << "\treturn result\r\n";
-
-            out << "async def write_value(path, val):\r\n";
-            out << "\tresult = await rx_write_value(current_id, path, val)\r\n";
-            //out << "\tyield\r\n";
-            out << "\treturn result\r\n";
-
-            out << "\n\nasync def funkcija_exec(";
-            bool first = true;
+            out << "\n\nasync def funkcija_exec(ctx";
             for (const auto& one : inputs_.elements)
             {
-                if (first)
-                    first = false;
-                else
-                    out << ", ";
+                out << ", ";
                 out << one.name;
             }
             out << "):\n";
@@ -134,12 +118,9 @@ rx_result upy_method::execute (rx_platform::runtime::execute_data data, runtime:
 
             func_str = "funkcija_exec";
         }
-        if (!module_str.empty())
+        else if (!module_str.empty())
         {
             out << "import rxplatform\n";
-      //      out << "import " << module_str << "\n";
-
-          //  func_str = module_str + "." + func_str;
         }
         
         out << "\n\nasync def funkcija(ctx";

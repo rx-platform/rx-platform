@@ -466,7 +466,7 @@ RX_COMMON_API int rx_init_string_array_value(struct typed_value_type* val, const
 	if (size)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * size);
-		for (int i = 0; i < size; i++)
+		for (size_t i = 0; i < size; i++)
 		{
 			g_values_count++;
 			rx_init_string_value_struct(&val->value.array_value.values[i].string_value, data[i], -1);
@@ -486,7 +486,7 @@ RX_COMMON_API int rx_init_bytes_array_value(struct typed_value_type* val, const 
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			rx_init_bytes_value_struct(&val->value.array_value.values[i].bytes_value, data[i], sizes[i]);
@@ -507,7 +507,7 @@ RX_COMMON_API int rx_init_uuid_array_value(struct typed_value_type* val, const r
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 #ifndef RX_VALUE_SIZE_16
@@ -532,7 +532,7 @@ RX_COMMON_API int rx_init_time_array_value(struct typed_value_type* val, const r
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].time_value = data[i];
@@ -553,7 +553,7 @@ RX_COMMON_API int rx_init_node_id_array_value(struct typed_value_type* val, cons
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].node_id_value = rx_heap_alloc(sizeof(rx_node_id_struct));
@@ -575,7 +575,7 @@ RX_COMMON_API int rx_init_bool_array_value(struct typed_value_type* val, const u
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].bool_value = data[i];
@@ -596,7 +596,7 @@ RX_COMMON_API int rx_init_struct_value(struct typed_value_type* val, const struc
 	if (count)
 	{
 		val->value.struct_value.values = rx_heap_alloc(sizeof(struct typed_value_type) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			rx_copy_value(&val->value.struct_value.values[i], &data[i]);
@@ -617,7 +617,7 @@ RX_COMMON_API int rx_init_array_value(struct typed_value_type* val, rx_value_t t
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			assign_value(&val->value.array_value.values[i], &data[i], type);
@@ -637,7 +637,7 @@ RX_COMMON_API int rx_init_array_value_with_ptrs(struct typed_value_type* val, rx
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			assign_value(&val->value.array_value.values[i], data[i], type);
@@ -659,7 +659,7 @@ RX_COMMON_API int rx_init_array_value_with_move(struct typed_value_type* val, rx
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			move_value(&val->value.array_value.values[i], &data[i], type);
 		}
@@ -678,7 +678,7 @@ RX_COMMON_API int rx_init_array_value_with_ptrs_move(struct typed_value_type* va
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			move_value(&val->value.array_value.values[i], data[i], type);
 		}
@@ -698,7 +698,7 @@ RX_COMMON_API int rx_init_struct_value_with_ptrs(struct typed_value_type* val, c
 	if (count)
 	{
 		val->value.struct_value.values = rx_heap_alloc(sizeof(struct typed_value_type) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			rx_copy_value(&val->value.struct_value.values[i], data[i]);
 		}
@@ -719,7 +719,7 @@ RX_COMMON_API int rx_init_int8_array_value(struct typed_value_type* val, const i
 	{
 		g_values_count++;
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			val->value.array_value.values[i].int8_value = data[i];
 		}
@@ -739,7 +739,7 @@ RX_COMMON_API int rx_init_uint8_array_value(struct typed_value_type* val, const 
 	{
 		g_values_count++;
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			val->value.array_value.values[i].uint8_value = data[i];
 		}
@@ -758,7 +758,7 @@ RX_COMMON_API int rx_init_int16_array_value(struct typed_value_type* val, const 
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].int16_value = data[i];
@@ -778,7 +778,7 @@ RX_COMMON_API int rx_init_uint16_array_value(struct typed_value_type* val, const
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].uint16_value = data[i];
@@ -798,7 +798,7 @@ RX_COMMON_API int rx_init_int32_array_value(struct typed_value_type* val, const 
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].int32_value = data[i];
@@ -818,7 +818,7 @@ RX_COMMON_API int rx_init_uint32_array_value(struct typed_value_type* val, const
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].int32_value = data[i];
@@ -838,7 +838,7 @@ RX_COMMON_API int rx_init_int64_array_value(struct typed_value_type* val, const 
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].int64_value = data[i];
@@ -858,7 +858,7 @@ RX_COMMON_API int rx_init_uint64_array_value(struct typed_value_type* val, const
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].uint64_value = data[i];
@@ -879,7 +879,7 @@ RX_COMMON_API int rx_init_float_array_value(struct typed_value_type* val, const 
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].float_value = data[i];
@@ -899,7 +899,7 @@ RX_COMMON_API int rx_init_double_array_value(struct typed_value_type* val, const
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].double_value = data[i];
@@ -920,7 +920,7 @@ RX_COMMON_API int rx_init_complex_array_value(struct typed_value_type* val, cons
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 #ifndef RX_VALUE_SIZE_16
@@ -953,8 +953,9 @@ RX_COMMON_API void rx_copy_value(struct typed_value_type* val, const struct type
 }
 RX_COMMON_API void rx_move_value(struct typed_value_type* val, struct typed_value_type* right)
 {
-	RX_ASSERT(val->value_type == 0);
-	
+    if(val->value_type == 0)
+        RX_ASSERT(val->value_type == 0);
+
 	// hard core move with memcpy and memzero
 	memcpy(val, right, sizeof(struct typed_value_type));
 	memzero(right, sizeof(struct typed_value_type));
@@ -970,7 +971,7 @@ RX_COMMON_API int rx_init_struct_array_value(struct typed_value_type* val, const
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].struct_value.values = rx_heap_alloc(sizeof(struct typed_value_type) * data[i].size);
@@ -996,7 +997,7 @@ RX_COMMON_API int rx_init_struct_array_value_with_ptrs(struct typed_value_type* 
 	if (count)
 	{
 		val->value.array_value.values = rx_heap_alloc(sizeof(union rx_value_union) * count);
-		for (int i = 0; i < count; i++)
+		for (size_t i = 0; i < count; i++)
 		{
 			g_values_count++;
 			val->value.array_value.values[i].struct_value.values = rx_heap_alloc(sizeof(struct typed_value_type) * data[i]->size);
@@ -1950,6 +1951,7 @@ RX_COMMON_API int rx_get_string_value(const struct typed_value_type* val, size_t
 		return RX_ERROR;
 	}
 	int ret = get_string_value(&val->value, val->value_type, idx, value);
+
 	return ret;
 }
 RX_COMMON_API int rx_get_bytes_value(const struct typed_value_type* val, size_t idx, bytes_value_struct* value)
@@ -2111,7 +2113,7 @@ RX_COMMON_API int rx_is_sub_struct(size_t idx_count, const size_t* idxs, const s
 			}
 			else
 			{
-				
+
 				return 0;
 			}
 		}
@@ -2212,7 +2214,7 @@ RX_COMMON_API int rx_is_sub_array_value(size_t idx_count, const size_t* idxs, co
 			}
 			else
 			{
-				
+
 				return 0;
 			}
 		}

@@ -154,7 +154,9 @@ extern "C"
     }
     rx_result_struct c_deinit_object(rx_platform_api::rx_object* self)
     {
-        return self->deinitialize_object().move();
+        auto ret = self->deinitialize_object().move();
+        self->release_runtime();
+        return ret;
     }
 }
 

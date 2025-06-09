@@ -2,8 +2,8 @@
 
 
 #define RX_LIB_MAJOR_VERSION 3
-#define RX_LIB_MINOR_VERSION 3
-#define RX_LIB_BUILD_NUMBER 3
+#define RX_LIB_MINOR_VERSION 4
+#define RX_LIB_BUILD_NUMBER 1
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -81,4 +81,6 @@
 // version 3.3.1 alloc from buffer receives size
 // version 3.3.2 alloc from buffer receives size
 // version 3.3.3 mode_type_in_error
+// version 3.4.0 added security guards
+// version 3.4.1 added ISO-8601 as separate files
 

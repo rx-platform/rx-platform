@@ -1094,6 +1094,11 @@ rx_result relation_type_algorithm::serialize_type (const relation_type& whose, b
 		if (!stream.write_string("description", whose.relation_data.description.c_str()))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+	{
+		if (!whose.relation_data.security_guard.serialize("access", stream))
+			return stream.get_error();
+	}
 
 	if (!stream.end_object())
 		return stream.get_error();
@@ -1126,6 +1131,11 @@ rx_result relation_type_algorithm::deserialize_type (relation_type& whose, base_
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.read_string("description", whose.relation_data.description))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+	{
+		if (!whose.relation_data.security_guard.deserialize("access", stream))
 			return stream.get_error();
 	}
 
@@ -1462,6 +1472,11 @@ rx_result relation_blocks_algorithm::serialize_relation_attribute (const object_
 		if (!stream.write_string("description", whose.description.c_str()))
 			return stream.get_error();
 	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+	{
+		if (!whose.security_guard.serialize("access", stream))
+			return stream.get_error();
+	}
 	return true;
 }
 
@@ -1476,6 +1491,11 @@ rx_result relation_blocks_algorithm::deserialize_relation_attribute (object_type
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
 		if (!stream.read_string("description", whose.description))
+			return stream.get_error();
+	}
+	if (stream.get_version() >= RX_SECURITY_GUARDS3_VERSION)
+	{
+		if (!whose.security_guard.deserialize("access", stream))
 			return stream.get_error();
 	}
 	return true;

@@ -4,27 +4,27 @@
 *
 *  system\runtime\rx_holder_algorithms.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace runtime {
 
 namespace algorithms {
 
-// Parameterized Class rx_platform::runtime::algorithms::runtime_holder_algorithms
+// Parameterized Class rx_platform::runtime::algorithms::runtime_holder_algorithms 
 
 
 template <class typeT>
@@ -190,7 +190,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
                         }
                         else
                         {
-                            RUNTIME_LOG_INFO("runtime_model_algorithm", 100, "Saved "s 
+                            RUNTIME_LOG_INFO("runtime_model_algorithm", 100, "Saved "s
                                 + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose->meta_info_.get_full_path());
                         }
                         auto it = whose->context_->serialize_callbacks_.find(trans_id);
@@ -225,9 +225,9 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
         }
         else
         {
-   
+
             runtime_transaction_id_t this_transaction_id = whose.context_->serialize_trans_id_.exchange(0);
-            RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error opening runtime storage for "s 
+            RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error opening runtime storage for "s
                 + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path() + " " + item_result.errors_line());
 
 
@@ -263,7 +263,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
 template <class typeT>
 std::unique_ptr<runtime_process_context> runtime_holder_algorithms<typeT>::create_context (typename typeT::RType& whose, runtime::events::runtime_events_manager* events)
 {
-    return std::make_unique<runtime_process_context>(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.smart_this(), whose.security_guard_, events);
+    return std::make_unique<runtime_process_context>(whose.tags_.binded_tags_, whose.tags_.connected_tags_, whose.meta_info_, &whose.directories_, whose.smart_this(), &whose.security_guards_, events);
 }
 
 template <class typeT>
@@ -635,6 +635,26 @@ rx_result runtime_holder_algorithms<typeT>::disconnect_events (runtime_handle_t 
     return RX_NOT_IMPLEMENTED;
 }
 
+template <class typeT>
+void runtime_holder_algorithms<typeT>::fill_access_guards (meta::construct_context& data, typename typeT::RType& whose, security::security_guard root)
+{
+	auto& access_guards = data.get_access_guards();
+    if (!root.is_null())
+        access_guards[""] = std::move(root);
+
+	std::map<string_type, uint32_t> access_map;
+	std::vector<security::security_guard> access_guards_vector;
+    for(const auto& guard : access_guards)
+    {
+		access_map[guard.first] = (uint32_t)access_guards_vector.size();
+        access_guards_vector.push_back(guard.second);
+	}
+	whose.tags_.connected_tags_.security_guards_map_ = std::move(access_map);
+    whose.security_guards_ = const_size_vector< security::security_guard>(access_guards_vector);
+    
+    whose.context_->security_guards_ = &whose.security_guards_;
+}
+
 template <>
 std::vector<rx_result_with<runtime_handle_t> > runtime_holder_algorithms<meta::object_types::relation_type>::connect_items(const string_array& paths, runtime::tag_blocks::tags_callback_ptr monitor, meta::object_types::relation_type::RType& whose)
 {
@@ -656,7 +676,7 @@ template class runtime_holder_algorithms<meta::object_types::object_type>;
 template class runtime_holder_algorithms<meta::object_types::domain_type>;
 template class runtime_holder_algorithms<meta::object_types::application_type>;
 
-// Class rx_platform::runtime::algorithms::runtime_relation_algorithms
+// Class rx_platform::runtime::algorithms::runtime_relation_algorithms 
 
 
 void runtime_relation_algorithms::notify_relation_connected (const string_type& name, const platform_item_ptr& item, runtime_process_context* ctx)

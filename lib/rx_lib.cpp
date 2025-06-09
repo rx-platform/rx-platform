@@ -37,6 +37,7 @@
 #include "lib/rx_mem.h"
 #include "version/rx_version.h"
 #include "lib/rx_values.h"
+#include "lib/rx_iso_8601.h"
 
 using namespace rx::values;
 
@@ -1191,7 +1192,7 @@ string_type get_code_module(const string_type& full)
 		return full.substr(idx + 1);
 }
 
-rx_mode_type::rx_mode_type()
+rx_mode_type::rx_mode_type() noexcept
 {
 	raw_format = 0;
 }
@@ -1754,79 +1755,16 @@ void rx_time::to_SNTP_time(uint32_t& seconds, uint32_t& fraction)
 }
 rx_time rx_time::from_IEC_string(const char* str)
 {
-	const char* ptr = str;
-
-	rx_full_time os_time;
-
-	os_time.hour = 0;
-	os_time.minute = 0;
-	os_time.second = 0;
-	os_time.milliseconds = 0;
-
-	if (sscanf(ptr, "%4u-%2u-%2u", &os_time.year, &os_time.month, &os_time.day) == 3)
-		ptr += 10;
-	else if (sscanf(ptr, "%4u%2u%2u", &os_time.year, &os_time.month, &os_time.day) == 3)
-		ptr += 8;
-	else
-		return rx_time();
-
-	if (*ptr != L'\0')
-	{
-		if (*ptr != L'T')
-			return rx_time();
-		ptr++;
-
-		if (sscanf(ptr, "%2u:%2u", &os_time.hour, &os_time.minute) == 2)
-			ptr += 5;
-		else if (sscanf(ptr, "%2u%2u", &os_time.hour, &os_time.minute) == 2)
-			ptr += 4;
-		else
-			return rx_time();
-
-		if (*ptr == L':')
-			ptr++;
-
-		if (*ptr != L'\0')
-		{// seconds too
-			if (sscanf(ptr, "%2u", &os_time.second) == 1)
-				ptr += 2;
-			else
-				return rx_time();
-			if (*ptr == L'.')
-			{
-				ptr++;
-				if (sscanf(ptr, "%3u", &os_time.milliseconds) == 1)
-					ptr += 3;
-			}
-		}
-	}
-
-	rx_time_struct ts;
-	if (rx_os_collect_time(&os_time, &ts))
-	{
-		return ts;
-	}
-	else
-		return rx_time();
+	return iso_8601_to_rx_time(str);
 }
 string_type rx_time::get_IEC_string() const
 {
 	char buff[0x200];
 
-	rx_time_struct temp = data_;
-	string_type ret;
-
-	rx_full_time os_time;
-	if (rx_os_split_time(&temp, &os_time))
-	{
-		snprintf(buff, sizeof(buff) / sizeof(buff[0]), "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ",
-			os_time.year, os_time.month, os_time.day,
-			os_time.hour, os_time.minute, os_time.second, os_time.milliseconds);
-		ret += buff;
-	}
-
-	return ret;
-
+	if (rx_time_to_iso_8601(&data_, buff, sizeof(buff) / sizeof(buff[0])) == RX_OK)
+		return buff;
+	else
+		return string_type();
 }
 
 void rx_time::set_as_span(uint32_t days)

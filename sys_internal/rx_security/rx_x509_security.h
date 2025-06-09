@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_security\rx_x509_security.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_platform_security
-#include "sys_internal/rx_security/rx_platform_security.h"
 // rx_security
 #include "security/rx_security.h"
+// rx_platform_security
+#include "sys_internal/rx_security/rx_platform_security.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -136,39 +136,6 @@ class x509_certificates
 
 
 
-class certificate_security_provider : public platform_security_provider  
-{
-
-  public:
-
-      const string_type& get_name ();
-
-      string_type get_info ();
-
-      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
-
-      void deinitialize ();
-
-      rx_result_with<security::security_context_ptr> create_host_context (hosting::rx_platform_host* host, configuration_data_t& data);
-
-      rx_result_with<security::security_context_ptr> create_system_context (hosting::rx_platform_host* host, configuration_data_t& data);
-
-      rx_result_with<security::security_context_ptr> create_world_context (hosting::rx_platform_host* host, configuration_data_t& data);
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
 class x509_security_context : public rx_platform::security::security_context  
 {
     DECLARE_REFERENCE_PTR(x509_security_context);
@@ -207,6 +174,43 @@ class x509_security_context : public rx_platform::security::security_context
 
 
       bool has_console_;
+
+
+};
+
+
+
+
+
+
+
+class certificate_security_provider : public platform_security_provider  
+{
+
+  public:
+
+      const string_type& get_name ();
+
+      string_type get_info ();
+
+      rx_result initialize (hosting::rx_platform_host* host, configuration_data_t& data);
+
+      void deinitialize ();
+
+      rx_result_with<security::security_context_ptr> create_host_context (hosting::rx_platform_host* host, configuration_data_t& data);
+
+      rx_result_with<security::security_context_ptr> create_system_context (hosting::rx_platform_host* host, configuration_data_t& data);
+
+      rx_result_with<security::security_context_ptr> create_world_context (hosting::rx_platform_host* host, configuration_data_t& data);
+
+      rx_result start (hosting::rx_platform_host* host);
+
+      void stop ();
+
+
+  protected:
+
+  private:
 
 
 };

@@ -4,7 +4,7 @@
 *
 *  security\rx_security.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -54,6 +54,27 @@ using namespace rx;
 
 
 namespace rx_platform {
+enum security_mask_t : std::uint_fast32_t
+{
+    rx_security_null = 0,
+
+    rx_security_read_access = 0x01,
+    rx_security_write_access = 0x02,
+    rx_security_delete_access = 0x04,
+    rx_security_poll_access = 0x04,
+    rx_security_execute_access = 0x10,
+
+    rx_security_full = 0x1f,
+};
+
+
+enum extended_security_mask_t : std::uint_fast32_t
+{
+    rx_security_ext_null = 0,
+
+    rx_security_requires_system = 0x01,
+    rx_security_requires_internal = 0x02,
+};
 
 namespace security {
 class security_context;
@@ -102,6 +123,8 @@ class security_context : public rx::pointers::reference_object
 
       virtual rx_result deserialize (base_meta_reader& stream) = 0;
 
+      virtual bool is_in_role (string_view_type role, security_mask_t access) const;
+
 
       const rx_security_handle_t get_handle () const
       {
@@ -147,6 +170,7 @@ class security_context : public rx::pointers::reference_object
 
 
 // unauthorized 
+bool is_in_role(string_view_type role, security_mask_t mask);
 security_context_ptr active_security();
 security_context_ptr unauthorized_context();
 void push_security(security_context_ptr ctx);
@@ -178,6 +202,8 @@ class security_manager
 
       void get_active_contexts (std::vector<security_context_ptr >& ctxs);
 
+      security_context_ptr get_context (rx_security_handle_t handle);
+
       void deinitialize ();
 
 
@@ -189,9 +215,6 @@ class security_manager
       security_manager(const security_manager &right);
 
       security_manager & operator=(const security_manager &right);
-
-
-      security_context_ptr get_context (rx_security_handle_t handle);
 
 
 
@@ -206,46 +229,46 @@ class security_manager
 };
 
 
-enum security_mask_t : std::uint_fast32_t
+struct role_access_t
 {
-    rx_security_null            = 0,
-
-    rx_security_read_access     = 0x01,
-	rx_security_write_access	= 0x02,
-	rx_security_delete_access	= 0x04,
-    rx_security_poll_access     = 0x04,
-    rx_security_execute_access  = 0x10,
-
-    rx_security_full            = 0x1f,
-};
-
-
-enum extended_security_mask_t : std::uint_fast32_t
-{
-	rx_security_ext_null = 0,
-
-    rx_security_requires_system = 0x01,
-    rx_security_requires_internal = 0x02,
+    string_type role;
+	security_mask_t access = rx_security_null;
+	security_mask_t deny = rx_security_null;
 };
 
 
 
 
-class security_guard : public rx::pointers::reference_object  
+class security_guard 
 {
-    DECLARE_REFERENCE_PTR(security_guard);
+    typedef std::vector<role_access_t> roles_type;
 
   public:
-      security_guard (const meta_data& data, security_mask_t access = security::rx_security_null);
+      security_guard();
 
-      security_guard (security_mask_t access, const string_type& path, extended_security_mask_t extended = rx_security_ext_null);
+      security_guard (const meta_data& data, security_mask_t access = rx_security_null);
+
+      security_guard (security_mask_t access, extended_security_mask_t extended = rx_security_ext_null);
+
+      security_guard (std::vector<role_access_t> data);
 
       ~security_guard();
 
 
+      rx_result serialize (const string_type& name, base_meta_writer& stream) const;
+
+      rx_result deserialize (const string_type& name, base_meta_reader& stream);
+
       bool check_permission (security_mask_t access);
 
+      bool is_null () const;
 
+      bool is_slow () const;
+
+      security_guard(const security_guard&) = default;
+      security_guard(security_guard&&) = default;
+      security_guard& operator=(const security_guard&) = default;
+      security_guard& operator=(security_guard&&) = default;
   protected:
 
       virtual bool check_permission (security_mask_t mask, security_context_ptr ctx);
@@ -258,12 +281,12 @@ class security_guard : public rx::pointers::reference_object
 
       extended_security_mask_t extended_mask_;
 
-      string_type path_base_;
+      roles_type roles_;
 
 
 };
 
-typedef security_guard::smart_ptr security_guard_ptr;
+typedef security_guard* security_guard_ptr;
 
 
 

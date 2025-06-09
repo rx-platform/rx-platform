@@ -4,7 +4,7 @@
 *
 *  model\rx_meta_internals.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -418,10 +418,10 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	create_runtime_result<typeT> ret;
 	//ret.runtime_data = std::move(runtime_data);
 	RImplPtr implementation_ptr;
-	RBeh behavior;
+	RBeh behavior(0);
 	rx_node_id parent_id;
 
-	construct_context ctx(meta.name);
+	construct_context ctx(meta);
 	ctx.get_directories().add_paths({ meta.path });
 	if (!meta.parent.is_null())
 	{
@@ -519,6 +519,7 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		}
 	}
 
+	security::security_guard guard;
 	std::vector<data::runtime_values_data> overrides;
 	ret.ptr = rx_create_reference<RType>(meta, instance_data, std::move(behavior));
 	ret.ptr->implementation_ = implementation_ptr;
@@ -527,6 +528,8 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		auto my_class = get_type_definition(*it);
 		if (my_class)
 		{
+			if(!my_class.value()->complex_data.security_guard.is_null())
+				guard = my_class.value()->complex_data.security_guard;
 			ctx.reinit();
 			std::unique_ptr<data::runtime_values_data> temp_values= std::make_unique<data::runtime_values_data>();
 			ctx.push_overrides("", temp_values.get());
@@ -554,10 +557,13 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	std::bitset<32> opts;
 	opts[runtime::structure::value_opt_readonly] = true;
 	opts[runtime::structure::value_opt_persistent] = false;
+
+
 	rt_data.add_const_value("_Name", name_value, opts);
 	auto block_data = rt_data.create_block_data();
 	ret.ptr->tags_.set_runtime_data(create_runtime_data(rt_data));
 	// now handle methods, programs and rest of the stuff
+
 
 	auto& obj_data = ctx.object_data();
 	if (!obj_data.methods.empty())
@@ -597,7 +603,12 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 	if (!runtime_data.empty())// quick check won't harm
 		runtime::algorithms::runtime_holder_algorithms<typeT>::fill_data(runtime_data, *ret.ptr);
 	ret.ptr->get_overrides() = instance_data.overrides;
+	ret.ptr->stored_security_guard = instance_data.security_guard;
+	if(!instance_data.security_guard.is_null())
+		guard = instance_data.security_guard;
+	runtime::algorithms::runtime_holder_algorithms<typeT>::fill_access_guards(ctx, *ret.ptr, guard);
 	ret.ptr->directories_.add_paths({ ret.ptr->meta_info_.path });
+	
 
 	if (!prototype)
 	{
@@ -880,7 +891,7 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 				ss << "Unable to initialize runtime "
 					<< one.second.target->meta_info().get_full_path()
 					<< " :" << result.errors_line();
-				MEAT_LOG_CRITICAL("types_repository", 500, ss.str());
+				META_LOG_CRITICAL("types_repository", 500, ss.str());
 			}
 			else
 			{// regular class run but off
@@ -1204,7 +1215,7 @@ bool types_repository<typeT>::is_the_same (const rx_node_id& id, typename types_
 }
 
 template <class typeT>
-bool types_repository<typeT>::is_the_same (const rx_node_id& id, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data& runtime_data)
+bool types_repository<typeT>::is_the_same (const rx_node_id& id, const typename typeT::instance_data_t& instance_data, const data::runtime_values_data& runtime_data, const security::security_guard& guard)
 {
 	memory::std_buffer buffer1;
 	size_t buffer1_size = 0;
@@ -1230,12 +1241,14 @@ bool types_repository<typeT>::is_the_same (const rx_node_id& id, const typename 
 
 		instance_data.instance_data.serialize(writer1, STREAMING_TYPE_MESSAGE);
 		writer1.write_init_values("overrides", runtime_data);
+		guard.serialize("", writer1);
 		buffer1_size = buffer1.get_size();
 
 		serialization::std_buffer_writer writer2(buffer2);
 
 		it->second.target->get_instance_data().get_data().serialize(writer2, STREAMING_TYPE_MESSAGE);
 		writer2.write_init_values("overrides", it->second.target->get_overrides());
+		it->second.target->stored_security_guard.serialize("", writer1);
 		buffer2_size = buffer2.get_size();
 
 		if (buffer1_size != buffer2_size)
@@ -1697,6 +1710,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 
 	ctx.push_rt_name(rt_name);
 
+	security::security_guard guard;
 	std::vector<data::runtime_values_data> overrides;
 	RDataType rt_prototype;
 	for(auto it=base.rbegin(); it!=base.rend(); it++)
@@ -1704,6 +1718,7 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 		auto my_class = get_type_definition((*it));
 		if (my_class)
 		{
+			guard = my_class.value()->complex_data.security_guard;
 			std::unique_ptr<data::runtime_values_data> temp_values = std::make_unique<data::runtime_values_data>();
 			ctx.get_directories().add_paths({my_class.value()->meta_info.path});
 			auto result = meta::meta_algorithm::basic_types_algorithm<typeT>::construct(*my_class.value(), ctx, rt_prototype);
@@ -1739,7 +1754,8 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 		if (!rt_name.empty() && rt_name[0] == '_')
 			ctx.end_of_model_out(was_in_model);
 	}
-
+	if(!guard.is_null())
+		ctx.get_access_guards().insert_or_assign(ctx.get_current_path() + rt_name, guard);
 	return RDataType(std::move(runtime), std::move(ret), std::move(rt_prototype));
 }
 
