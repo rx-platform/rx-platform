@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 3
 #define RX_LIB_MINOR_VERSION 4
-#define RX_LIB_BUILD_NUMBER 1
+#define RX_LIB_BUILD_NUMBER 2
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -83,4 +83,5 @@
 // version 3.3.3 mode_type_in_error
 // version 3.4.0 added security guards
 // version 3.4.1 added ISO-8601 as separate files
+// version 3.4.2 extended a rx_const_io_buffer with size
 

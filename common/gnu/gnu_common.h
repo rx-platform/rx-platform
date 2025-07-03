@@ -157,7 +157,7 @@ typedef struct _crypt_key_t
 	uint32_t size;
 } *crypt_key_t;
 
-typedef HMAC_CTX* crypt_hash_t;
+typedef EVP_MAC_CTX* crypt_hash_t;
 
 
 

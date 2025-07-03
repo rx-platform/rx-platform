@@ -157,6 +157,10 @@ void server_command_manager::register_internal_commands ()
 		RX_RX_JSON_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::rx_protocol::rx_json_protocol_port>();
 		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_RX_OPC_ADAPT_TYPE_ID, [] {
+			return rx_create_reference<rx_internal::rx_protocol::rx_opc_protocol_adapter_port>();
+		});
 	result = rx_internal::model::register_internal_constructor<port_type, rx_internal::rx_protocol::rx_json_protocol_client_port>(
 		nullptr, RX_RX_JSON_CLIENT_TYPE_ID, [] {
 			return rx_create_reference<rx_internal::rx_protocol::rx_json_protocol_client_port>();

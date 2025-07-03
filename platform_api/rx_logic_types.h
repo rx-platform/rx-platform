@@ -116,7 +116,14 @@ class rx_simple_method : public rx_method
     template < typename Type>
     Type from_arg(const rx_simple_value& what)
     {
-        return what.extract_static<Type>(0);
+        if constexpr (std::is_same_v<Type, string_type>)
+        {
+            return what.extract_static<std::string>("");
+        }
+        else
+        {
+            return what.extract_static<Type>(0);
+        }
     }
 
     template < typename Type>

@@ -1048,6 +1048,8 @@ public:
 
       rx_result collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
+      rx_result check_data (const data::runtime_values_data& data) const;
+
       void fill_data (const data::runtime_values_data& data);
 
       rx_result collect_value (values::rx_simple_value& data, runtime_value_type type) const;

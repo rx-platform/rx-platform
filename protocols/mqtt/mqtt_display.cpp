@@ -198,8 +198,15 @@ void mqtt_http_display::internal_port_disconnected ()
 
 void mqtt_http_display::fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path)
 {
+	rx_http_static_display::fill_contents(content, ctx, disp_path);
 	content.mapped_content["broker-url"] = broker_url_;
 	content.mapped_content["mqtt-topic"] = topic_;
+}
+
+const string_array& mqtt_http_display::get_point_replace () const
+{
+	static string_array ret = { "#" };
+	return ret;
 }
 
 

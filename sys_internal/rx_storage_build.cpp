@@ -228,7 +228,7 @@ rx_result configuration_storage_builder::create_object_from_storage (rx_storage_
 	{
 		do_save = true;
 		meta.id = rx_node_id::generate_new();
-		META_LOG_WARNING("configuration_storage_builder", 250, "Created new instance of an object " + meta.get_full_path());
+		META_LOG_WARNING("configuration_storage_builder", 250, "Creating new instance of an object " + meta.get_full_path());
 	}
 
 	auto dir = storage_get_direcotry(root, meta.path);
@@ -281,7 +281,7 @@ rx_result configuration_storage_builder::create_type_from_storage (rx_storage_it
 	{
 		do_save = true;
 		meta.id = rx_node_id::generate_new();
-		META_LOG_WARNING("configuration_storage_builder", 250, "Created new type " + meta.get_full_path());
+		META_LOG_WARNING("configuration_storage_builder", 250, "Creating new type " + meta.get_full_path());
 	}
 
 	auto dir = storage_get_direcotry(root, meta.path);

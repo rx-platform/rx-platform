@@ -150,10 +150,6 @@ rx_result http_server::handle_request (http_request req)
 				req.identity = ident;
 			}
 		}
-		/*else if (req.identity)
-		{
-			ident = req.identity;
-		}*/
 
 		security::secured_scope _(ident);
 
@@ -287,6 +283,25 @@ void http_server::register_standard_filters ()
 	filters_.emplace_back(std::make_unique<http_path_filter>());
 	filters_.emplace_back(std::make_unique<standard_request_filter>());
 	filters_.emplace_back(std::make_unique<aspnet::aspnet_authorizer>());
+}
+
+void http_server::dump_http_references (std::ostream& out)
+{
+	out << "Global path:\r\n  - "
+		<< global_path_
+		<< "\r\n\r\n";
+	out << "Static paths:\r\n";
+	for (auto& one : static_paths_)
+	{
+		out << "  - " << one << "\r\n";
+	}
+	out << "\r\n";
+	out << "Dynamic paths:\r\n";
+	for(auto& one : dynamic_paths_)
+	{
+		out << "  - " << one << "\r\n";
+	}
+	out << "\r\n";
 }
 
 

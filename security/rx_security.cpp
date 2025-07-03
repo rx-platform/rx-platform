@@ -409,6 +409,10 @@ bool security_guard::check_permission (security_mask_t access)
 
 bool security_guard::check_permission (security_mask_t mask, security_context_ptr ctx)
 {
+	if (is_null())
+	{
+		return true;
+	}
 	if (!ctx->is_authenticated())
 	{
 		return false;

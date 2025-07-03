@@ -2595,6 +2595,69 @@ rx_result block_data::collect_data (string_view_type path, data::runtime_values_
 	}
 }
 
+rx_result block_data::check_data (const data::runtime_values_data& data) const
+{
+	for (auto& one : items)
+	{
+		switch (one.index & rt_type_mask)
+		{
+			case rt_const_index_type:
+				{// simple value
+					auto val = data.get_value(one.name);
+					if (!val.is_null())
+					{
+						if(!val.convert_to(values[one.index >> rt_type_shift].get_item()->simple_get_value().get_type()))
+							return RX_INVALID_CONVERSION;
+					}
+				}
+				break;
+			case rt_data_index_type:
+				{// child value
+					if (!children[(one.index >> rt_type_shift)].is_array())
+					{
+						auto it = data.children.find(one.name);
+						if (it != data.children.end())
+						{
+							if (std::holds_alternative<data::runtime_values_data>(it->second))
+							{
+								auto val_result = children[one.index >> rt_type_shift].get_item()->check_data(
+									std::get< data::runtime_values_data>(it->second));
+								if (!val_result)
+									return val_result;
+							}
+						}
+					}
+					else
+					{
+						auto it = data.children.find(one.name);
+						if (it != data.children.end())
+						{
+							if (std::holds_alternative<std::vector<data::runtime_values_data> >(it->second))
+							{
+								auto& this_val = children[(one.index >> rt_type_shift)];
+								auto& childs = std::get<std::vector<data::runtime_values_data>>(it->second);
+								const block_data* prototype = this_val.get_prototype();
+								for (int j = 0; j < (int)childs.size(); j++)
+								{
+									if (j < this_val.get_size())
+									{
+										auto val_result = prototype->check_data(childs[j]);
+										if (!val_result)
+											return val_result;
+									}
+								}
+							}
+						}
+					}
+				}
+				break;
+			default:
+				RX_ASSERT(false);
+		}
+	}
+	return true;
+}
+
 void block_data::fill_data (const data::runtime_values_data& data)
 {
 	for (auto& one : items)

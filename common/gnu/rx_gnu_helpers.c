@@ -79,6 +79,8 @@ int g_is_debug_instance = 0;
 
 extern SSL_CTX* g_ssl_ctx;
 
+EVP_MD* g_sha1_evp = NULL;
+EVP_MD* g_sha256_evp = NULL;
 
 
 void create_ssl_context()
@@ -134,6 +136,9 @@ RX_COMMON_API int rx_init_common_library(const rx_platform_init_data* init_data)
         SSL_library_init();
         OpenSSL_add_all_algorithms();
         SSL_load_error_strings();
+
+        g_sha1_evp = EVP_MD_fetch(NULL, "SHA1", NULL);
+        g_sha256_evp = EVP_MD_fetch(NULL, "SHA256", NULL);
 
         create_ssl_context();
 

@@ -529,7 +529,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 	inst_data = meta::runtime_data::port_runtime_data();
 	inst_data.meta_info.name = RX_LOCAL_PIPE_TRANSPORT_NAME;
 	inst_data.meta_info.id = rx_node_id(RX_LOCAL_PIPE_TRANSPORT_ID, 2);
-	inst_data.meta_info.parent = rx_node_id(RX_OPCUA_TRANSPORT_PORT_TYPE_ID);
+	inst_data.meta_info.parent = rx_node_id(RX_STXETX_TYPE_ID);
 	inst_data.meta_info.path = "/sys/host";
 	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 
@@ -544,23 +544,6 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 		return result;
 	}
 
-	inst_data = meta::runtime_data::port_runtime_data();
-	inst_data.meta_info.name = RX_LOCAL_PIPE_CHANNEL_NAME;
-	inst_data.meta_info.id = rx_node_id(RX_LOCAL_PIPE_CHANNEL_ID, 2);
-	inst_data.meta_info.parent = rx_node_id(RX_OPCUA_SEC_NONE_PORT_TYPE_ID);
-	inst_data.meta_info.path = "/sys/host";
-	inst_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
-
-	inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
-
-	inst_data.overrides.add_value_static("StackTop", RX_LOCAL_PIPE_TRANSPORT_NAME);
-
-	result = register_host_runtime<meta::object_types::port_type>(inst_data, nullptr);
-	if (!result)
-	{
-		result.register_error("Unable to register " RX_LOCAL_PIPE_CHANNEL_NAME " port runtime.");
-		return result;
-	}
 
 	inst_data = meta::runtime_data::port_runtime_data();
 	inst_data.meta_info.name = RX_LOCAL_PIPE_PROTOCOL_NAME;
@@ -571,7 +554,7 @@ rx_result rx_pipe_host::build_host (hosting::host_platform_builder& builder)
 
 	inst_data.instance_data.app_ref = rx_node_id(RX_HOST_APP_ID);
 
-	inst_data.overrides.add_value_static("StackTop", RX_LOCAL_PIPE_CHANNEL_NAME);
+	inst_data.overrides.add_value_static("StackTop", RX_LOCAL_PIPE_TRANSPORT_NAME);
 
 	result = register_host_runtime<meta::object_types::port_type>(inst_data, nullptr);
 	if (!result)

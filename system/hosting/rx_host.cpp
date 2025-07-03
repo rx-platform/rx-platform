@@ -280,6 +280,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.instance.group = row.second;
 		else if (row.first == "rx.port" && config.other.rx_port == 0)
 			config.other.rx_port = atoi(row.second.c_str());
+		else if (row.first == "rx.wsport" && config.other.rx_wsport == 0)
+			config.other.rx_wsport = atoi(row.second.c_str());
 		else if (row.first == "processor.realtime" && !config.processor.real_time && get_bool_value(row.second))
 			config.processor.real_time = true;
 		else if (row.first == "processor.nohdtimer" && !config.processor.no_hd_timer && get_bool_value(row.second))
@@ -469,6 +471,7 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 	config.other.opcua_port = 0;
 	config.instance.port = 0;
 	config.other.rx_port = 0;
+	config.other.rx_wsport = 0;
 
 
 	cxxopts::Options options(help_name, "");

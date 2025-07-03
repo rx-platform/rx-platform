@@ -4,7 +4,7 @@
 *
 *  lib\rx_io_buffers.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -151,6 +151,21 @@ rx_result rx_const_io_buffer::read_to_end (byte_string& data)
 		data.clear();
 	}
 	return true;
+}
+
+size_t rx_const_io_buffer::available_size ()
+{
+	return rx_get_packet_available_data(buffer_);
+}
+
+const void* rx_const_io_buffer::get_data (size_t count)
+{
+	rx_protocol_result_t result;
+	const void* ret = rx_get_from_packet(buffer_, count, &result);
+	if (result == RX_PROTOCOL_OK)
+		return ret;
+	else
+		return nullptr;
 }
 
 

@@ -4,7 +4,7 @@
 *
 *  lib\rx_io_buffers.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -72,6 +72,10 @@ class rx_const_io_buffer
       bool eof () const;
 
       rx_result read_to_end (byte_string& data);
+
+      size_t available_size ();
+
+      const void* get_data (size_t count);
 
 	  template<typename T>
 	  rx_result read_from_buffer(T& val)

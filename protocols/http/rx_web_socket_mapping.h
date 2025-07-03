@@ -4,7 +4,7 @@
 *
 *  protocols\http\rx_web_socket_mapping.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,13 +33,18 @@
 
 
 
-// dummy
-#include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
+// dummy
+#include "dummy.h"
+// rx_http_parser
+#include "protocols/http/rx_http_parser.h"
+// rx_io_buffers
+#include "lib/rx_io_buffers.h"
 
+#define WS_HEAD_MAX_SIZE 16 //(actually 14, but we reserve 2 bytes for future use)
 
 
 namespace protocols {
@@ -47,12 +52,35 @@ namespace protocols {
 namespace rx_http {
 class rx_web_socket_port;
 
+#define RX_WS_INVALID_OPCODE 0xFF // Invalid opcode for WebSocket
+struct web_socket_header
+{
+    uint8_t opcode;
+    bool is_final;
+    bool is_masked;
+    size_t payload_length;
+    uint8_t mask_key[4];
+
+    operator bool() const
+    {
+        return opcode !=  RX_WS_INVALID_OPCODE;
+	}
+};
 
 
 
 
 class rx_web_socket_endpoint 
 {
+    enum class web_socket_state
+    {
+      initial,
+	  idle,
+      header_collect,
+      payload_collect,
+      closing,
+      closed
+	};
 
   public:
       rx_web_socket_endpoint (rx_web_socket_port* port);
@@ -66,6 +94,17 @@ class rx_web_socket_endpoint
       rx_web_socket_port* get_port ()
       {
         return port_;
+      }
+
+
+      rx_thread_handle_t get_executer () const
+      {
+        return executer_;
+      }
+
+      void set_executer (rx_thread_handle_t value)
+      {
+        executer_ = value;
       }
 
 
@@ -83,9 +122,38 @@ class rx_web_socket_endpoint
 
       static rx_protocol_result_t transport_connected (rx_protocol_stack_endpoint* reference, const protocol_address* local_address, const protocol_address* remote_address);
 
+      rx_protocol_result_t parse_http_request (http_parsed_request req);
+
+      string_type generate_websocket_accept (const string_type& web_key);
+
+      rx_protocol_result_t received (recv_protocol_packet packet);
+
+      rx_protocol_result_t send (send_protocol_packet packet);
+
+      bool is_header_done ();
+
+      web_socket_header parse_header ();
+
+
+
+      http_parser parser_;
+
+      rx::io::rx_io_buffer *receive_buffer_;
 
 
       rx_web_socket_port* port_;
+
+      rx_thread_handle_t executer_;
+
+      locks::slim_lock port_lock_;
+
+      web_socket_state state_;
+
+      size_t head_size_;
+
+      uint8_t header_buffer_[WS_HEAD_MAX_SIZE];
+
+      size_t payload_to_read_;
 
 
 };
@@ -96,7 +164,7 @@ class rx_web_socket_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< rx_web_socket_endpoint  > rx_web_socket_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< protocols::rx_http::rx_web_socket_endpoint  > rx_web_socket_port_base;
 
 
 

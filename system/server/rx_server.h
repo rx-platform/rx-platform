@@ -84,6 +84,7 @@ struct io_manager_data_t
 struct general_data_t
 {
     uint16_t rx_port;
+    uint16_t rx_wsport;
 	string_type manuals_path;
     string_type http_path;
     string_type http_user;

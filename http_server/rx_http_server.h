@@ -149,6 +149,8 @@ class http_server
 
       string_type get_dynamic_content (const string_type& path);
 
+      void dump_http_references (std::ostream& out);
+
 
       http_displays::http_displays_repository& get_displays ()
       {

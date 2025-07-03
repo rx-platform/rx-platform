@@ -87,7 +87,8 @@ rx_protocol_result_t stxetx_endpoint::send_packet (send_protocol_packet packet)
     if (port_)
     {
         auto send_size = rx_get_packet_usable_data(packet.buffer);
-        if (send_size + 2 <= port_->max_buffer_size)
+        if ((port_->max_buffer_size > 0 && send_size + 2 <= port_->max_buffer_size)
+            || (port_->max_buffer_size == 0 && send_size > 0))
         {
             uint8_t temp = ASCII_STX;
             result = rx_push_to_packet_front(packet.buffer, &temp, sizeof(temp));
@@ -225,7 +226,7 @@ stxetx_port::stxetx_port()
 
 rx_result stxetx_port::initialize_runtime (runtime::runtime_init_context& ctx)
 {
-    max_buffer_size = ctx.get_item_static(".Options.MaxPacketsize", 0x1000u);
+    max_buffer_size = ctx.get_item_static(".Options.MaxPacketSize", 0);
     return true;
 }
 

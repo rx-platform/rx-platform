@@ -166,7 +166,7 @@ typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< te
 class telnet_transport_port : public telnet_port_base  
 {
     DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-VT100 terminal. implementation of telnet and VT100 transport protocol port.");
+Telnet port. implementation of telnet transport protocol port.");
 
     DECLARE_REFERENCE_PTR(telnet_transport_port);
 

@@ -318,6 +318,9 @@
 #define RX_MAC_BIND_TYPE_ID 0xc0000ad
 
 
+#define RX_RX_OPC_ADAPT_TYPE_NAME "RxOPCProtocolAdapter"
+#define RX_RX_OPC_ADAPT_TYPE_ID 0xc000110
+
 #define RX_RX_JSON_TYPE_NAME "RxJsonProtocol"
 #define RX_RX_JSON_TYPE_ID 0xc000022
 
@@ -668,8 +671,18 @@
 #define RX_NS_SYSTEM_OPCUABIN_ID 0xc000043
 #define RX_NS_SYSTEM_OPCUABIN_SEC_NAME "RxOpcUaSecChannel"
 #define RX_NS_SYSTEM_OPCUABIN_SEC_ID 0xc000081
+#define RX_NS_SYSTEM_RXOPC_ADAPT_NAME "RxOpcAdapter"
+#define RX_NS_SYSTEM_RXOPC_ADAPT_ID 0xc000111
 #define RX_NS_SYSTEM_RXJSON_NAME "JSON"
 #define RX_NS_SYSTEM_RXJSON_ID 0xc000044
+
+
+#define RX_NS_SYSTEM_WS_TCP_NAME "WsTcpServer"
+#define RX_NS_SYSTEM_WS_TCP_ID 0xc00010a
+#define RX_NS_SYSTEM_RXWS_NAME "RxWs"
+#define RX_NS_SYSTEM_RXWS_ID 0xc00010c
+#define RX_NS_SYSTEM_WS_RXJSON_NAME "WsJSON"
+#define RX_NS_SYSTEM_WS_RXJSON_ID 0xc00010b
 
 
 #define RX_NS_SYSTEM_TCP_CLIENT_NAME "TcpClientServer"
@@ -725,10 +738,21 @@
 #define RX_NS_WS_TYPE_ID 0xc0000b4
 
 
+#define RX_PATH_BIND_TYPE_NAME "PathBindData"
+#define RX_PATH_BIND_TYPE_ID 0xc00010d
+
+
+
 #define RX_TCP_HTTP_PORT_TYPE_ID 0xc000058
 #define RX_TCP_HTTP_PORT_TYPE_NAME "SystemHttpPort"
 #define RX_TCP_RX_PORT_TYPE_ID 0xc000059
 #define RX_TCP_RX_PORT_TYPE_NAME "SystemRxPort"
+#define RX_RX_OPC_JSON_TYPE_ID 0xc00010f
+#define RX_RX_OPC_JSON_TYPE_NAME "SystemOPCJsonProtocol"
+#define RX_TCP_RX_WS_PORT_TYPE_ID 0xc000109
+#define RX_TCP_RX_WS_PORT_TYPE_NAME "SystemRxWSPort"
+#define RX_TCP_RX_WS_JSON_PORT_TYPE_ID 0xc00010e
+#define RX_TCP_RX_WS_JSON_PORT_TYPE_NAME "SystemWsJsonPort"
 #define RX_TCP_OPCUA_PORT_TYPE_ID 0xc000084
 #define RX_TCP_OPCUA_PORT_TYPE_NAME "SystemOpcPort"
 #define RX_TCP_MQTT_PORT_TYPE_ID 0xc0000f3
@@ -796,7 +820,7 @@
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc000108!!!! 
+// last is 0xc000111!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

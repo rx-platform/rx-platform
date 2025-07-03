@@ -38,6 +38,7 @@
 #include "system/meta/rx_useful_queries.h"
 #include "api/rx_namespace_api.h"
 #include "rx_term_table.h"
+#include "http_server/rx_http_server.h"
 using namespace rx;
 #define VT100_CURCOR_UP ""
 
@@ -788,6 +789,15 @@ void vt100_endpoint::synchronized_do_command (const string_type& in_line, securi
 		std::ostream out(out_buffer.unsafe_ptr());
 		out << "Storage Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
 		rx_gate::instance().get_host()->dump_storage_references(out);
+		out << "\r\n";
+		process_result(true, out_buffer, memory::buffer_ptr::null_ptr, true);
+	}
+	else if (line == "http")
+	{
+		auto out_buffer = rx_create_reference< memory::std_buffer_type>();
+		std::ostream out(out_buffer.unsafe_ptr());
+		out << "HTTP Resources Information:\r\n" RX_CONSOLE_HEADER_LINE "\r\n";
+		rx_internal::rx_http_server::http_server::instance().dump_http_references(out);
 		out << "\r\n";
 		process_result(true, out_buffer, memory::buffer_ptr::null_ptr, true);
 	}

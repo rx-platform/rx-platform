@@ -35,16 +35,16 @@
 
 // dummy
 #include "dummy.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
+// rx_http_parser
+#include "protocols/http/rx_http_parser.h"
 // rx_http_server
 #include "http_server/rx_http_server.h"
-// rx_io_buffers
-#include "lib/rx_io_buffers.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 #include "protocols/ansi_c/common_c/rx_protocol_handlers.h"
 #include "protocols/ansi_c/http_c/rx_http_c_impl.h"
@@ -108,15 +108,11 @@ class rx_http_endpoint : public rx::pointers::reference_object
 
       static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
 
-      rx_protocol_result_t create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, size_t num_headers, std::byte* content_ptr, size_t content_max_size);
-
-      void send_current_request ();
-
 
 
       rx_protocol_stack_endpoint stack_entry_;
 
-      rx::io::rx_io_buffer receive_buffer_;
+      http_parser parser_;
 
 
       rx_thread_handle_t executer_;
@@ -124,12 +120,6 @@ class rx_http_endpoint : public rx::pointers::reference_object
       rx_reference<rx_http_port> port_;
 
       locks::slim_lock port_lock_;
-
-      size_t content_left_;
-
-      http_request prepared_request_;
-
-      phr_header headers_buffer_[0x80];
 
 
 };

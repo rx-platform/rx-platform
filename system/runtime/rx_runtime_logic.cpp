@@ -191,19 +191,22 @@ void logic_holder::fill_data (const data::runtime_values_data& data, runtime_pro
 
 void logic_holder::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-    for (const auto& one : runtime_programs_)
+    if (type != runtime_value_type::simple_runtime_value)
     {
-        data::runtime_values_data one_data;
-        one.collect_data(one_data, type);
-        if(!one_data.empty())
-            data.add_child(one.name, std::move(one_data));
-    }
-    for (const auto& one : runtime_methods_)
-    {
-        data::runtime_values_data one_data;
-        one.collect_data(one_data, type);
-        if (!one_data.empty())
-            data.add_child(one.name, std::move(one_data));
+        for (const auto& one : runtime_programs_)
+        {
+            data::runtime_values_data one_data;
+            one.collect_data(one_data, type);
+            if (!one_data.empty())
+                data.add_child(one.name, std::move(one_data));
+        }
+        for (const auto& one : runtime_methods_)
+        {
+            data::runtime_values_data one_data;
+            one.collect_data(one_data, type);
+            if (!one_data.empty())
+                data.add_child(one.name, std::move(one_data));
+        }
     }
 }
 
@@ -662,13 +665,27 @@ rx_result method_data::execute (context_execute_data&& data, std::unique_ptr<str
         {
             to_send = std::move(std::get<rx_simple_value>(data.data));
         }
+        else
+        {
+            result.register_error("Error converting input parameters!");
+            RUNTIME_LOG_WARNING("method_data", 300, result.errors_line());
+        }
     }
     else if (std::holds_alternative<data::runtime_values_data>(data.data))
     {
         structure::block_data args(inputs);
-        args.fill_data(std::get<data::runtime_values_data>(data.data));
-        result = args.collect_value(to_send, runtime_value_type::simple_runtime_value);
-        named = true;
+        result = args.check_data(std::get<data::runtime_values_data>(data.data));
+        if (result)
+        {
+            args.fill_data(std::get<data::runtime_values_data>(data.data));
+            result = args.collect_value(to_send, runtime_value_type::simple_runtime_value);
+            named = true;
+        }
+        else
+        {
+            result.register_error("Error converting input parameters!");
+            RUNTIME_LOG_WARNING("method_data", 300, result.errors_line());
+        }
     }
     else
     {

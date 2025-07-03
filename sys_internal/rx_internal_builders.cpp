@@ -1198,6 +1198,15 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_RX_OPC_ADAPT_TYPE_NAME
+			, RX_RX_OPC_ADAPT_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
 		port->complex_data.register_struct("Bind", RX_OPCUA_ENDPOINT_DATA_ID);
 		add_type_to_configuration(dir, port, false);
 
@@ -1221,6 +1230,26 @@ rx_result system_types_builder::do_build (configuration_data_t& config)
 			, full_path
 			});
 		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_TCP_RX_WS_PORT_TYPE_NAME
+			, RX_TCP_RX_WS_PORT_TYPE_ID
+			, RX_TCP_SERVER_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_TCP_RX_WS_JSON_PORT_TYPE_NAME
+			, RX_TCP_RX_WS_JSON_PORT_TYPE_ID
+			, RX_RX_JSON_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Bind", RX_PATH_BIND_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
 		
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -2149,6 +2178,16 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
+			RX_PATH_BIND_TYPE_NAME
+			, RX_PATH_BIND_TYPE_ID
+			, RX_CLASS_STRUCT_BASE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("Path", "");
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+		what = create_type<struct_type>(meta::type_creation_data{
 			RX_MAC_BIND_TYPE_NAME
 			, RX_MAC_BIND_TYPE_ID
 			, RX_CLASS_STRUCT_BASE_ID
@@ -2270,7 +2309,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 				});
-		what->complex_data.register_const_value_static("MaxPacketSize", 0x1000u);
+		what->complex_data.register_const_value_static("MaxPacketSize", 0);
 		add_simple_type_to_configuration<struct_type>(dir, what, false);
 
 		what = create_type<struct_type>(meta::type_creation_data{
@@ -2667,6 +2706,8 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 16000);
 		auto result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
+		
+
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUABIN_NAME;
 		port_instance_data.meta_info.id = RX_NS_SYSTEM_OPCUABIN_ID;
 		port_instance_data.meta_info.parent = RX_OPCUA_TRANSPORT_PORT_TYPE_ID;
@@ -2687,15 +2728,61 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
 
 
-		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXJSON_NAME;
-		port_instance_data.meta_info.id = RX_NS_SYSTEM_RXJSON_ID;
-		port_instance_data.meta_info.parent = RX_RX_JSON_TYPE_ID;
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXOPC_ADAPT_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_RXOPC_ADAPT_ID;
+		port_instance_data.meta_info.parent = RX_RX_OPC_ADAPT_TYPE_ID;
 		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_SEC_NAME);
 		port_instance_data.overrides.add_value_static("Bind.Endpoint", "rx-platform/*");
 		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
+
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXJSON_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_RXJSON_ID;
+		port_instance_data.meta_info.parent = RX_RX_JSON_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_RXOPC_ADAPT_NAME);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
+
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_WS_TCP_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_WS_TCP_ID;
+		port_instance_data.meta_info.parent = RX_TCP_RX_WS_PORT_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("Bind.IPPort", 0);
+		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 300000);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
+
+
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXWS_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_RXWS_ID;
+		port_instance_data.meta_info.parent = RX_NS_WS_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_WS_TCP_NAME);
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
+
+
+		port_instance_data.meta_info.name = RX_NS_SYSTEM_WS_RXJSON_NAME;
+		port_instance_data.meta_info.id = RX_NS_SYSTEM_WS_RXJSON_ID;
+		port_instance_data.meta_info.parent = RX_TCP_RX_WS_JSON_PORT_TYPE_ID;
+		port_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
+		port_instance_data.meta_info.path = full_path;
+		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_RXWS_NAME);
+		port_instance_data.overrides.add_value_static("Bind.Path", "rx-platform");
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+
+
 
 		port_instance_data.meta_info.name = RX_NS_HTTP_TCP_NAME;
 		port_instance_data.meta_info.id = RX_NS_HTTP_TCP_ID;

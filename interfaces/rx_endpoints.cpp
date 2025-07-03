@@ -189,6 +189,10 @@ rx_result rx_io_manager::initialize (hosting::rx_platform_host* host, configurat
 				return rx_create_reference<ip_endpoints::system_rx_port>();
 			});
 		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+			RX_TCP_RX_WS_PORT_TYPE_ID, [] {
+				return rx_create_reference<ip_endpoints::system_wsrx_port>();
+			});
+		result = model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 				RX_TCP_OPCUA_PORT_TYPE_ID, [] {
 					return rx_create_reference<ip_endpoints::system_opcua_port>();
 				});

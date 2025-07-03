@@ -319,20 +319,40 @@ crypt_hash_t rx_crypt_create_hash(crypt_key_t key, int alg)
 	HMAC_INFO info;
 	DWORD err = 0;
 
-	BOOL ret = CryptCreateHash(hcrypt, CALG_HMAC, key, 0, &hhash);
+	int alg_func = algorithm_from_int(alg);
+
+	if (key == 0 && alg_func != CALG_MD5 && alg_func != CALG_SHA1 && alg_func != CALG_SHA_256)
+	{
+		// HMAC requires a key
+		return 0;
+	}
+
+	BOOL ret = CryptCreateHash(hcrypt, alg_func, key, 0, &hhash);
 	if (ret)
 	{
-		ZeroMemory(&info, sizeof(info));
-		info.HashAlgid = algorithm_from_int(alg);
-		ret = CryptSetHashParam(hhash, HP_HMAC_INFO, (BYTE*)&info, 0);
-		if (ret)
+		switch (alg_func)
 		{
-			return hhash;
-		}
-		else
-		{
-			err = GetLastError();
-			CryptDestroyHash(hhash);
+			case CALG_MD5:
+			case CALG_SHA1:
+			case CALG_SHA_256:
+				// no additional parameters needed
+				return hhash;
+			case CALG_HMAC:
+				info.HashAlgid = CALG_SHA_256; // Default to SHA-256 for HMAC
+				ret = CryptSetHashParam(hhash, HP_HMAC_INFO, (BYTE*)&info, 0);
+				if (ret)
+				{
+					return hhash;
+				}
+				else
+				{
+					err = GetLastError();
+					CryptDestroyHash(hhash);
+					return 0;
+				}
+			default:
+				CryptDestroyHash(hhash);
+				return 0; // unsupported
 		}
 	}
 	else

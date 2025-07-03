@@ -485,6 +485,10 @@ rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, 
 	string_type type_name = prototype->meta_info.name;
 	string_type path = prototype->meta_info.path;
 
+
+	if (!rx_is_valid_item_name(type_name))
+		return type_name + " is invalid item name!";
+
 	if (item_id.is_null())
 	{
 		item_id = rx_node_id::generate_new();
@@ -609,6 +613,10 @@ template<class typeCache, class typeT>
 rx_result_with<typeT> update_some_type(typeCache& cache, typeT prototype, rx_update_type_data update_data, rx_transaction_type& transaction)
 {
 	using algorithm_type = typename typeT::pointee_type::algorithm_type;
+
+
+	if(!rx_is_valid_item_name(prototype->meta_info.name))
+		return prototype->meta_info.name + " is invalid item name!";
 
 	if (cache.is_the_same(prototype->meta_info.id, prototype))
 		return "Nothing changed!";
@@ -772,6 +780,9 @@ rx_result_with<create_runtime_result<typename typeCache::HType> > create_some_ru
 {
 	string_type path = instance_data.meta_info.path;
 	string_type runtime_name = instance_data.meta_info.name;
+
+	if (!rx_is_valid_item_name(runtime_name))
+		return runtime_name + " is invalid item name!";
 
 
 	rx_directory_ptr dir = rx_gate::instance().get_directory(path);
@@ -1472,6 +1483,14 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 {
 	using ret_type = rx_result_with<typename typeT::RTypePtr>;
 	auto id = instance_data.meta_info.id;
+
+	if (!rx_is_valid_item_name(instance_data.meta_info.name))
+	{
+		ret_type ret(instance_data.meta_info.name + " is invalid item name!");
+		callback(std::move(ret));
+		return;
+	}
+
 	bool is_empty = false;
 	if (id.is_null())
 	{// error, item does not have id
@@ -1727,7 +1746,7 @@ void runtime_model_algorithm<typeT>::reload_runtime_sync (const rx_item_referenc
 	{
 		do_save = true;
 		item_meta.id = rx_node_id::generate_new();
-		META_LOG_WARNING("configuration_storage_builder", 250, "Created new instance of an object " + item_meta.get_full_path());
+		META_LOG_WARNING("configuration_storage_builder", 250, "Creating new instance of an object " + item_meta.get_full_path());
 	}
 
 	data::runtime_values_data runtime_data;

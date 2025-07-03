@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_protocol.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,14 @@
 
 
 
-// rx_port_helpers
-#include "system/runtime/rx_port_helpers.h"
-// rx_protocol_templates
-#include "system/runtime/rx_protocol_templates.h"
 // dummy
 #include "dummy.h"
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
+// rx_transport_templates
+#include "system/runtime/rx_transport_templates.h"
+// rx_protocol_templates
+#include "system/runtime/rx_protocol_templates.h"
 // rx_protocol_messages
 #include "sys_internal/rx_protocol_messages.h"
 // rx_subscription
@@ -48,9 +50,10 @@
 
 namespace rx_internal {
 namespace rx_protocol {
+class rx_json_protocol_client_port;
 class rx_protocol_connection;
 class rx_json_protocol_port;
-class rx_json_protocol_client_port;
+class rx_opc_protocol_adapter_port;
 
 } // namespace rx_protocol
 } // namespace rx_internal
@@ -610,6 +613,94 @@ System protocol port class. Implementation of a rx-platform JSON protocol");
 
 
       void stack_assembled ();
+
+      rx_result initialize_runtime (runtime_init_context& ctx);
+
+
+      rx_platform::runtime::io_types::simple_port_status status;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+
+class rx_opc_adapter_endpoint 
+{
+
+  public:
+      rx_opc_adapter_endpoint (rx_opc_protocol_adapter_port* port);
+
+      ~rx_opc_adapter_endpoint();
+
+
+      rx_protocol_stack_endpoint& get_stack_entry ()
+      {
+        return stack_entry_;
+      }
+
+
+
+      rx_opc_protocol_adapter_port* get_port ()
+      {
+        return port_;
+      }
+
+
+
+  protected:
+
+  private:
+
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+
+      rx_protocol_result_t received (recv_protocol_packet packet);
+
+      rx_protocol_result_t send (send_protocol_packet packet);
+
+
+
+      rx_protocol_stack_endpoint stack_entry_;
+
+
+      rx_opc_protocol_adapter_port* port_;
+
+
+};
+
+
+
+
+
+
+
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< rx_internal::rx_protocol::rx_opc_adapter_endpoint  > rx_opc_protocol_adapter_port_base;
+
+
+
+
+
+
+class rx_opc_protocol_adapter_port : public rx_opc_protocol_adapter_port_base  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+OPC Adapter Port. Implementation of adapter for OPC to rx-platform protocol port.");
+
+    DECLARE_REFERENCE_PTR(rx_opc_protocol_adapter_port);
+
+  public:
+      rx_opc_protocol_adapter_port();
+
 
       rx_result initialize_runtime (runtime_init_context& ctx);
 

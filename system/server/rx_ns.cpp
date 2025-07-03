@@ -175,6 +175,10 @@ void rx_platform_directory::list_content (platform_directories_type& sub_directo
 rx_result rx_platform_directory::add_item (rx_namespace_item item)
 {
 	auto name = item.get_meta().name;
+
+	if (!rx_is_valid_item_name(name))
+		return name + " is invalid item name!";
+
 	rx_result ret;
 	{
 		valid_scope valid(valid_);

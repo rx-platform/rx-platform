@@ -188,9 +188,14 @@ void relation_data::collect_data (data::runtime_values_data& data, runtime_value
 	if (type == runtime_value_type::persistent_runtime_value && value.value_opt[runtime::structure::value_opt_readonly])
 		return;
 
-	rx_simple_value temp;
-	temp.assign_static(target_path.c_str());
-	data.add_value(name, std::move(temp));
+
+	if (type != runtime_value_type::simple_runtime_value)
+	{
+		rx_simple_value temp;
+		temp.assign_static(target_path.c_str());
+		data.add_value(name, std::move(temp));
+	}
+
 }
 
 void relation_data::try_resolve ()

@@ -97,8 +97,13 @@ private:
 
       void timer_tick ();
 
+      const string_array& get_point_replace () const;
+
 
   protected:
+
+      virtual void fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path);
+
 
   private:
 
@@ -109,8 +114,6 @@ private:
       bool internal_port_connected (const platform_item_ptr& item);
 
       void internal_port_disconnected ();
-
-      virtual void fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path);
 
 
 

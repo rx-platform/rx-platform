@@ -36,7 +36,22 @@
 
 #include "lib/rx_intrinsic.h"
 
+#define PCB_REF_COUNT_MASK 0xffff
+#define PCB_WEAK_COUNT_MASK 0xffff0000
+#define PCB_REF_CHECK_MASK 0x10000000
+#define PCB_WEAK_CHECK_MASK 0x1000
+#define PCB_WEAK_REF_INC 0x10000
 
+RX_COMMON_API lock_reference_struct2* rx_init_lock_reference2(void* target, lock_reference_def_struct2* def)
+{
+	lock_reference_struct2* data = rx_heap_alloc(sizeof(lock_reference_struct2));
+	data->target = target;
+	data->ref_count = 1;
+	data->def = def;
+	data->def->version = 1;
+
+	return NULL;
+}
 RX_COMMON_API void rx_init_lock_reference(lock_reference_struct* data, void* target, lock_reference_def_struct* def)
 {
 	data->target = target;
@@ -53,11 +68,42 @@ RX_COMMON_API void rx_release_lock_reference(lock_reference_struct* data)
 	if (data->target && data->def)
 	{
 		rx_count_ref_t ret = rx_atomic_dec_fetch_32(&data->ref_count);
+		RX_ASSERT(!(ret & PCB_REF_CHECK_MASK));
+		if ((ret & PCB_REF_CHECK_MASK) != 0)
+			ret = ret ^ PCB_REF_CHECK_MASK;
+		ret = ret & PCB_REF_COUNT_MASK;
 		if (ret <= 0 && data->def->destroy_reference)
 		{
 			data->def->destroy_reference(data->target);
 		}
 	}
+}
+RX_COMMON_API void rx_aquire_weak_reference(lock_reference_struct2* data)
+{
+	RX_ASSERT(data->def->version >= 1);
+	if (data->target)
+		rx_atomic_add_fetch_32(&data->ref_count, PCB_WEAK_REF_INC);
+}
+RX_COMMON_API void rx_release_weak_reference(lock_reference_struct2* data)
+{
+	RX_ASSERT(data->def->version >= 1);
+	if (data->target && data->def)
+	{
+		rx_count_ref_t ret_count = rx_atomic_sub_fetch_32(&data->ref_count, PCB_WEAK_REF_INC);
+		RX_ASSERT(!(ret_count & PCB_WEAK_CHECK_MASK));
+		if ((ret_count & PCB_WEAK_CHECK_MASK) != 0)
+			ret_count = ret_count ^ PCB_WEAK_CHECK_MASK;
+
+		if (ret_count == 0)
+		{
+			data->def->destroy_reference(data->target);
+		}
+	}
+}
+RX_COMMON_API void* rx_lock_weak_reference(lock_reference_struct2* data)
+{
+	RX_ASSERT(data->def->version >= 1);
+	return NULL;
 }
 
 int parse_uint16(const char* str, uint16_t* val);

@@ -48,10 +48,15 @@
 #define bswap_32(x) _byteswap_ulong(x)
 #define bswap_64(x) _byteswap_uint64(x)
 
+
+#define rx_atomic_add_fetch_32(x,a) (int32_t)InterlockedAdd((LONG*)x, a)
+#define rx_atomic_sub_fetch_32(x,a) (int32_t)InterlockedAdd((LONG*)x, -(a))
 #define rx_atomic_inc_fetch_32(x) (int32_t)InterlockedIncrement((LONG*)x)
 #define rx_atomic_dec_fetch_32(x) (int32_t)InterlockedDecrement((LONG*)x)
-#define rx_atomic_fetch_32(x) (int32_t)InterlockedAdd((LONG*)x, 1)
+#define rx_atomic_fetch_32(x) (int32_t)InterlockedAdd((LONG*)x, 0)
 
+#define rx_atomic_add_fetch_64(x,a) (int32_t)InterlockedAdd64((LONG64*)x, a)
+#define rx_atomic_sub_fetch_64(x,a) (int32_t)InterlockedAdd64((LONG64*)x, -(a))
 #define rx_atomic_inc_fetch_64(x) (int64_t)InterlockedIncrement64((LONG64*)x)
 #define rx_atomic_dec_fetch_64(x) (int64_t)InterlockedDecrement64((LONG64*)x)
 #define rx_atomic_fetch_64(x) (int64_t)InterlockedAdd64((LONG64*)x, 0);
@@ -99,10 +104,14 @@
 
 #include <byteswap.h>
 
+#define rx_atomic_add_fetch_32(x,a) (int32_t)__atomic_add_fetch((volatile int*)x, a, __ATOMIC_SEQ_CST)
+#define rx_atomic_sub_fetch_32(x,a) (int32_t)__atomic_add_fetch((volatile int*)x, -(a), __ATOMIC_SEQ_CST)
 #define rx_atomic_inc_fetch_32(x) (int32_t)__atomic_add_fetch((volatile int*)x, 1, __ATOMIC_SEQ_CST)
 #define rx_atomic_dec_fetch_32(x) (int32_t)__atomic_add_fetch((volatile int*)x, -1, __ATOMIC_SEQ_CST)
 #define rx_atomic_fetch_32(x) (int32_t)__atomic_add_fetch((volatile int*)val, 0, __ATOMIC_SEQ_CST)
 
+#define rx_atomic_add_fetch_64(x,a) (int32_t)__atomic_add_fetch((volatile int64_t*)x, a, __ATOMIC_SEQ_CST)
+#define rx_atomic_sub_fetch_64(x,a) (int32_t)__atomic_add_fetch((volatile int64_t*)x, -(a), __ATOMIC_SEQ_CST)
 #define rx_atomic_inc_fetch_64(x) (int64_t)__atomic_add_fetch((volatile int64_t*)x, 1ll, __ATOMIC_SEQ_CST)
 #define rx_atomic_dec_fetch_64(x) (int64_t)__atomic_add_fetch((volatile int64_t*)x, -1ll, __ATOMIC_SEQ_CST)
 #define rx_atomic_fetch_64(x) (int64_t)__atomic_add_fetch((volatile int64_t*)val, 0ll, __ATOMIC_SEQ_CST)

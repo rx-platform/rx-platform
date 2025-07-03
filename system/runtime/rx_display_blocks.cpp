@@ -168,13 +168,16 @@ void displays_holder::fill_data (const data::runtime_values_data& data, runtime_
 
 void displays_holder::collect_data (data::runtime_values_data& data, runtime_value_type type) const
 {
-    for (const auto& one : displays_)
+    if (type != runtime_value_type::simple_runtime_value)
     {
-        data::runtime_values_data one_data;
-        one.collect_data(one_data, type);
-        if (!one_data.empty())
-            data.add_child(one.name, std::move(one_data));
+        for (const auto& one : displays_)
+        {
+            data::runtime_values_data one_data;
+            one.collect_data(one_data, type);
+            if (!one_data.empty())
+                data.add_child(one.name, std::move(one_data));
 
+        }
     }
 }
 
@@ -282,11 +285,23 @@ rx_result displays_holder::get_value_ref (string_view_type path, rt_value_ref& r
 
 rx_result displays_holder::get_struct_value (string_view_type item, string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const
 {
+    string_view_type mine;
+    string_view_type bellow;
+    auto idx = item.find('.');
+    if (idx != string_view_type::npos)
+    {
+        mine = path.substr(0, idx);
+        bellow = path.substr(idx + 1);
+    }
+    else
+    {
+        mine = item;
+    }
     for (const auto& one : displays_)
     {
-        if (one.name == item)
+        if (one.name == mine)
         {
-            one.item->collect_data(path, data, type);
+            one.item->collect_data(bellow, data, type);
             return true;
         }
     }

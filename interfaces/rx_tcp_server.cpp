@@ -595,6 +595,18 @@ uint16_t system_opcua_port::get_configuration_port () const
 }
 
 
+// Class rx_internal::interfaces::ip_endpoints::system_wsrx_port 
+
+
+uint16_t system_wsrx_port::get_configuration_port () const
+{
+    auto ret = rx_gate::instance().get_configuration().other.rx_wsport;
+    if (ret == 0)
+        ret = 0x7ABF;
+    return ret;
+}
+
+
 } // namespace ip_endpoints
 } // namespace interfaces
 } // namespace rx_internal

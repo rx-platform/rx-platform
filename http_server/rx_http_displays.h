@@ -73,6 +73,12 @@ class http_display_point : public sys_runtime::data_source::value_point_impl
 
       const string_type& get_str_value () const;
 
+      const rx_simple_value& get_value () const
+      {
+        return value_;
+      }
+
+
 
   protected:
 
@@ -86,6 +92,8 @@ class http_display_point : public sys_runtime::data_source::value_point_impl
 
 
       string_type str_value_;
+
+      rx_simple_value value_;
 
 
 };
@@ -128,13 +136,14 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
     struct one_point_data
     {
+        bool live;
         string_type point_id;
         size_t start_idx;
         size_t end_idx;
         string_type point_path;
         std::unique_ptr<http_display_point> point;
     };
-    typedef std::vector<one_point_data> connected_points_type;
+    typedef std::map<size_t, one_point_data> connected_points_type;
     typedef std::map<string_type, size_t> points_hash_type;
     friend class ::rx_internal::rx_http_server::http_display_handler;
 
@@ -158,6 +167,8 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
       virtual void point_changed ();
 
+      virtual const string_array& get_point_replace () const = 0;
+
 
   protected:
 
@@ -167,11 +178,14 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
       rx_result disconnect_points (runtime::runtime_stop_context& ctx, const string_type& disp_path);
 
-      string_type get_dynamic_content (const string_type& html_data);
+      string_type get_dynamic_content (const string_type& html_data, const string_type& embedded_id, const string_type& display_path);
 
       string_type collect_json_data ();
 
       rx_result write_point (const string_type& id, const string_type& val);
+
+
+      bool meta_;
 
 
   private:
@@ -235,16 +249,20 @@ actuality first display implemented good for testing.)");
 
       rx_result handle_request_internal (rx_platform::http::http_request& req, rx_platform::http::http_response& resp);
 
+      const string_array& get_point_replace () const;
+
 
   protected:
-
-  private:
 
       virtual void fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path);
 
 
+  private:
+
 
       string_type html_data_;
+
+      string_type definition_data_;
 
 
 };
@@ -311,9 +329,10 @@ this implementation is set by default.)");
 
   protected:
 
-  private:
-
       void fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path);
+
+
+  private:
 
       void fill_div (std::ostream& stream, const string_type& rt_name, const string_type& path, const data::runtime_values_data& data);
 
@@ -343,10 +362,10 @@ it enables quick and easy http implementation.)");
 
   protected:
 
-  private:
-
       void fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path);
 
+
+  private:
 
 
 };
@@ -373,9 +392,10 @@ of the platform.)");
 
   protected:
 
-  private:
-
       void fill_contents (http_display_custom_content& content, runtime::runtime_init_context& ctx, const string_type& disp_path);
+
+
+  private:
 
       void fill_div (std::ostream& stream, const string_type& rt_name, const string_type& path, const data::runtime_values_data& data);
 

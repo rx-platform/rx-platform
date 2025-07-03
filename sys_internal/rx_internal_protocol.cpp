@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_protocol.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -581,7 +581,7 @@ void rx_protocol_connection::response_received (response_message_ptr&& response)
 
 		if (!result)
 		{
-			
+
 		}
 	}
 }
@@ -934,7 +934,7 @@ rx_server_connection::rx_server_connection (rx_json_protocol_port* port)
 	RXCOMM_LOG_DEBUG("rx_server_connection", 200, "{rx-platform} communication server endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
 	stack_entry_.received_function = &rx_server_connection::received_function;
-	
+
 	executer_ = port->get_executer();
 }
 
@@ -967,37 +967,22 @@ rx_protocol_result_t rx_server_connection::received_function (rx_protocol_stack_
 
 rx_protocol_result_t rx_server_connection::received (recv_protocol_packet packet)
 {
-	io::rx_const_io_buffer received(packet.buffer);
-	uint8_t type;
-	uint8_t namespace_id;
-	uint16_t num_id;
-	auto result = received.read_from_buffer(type);
-	if (!result)
-		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
-	if (type != 0x1)// has to be string value
-		return RX_PROTOCOL_PARSING_ERROR;
-	result = received.read_from_buffer(namespace_id);
-	if (!result)
-		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
-	result = received.read_from_buffer(num_id);
-	if (!result)
-		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
-	if (num_id != 0x7fff)// has to be exact value
-		return RX_PROTOCOL_PARSING_ERROR;
-	
-	
-	string_type json;
-	result = received.read_string(json);
-	if (result)
+
+	if (packet.buffer && rx_get_packet_available_data(packet.buffer) > 0)
 	{
+		io::rx_const_io_buffer json_buffer(packet.buffer);
 		uint32_t temp_version = stream_version_ == 0 ? RX_CURRENT_SERIALIZE_VERSION : stream_version_;
+
+		string_type json;
+		if(!json_buffer.read_chars(json))
+			return RX_PROTOCOL_PARSING_ERROR;
 
 		messages::rx_request_id_t request_id = 0;
 		// read the header first
-		serialization::json_reader reader(temp_version);
-		if (!reader.parse_data(json))
-			return RX_PROTOCOL_PARSING_ERROR;
-		auto request = messages::rx_request_message::create_request_from_stream(request_id, reader);
+			serialization::json_reader reader(temp_version);
+			if (!reader.parse_data(json))
+				return RX_PROTOCOL_PARSING_ERROR;
+				auto request = messages::rx_request_message::create_request_from_stream(request_id, reader);
 		if (request)
 		{
 			rx_post_function_to(get_executer(), smart_this(),
@@ -1077,10 +1062,7 @@ void rx_server_connection::send_message (message_ptr msg)
 		auto buff_result = port_->alloc_io_buffer();
 		if(buff_result)
 		{
-			buff_result.value().write_to_buffer((uint8_t)1);
-			buff_result.value().write_to_buffer((uint8_t)1);
-			buff_result.value().write_to_buffer((uint16_t)0x7fff);
-			result = buff_result.value().write_string(ret_data);
+			result = buff_result.value().write_chars(ret_data);
 			send_protocol_packet packet = rx_create_send_packet(msg->request_id, &buff_result.value(), 0, 0);
 
 			auto protocol_res = rx_move_packet_down(&stack_entry_, packet);
@@ -1104,6 +1086,125 @@ void rx_server_connection::send_message (message_ptr msg)
 
 
 // Class rx_internal::rx_protocol::subscription_item_data 
+
+
+// Class rx_internal::rx_protocol::rx_opc_protocol_adapter_port 
+
+rx_opc_protocol_adapter_port::rx_opc_protocol_adapter_port()
+{
+	construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
+		{
+			auto rt = std::make_unique<rx_opc_adapter_endpoint>(this);
+			rx_protocol_stack_endpoint* entry = &rt->get_stack_entry();
+			return construct_func_type::result_type{ entry, std::move(rt) };
+		};
+}
+
+
+
+rx_result rx_opc_protocol_adapter_port::initialize_runtime (runtime_init_context& ctx)
+{
+	auto result = status.initialize(ctx);
+	return result;
+}
+
+
+// Class rx_internal::rx_protocol::rx_opc_adapter_endpoint 
+
+rx_opc_adapter_endpoint::rx_opc_adapter_endpoint (rx_opc_protocol_adapter_port* port)
+      : port_(port)
+{
+	RXCOMM_LOG_DEBUG("rx_opc_adapter_endpoint", 900, "OPC Adapter endpoint created.");
+	rx_init_stack_entry(&stack_entry_, this);
+	stack_entry_.received_function = &rx_opc_adapter_endpoint::received_function;
+	stack_entry_.send_function = &rx_opc_adapter_endpoint::send_function;
+}
+
+
+rx_opc_adapter_endpoint::~rx_opc_adapter_endpoint()
+{
+	RXCOMM_LOG_DEBUG("rx_opc_adapter_endpoint", 900, "OPC Adapter endpoint destoryed.");
+}
+
+
+
+rx_protocol_result_t rx_opc_adapter_endpoint::received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet)
+{
+	rx_opc_adapter_endpoint* self = reinterpret_cast<rx_opc_adapter_endpoint*>(reference->user_data);
+	if (self->port_)
+	{
+		self->port_->status.received_packet();
+		return self->received(packet);
+	}
+	else
+	{
+		return RX_PROTOCOL_DISCONNECTED;
+	}
+}
+
+rx_protocol_result_t rx_opc_adapter_endpoint::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
+{
+	rx_opc_adapter_endpoint* self = reinterpret_cast<rx_opc_adapter_endpoint*>(reference->user_data);
+	if (self->port_)
+	{
+		self->port_->status.sent_packet();
+		return self->send(packet);
+	}
+	else
+	{
+		return RX_PROTOCOL_DISCONNECTED;
+	}
+}
+
+rx_protocol_result_t rx_opc_adapter_endpoint::received (recv_protocol_packet packet)
+{
+	io::rx_const_io_buffer received(packet.buffer);
+	uint8_t type;
+	uint8_t namespace_id;
+	uint16_t num_id;
+	auto result = received.read_from_buffer(type);
+	if (!result)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	if (type != 0x1)// has to be string value
+		return RX_PROTOCOL_PARSING_ERROR;
+	result = received.read_from_buffer(namespace_id);
+	if (!result)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	result = received.read_from_buffer(num_id);
+	if (!result)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+	if (num_id != 0x7fff)// has to be exact value
+		return RX_PROTOCOL_PARSING_ERROR;
+
+
+	string_type json;
+	result = received.read_string(json);
+	if (result && !json.empty())
+	{
+		rx_const_packet_buffer pack{};
+		rx_init_const_packet_buffer(&pack, json.c_str() , json.size());
+		recv_protocol_packet up = rx_create_recv_packet(packet.id, &pack, packet.from, packet.to);
+		return rx_move_packet_up(&stack_entry_, up);
+	}
+	
+	return RX_PROTOCOL_PARSING_ERROR;
+}
+
+rx_protocol_result_t rx_opc_adapter_endpoint::send (send_protocol_packet packet)
+{
+	if(packet.buffer == nullptr)
+		return RX_PROTOCOL_BUFFER_SIZE_ERROR;
+
+	io::rx_io_buffer send_buffer;
+	send_buffer.attach(packet.buffer);
+	send_buffer.write_to_buffer_front((uint32_t)send_buffer.size);
+	send_buffer.write_to_buffer_front((uint16_t)0x7fff);
+	send_buffer.write_to_buffer_front((uint8_t)1);
+	send_buffer.write_to_buffer_front((uint8_t)1);
+	send_buffer.detach(packet.buffer);
+
+	return rx_move_packet_down(&stack_entry_ , packet);
+}
 
 
 } // namespace rx_protocol

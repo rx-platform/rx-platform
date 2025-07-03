@@ -159,7 +159,7 @@ class tcp_server_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< rx_internal::interfaces::ip_endpoints::tcp_server_endpoint  > tcp_server_base;
+typedef rx_platform::runtime::io_types::ports_templates::extern_port_impl< tcp_server_endpoint  > tcp_server_base;
 
 
 
@@ -323,6 +323,30 @@ class system_opcua_port : public system_server_port_base
 System a OPC UA Binary TCP Server port class.");
 
     DECLARE_REFERENCE_PTR(system_opcua_port);
+
+  public:
+
+      uint16_t get_configuration_port () const;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class system_wsrx_port : public system_server_port_base  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+System rx-protocol WS TCP Server port class.");
+
+    DECLARE_REFERENCE_PTR(system_wsrx_port);
 
   public:
 

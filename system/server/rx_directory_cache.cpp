@@ -37,6 +37,7 @@
 #include "system/server/rx_directory_cache.h"
 
 #include "rx_configuration.h"
+#include "system/meta/rx_def_blocks.h"
 
 
 namespace rx_platform {
@@ -84,6 +85,10 @@ rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (const string
 	if (name.empty())
 		return RX_INVALID_PATH ", empty name is invalid";
 
+
+	if (!rx_is_valid_item_name(name))
+		return name + " is invalid item name!";
+
 	locks::const_auto_lock_t _(&cache_lock_);
 	auto it = cache_.find(path);
 	if (it != cache_.end())
@@ -128,6 +133,11 @@ rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (const string
 
 rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (rx_directory_ptr parent, const string_type& dir_name, rx_storage_ptr storage)
 {
+
+
+	if (!rx_is_valid_item_name(dir_name))
+		return dir_name + " is invalid directory name!";
+
 	string_type full_path = parent->meta_info().get_full_path();
 	if(!full_path.empty() && *full_path.rbegin()==RX_DIR_DELIMETER)
 		full_path += dir_name;

@@ -362,12 +362,9 @@ template <class typeT>
 void runtime_holder_algorithms<typeT>::collect_data (data::runtime_values_data& data, runtime_value_type type, const typename typeT::RType& whose)
 {
     whose.tags_.collect_data(data, type);
-    if (type != runtime_value_type::simple_runtime_value)
-    {
-        whose.relations_.collect_data(data, type);
-        whose.logic_.collect_data(data, type);
-        whose.displays_.collect_data(data, type);
-    }
+    whose.relations_.collect_data(data, type);
+    whose.logic_.collect_data(data, type);
+    whose.displays_.collect_data(data, type);
 }
 
 template <class typeT>

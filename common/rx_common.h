@@ -411,9 +411,30 @@ typedef struct lock_reference_struct_t
 
 } lock_reference_struct;
 
+typedef struct lock_reference_def_struct2_t
+{
+	reference_destroy_func_t destroy_reference;
+	int version;
+
+} lock_reference_def_struct2;
+
+
+
+typedef struct lock_reference_struct2_t
+{
+	void* target;
+	rx_count_ref_t ref_count;
+	lock_reference_def_struct2* def;
+
+} lock_reference_struct2;
+
 RX_COMMON_API void rx_init_lock_reference(lock_reference_struct* data, void* target, lock_reference_def_struct* def);
+RX_COMMON_API lock_reference_struct2* rx_init_lock_reference2(void* target, lock_reference_def_struct2* def);
 RX_COMMON_API void rx_aquire_lock_reference(lock_reference_struct* data);
 RX_COMMON_API void rx_release_lock_reference(lock_reference_struct* data);
+RX_COMMON_API void rx_aquire_weak_reference(lock_reference_struct2* data);
+RX_COMMON_API void rx_release_weak_reference(lock_reference_struct2* data);
+RX_COMMON_API void* rx_lock_weak_reference(lock_reference_struct2* data);
 
 
 RX_COMMON_API int rx_parse_value_type_name(const char* strtype, rx_value_t* type);
