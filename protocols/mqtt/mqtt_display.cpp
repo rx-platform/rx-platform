@@ -63,8 +63,10 @@ rx_result mqtt_http_display::initialize_display (runtime::runtime_init_context& 
 {
 
 	topic_ = ctx.get_item_static(".Mqtt.Topic", ""s);
-	if (topic_.empty())
-		topic_ = disp_path;
+	if (topic_.empty() && !disp_path.empty())
+	{
+		topic_ = disp_path.substr(1);
+	}
 	broker_url_ = ctx.get_item_static(".Mqtt.BrokerUrl", ""s);
 	auto idx = broker_url_.find('~');
 	if (idx != string_type::npos)

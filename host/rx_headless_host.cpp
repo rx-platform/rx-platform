@@ -415,6 +415,7 @@ int headless_platform_host::start_platform ()
 	auto result = rx_internal::rx_security::platform_security::instance().start(this);
 	if (result)
 	{
+		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		std::cout << "Starting {rx-platform} ...\r\n";
 		auto result = rx_platform::rx_gate::instance().start(this, config_);
 		if (result)

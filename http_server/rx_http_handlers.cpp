@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_handlers.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -65,6 +65,12 @@ void http_handlers_repository::register_standard_handlers ()
 	handler_ptr = std::make_unique<css_file_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<js_file_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<jsx_file_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<ico_file_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<svg_file_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	
 	// excluded object handlers (moved to enterprise)
@@ -225,6 +231,49 @@ const char* jpg_file_handler::get_extension ()
 const char* jpg_file_handler::get_content_type ()
 {
 	return "image/jpeg";
+}
+
+
+// Class rx_internal::rx_http_server::ico_file_handler 
+
+
+const char* ico_file_handler::get_extension ()
+{
+	return "ico";
+}
+
+const char* ico_file_handler::get_content_type ()
+{
+	//return "image/vnd.microsoft.icon";
+	return "image/x-icon";
+}
+
+
+// Class rx_internal::rx_http_server::svg_file_handler 
+
+
+const char* svg_file_handler::get_extension ()
+{
+	return "svg";
+}
+
+const char* svg_file_handler::get_content_type ()
+{
+	return "image/svg+xml";
+}
+
+
+// Class rx_internal::rx_http_server::jsx_file_handler 
+
+
+const char* jsx_file_handler::get_extension ()
+{
+	return "jsx";
+}
+
+const char* jsx_file_handler::get_content_type ()
+{
+	return "text/jsx";
 }
 
 

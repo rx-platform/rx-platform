@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,7 +49,7 @@ namespace runtime {
 
 namespace algorithms {
 
-// Parameterized Class rx_platform::runtime::algorithms::runtime_holder_algorithms 
+// Parameterized Class rx_platform::runtime::algorithms::runtime_holder_algorithms
 
 
 template <class typeT>
@@ -267,9 +267,11 @@ std::unique_ptr<runtime_process_context> runtime_holder_algorithms<typeT>::creat
 }
 
 template <class typeT>
-runtime_init_context runtime_holder_algorithms<typeT>::create_init_context (typename typeT::RType& whose)
+runtime_init_context runtime_holder_algorithms<typeT>::create_init_context (typename typeT::RType& whose, data::runtime_data_model model)
 {
-    return runtime::runtime_init_context(*whose.tags_.item_, whose.meta_info_, whose.context_.get(), &whose.tags_.binded_tags_, &whose.directories_, typeT::runtime_type_id);
+    runtime_init_context ret = runtime::runtime_init_context(*whose.tags_.item_, whose.meta_info_, whose.context_.get(), &whose.tags_.binded_tags_, &whose.directories_, typeT::runtime_type_id);
+    ret.path.model = std::move(model);
+    return ret;
 }
 
 template <class typeT>
@@ -505,8 +507,16 @@ void runtime_holder_algorithms<typeT>::read_struct (string_view_type path, read_
     data::runtime_values_data collected_data;
     if (path.empty())
     {// our value
-        collected_data = whose.runtime_data_cache_;
-        result = true;
+        if (data.type == runtime_value_type::simple_runtime_value)
+        {
+            collected_data = whose.runtime_data_cache_;
+            result = true;
+        }
+        else
+        {
+            collect_data(collected_data, data.type, whose);
+            result = true;
+        }
     }
     else if (path == "Storage")
     {// our runtime value
@@ -648,7 +658,7 @@ void runtime_holder_algorithms<typeT>::fill_access_guards (meta::construct_conte
 	}
 	whose.tags_.connected_tags_.security_guards_map_ = std::move(access_map);
     whose.security_guards_ = const_size_vector< security::security_guard>(access_guards_vector);
-    
+
     whose.context_->security_guards_ = &whose.security_guards_;
 }
 
@@ -673,7 +683,7 @@ template class runtime_holder_algorithms<meta::object_types::object_type>;
 template class runtime_holder_algorithms<meta::object_types::domain_type>;
 template class runtime_holder_algorithms<meta::object_types::application_type>;
 
-// Class rx_platform::runtime::algorithms::runtime_relation_algorithms 
+// Class rx_platform::runtime::algorithms::runtime_relation_algorithms
 
 
 void runtime_relation_algorithms::notify_relation_connected (const string_type& name, const platform_item_ptr& item, runtime_process_context* ctx)

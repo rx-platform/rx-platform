@@ -470,7 +470,7 @@ class runtime_data_prototype
     typedef std::vector<std::bitset<32> > const_values_opts_type;
 	typedef std::vector< runtime::structure::array_wrapper<runtime::structure::value_data> > values_type;
 	typedef std::vector<std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::variable_data> > > variables_type;
-    typedef std::vector<runtime::structure::block_data> struct_blocks_type;
+    typedef std::vector<runtime::structure::meta_blocks_t> meta_data_blocks_type;
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::array_wrapper<runtime::structure::struct_data> > > structs_type;
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::source_data> > sources_type;
 	typedef std::vector< std::pair<rx_node_id, runtime::structure::mapper_data> > mappers_type;
@@ -498,17 +498,17 @@ public:
 
       rx_result add_value (const string_type& name, std::vector<rx_timed_value> value, const std::bitset<32>& value_opt);
 
-      rx_result add_mapper (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id);
+      rx_result add_mapper (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id, runtime::structure::meta_blocks_t block);
 
-      rx_result add_struct (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id, runtime::structure::block_data block);
+      rx_result add_struct (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id, runtime::structure::meta_blocks_t block);
 
-      rx_result add_struct (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id, runtime::structure::block_data block);
+      rx_result add_struct (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id, runtime::structure::meta_blocks_t block);
 
-      rx_result add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_node_id id);
+      rx_result add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_node_id id, runtime::structure::meta_blocks_t block);
 
-      rx_result add_variable (const string_type& name, std::vector<runtime::structure::variable_data> value, rx_node_id id);
+      rx_result add_variable (const string_type& name, std::vector<runtime::structure::variable_data> value, rx_node_id id, runtime::structure::meta_blocks_t block);
 
-      rx_result add_source (const string_type& name, runtime::structure::source_data&& value, rx_node_id id, const security::security_guard& sec);
+      rx_result add_source (const string_type& name, runtime::structure::source_data&& value, rx_node_id id, const security::security_guard& sec, runtime::structure::meta_blocks_t block);
 
       rx_result add_filter (const string_type& name, runtime::structure::filter_data&& value, rx_node_id id);
 
@@ -526,6 +526,8 @@ public:
 
       runtime::structure::block_data create_block_data ();
 
+      runtime::structure::block_data create_full_block_data ();
+
 
       items_type items;
 
@@ -535,13 +537,19 @@ public:
 
       variables_type variables;
 
+      meta_data_blocks_type variable_meta_blocks;
+
       structs_type structs;
 
-      struct_blocks_type struct_blocks;
+      meta_data_blocks_type struct_blocks;
 
       sources_type sources;
 
+      meta_data_blocks_type source_blocks;
+
       mappers_type mappers;
+
+      meta_data_blocks_type mapper_blocks;
 
       filters_type filters;
 
@@ -725,7 +733,7 @@ class construct_context
 
       void push_rt_name (const string_type& name);
 
-      runtime_data_prototype pop_rt_name ();
+      rx_platform::meta::runtime_data_prototype pop_rt_name ();
 
       runtime_data_prototype& runtime_data ();
 

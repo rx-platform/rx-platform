@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_builders.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -70,9 +70,9 @@ class rx_platform_builder
       virtual ~rx_platform_builder();
 
 
-      static rx_result build_platform (hosting::rx_platform_host* host, configuration_data_t& config);
+      static rx_result build_platform (hosting::rx_platform_host* host, configuration_data_t& config, startup_create_data_type& data);
 
-      virtual rx_result do_build (configuration_data_t& config) = 0;
+      virtual rx_result do_build (configuration_data_t& config, startup_create_data_type& data) = 0;
 
       static void deinitialize ();
 
@@ -95,7 +95,7 @@ class rx_platform_builder
 
       static rx_result register_system_constructors ();
 
-      static rx_result buid_unassigned (hosting::rx_platform_host* host, namespace_data_t& data);
+      static rx_result buid_unassigned (hosting::rx_platform_host* host, namespace_data_t& data, startup_create_data_type& create_data);
 
       static std::vector<std::unique_ptr<rx_platform_builder> > get_plugin_builders (namespace_data_t& data, hosting::rx_platform_host* host);
 
@@ -117,7 +117,7 @@ class root_folder_builder : public rx_platform_builder
       root_folder_builder (hosting::rx_platform_host* host);
 
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -140,7 +140,7 @@ class basic_object_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -165,7 +165,7 @@ class system_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -186,7 +186,7 @@ class port_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -206,7 +206,7 @@ class system_objects_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -226,7 +226,7 @@ class support_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -246,7 +246,7 @@ class relation_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -266,7 +266,7 @@ class simulation_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -286,7 +286,7 @@ class system_ports_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -306,7 +306,7 @@ class terminal_commands_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -326,7 +326,7 @@ class http_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -346,7 +346,7 @@ class basic_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -369,7 +369,7 @@ class opc_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -389,7 +389,7 @@ class mqtt_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -409,7 +409,7 @@ class xml_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
@@ -429,7 +429,7 @@ class json_types_builder : public rx_platform_builder
 
   public:
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:

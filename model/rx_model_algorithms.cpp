@@ -4,27 +4,27 @@
 *
 *  model\rx_model_algorithms.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -1056,7 +1056,7 @@ std::vector<rx_result_with<platform_item_ptr> > get_working_runtimes(const rx_no
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// Parameterized Class rx_internal::model::algorithms::types_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::types_model_algorithm 
 
 
 template <class typeT>
@@ -1196,7 +1196,7 @@ rx_result_with<check_type_result> types_model_algorithm<typeT>::check_type_sync 
 }
 
 
-// Parameterized Class rx_internal::model::algorithms::simple_types_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::simple_types_model_algorithm 
 
 
 template <class typeT>
@@ -1348,7 +1348,7 @@ rx_result simple_types_model_algorithm<typeT>::delete_peer_type_sync (rx_referen
 }
 
 
-// Parameterized Class rx_internal::model::algorithms::runtime_model_algorithm
+// Parameterized Class rx_internal::model::algorithms::runtime_model_algorithm 
 
 
 template <class typeT>
@@ -1395,9 +1395,10 @@ void runtime_model_algorithm<typeT>::delete_runtime (const rx_item_reference& it
 }
 
 template <class typeT>
-rx_result runtime_model_algorithm<typeT>::init_runtime (typename typeT::RTypePtr what, structure::block_data model)
+rx_result runtime_model_algorithm<typeT>::init_runtime (typename typeT::RTypePtr what, structure::block_data model, data::runtime_data_model data_model)
 {
-	auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(what, std::move(model));
+	data::runtime_data_model mod;
+	auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(what, std::move(model), std::move(data_model));
 	if (init_result)
 	{// make object running in state
 
@@ -1444,14 +1445,14 @@ rx_result_with<typename typeT::RTypePtr> runtime_model_algorithm<typeT>::create_
 		rx_node_id item_id = result.value().ptr->meta_info().id;
 		sys_runtime::platform_runtime_manager::instance().get_cache().add_functions(item_id, result.value().register_f, result.value().unregister_f);
 		transaction.push([item_id]() mutable {
-			sys_runtime::platform_runtime_manager::instance().get_cache().remove_functions(item_id);
-			auto delete_result = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(item_id);
+				sys_runtime::platform_runtime_manager::instance().get_cache().remove_functions(item_id);
+				auto delete_result = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(item_id);
 			});
 
 		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
 			auto init_result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(result.value().ptr
-				, platform_types_manager::instance().get_type_repository<typeT>().get_runtime_model(item_id));
+				, platform_types_manager::instance().get_type_repository<typeT>().get_runtime_model(item_id), result.value().model);
 			if (!init_result)
 			{
 				init_result.register_error("Unable to initialize "s + result.value().ptr->meta_info().get_full_path());
@@ -1609,7 +1610,7 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 					, update_data = std::move(update_data)
 					, instance_data = std::move(instance_data)
 					, transaction_ptr
-					, create_data = create_result.value()
+					, create_data = create_result.move_value()
 					, callback=std::move(callback)
 				]
 				(rx_result&& deinit_result) mutable
@@ -1627,7 +1628,8 @@ void runtime_model_algorithm<typeT>::update_runtime_sync (instanceT&& instance_d
 						if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 						{
 							auto result = sys_runtime::platform_runtime_manager::instance().init_runtime<typeT>(create_data.ptr,
-								platform_types_manager::instance().get_type_repository<typeT>().get_runtime_model(item_id));
+								platform_types_manager::instance().get_type_repository<typeT>().get_runtime_model(item_id)
+							, std::move(create_data.meta_model));
 							if (!result)
 							{
 								result.register_error("Unable to initialize "s + RX_NEW_SYMBOL_LOG_PREFIX_STR + create_data.ptr->meta_info().name);
@@ -1829,8 +1831,29 @@ void runtime_model_algorithm<typeT>::update_runtime_with_depends_sync (instanceT
 	}
 }
 
+template <class typeT>
+rx_result_with<create_runtime_result<typeT> > runtime_model_algorithm<typeT>::just_create_runtime_sync (instanceT&& instance_data, data::runtime_values_data&& runtime_data, bool temp)
+{
+	rx_transaction_type transaction;
+	auto result = create_some_runtime<types_repository<typeT> >(platform_types_manager::instance().get_type_repository<typeT>()
+		, std::move(instance_data), std::move(runtime_data), transaction, temp);
+	if (result)
+	{
+		rx_node_id item_id = result.value().ptr->meta_info().id;
+		sys_runtime::platform_runtime_manager::instance().get_cache().add_functions(item_id, result.value().register_f, result.value().unregister_f);
+		transaction.push([item_id]() mutable {
+			sys_runtime::platform_runtime_manager::instance().get_cache().remove_functions(item_id);
+			auto delete_result = platform_types_manager::instance().get_type_repository<typeT>().delete_runtime(item_id);
+			});
 
-// Class rx_internal::model::algorithms::relation_types_algorithm
+		transaction.commit();
+		return result;
+	}
+	return result.errors();
+}
+
+
+// Class rx_internal::model::algorithms::relation_types_algorithm 
 
 
 void relation_types_algorithm::get_type (const rx_item_reference& item_reference, rx_result_with_callback<typename relation_type::smart_ptr>&& callback)
@@ -1963,7 +1986,7 @@ template class runtime_model_algorithm<object_type>;
 template class runtime_model_algorithm<port_type>;
 template class runtime_model_algorithm<domain_type>;
 template class runtime_model_algorithm<application_type>;
-// Class rx_internal::model::algorithms::data_types_model_algorithm
+// Class rx_internal::model::algorithms::data_types_model_algorithm 
 
 
 void data_types_model_algorithm::get_type (const rx_item_reference& item_reference, rx_result_with_callback<typename data_type::smart_ptr>&& callback)
@@ -2052,7 +2075,7 @@ rx_result_with<check_type_result> data_types_model_algorithm::check_type_sync (c
 }
 
 
-// Class rx_internal::model::algorithms::transaction_algorithm
+// Class rx_internal::model::algorithms::transaction_algorithm 
 
 
 rx_result_with<api::query_result> transaction_algorithm::get_dependents (rx_item_reference item, string_view_type dir)

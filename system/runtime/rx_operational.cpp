@@ -936,7 +936,8 @@ data::runtime_data_model binded_tags::internal_get_data_model (const string_type
 					size_t idx = 1;
 					while (idx < path.size() && path[idx] == RX_PATH_PARENT)
 						idx++;
-					return structure.get_data_type(&path.c_str()[idx]);
+					if (idx < path.size())
+						return structure.get_data_type(&path.c_str()[idx]);
 				}
 				break;
 		}

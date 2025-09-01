@@ -4333,6 +4333,8 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 					{
 						if (tag_references_)
 							tag_references_->block_data_changed(block, ctx);
+						if (task)
+							task->process_result(true);
 					}
 				}
 				else

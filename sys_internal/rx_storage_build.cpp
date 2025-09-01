@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_storage_build.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -61,9 +61,9 @@ configuration_storage_builder::~configuration_storage_builder()
 
 
 
-rx_result configuration_storage_builder::do_build (configuration_data_t& config)
+rx_result configuration_storage_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
-	auto result = build_from_storage(ns::rx_directory_cache::instance().get_root(), *storage_);
+	auto result = build_from_storage(ns::rx_directory_cache::instance().get_root(), *storage_, data);
 	if (!result)
 	{
 		for (auto& err : result.errors())
@@ -72,7 +72,7 @@ rx_result configuration_storage_builder::do_build (configuration_data_t& config)
 	return result;
 }
 
-rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr root, rx_platform::storage_base::rx_platform_storage& storage)
+rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr root, rx_platform::storage_base::rx_platform_storage& storage, startup_create_data_type& data)
 {
 	if (!storage.is_valid_storage())
 		return "Storage not initialized!";
@@ -164,7 +164,7 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 										auto rt_result = rt_it->second->open_for_read();
 										if (rt_result)
 										{
-											result = create_object_from_storage(item, rt_it->second, root);
+											result = create_object_from_storage(item, rt_it->second, root, data);
 											rt_it->second->close_read();
 										}
 										else
@@ -173,13 +173,13 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 												("Unable to load runtime file!"s + rt_result.errors_line()).c_str());
 
 											rx_storage_item_ptr null_storage_ptr;
-											result = create_object_from_storage(item, null_storage_ptr, root);
+											result = create_object_from_storage(item, null_storage_ptr, root, data);
 										}
 									}
 									else
 									{
 										rx_storage_item_ptr null_storage_ptr;
-										result = create_object_from_storage(item, null_storage_ptr, root);
+										result = create_object_from_storage(item, null_storage_ptr, root, data);
 									}
 								}
 								break;
@@ -212,7 +212,7 @@ rx_result configuration_storage_builder::build_from_storage (rx_directory_ptr ro
 	return result;
 }
 
-rx_result configuration_storage_builder::create_object_from_storage (rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr root)
+rx_result configuration_storage_builder::create_object_from_storage (rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr root, startup_create_data_type& data)
 {
 	meta_data meta;
 	rx_item_type target_type;
@@ -238,16 +238,16 @@ rx_result configuration_storage_builder::create_object_from_storage (rx_storage_
 		{
 			// objects
 		case rx_item_type::rx_object:
-			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<object_type>());
+			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<object_type>(), data);
 			break;
 		case rx_item_type::rx_port:
-			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<port_type>());
+			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<port_type>(), data);
 			break;
 		case rx_item_type::rx_application:
-			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<application_type>());
+			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<application_type>(), data);
 			break;
 		case rx_item_type::rx_domain:
-			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<domain_type>());
+			result = create_concrete_object_from_storage(meta, storage, runtime_storage, dir.value(), do_save, tl::type2type<domain_type>(), data);
 			break;
 		default:
 			result = "Unknown type: "s + rx_item_type_name(target_type);
@@ -502,7 +502,7 @@ rx_result configuration_storage_builder::create_concrete_data_type_from_storage(
 }
 
 template<class T>
-rx_result configuration_storage_builder::create_concrete_object_from_storage(meta_data& meta, rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr dir, bool save, tl::type2type<T>)
+rx_result configuration_storage_builder::create_concrete_object_from_storage(meta_data& meta, rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr dir, bool save, tl::type2type<T>, startup_create_data_type& data)
 {
 	data::runtime_values_data runtime_data;
 	typename T::instance_data_t instance_data;
@@ -515,10 +515,11 @@ rx_result configuration_storage_builder::create_concrete_object_from_storage(met
 			RUNTIME_LOG_DEBUG("runtime_model_algorithm", 100, "Readed runtime "s + rx_item_type_name(T::RImplType::type_id) + " "s + meta.get_full_path());
 				
 		}
-		auto create_result = model::algorithms::runtime_model_algorithm<T>::create_runtime_sync(std::move(instance_data), std::move(runtime_data));
+		auto create_result = model::algorithms::runtime_model_algorithm<T>::just_create_runtime_sync(std::move(instance_data), std::move(runtime_data));
 		if (create_result)
 		{
-			auto rx_type_item = create_result.value()->get_item_ptr();
+			data.emplace(create_result.value().ptr->meta_info().id
+				, startup_create_data_t{ create_result.value().meta_model });
 			return true;
 		}
 		else

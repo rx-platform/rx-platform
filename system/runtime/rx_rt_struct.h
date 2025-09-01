@@ -1142,6 +1142,11 @@ struct block_data_result_t
     }
 };
 
+struct meta_blocks_t
+{
+    structure::block_data simple;
+    structure::block_data full;
+};
 
 
 

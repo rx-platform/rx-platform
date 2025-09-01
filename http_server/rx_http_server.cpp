@@ -174,7 +174,6 @@ rx_result http_server::handle_request (http_request req)
 
 void http_server::send_response (http_request& request, http_response response)
 {
-
 	for (auto& one : filters_)
 	{
 		one->handle_request_after(request, response);
@@ -310,6 +309,13 @@ void http_server::dump_http_references (std::ostream& out)
 
 rx_result standard_request_filter::handle_request_after (http_request& req, http_response& resp)
 {
+	////////////////////////////////////////////////////////////////////////////////////
+	if (rx_is_debug_instance())
+	{
+		resp.headers["Access-Control-Allow-Origin"] = "*";
+		resp.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE";
+	}
+	////////////////////////////////////////////////////////////////////////////////////
 	resp.headers.emplace("Connection", "Keep-Alive");
 	resp.headers.emplace("Keep-Alive", "timeout=32");
 	resp.headers.emplace("Content-Language", "en");

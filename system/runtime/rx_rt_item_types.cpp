@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_rt_item_types.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -1532,4 +1532,6 @@ bool runtime_data<variables_type,structs_type,sources_type,mappers_type,filters_
 } // namespace structure
 } // namespace runtime
 } // namespace rx_platform
+
+
 

@@ -191,6 +191,14 @@ class block_data;
 }
 }
 
+
+struct startup_create_data_t
+{
+    data::runtime_data_model model;
+    std::unique_ptr<runtime::structure::block_data> block;
+};
+typedef std::map<rx_node_id, startup_create_data_t> startup_create_data_type;
+
 struct initialize_data_t
 {
     std::unique_ptr<runtime::structure::block_data> block;

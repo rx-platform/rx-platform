@@ -166,7 +166,8 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 				}
 				else
 				{
-					auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data);
+					startup_create_data_type create_data;
+					auto build_result = rx_internal::builders::rx_platform_builder::build_platform(host, data, create_data);
 
 					if (build_result)
 					{
@@ -179,7 +180,7 @@ rx_result rx_gate::initialize (hosting::rx_platform_host* host, configuration_da
 						if (result)
 						{
 							init_data_ = std::make_unique<initialize_data_type>();
-							result = rx_internal::model::platform_types_manager::instance().initialize(host, data, *init_data_);
+							result = rx_internal::model::platform_types_manager::instance().initialize(host, data, *init_data_, create_data);
 							if (!result)
 							{
 								result.register_error("Error initializing platform types manager!");

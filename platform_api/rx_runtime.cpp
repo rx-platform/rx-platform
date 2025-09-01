@@ -705,6 +705,39 @@ rx_result rx_init_context::get_data_type (const string_type& path, data::runtime
     return ret;
 }
 
+rx_result rx_init_context::get_data_model (data::runtime_data_model& data) const
+{
+    if (!api_get_data_type_func)
+        return RX_NOT_SUPPORTED;
+
+    bytes_value_struct type_data;
+    rx_result ret = api_get_data_type_func(get_binded_stream_version(), impl_, "", &type_data);
+    if (ret)
+    {
+        size_t count = 0;
+        const uint8_t* data_ptr = rx_c_ptr(&type_data, &count);
+        if (count)
+        {
+            memory::std_buffer buffer;
+            bool data_ret = buffer.push_data(data_ptr, count);
+            rx_destory_bytes_value_struct(&type_data);
+
+            if (!data_ret)
+                return RX_OUT_OF_MEMORY;
+
+            serialization::std_buffer_reader reader(buffer, get_binded_stream_version());
+
+            data::runtime_data_model model;
+
+            if (!reader.read_data_type(NULL, model))
+                return reader.get_error();
+
+            data = std::move(model);
+        }
+    }
+    return ret;
+}
+
 
 // Class rx_platform_api::rx_start_context 
 

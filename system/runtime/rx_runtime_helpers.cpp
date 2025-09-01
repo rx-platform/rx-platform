@@ -210,6 +210,10 @@ rx_time runtime_init_context::now ()
 
 data::runtime_data_model runtime_init_context::get_data_model (string_view_type path)
 {
+	if(path.empty())
+	{
+		return this->path.get_current_model();
+	}
 	return tags->get_data_model(string_type(path), structure);
 }
 
@@ -219,9 +223,50 @@ data::runtime_data_model runtime_init_context::get_data_model (string_view_type 
 
 void runtime_path_resolver::push_to_path (const string_type& name)
 {
+	static const data::runtime_data_model g_empty_element;
 	if (!path_.empty())
 		path_ += RX_OBJECT_DELIMETER;
 	path_ += name;
+	if (model_elements.empty())
+	{
+		auto it = std::find_if(model.elements.begin(), model.elements.end(), [name](const data::runtime_model_element& el) {
+				return el.name == name;
+			});
+		if (it != model.elements.end())
+		{
+			if(it->is_complex())
+				model_elements.push(it->get_complex());
+			else if (it->is_complex_array())
+				model_elements.push(it->get_complex_array());
+			else
+				model_elements.push(g_empty_element);
+		}
+		else
+		{
+			model_elements.push(g_empty_element);
+		}
+	}
+	else
+	{
+		const auto& top = model_elements.top().get();
+		
+		auto it = std::find_if(top.elements.begin(), top.elements.end(), [name](const data::runtime_model_element& el) {
+				return el.name == name;
+			});
+		if (it != top.elements.end())
+		{
+			if (it->is_complex())
+				model_elements.push(it->get_complex());
+			else if (it->is_complex_array())
+				model_elements.push(it->get_complex_array());
+			else
+				model_elements.push(g_empty_element);
+		}
+		else
+		{
+			model_elements.push(g_empty_element);
+		}
+	}
 }
 
 void runtime_path_resolver::pop_from_path ()
@@ -238,6 +283,11 @@ void runtime_path_resolver::pop_from_path ()
 		{
 			path_.resize(idx);
 		}
+	}
+	RX_ASSERT(!model_elements.empty());
+	if (!model_elements.empty())
+	{
+		model_elements.pop();
 	}
 }
 
@@ -273,6 +323,18 @@ string_type runtime_path_resolver::get_parent_path (size_t level) const
 		}
 	}
 	return "";
+}
+
+const data::runtime_data_model& runtime_path_resolver::get_current_model () const
+{
+	if (model_elements.empty())
+	{
+		return model;
+	}
+	else
+	{
+		return model_elements.top().get();
+	}
 }
 
 
@@ -404,9 +466,16 @@ data::runtime_data_model runtime_structure_resolver::get_data_type (const string
 {
 	auto it = data_types_.find(path);
 	if (it != data_types_.end())
+	{
 		return it->second;
+	}
 	else
+	{
+		auto& item = get_current_item();
+		data::runtime_values_data vals;
+		auto brw = item.collect_data(path, vals, runtime_value_type::full_runtime_value);
 		return data::runtime_data_model();
+	}
 }
 
 void runtime_structure_resolver::register_data_type (const string_type& path, data::runtime_data_model data)

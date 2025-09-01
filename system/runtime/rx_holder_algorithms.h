@@ -73,7 +73,7 @@ class runtime_holder_algorithms
 
       static std::unique_ptr<runtime_process_context> create_context (typename typeT::RType& whose, runtime::events::runtime_events_manager* events);
 
-      static runtime_init_context create_init_context (typename typeT::RType& whose);
+      static runtime_init_context create_init_context (typename typeT::RType& whose, data::runtime_data_model model);
 
       static runtime_start_context create_start_context (typename typeT::RType& whose);
 

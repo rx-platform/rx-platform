@@ -793,7 +793,11 @@ extern "C" {
 	RX_PLATFORM_API rx_result_struct rxInitCtxGetDataType(int version, init_ctx_ptr ctx, const char* path, bytes_value_struct* data)
 	{
 		runtime::runtime_init_context* self = (runtime::runtime_init_context*)ctx;
-		data::runtime_data_model data_str = self->structure.get_data_type(path);
+		data::runtime_data_model data_str;
+		if(path==nullptr || *path == '\0')
+			data_str = self->path.get_current_model();
+		else
+			data_str = self->structure.get_data_type(path);
 		
 
 		memory::std_buffer buffer;

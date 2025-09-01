@@ -178,7 +178,7 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
       rx_result disconnect_points (runtime::runtime_stop_context& ctx, const string_type& disp_path);
 
-      string_type get_dynamic_content (const string_type& html_data, const string_type& embedded_id, const string_type& display_path);
+      string_type get_dynamic_content (const string_type& html_data, string_view_type embedded_id, string_view_type display_path);
 
       string_type collect_json_data ();
 

@@ -5,7 +5,7 @@
 #define RX_SERVER_NAME "Molecule"
 #define RX_SERVER_MAJOR_VERSION 2
 #define RX_SERVER_MINOR_VERSION 7
-#define RX_SERVER_BUILD_NUMBER 0
+#define RX_SERVER_BUILD_NUMBER 2
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -60,4 +60,6 @@
 // version 2.6.6 write result for persistent values is after storage write
 // version 2.6.7 circular references not implemented for extern objects but should work for now
 // version 2.7.0 added WebSocket server, and connected config with it
+// version 2.7.1 added data model while in initialization
+// version 2.7.2 corrected errors in data model
 

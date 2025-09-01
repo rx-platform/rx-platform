@@ -73,55 +73,55 @@ platform_types_manager& platform_types_manager::instance ()
 	return *g_platform_types_instance;//ROOT of CLASSES!!!! $$$ Important Object Here!!!
 }
 
-rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data)
+rx_result platform_types_manager::initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data, startup_create_data_type& create_data)
 {
 
-	auto result = get_data_types_repository().initialize(host, data);
+	auto result = get_data_types_repository().initialize(host, data, create_data);
 	if (!result)
 		return result;
 
-	result = get_simple_type_repository<basic_types::struct_type>().initialize(host, data);
+	result = get_simple_type_repository<basic_types::struct_type>().initialize(host, data, create_data);
 	if (!result)
 		return result;
-	result = get_simple_type_repository<basic_types::variable_type>().initialize(host, data);
+	result = get_simple_type_repository<basic_types::variable_type>().initialize(host, data, create_data);
 	if (!result)
 		return result;
-	result = get_simple_type_repository<basic_types::source_type>().initialize(host, data);
+	result = get_simple_type_repository<basic_types::source_type>().initialize(host, data, create_data);
 	if (!result)
 		return result;
-	result = get_simple_type_repository<basic_types::filter_type>().initialize(host, data);
+	result = get_simple_type_repository<basic_types::filter_type>().initialize(host, data, create_data);
 	if (!result)
 		return result;
-	result = get_simple_type_repository<basic_types::event_type>().initialize(host, data);
+	result = get_simple_type_repository<basic_types::event_type>().initialize(host, data, create_data);
 	if (!result)
 		return result;
-	result = get_simple_type_repository<basic_types::mapper_type>().initialize(host, data);
+	result = get_simple_type_repository<basic_types::mapper_type>().initialize(host, data, create_data);
 	if (!result)
 		return result;
-	result = get_simple_type_repository<basic_types::method_type>().initialize(host, data);
+	result = get_simple_type_repository<basic_types::method_type>().initialize(host, data, create_data);
 	if (!result)
 		return result;
-	result = get_simple_type_repository<basic_types::program_type>().initialize(host, data);
+	result = get_simple_type_repository<basic_types::program_type>().initialize(host, data, create_data);
 	if (!result)
 		return result;
-	result = get_simple_type_repository<basic_types::display_type>().initialize(host, data);
-	if (!result)
-		return result;
-
-	result = get_relations_repository().initialize(host, data);
+	result = get_simple_type_repository<basic_types::display_type>().initialize(host, data, create_data);
 	if (!result)
 		return result;
 
-	result = get_type_repository<object_types::application_type>().initialize(host, data, init_data);
+	result = get_relations_repository().initialize(host, data, create_data);
 	if (!result)
 		return result;
-	result = get_type_repository<object_types::domain_type>().initialize(host, data, init_data);
+
+	result = get_type_repository<object_types::application_type>().initialize(host, data, init_data, create_data);
 	if (!result)
 		return result;
-	result = get_type_repository<object_types::port_type>().initialize(host, data, init_data);
+	result = get_type_repository<object_types::domain_type>().initialize(host, data, init_data, create_data);
 	if (!result)
 		return result;
-	result = get_type_repository<object_types::object_type>().initialize(host, data, init_data);
+	result = get_type_repository<object_types::port_type>().initialize(host, data, init_data, create_data);
+	if (!result)
+		return result;
+	result = get_type_repository<object_types::object_type>().initialize(host, data, init_data, create_data);
 	if (!result)
 		return result;
 
@@ -561,6 +561,9 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 
 	rt_data.add_const_value("_Name", name_value, opts);
 	auto block_data = rt_data.create_block_data();
+
+
+	ret.meta_model = rt_data.create_full_block_data().create_runtime_model();
 	ret.ptr->tags_.set_runtime_data(create_runtime_data(rt_data));
 	// now handle methods, programs and rest of the stuff
 
@@ -608,6 +611,8 @@ rx_result_with<create_runtime_result<typeT> > types_repository<typeT>::create_ru
 		guard = instance_data.security_guard;
 	runtime::algorithms::runtime_holder_algorithms<typeT>::fill_access_guards(ctx, *ret.ptr, guard);
 	ret.ptr->directories_.add_paths({ ret.ptr->meta_info_.path });
+
+	ret.model = block_data.create_runtime_model();
 	
 
 	if (!prototype)
@@ -851,7 +856,7 @@ rx_result types_repository<typeT>::delete_type (rx_node_id id)
 }
 
 template <class typeT>
-rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data)
+rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data, startup_create_data_type& create_data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
 	std::unique_ptr<std::map<rx_node_id, string_type> > ids_map;
@@ -882,7 +887,10 @@ rx_result types_repository<typeT>::initialize (hosting::rx_platform_host* host, 
 
 	for (auto& one : registered_objects_)
 	{
-		result = sys_runtime::platform_runtime_manager::instance().just_init_runtime<typeT>(one.second.target, init_data, get_runtime_model(one.second.target->meta_info().id));
+		auto meta_it = create_data.find(one.first);
+		result = sys_runtime::platform_runtime_manager::instance().just_init_runtime<typeT>(one.second.target, init_data
+			, get_runtime_model(one.second.target->meta_info().id)
+			, meta_it == create_data.end() ? data::runtime_data_model() : std::move(meta_it->second.model));
 		if (!result)
 		{
 			if (one.second.target->meta_info().is_system())
@@ -1631,7 +1639,7 @@ rx_result simple_types_repository<typeT>::register_constructor (const rx_node_id
 }
 
 template <class typeT>
-rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_repository<typeT>::create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, runtime::structure::block_data* block_ptr) const
+rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_repository<typeT>::create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, runtime::structure::meta_blocks_t* block_ptr) const
 {
 	bool was_in_model = false;
 	if constexpr (!std::is_same<typeT, meta::basic_types::struct_type>())
@@ -1736,7 +1744,10 @@ rx_result_with<typename simple_types_repository<typeT>::RDataType> simple_types_
 
 	runtime_data_prototype rt = ctx.pop_rt_name();
 	if (block_ptr)
-		*block_ptr = rt.create_block_data();
+	{
+		block_ptr->simple = rt.create_block_data();
+		block_ptr->full = rt.create_full_block_data();
+	}
 	auto runtime = create_runtime_data(rt);
 	// go reverse with overrides
 	for (auto it = overrides.rbegin(); it != overrides.rend(); it++)
@@ -1838,7 +1849,7 @@ rx_result simple_types_repository<typeT>::type_exists (rx_node_id id) const
 }
 
 template <class typeT>
-rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
+rx_result simple_types_repository<typeT>::initialize (hosting::rx_platform_host* host, const configuration_data_t& data, startup_create_data_type& create_data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
 	std::unique_ptr<std::map<rx_node_id, string_type> > ids_map;
@@ -2318,7 +2329,7 @@ rx_result relations_type_repository::delete_type (rx_node_id id)
 	}
 }
 
-rx_result relations_type_repository::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
+rx_result relations_type_repository::initialize (hosting::rx_platform_host* host, const configuration_data_t& data, startup_create_data_type& create_data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
 	std::unique_ptr<std::map<rx_node_id, string_type> > ids_map;
@@ -2832,7 +2843,7 @@ rx_result data_type_repository::delete_type (rx_node_id id)
 	}
 }
 
-rx_result data_type_repository::initialize (hosting::rx_platform_host* host, const configuration_data_t& data)
+rx_result data_type_repository::initialize (hosting::rx_platform_host* host, const configuration_data_t& data, startup_create_data_type& create_data)
 {
 	std::vector<std::pair<rx_node_id, rx_node_id> > to_add;
 	std::unique_ptr<std::map<rx_node_id, string_type> > ids_map;

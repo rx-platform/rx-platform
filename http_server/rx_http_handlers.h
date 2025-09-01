@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_handlers.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -208,6 +208,72 @@ class js_file_handler : public text_file_handler
 
 
 class jpg_file_handler : public http_file_handler  
+{
+
+  public:
+
+      const char* get_extension ();
+
+      const char* get_content_type ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class ico_file_handler : public http_file_handler  
+{
+
+  public:
+
+      const char* get_extension ();
+
+      const char* get_content_type ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class svg_file_handler : public http_file_handler  
+{
+
+  public:
+
+      const char* get_extension ();
+
+      const char* get_content_type ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class jsx_file_handler : public text_file_handler  
 {
 
   public:

@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_storage_build.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -58,17 +58,17 @@ class configuration_storage_builder : public rx_platform_builder
       ~configuration_storage_builder();
 
 
-      rx_result do_build (configuration_data_t& config);
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
 
   protected:
 
-      rx_result build_from_storage (rx_directory_ptr root, rx_platform::storage_base::rx_platform_storage& storage);
+      rx_result build_from_storage (rx_directory_ptr root, rx_platform::storage_base::rx_platform_storage& storage, startup_create_data_type& data);
 
 
   private:
 
-      rx_result create_object_from_storage (rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr root);
+      rx_result create_object_from_storage (rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage, rx_directory_ptr root, startup_create_data_type& data);
 
       rx_result create_type_from_storage (rx_storage_item_ptr& storage, rx_directory_ptr root);
 
@@ -93,7 +93,7 @@ class configuration_storage_builder : public rx_platform_builder
 	  template<class T>
 	  rx_result create_concrete_object_from_storage(meta_data& meta
           , rx_storage_item_ptr& storage, rx_storage_item_ptr& runtime_storage
-          , rx_directory_ptr dir, bool save, tl::type2type<T>);
+          , rx_directory_ptr dir, bool save, tl::type2type<T>, startup_create_data_type& data);
 };
 
 

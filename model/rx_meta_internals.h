@@ -336,6 +336,8 @@ struct create_runtime_result
     std::function<void(const rx_node_id&)> register_f;
     std::function<void(const rx_node_id&)> unregister_f;
     data::runtime_values_data runtime_data;
+	data::runtime_data_model model;
+    data::runtime_data_model meta_model;
     operator bool() const
     {
         return ptr;
@@ -429,7 +431,7 @@ public:
 
       rx_result delete_type (rx_node_id id);
 
-      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data, startup_create_data_type& create_data);
 
       void deinitialize ();
 
@@ -520,7 +522,7 @@ public:
 
       rx_result register_constructor (const rx_node_id& id, std::function<RTypePtr()> f);
 
-      rx_result_with<typename simple_types_repository<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, runtime::structure::block_data* block_ptr = nullptr) const;
+      rx_result_with<typename simple_types_repository<typeT>::RDataType> create_simple_runtime (const rx_node_id& type_id, const string_type& rt_name, construct_context& ctx, runtime::structure::meta_blocks_t* block_ptr) const;
 
       api::query_result get_derived_types (const rx_node_id& id) const;
 
@@ -530,7 +532,7 @@ public:
 
       rx_result type_exists (rx_node_id id) const;
 
-      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data, startup_create_data_type& create_data);
 
       void deinitialize ();
 
@@ -714,7 +716,7 @@ public:
 
       rx_result delete_type (rx_node_id id);
 
-      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data, startup_create_data_type& create_data);
 
       void deinitialize ();
 
@@ -801,7 +803,7 @@ public:
 
       rx_result delete_type (rx_node_id id);
 
-      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data, startup_create_data_type& create_data);
 
       void deinitialize ();
 
@@ -943,7 +945,7 @@ class platform_types_manager
 
       static platform_types_manager& instance ();
 
-      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data);
+      rx_result initialize (hosting::rx_platform_host* host, const configuration_data_t& data, initialize_data_type& init_data, startup_create_data_type& create_data);
 
       void deinitialize ();
 

@@ -261,6 +261,9 @@ first_mapper::~first_mapper()
 rx_result first_mapper::initialize_mapper (rx_platform_api::rx_init_context& ctx)
 {
 	RX_PLUGIN_LOG_DEBUG("first_mapper", 100, _rx_func_);
+	data::runtime_data_model data;
+	auto res = ctx.get_data_model(data);
+	RX_ASSERT(res);
 	return true;
 }
 

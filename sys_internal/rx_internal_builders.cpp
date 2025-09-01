@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_builders.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -174,7 +174,7 @@ void add_relation_type_to_configuration(rx_directory_ptr dir, relation_type::sma
 }
 
 template<class T>
-rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance_data_t&& data, data::runtime_values_data&& runtime_data, tl::type2type<T>
+rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance_data_t&& data, data::runtime_values_data&& runtime_data, tl::type2type<T>, startup_create_data_type& startup_data
 , std::function<void(typename T::RTypePtr)> result_f = std::function<void(typename T::RTypePtr)>())
 {
 	data.meta_info = create_meta_for_new(data.meta_info);
@@ -223,7 +223,7 @@ rx_platform_builder & rx_platform_builder::operator=(const rx_platform_builder &
 
 
 
-rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, configuration_data_t& config)
+rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, configuration_data_t& config, startup_create_data_type& data)
 {
 	rx_result errors = register_system_constructors();
 	if (!errors)
@@ -241,7 +241,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building system...");
 	for (auto& one : sys_builders)
 	{
-		auto result = one->do_build(config);
+		auto result = one->do_build(config, data);
 		if (!result)
 		{
 			BUILD_LOG_ERROR("rx_platform_builder", 900, "Error building platform system!");
@@ -251,7 +251,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	}
 	BUILD_LOG_INFO("rx_platform_builder", 900, "System built.");
 	BUILD_LOG_INFO("rx_platform_builder", 900, "Building unassigned system...");
-	errors = buid_unassigned(host, config.storage);
+	errors = buid_unassigned(host, config.storage, data);
 	if (errors)
 		BUILD_LOG_INFO("rx_platform_builder", 900, "Unassigned system built.");
 	// unassigned is critical so an error in building system is fatal
@@ -327,7 +327,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		if (storage_ptr)
 		{
 			storage::configuration_storage_builder builder(storage_ptr.value());
-			errors = builder.do_build(config);
+			errors = builder.do_build(config, data);
 			if (!errors)
 			{
 				errors.register_error("Unable to build host "s + host->get_host_name());
@@ -355,7 +355,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 			if (storage_ptr)
 			{
 				storage::configuration_storage_builder builder(storage_ptr.value());
-				errors = builder.do_build(config);
+				errors = builder.do_build(config, data);
 				if (!errors)
 				{
 					errors.register_error("Unable to build plugin "s + (*it_plugin)->get_plugin_name());
@@ -373,7 +373,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 
 	for (auto& one : user_builders)
 	{
-		auto result = one->do_build(config);
+		auto result = one->do_build(config, data);
 		if (!result)
 		{
 			BUILD_LOG_ERROR("rx_platform_builder", 900, "Errors occurred while building platform user configuration!");
@@ -385,7 +385,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	{
 		for (auto& one : test_builders)
 		{
-			auto result = one->do_build(config);
+			auto result = one->do_build(config, data);
 			if (!result)
 			{
 				BUILD_LOG_WARNING("rx_platform_builder", 900, "Errors occurred while building platform test configuration!");
@@ -394,7 +394,7 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 	}
 	for (auto& one : other_builders)
 	{
-		auto result = one->do_build(config);
+		auto result = one->do_build(config, data);
 		if (!result)
 		{
 			BUILD_LOG_WARNING("rx_platform_builder", 900, "Error building platform additional configuration!");
@@ -552,7 +552,7 @@ rx_result rx_platform_builder::register_system_constructors ()
 	return true;
 }
 
-rx_result rx_platform_builder::buid_unassigned (hosting::rx_platform_host* host, namespace_data_t& data)
+rx_result rx_platform_builder::buid_unassigned (hosting::rx_platform_host* host, namespace_data_t& data, startup_create_data_type& create_data)
 {
 	string_type path(RX_NS_UNASSIGNED_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -567,7 +567,7 @@ rx_result rx_platform_builder::buid_unassigned (hosting::rx_platform_host* host,
 		app_instance_data.meta_info.path = full_path;
 		app_instance_data.instance_data.processor = 1;
 		app_instance_data.instance_data.priority = rx_domain_priority::low;
-		auto result = add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>());
+		auto result = add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>(), create_data);
 		if (!result)
 		{
 			result.register_error("Unable to add unassigned application!");
@@ -582,7 +582,7 @@ rx_result rx_platform_builder::buid_unassigned (hosting::rx_platform_host* host,
 		instance_data.instance_data.processor = 1;
 		instance_data.instance_data.app_ref = rx_item_reference(RX_NS_SYSTEM_UNASS_APP_NAME);
 		instance_data.instance_data.priority = rx_domain_priority::low;
-		auto result2 = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<domain_type>());
+		auto result2 = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<domain_type>(), create_data);
 		if (!result2)
 		{
 			result2.register_error("Unable to add unassigned domain!");
@@ -636,7 +636,7 @@ root_folder_builder::root_folder_builder (hosting::rx_platform_host* host)
 
 
 
-rx_result root_folder_builder::do_build (configuration_data_t& config)
+rx_result root_folder_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	std::vector<std::pair<string_type, rx_storage_ptr> > dirs =
 	{
@@ -731,7 +731,7 @@ rx_result root_folder_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::basic_object_types_builder 
 
 
-rx_result basic_object_types_builder::do_build (configuration_data_t& config)
+rx_result basic_object_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_BASE_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -916,7 +916,7 @@ void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<rx
 // Class rx_internal::builders::system_types_builder 
 
 
-rx_result system_types_builder::do_build (configuration_data_t& config)
+rx_result system_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SYSTEM_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -1350,7 +1350,7 @@ void system_types_builder::build_host_info_struct_type(rx_directory_ptr dir, str
 // Class rx_internal::builders::port_types_builder 
 
 
-rx_result port_types_builder::do_build (configuration_data_t& config)
+rx_result port_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_PORT_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -1628,7 +1628,7 @@ rx_result port_types_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::system_objects_builder 
 
 
-rx_result system_objects_builder::do_build (configuration_data_t& config)
+rx_result system_objects_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_SYSTEM_OBJ_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -1644,7 +1644,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		app_instance_data.meta_info.path = full_path;
 		app_instance_data.instance_data.processor = 0;
 		app_instance_data.instance_data.priority = rx_domain_priority::normal;
-		auto result = add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>());
+		auto result = add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>(), data);
 
 		runtime_data::domain_runtime_data domain_instance_data;
 		domain_instance_data.meta_info.name = RX_NS_SYSTEM_DOM_NAME;
@@ -1655,7 +1655,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		domain_instance_data.instance_data.processor = -1;
 		domain_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		domain_instance_data.instance_data.priority = rx_domain_priority::normal;
-		result = add_object_to_configuration(dir, std::move(domain_instance_data), data::runtime_values_data(), tl::type2type<domain_type>());
+		result = add_object_to_configuration(dir, std::move(domain_instance_data), data::runtime_values_data(), tl::type2type<domain_type>(), data);
 
 		app_instance_data = runtime_data::application_runtime_data();
 		app_instance_data.meta_info.name = RX_NS_WORLD_APP_NAME;
@@ -1665,7 +1665,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		app_instance_data.meta_info.path = full_path;
 		app_instance_data.instance_data.processor = 0;
 		app_instance_data.instance_data.priority = rx_domain_priority::normal;
-		result = add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>());
+		result = add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>(), data);
 
 
 		runtime_data::object_runtime_data instance_data;
@@ -1677,7 +1677,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
 		instance_data.overrides.add_value_static<string_array >("index.Resources.DisplayFiles", { "index.html" });
-		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>(), data);
 
 		instance_data = runtime_data::object_runtime_data();
 		instance_data.meta_info.name = RX_NS_MEMORY_NAME;
@@ -1686,7 +1686,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
-		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>(), data);
 
 
 		instance_data = runtime_data::object_runtime_data();
@@ -1696,7 +1696,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
-		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>(), data);
 		// we did the move so make another object
 		instance_data = runtime_data::object_runtime_data();
 		instance_data.meta_info.name = IO_POOL_NAME;
@@ -1705,7 +1705,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
-		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>(), data);
 
 		instance_data = runtime_data::object_runtime_data();
 		instance_data.meta_info.name = META_POOL_NAME;
@@ -1714,7 +1714,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
-		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>(), data);
 
 
 		instance_data = runtime_data::object_runtime_data();
@@ -1724,7 +1724,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
-		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>());
+		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>(), data);
 
 	}
 	BUILD_LOG_INFO("system_objects_builder", 900, "System objects built.");
@@ -1735,7 +1735,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::support_types_builder 
 
 
-rx_result support_types_builder::do_build (configuration_data_t& config)
+rx_result support_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SUPPORT_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -2585,7 +2585,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::relation_types_builder 
 
 
-rx_result relation_types_builder::do_build (configuration_data_t& config)
+rx_result relation_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_RELATIONS_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -2661,7 +2661,7 @@ rx_result relation_types_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::simulation_types_builder 
 
 
-rx_result simulation_types_builder::do_build (configuration_data_t& config)
+rx_result simulation_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_SIMULATION_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -2687,7 +2687,7 @@ rx_result simulation_types_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::system_ports_builder 
 
 
-rx_result system_ports_builder::do_build (configuration_data_t& config)
+rx_result system_ports_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_OBJ_NAME "/" RX_NS_PORT_OBJ_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -2704,7 +2704,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("Bind.IPPort", 0);
 		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 16000);
-		auto result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		auto result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 		
 
@@ -2715,7 +2715,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_TCP_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUABIN_SEC_NAME;
@@ -2725,7 +2725,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXOPC_ADAPT_NAME;
@@ -2736,7 +2736,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUABIN_SEC_NAME);
 		port_instance_data.overrides.add_value_static("Bind.Endpoint", "rx-platform/*");
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_RXJSON_NAME;
@@ -2746,7 +2746,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_RXOPC_ADAPT_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_WS_TCP_NAME;
@@ -2757,7 +2757,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("Bind.IPPort", 0);
 		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 300000);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 
@@ -2768,7 +2768,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_WS_TCP_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 
@@ -2780,7 +2780,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_RXWS_NAME);
 		port_instance_data.overrides.add_value_static("Bind.Path", "rx-platform");
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 
@@ -2792,7 +2792,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("Bind.IPPort", 0);
 		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 300000);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 		/*port_instance_data.meta_info.name = RX_NS_HTTP_TRANSP_NAME;
 		port_instance_data.meta_info.id = RX_NS_HTTP_TRANSP_ID;
@@ -2810,7 +2810,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_HTTP_TCP_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_MQTT_TCP_NAME;
@@ -2822,7 +2822,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.overrides.add_value_static("Bind.IPPort", 0);
 		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 60000);
 		port_instance_data.overrides.add_value_static("Connect.IPPort", 1883);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_MQTT_NAME;
 		port_instance_data.meta_info.id = RX_NS_SYSTEM_MQTT_ID;
@@ -2832,7 +2832,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("Options.KeepAlive", 30);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_MQTT_TCP_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 
@@ -2844,7 +2844,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("Bind.IPPort", 0);
 		port_instance_data.overrides.add_value_static("Timeouts.ReceiveTimeout", 300000);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUA_NAME;
 		port_instance_data.meta_info.id = RX_NS_SYSTEM_OPCUA_ID;
@@ -2853,7 +2853,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUA_TCP_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUA_SEC_NAME;
@@ -2863,7 +2863,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.meta_info.path = full_path;
 		port_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
 		port_instance_data.overrides.add_value_static("StackTop", "./" RX_NS_SYSTEM_OPCUA_NAME);
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 
 		port_instance_data.meta_info.name = RX_NS_SYSTEM_OPCUA_SERVER_NAME;
@@ -2877,7 +2877,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 		port_instance_data.overrides.add_value_static("Options.AppName", "System");
 		port_instance_data.overrides.add_value_static("Bind.Endpoint", "sys");
 
-		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>());
+		result = add_object_to_configuration(dir, std::move(port_instance_data), data::runtime_values_data(), tl::type2type<port_type>(), data);
 
 	}
 	BUILD_LOG_INFO("system_ports_builder", 900, "System ports built.");
@@ -2888,7 +2888,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::terminal_commands_builder 
 
 
-rx_result terminal_commands_builder::do_build (configuration_data_t& config)
+rx_result terminal_commands_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_TERMINAL_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -2975,7 +2975,7 @@ rx_result terminal_commands_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::http_builder 
 
 
-rx_result http_builder::do_build (configuration_data_t& config)
+rx_result http_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_HTTP_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -3087,7 +3087,7 @@ rx_result http_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::basic_types_builder 
 
 
-rx_result basic_types_builder::do_build (configuration_data_t& config)
+rx_result basic_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_BASE_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -3243,7 +3243,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::opc_types_builder 
 
 
-rx_result opc_types_builder::do_build (configuration_data_t& config)
+rx_result opc_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_OPC_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -3567,7 +3567,7 @@ rx_result opc_types_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::mqtt_types_builder 
 
 
-rx_result mqtt_types_builder::do_build (configuration_data_t& config)
+rx_result mqtt_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_MQTT_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -3881,7 +3881,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::xml_types_builder 
 
 
-rx_result xml_types_builder::do_build (configuration_data_t& config)
+rx_result xml_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_XML_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;
@@ -3931,7 +3931,7 @@ rx_result xml_types_builder::do_build (configuration_data_t& config)
 // Class rx_internal::builders::json_types_builder 
 
 
-rx_result json_types_builder::do_build (configuration_data_t& config)
+rx_result json_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
 {
 	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_JSON_CLASSES_NAME);
 	string_type full_path = RX_DIR_DELIMETER + path;

@@ -68,6 +68,13 @@ class rx_directory_resolver;
 } // namespace ns
 
 namespace runtime {
+namespace structure {
+class mapper_data;
+class variable_data;
+class runtime_item;
+class source_data;
+} // namespace structure
+
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
@@ -80,15 +87,8 @@ class relation_subscriber;
 class runtime_process_context;
 namespace tag_blocks {
 class binded_tags;
+
 } // namespace tag_blocks
-
-namespace structure {
-class mapper_data;
-class variable_data;
-class runtime_item;
-class source_data;
-
-} // namespace structure
 } // namespace runtime
 } // namespace rx_platform
 
@@ -230,6 +230,7 @@ class io_capabilities
 
 class runtime_path_resolver 
 {
+    typedef std::stack<std::reference_wrapper<const data::runtime_data_model>, std::vector<std::reference_wrapper<const data::runtime_data_model> > > model_elements_type;
 
   public:
 
@@ -240,6 +241,13 @@ class runtime_path_resolver
       const string_type& get_current_path () const;
 
       string_type get_parent_path (size_t level) const;
+
+      const data::runtime_data_model& get_current_model () const;
+
+
+      data::runtime_data_model model;
+
+      model_elements_type model_elements;
 
 
   protected:
@@ -656,6 +664,7 @@ struct runtime_init_context
 
   public:
       runtime_init_context(const runtime_init_context&) = delete;
+      runtime_init_context(runtime_init_context&&) = default;
       template<typename T>
       rx_result set_item_static(const string_type& path, T&& value)
       {

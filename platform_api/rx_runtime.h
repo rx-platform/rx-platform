@@ -296,6 +296,8 @@ class rx_init_context
 
       rx_result get_data_type (const string_type& path, data::runtime_data_model& data) const;
 
+      rx_result get_data_model (data::runtime_data_model& data) const;
+
       template<typename T>
       T get_local_value_as(const string_type& path, const T& default_value)
       {

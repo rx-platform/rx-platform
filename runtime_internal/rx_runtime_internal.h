@@ -249,12 +249,12 @@ class platform_runtime_manager
 
 
 	  template<class typeT>
-	  rx_result init_runtime(typename typeT::RTypePtr what, structure::block_data model)
+	  rx_result init_runtime(typename typeT::RTypePtr what, structure::block_data model, data::runtime_data_model data_model)
 	  {
           auto result = algorithms::create_runtime_structure<typeT>(what);
           if (result)
           {
-              auto ctx = runtime::algorithms::runtime_holder_algorithms<typeT>::create_init_context(*what);
+              auto ctx = runtime::algorithms::runtime_holder_algorithms<typeT>::create_init_context(*what, std::move(data_model));
               ctx.model = std::make_unique<structure::block_data>(std::move(model));
               result = algorithms::init_runtime<typeT>(what, ctx);
               if (result)
@@ -263,12 +263,12 @@ class platform_runtime_manager
 		  return result;
 	  }
       template<class typeT>
-      rx_result just_init_runtime(typename typeT::RTypePtr what, initialize_data_type& init_data, structure::block_data model)
+      rx_result just_init_runtime(typename typeT::RTypePtr what, initialize_data_type& init_data, structure::block_data model, data::runtime_data_model data_model)
       {
           auto result = algorithms::create_runtime_structure<typeT>(what);
           if (result)
           {
-              auto ctx = runtime::algorithms::runtime_holder_algorithms<typeT>::create_init_context(*what);
+              auto ctx = runtime::algorithms::runtime_holder_algorithms<typeT>::create_init_context(*what, data_model);
               ctx.model = std::make_unique<structure::block_data>(std::move(model));
               result = algorithms::just_init_runtime<typeT>(what, ctx);
               if (!result)

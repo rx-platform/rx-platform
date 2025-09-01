@@ -154,7 +154,7 @@ rx_result meta_blocks_algorithm<def_blocks::struct_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
-	runtime::structure::block_data block;
+	runtime::structure::meta_blocks_t block;
 	if (whose.array_size_ < 0)
 	{
 		auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::struct_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
@@ -368,11 +368,14 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 	}
 	target = resolve_result.value();
 
+	runtime::structure::meta_blocks_t block;
+
+
 	if (whose.get_data_type_ref().is_null())
 	{
 		if (whose.array_size_ < 0)
 		{
-			auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+			auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 			if (temp)
 			{
 				temp.value().value = whose.get_value(ctx.now);
@@ -384,7 +387,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 					string_type path = ctx.get_current_path() + whose.name_;
 					ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
 				}
-				return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target);
+				return ctx.runtime_data().add_variable(whose.name_, std::move(temp.value()), target, std::move(block));
 			}
 			else
 			{
@@ -402,7 +405,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 			data.reserve(whose.array_size_);
 			for (int i = 0; i < whose.array_size_; i++)
 			{
-				auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+				auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 				if (temp)
 				{
 					if (i < vals_size)
@@ -424,7 +427,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 				string_type path = ctx.get_current_path() + whose.name_;
 				ctx.get_access_guards().insert_or_assign(path, whose.security_guard);
 			}
-			return ctx.runtime_data().add_variable(whose.name_, std::move(data), target);
+			return ctx.runtime_data().add_variable(whose.name_, std::move(data), target, std::move(block));
 		}
 	}
 	else
@@ -445,7 +448,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 			auto temp_data = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(data_target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
 			if (temp_data)
 			{
-				auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+				auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 				if (temp)
 				{
 					temp.value().value = whose.get_value(ctx.now);
@@ -487,7 +490,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 				auto temp_data = rx_internal::model::platform_types_manager::instance().get_data_types_repository().create_data_type(data_target, whose.get_name(), ctx, ctx.get_directories(), nullptr);
 				if (temp_data)
 				{
-					auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+					auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::variable_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 					if (temp)
 					{
 						if (i < vals_size)
@@ -601,7 +604,8 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::source_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+	runtime::structure::meta_blocks_t block;
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::source_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 	if (temp)
 	{
 		if (!whose.security_guard.is_null())
@@ -614,7 +618,7 @@ rx_result meta_blocks_algorithm<def_blocks::source_attribute>::construct_complex
 		temp.value().source_id = target;
 		temp.value().input_value.value.set_time(ctx.now);
 		temp.value().input_value.value.set_quality(RX_DEFAULT_VALUE_QUALITY);
-		return ctx.runtime_data().add_source(whose.name_, std::move(temp.value()), target, whose.security_guard);
+		return ctx.runtime_data().add_source(whose.name_, std::move(temp.value()), target, whose.security_guard, std::move(block));
 	}
 	else
 	{
@@ -704,7 +708,8 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 		return true;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+	runtime::structure::meta_blocks_t block;
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::mapper_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 	if (temp)
 	{
 		if (!whose.security_guard.is_null())
@@ -722,7 +727,7 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::construct_complex
 			string_type path = ctx.get_current_path() + whose.name_;
 			ctx.get_access_guards().emplace(path, whose.security_guard);
 		}
-		return ctx.runtime_data().add_mapper(whose.name_, std::move(temp.value()), target);
+		return ctx.runtime_data().add_mapper(whose.name_, std::move(temp.value()), target, std::move(block));
 	}
 	else
 	{
@@ -810,7 +815,8 @@ rx_result meta_blocks_algorithm<def_blocks::filter_attribute>::construct_complex
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::filter_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+	runtime::structure::meta_blocks_t block;
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::filter_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 	if (temp)
 	{
 		temp.value().io_.set_input(whose.io_.input);
@@ -842,7 +848,8 @@ rx_result meta_blocks_algorithm<def_blocks::event_attribute>::construct_complex_
 		return ret;
 	}
 	target = resolve_result.value();
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::event_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+	runtime::structure::meta_blocks_t block;
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::event_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 	if (temp)
 	{
 		if (!whose.arguments_.is_null())
@@ -885,8 +892,9 @@ rx_result meta_blocks_algorithm<def_blocks::program_attribute>::construct_comple
 		return ret;
 	}
 	target = resolve_result.value();
+	runtime::structure::meta_blocks_t block;
 	ctx.start_program(whose.get_name());
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::program_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::program_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 	if (temp)
 	{
 		if (!whose.security_guard.is_null())
@@ -916,8 +924,9 @@ rx_result meta_blocks_algorithm<def_blocks::display_attribute>::construct_comple
 		return ret;
 	}
 	target = resolve_result.value();
+	runtime::structure::meta_blocks_t block;
 	ctx.start_display(whose.get_name());
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::display_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::display_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 	if (temp)
 	{
 		if (!whose.security_guard.is_null())
@@ -2402,8 +2411,9 @@ rx_result method_blocks_algorithm::construct_complex_attribute (const def_blocks
 	}
 	target = resolve_result.value();
 	rx_node_id input_id, output_id;
+	runtime::structure::meta_blocks_t block;
 	ctx.start_method(whose.get_name(), input_id, output_id);
-	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::method_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx);
+	auto temp = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<def_blocks::method_attribute::TargetType>().create_simple_runtime(target, whose.name_, ctx, &block);
 	if (temp)
 	{
 		if (!whose.inputs_.is_null())

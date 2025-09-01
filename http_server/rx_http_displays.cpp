@@ -186,6 +186,8 @@ rx_result rx_http_static_display::handle_request_internal (rx_platform::http::ht
 			{
 				resp.set_string_content(get_dynamic_content(html_data_, "", req.path + "." + req.extension));
 				resp.headers["Content-Type"] = "text/html";
+
+
 				resp.result = 200;
 			}
 			else
@@ -640,14 +642,26 @@ rx_result rx_http_display_base::disconnect_points (runtime::runtime_stop_context
 	return true;
 }
 
-string_type rx_http_display_base::get_dynamic_content (const string_type& html_data, const string_type& embedded_id, const string_type& display_path)
+string_type rx_http_display_base::get_dynamic_content (const string_type& html_data, string_view_type embedded_id, string_view_type display_path)
 {
 	string_type ret_content;
 	ret_content.reserve(html_data.size());
 	size_t last_idx = 0;
+	string_view_type sub_path;
+	string_view_type emb_id;
 	if (!embedded_id.empty())
 	{
-		auto idx = html_data.find("<body");
+		auto idx = embedded_id.rfind('/');
+		if (idx != string_view_type::npos)
+		{
+			sub_path = embedded_id.substr(0, idx + 1);
+			emb_id = embedded_id.substr(idx + 1);
+		}
+		else
+		{
+			emb_id = embedded_id;
+		}
+		idx = html_data.find("<body");
 		if (idx != string_type::npos)
 		{
 			idx = html_data.find('>', idx + 5);
@@ -688,22 +702,31 @@ string_type rx_http_display_base::get_dynamic_content (const string_type& html_d
 		}
 		else if (one.second.point_path == "#")
 		{
-			ret_content += embedded_id.empty() ? "id"s : embedded_id;
+			ret_content += emb_id.empty() ? "id"s : emb_id;
 		}
 		else if (one.second.point_path == "$")
 		{
-			if (display_path.size() > 0 && display_path[0] == '/')
+			string_view_type display_name;
+			auto idx = display_path.rfind('/');
+			if (idx != string_view_type::npos)
+				display_name = display_path.substr(idx + 1);
+			else
+				display_name = display_path;
+			display_name = display_name;
+			if (display_name.size() > 0 && display_name[0] == '/')
 			{
-				ret_content += &display_path.c_str()[1];
+				ret_content += sub_path;
+				ret_content += &display_name[1];
 			}
 			else
 			{
-				ret_content += display_path;
+				ret_content += sub_path;
+				ret_content += display_name;
 			}
 		}
 		last_idx = one.second.end_idx;
 	}
-	if (!embedded_id.empty())
+	if (!emb_id.empty())
 	{
 		auto idx = html_data.find("</body>", last_idx);
 		if (idx != string_type::npos)

@@ -441,7 +441,7 @@ bool rx_web_socket_endpoint::is_header_done ()
     {
         return false; // Header is not complete
 	}
-	int mask_size = (header_buffer_[1] & 0x80) ? 4 : 0; // Check if mask is present
+	size_t mask_size = (header_buffer_[1] & 0x80) ? 4 : 0; // Check if mask is present
     switch(header_buffer_[1]& 0x7F) // Mask the first bit to get payload length
     {
         case 126: // Extended payload length (16 bits)

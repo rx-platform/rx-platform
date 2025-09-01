@@ -268,7 +268,7 @@ void construct_context::push_rt_name (const string_type& name)
 	runtime_stack().push_back(runtime_data_prototype());
 }
 
-runtime_data_prototype construct_context::pop_rt_name ()
+rx_platform::meta::runtime_data_prototype construct_context::pop_rt_name ()
 {
 	rt_names_.pop_back();
 	runtime_data_prototype ret = std::move(*runtime_stack().rbegin());
@@ -818,13 +818,14 @@ int runtime_data_prototype::check_member_name (const string_type& name) const
 	return -1;
 }
 
-rx_result runtime_data_prototype::add_mapper (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id)
+rx_result runtime_data_prototype::add_mapper (const string_type& name, runtime::structure::mapper_data&& value, rx_node_id id, runtime::structure::meta_blocks_t block)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(mappers.size());
 		mappers.emplace_back(std::move(id), std::move(value));
+		mapper_blocks.emplace_back(block);
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_mapper_index_type });
 		return true;
 	}
@@ -835,6 +836,7 @@ rx_result runtime_data_prototype::add_mapper (const string_type& name, runtime::
 		{
 			members_index_type new_idx = static_cast<members_index_type>(mappers.size());
 			mappers.emplace_back(std::move(id), std::move(value));
+			mapper_blocks.emplace_back(block);
 			elem.index = (new_idx << rt_type_shift) | rt_mapper_index_type;
 			return true;
 		}
@@ -845,7 +847,7 @@ rx_result runtime_data_prototype::add_mapper (const string_type& name, runtime::
 	}
 }
 
-rx_result runtime_data_prototype::add_struct (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id, runtime::structure::block_data block)
+rx_result runtime_data_prototype::add_struct (const string_type& name, runtime::structure::struct_data&& value, rx_node_id id, runtime::structure::meta_blocks_t block)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -881,7 +883,7 @@ rx_result runtime_data_prototype::add_struct (const string_type& name, runtime::
 	}
 }
 
-rx_result runtime_data_prototype::add_struct (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id, runtime::structure::block_data block)
+rx_result runtime_data_prototype::add_struct (const string_type& name, std::vector<runtime::structure::struct_data> value, rx_node_id id, runtime::structure::meta_blocks_t block)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
@@ -919,13 +921,14 @@ rx_result runtime_data_prototype::add_struct (const string_type& name, std::vect
 	}
 }
 
-rx_result runtime_data_prototype::add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_node_id id)
+rx_result runtime_data_prototype::add_variable (const string_type& name, runtime::structure::variable_data&& value, rx_node_id id, runtime::structure::meta_blocks_t block)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(variables.size());
 		variables.emplace_back(std::move(id), std::move(value));
+		variable_meta_blocks.emplace_back(block);
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_variable_index_type });
 		return true;
 	}
@@ -947,6 +950,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
 				variables.emplace_back(std::move(id), std::move(value));
+				variable_meta_blocks.emplace_back(block);
 				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
 			}
 			break;
@@ -961,6 +965,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 					return "Can't override value, wrong value type!";
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
 				variables.emplace_back(std::move(id), std::move(value));
+				variable_meta_blocks.emplace_back(block);
 				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
 			}
 			break;
@@ -978,6 +983,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 					return "Can't override variable, wrong variable type!";
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
 				variables.emplace_back(std::move(id), std::move(value));
+				variable_meta_blocks.emplace_back(block);
 				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
 			}
 			break;
@@ -988,13 +994,14 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 	}
 }
 
-rx_result runtime_data_prototype::add_variable (const string_type& name, std::vector<runtime::structure::variable_data> value, rx_node_id id)
+rx_result runtime_data_prototype::add_variable (const string_type& name, std::vector<runtime::structure::variable_data> value, rx_node_id id, runtime::structure::meta_blocks_t block)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(variables.size());
 		variables.emplace_back(std::move(id), std::move(value));
+		variable_meta_blocks.emplace_back(block);
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_variable_index_type });
 		return true;
 	}
@@ -1014,6 +1021,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, std::ve
 
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
 				variables.emplace_back(std::move(id), std::move(value));
+				variable_meta_blocks.emplace_back(block);
 				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
 			}
 			break;
@@ -1026,6 +1034,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, std::ve
 					return "Can't override value, wrong value type!";
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
 				variables.emplace_back(std::move(id), std::move(value));
+				variable_meta_blocks.emplace_back(block);
 				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
 			}
 			break;
@@ -1041,6 +1050,7 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, std::ve
 					return "Can't override variable, wrong variable type!";
 				members_index_type new_idx = static_cast<members_index_type>(variables.size());
 				variables.emplace_back(std::move(id), std::move(value));
+				variable_meta_blocks.emplace_back(block);
 				elem.index = (new_idx << rt_type_shift) | rt_variable_index_type;
 			}
 			break;
@@ -1051,13 +1061,14 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, std::ve
 	}
 }
 
-rx_result runtime_data_prototype::add_source (const string_type& name, runtime::structure::source_data&& value, rx_node_id id, const security::security_guard& sec)
+rx_result runtime_data_prototype::add_source (const string_type& name, runtime::structure::source_data&& value, rx_node_id id, const security::security_guard& sec, runtime::structure::meta_blocks_t block)
 {
 	auto idx = check_member_name(name);
 	if (idx < 0)
 	{
 		members_index_type new_idx = static_cast<members_index_type>(sources.size());
 		sources.emplace_back(std::move(id), std::move(value));
+		source_blocks.emplace_back(block);
 		items.push_back({ name, (new_idx << rt_type_shift) | rt_source_index_type });
 		return true;
 	}
@@ -1068,6 +1079,7 @@ rx_result runtime_data_prototype::add_source (const string_type& name, runtime::
 		{
 			members_index_type new_idx = static_cast<members_index_type>(sources.size());
 			sources.emplace_back(std::move(id), std::move(value));
+			source_blocks.emplace_back(block);
 			elem.index = (new_idx << rt_type_shift) | rt_source_index_type;
 			return true;
 		}
@@ -1242,7 +1254,7 @@ rx_result runtime_data_prototype::add_value_block (const string_type& name, std:
 	}
 }
 
-runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
+rx_platform::meta::runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
 {
 	runtime_data_prototype ret;
 	for (auto& item : items)
@@ -1268,6 +1280,7 @@ runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
 			{
 				members_index_type new_idx = static_cast<members_index_type>(ret.variables.size());
 				ret.variables.push_back(std::move(variables[idx]));
+				ret.variable_meta_blocks.push_back(std::move(variable_meta_blocks[idx]));
 				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_variable_index_type });
 			}
 			break;
@@ -1283,6 +1296,7 @@ runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
 			{
 				members_index_type new_idx = static_cast<members_index_type>(ret.sources.size());
 				ret.sources.push_back(std::move(sources[idx]));
+				ret.source_blocks.push_back(std::move(source_blocks[idx]));
 				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_source_index_type });
 			}
 			break;
@@ -1290,6 +1304,7 @@ runtime_data_prototype runtime_data_prototype::strip_normalized_prototype ()
 			{
 				members_index_type new_idx = static_cast<members_index_type>(ret.mappers.size());
 				ret.mappers.push_back(std::move(mappers[idx]));
+				ret.mapper_blocks.push_back(std::move(mapper_blocks[idx]));
 				ret.items.push_back({ item.name, (new_idx << rt_type_shift) | rt_mapper_index_type });
 			}
 			break;
@@ -1374,17 +1389,133 @@ runtime::structure::block_data runtime_data_prototype::create_block_data ()
 					break;
 				case rt_struct_index_type:
 					{
-						if (!struct_blocks[idx].items.empty())
+						if (!struct_blocks[idx].simple.items.empty())
 						{
 							block_data_prototype block_struck;
 							if (structs[idx].second.is_array())
 							{
-								block_proto.add_empty_array(item.name, runtime::structure::block_data(struct_blocks[idx]), rx_node_id());
+								block_proto.add_empty_array(item.name, runtime::structure::block_data(struct_blocks[idx].simple), rx_node_id());
 							}
 							else
 							{
-								block_proto.add(item.name, runtime::structure::block_data(struct_blocks[idx]), rx_node_id());
+								block_proto.add(item.name, runtime::structure::block_data(struct_blocks[idx].simple), rx_node_id());
 							}
+						}
+					}
+					break;
+				case rt_value_data_index_type:
+					{
+						if (blocks[idx].second.is_array())
+						{
+							block_proto.add_empty_array(item.name, runtime::structure::block_data(blocks[idx].second.get_prototype()->block), rx_node_id());
+						}
+						else
+						{
+							block_proto.add(item.name, runtime::structure::block_data(blocks[idx].second.get_item()->block), rx_node_id());
+						}
+					}
+					break;
+				case rt_variable_data_index_type:
+					{
+						if (variable_blocks[idx].second.is_array())
+						{
+							block_proto.add_empty_array(item.name, runtime::structure::block_data(variable_blocks[idx].second.get_prototype()->block), rx_node_id());
+						}
+						else
+						{
+							block_proto.add(item.name, runtime::structure::block_data(variable_blocks[idx].second.get_item()->block), rx_node_id());
+						}
+					}
+					break;
+				default:
+					;
+			}
+		}
+	}
+	return block_proto.create_block();
+}
+
+runtime::structure::block_data runtime_data_prototype::create_full_block_data ()
+{
+	block_data_prototype block_proto;
+	for (auto& item : items)
+	{
+		if (!item.name.empty() && item.name[0] != '_')
+		{
+			size_t idx = (item.index >> rt_type_shift);
+			switch (item.index & rt_type_mask)
+			{
+				case rt_const_index_type:
+					{
+						if (const_values[idx].is_array())
+						{
+							block_proto.add_empty_array_value(item.name, const_values[idx].get_prototype()->simple_get_value());
+						}
+						else
+						{
+							block_proto.add_value(item.name, const_values[idx].get_item()->simple_get_value());
+						}
+					}
+					break;
+				case rt_value_index_type:
+					{
+						if (values[idx].is_array())
+						{
+							block_proto.add_empty_array_value(item.name, values[idx].get_prototype()->simple_get_value());
+						}
+						else
+						{
+							block_proto.add_value(item.name, values[idx].get_item()->simple_get_value());
+						}
+					}
+					break;
+				case rt_variable_index_type:
+					{
+						if (!variable_meta_blocks[idx].full.items.empty())
+						{
+							block_data_prototype block_struck;
+							if (variables[idx].second.is_array())
+							{
+								block_proto.add_empty_array(item.name, runtime::structure::block_data(variable_meta_blocks[idx].full), rx_node_id());
+							}
+							else
+							{
+								block_proto.add(item.name, runtime::structure::block_data(variable_meta_blocks[idx].full), rx_node_id());
+							}
+						}
+					}
+					break;
+				case rt_struct_index_type:
+					{
+						if (!struct_blocks[idx].full.items.empty())
+						{
+							block_data_prototype block_struck;
+							if (structs[idx].second.is_array())
+							{
+								block_proto.add_empty_array(item.name, runtime::structure::block_data(struct_blocks[idx].full), rx_node_id());
+							}
+							else
+							{
+								block_proto.add(item.name, runtime::structure::block_data(struct_blocks[idx].full), rx_node_id());
+							}
+						}
+					}
+					break;
+				case rt_mapper_index_type:
+					{
+						if (!mapper_blocks[idx].full.items.empty())
+						{
+							block_data_prototype block_struck;
+							block_proto.add(item.name, runtime::structure::block_data(mapper_blocks[idx].full), rx_node_id());
+						}
+					}
+					break;
+				case rt_source_index_type:
+					{
+						if (!source_blocks[idx].full.items.empty())
+						{
+							block_data_prototype block_struck;
+							block_proto.add(item.name, runtime::structure::block_data(source_blocks[idx].full), rx_node_id());
 						}
 					}
 					break;

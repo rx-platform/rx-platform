@@ -36,10 +36,8 @@
 #include "system/server/rx_platform_item.h"
 #include "rx_value_templates.h"
 
-// rx_ns_resolver
-#include "system/server/rx_ns_resolver.h"
-// rx_job
-#include "system/threads/rx_job.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 // rx_event_manager
 #include "system/runtime/rx_event_manager.h"
 // rx_tag_blocks
@@ -54,10 +52,12 @@
 #include "system/runtime/rx_operational.h"
 // rx_objbase
 #include "system/runtime/rx_objbase.h"
+// rx_ns_resolver
+#include "system/server/rx_ns_resolver.h"
+// rx_job
+#include "system/threads/rx_job.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace runtime {
@@ -264,6 +264,8 @@ public:
       memory::std_buffer binary_cache_;
 
       data::runtime_values_data runtime_data_cache_;
+
+      std::unique_ptr<data::runtime_data_model> model_;
 
 
 };
