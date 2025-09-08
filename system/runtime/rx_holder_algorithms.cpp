@@ -95,15 +95,11 @@ template <class typeT>
 void runtime_holder_algorithms<typeT>::fire_job (typename typeT::RType& whose)
 {
     locks::auto_lock_t<decltype(whose.job_lock_)> _(&whose.job_lock_);
-    if (!whose.job_pending_)
+    if (!whose.job_pending_ && whose.my_job_ptr_)
     {
         whose.job_pending_ = true;
-        RX_ASSERT(whose.my_job_ptr_);
-        if (whose.my_job_ptr_)
-        {
-            auto executer = rx_internal::infrastructure::server_runtime::instance().get_executer(whose.get_executer());
-            executer->append(whose.my_job_ptr_);
-        }
+        auto executer = rx_internal::infrastructure::server_runtime::instance().get_executer(whose.get_executer());
+        executer->append(whose.my_job_ptr_);
     }
 }
 

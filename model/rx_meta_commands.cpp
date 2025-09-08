@@ -4,7 +4,7 @@
 *
 *  model\rx_meta_commands.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *
@@ -46,7 +46,7 @@
 #include "system/runtime/rx_blocks.h"
 #include "system/server/rx_file_helpers.h"
 #include "system/meta/rx_meta_support.h"
-
+#include "sys_internal/rx_async_functions.h"
 
 using namespace rx_platform::api;
 using namespace rx_platform::api::meta;
@@ -2131,6 +2131,118 @@ bool carray_command::do_console_command (std::istream& in, std::ostream& out, st
 		return false;
 	}
 }
+
+
+// Class rx_internal::model::meta_commands::reload_command
+
+reload_command::reload_command()
+	: server_command("reload")
+{
+}
+
+reload_command::reload_command (const string_type& name)
+	: server_command(name)
+{
+}
+
+
+reload_command::~reload_command()
+{
+}
+
+
+
+bool reload_command::do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx)
+{
+	string_type full_path;
+	string_type line;
+
+	in >> full_path;
+	if (!in.eof())
+	{
+		std::istreambuf_iterator<char> eos;
+		line = string_type(std::istreambuf_iterator<char>(in), eos);
+	}
+	if (full_path.empty())
+	{
+		err << "Empty path!";
+		return false;
+	}
+	string_type whose;
+	string_type item_path;
+	if (full_path[0] != -'-')
+		rx_split_item_path(full_path, whose, item_path);
+	if (!whose.empty())
+	{
+		rx_directory_resolver directories;
+		directories.add_paths({ ctx->get_current_directory() });
+		api::rx_context context;
+		context.active_path = ctx->get_current_directory();
+		context.object = smart_this();
+
+		auto resolve_result = api::ns::rx_resolve_reference(whose, directories);
+		if (!resolve_result)
+		{
+			ctx->raise_error(resolve_result);
+			return resolve_result;
+
+		}
+
+
+		auto item_result = rx_internal::model::algorithms::get_working_runtime(resolve_result.value());
+		if (!item_result)
+		{
+			ctx->raise_error(item_result);
+			return item_result;
+		}
+		ctx->set_waiting();
+		string_type name = item_result.value()->get_name();
+		string_type type_name = rx_item_type_name(item_result.value()->get_type_id());
+
+		/*rx_internal::model::algorithms::do_in_meta_with_item([](platform_item_ptr&& item) -> rx_result
+			{
+				return RX_NOT_IMPLEMENTED;//  item->reload_definition();
+			},
+			[](rx_result&& result)
+			{
+				if (!result)
+				{
+					auto& err = ctx->get_stderr();
+					err << "Error reloading item\r\n";
+					ctx->raise_error(result);
+				}
+				else
+				{
+					auto& out = ctx->get_stdout();
+					out << "Reloaded " << type_name << " "
+						<< ANSI_RX_OBJECT_COLOR << name << ANSI_COLOR_RESET
+						<< ".\r\n";
+				}
+				ctx->continue_scan();
+			}, item_result.value()->meta_info().id, context);*/
+		ctx->raise_error(rx_result(RX_NOT_IMPLEMENTED));
+		return false;
+	}
+	else
+	{
+		err << "Please, define item!";
+		return false;
+	}
+}
+
+
+// Class rx_internal::model::meta_commands::rld_command
+
+rld_command::rld_command()
+	: reload_command("rld")
+{
+}
+
+
+rld_command::~rld_command()
+{
+}
+
 
 
 } // namespace meta_commands

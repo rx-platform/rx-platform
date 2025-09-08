@@ -258,6 +258,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.http_path = row.second;
 		else if (row.first == "http.user" && config.other.http_user.empty())
 			config.other.http_user = row.second;
+		else if (row.first == "http.spa" && config.other.http_spa.empty())
+			config.other.http_spa = row.second;
 		else if (row.first == "upy.resources" && config.other.upy_path.empty())
 			config.other.upy_path = row.second;
 		else if (row.first == "upy.user" && config.other.upy_user.empty())
@@ -555,6 +557,7 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.instance.plugin))
 		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
 		("http", "Location of the http user resource files", cxxopts::value<string_type>(config.other.http_user))
+		("http-spa", "HTTP server Single Page Application file name", cxxopts::value<string_type>(config.other.http_spa))
 		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
 		("upy-path", "Location of the micropython files", cxxopts::value<string_type>(config.other.upy_path))
 		("upy", "Location of the micropython user program files", cxxopts::value<string_type>(config.other.upy_user))

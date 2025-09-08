@@ -4,7 +4,7 @@
 *
 *  model\rx_meta_commands.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -368,6 +368,58 @@ command for exporting item to C array def\r\n\
 
       bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
 
+
+  private:
+
+
+};
+
+
+
+
+
+
+class reload_command : public terminal::commands::server_command  
+{
+    DECLARE_REFERENCE_PTR(reload_command);
+    DECLARE_CONSOLE_CODE_INFO(0, 1, 0, "\
+command for reloading runtime entities in platform\r\n\
+\
+");
+
+  public:
+      reload_command();
+
+      reload_command (const string_type& name);
+
+      ~reload_command();
+
+
+  protected:
+
+      bool do_console_command (std::istream& in, std::ostream& out, std::ostream& err, console_context_ptr ctx);
+
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rld_command : public reload_command  
+{
+
+  public:
+      rld_command();
+
+      ~rld_command();
+
+
+  protected:
 
   private:
 

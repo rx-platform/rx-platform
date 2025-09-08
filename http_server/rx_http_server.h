@@ -67,6 +67,8 @@ class standard_request_filter : public rx_platform::http::http_request_filter
 {
 
   public:
+      standard_request_filter (const string_type& spa);
+
 
       rx_result handle_request_after (http_request& req, http_response& resp);
 
@@ -76,6 +78,9 @@ class standard_request_filter : public rx_platform::http::http_request_filter
   protected:
 
   private:
+
+
+      string_type spa_;
 
 
 };
@@ -121,6 +126,69 @@ class http_display_handler : public rx_platform::http::http_handler
 
 
 
+class http_path_filter : public rx_platform::http::http_request_filter  
+{
+
+  public:
+
+      rx_result handle_request_after (http_request& req, http_response& resp);
+
+      rx_result handle_request_before (http_request& req, http_response& resp);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+struct html_file_poss_t
+{
+    size_t start;
+    size_t length;
+};
+struct html_file_data_t
+{
+    string_type content;
+    std::vector<html_file_poss_t> path_indexes;
+};
+
+
+
+
+class html_file_loader 
+{
+    typedef std::map<string_type, html_file_data_t> cached_items_type;
+
+  public:
+
+      rx_result get_parsed_html_content (const string_type& path, const string_type& root, byte_string& buffer);
+
+      static std::vector<html_file_poss_t> process_html_file (string_view_type content);
+
+
+  protected:
+
+  private:
+
+      rx_result fill_html_data (const html_file_data_t& item, const string_type& root, byte_string& buffer);
+
+
+
+      cached_items_type cached_items_;
+
+      locks::slim_lock cache_lock_;
+
+
+};
+
+
+
+
+
+
 
 class http_server 
 {
@@ -145,9 +213,9 @@ class http_server
 
       void deinitialize ();
 
-      string_type get_global_content1 (const string_type& path);
+      string_type get_content (const string_type& path);
 
-      string_type get_dynamic_content (const string_type& path);
+      rx_result get_parsed_html_content (const string_type& path, const string_type& root, byte_string& buffer);
 
       void dump_http_references (std::ostream& out);
 
@@ -182,6 +250,8 @@ class http_server
 
       http_displays::http_displays_repository displays_;
 
+      html_file_loader html_loader_;
+
 
       string_array static_paths_;
 
@@ -193,31 +263,9 @@ class http_server
 
       locks::slim_lock cache_lock_;
 
-      cached_content_type cached_globals_;
-
       cached_content_type cached_dynamic_;
 
-
-};
-
-
-
-
-
-
-class http_path_filter : public rx_platform::http::http_request_filter  
-{
-
-  public:
-
-      rx_result handle_request_after (http_request& req, http_response& resp);
-
-      rx_result handle_request_before (http_request& req, http_response& resp);
-
-
-  protected:
-
-  private:
+      string_type spa_;
 
 
 };

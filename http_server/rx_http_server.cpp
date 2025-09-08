@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -50,7 +50,7 @@ namespace {
 http_server* g_inst = nullptr;
 }
 
-// Class rx_internal::rx_http_server::http_server 
+// Class rx_internal::rx_http_server::http_server
 
 http_server::http_server()
 {
@@ -67,6 +67,8 @@ http_server& http_server::instance ()
 
 rx_result http_server::initialize (hosting::rx_platform_host* host, configuration_data_t& config)
 {
+	spa_ = config.other.http_spa;
+
 	register_standard_filters();
 	http_displays::rx_http_display_base::fill_globals();
 	string_type master_path = config.other.http_path;
@@ -93,7 +95,7 @@ rx_result http_server::initialize (hosting::rx_platform_host* host, configuratio
 	result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
 		RX_STANDARD_HTTP_DISPLAY_TYPE_ID, [] {
 			return rx_create_reference<http_displays::rx_http_standard_display>();
-		}); 
+		});
 	result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
 		RX_SIMPLE_HTTP_DISPLAY_TYPE_ID, [] {
 			return rx_create_reference<http_displays::rx_http_simple_display>();
@@ -108,8 +110,6 @@ rx_result http_server::initialize (hosting::rx_platform_host* host, configuratio
 
 rx_result http_server::handle_request (http_request req)
 {
-	if (req.path.empty() || req.path == "/")
-		req.path = "/sys/runtime/system/System.index.disp";
 	HTTP_LOG_DEBUG("http_server", 100, "HTTP request received for "s + req.path);
 	http_response response;
 	response.cache_me = false;
@@ -133,6 +133,7 @@ rx_result http_server::handle_request (http_request req)
 			return true;// done with the cache
 		}
 	}
+
 
 	for (auto& one : filters_)
 	{
@@ -225,35 +226,7 @@ void http_server::deinitialize ()
 	delete this;
 }
 
-string_type http_server::get_global_content1 (const string_type& path)
-{
-	{
-		locks::auto_lock_t _(&cache_lock_);
-		auto it = cached_globals_.find(path);
-		if (it != cached_globals_.end())
-			return it->second;
-	}
-	string_type ret;
-	auto file_path = rx_combine_paths(global_path_, path);
-	rx::rx_source_file src;
-	auto result = src.open(file_path.c_str());
-	if (result)
-	{
-		string_type buffer;
-		result = src.read_string(buffer);
-		if (result)
-		{
-			ret = std::move(buffer);
-			// put in cache if not there
-			locks::auto_lock_t _(&cache_lock_);
-			cached_globals_.emplace(path, ret);
-
-		}
-	}
-	return ret;
-}
-
-string_type http_server::get_dynamic_content (const string_type& path)
+string_type http_server::get_content (const string_type& path)
 {
 	string_type ret;
 	for (const auto& one_path : dynamic_paths_)
@@ -267,6 +240,7 @@ string_type http_server::get_dynamic_content (const string_type& path)
 			result = src.read_string(buffer);
 			if (result)
 			{
+				HTTP_LOG_DEBUG("http_server", 100, "Dynamic content loaded from "s + file_path);
 				ret = std::move(buffer);
 				locks::auto_lock_t _(&cache_lock_);
 				cached_dynamic_.emplace(path, ret);
@@ -277,10 +251,15 @@ string_type http_server::get_dynamic_content (const string_type& path)
 	return ret;
 }
 
+rx_result http_server::get_parsed_html_content (const string_type& path, const string_type& root, byte_string& buffer)
+{
+	return html_loader_.get_parsed_html_content(path, root, buffer);
+}
+
 void http_server::register_standard_filters ()
 {
 	filters_.emplace_back(std::make_unique<http_path_filter>());
-	filters_.emplace_back(std::make_unique<standard_request_filter>());
+	filters_.emplace_back(std::make_unique<standard_request_filter>(spa_));
 	filters_.emplace_back(std::make_unique<aspnet::aspnet_authorizer>());
 }
 
@@ -304,7 +283,13 @@ void http_server::dump_http_references (std::ostream& out)
 }
 
 
-// Class rx_internal::rx_http_server::standard_request_filter 
+// Class rx_internal::rx_http_server::standard_request_filter
+
+standard_request_filter::standard_request_filter (const string_type& spa)
+      : spa_("/"s + spa)
+{
+}
+
 
 
 rx_result standard_request_filter::handle_request_after (http_request& req, http_response& resp)
@@ -361,20 +346,53 @@ rx_result standard_request_filter::handle_request_after (http_request& req, http
 
 rx_result standard_request_filter::handle_request_before (http_request& req, http_response& resp)
 {
+	if (!spa_.empty())
+	{
+		if (req.path.empty() || req.path == "/")
+			req.path = "/sys/runtime/system/System.index.disp";
+	}
+
+	int sub_count = 0;
+	string_view_type path = req.path;
+	auto in_path = path.rfind('/');
+	while (in_path != 0 && in_path != string_view_type::npos)
+	{
+		sub_count++;
+		in_path = path.rfind('/', in_path - 1);
+	}
+	string_type to_replace = "./";
+	while (sub_count > 0)
+	{
+		to_replace += "../";
+		sub_count--;
+	}
+
+	req.rel_root = to_replace;
+
 	size_t idx = req.path.rfind('.');
 	if (idx != string_type::npos)
 	{
 		req.extension = req.path.substr(idx + 1);
+		if(!spa_.empty() && req.extension == "html" && req.path.size()>10 && req.path.substr(req.path.size() - 11, 11) == spa_)
+			req.path = spa_;
 	}
 	else
 	{
-		req.extension = "json";
+		if (!spa_.empty())
+		{
+			req.path = spa_;
+			req.extension = "html";
+		}
+		else
+		{
+			req.extension = "json";
+		}
 	}
 	return true;
 }
 
 
-// Class rx_internal::rx_http_server::http_display_handler 
+// Class rx_internal::rx_http_server::http_display_handler
 
 
 rx_result http_display_handler::handle_request (http_request& req, http_response& resp)
@@ -437,112 +455,213 @@ const char* http_display_handler::get_extension ()
 	return "disp";
 }
 
-size_t process_next_find(const string_view_type& view, size_t from, size_t& size, size_t& to_copy, char& ending)
+size_t process_next_find(const string_view_type& view, size_t from, size_t& to_skip, char& ending)
 {
-	auto idx1 = view.find("href=\"/", from);
-	auto idx2= view.find("src=\"/", from);
-	auto idx3 = view.find("\"~", from);
-	auto idx4 = view.find("'~", from);
-	
-	auto ret = std::min(std::min(idx1, idx2), std::min(idx3, idx4));
-	if (ret == string_view_type::npos)
+	size_t idx = 0;
+	auto idx1 = view.find("href", from);
+	auto idx2= view.find("src", from);
+	if(idx1==string_view_type::npos && idx2==string_view_type::npos)
+		return string_view_type::npos;
+
+	if (idx1 < idx2)
+		idx = idx1 + 4;
+	else
+		idx = idx2 + 3;
+
+	while (idx < view.size() && isspace(view[idx]))
+		idx++;
+
+	if (idx < view.size() && view[idx] == '=')
+		idx++;
+	else if (idx >= view.size())
+		return string_view_type::npos;
+	else
+		return process_next_find(view, idx, to_skip, ending);
+
+	while (idx < view.size() && isspace(view[idx]))
 	{
-		size = 0;
-		to_copy = 0;
-		ending = '\0';
+		idx++;
 	}
-	else if (ret == idx1)
+
+	if(idx<view.size() && (view[idx] == '\"' || view[idx] == '\'') )
 	{
-		size = 7;
-		to_copy = 6;
-		ending = '\"';
+		ending = view[idx];
+		idx++;
+		if(idx >= view.size())
+			return string_view_type::npos;
+		if (view[idx] == '~')
+		{
+			if (idx + 1 >= view.size())
+				return string_view_type::npos;
+			to_skip = 1;
+			if (view[idx + 1] == '/')
+				to_skip = 2;
+
+			return idx;
+		}
+		else
+		{
+			idx = view.find(ending, idx);
+			if (idx != string_view_type::npos)
+				return process_next_find(view, idx + 1, to_skip, ending);
+			else
+				return string_view_type::npos;
+		}
 	}
-	else if (ret == idx2)
+	else if(idx < view.size())
 	{
-		size = 6;
-		to_copy = 5;
-		ending = '\"';
-	}
-	else if (ret == idx3)
-	{
-		size = 2;
-		to_copy = 1;
-		if (view[ret + size] == '/')
-			size++;
-		ending = '\"';
-	}
-	else if (ret == idx4)
-	{
-		size = 2; 
-		to_copy = 1;
-		if (view[ret + size] == '/')
-			size++;
-		ending = '\'';
+		return process_next_find(view, idx, to_skip, ending);
 	}
 	else
 	{
-		RX_ASSERT(false);
-		ret = string_view_type::npos;
-		size = 0;
-		to_copy = 0;
-		ending = '\0';
+		return string_view_type::npos;
 	}
 
-	return ret;
 }
-// Class rx_internal::rx_http_server::http_path_filter 
+// Class rx_internal::rx_http_server::http_path_filter
 
 
 rx_result http_path_filter::handle_request_after (http_request& req, http_response& resp)
 {
-	auto it = resp.headers.find("Content-Type");
-	if (it != resp.headers.end()
-		&& it->second == "text/html"
-		&& resp.content.size() > 0x20 /*just about right*/)
-	{
-		int sub_count = 0;
-		string_view_type path = req.path;
-		auto in_path = path.rfind('/');
-		while (in_path != 0 && in_path != string_view_type::npos)
-		{
-			sub_count++;
-			in_path = path.rfind('/', in_path - 1);
-		}
-		string_type to_replace = "";
-		while (sub_count > 0)
-		{
-			to_replace += "../";
-			sub_count--;
-		}
-		string_view_type view((const char*)&resp.content[0], resp.content.size());
-		
-		char ending = '\0';
-		size_t to_copy = 0;
-		size_t found_size = 0;
-		size_t idx = process_next_find(view, 0, found_size, to_copy, ending);
-		size_t idx2 = 0;
-		string_type new_buffer;
-		while (idx != string_view_type::npos)
-		{
-			new_buffer+=(view.substr(idx2, idx - idx2 + to_copy));
-			idx2 = view.find(ending, idx + found_size + 1);
-			if (idx2 != string_view_type::npos)
-			{
-				new_buffer += to_replace;
-				size_t temp = idx2 + 1;
-				idx2 = idx;
-				idx2 += (found_size);
-				idx = process_next_find(view, temp, found_size, to_copy, ending);
-			}
-		}
-		new_buffer += (view.substr(idx2));
-		resp.set_string_content(new_buffer);
-	}
+	//auto it = resp.headers.find("Content-Type");
+	//if (it != resp.headers.end()
+	//	&& it->second == "text/html"
+	//	&& resp.content.size() > 0x20 /*just about right*/)
+	//{
+	//	string_view_type view((const char*)&resp.content[0], resp.content.size());
+
+	//	char ending = '\0';
+	//	size_t to_skip = 0;
+	//	size_t idx = process_next_find(view, 0, to_skip, ending);
+	//	if (idx == string_view_type::npos)
+	//		return true; // nothing to do
+	//	size_t idx2 = 0;
+	//	string_type new_buffer;
+	//	while (idx != string_view_type::npos)
+	//	{
+	//		new_buffer+=(view.substr(idx2, idx - idx2));
+	//		idx2 = view.find(ending, idx + to_skip);
+	//		if (idx2 != string_view_type::npos)
+	//		{
+	//			new_buffer += req.rel_root;
+	//			new_buffer += view.substr(idx + to_skip, idx2 - (idx + to_skip));
+	//			idx = process_next_find(view, idx2, to_skip, ending);
+	//		}
+	//	}
+	//	if (idx2 != string_view_type::npos)
+	//		new_buffer += (view.substr(idx2));
+	//	resp.set_string_content(new_buffer);
+	//}
 	return true;
 }
 
 rx_result http_path_filter::handle_request_before (http_request& req, http_response& resp)
 {
+	return true;
+}
+
+
+// Class rx_internal::rx_http_server::html_file_loader
+
+
+rx_result html_file_loader::get_parsed_html_content (const string_type& path, const string_type& root, byte_string& buffer)
+{
+	if(!rx_gate::instance().get_configuration().management.debug)
+	{
+		std::scoped_lock _(cache_lock_);
+		auto it = cached_items_.find(path);
+		if (it != cached_items_.end())
+		{
+			return fill_html_data(it->second, root, buffer);
+		}
+	}
+	// no cache, load from file
+	string_type file_data;
+	auto paths = rx_internal::rx_http_server::http_server::instance().get_static_paths();
+	for (const auto& one_dir : paths)
+	{
+		auto file_path = rx_combine_paths(one_dir, path);
+		auto file = rx_file(file_path.c_str(), RX_FILE_OPEN_READ, RX_FILE_OPEN_EXISTING);
+		if (file)
+		{
+			uint64_t size = 0;
+			auto result = rx_file_get_size(file, &size);
+			if (result == RX_OK)
+			{
+				file_data.resize((size_t)size);
+				uint32_t readed = 0;
+				result = rx_file_read(file, &file_data[0], (uint32_t)size, &readed);
+				if (result != RX_OK)
+				{
+					file_data.clear();
+				}
+			}
+			rx_file_close(file);
+		}
+	}
+	if (file_data.empty())
+		return RX_INVALID_PATH;
+
+	auto indexes = process_html_file(file_data);
+	std::scoped_lock _(cache_lock_);
+	auto result = cached_items_.insert_or_assign(path, html_file_data_t{ std::move(file_data), std::move(indexes) });
+	return fill_html_data(result.first->second, root, buffer);
+
+}
+
+std::vector<html_file_poss_t> html_file_loader::process_html_file (string_view_type content)
+{
+	std::vector<html_file_poss_t> indexes;
+	char ending = '\0';
+	size_t to_skip = 0;
+	size_t idx = process_next_find(content, 0, to_skip, ending);
+	if (idx == string_view_type::npos)
+		return indexes; // nothing to do
+	size_t idx2 = 0;
+	while (idx != string_view_type::npos)
+	{
+		idx2 = content.find(ending, idx + to_skip);
+		if (idx2 != string_view_type::npos)
+		{
+			html_file_poss_t one;
+			one.start = idx - 1;
+			one.length = to_skip;
+			idx = process_next_find(content, idx2, to_skip, ending);
+			indexes.push_back(one);
+		}
+	}
+	return indexes;
+}
+
+rx_result html_file_loader::fill_html_data (const html_file_data_t& item, const string_type& root, byte_string& buffer)
+{
+	size_t start_idx = 0;
+	const std::byte* root_start = nullptr;
+	const std::byte* root_end= nullptr;
+	if(!root.empty())
+	{
+        root_start=reinterpret_cast<const std::byte*>(root.c_str());
+        root_end=reinterpret_cast<const std::byte*>(root.c_str() + root.size());
+	}
+	buffer.reserve(item.content.size() + 0x20);// this should do
+	for (const auto& one : item.path_indexes)
+	{
+		RX_ASSERT(one.start + one.length <= item.content.size());
+		if (one.start + one.length <= item.content.size())
+		{
+			buffer.insert(buffer.end()
+                , reinterpret_cast<const std::byte*>(item.content.c_str() + start_idx)
+                , reinterpret_cast<const std::byte*>(item.content.c_str() + one.start + 1));
+            if(root_start)
+                buffer.insert(buffer.end(), root_start, root_end);
+			start_idx = one.start + one.length + 1;
+		}
+	}
+	if (start_idx < item.content.size())
+		buffer.insert(buffer.end()
+            , reinterpret_cast<const std::byte*>(item.content.c_str() + start_idx)
+            , reinterpret_cast<const std::byte*>(item.content.c_str() + item.content.size()));
+
 	return true;
 }
 

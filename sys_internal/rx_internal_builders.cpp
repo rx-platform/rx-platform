@@ -933,7 +933,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config, startup_
 			});
 		obj->complex_data.register_struct("Info", RX_NS_SYSTEM_INFO_TYPE_ID);
 		obj->object_data.register_display(def_blocks::display_attribute("index", RX_MAIN_HTTP_DISPLAY_TYPE_ID), obj->complex_data);
-		obj->complex_data.overrides.add_value_static<string_array>("index.Resources.DisplayFiles", { "index.html" });
+		obj->complex_data.overrides.add_value_static<string_array>("index.Resources.DisplayFiles", { "system.html" });
 		add_type_to_configuration(dir, obj, false);
 
 		obj = create_type<object_type>(meta::object_type_creation_data{
@@ -1676,7 +1676,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config, startu
 		instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
 		instance_data.meta_info.path = full_path;
 		instance_data.instance_data.domain_ref = rx_node_id(RX_NS_SYSTEM_DOM_ID);
-		instance_data.overrides.add_value_static<string_array >("index.Resources.DisplayFiles", { "index.html" });
+		instance_data.overrides.add_value_static<string_array >("index.Resources.DisplayFiles", { "system.html" });
 		result = add_object_to_configuration(dir, std::move(instance_data), data::runtime_values_data(), tl::type2type<object_type>(), data);
 
 		instance_data = runtime_data::object_runtime_data();

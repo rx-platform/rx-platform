@@ -124,14 +124,24 @@ class png_file_handler : public http_file_handler
 
 
 
-class text_file_handler : public http_file_handler  
+class html_file_handler : public rx_platform::http::http_handler  
 {
 
   public:
 
+      const char* get_extension ();
+
+      const char* get_content_type ();
+
+      rx_result handle_request (http_request& req, http_response& resp);
+
+
   protected:
 
   private:
+
+
+      bool spa_;
 
 
 };
@@ -141,15 +151,10 @@ class text_file_handler : public http_file_handler
 
 
 
-class html_file_handler : public text_file_handler  
+class text_file_handler : public http_file_handler  
 {
 
   public:
-
-      const char* get_extension ();
-
-      const char* get_content_type ();
-
 
   protected:
 

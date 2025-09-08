@@ -38,6 +38,7 @@
 #include "rx_http_items.h"
 #include "system/server/rx_file_helpers.h"
 #include "rx_http_query.h"
+#include "rx_http_server.h"
 
 
 namespace rx_internal {
@@ -97,11 +98,22 @@ void http_handlers_repository::register_standard_handlers ()
 
 http_handler* http_handlers_repository::get_handler (const string_type& ext)
 {
-	auto it = handlers_.find(ext);
-	if (it != handlers_.end())
-		return it->second.get();
+	if(ext.empty())
+	{
+		auto it = handlers_.find("html");
+		if (it != handlers_.end())
+			return it->second.get();
+		else
+			return nullptr;
+	}
 	else
-		return nullptr;
+	{
+		auto it = handlers_.find(ext);
+		if (it != handlers_.end())
+			return it->second.get();
+		else
+			return nullptr;
+	}
 }
 
 
@@ -186,6 +198,31 @@ const char* html_file_handler::get_extension ()
 const char* html_file_handler::get_content_type ()
 {
 	return "text/html";
+}
+
+rx_result html_file_handler::handle_request (http_request& req, http_response& resp)
+{
+	if (req.method != rx_http_method::get)
+	{
+		resp.result = 405;
+		return true;
+	}
+	auto result = http_server::instance().get_parsed_html_content(req.path, req.rel_root, resp.content);
+	if (result)
+	{
+		resp.headers["Content-Type"] = get_content_type();
+		resp.cache_me = true;
+		resp.result = 200;// OK
+	}
+	else
+	{
+		resp.result = 404;// Not Found
+		char buff[0x100];
+		rx_last_os_error("Error processing request:", buff, sizeof(buff));
+		resp.set_string_content(buff);
+	}
+
+	return true;
 }
 
 
@@ -273,7 +310,7 @@ const char* jsx_file_handler::get_extension ()
 
 const char* jsx_file_handler::get_content_type ()
 {
-	return "text/jsx";
+	return "text/js";
 }
 
 

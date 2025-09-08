@@ -88,8 +88,9 @@ struct general_data_t
 	string_type manuals_path;
     string_type http_path;
     string_type http_user;
-    uint16_t http_port;
-    uint16_t mqtt_port;
+    string_type http_spa;
+    uint16_t http_port = 0;
+    uint16_t mqtt_port = 0;
     string_type mqtt_address;
     uint16_t opcua_port;
     string_type rx_security;

@@ -82,6 +82,8 @@ struct http_request
 
       string_type path;
 
+      string_type rel_root;
+
       string_type extension;
 
       rx_http_headers_type headers;

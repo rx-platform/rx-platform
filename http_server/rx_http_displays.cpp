@@ -70,6 +70,7 @@ rx_http_static_display::~rx_http_static_display()
 
 rx_result rx_http_static_display::initialize_display (runtime::runtime_init_context& ctx, const string_type& disp_path)
 {
+	name_ = ctx.meta.name;
 	http_display_custom_content content;
 	fill_contents(content, ctx, disp_path);
 	content.body_begin_content += "\r\n"
@@ -132,7 +133,7 @@ rx_result rx_http_static_display::handle_request_internal (rx_platform::http::ht
 			}
 			else if (req.params.empty())
 			{
-				resp.set_string_content(get_dynamic_content(html_data_, "", req.path + "." + req.extension));
+				resp.set_string_content(get_dynamic_content(html_data_, "", req.path + "." + req.extension, name_));
 				resp.headers["Content-Type"] = "application/json";
 				resp.result = 200;
 			}
@@ -146,7 +147,7 @@ rx_result rx_http_static_display::handle_request_internal (rx_platform::http::ht
 			auto it = req.params.find("embed");
 			if (it != req.params.end())
 			{
-				string_type ret = get_dynamic_content(html_data_, it->second, req.path + "." + req.extension);
+				string_type ret = get_dynamic_content(html_data_, it->second, req.path + "." + req.extension, name_);
 				size_t idx1 = 0;
 				size_t html_size = 0;
 				size_t idx2 = 0;
@@ -184,7 +185,7 @@ rx_result rx_http_static_display::handle_request_internal (rx_platform::http::ht
 			}
 			else if (req.params.empty())
 			{
-				resp.set_string_content(get_dynamic_content(html_data_, "", req.path + "." + req.extension));
+				resp.set_string_content(get_dynamic_content(html_data_, "", req.path + "." + req.extension, name_));
 				resp.headers["Content-Type"] = "text/html";
 
 
@@ -394,7 +395,8 @@ rx_result rx_http_display_base::parse_display_data (runtime::runtime_init_contex
 	last_req_time_.bind(".Status.LastReqTime", ctx);
 	max_req_time_.bind(".Status.MaxReqTime", ctx);
 	string_array paths = ctx.structure.get_current_item().get_local_as<string_array>("Resources.DisplayFiles", {});
-	string_type temp_str;
+	string_type temp;
+	html_file_data_t temp_data;
 
 	html_data.clear();// just in case
 
@@ -403,15 +405,18 @@ rx_result rx_http_display_base::parse_display_data (runtime::runtime_init_contex
 		if (path.empty())
 			continue;
 
-		temp_str = http_server::instance().get_dynamic_content(path);
-
-		if (temp_str.empty())
-			return "Error in reading file: " + path;
-		if(path.size() > 5 && path.substr(path.size() - 5) == ".json")
+		if (path.size() > 5 && path.substr(path.size() - 5) == ".json")
 		{
 			meta_ = true;
 		}
-		html_data += temp_str;
+		temp_data.content = http_server::instance().get_content(path);
+
+		if (temp_data.content.empty())
+			return "Error in reading file: " + path;
+
+		size_t offset = html_data.size();
+		html_data += temp_data.content;
+		
 	}
 
 	// preprocess static data
@@ -460,6 +465,16 @@ rx_result rx_http_display_base::parse_display_data (runtime::runtime_init_contex
 		{
 			break;
 		}
+	}
+	auto path_points = html_file_loader::process_html_file(html_data);
+	for(const auto& one : path_points)
+	{
+		one_point_data one_data;
+		one_data.live = false;
+		one_data.start_idx = one.start;
+		one_data.end_idx = one.start + one.length + 1;
+		one_data.point_path = "~";
+		connected_points_.emplace(one_data.start_idx, std::move(one_data));
 	}
 	return true;
 }
@@ -548,6 +563,26 @@ string_type rx_http_display_base::preprocess_static (const string_type& content,
 						one_data.point_path = "$";
 						connected_points_.emplace(one_data.start_idx, std::move(one_data));
 					}
+					else if (easier == "object-name")
+					{
+						one_point_data one_data;
+						one_data.live = false;
+						one_data.start_idx = ret.size();
+						ret += "<?obj-path?>";
+						one_data.end_idx = ret.size();
+						one_data.point_path = "@";
+						connected_points_.emplace(one_data.start_idx, std::move(one_data));
+					}
+					else if (easier == "platform-root")
+					{
+						one_point_data one_data;
+						one_data.live = false;
+						one_data.start_idx = ret.size();
+						ret += "<?obj-root?>";
+						one_data.end_idx = ret.size();
+						one_data.point_path = "&";
+						connected_points_.emplace(one_data.start_idx, std::move(one_data));
+					}
 					else if (easier == "head")
 					{
 						ret += custom.head_content;
@@ -559,10 +594,6 @@ string_type rx_http_display_base::preprocess_static (const string_type& content,
 					else if (easier == "body-end")
 					{
 						ret += custom.body_end_content;
-					}
-					else if (easier == "name")
-					{
-						ret += meta_info.name;
 					}
 					else if (easier == "name")
 					{
@@ -642,7 +673,7 @@ rx_result rx_http_display_base::disconnect_points (runtime::runtime_stop_context
 	return true;
 }
 
-string_type rx_http_display_base::get_dynamic_content (const string_type& html_data, string_view_type embedded_id, string_view_type display_path)
+string_type rx_http_display_base::get_dynamic_content (const string_type& html_data, string_view_type embedded_id, string_view_type display_path, string_view_type object_name)
 {
 	string_type ret_content;
 	ret_content.reserve(html_data.size());
@@ -723,6 +754,34 @@ string_type rx_http_display_base::get_dynamic_content (const string_type& html_d
 				ret_content += sub_path;
 				ret_content += display_name;
 			}
+		}
+		else if (one.second.point_path == "@")
+		{
+			ret_content += object_name;
+		}
+		else if (one.second.point_path == "~")
+		{
+			string_type root_path = "./";
+			string_view_type display_name;
+			auto idx = display_path.rfind('/');
+			while (idx != string_view_type::npos && idx > 0)
+			{
+				root_path += "../";
+				idx = display_path.rfind('/', idx - 1);
+			}
+			ret_content += root_path;
+		}
+		else if (one.second.point_path == "&" || one.second.point_path == "~")
+		{
+			string_type root_path = "./";
+			string_view_type display_name;
+			auto idx = display_path.rfind('/');
+			while (idx != string_view_type::npos && idx > 0)
+			{
+				root_path += "../";
+				idx = display_path.rfind('/', idx - 1);
+			}
+			ret_content += root_path;
 		}
 		last_idx = one.second.end_idx;
 	}

@@ -476,7 +476,10 @@ template <class portT>
 void rx_extern_mapper<portT>::internal_port_disconnected ()
 {
     if (this->my_port_)
+    {
         this->port_disconnected(my_port_);
+        this->my_port_ = portT::smart_ptr::null_ptr;
+    }
 }
 
 

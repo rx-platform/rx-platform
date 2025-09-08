@@ -404,6 +404,7 @@ std::vector<server_command_base_ptr> server_command_manager::get_internal_comman
 	ret_commands.push_back(rx_create_reference<model::meta_commands::save_command>());
 	ret_commands.push_back(rx_create_reference<model::meta_commands::query_command>());
 	ret_commands.push_back(rx_create_reference<model::meta_commands::carray_command>());
+	ret_commands.push_back(rx_create_reference<model::meta_commands::reload_command>());
 	// runtime commands
 	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::read_command>());
 	ret_commands.push_back(rx_create_reference<sys_runtime::runtime_commands::struct_command>());
