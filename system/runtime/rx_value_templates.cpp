@@ -155,6 +155,101 @@ const rx_simple_value& local_complex_value::value() const
 }
 
 
+rx_result async_complex_value::bind(const string_type& path, runtime_init_context& ctx, callback_t callback)
+{
+    callback_ = callback;
+    auto result = ctx.bind_item(path, [this](const rx_value& val)
+        {
+			rx_simple_value local_value;
+            if (ctx_->is_mine_value(val))
+            {
+                if (val.is_good())
+                {
+                    locks::const_auto_lock_t _(&lock_);
+                    value_ = val.to_simple();
+                    local_value = value_;
+                }
+                else
+                {
+                    locks::const_auto_lock_t _(&lock_);
+                    if (value_ == bad_value_)
+                        return; // we already had it!, skip the callback
+
+                    value_ = bad_value_;
+                    local_value = value_;
+                }
+                if (callback_)
+                {
+                    callback_(local_value);
+                }
+            }
+        });
+    if (result)
+    {
+        ctx_ = ctx.context;
+        handle_ = result.move_value();
+        auto result = ctx_->get_value(handle_, value_);
+        if (!result)
+        {
+            locks::const_auto_lock_t _(&lock_);
+            value_ = bad_value_;
+        }
+        return result;
+    }
+    else
+    {
+        return result.errors();
+    }
+}
+async_complex_value::async_complex_value(const rx_simple_value& right)
+{
+    bad_value_ = right;
+    value_ = right;
+}
+async_complex_value::async_complex_value(rx_simple_value&& right)
+{
+    bad_value_ = right;
+    value_ = std::move(right);
+}
+async_complex_value::async_complex_value(const rx_simple_value& right, const rx_simple_value& bad_value)
+{
+    bad_value_ = bad_value;
+    value_ = right;
+}
+async_complex_value::async_complex_value(rx_simple_value&& right, rx_simple_value&& bad_value)
+{
+    value_ = std::move(right);
+    bad_value_ = std::move(bad_value);
+}
+const rx_simple_value& async_complex_value::value() const
+{
+    locks::const_auto_lock_t _(&lock_);
+    return value_;
+}
+
+void async_complex_value::internal_commit(rx_simple_value val, tag_blocks::binded_write_result_callback_t callback)
+{
+    if (ctx_ && handle_)// just in case both of them...
+    {
+		async_data data;
+		data.handle = handle_;
+		data.value = std::move(val);
+		data.callback = callback;
+
+        ctx_->async_value_pending(std::move(data));
+    }
+}
+void async_complex_value::commit(const rx_simple_value& val, tag_blocks::binded_write_result_callback_t callback)
+{
+    internal_commit(rx_simple_value(val), callback);
+}
+void async_complex_value::commit(rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback)
+{
+    internal_commit(std::move(val), callback);
+}
+
+
+
 } // namespace runtime
 } // namespace rx_platform
 

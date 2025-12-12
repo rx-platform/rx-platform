@@ -108,6 +108,7 @@ rx_result tags_holder::initialize_runtime (runtime_init_context& ctx, relations:
 	ref.ref_value_ptr.value->value_opt[structure::opt_state_ignorant] = true;*/
 
 	connected_tags_.init_tags(ctx.context, relations, logic, displays, &binded_tags_);
+	binded_tags_.init_tags(relations, logic, displays);
 
 	result = item_->initialize_runtime(ctx);
 	if (result)

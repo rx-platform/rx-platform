@@ -4,7 +4,7 @@
 *
 *  upython\upy_internal.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,8 +33,6 @@
 
 
 
-#ifdef UPYTHON_SUPPORT
-
 // rx_thread
 #include "system/threads/rx_thread.h"
 // rx_ptr
@@ -51,9 +49,11 @@ class upy_method_execution_context;
 #include "system/logic/rx_logic.h"
 
 
+#ifdef _MSC_VER
 #pragma warning(push)
 // zero sized array is used!!!
 #pragma warning(disable:4200)
+#endif
 
 extern "C"
 {
@@ -66,7 +66,9 @@ extern "C"
 
 }
 
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 
 namespace rx_platform {
@@ -97,7 +99,7 @@ class upy_module : public rx::pointers::reference_object
     typedef std::map<runtime_transaction_id_t, std::unique_ptr<upy_method_execution_context> > pending_contexts_type;
 
   public:
-      upy_module (const string_type& script, const string_type& eval_script, platform_item_ptr item);
+      upy_module (const string_type& script, platform_item_ptr item);
 
       ~upy_module();
 
@@ -121,8 +123,6 @@ class upy_module : public rx::pointers::reference_object
 
 
       string_type script_;
-
-      string_type eval_script_;
 
       mp_obj_t py_module_;
 
@@ -298,7 +298,6 @@ class upy_write_callback : public upy_callback_module
 } // namespace python
 } // namespace rx_platform
 
-#endif
 
 
 #endif

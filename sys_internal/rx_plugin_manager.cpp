@@ -166,6 +166,8 @@ bool plugin_command::do_console_command (std::istream& in, std::ostream& out, st
 			out << plugin->get_plugin_name()
 				<< ANSI_COLOR_RESET "\r\n";
 			out << info.plugin_version << "\r\n";
+			out << "Namespace: ";
+			out << ANSI_COLOR_BLUE ANSI_COLOR_BOLD << info.namespace_name << ANSI_COLOR_RESET "\r\n";
 			out << "Platform: " << info.platform_version << "\r\n";
 			out << "Library: " << info.lib_version << "\r\n";
 			out << "Compiler: " << info.comp_version << "\r\n";

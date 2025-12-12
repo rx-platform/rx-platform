@@ -164,13 +164,13 @@ bool write_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_i
 				out << "Write to "
 					<< sub_item
 					<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
-				out << "Signal Level:" << signal_level;
+				out << "Signal Level: " << signal_level;
 				out << "Time elapsed: " ANSI_RX_GOOD_COLOR << us2 << ANSI_COLOR_RESET " us\r\n";
 			}
 			else
 			{
 				out << "Write " ANSI_COLOR_BOLD ANSI_COLOR_RED "failed" ANSI_COLOR_RESET ". \r\n";
-				out << "Signal Level:" << signal_level;
+				out << "Signal Level: " << signal_level;
 				ctx->raise_error(result);
 			}
 			ctx->continue_scan();
@@ -676,8 +676,8 @@ bool execute_command::do_with_item (platform_item_ptr&& rt_item, string_type sub
 				out << "Execute "
 					<< sub_item
 					<< " " ANSI_RX_GOOD_COLOR "succeeded" ANSI_COLOR_RESET ". \r\n";
-				out << "Signal Level:" << signal_level;
-				out << "Result:";
+				out << "Signal Level: " << signal_level;
+				out << "\r\nResult:";
 				serialization::pretty_json_writer writer;
 				writer.write_header(STREAMING_TYPE_MESSAGE, 0);
 				writer.write_init_values(nullptr, data);
@@ -690,7 +690,7 @@ bool execute_command::do_with_item (platform_item_ptr&& rt_item, string_type sub
 			else
 			{
 				out << "Execute " ANSI_COLOR_BOLD ANSI_COLOR_RED "failed" ANSI_COLOR_RESET ". \r\n";
-				out << "Signal Level:" << signal_level;
+				out << "Signal Level: " << signal_level;
 				ctx->raise_error(result);
 			}
 			ctx->continue_scan();

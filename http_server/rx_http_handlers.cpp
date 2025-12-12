@@ -73,6 +73,16 @@ void http_handlers_repository::register_standard_handlers ()
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	handler_ptr = std::make_unique<svg_file_handler>();
 	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<json_file_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<wasm_file_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<dat_files_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<pdb_files_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
+	handler_ptr = std::make_unique<map_file_handler>();
+	handlers_.emplace(string_type(handler_ptr->get_extension()), std::move(handler_ptr));
 	
 	// excluded object handlers (moved to enterprise)
 	//handler_ptr = std::make_unique<http_json_object_reader>();
@@ -139,18 +149,30 @@ rx_result http_file_handler::handle_request (http_request& req, http_response& r
 			auto result = rx_file_get_size(file, &size);
 			if (result == RX_OK)
 			{
-				resp.content.assign((size_t)size, std::byte{ 0 });
-				uint32_t readed = 0;
-				result = rx_file_read(file, &resp.content[0], (uint32_t)size, &readed);
-				if (result == RX_OK)
+				if (size > 0)
 				{
-					resp.headers["Content-Type"] = get_content_type();
-					resp.cache_me = true;
-					resp.result = 200;// OK
+					resp.content.assign((size_t)size, std::byte{ 0 });
+					uint32_t readed = 0;
+					result = rx_file_read(file, &resp.content[0], (uint32_t)size, &readed);
+					if (result == RX_OK)
+					{
+						resp.headers["Content-Type"] = get_content_type();
+						resp.cache_path = std::filesystem::path(file_path).lexically_normal().string();
+						resp.result = 200;// OK
+						HTTP_LOG_TRACE("http_file_handler", 100, "File "s + resp.cache_path + " loaded from disk!");
+					}
+					else
+					{// clear this buffer
+						resp.content.clear();
+					}
 				}
 				else
-				{// clear this buffer
-					resp.content.clear();
+				{
+					resp.headers["Content-Type"] = get_content_type();
+					resp.cache_path = std::filesystem::path(file_path).lexically_normal().string();
+					resp.content = byte_string();
+					resp.result = 200;// OK
+					HTTP_LOG_TRACE("http_file_handler", 100, "File "s + resp.cache_path + " loaded from disk!");
 				}
 			}
 			if (resp.result != 200)
@@ -211,7 +233,6 @@ rx_result html_file_handler::handle_request (http_request& req, http_response& r
 	if (result)
 	{
 		resp.headers["Content-Type"] = get_content_type();
-		resp.cache_me = true;
 		resp.result = 200;// OK
 	}
 	else
@@ -241,6 +262,12 @@ const char* css_file_handler::get_content_type ()
 
 
 // Class rx_internal::rx_http_server::text_file_handler 
+
+
+const char* text_file_handler::get_content_type ()
+{
+	return "text/plain";
+}
 
 
 // Class rx_internal::rx_http_server::js_file_handler 
@@ -311,6 +338,70 @@ const char* jsx_file_handler::get_extension ()
 const char* jsx_file_handler::get_content_type ()
 {
 	return "text/js";
+}
+
+
+// Class rx_internal::rx_http_server::json_file_handler 
+
+
+const char* json_file_handler::get_extension ()
+{
+	return "json";
+}
+
+const char* json_file_handler::get_content_type ()
+{
+	return "application/json";
+}
+
+
+// Class rx_internal::rx_http_server::wasm_file_handler 
+
+
+const char* wasm_file_handler::get_extension ()
+{
+	return "wasm";
+}
+
+const char* wasm_file_handler::get_content_type ()
+{
+	return "application/wasm";
+}
+
+
+// Class rx_internal::rx_http_server::dat_files_handler 
+
+
+const char* dat_files_handler::get_extension ()
+{
+	return "dat";
+}
+
+
+// Class rx_internal::rx_http_server::pdb_files_handler 
+
+
+const char* pdb_files_handler::get_extension ()
+{
+	return "pdb";
+}
+
+
+// Class rx_internal::rx_http_server::octet_stream_handler 
+
+
+const char* octet_stream_handler::get_content_type ()
+{
+	return "application/octet-stream";
+}
+
+
+// Class rx_internal::rx_http_server::map_file_handler 
+
+
+const char* map_file_handler::get_extension ()
+{
+	return "map";
 }
 
 

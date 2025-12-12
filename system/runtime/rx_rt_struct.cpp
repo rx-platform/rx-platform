@@ -1405,7 +1405,7 @@ void source_data::process_update (values::rx_value&& value)
 				result.register_error("Unable to filter input value.");
 			}
 		}
-		if (value != current_value_)
+		if(!value.compare(current_value_, time_compare_type::skip))
 		{
 			current_value_ = value;
 			if (io_.get_complex())
@@ -1658,12 +1658,50 @@ event_data::event_data (runtime_item::smart_ptr&& rt, event_runtime_ptr&& var, e
 
 rx_result event_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-	if (type != runtime_value_type::persistent_runtime_value)
+	auto idx = path.find(RX_OBJECT_DELIMETER);
+	if (idx != string_view_type::npos)
 	{
-		if (path.empty())
-			arguments.collect_data("", data, type);
+		if (type != runtime_value_type::persistent_runtime_value)
+		{
+			string_view_type sub_path = path.substr(0, idx);
+			string_view_type rest_path = path.substr(idx + 1);
+			if (sub_path == "Args")
+			{
+				data::runtime_values_data args_data;
+				auto result = arguments.collect_data(rest_path, args_data, type);
+				if(result && !args_data.empty())
+					data.children["Args"] = std::move(args_data);
+				return result;
+			}
+			else
+			{
+				return item->collect_data(path, data, type);
+			}
+		}
+		else
+		{
+			return item->collect_data(path, data, type);
+		}
 	}
-	return item->collect_data(path, data, type);
+	else if (path.empty())
+	{
+		if (type != runtime_value_type::persistent_runtime_value)
+		{
+			data::runtime_values_data args_data;
+			auto result = arguments.collect_data("", args_data, type);
+			if (result && !args_data.empty())
+				data.children["Args"] = std::move(args_data);
+		}
+		return item->collect_data("", data, type);
+	}
+	else if (path == "Args" && type != runtime_value_type::persistent_runtime_value)
+	{
+		return arguments.collect_data("", data, type);
+	}
+	else
+	{
+		return item->collect_data(path, data, type);
+	}
 }
 
 void event_data::fill_data (const data::runtime_values_data& data)
@@ -4000,11 +4038,14 @@ rx_value full_value_data::get_value (runtime_process_context* ctx) const
 
 void full_value_data::set_value (const rx_value& val, runtime_process_context* ctx)
 {
-	rx_value temp(val);
-	if (temp.convert_to(value.get_type()))
+	if (value != val)
 	{
-		value = std::move(temp);
-		ctx->full_value_changed(this);
+		rx_value temp(val);
+		if (temp.convert_to(value.get_type()))
+		{
+			value = std::move(temp);
+			ctx->full_value_changed(this);
+		}
 	}
 }
 
@@ -4226,18 +4267,47 @@ rx_result value_block_data::prepare_value (rx_simple_value& val, data::runtime_v
 	}
 	else
 	{
-		block_data temp = block;
-		auto ret = temp.fill_value(val);
-		if (ret)
+		if (val.get_type() == RX_STRING_TYPE)
 		{
-			rx_simple_value temp_val;
-			ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+			string_type str_val = val.to_string();
+
+			serialization::json_reader reader;
+			if(!reader.parse_data(str_val))
+				return RX_INVALID_CONVERSION;
+			data::runtime_values_data rt_data;
+			auto ret = reader.read_init_values(nullptr, rt_data);
 			if (ret)
 			{
-				val = std::move(temp_val);
+				block_data temp = block;
+				temp.fill_data(rt_data);
+				rx_simple_value temp_val;
+				auto ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+				if (ret)
+				{
+					val = std::move(temp_val);
+				}
 			}
+			return ret;
 		}
-		return ret;
+		else if (val.get_type() == RX_STRUCT_TYPE)
+		{
+			block_data temp = block;
+			auto ret = temp.fill_value(val);
+			if (ret)
+			{
+				rx_simple_value temp_val;
+				ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+				if (ret)
+				{
+					val = std::move(temp_val);
+				}
+			}
+			return ret;
+		}
+		else
+		{
+			return RX_INVALID_CONVERSION;
+		}
 	}
 
 }
@@ -4277,7 +4347,6 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 	auto result = check_set_value(ctx, data.internal, data.test);
 	if (!result)
 		return result;
-
 	if (data.value.get_type() == (RX_STRUCT_TYPE))
 	{
 		result = block.fill_value(data.value);
@@ -4609,18 +4678,47 @@ rx_result variable_block_data::prepare_value (rx_simple_value& val, data::runtim
 	}
 	else
 	{
-		block_data temp = block;
-		auto ret = temp.fill_value(val);
-		if (ret)
+		if (val.get_type() == RX_STRING_TYPE)
 		{
-			rx_simple_value temp_val;
-			ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+			string_type str_val = val.to_string();
+
+			serialization::json_reader reader;
+			if (!reader.parse_data(str_val))
+				return RX_INVALID_CONVERSION;
+			data::runtime_values_data rt_data;
+			auto ret = reader.read_init_values(nullptr, rt_data);
 			if (ret)
 			{
-				val = std::move(temp_val);
+				block_data temp = block;
+				temp.fill_data(rt_data);
+				rx_simple_value temp_val;
+				auto ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+				if (ret)
+				{
+					val = std::move(temp_val);
+				}
 			}
+			return ret;
 		}
-		return ret;
+		else if (val.get_type() == RX_STRUCT_TYPE)
+		{
+			block_data temp = block;
+			auto ret = temp.fill_value(val);
+			if (ret)
+			{
+				rx_simple_value temp_val;
+				ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+				if (ret)
+				{
+					val = std::move(temp_val);
+				}
+			}
+			return ret;
+		}
+		else
+		{
+			return RX_INVALID_CONVERSION;
+		}
 	}
 }
 

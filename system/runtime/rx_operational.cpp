@@ -62,6 +62,7 @@ namespace tag_blocks {
 // Class rx_platform::runtime::tag_blocks::binded_tags 
 
 binded_tags::binded_tags()
+      : parent_relations_(nullptr)
 {
 }
 
@@ -71,6 +72,11 @@ binded_tags::~binded_tags()
 }
 
 
+
+void binded_tags::init_tags (relations::relations_holder* relations, logic_blocks::logic_holder* logic, display_blocks::displays_holder* displays)
+{
+	parent_relations_ = relations;
+}
 
 rx_result binded_tags::get_value (runtime_handle_t handle, rx_simple_value& val) const
 {
@@ -99,6 +105,9 @@ rx_result binded_tags::get_value (runtime_handle_t handle, rx_simple_value& val)
 			return true;
 		case rt_value_ref_type::rt_block_variable:
 			val = it_handles->second.ref_value_ptr.block_variable->simple_get_value();
+			return true;
+		case rt_value_ref_type::rt_relation:
+			val = it_handles->second.ref_value_ptr.relation->simple_get_value();
 			return true;
 		default:
 			RX_ASSERT(false);
@@ -160,6 +169,26 @@ rx_result binded_tags::set_value (runtime_handle_t handle, rx_simple_value&& val
 				data.identity = rx_security_context();
 				auto result = it_handles->second.ref_value_ptr.variable->write_value(std::move(data),
 					std::make_unique<binded_write_task>(this, std::move(callback), trans_id, handle), ctx);
+				return result;
+			}
+		case rt_value_ref_type::rt_relation:
+			{
+				auto trans_id = rx_get_new_transaction_id();
+				write_data data;
+				data.internal = true;
+				data.transaction_id = trans_id;
+				data.value = std::move(val);
+				data.test = ctx->get_mode().is_test();
+				data.identity = rx_security_context();
+				auto result = it_handles->second.ref_value_ptr.relation->write_value(std::move(data), ctx,
+					std::make_unique<binded_write_task>(this, std::move(callback), trans_id, handle));
+				if (result)
+				{
+					auto new_value = it_handles->second.ref_value_ptr.relation->value.get_value(ctx);
+					relation_change(it_handles->second.ref_value_ptr.relation, new_value);
+					tags.binded_relation_change(it_handles->second.ref_value_ptr.relation, new_value);
+
+				}
 				return result;
 			}
 		case rt_value_ref_type::rt_block_value:
@@ -278,7 +307,25 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 	{
 		auto ref_result = ctx.structure.get_root().get_value_ref(path, ref, false);
 		if (!ref_result)
-			return ref_result.errors();
+		{
+			if (parent_relations_)
+			{
+				auto rel_result = parent_relations_->get_relation(path);
+				if (rel_result)
+				{
+					ref.ref_type = rt_value_ref_type::rt_relation;
+					ref.ref_value_ptr.relation = rel_result.unsafe_ptr();
+				}
+				else
+				{					
+					return RX_INVALID_PATH;
+				}
+			}
+			else
+			{
+				return ref_result.errors();
+			}
+		}
 		revisied_path = path;
 	}
 	// fill out the data
@@ -311,6 +358,13 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item (const string_type& path
 	case rt_value_ref_type::rt_method:
 		{
 			auto result = methods_.emplace(ref.ref_value_ptr.method, callback_data_t{ handle });
+			if (callback)
+				result.first->second.update_callabcks.emplace_back(callback);
+		}
+		break;
+	case rt_value_ref_type::rt_relation:
+		{
+			auto result = relations_.emplace(ref.ref_value_ptr.relation, callback_data_t{ handle });
 			if (callback)
 				result.first->second.update_callabcks.emplace_back(callback);
 		}
@@ -410,7 +464,25 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item_with_write (const string
 	{
 		auto ref_result = ctx.structure.get_root().get_value_ref(path, ref, false);
 		if (!ref_result)
-			return ref_result.errors();
+		{
+			if (parent_relations_)
+			{
+				auto rel_result = parent_relations_->get_relation(path);
+				if (rel_result)
+				{
+					ref.ref_type = rt_value_ref_type::rt_relation;
+					ref.ref_value_ptr.relation = rel_result.unsafe_ptr();
+				}
+				else
+				{
+					return RX_INVALID_PATH;
+				}
+			}
+			else
+			{
+				return ref_result.errors();
+			}
+		}
 		revisied_path = path;
 	}
 	// fill out the data
@@ -462,6 +534,19 @@ rx_result_with<runtime_handle_t> binded_tags::bind_item_with_write (const string
 	case rt_value_ref_type::rt_method:
 		{
 			auto result = methods_.emplace(ref.ref_value_ptr.method, callback_data_t{ handle });
+			if (callback)
+				result.first->second.update_callabcks.emplace_back(callback);
+			if (write_callback)
+			{
+				if (!result.first->second.write_callabcks)
+					result.first->second.write_callabcks = std::make_unique<std::vector<write_callback_t> >();
+				result.first->second.write_callabcks->emplace_back(std::move(write_callback));
+			}
+		}
+		break;
+	case rt_value_ref_type::rt_relation:
+		{
+			auto result = relations_.emplace(ref.ref_value_ptr.relation, callback_data_t{ handle });
 			if (callback)
 				result.first->second.update_callabcks.emplace_back(callback);
 			if (write_callback)
@@ -560,6 +645,18 @@ void binded_tags::value_change (structure::value_data* whose, const rx_value& va
 {
 	auto it = values_.find(whose);
 	if (it != values_.end())
+	{
+		for (auto& one : it->second.update_callabcks)
+		{
+			one(val);
+		}
+	}
+}
+
+void binded_tags::relation_change (relations::relation_data* whose, const rx_value& val)
+{
+	auto it = relations_.find(whose);
+	if (it != relations_.end())
 	{
 		for (auto& one : it->second.update_callabcks)
 		{
@@ -718,6 +815,14 @@ void binded_tags::runtime_started (runtime_start_context& ctx)
 		one.second(val);
 	}
 	for (auto& one : values_)
+	{
+		rx_value temp = one.first->get_value(ctx.context);
+		for (auto cb : one.second.update_callabcks)
+		{
+			cb(temp);
+		}
+	}
+	for (auto& one : blocks_)
 	{
 		rx_value temp = one.first->get_value(ctx.context);
 		for (auto cb : one.second.update_callabcks)
@@ -928,7 +1033,7 @@ data::runtime_data_model binded_tags::internal_get_data_model (const string_type
 		{
 			case RX_PATH_CURRENT:
 				{
-					return structure.get_data_type(path);
+					return structure.get_data_type(path.substr(1));
 				}
 				break;
 			case RX_PATH_PARENT:
@@ -1178,6 +1283,7 @@ rx_result_with<runtime_handle_t> connected_tags::connect_tag_from_relations (con
 				reference.ref_value_ptr.relation = it->second.unsafe_ptr();
 				handles_map_.emplace(handle, one_tag_data{ reference, 1,  {monitor}, sec_index });
 				it->second->runtime_handle = handle;
+				relations_.emplace(it->second.unsafe_ptr(), handle);
 
 			}
 			auto result = it->second->runtime_handle;
@@ -1526,6 +1632,27 @@ void connected_tags::binded_block_change (structure::value_block_data* whose, co
 {
 	auto it = blocks_.find(whose);
 	if (it != blocks_.end())
+	{
+		auto handle = it->second;
+		auto it_data = handles_map_.find(handle);
+		if (it_data != handles_map_.end())
+		{
+			if (!it_data->second.monitors.empty())
+			{
+				for (auto& one : it_data->second.monitors)
+				{
+					next_send_[one].insert_or_assign(handle, val);
+				}
+			}
+		}
+	}
+	context_->tag_updates_pending();
+}
+
+void connected_tags::binded_relation_change (relations::relation_data* whose, const rx_value& val)
+{
+	auto it = relations_.find(whose);
+	if (it != relations_.end())
 	{
 		auto handle = it->second;
 		auto it_data = handles_map_.find(handle);
@@ -1936,6 +2063,8 @@ rx_result connected_tags::internal_write_tag (runtime_transaction_id_t trans_id,
 					auto val = it->second.reference.ref_value_ptr.relation->value.get_value(context_);
 					for (const auto& one : it->second.monitors)
 						next_send_[one].insert_or_assign(item, val);
+					if (binded_)
+						binded_->relation_change(it->second.reference.ref_value_ptr.relation, val);
 					context_->tag_updates_pending();
 
 					return true;

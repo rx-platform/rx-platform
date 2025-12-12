@@ -32,7 +32,6 @@
 #define upy_values_h 1
 
 
-#ifdef UPYTHON_SUPPORT
 #include "upy_internal.h"
 
 
@@ -69,7 +68,6 @@ class upy_convertor
 } // namespace python
 } // namespace rx_platform
 
-#endif
 
 
 #endif

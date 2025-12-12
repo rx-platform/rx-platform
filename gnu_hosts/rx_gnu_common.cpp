@@ -102,11 +102,14 @@ void fill_plugin_paths(string_array& paths)
 	// rPi plugin not working in regular ubuntu!!!
 	//paths.emplace_back("/media/sf_rx-release/Dev/GCC/rpi/bin/Debug/librx-rpi.so");
 	// simulation stuff
-	//paths.emplace_back("//media/sf_rx-release/Dev/GCC/Filters/rx-simulation/bin/Debug/librx-simulation.so");
+	paths.emplace_back("//media/sf_rx-release/Dev/GCC/Filters/rx-simulation/bin/Debug/librx-simulation.so");
 	paths.emplace_back("//media/sf_rx-release/Dev/GCC/Filters/rx-filters/bin/Debug/librx-filters.so");
 	// LINN TEM plugins
 	paths.emplace_back("/media/sf_MES/GCC/project/bin/Debug/librx-linnmes.so");
 	paths.emplace_back("/media/sf_MES/GCC/project/bin/Debug/librx-linntms.so");
+
+
+	paths.emplace_back("/media/sf_rx-release/Dev/GCC/dotnet/bin/Debug/net9.0/linux-x64/publish/dotnet.so");
 
 	//paths.emplace_back("/media/sf_rx-release/Dev/GCC/LazzarStuff/bin/Debug/liblazzar.so");
 
@@ -122,6 +125,17 @@ void fill_plugin_paths(string_array& paths)
 			paths.emplace_back(rx_combine_paths(search_dir, one));
 		}
 	}
+#endif
+}
+
+
+void fill_dotnet_host_path(string_type& path)
+{
+#ifdef _DEBUG
+	path = "/media/sf_RX/dotnet/rx-platform-dotnet-host/bin/Debug/net8.0";
+	//path = "/media/sf_RX/dotnet/DynamicAssembly/bin/Debug/net8.0/DynamicAssembly.dll";
+#else
+	path = "/usr/lib/rx-platform/dotnet";
 #endif
 }
 rx_result build_directories(hosting::rx_host_directories& data)

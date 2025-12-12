@@ -33,6 +33,7 @@
 #include "rx_opcua_identifiers.h"
 using namespace protocols::opcua::ids;
 #include "system/server/rx_server.h"
+#include "system/server/rx_namespaces.h"
 
 // rx_opcua_builder
 #include "protocols/opcua/rx_opcua_builder.h"
@@ -115,9 +116,18 @@ rx_result build_standard_address_space(opcua_std_address_space& server, const st
 	val = rx_value();
 	std::ostringstream ss;
 
-	string_array temp{ "http://opcfoundation.org/UA/" };
+	string_array temp{  };
 
+	auto ns = rx_gate::instance().get_system_namespaces();
+
+	for(const auto& nspace : ns->get_namespaces())
+	{
+		temp.emplace_back(nspace);
+	}
+	/*
 	ss << "urn:"
+		<< rx_gate::instance().get_instance_name()
+		<< '@'
 		<< rx_gate::instance().get_node_name()
 		<< ":"
 		<< "rx-platform:UA:"
@@ -141,6 +151,7 @@ rx_result build_standard_address_space(opcua_std_address_space& server, const st
 		<< rx_gate::instance().get_instance_name() << ":"
 		<< app_uri;
 	temp.emplace_back(ss.str());
+	*/
 
 	val.assign_static<string_array>(std::move(temp), now);
 	val.set_good_locally();

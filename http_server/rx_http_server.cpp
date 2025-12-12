@@ -34,6 +34,20 @@
 // rx_http_server
 #include "http_server/rx_http_server.h"
 
+
+#define DMON_IMPL
+#define DMON_MALLOC rx_heap_alloc
+#define DMON_FREE rx_heap_free
+#define DMON_REALLOC rx_heap_realloc
+
+#define DMON_ASSERT(e)   RX_ASSERT(e)
+
+
+#define DMON_LOG_ERROR(s) RX_LOG_ERROR("dmon","files",200,s)
+
+#include "third-party/dmon/dmon.h"
+
+
 #include "rx_http_version.h"
 #include "api/rx_namespace_api.h"
 #include "model/rx_model_algorithms.h"
@@ -48,12 +62,33 @@ namespace rx_internal {
 namespace rx_http_server {
 namespace {
 http_server* g_inst = nullptr;
+
+void watch_callback_internal(dmon_watch_id watch_id, dmon_action action, const char* rootdir,
+	const char* filepath, const char* oldfilepath, void* user)
+{
+	http_files_manager* self = (http_files_manager*)user;
+	self->watch_callback(watch_id.id, action, rootdir, filepath, oldfilepath);
+}
+
+struct dmon_initializer
+{
+	dmon_initializer()
+	{
+		dmon_init();
+		HTTP_LOG_INFO("dmon_initializer", 100, "dmon initialized");
+	}
+	~dmon_initializer()
+	{
+		dmon_deinit();
+	}
+};
 }
 
 // Class rx_internal::rx_http_server::http_server
 
 http_server::http_server()
 {
+	static dmon_initializer dmon_init_;
 }
 
 
@@ -75,14 +110,20 @@ rx_result http_server::initialize (hosting::rx_platform_host* host, configuratio
 	if (!master_path.empty())
 	{
 		static_paths_.push_back(rx_combine_paths(master_path, "_static"));
-		global_path_ = rx_combine_paths(master_path, "_global");
 		dynamic_paths_.push_back(rx_combine_paths(master_path, "_dynamic"));
 		handlers_.initialize(host, config);
 	}
 	if (!config.other.http_user.empty())
 	{
-		static_paths_.push_back(config.other.http_user);
-		dynamic_paths_.push_back(config.other.http_user);
+		string_type user_path = host->get_full_path(config.other.http_user);
+		static_paths_.push_back(user_path);
+		dynamic_paths_.push_back(user_path);
+		auto result = files_.initialize(user_path, this);
+		if (!result)
+		{
+			HTTP_LOG_ERROR("http_server", 100, "Error initializing HTTP files manager: "s + result.errors_line());
+			return result;
+		}
 	}
 	auto result = model::platform_types_manager::instance().get_simple_type_repository<display_type>().register_constructor(
 		RX_STATIC_HTTP_DISPLAY_TYPE_ID, [] {
@@ -111,29 +152,41 @@ rx_result http_server::initialize (hosting::rx_platform_host* host, configuratio
 rx_result http_server::handle_request (http_request req)
 {
 	HTTP_LOG_DEBUG("http_server", 100, "HTTP request received for "s + req.path);
+
 	http_response response;
-	response.cache_me = false;
-
-
-	if (!rx_gate::instance().get_configuration().management.debug)
+	if (req.method == rx_http_method::get)
 	{
-		if (req.method == rx_http_method::get)
+		bool found = false;
 		{
 			locks::auto_lock_t _(&cache_lock_);
 			auto it = cached_items_.find(req.path);
 			if (it != cached_items_.end())
 			{
+				found = true;
 				response = it->second;
 			}
 		}
-		if (response.cache_me)
+		if (found)
 		{
 			HTTP_LOG_DEBUG("http_server", 100, "Cache sending HTTP response "s + response.result_string + " for "s + req.path);
 			req.whose->send_response(std::move(response));
 			return true;// done with the cache
 		}
 	}
-
+	else if(req.method == rx_http_method::options)
+	{
+		response.result = 204;
+		if (rx_is_debug_instance())
+		{
+			response.headers["Access-Control-Allow-Origin"] = "*";
+			response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,OPTIONS";
+			response.headers["Access-Control-Allow-Headers"] = "Content-Type";
+			response.headers["Access-Control-Allow-Credentials"] = "true";
+		}
+		response.headers["Content-Length"] = "0";
+		send_response(req, std::move(response));
+		return true;// done with options
+	}
 
 	for (auto& one : filters_)
 	{
@@ -184,10 +237,11 @@ void http_server::send_response (http_request& request, http_response response)
 		request.request_identity->logout();
 		request.request_identity = security::security_context_ptr::null_ptr;
 	}
-	if (response.cache_me && request.method == rx_http_method::get)
+	if (!response.cache_path.empty() && request.method == rx_http_method::get)
 	{
 		locks::auto_lock_t _(&cache_lock_);
-		cached_items_.emplace(request.path, response);
+		cached_items_.insert_or_assign(request.path, response);
+		cached_paths_.insert_or_assign(response.cache_path, request.path);
 	}
 	HTTP_LOG_DEBUG("http_server", 100, "Sending HTTP response "s + response.result_string + " for "s + request.path);
 	auto ret = request.whose->send_response(std::move(response));
@@ -223,15 +277,32 @@ string_type http_server::get_server_header_info ()
 
 void http_server::deinitialize ()
 {
+	auto result = files_.deinitialize();
+	if(!result)
+	{
+		HTTP_LOG_ERROR("http_server", 800, "Error deinitializing HTTP files manager: "s + result.errors_line());
+	}
 	delete this;
 }
 
 string_type http_server::get_content (const string_type& path)
 {
 	string_type ret;
+	{
+		std::scoped_lock _(cache_lock_);
+		auto it = cached_content_.find(path);
+		if (it != cached_content_.end())
+		{
+			ret = it->second;
+			HTTP_LOG_DEBUG("http_server", 100, "Dynamic content from cache "s + path);
+		}
+	}
+	if (!ret.empty())
+		return ret;
+
 	for (const auto& one_path : dynamic_paths_)
 	{
-		auto file_path = rx_combine_paths(one_path, path);
+		auto file_path = std::filesystem::path(rx_combine_paths(one_path, path)).lexically_normal().string();
 		rx::rx_source_file src;
 		auto result = src.open(file_path.c_str());
 		if (result)
@@ -240,10 +311,13 @@ string_type http_server::get_content (const string_type& path)
 			result = src.read_string(buffer);
 			if (result)
 			{
-				HTTP_LOG_DEBUG("http_server", 100, "Dynamic content loaded from "s + file_path);
+				HTTP_LOG_TRACE("http_server", 100, "Dynamic content loaded from "s + file_path);
+				{
+					std::scoped_lock _(cache_lock_);
+					cached_content_.insert_or_assign(path, buffer);
+					cached_content_paths_.insert_or_assign(file_path, path);
+				}
 				ret = std::move(buffer);
-				locks::auto_lock_t _(&cache_lock_);
-				cached_dynamic_.emplace(path, ret);
 			}
 			return ret;
 		}
@@ -265,9 +339,6 @@ void http_server::register_standard_filters ()
 
 void http_server::dump_http_references (std::ostream& out)
 {
-	out << "Global path:\r\n  - "
-		<< global_path_
-		<< "\r\n\r\n";
 	out << "Static paths:\r\n";
 	for (auto& one : static_paths_)
 	{
@@ -282,11 +353,29 @@ void http_server::dump_http_references (std::ostream& out)
 	out << "\r\n";
 }
 
+void http_server::process_file_changes (string_array paths)
+{
+	{
+		std::scoped_lock _(cache_lock_);
+		for (const auto& file_path : paths)
+		{
+			auto it = cached_paths_.find(file_path);
+			if (it != cached_paths_.end())
+			{
+				HTTP_LOG_DEBUG("http_server", 100, "Cache deleted response for "s + it->second);
+				cached_items_.erase(it->second);
+				cached_paths_.erase(it);
+			}
+		}
+	}
+	html_loader_.process_file_changes(paths);
+}
+
 
 // Class rx_internal::rx_http_server::standard_request_filter
 
 standard_request_filter::standard_request_filter (const string_type& spa)
-      : spa_("/"s + spa)
+      : spa_(spa.empty() ? ""s : "/"s + spa)
 {
 }
 
@@ -300,6 +389,8 @@ rx_result standard_request_filter::handle_request_after (http_request& req, http
 		resp.headers["Access-Control-Allow-Origin"] = "*";
 		resp.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE";
 	}
+	resp.headers.emplace("Cross-Origin-Opener-Policy", "same-origin");
+	resp.headers.emplace("Cross-Origin-Embedder-Policy", "require-corp");
 	////////////////////////////////////////////////////////////////////////////////////
 	resp.headers.emplace("Connection", "Keep-Alive");
 	resp.headers.emplace("Keep-Alive", "timeout=32");
@@ -316,6 +407,9 @@ rx_result standard_request_filter::handle_request_after (http_request& req, http
 		break;
 	case 200:
 		resp.result_string = "200 OK";
+		break;
+	case 204:
+		resp.result_string = "204 No Content";
 		break;
 	case  403:
 		resp.result_string = "403 Forbidden";
@@ -346,10 +440,10 @@ rx_result standard_request_filter::handle_request_after (http_request& req, http
 
 rx_result standard_request_filter::handle_request_before (http_request& req, http_response& resp)
 {
-	if (!spa_.empty())
+	if (spa_.empty())
 	{
 		if (req.path.empty() || req.path == "/")
-			req.path = "/sys/runtime/system/System.index.disp";
+			req.path = "/System.index.disp";
 	}
 
 	int sub_count = 0;
@@ -566,17 +660,19 @@ rx_result http_path_filter::handle_request_before (http_request& req, http_respo
 
 rx_result html_file_loader::get_parsed_html_content (const string_type& path, const string_type& root, byte_string& buffer)
 {
-	if(!rx_gate::instance().get_configuration().management.debug)
 	{
+		// check the cache first
 		std::scoped_lock _(cache_lock_);
 		auto it = cached_items_.find(path);
 		if (it != cached_items_.end())
 		{
+			HTTP_LOG_DEBUG("html_file_loader", 100, "HTML Files Cache processing cached data for "s + path);
 			return fill_html_data(it->second, root, buffer);
 		}
 	}
 	// no cache, load from file
 	string_type file_data;
+	string_type cache_file_path;
 	auto paths = rx_internal::rx_http_server::http_server::instance().get_static_paths();
 	for (const auto& one_dir : paths)
 	{
@@ -591,21 +687,31 @@ rx_result html_file_loader::get_parsed_html_content (const string_type& path, co
 				file_data.resize((size_t)size);
 				uint32_t readed = 0;
 				result = rx_file_read(file, &file_data[0], (uint32_t)size, &readed);
-				if (result != RX_OK)
+				if (result == RX_OK)
+				{
+					cache_file_path = std::filesystem::path(file_path).lexically_normal().string();
+					HTTP_LOG_TRACE("html_file_loader", 100, "HTML file "s + cache_file_path + " loaded from disk!");
+				}
+				else
 				{
 					file_data.clear();
 				}
 			}
 			rx_file_close(file);
+			break;
 		}
 	}
 	if (file_data.empty())
 		return RX_INVALID_PATH;
 
 	auto indexes = process_html_file(file_data);
-	std::scoped_lock _(cache_lock_);
-	auto result = cached_items_.insert_or_assign(path, html_file_data_t{ std::move(file_data), std::move(indexes) });
-	return fill_html_data(result.first->second, root, buffer);
+	{
+		std::scoped_lock _(cache_lock_);
+		cached_paths_.insert_or_assign(cache_file_path, path);
+		auto result = cached_items_.insert_or_assign(path, html_file_data_t{ std::move(file_data), std::move(indexes) });
+		return fill_html_data(result.first->second, root, buffer);
+
+	}
 
 }
 
@@ -663,6 +769,127 @@ rx_result html_file_loader::fill_html_data (const html_file_data_t& item, const 
             , reinterpret_cast<const std::byte*>(item.content.c_str() + item.content.size()));
 
 	return true;
+}
+
+void html_file_loader::process_file_changes (string_array paths)
+{
+	std::scoped_lock _(cache_lock_);
+	for(const auto& file_path : paths)
+	{
+		auto it = cached_paths_.find(file_path);
+		if (it != cached_paths_.end())
+		{
+			HTTP_LOG_DEBUG("html_file_loader", 100, "HTML Files Cache deleted response for "s + it->second);
+			cached_items_.erase(it->second);
+			cached_paths_.erase(it);
+		}
+	}
+}
+
+
+// Class rx_internal::rx_http_server::http_files_manager
+
+http_files_manager::http_files_manager()
+      : server_(nullptr),
+        watch_id_(0)
+{
+}
+
+
+http_files_manager::~http_files_manager()
+{
+}
+
+
+
+rx_result http_files_manager::initialize (const string_type& path, http_server* srv)
+{
+	path_ = path;
+	server_ = srv;
+	if (watch_id_)
+		return RX_ALREADY_CONNECTED;
+
+	auto result = dmon_watch(path.c_str(), watch_callback_internal, DMON_WATCHFLAGS_RECURSIVE, this);
+	if (result.id == 0)
+	{
+		char buff[0x100];
+		rx_last_os_error("Error connecting directory.", buff, sizeof(buff));
+		HTTP_LOG_WARNING("http_files_manager", 100, "Error connecting file monitor on "s + path + ": "s + buff);
+
+	}
+	else
+	{
+		HTTP_LOG_INFO("http_files_manager", 100, "File monitor on "s + path + " started.");
+		watch_id_ = result.id;
+		return true;
+	}
+	return true;
+}
+
+rx_result http_files_manager::deinitialize ()
+{
+	if (watch_id_ != 0)
+	{
+		dmon_unwatch({ watch_id_ });
+		watch_id_ = { 0 };
+	}
+	return true;
+}
+
+void http_files_manager::watch_callback (uint32_t watch_id, int action, const char* rootdir, const char* filepath, const char* oldfilepath)
+{
+	if (watch_id == watch_id_)
+	{
+		string_array changes;
+		std::filesystem::path path1 = rx_combine_paths(rootdir, filepath);
+		string_type path1_str = path1.lexically_normal().string();
+		string_type path2_str;
+		if (oldfilepath && oldfilepath[0])
+		{
+			std::filesystem::path path2 = rx_combine_paths(rootdir, oldfilepath);
+			path2_str = path2.lexically_normal().string();
+		}
+		switch ((dmon_action_t)action)
+		{
+			case DMON_ACTION_MOVE:
+				{
+					if (!path2_str.empty())
+					{
+						changes.push_back(std::move(path2_str));
+					}
+
+				}
+				[[fallthrough]];
+			case DMON_ACTION_MODIFY:
+			case DMON_ACTION_CREATE:
+			case DMON_ACTION_DELETE:
+				{
+					if (!path1_str.empty())
+					{
+						changes.push_back(std::move(path1_str));
+					}
+				}
+				break;
+			default:
+				RX_ASSERT(false);
+		}
+		if (!changes.empty() && server_)
+		{
+			rx_post_function_to(RX_JOB_SLOW, rx_reference_ptr(), [changes = std::move(changes), server = server_]()
+				{
+					for(const auto& one : changes)
+					{
+						HTTP_LOG_DEBUG("http_files_manager", 100, "File change detected: "s + one);
+					}
+					server->process_file_changes(std::move(changes));
+				});
+		}
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
+
 }
 
 

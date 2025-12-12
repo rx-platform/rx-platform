@@ -4,7 +4,7 @@
 *
 *  system\storage_base\rx_storage.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -167,7 +167,7 @@ class rx_code_storage_item : public rx_storage_item
 {
 
   public:
-      rx_code_storage_item();
+      rx_code_storage_item (bool dynamic);
 
 
       base_meta_reader& read_stream ();
@@ -194,10 +194,15 @@ class rx_code_storage_item : public rx_storage_item
 
       rx_result save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback);
 
+      bool is_read_only () const;
+
 
   protected:
 
   private:
+
+
+      bool dynamic_;
 
 
 };
@@ -303,7 +308,7 @@ class rx_platform_storage : public rx::pointers::reference_object
   public:
       rx_platform_storage();
 
-      ~rx_platform_storage();
+      virtual ~rx_platform_storage();
 
 
       virtual string_type get_storage_info () = 0;
@@ -359,7 +364,7 @@ class rx_code_storage : public rx_platform_storage
     DECLARE_REFERENCE_PTR(rx_code_storage);
 
   public:
-      rx_code_storage();
+      rx_code_storage (bool dynamic = false);
 
 
       string_type get_storage_info ();
@@ -384,6 +389,9 @@ class rx_code_storage : public rx_platform_storage
   protected:
 
   private:
+
+
+      bool dynamic_;
 
 
 };

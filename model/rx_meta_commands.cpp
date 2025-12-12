@@ -2081,6 +2081,7 @@ bool carray_command::do_console_command (std::istream& in, std::ostream& out, st
 					}
 					else
 					{
+						uint32_t version = RX_CURRENT_SERIALIZE_VERSION;
 						char hex_buff[0x8];
 						out << "\r\n"
 							<< "static const uint8_t c_def_" << data.value()->meta_info().name << "[] = {\r\n    ";
@@ -2103,6 +2104,8 @@ bool carray_command::do_console_command (std::istream& in, std::ostream& out, st
 							out << hex_buff;
 						}
 						out << "\r\n};\r\n";
+						out << "static const uint32_t c_version_" << data.value()->meta_info().name << " = 0x" 
+							<< std::hex << version << ";\r\n";
 					}
 					return true;
 				}

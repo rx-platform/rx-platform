@@ -2,7 +2,7 @@
 
 #define RX_HAL_NAME "Linux"
 #define RX_HAL_MAJOR_VERSION 2
-#define RX_HAL_MINOR_VERSION 1
+#define RX_HAL_MINOR_VERSION 2
 #define RX_HAL_BUILD_NUMBER 1
 
 /*********************************************************************************
@@ -37,4 +37,6 @@
 2.0.2 resolved year 2038 _TIME_BITS 64
 2.1.0 Included IP table in Ethernet Cards list, added Multi-cast
 2.1.1 Implemented rx_file_rename
+2.2.0 epoll_wait on reading 0x10 events
+2.2.1 corrected rx_open_find_file_list for empty dir
 *********************************************************************************/

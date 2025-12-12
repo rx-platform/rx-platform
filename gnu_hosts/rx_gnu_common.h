@@ -43,6 +43,7 @@ void get_full_path(const std::string& base, std::string& path);
 std::string get_full_path_from_relative(const std::string& path);
 rx_result build_directories(hosting::rx_host_directories& data);
 void fill_plugin_paths(string_array& paths);
+void fill_dotnet_host_path(string_type& path);
 }
 
 

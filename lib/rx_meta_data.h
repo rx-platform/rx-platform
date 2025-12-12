@@ -4,7 +4,7 @@
 *
 *  lib\rx_meta_data.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -278,6 +278,8 @@ class meta_data
       void set_version (uint32_t val);
 
       void set_run_at (const string_type& run);
+
+      bool is_from_code () const;
 
 
       rx_node_id id;

@@ -54,6 +54,8 @@ rx_result rx_save_sync_platform_item(itemTptr item)
 {
     //rx_internal::model::algorithms::do_with_item_storage()
     const auto& meta = item->meta_info();
+    if (meta.is_from_code())
+        return true;
     auto storage_result = resolve_storage(meta);
     if (storage_result)
     {
@@ -96,6 +98,8 @@ template<class itemTptr>
 rx_result rx_save_platform_item(itemTptr item, storage_callback_t callback, runtime_transaction_id_t trans_id)
 {
     const auto& meta = item->meta_info();
+    if (meta.is_from_code())
+        return true;
     auto storage_result = resolve_storage(meta);
     if (storage_result)
     {
@@ -140,6 +144,8 @@ rx_result rx_save_sync_platform_meta_item(itemTptr item)
 {
     using algorithm_type = typename itemTptr::pointee_type::algorithm_type;
     const auto& meta = item->meta_info;
+    if (meta.is_from_code())
+        return true;
     auto storage_result = resolve_storage(meta);
     if (storage_result)
     {
@@ -183,6 +189,8 @@ rx_result rx_save_platform_meta_item(itemTptr item, storage_callback_t callback,
 {
     using algorithm_type = typename itemTptr::pointee_type::algorithm_type;
     const auto& meta = item->meta_info;
+    if (meta.is_from_code())
+        return true;
     auto storage_result = resolve_storage(meta);
     if (storage_result)
     {

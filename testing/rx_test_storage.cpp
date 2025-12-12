@@ -38,7 +38,6 @@
 #include "testing/rx_test_storage.h"
 
 #include "system/hosting/rx_host.h"
-#include "system/server/rx_server.h"
 #include "model/rx_meta_internals.h"
 #include "terminal/rx_term_table.h"
 

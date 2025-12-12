@@ -54,6 +54,7 @@ string_type get_full_path_from_relative(const string_type& path)
 void fill_plugin_paths(string_array& paths)
 {
 #ifdef _DEBUG
+	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\net_plugin\\DummyAssembly\\bin\\Debug\\net8.0\\publish\\DummyAssembly.dll");
 	paths.emplace_back("C:\\RX\\Native\\VS\\RxMainSolution\\x64\\DebugPy\\rx-first-plugin.dll");
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Modbus\\x64\\Debug\\rx-modbus.dll");
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Siemens\\x64\\Debug\\rx-siemens.dll");
@@ -70,6 +71,9 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\LazzarStuff\\x64\\Debug\\lazzar.dll");
 
 	paths.emplace_back("C:\\RX\\Plugins\\LearnProject\\PortsExample\\x64\\Debug\\ports_example.dll");
+	paths.emplace_back("C:\\RX\\Native\\VS\\RxNodeJs\\x64\\Debug\\rx-platform-node.dll");
+
+	//paths.emplace_back("C:\\temp\\UrosBum\\rx-lgacsmart5\\rx-lgacsmart5\\bin\\Debug\\net8.0\\win-x64\\native\\rx-lgacsmart5.dll");
 
 //	paths.emplace_back("C:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
 
@@ -102,6 +106,27 @@ void fill_plugin_paths(string_array& paths)
 	}
 #endif
 }
+
+void fill_dotnet_host_path(string_type& path)
+{
+#ifdef _DEBUG
+	path = "C:\\RX\\Native\\dotnet\\rx-platform-dotnet-host\\bin\\Debug\\net8.0";
+#else
+	char buff[MAX_PATH];
+	DWORD size = sizeof(buff);
+	if (GetEnvironmentVariableA("rx-path", buff, size))
+	{
+		if (buff[0] == '"')
+		{
+			path = rx::rx_combine_paths(&buff[1], "dotnet");
+		}
+		else
+		{
+			path = rx::rx_combine_paths(buff, "dotnet");
+		}
+	}
+#endif
+}
 rx_result build_directories(rx_host_directories& data)
 {
 	char buff[MAX_PATH];
@@ -116,6 +141,7 @@ rx_result build_directories(rx_host_directories& data)
 	{
 		if (buff[0] == '"')
 		{
+			data.dotnet_host = rx::rx_combine_paths(&buff[1], "rx-platform/dotnet");
 			data.system_config = rx::rx_combine_paths(&buff[1], "rx-platform/config");
 			data.system_storage = rx::rx_combine_paths(&buff[1], "rx-platform/storage/rx-system-storage");//copyright_file
 			data.copyright_file = rx::rx_combine_paths(&buff[1], "rx-platform/config/COPYRIGHT");
@@ -127,6 +153,7 @@ rx_result build_directories(rx_host_directories& data)
 		}
 		else
 		{
+			data.dotnet_host = rx::rx_combine_paths(buff, "rx-platform/dotnet");
 			data.system_config = rx::rx_combine_paths(buff, "rx-platform/config");
 			data.system_storage = rx::rx_combine_paths(buff, "rx-platform/storage/rx-system-storage");
 			data.license_file = rx::rx_combine_paths(buff, "rx-platform/config/LICENSE");

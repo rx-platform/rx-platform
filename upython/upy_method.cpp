@@ -4,27 +4,27 @@
 *
 *  upython\upy_method.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -45,7 +45,7 @@ namespace rx_platform {
 
 namespace python {
 
-// Class rx_platform::python::upy_method 
+// Class rx_platform::python::upy_method
 
 upy_method::upy_method()
 {
@@ -62,7 +62,7 @@ rx_result upy_method::initialize_runtime (runtime::runtime_init_context& ctx)
 {
     inputs_ = get_method_inputs();
     outputs_ = get_method_outputs();
-   
+
     return true;
 }
 
@@ -83,12 +83,13 @@ rx_result upy_method::stop_runtime (runtime::runtime_stop_context& ctx)
     return true;
 }
 
-rx_result upy_method::execute (rx_platform::runtime::execute_data data, runtime::runtime_process_context* ctx)
+rx_result upy_method::execute (execute_data data, runtime::runtime_process_context* ctx)
 {
-    
-    auto upy_ctx = std::make_unique<upy_method_execution_context>(data, "funkcija", smart_this());
+
     if (!my_module_)
     {
+        function_name_ = rx_create_string("rxf", data.transaction_id);
+
         string_type temp_str = get_code();
         string_type func_str = get_function();
         string_type module_str = get_module();
@@ -101,6 +102,9 @@ rx_result upy_method::execute (rx_platform::runtime::execute_data data, runtime:
                 return RX_INVALID_ARGUMENT " script is empty!";
 
             std::istringstream in(script_buffer_);
+
+            out << "import rxplatform";
+            out << "\nimport sys";
 
             out << "\n\nasync def funkcija_exec(ctx";
             for (const auto& one : inputs_.elements)
@@ -122,18 +126,21 @@ rx_result upy_method::execute (rx_platform::runtime::execute_data data, runtime:
         {
             out << "import rxplatform\n";
         }
-        
-        out << "\n\nasync def funkcija(ctx";
+
+        out << "\n\nasync def "
+            << function_name_
+            << "(ctx";
         for (const auto& one : inputs_.elements)
             out << ", " << one.name;
         out << "):\n";
+        out << "\tprint(ctx)\n";
         out << "\ttry:\n";
         //out << "\t\tprint(\"Pozvao\")\n";
         out << "\t\tresult = await " << func_str << "(ctx";
         for (const auto& one : inputs_.elements)
         {
             out << ", " << one.name;
-            
+
         }
         out << ")\n";
         //out << "\t\tprint(\"gotovo\")\n";
@@ -143,10 +150,12 @@ rx_result upy_method::execute (rx_platform::runtime::execute_data data, runtime:
         out << "\n";
 
         string_type temp = out.str();
-        my_module_ = rx_create_reference<upy_module>(std::move(temp), "create_task(funkcija, 99)", item_->clone());
+        my_module_ = rx_create_reference<upy_module>(std::move(temp), item_->clone());
     }
     if (my_module_)
     {
+        RX_ASSERT(!function_name_.empty());
+        auto upy_ctx = std::make_unique<upy_method_execution_context>(data, function_name_, smart_this());
         my_module_->push_context(std::move(upy_ctx));
         upy_thread::instance().include(my_module_);
     }
@@ -191,9 +200,9 @@ void upy_method::reset_module ()
 }
 
 
-// Class rx_platform::python::upy_method_execution_context 
+// Class rx_platform::python::upy_method_execution_context
 
-upy_method_execution_context::upy_method_execution_context (rx_platform::runtime::execute_data data, const string_type& func_name, rx_reference<upy_method> method)
+upy_method_execution_context::upy_method_execution_context (execute_data data, const string_type& func_name, rx_reference<upy_method> method)
       : data_(data),
         method_(method),
         func_name_(func_name)
@@ -205,13 +214,17 @@ upy_method_execution_context::upy_method_execution_context (rx_platform::runtime
 
 string_type upy_method_execution_context::get_eval_code () const
 {
-    
-    int struct_size = (int)data_.value.struct_size();
+    size_t args_count = 0;
+    if (data_.value.is_struct())
+        args_count = data_.value.struct_size();
+    else if(data_.value.is_array())
+    args_count = data_.value.array_size();
+
     std::ostringstream ss;
     ss << "create_task(" << func_name_ << ", " << id_;
-    for (int i=0 ; i< struct_size; i++)
+    for (size_t i = 0; i < args_count; i++)
     {
-        ss << ", " << get_python_value(data_.value[i]);
+        ss << ", " << get_python_value(data_.value[(int)i]);
     }
     ss << ")";
     return ss.str();
@@ -239,7 +252,7 @@ const string_type& upy_method_execution_context::get_func_name () const
 }
 
 
-// Class rx_platform::python::upy_module_method 
+// Class rx_platform::python::upy_module_method
 
 upy_module_method::upy_module_method()
 {
@@ -291,7 +304,7 @@ string_type upy_module_method::get_module ()
 }
 
 
-// Class rx_platform::python::upy_script_method 
+// Class rx_platform::python::upy_script_method
 
 upy_script_method::upy_script_method()
 {

@@ -182,6 +182,8 @@ class rx_http_display_base : public rx_platform::displays::display_runtime
 
       string_type collect_json_data ();
 
+      rx_result write_point (const string_type& id, rx_simple_value val);
+
       rx_result write_point (const string_type& id, const string_type& val);
 
 

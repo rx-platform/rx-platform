@@ -769,6 +769,11 @@ std::ostream & operator << (std::ostream &out, const rx_node_id &val)
 	return out;
 }
 
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+
 rx_node_id::rx_node_id() noexcept
 {
 	rx_init_null_node_id(&data_);
@@ -1048,6 +1053,223 @@ const rx_node_id_type rx_node_id::get_node_type() const
 {
 	return data_.node_type;
 }
+
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+
+
+rx_full_node_id::rx_full_node_id() noexcept
+{
+	rx_init_null_full_node_id(&data_);
+}
+rx_full_node_id::rx_full_node_id(const char* ns, const rx_node_id_struct* right)
+{
+	auto ret = rx_init_full_node_id(&data_, right, ns);
+	RX_ASSERT(ret==RX_OK);
+	if(ret!=RX_OK)
+		rx_init_null_full_node_id(&data_);
+}
+rx_full_node_id::rx_full_node_id(const string_type& ns, const rx_node_id& right)
+{
+	auto ret = rx_init_full_node_id(&data_, right.c_ptr(), ns.c_str());
+	RX_ASSERT(ret==RX_OK);
+	if(ret!=RX_OK)
+		rx_init_null_full_node_id(&data_);
+}
+rx_full_node_id::rx_full_node_id(const rx_full_node_id& right)
+{
+	auto ret = rx_copy_full_node_id(&data_, right.c_ptr());
+	RX_ASSERT(ret==RX_OK);
+	if(ret!=RX_OK)
+		rx_init_null_full_node_id(&data_);
+}
+rx_full_node_id::rx_full_node_id(rx_full_node_id&& right)  noexcept
+{
+	auto ret = rx_copy_full_node_id(&data_, right.c_ptr());
+	RX_ASSERT(ret==RX_OK);
+	if(ret!=RX_OK)
+		rx_init_null_full_node_id(&data_);
+}
+rx_full_node_id::~rx_full_node_id()
+{
+	rx_destroy_full_node_id(&data_);
+}
+
+
+
+rx_full_node_id& rx_full_node_id::operator=(const rx_full_node_id& right)
+{
+	rx_destroy_full_node_id(&data_);
+	auto ret = rx_copy_full_node_id(&data_, right.c_ptr());
+	RX_ASSERT(ret==RX_OK);
+	if(ret!=RX_OK)
+		rx_init_null_full_node_id(&data_);
+	return *this;
+}
+rx_full_node_id& rx_full_node_id::operator=(rx_full_node_id&& right) noexcept
+{
+	if (this != &right)
+	{
+		rx_destroy_full_node_id(&data_);
+		auto ret = rx_move_full_node_id(&data_, &right.data_);
+		RX_ASSERT(ret == RX_OK);
+		if (ret != RX_OK)
+			rx_init_null_full_node_id(&data_);
+	}
+	return *this;
+}
+
+const rx_full_node_id_struct* rx_full_node_id::c_ptr() const
+{
+	return &data_;
+}
+rx_full_node_id_struct rx_full_node_id::move() noexcept
+{
+	return std::move(data_);
+}
+
+void rx_full_node_id::to_string(string_type& val) const
+{
+	string_value_struct str;
+	int ret = rx_full_node_id_to_string(&data_, &str);
+	if (ret)
+	{
+		const char* ptr = rx_c_str(&str);
+		if (ptr)
+			val = ptr;
+		else
+			val.clear();
+	}
+	else
+	{
+		val.clear();
+	}
+}
+string_type rx_full_node_id::to_string() const
+{
+	string_type result;
+	to_string(result);
+	return result;
+}
+rx_full_node_id rx_full_node_id::from_string(const char* value)
+{
+	rx_full_node_id result;
+	rx_full_node_id_from_string(&result.data_, value);
+	return result;
+}
+
+string_type rx_full_node_id::get_namespace() const
+{
+	if(data_.namespace_name.size==0)
+		return "";
+	else
+		return rx_c_str(&data_.namespace_name);
+}
+void rx_full_node_id::set_namespace(const string_type& value)
+{
+	rx_destory_string_value_struct(&data_.namespace_name);
+	rx_init_string_value_struct(&data_.namespace_name, value.c_str(), -1);
+}
+
+rx_node_id rx_full_node_id::get_node_id(uint16_t index) const
+{
+	rx_node_id_struct data;
+	rx_init_node_id(&data, &data_, index);
+	return rx_node_id(data);
+}
+
+
+bool rx_full_node_id::is_null() const
+{
+	return rx_is_null_full_node_id(&data_);
+}
+rx_full_node_id::operator bool() const
+{
+	return !is_null();
+}
+
+
+const rx_node_id_type rx_full_node_id::get_node_type() const
+{
+	return data_.node_type;
+}
+
+
+const rx_uuid_t& rx_full_node_id::get_uuid() const
+{
+	if (data_.node_type == rx_node_id_uuid)
+		return data_.value.uuid_value;
+	else
+		throw std::invalid_argument("Wrong node id type");
+}
+uint32_t rx_full_node_id::get_numeric() const
+{
+	if (data_.node_type == rx_node_id_numeric)
+		return data_.value.int_value;
+	else
+		throw std::invalid_argument("Wrong node id type");
+}
+
+bool rx_full_node_id::get_uuid(rx_uuid_t& id) const
+{
+	if (data_.node_type == rx_node_id_uuid)
+	{
+		id = data_.value.uuid_value;
+		return true;
+	}
+	else
+		return false;
+}
+bool rx_full_node_id::get_numeric(uint32_t& id) const
+{
+	if (data_.node_type == rx_node_id_numeric)
+	{
+		id = data_.value.int_value;
+		return true;
+	}
+	else
+		return false;
+}
+bool rx_full_node_id::get_string(string_type& id) const
+{
+	if (data_.node_type == rx_node_id_string)
+	{
+		const char* ptr = rx_c_str(&data_.value.string_value);
+		if (ptr)
+			id = ptr;
+		else
+			id.clear();
+		return true;
+	}
+	else
+		return false;
+}
+bool rx_full_node_id::get_bytes(byte_string& id) const
+{
+	if (data_.node_type == rx_node_id_bytes)
+	{
+		size_t len = 0;
+		const std::byte* ptr = (const std::byte*)rx_c_ptr(&data_.value.bstring_value, &len);
+		if (ptr && len)
+		{
+			id.assign(ptr, ptr + len);
+		}
+		else
+		{
+			id.clear();
+		}
+		return true;
+	}
+	else
+		return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 
 
 #ifndef RX_USE_OWN_HEAP

@@ -285,9 +285,12 @@ RX_COMMON_API void rx_ms_sleep(uint32_t timeout)
 {
 	Sleep(timeout);
 }
-RX_COMMON_API void rx_usleep(uint64_t timeout)
+RX_COMMON_API void rx_us_sleep(uint64_t timeout)
 {
+	uint64_t to_sleep = (timeout + 10) / 1000;
+	uint64_t tick = rx_get_us_ticks();
 	Sleep((DWORD)(timeout / 1000));
+	while (rx_get_us_ticks() - tick < timeout);
 }
 
 RX_COMMON_API int rx_os_get_system_time(struct rx_time_struct_t* st)

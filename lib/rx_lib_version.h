@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 3
 #define RX_LIB_MINOR_VERSION 4
-#define RX_LIB_BUILD_NUMBER 2
+#define RX_LIB_BUILD_NUMBER 5
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -84,4 +84,7 @@
 // version 3.4.0 added security guards
 // version 3.4.1 added ISO-8601 as separate files
 // version 3.4.2 extended a rx_const_io_buffer with size
+// version 3.4.3 added len function support for string and byte_array
+// version 3.4.3 added rx_full_node_id class
+// version 3.4.4 added rx_full_node_id class
 

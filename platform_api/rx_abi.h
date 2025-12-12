@@ -767,6 +767,7 @@ extern "C" {
 	RX_PLUGIN_API void rxGetPluginInfo(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver);
 	RX_PLUGIN_API void rxGetPluginInfo2(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver, string_value_struct* abi_ver, string_value_struct* common_ver);
 	RX_PLUGIN_API void rxGetPluginName(string_value_struct* name);
+	RX_PLUGIN_API void rxGetPluginName2(string_value_struct* name, string_value_struct* ns);
 
 	RX_PLUGIN_API rx_result_struct rxInitPlugin();
 	RX_PLUGIN_API rx_result_struct rxDeinitPlugin();
@@ -777,6 +778,7 @@ extern "C" {
 	typedef void(*rxGetPluginInfo_t)(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver);
 	typedef void(*rxGetPluginInfo2_t)(string_value_struct* plugin_ver, string_value_struct* lib_ver, string_value_struct* sys_ver, string_value_struct* comp_ver, string_value_struct* abi_ver, string_value_struct* common_ver);
 	typedef void(*rxGetPluginName_t)(string_value_struct* name);
+	typedef void(*rxGetPluginName2_t)(string_value_struct* name, string_value_struct* ns);
 	typedef rx_result_struct(*rxInitPlugin_t)();
 	typedef rx_result_struct(*rxDeinitPlugin_t)();
 	typedef rx_result_struct(*rxBuildPlugin_t)(const char* root);

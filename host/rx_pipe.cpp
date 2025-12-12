@@ -247,7 +247,7 @@ int rx_pipe_host::pipe_main (int argc, char* argv[], std::vector<library::rx_plu
 					HOST_LOG_INFO("Main", 900, "{rx-platform} running on PID "s + buff);
 
 					std::cout << "Registering plug-ins...";
-					ret = register_plugins(plugins);
+					ret = register_plugins(plugins, config);
 					if (ret)
 					{
 						std::cout << SAFE_ANSI_STATUS_OK << "\r\n";

@@ -45,6 +45,7 @@ string_type get_full_path_from_relative(const string_type& path);
 string_type get_full_path(const string_type& base);
 string_type get_storage_directory();
 void fill_plugin_paths(string_array& paths);
+void fill_dotnet_host_path(string_type& path);
 
 }
 

@@ -139,7 +139,7 @@ internal_data_subscription::internal_data_subscription (value_handle_extended ha
 void internal_data_subscription::add_item (const string_type& path, value_handle_extended& handle)
 {
 	std::vector<rx_result_with<runtime_handle_t> > results;
-	string_array items{path};
+	std::vector<sys_runtime::subscriptions::rx_subs_item_data> items{ {path, subscription_trigger_type::subscription_trigger_critical } };
 	my_subscription_->connect_items(items, results);
 	if (!results.empty() && results[0] && results[0].value())
 		handle.item = results[0].value();

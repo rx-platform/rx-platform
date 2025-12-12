@@ -80,14 +80,14 @@ int is_float_union_type(rx_value_t type)
 }
 int is_integer_union_type(rx_value_t type)
 {
-	return type == RX_BOOL_TYPE || type <= RX_INT8_TYPE
-		|| type == RX_INT16_TYPE || type <= RX_INT32_TYPE
+	return type == RX_BOOL_TYPE || type == RX_INT8_TYPE
+		|| type == RX_INT16_TYPE || type == RX_INT32_TYPE
 		|| type == RX_INT64_TYPE;
 }
 int is_unassigned_union_type(rx_value_t type)
 {
-	return type == RX_BOOL_TYPE || type <= RX_UINT8_TYPE
-		|| type == RX_UINT16_TYPE || type <= RX_UINT32_TYPE
+	return type == RX_BOOL_TYPE || type == RX_UINT8_TYPE
+		|| type == RX_UINT16_TYPE || type == RX_UINT32_TYPE
 		|| type == RX_UINT64_TYPE;
 }
 int is_numeric_union_type(rx_value_t type)
@@ -145,6 +145,11 @@ RX_COMMON_API int rx_get_array_size(const struct typed_value_type* val, size_t* 
 	if ((val->value_type & RX_ARRAY_VALUE_MASK) != 0)
 	{
 		*size = val->value.array_value.size;
+		return RX_OK;
+	}
+	else if(val->value_type == RX_STRING_TYPE || val->value_type == RX_BYTES_TYPE)
+	{// string and bytes are special cases of array, but they are not marked as arrays in value_type
+		*size = (val->value_type == RX_STRING_TYPE) ? val->value.string_value.size : val->value.bytes_value.size;
 		return RX_OK;
 	}
 	else

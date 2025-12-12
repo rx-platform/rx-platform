@@ -478,6 +478,49 @@ public:
 
 };
 
+
+class rx_full_node_id
+{
+	rx_full_node_id_struct data_;
+public:
+	rx_full_node_id() noexcept;
+	rx_full_node_id(const char* ns, const rx_node_id_struct* right);
+	rx_full_node_id(const string_type& ns, const rx_node_id& right);
+	rx_full_node_id(const rx_full_node_id& right);
+	rx_full_node_id(rx_full_node_id&& right)  noexcept;
+	~rx_full_node_id();
+
+	rx_full_node_id& operator=(const rx_full_node_id& right);
+	rx_full_node_id& operator=(rx_full_node_id&& right) noexcept;
+
+	const rx_full_node_id_struct* c_ptr() const;
+	rx_full_node_id_struct move() noexcept;
+
+	void to_string(string_type& val) const;
+	string_type to_string() const;
+	static rx_full_node_id from_string(const char* value);
+
+	bool is_null() const;
+	operator bool() const;
+
+	string_type get_namespace() const;
+	void set_namespace(const string_type& value);
+
+	rx_node_id get_node_id(uint16_t index) const;
+
+	const rx_node_id_type get_node_type() const;
+
+
+	const rx_uuid_t& get_uuid() const;
+	uint32_t get_numeric() const;
+
+	bool get_uuid(rx_uuid_t& id) const;
+	bool get_numeric(uint32_t& id) const;
+	bool get_string(string_type& id) const;
+	bool get_bytes(byte_string& id) const;
+
+};
+
 std::ostream & operator << (std::ostream &out, const rx_node_id &val);
 
 typedef std::vector<rx_node_id> rx_node_ids;

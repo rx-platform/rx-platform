@@ -4,7 +4,7 @@
 *
 *  system\server\rx_log.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -317,7 +317,7 @@ rx_result log_object::start (bool test, std::vector<log_subscriber::smart_ptr>& 
 	return true;
 }
 
-bool log_object::read_log (const string_type& log, const log_query_type& query, std::function<void(rx_result_with<log_events_type>&&)> callback) const
+bool log_object::read_log (const string_type& log, const log_query_type& query, std::function<void(rx_result_with<log_events_type>&&)> callback)
 {
 	rx_reference_ptr ref;
 	auto my_job = jobs::rx_create_func_job(std::move(ref), [this](const string_type& log, log_query_type query, std::function<void(rx_result_with < log_events_type>&&)> callback)
@@ -326,7 +326,7 @@ bool log_object::read_log (const string_type& log, const log_query_type& query, 
 			auto it = subscribers_.find(log);
 			if (it != subscribers_.end())
 			{
-				auto read_result = it->second->read_log(std::move(query), result);
+				auto read_result = it->second->read_log(query, result);
 				if (read_result)
 				{
 					result.succeeded = true;
@@ -360,7 +360,7 @@ log_subscriber::~log_subscriber()
 
 
 
-rx_result log_subscriber::read_log (log_query_type query, log_events_type& result) const
+rx_result log_subscriber::read_log (const log_query_type& query, log_events_type& result)
 {
 	return RX_NOT_IMPLEMENTED;
 }
@@ -459,7 +459,7 @@ void cache_log_subscriber::log_event (log_event_type event_type, const string_ty
 	}
 }
 
-rx_result cache_log_subscriber::read_log (log_query_type query, log_events_type& result) const
+rx_result cache_log_subscriber::read_log (const log_query_type& query, log_events_type& result)
 {
 	if (!events_cache_.empty())
 	{

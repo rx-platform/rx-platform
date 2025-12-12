@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_logic.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -132,7 +132,7 @@ public:
 
       void fill_data (const data::runtime_values_data& data);
 
-      void collect_data (data::runtime_values_data& data, runtime_value_type type) const;
+      void collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const;
 
       rx_result browse_items (const string_type& prefix, const string_type& path, const string_type& filter, std::vector<runtime_item_attribute>& items, runtime_process_context* ctx);
 

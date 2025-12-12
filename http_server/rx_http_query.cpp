@@ -124,10 +124,22 @@ rx_result http_enterprise_handler::handle_request (http_request& req, http_respo
 
 const char* http_enterprise_handler::get_extension ()
 {
-    if (my_interface_)
-        return name_.c_str();
-    else
-        return nullptr;
+	if (my_interface_)
+	{
+		if (name_ == "json")
+		{
+			return "rx";
+		}
+		else
+		{
+
+			return name_.c_str();
+		}
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
 

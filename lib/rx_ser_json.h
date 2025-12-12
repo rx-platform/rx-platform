@@ -4,7 +4,7 @@
 *
 *  lib\rx_ser_json.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -61,6 +61,8 @@ class json_reader : public base_meta_reader
 
 
       bool read_id (const char* name, rx_node_id& id);
+
+      bool read_full_id (const char* name, rx_full_node_id& id);
 
       bool read_string (const char* name, string_type& str);
 
@@ -154,6 +156,8 @@ class json_writer_type : public base_meta_writer
 
 
       bool write_id (const char* name, const rx_node_id& id);
+
+      bool write_full_id (const char* name, const rx_full_node_id& id);
 
       bool write_string (const char* name, const char* str);
 

@@ -9,4 +9,5 @@
 
 
 #define RX_PLUGIN_ID "first"
+#define RX_PLUGIN_NAMESPACE "ENSACO.RxPlatform.FirstPlugin"
 

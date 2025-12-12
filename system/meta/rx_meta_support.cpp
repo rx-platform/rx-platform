@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -106,7 +106,7 @@ rx_result_with<rx_storage_ptr> resolve_storage(const meta_data& data)
 
 namespace meta {
 
-// Class rx_platform::meta::type_check_context 
+// Class rx_platform::meta::type_check_context
 
 type_check_context::type_check_context ()
 {
@@ -201,7 +201,7 @@ rx_result_erros_t type_check_context::get_errors () const
 }
 
 
-// Class rx_platform::meta::construct_context 
+// Class rx_platform::meta::construct_context
 
 construct_context::construct_context (const meta_data& meta)
       : now(rx_time::now()),
@@ -289,15 +289,15 @@ runtime_data_type& construct_context::runtime_stack ()
 		return runtime_data_.runtime_data;
 	case active_state_t::in_method:
 		RX_ASSERT(current_method_ >= 0);
-		RX_ASSERT(current_method_ < runtime_data_.methods.size());
+		RX_ASSERT(current_method_ < (int)runtime_data_.methods.size());
 		return runtime_data_.methods[current_method_].runtime_data;
 	case active_state_t::in_program:
 		RX_ASSERT(current_program_ >= 0);
-		RX_ASSERT(current_program_ < runtime_data_.programs.size());
+		RX_ASSERT(current_program_ < (int)runtime_data_.programs.size());
 		return runtime_data_.programs[current_program_].runtime_data;
 	case active_state_t::in_display:
 		RX_ASSERT(current_display_ >= 0);
-		RX_ASSERT(current_display_ < runtime_data_.displays.size());
+		RX_ASSERT(current_display_ < (int)runtime_data_.displays.size());
 		return runtime_data_.displays[current_display_].runtime_data;
 	default:
 		RX_ASSERT(false);
@@ -360,7 +360,7 @@ void construct_context::start_method (const string_type& name, rx_node_id& input
 void construct_context::end_program (runtime::logic_blocks::program_data data)
 {
 	RX_ASSERT(state_ == active_state_t::in_program);
-	RX_ASSERT(current_program_ >= 0 && current_program_ < runtime_data_.programs.size());
+	RX_ASSERT(current_program_ >= 0 && current_program_ < (int)runtime_data_.programs.size());
 	data.name = runtime_data_.programs[current_program_].name;
 	runtime_data_.programs[current_method_].program = std::move(data);
 	current_program_ = -1;
@@ -371,7 +371,7 @@ void construct_context::end_program (runtime::logic_blocks::program_data data)
 void construct_context::end_method (runtime::logic_blocks::method_data data, rx_node_id inputs_id, rx_node_id outputs_id)
 {
 	RX_ASSERT(state_ == active_state_t::in_method);
-	RX_ASSERT(current_method_ >= 0 && current_method_ < runtime_data_.methods.size());
+	RX_ASSERT(current_method_ >= 0 && current_method_ < (int)runtime_data_.methods.size());
 	data.name = runtime_data_.methods[current_method_].name;
 	runtime_data_.methods[current_method_].method = std::move(data);
 	runtime_data_.methods[current_method_].set_inputs_id(inputs_id);
@@ -384,14 +384,14 @@ void construct_context::end_method (runtime::logic_blocks::method_data data, rx_
 runtime::logic_blocks::method_data& construct_context::method_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_method);
-	RX_ASSERT(current_method_ >= 0 && current_method_ < runtime_data_.methods.size());
+	RX_ASSERT(current_method_ >= 0 && current_method_ < (int)runtime_data_.methods.size());
 	return runtime_data_.methods[current_method_].method;
 }
 
 runtime::logic_blocks::program_data& construct_context::program_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_program);
-	RX_ASSERT(current_program_ >= 0 && current_program_ < runtime_data_.programs.size());
+	RX_ASSERT(current_program_ >= 0 && current_program_ < (int)runtime_data_.programs.size());
 	return runtime_data_.programs[current_program_].program;
 }
 
@@ -422,7 +422,7 @@ void construct_context::start_display (const string_type& name)
 void construct_context::end_display (runtime::display_blocks::display_data data)
 {
 	RX_ASSERT(state_ == active_state_t::in_display);
-	RX_ASSERT(current_display_ >= 0 && current_display_ < runtime_data_.displays.size());
+	RX_ASSERT(current_display_ >= 0 && current_display_ < (int)runtime_data_.displays.size());
 	data.name = runtime_data_.displays[current_display_].name;
 	runtime_data_.displays[current_display_].display = std::move(data);
 	current_display_ = -1;
@@ -433,7 +433,7 @@ void construct_context::end_display (runtime::display_blocks::display_data data)
 runtime::display_blocks::display_data& construct_context::display_data ()
 {
 	RX_ASSERT(state_ == active_state_t::in_display);
-	RX_ASSERT(current_display_ >= 0 && current_display_ < runtime_data_.displays.size());
+	RX_ASSERT(current_display_ >= 0 && current_display_ < (int)runtime_data_.displays.size());
 	return runtime_data_.displays[current_display_].display;
 }
 
@@ -498,7 +498,7 @@ std::map<string_type, security::security_guard> construct_context::normalize_sec
 }
 
 
-// Class rx_platform::meta::runtime_data_prototype 
+// Class rx_platform::meta::runtime_data_prototype
 
 
 rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_simple_value value, const std::bitset<32>& value_opt)
@@ -530,6 +530,9 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
 				runtime::structure::const_value_data temp;
 				temp.value = std::move(value);
+
+				if (!check_is_sealed(const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override sealed constant value!";
 				if (!check_read_only(value_opt, const_values_opts[elem.index >> rt_type_shift]))
 					return "Can't override const value wrong read-only value";
 				const_values.emplace_back(std::move(temp));
@@ -544,6 +547,9 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 					return "Can't override value, can not replace array with simple value!";
 				if (value.get_type() != this_val.get_item()->value.get_type())
 					return "Can't override value, wrong value type!";
+
+				if (!check_is_sealed(this_val.get_item()->value_opt))
+					return "Can't override sealed value!";
 				if (!check_read_only(value_opt, this_val.get_item()->value_opt))
 					return "Can't override const value wrong read-only value";
 
@@ -684,6 +690,8 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 				value_data temp_val;
 				temp_val.value = std::move(value);
 				temp_val.value_opt = value_opt;
+				if(!check_is_sealed(const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override sealed constant value!";
 				if (!check_read_only(temp_val.value_opt, const_values_opts[elem.index >> rt_type_shift]))
 					return "Can't override const value wrong read-only value";
 				values.push_back(std::move(temp_val));
@@ -703,6 +711,8 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 				value_data temp_val;
 				temp_val.value = std::move(value);
 				temp_val.value_opt = value_opt;
+				if (!check_is_sealed(this_val.get_item()->value_opt))
+					return "Can't override sealed value!";
 				if (!check_read_only(temp_val.value_opt, this_val.get_item()->value_opt))
 					return "Can't override value wrong read-only value";
 				values.push_back(std::move(temp_val));
@@ -941,6 +951,8 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 		case rt_const_index_type:
 			{
 				auto& this_val = const_values[elem.index >> rt_type_shift];
+				if (!check_is_sealed(const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override sealed constant value!";
 				if (!check_read_only(value.value_opt, const_values_opts[elem.index >> rt_type_shift]))
 					return "Can't override const value wrong read-only value";
 				if (this_val.is_array())
@@ -957,6 +969,8 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 		case rt_value_index_type:
 			{
 				auto& this_val = values[elem.index >> rt_type_shift];
+				if (!check_is_sealed(this_val.get_item()->value_opt))
+					return "Can't override sealed value!";
 				if(!check_read_only(value.value_opt, this_val.get_item()->value_opt))
 					return "Can't override value wrong read-only value";
 				if (this_val.is_array())
@@ -972,6 +986,8 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 		case rt_variable_index_type:
 			{
 				auto& this_val = variables[elem.index >> rt_type_shift].second;
+				if (!check_is_sealed(this_val.get_item()->value_opt))
+					return "Can't override sealed variable value!";
 				if (!check_read_only(value.value_opt, this_val.get_item()->value_opt))
 					return "Can't override variable wrong read-only value";
 				if (this_val.is_array())
@@ -1201,6 +1217,8 @@ rx_result runtime_data_prototype::add_value_block (const string_type& name, runt
 			case rt_value_data_index_type:
 				{
 					auto& this_val = blocks[elem.index >> rt_type_shift];
+					if (!check_is_sealed(this_val.second.get_item()->struct_value.value_opt))
+						return "Can't override sealed value!";
 					if (!check_read_only(value.struct_value.value_opt, this_val.second.get_item()->struct_value.value_opt))
 						return "Can't override const value wrong read-only value";
 					if (this_val.second.is_array())
@@ -1218,6 +1236,8 @@ rx_result runtime_data_prototype::add_value_block (const string_type& name, runt
 			case rt_variable_data_index_type:
 				{
 					auto& this_val = variable_blocks[elem.index >> rt_type_shift];
+					if (!check_is_sealed(this_val.second.get_item()->variable.value_opt))
+						return "Can't override sealed value!";
 					if (!check_read_only(value.struct_value.value_opt, this_val.second.get_item()->variable.value_opt))
 						return "Can't override variable data wrong read-only value";
 					if (this_val.second.is_array())
@@ -2118,15 +2138,18 @@ bool runtime_data_prototype::check_read_only(const std::bitset<32>& to, const st
 		to[runtime::structure::value_opt_readonly] ||
 		 !from[runtime::structure::value_opt_readonly];
 }
+bool runtime_data_prototype::check_is_sealed(const std::bitset<32>& from)
+{
+		return !from[runtime::structure::value_opt_sealed];
+}
+
+// Class rx_platform::meta::object_type_creation_data
 
 
-// Class rx_platform::meta::object_type_creation_data 
+// Class rx_platform::meta::type_creation_data
 
 
-// Class rx_platform::meta::type_creation_data 
-
-
-// Class rx_platform::meta::type_create_context 
+// Class rx_platform::meta::type_create_context
 
 type_create_context::type_create_context ()
 {
@@ -2150,10 +2173,10 @@ void type_create_context::reinit ()
 }
 
 
-// Class rx_platform::meta::check_record 
+// Class rx_platform::meta::check_record
 
 
-// Class rx_platform::meta::type_check_source 
+// Class rx_platform::meta::type_check_source
 
 type_check_source::type_check_source (const string_type& source, type_check_context* ctx)
       : ctx_(ctx)
@@ -2169,10 +2192,10 @@ type_check_source::~type_check_source()
 
 
 
-// Class rx_platform::meta::object_data_prototype 
+// Class rx_platform::meta::object_data_prototype
 
 
-// Class rx_platform::meta::method_data_prototype 
+// Class rx_platform::meta::method_data_prototype
 
 
 const rx_node_id method_data_prototype::get_inputs_id () const
@@ -2196,16 +2219,16 @@ void method_data_prototype::set_outputs_id (const rx_node_id& value)
 }
 
 
-// Class rx_platform::meta::program_data_prototype 
+// Class rx_platform::meta::program_data_prototype
 
 
-// Class rx_platform::meta::display_data_prototype 
+// Class rx_platform::meta::display_data_prototype
 
 
-// Class rx_platform::meta::dependencies_context 
+// Class rx_platform::meta::dependencies_context
 
 
-// Class rx_platform::meta::config_part_container 
+// Class rx_platform::meta::config_part_container
 
 
 rx_result config_part_container::serialize (const string_type& name, base_meta_writer& stream, uint8_t type) const
@@ -2383,7 +2406,7 @@ rx_result config_part_container::deserialize (const string_type& name, base_meta
 }
 
 
-// Class rx_platform::meta::block_data_prototype 
+// Class rx_platform::meta::block_data_prototype
 
 
 rx_result block_data_prototype::add_value (const string_type& name, rx_simple_value value)

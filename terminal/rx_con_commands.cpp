@@ -47,6 +47,7 @@
 #include "model/rx_model_algorithms.h"
 #include "terminal/rx_console.h"
 #include "sys_internal/rx_namespace_algorithms.h"
+#include "dotnet/rx_dotnet.h"
 
 
 namespace rx_internal {
@@ -268,6 +269,15 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	table.emplace_back(rx_row_type());
 	table.back().emplace_back("Common", col_prefix, ANSI_COLOR_RESET);
 	table.back().emplace_back(rx_gate::instance().get_common_version(), color_prefix, ANSI_COLOR_RESET);
+	if (show_all)
+	{
+		table.emplace_back(rx_row_type());
+		table.back().emplace_back(".NET Hosting Version");
+		table.back().emplace_back(dotnet::dotnet_hosting::instance().get_dotnet_info().rx_dotnet_version);
+		table.emplace_back(rx_row_type());
+		table.back().emplace_back(".NET Runtime");
+		table.back().emplace_back(dotnet::dotnet_hosting::instance().get_dotnet_info().runtime_version);
+	}
 	if (show_all)
 	{
 		table.emplace_back(rx_row_type());

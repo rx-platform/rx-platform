@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -339,7 +339,7 @@ rx_result do_in_meta_with_dir(
 
 
 template <class typeT>
-class types_model_algorithm
+class types_model_algorithm 
 {
 
   public:
@@ -379,7 +379,7 @@ class types_model_algorithm
 
 
 template <class typeT>
-class simple_types_model_algorithm
+class simple_types_model_algorithm 
 {
 
   public:
@@ -425,7 +425,7 @@ class simple_types_model_algorithm
 
 
 template <class typeT>
-class runtime_model_algorithm
+class runtime_model_algorithm 
 {
   public:
       using instanceT = typename typeT::instance_data_t;
@@ -476,7 +476,7 @@ class runtime_model_algorithm
 
 
 
-class relation_types_algorithm
+class relation_types_algorithm 
 {
 
   public:
@@ -493,6 +493,8 @@ class relation_types_algorithm
 
       static rx_result_with<relation_type::smart_ptr> create_type_sync (relation_type::smart_ptr prototype);
 
+      static rx_result delete_type_sync (const rx_item_reference& item_reference);
+
 
   protected:
 
@@ -501,8 +503,6 @@ class relation_types_algorithm
       static rx_result_with<relation_type::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
       static rx_result_with<relation_type::smart_ptr> update_type_sync (relation_type::smart_ptr prototype, rx_update_type_data update_data);
-
-      static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
       static rx_result_with<check_type_result> check_type_sync (const string_type& name, const string_type& dir);
 
@@ -515,7 +515,7 @@ class relation_types_algorithm
 
 
 
-class data_types_model_algorithm
+class data_types_model_algorithm 
 {
 
   public:
@@ -532,6 +532,8 @@ class data_types_model_algorithm
 
       static rx_result_with<data_type::smart_ptr> create_type_sync (data_type::smart_ptr prototype);
 
+      static rx_result delete_type_sync (const rx_item_reference& item_reference);
+
 
   protected:
 
@@ -540,8 +542,6 @@ class data_types_model_algorithm
       static rx_result_with<data_type::smart_ptr> get_type_sync (const rx_item_reference& item_reference);
 
       static rx_result_with<data_type::smart_ptr> update_type_sync (data_type::smart_ptr prototype, rx_update_type_data update_data);
-
-      static rx_result delete_type_sync (const rx_item_reference& item_reference);
 
       static rx_result_with<check_type_result> check_type_sync (const string_type& name, const string_type& dir);
 
@@ -554,7 +554,7 @@ class data_types_model_algorithm
 
 
 
-class transaction_algorithm
+class transaction_algorithm 
 {
 
   public:

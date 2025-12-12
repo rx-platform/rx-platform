@@ -57,7 +57,7 @@ rx_web_socket_endpoint::rx_web_socket_endpoint (rx_web_socket_port* port)
     stack_entry.send_function = &rx_web_socket_endpoint::send_function;
     executer_ = port->get_executer();
     parser_.callback = [this](http_parsed_request req) -> rx_protocol_result_t
-        {
+        {            
 			return parse_http_request(std::move(req));
         };
 }
@@ -114,6 +114,11 @@ void rx_web_socket_endpoint::close_endpoint ()
 
 rx_protocol_result_t rx_web_socket_endpoint::parse_http_request (http_parsed_request req)
 {
+    if(req.method != rx_http_method::get)
+    {
+        HTTP_LOG_ERROR("rx_web_socket_endpoint", 400, "Invalid HTTP method for WebSocket Upgrade request.");
+        return RX_PROTOCOL_INVALID_ARG;
+	}
     string_type conn = req.headers["Connection"];
     string_type upgrade = req.headers["Upgrade"];
     string_type web_key = req.headers["Sec-WebSocket-Key"];
@@ -127,6 +132,7 @@ rx_protocol_result_t rx_web_socket_endpoint::parse_http_request (http_parsed_req
             string_type response_key = generate_websocket_accept(web_key);
             string_type response;
 			response += "HTTP/1.1 101 Switching Protocols\r\n";
+			response += "Server: " + rx_internal::rx_http_server::http_server::get_server_header_info() + "\r\n";
 			response += "Upgrade: websocket\r\n";
 			response += "Connection: Upgrade\r\n";
 			response += "Sec-WebSocket-Accept: " + response_key + "\r\n";

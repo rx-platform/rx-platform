@@ -187,7 +187,8 @@ rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 // Class rx_platform::meta::def_blocks::const_value_def 
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value, bool config_only)
-	: array_size_(-1)
+      : is_sealed_(false)
+	, array_size_(-1)
 	, name_(name)
 	, value_(std::move(value))
 	, read_only_(false)
@@ -197,7 +198,8 @@ const_value_def::const_value_def (const string_type& name, rx_simple_value&& val
 }
 
 const_value_def::const_value_def (const string_type& name, const rx_simple_value& value, bool config_only)
-	: array_size_(-1)
+      : is_sealed_(false)
+	, array_size_(-1)
 	, name_(name)
 	, value_(value)
 	, read_only_(false)
@@ -207,7 +209,8 @@ const_value_def::const_value_def (const string_type& name, const rx_simple_value
 }
 
 const_value_def::const_value_def (const string_type& name, const rx_item_reference& type_id, bool is_array, bool config_only)
-	: array_size_(is_array ?  0 : -1)
+      : is_sealed_(false)
+	, array_size_(is_array ?  0 : -1)
 	, name_(name)
 	, data_type_ref_(type_id)
 	, read_only_(false)
@@ -498,7 +501,8 @@ mapper_attribute::mapper_attribute (const string_type& name, const string_type& 
 // Class rx_platform::meta::def_blocks::simple_value_def 
 
 simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& value, bool read_only, bool persistent)
-	: array_size_(-1)
+      : is_sealed_(false)
+	, array_size_(-1)
 	, name_(name)
 	, value_(std::move(value))
 	, read_only_(read_only)
@@ -507,7 +511,8 @@ simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& v
 }
 
 simple_value_def::simple_value_def (const string_type& name, const rx_simple_value& value, bool read_only, bool persistent)
-	: array_size_(-1)
+      : is_sealed_(false)
+	, array_size_(-1)
 	, name_(name)
 	, value_(value)
 	, read_only_(read_only)
@@ -516,7 +521,8 @@ simple_value_def::simple_value_def (const string_type& name, const rx_simple_val
 }
 
 simple_value_def::simple_value_def (const string_type& name, const rx_item_reference& type_id, bool is_array, bool read_only, bool persistent)
-	: array_size_(is_array ? 0 : -1)
+      : is_sealed_(false)
+	, array_size_(is_array ? 0 : -1)
 	, name_(name)
 	, data_type_ref_(type_id)
 	, read_only_(read_only)
@@ -749,7 +755,8 @@ struct_attribute::struct_attribute (const string_type& name, const string_type& 
 
 variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
       : name_(name),
-        array_size_(-1)
+        array_size_(-1),
+        is_sealed_(false)
 	, target_(id)
 	, value_(std::move(value))
 	, read_only_(read_only)
@@ -758,7 +765,8 @@ variable_attribute::variable_attribute (const string_type& name, const rx_node_i
 
 variable_attribute::variable_attribute (const string_type& name, const string_type& target_name)
       : name_(name),
-        array_size_(-1)
+        array_size_(-1),
+        is_sealed_(false)
 	, target_(target_name)
 	, read_only_(false)
 {
@@ -1071,11 +1079,3 @@ rx_result mapped_data_type::register_mapper (const string_type& name, const rx_n
 } // namespace meta
 } // namespace rx_platform
 
-
-
-// Detached code regions:
-// WARNING: this code will be lost if code is regenerated.
-#if 0
-	return &security_;
-
-#endif

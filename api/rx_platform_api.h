@@ -32,14 +32,15 @@
 #define rx_platform_api_h 1
 
 
+#include "system/runtime/rx_objbase.h"
 
 // rx_job
 #include "system/threads/rx_job.h"
 
 #include "rx_library.h"
 #include "system/server/rx_log.h"
-#include "system/server/rx_ns.h"
 #include "system/runtime/rx_objbase.h"
+#include "system/server/rx_ns.h"
 #include "system/meta/rx_obj_types.h"
 #include "system/meta/rx_types.h"
 #include "platform_api/rx_abi.h"

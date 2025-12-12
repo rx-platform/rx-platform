@@ -36,6 +36,8 @@
 #include "system/server/rx_cmds.h"
 // rx_endpoints
 #include "interfaces/rx_endpoints.h"
+// rx_namespaces
+#include "system/server/rx_namespaces.h"
 // rx_server
 #include "system/server/rx_server.h"
 
@@ -57,6 +59,7 @@
 #include "discovery/rx_discovery_main.h"
 #include "enterprise/rx_enterprise.h"
 #include "system/runtime/rx_internal_objects.h"
+#include "dotnet/rx_dotnet.h"
 
 
 namespace rx_platform {
@@ -67,6 +70,7 @@ rx_gate* rx_gate::g_instance = nullptr;
 
 rx_gate::rx_gate()
       : host_(nullptr),
+        system_namespace_(std::make_unique<ns::rx_namespace_array>()),
         started_(rx_time::now()),
         pid_(0),
         security_guard_(rx_security_read_access | rx_security_delete_access),
@@ -237,8 +241,8 @@ rx_result rx_gate::deinitialize ()
 
 	rx_internal::rx_http_server::http_server::instance().deinitialize();
 
-	rx_internal::enterprise::enterprise_manager::instance().deinit_interfaces(); 
-	
+	rx_internal::enterprise::enterprise_manager::instance().deinit_interfaces();
+
 	rx_internal::discovery::discovery_manager::instance().deinitialize();
 
 	rx_internal::model::platform_types_manager::instance().deinitialize();
@@ -260,7 +264,6 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 	auto result = rx_internal::infrastructure::server_runtime::instance().start(host, data.processor, data.io);
 	if (result)
 	{
-
 #ifdef UPYTHON_SUPPORT
 		result = python::upython::start_script(host, data);
 #endif
@@ -274,12 +277,13 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 			{
 				network_ = rx_internal::discovery::discovery_manager::instance().get_ip4_network().to_string();
 				network_id_ = rx_internal::discovery::discovery_manager::instance().get_network_id();
-			
+
 				result = rx_internal::model::platform_types_manager::instance().start(host, data, *init_data_);
 				if (result)
 				{
 					init_data_.reset();// we do not need this anymore
 					platform_status_ = rx_platform_status::running;
+					result = rx_internal::dotnet::dotnet_hosting::instance().start(host, data, *init_data_);
 					host->server_started_event();
 					return true;
 				}
@@ -311,7 +315,7 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 
 rx_result rx_gate::stop ()
 {
-	platform_status_ = rx_platform_status::stopping; 
+	platform_status_ = rx_platform_status::stopping;
 	rx_internal::sys_runtime::platform_runtime_manager::instance().stop_all();
 	rx_internal::model::platform_types_manager::instance().stop();
 #ifdef UPYTHON_SUPPORT
@@ -434,6 +438,21 @@ runtime_transaction_id_t rx_gate::get_new_unique_id ()
 		}, std::move(callback));
 
 	return true;*/
+}
+
+ns::rx_namespace_array* rx_gate::get_system_namespaces ()
+{
+	return system_namespace_.get();
+}
+
+rx_result_with<uint16_t> rx_gate::add_namespace (const string_type& name)
+{
+	return system_namespace_->add_namespace(name);
+}
+
+string_type rx_gate::namespace_lookup (uint16_t id) const
+{
+	return system_namespace_->namespace_lookup(id);
 }
 
 

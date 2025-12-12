@@ -37,6 +37,8 @@
 #include "rx_rt_struct.h"
 #include "rx_operational.h"
 
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 // rx_relation_impl
@@ -45,22 +47,20 @@
 #include "system/runtime/rx_resolvers.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
 // rx_values
 #include "lib/rx_values.h"
 
 namespace rx_platform {
 namespace runtime {
+namespace algorithms {
+template <class typeT> class runtime_holder_algorithms;
+} // namespace algorithms
+
 namespace relations {
 class relation_connections;
 class relation_connector;
+
 } // namespace relations
-
-namespace algorithms {
-template <class typeT> class runtime_holder_algorithms;
-
-} // namespace algorithms
 } // namespace runtime
 } // namespace rx_platform
 
@@ -300,11 +300,13 @@ class relation_data : public rx::pointers::reference_object
 
       rx_item_type get_type_id () const;
 
-      values::rx_value get_value () const;
+      values::rx_value get_value (runtime_process_context* ctx) const;
 
       const string_type& get_name () const;
 
       security::security_guard_ptr get_security_guard ();
+
+      values::rx_simple_value simple_get_value () const;
 
 
       const rx_reference<relation_runtime> get_implementation () const

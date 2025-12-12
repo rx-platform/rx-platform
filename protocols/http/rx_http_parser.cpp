@@ -190,6 +190,11 @@ rx_protocol_result_t http_parser::create_and_forward_request (const char* method
 	{
 		request.method = rx_http_method::del;
 	}
+
+	else if (method_len == 7 && 0 == memcmp(method, "OPTIONS", 7))
+	{
+		request.method = rx_http_method::options;
+	}
 	string_type str_path;
 	str_path.reserve(path_len);
 	size_t idx = 0;

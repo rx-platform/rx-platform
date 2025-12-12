@@ -52,6 +52,10 @@
 #include "system/hosting/rx_host.h"
 
 namespace rx_platform {
+namespace ns {
+class rx_namespace_array;
+} // namespace ns
+
 namespace prog {
 class server_script_host;
 } // namespace prog
@@ -159,6 +163,18 @@ struct memory_data_t
     std::vector<size_t> parameters;
 };
 
+struct dotnet_data_t
+{
+    string_type version;
+    bool server_gc = true;
+	bool concurrent_gc = true;
+	uint32_t max_threads = 0;
+    uint32_t min_threads = 0;
+	string_type host_path;
+    string_type app_path;
+    string_type lib_path;
+};
+
 struct configuration_data_t
 {
 	runtime_data_t processor;
@@ -169,10 +185,11 @@ struct configuration_data_t
 	io_manager_data_t io;
 	general_data_t other;
     log_data_t log;
-    bool build_system_from_code = false;
+    bool build_system_from_storage = false;
     std::map<string_type, string_type> user_storages;
     std::map<string_type, string_type> system_storages;
     memory_data_t memory;
+    dotnet_data_t dotnet;
 };
 
 enum class rx_platform_status
@@ -256,6 +273,12 @@ class rx_gate
       string_type resolve_ethernet_alias (const string_type& what) const;
 
       runtime_transaction_id_t get_new_unique_id ();
+
+      ns::rx_namespace_array* get_system_namespaces ();
+
+      rx_result_with<uint16_t> add_namespace (const string_type& name);
+
+      string_type namespace_lookup (uint16_t id) const;
 
 
       hosting::rx_platform_host * get_host ()
@@ -376,6 +399,8 @@ class rx_gate
       scripts_type scripts_;
 
       std::unique_ptr<rx_internal::interfaces::io_endpoints::rx_io_manager> io_manager_;
+
+      std::unique_ptr<ns::rx_namespace_array> system_namespace_;
 
 
       static rx_gate* g_instance;

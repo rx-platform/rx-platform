@@ -156,6 +156,9 @@ class text_file_handler : public http_file_handler
 
   public:
 
+      const char* get_content_type ();
+
+
   protected:
 
   private:
@@ -286,6 +289,130 @@ class jsx_file_handler : public text_file_handler
       const char* get_extension ();
 
       const char* get_content_type ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class json_file_handler : public text_file_handler  
+{
+
+  public:
+
+      const char* get_extension ();
+
+      const char* get_content_type ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class wasm_file_handler : public http_file_handler  
+{
+
+  public:
+
+      const char* get_extension ();
+
+      const char* get_content_type ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class octet_stream_handler : public http_file_handler  
+{
+
+  public:
+
+      const char* get_content_type ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class dat_files_handler : public octet_stream_handler  
+{
+
+  public:
+
+      const char* get_extension ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class pdb_files_handler : public octet_stream_handler  
+{
+
+  public:
+
+      const char* get_extension ();
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class map_file_handler : public text_file_handler  
+{
+
+  public:
+
+      const char* get_extension ();
 
 
   protected:

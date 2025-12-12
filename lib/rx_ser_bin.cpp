@@ -4,27 +4,27 @@
 *
 *  lib\rx_ser_bin.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -40,7 +40,7 @@ namespace rx {
 
 namespace serialization {
 
-// Parameterized Class rx::serialization::binary_reader
+// Parameterized Class rx::serialization::binary_reader 
 
 template <typename allocT, bool swap_bytes>
 binary_reader<allocT,swap_bytes>::binary_reader (buffer_type& buffer, int version)
@@ -64,6 +64,8 @@ bool binary_reader<allocT,swap_bytes>::read_id (const char* name, rx_node_id& id
     uint8_t encoding;
     if (!buffer_.read_data(encoding))
         return false;
+    if ((encoding & 0x80) != 0x00)
+        return false; // a full node id
     switch (encoding & 0xf)
     {
         case 0:
@@ -137,6 +139,95 @@ bool binary_reader<allocT,swap_bytes>::read_id (const char* name, rx_node_id& id
         default:
             return false;// unknown encoding value
     }
+    return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_reader<allocT,swap_bytes>::read_full_id (const char* name, rx_full_node_id& id)
+{
+	rx_node_id id_part;
+    uint8_t encoding;
+    if (!buffer_.read_data(encoding))
+        return false;
+    if( (encoding & 0x80) != 0x80)
+		return false; // not a full node id
+    switch (encoding & 0xf)
+    {
+        case 0:
+            {// two uint8_ts
+                uint8_t val;
+                if (!buffer_.read_data(val))
+                    return false;
+                if (val == 0u)
+                    id_part = rx_node_id();
+                else
+                    id_part = rx_node_id(val);
+            }
+            break;
+        case 1:
+            {// four uint8_ts
+                uint8_t namesp;
+                uint16_t val;
+                if (!buffer_.read_data(namesp))
+                    return false;
+                if (!buffer_.read_data(val))
+                    return false;
+                id_part = rx_node_id(val, namesp);
+            }
+            break;
+        case 2:
+            {// full numeric uint8_ts
+                uint16_t namesp;
+                uint32_t val;
+                if (!buffer_.read_data(namesp))
+                    return false;
+                if (!buffer_.read_data(val))
+                    return false;
+                id_part = rx_node_id(val, namesp);
+            }
+            break;
+        case 3:
+            {// string value
+                uint16_t namesp;
+                string_type val;
+                if (!buffer_.read_data(namesp))
+                    return false;
+                if (!buffer_.read_data(val))
+                    return false;
+                id_part = rx_node_id(val.c_str(), namesp);
+            }
+            break;
+        case 4:
+            {// uuid value
+                uint16_t namesp;
+                rx_uuid_t val;
+                if (!buffer_.read_data(namesp))
+                    return false;
+                if (!buffer_.read_data(val))
+                    return false;
+                id_part = rx_node_id(val, namesp);
+            }
+            break;
+        case 5:
+            {// binary value
+                uint16_t namesp;
+                byte_string val;
+                if (!buffer_.read_data(namesp))
+                    return false;
+                if (!buffer_.read_data(val))
+                    return false;
+                id_part = rx_node_id(val, namesp);
+                return false;// not implemented yet
+                //id=base::node_id(val,namesp);
+            }
+            break;
+        default:
+            return false;// unknown encoding value
+    }
+    string_type namesp;
+    if (!buffer_.read_data(namesp))
+		return false;
+	id = rx_full_node_id(namesp, id_part);
     return true;
 }
 
@@ -563,7 +654,7 @@ string_type binary_reader<allocT,swap_bytes>::get_error () const
 }
 
 
-// Parameterized Class rx::serialization::binary_writer
+// Parameterized Class rx::serialization::binary_writer 
 
 template <typename allocT, bool swap_bytes>
 binary_writer<allocT,swap_bytes>::binary_writer (buffer_type& buffer, int version)
@@ -741,6 +832,95 @@ bool binary_writer<allocT,swap_bytes>::write_id (const char* name, const rx_node
                 }
                 break;
         }
+    }
+    return true;
+}
+
+template <typename allocT, bool swap_bytes>
+bool binary_writer<allocT,swap_bytes>::write_full_id (const char* name, const rx_full_node_id& id)
+{
+    if (id.is_null())
+    {
+        uint8_t vals[]{ 0, 0 };
+        if (!buffer_.push_data(vals[0]))
+            return false;
+        if (!buffer_.push_data(vals[1]))
+            return false;
+    }
+    else
+    {
+		string_type namespace_name = id.get_namespace();
+        switch (id.get_node_type())
+        {
+            case rx_node_id_numeric:
+                {
+                    uint16_t namesp = 0;
+                    uint32_t val = id.get_numeric();
+                    if (val < 0x100)
+                    {// two uint8_ts encoding 0
+                        uint8_t vals[]{ 0x80,(uint8_t)val };
+                        if (!buffer_.push_data(vals[0]))
+                            return false;
+                        if (!buffer_.push_data(vals[1]))
+                            return false;
+                    }
+                    else if (val < 0x10000)
+                    {// four uint8_ts encoding 0
+                        uint8_t vals[]{ 0x81,(uint8_t)namesp };
+                        uint16_t val16 = (uint16_t)val;
+                        if (!buffer_.push_data(vals[0]))
+                            return false;
+                        if (!buffer_.push_data(vals[1]))
+                            return false;
+                        if (!buffer_.push_data(val16))
+                            return false;
+                    }
+                    else
+                    {// regular id
+                        uint8_t type = 0x82;
+                        if (!buffer_.push_data(type))
+                            return false;
+                        if (!buffer_.push_data(namesp))
+                            return false;
+                        if (!buffer_.push_data(val))
+                            return false;
+                    }
+                }
+                break;
+            case rx_node_id_string:
+                {
+                    uint16_t namesp = 0;
+                    string_type val;
+                    id.get_string(val);
+
+                    if (!buffer_.push_data(((uint8_t)0x83)))
+                        return false;
+                    if (!buffer_.push_data(namesp))
+                        return false;
+                    if (!buffer_.push_data(val.c_str()))
+                        return false;
+                }
+                break;
+            case rx_node_id_uuid:
+                {
+                    uint16_t namesp = 0;
+                    auto val = id.get_uuid();
+
+                    if (!buffer_.push_data((uint8_t)0x84))
+                        return false;
+                    if (!buffer_.push_data(namesp))
+                        return false;
+                    if (!buffer_.push_data(val))
+                        return false;
+                }
+                break;
+            case rx_node_id_bytes:
+                {
+                    return false;// not implemented yet!!!
+                }
+                break;
+        }
+		buffer_.push_data(namespace_name);
     }
     return true;
 }

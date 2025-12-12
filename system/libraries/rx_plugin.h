@@ -4,7 +4,7 @@
 *
 *  system\libraries\rx_plugin.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -53,6 +53,7 @@ namespace rx_platform {
 namespace library {
 
 #define DEFAULT_VER_STRING "_._._"
+#define UNDEFINED_NAMESPACE_PREFIX "undefined_"
 struct rx_plugin_info
 {
     string_type plugin_version = DEFAULT_VER_STRING;
@@ -61,6 +62,7 @@ struct rx_plugin_info
     string_type platform_version = DEFAULT_VER_STRING;
     string_type abi_version = DEFAULT_VER_STRING;
     string_type common_version = DEFAULT_VER_STRING;
+    string_type namespace_name = UNDEFINED_NAMESPACE_PREFIX;
 
 };
 
@@ -184,6 +186,8 @@ class rx_dynamic_plugin : public rx_plugin_base
 
       rxGetPluginName_t prxGetPluginName_;
 
+      rxGetPluginName2_t prxGetPluginName2_;
+
       rxInitPlugin_t prxInitPlugin_;
 
       rxDeinitPlugin_t prxDeinitPlugin_;
@@ -197,6 +201,8 @@ class rx_dynamic_plugin : public rx_plugin_base
       static registered_plugins_type registered_plugins_;
 
       uint32_t stream_version_;
+
+      string_type namespace_;
 
 
 };

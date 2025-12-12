@@ -4,7 +4,7 @@
 *
 *  system\libraries\rx_plugin.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,6 +36,7 @@
 
 #include "model/rx_meta_internals.h"
 #include "api/rx_platform_api.h"
+#include "system/server/rx_namespaces.h"
 
 
 namespace rx_platform {
@@ -73,6 +74,7 @@ rx_dynamic_plugin::rx_dynamic_plugin (const string_type& lib_path)
         prxGetPluginInfo_(nullptr),
         prxGetPluginInfo2_(nullptr),
         prxGetPluginName_(nullptr),
+        prxGetPluginName2_(nullptr),
         prxInitPlugin_(nullptr),
         prxDeinitPlugin_(nullptr),
         prxBuildPlugin_(nullptr),
@@ -145,20 +147,41 @@ rx_result rx_dynamic_plugin::bind_plugin ()
             prxGetPluginInfo_ = (rxGetPluginInfo_t)rx_get_func_address(module_, "rxGetPluginInfo");
             prxGetPluginInfo2_ = (rxGetPluginInfo2_t)rx_get_func_address(module_, "rxGetPluginInfo2");
             prxGetPluginName_ = (rxGetPluginName_t)rx_get_func_address(module_, "rxGetPluginName");
+            prxGetPluginName2_ = (rxGetPluginName2_t)rx_get_func_address(module_, "rxGetPluginName2");
             prxInitPlugin_ = (rxInitPlugin_t)rx_get_func_address(module_, "rxInitPlugin");
             prxDeinitPlugin_ = (rxDeinitPlugin_t)rx_get_func_address(module_, "rxDeinitPlugin");
             prxBuildPlugin_ = (rxBuildPlugin_t)rx_get_func_address(module_, "rxBuildPlugin");
 
-            if (prxGetPluginName_)
+            if (prxGetPluginName2_)
+            {
+                rx::rx_string_wrapper wrap;
+                rx::rx_string_wrapper ns_wrap;
+                prxGetPluginName2_(&wrap, &ns_wrap);
+                std::ostringstream ss;
+                ss << "Plugin "
+                    << wrap.c_str()
+					<< " (namespace: "
+					<< ns_wrap.c_str()
+					<< ")"
+                    << " bound with version "
+                    << bind_version
+                    << ".";
+				namespace_ = ns_wrap.c_str();
+                rx_gate::instance().get_system_namespaces()->add_namespace(namespace_, string_type(UNDEFINED_NAMESPACE_PREFIX) + wrap.c_str());
+                PLUGIN_LOG_INFO("rx_dynamic_plugin", 900, ss.str());
+            }
+            else if (prxGetPluginName_)
             {
                 rx::rx_string_wrapper wrap;
                 prxGetPluginName_(&wrap);
                 std::ostringstream ss;
                 ss << "Plugin "
                     << wrap.c_str()
-                    << " binded with version "
+                    << " bound with version "
                     << bind_version
                     << ".";
+				namespace_ = string_type(UNDEFINED_NAMESPACE_PREFIX) + wrap.c_str();
+                rx_gate::instance().add_namespace(namespace_);
                 PLUGIN_LOG_INFO("rx_dynamic_plugin", 900, ss.str());
             }
         }
@@ -251,6 +274,7 @@ rx_plugin_info rx_dynamic_plugin::get_plugin_info () const
         ret.comp_version = rx_c_str(&comp_ver);
         rx_destory_string_value_struct(&comp_ver);
     }
+	ret.namespace_name = namespace_;
     return ret;
 }
 
@@ -269,7 +293,7 @@ rx_result rx_dynamic_plugin::init_plugin ()
     }
     else
     {
-        return "Plugin not binded";
+        return "Plugin not bound";
     }
 }
 

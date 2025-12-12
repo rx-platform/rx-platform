@@ -4,7 +4,7 @@
 *
 *  gnu_hosts\rx_gnu_pipe.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -65,6 +65,8 @@ class gnu_pipe_host : public host::pipe::rx_pipe_host
       string_type get_full_path (const string_type& path);
 
       void fill_plugin_libs (string_array& paths);
+
+      string_type get_dotnet_host_path ();
 
 
   protected:

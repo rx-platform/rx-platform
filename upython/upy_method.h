@@ -4,7 +4,7 @@
 *
 *  upython\upy_method.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -32,7 +32,6 @@
 #define upy_method_h 1
 
 
-#ifdef UPYTHON_SUPPORT
 
 // upy_internal
 #include "upython/upy_internal.h"
@@ -66,9 +65,16 @@ namespace python {
 
 class upy_method_execution_context 
 {
+	upy_method_execution_context(const upy_method_execution_context&) = delete;
+	upy_method_execution_context& operator=(const upy_method_execution_context&) = delete;
+	upy_method_execution_context(upy_method_execution_context&&) = delete;
+	upy_method_execution_context& operator=(upy_method_execution_context&&) = delete;
+public:
+    upy_method_execution_context() = default;
+	~upy_method_execution_context() = default;
 
   public:
-      upy_method_execution_context (rx_platform::runtime::execute_data data, const string_type& func_name, rx_reference<upy_method> method);
+      upy_method_execution_context (execute_data data, const string_type& func_name, rx_reference<upy_method> method);
 
 
       string_type get_eval_code () const;
@@ -115,7 +121,7 @@ class upy_method_execution_context
 class upy_method : public logic::method_runtime  
 {
     DECLARE_CODE_INFO("rx", 0, 1, 0, "\
-MicroPython method script. Currently testing on Win32 only.");
+MicroPython method script.");
 
     DECLARE_REFERENCE_PTR(upy_method)
 
@@ -133,7 +139,7 @@ MicroPython method script. Currently testing on Win32 only.");
 
       virtual rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      rx_result execute (rx_platform::runtime::execute_data data, runtime::runtime_process_context* ctx);
+      rx_result execute (execute_data data, runtime::runtime_process_context* ctx);
 
       void send_execute_result (rx_simple_value out_val, rx_result&& result, runtime_transaction_id_t id);
 
@@ -169,6 +175,8 @@ MicroPython method script. Currently testing on Win32 only.");
 
       platform_item_ptr item_;
 
+      string_type function_name_;
+
 
 };
 
@@ -179,6 +187,10 @@ MicroPython method script. Currently testing on Win32 only.");
 
 class upy_module_method : public upy_method  
 {
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+MicroPython method module script.");
+
+    DECLARE_REFERENCE_PTR(upy_module_method)
 
   public:
       upy_module_method();
@@ -214,6 +226,10 @@ class upy_module_method : public upy_method
 
 class upy_script_method : public upy_method  
 {
+    DECLARE_CODE_INFO("rx", 0, 1, 0, "\
+MicroPython method eval script.");
+
+    DECLARE_REFERENCE_PTR(upy_script_method)
 
   public:
       upy_script_method();
@@ -244,7 +260,6 @@ class upy_script_method : public upy_method
 } // namespace python
 } // namespace rx_platform
 
-#endif
 
 
 #endif

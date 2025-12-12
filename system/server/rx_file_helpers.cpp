@@ -69,7 +69,7 @@ rx_result rx_list_files(const std::string& dir, const std::string& pattern, std:
 	{
 		do
 		{
-			if (strcmp(one.file_name, ".") != 0 && strcmp(one.file_name, "..") != 0)
+			if (one.file_name[0] != '\0' && strcmp(one.file_name, ".") != 0 && strcmp(one.file_name, "..") != 0)
 			{
 				if (one.is_directory)
 					directories.emplace_back(one.file_name);
@@ -101,6 +101,10 @@ std::string rx_remove_extension(const std::string& path)
 		return string_type(path);
 	else
 		return path.substr(0, idx);
+}
+bool rx_path_compare(const std::string& path1, const std::string& path2)
+{
+	return std::filesystem::equivalent(std::filesystem::path(path1), std::filesystem::path(path2));
 }
 std::string rx_combine_paths(const std::string& path1, const std::string& path2)
 {

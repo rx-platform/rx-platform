@@ -4,27 +4,27 @@
 *
 *  interfaces\rx_ethernet.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -144,7 +144,7 @@ bool fill_mac_address(const char* port, void* buff)
     return fill_mac_address_internal(port, buff, true);
 }
 
-// Class rx_internal::interfaces::ethernet::ethernet_endpoint
+// Class rx_internal::interfaces::ethernet::ethernet_endpoint 
 
 ethernet_endpoint::ethernet_endpoint()
       : my_port_(nullptr),
@@ -360,7 +360,7 @@ void ethernet_endpoint::process_packet (const uint8_t* buffer, size_t size)
 }
 
 
-// Class rx_internal::interfaces::ethernet::ethernet_port
+// Class rx_internal::interfaces::ethernet::ethernet_port 
 
 ethernet_port::ethernet_port()
 {
@@ -453,6 +453,78 @@ buffer_ptr ethernet_port::get_buffer ()
         }
     }
     return rx_create_reference<buffer_ptr::pointee_type>();
+}
+
+
+// Class rx_internal::interfaces::ethernet::ethernet_endpoint2 
+
+ethernet_endpoint2::ethernet_endpoint2()
+      : my_port_(nullptr),
+        current_state_(ether_state::not_active)
+{
+}
+
+
+
+rx_protocol_result_t ethernet_endpoint2::send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet)
+{
+    return RX_PROTOCOL_NOT_IMPLEMENTED;
+}
+
+rx_protocol_stack_endpoint* ethernet_endpoint2::get_stack_endpoint ()
+{
+	return &stack_endpoint_;
+}
+
+runtime::items::port_runtime* ethernet_endpoint2::get_port ()
+{
+	return my_port_;
+}
+
+rx_protocol_result_t ethernet_endpoint2::send_packet (send_protocol_packet packet)
+{
+	return RX_PROTOCOL_NOT_IMPLEMENTED;
+}
+
+void ethernet_endpoint2::disconnected (rx_security_handle_t identity)
+{
+}
+
+bool ethernet_endpoint2::readed (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity)
+{
+	return false;
+}
+
+rx_result ethernet_endpoint2::open (io::ip4_address addr, security::security_context_ptr identity, ethernet_port* port)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+rx_result ethernet_endpoint2::close ()
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+bool ethernet_endpoint2::tick ()
+{
+    return false;
+}
+
+void ethernet_endpoint2::start_timer (bool fire_now)
+{
+}
+
+void ethernet_endpoint2::suspend_timer ()
+{
+}
+
+bool ethernet_endpoint2::is_connected () const
+{
+    return false;
+}
+
+void ethernet_endpoint2::release_buffer (buffer_ptr what)
+{
 }
 
 

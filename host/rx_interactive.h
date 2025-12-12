@@ -4,7 +4,7 @@
 *
 *  host\rx_interactive.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -119,6 +119,8 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
       rx_result console_loop (configuration_data_t& config, std::vector<library::rx_plugin_base*>& plugins);
 
+      void add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config);
+
 
   private:
 
@@ -127,6 +129,8 @@ class interactive_console_host : public rx_platform::hosting::rx_platform_host
 
 
       bool exit_;
+
+      bool debug_stop_;
 
 
 };

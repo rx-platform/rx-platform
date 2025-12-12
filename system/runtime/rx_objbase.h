@@ -4,27 +4,27 @@
 *
 *  system\runtime\rx_objbase.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -36,16 +36,16 @@
 #include "system/server/rx_server.h"
 #include "lib/rx_io_addr.h"
 
-// rx_ptr
-#include "lib/rx_ptr.h"
-// rx_meta_data
-#include "lib/rx_meta_data.h"
-// rx_io_buffers
-#include "lib/rx_io_buffers.h"
 // dummy
 #include "dummy.h"
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
+// rx_meta_data
+#include "lib/rx_meta_data.h"
+// rx_io_buffers
+#include "lib/rx_io_buffers.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_platform {
 namespace security {
@@ -162,9 +162,11 @@ object class. basic implementation of an object");
 
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
-      threads::job_thread* get_jobs_queue ();
-
       void add_periodic_job (jobs::periodic_job::smart_ptr job);
+
+      void add_job (job_ptr job);
+
+      threads::job_thread* get_jobs_queue ();
 
 
       static rx_item_type get_type_id ()
@@ -262,9 +264,11 @@ system application class. basic implementation of a application");
 
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
-      threads::job_thread* get_jobs_queue ();
+      void add_periodic_job (timer_job_ptr job);
 
-      void add_periodic_job (jobs::periodic_job::smart_ptr job);
+      void add_job (job_ptr job);
+
+      threads::job_thread* get_jobs_queue ();
 
 
       static rx_item_type get_type_id ()
@@ -355,9 +359,11 @@ system domain class. basic implementation of a domain");
 
       virtual rx_result stop_runtime (runtime_stop_context& ctx);
 
-      threads::job_thread* get_jobs_queue ();
-
       void add_periodic_job (jobs::periodic_job::smart_ptr job);
+
+      void add_job (job_ptr job);
+
+      threads::job_thread* get_jobs_queue ();
 
 
       static rx_item_type get_type_id ()
@@ -471,9 +477,9 @@ system port class. basic implementation of a port");
 
       virtual void destroy_endpoint (rx_protocol_stack_endpoint* what) = 0;
 
-      threads::job_thread* get_jobs_queue ();
-
       void add_periodic_job (jobs::periodic_job::smart_ptr job);
+
+      void add_job (job_ptr job);
 
       threads::job_thread* get_io_queue ();
 
@@ -484,6 +490,8 @@ system port class. basic implementation of a port");
       rx_result_with<io::rx_io_buffer> alloc_io_buffer ();
 
       void release_io_buffer (io::rx_io_buffer buff);
+
+      threads::job_thread* get_jobs_queue ();
 
 
       static rx_item_type get_type_id ()
@@ -527,7 +535,7 @@ system port class. basic implementation of a port");
       void send_function(funcT&& func, Args&&... args)
       {
           auto job = rx_create_job<funcT, Args...>()(smart_this(), std::forward<funcT>(func), std::forward<Args>(args)...);
-          get_jobs_queue()->append(job);
+          add_job(job);
       }
       template<typename funcT, typename... Args>
       void send_io_function(funcT&& func, Args&&... args)
@@ -578,9 +586,9 @@ system port class. basic implementation of a port");
       runtime_process_context *context_;
 
 
-      rx_thread_handle_t executer_;
-
       rx_port_ptr runtime_;
+
+      rx_thread_handle_t executer_;
 
 
 };

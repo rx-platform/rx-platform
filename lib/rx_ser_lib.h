@@ -4,7 +4,7 @@
 *
 *  lib\rx_ser_lib.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -63,8 +63,9 @@ using namespace rx;
 #define RX_SECURITY_GUARDS_VERSION  0x20006
 #define RX_SECURITY_GUARDS2_VERSION 0x20007
 #define RX_SECURITY_GUARDS3_VERSION 0x20008
+#define RX_FULL_NODE_ID_VERSION     0x20009
 
-#define RX_CURRENT_SERIALIZE_VERSION RX_SECURITY_GUARDS3_VERSION
+#define RX_CURRENT_SERIALIZE_VERSION RX_FULL_NODE_ID_VERSION
 
 //////////////////////////////////////////////////
 // streaming constants from header
@@ -104,6 +105,8 @@ public:
 
 
       virtual bool write_id (const char* name, const rx_node_id& id) = 0;
+
+      virtual bool write_full_id (const char* name, const rx_full_node_id& id) = 0;
 
       virtual bool write_string (const char* name, const char* str) = 0;
 
@@ -200,6 +203,8 @@ class base_meta_reader
 
 
       virtual bool read_id (const char* name, rx_node_id& id) = 0;
+
+      virtual bool read_full_id (const char* name, rx_full_node_id& id) = 0;
 
       virtual bool read_string (const char* name, string_type& str) = 0;
 

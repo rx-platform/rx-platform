@@ -570,6 +570,7 @@ public:
 
 
       bool check_read_only(const std::bitset<32>& to, const std::bitset<32>& from);
+      bool check_is_sealed(const std::bitset<32>& from);
 };
 
 typedef std::vector<runtime_data_prototype> runtime_data_type;

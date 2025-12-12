@@ -167,7 +167,7 @@ int headless_platform_host::initialize_platform (int argc, char* argv[], const c
 					HOST_LOG_INFO("Main", 900, "{rx-platform} running on PID "s + buff);
 
 					std::cout << "Registering plug-ins...";
-					ret = register_plugins(plugins);
+					ret = register_plugins(plugins, config_);
 					if (ret)
 					{
 						std::cout << "OK\r\n";

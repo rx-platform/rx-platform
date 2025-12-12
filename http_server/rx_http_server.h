@@ -38,12 +38,20 @@
 #include "system/http_support/rx_http_request.h"
 // rx_http
 #include "system/http_support/rx_http.h"
-// rx_http_mapping
-#include "protocols/http/rx_http_mapping.h"
 // rx_http_displays
 #include "http_server/rx_http_displays.h"
 // rx_http_handlers
 #include "http_server/rx_http_handlers.h"
+// rx_http_mapping
+#include "protocols/http/rx_http_mapping.h"
+
+namespace rx_internal {
+namespace rx_http_server {
+class http_server;
+
+} // namespace rx_http_server
+} // namespace rx_internal
+
 
 /////////////////////////////////////////////////////////////
 // logging macros for http library
@@ -161,12 +169,15 @@ struct html_file_data_t
 class html_file_loader 
 {
     typedef std::map<string_type, html_file_data_t> cached_items_type;
+    typedef std::map<string_type, string_type> cached_paths_type;
 
   public:
 
       rx_result get_parsed_html_content (const string_type& path, const string_type& root, byte_string& buffer);
 
       static std::vector<html_file_poss_t> process_html_file (string_view_type content);
+
+      void process_file_changes (string_array paths);
 
 
   protected:
@@ -180,6 +191,44 @@ class html_file_loader
       cached_items_type cached_items_;
 
       locks::slim_lock cache_lock_;
+
+      cached_paths_type cached_paths_;
+
+
+};
+
+
+
+
+
+
+class http_files_manager 
+{
+
+  public:
+      http_files_manager();
+
+      ~http_files_manager();
+
+
+      rx_result initialize (const string_type& path, http_server* srv);
+
+      rx_result deinitialize ();
+
+      void watch_callback (uint32_t watch_id, int action, const char* rootdir, const char* filepath, const char* oldfilepath);
+
+
+  protected:
+
+  private:
+
+
+      http_server *server_;
+
+
+      string_type path_;
+
+      uint32_t watch_id_;
 
 
 };
@@ -195,7 +244,7 @@ class http_server
     typedef std::unique_ptr<http_request_filter> filter_ptr_t;
     typedef std::vector<filter_ptr_t> filters_type;
     typedef std::map<string_type, http_response> cached_items_type;
-    typedef std::map<string_type, string_type> cached_content_type;
+    typedef std::map<string_type, string_type> cached_paths_type;
 
   public:
 
@@ -219,10 +268,18 @@ class http_server
 
       void dump_http_references (std::ostream& out);
 
+      void process_file_changes (string_array paths);
+
 
       http_displays::http_displays_repository& get_displays ()
       {
         return displays_;
+      }
+
+
+      http_files_manager& files ()
+      {
+        return files_;
       }
 
 
@@ -252,18 +309,22 @@ class http_server
 
       html_file_loader html_loader_;
 
+      http_files_manager files_;
+
 
       string_array static_paths_;
 
-      string_type global_path_;
-
       string_array dynamic_paths_;
-
-      cached_items_type cached_items_;
 
       locks::slim_lock cache_lock_;
 
-      cached_content_type cached_dynamic_;
+      cached_items_type cached_items_;
+
+      cached_paths_type cached_paths_;
+
+      cached_paths_type cached_content_;
+
+      cached_paths_type cached_content_paths_;
 
       string_type spa_;
 

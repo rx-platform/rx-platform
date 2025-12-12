@@ -4,7 +4,7 @@
 *
 *  system\storage_base\rx_storage.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -37,7 +37,6 @@
 // rx_storage
 #include "system/storage_base/rx_storage.h"
 
-#include "system/server/rx_server.h"
 #include "lib/rx_ser_json.h"
 #include "lib/rx_ser_bin.h"
 
@@ -119,8 +118,9 @@ rx_platform_storage_type::~rx_platform_storage_type()
 
 // Class rx_platform::storage_base::rx_code_storage_item 
 
-rx_code_storage_item::rx_code_storage_item()
-    : rx_storage_item(rx_storage_item_type::none)
+rx_code_storage_item::rx_code_storage_item (bool dynamic)
+      : dynamic_(dynamic)
+    , rx_storage_item(rx_storage_item_type::none)
 {
 }
 
@@ -128,7 +128,6 @@ rx_code_storage_item::rx_code_storage_item()
 
 base_meta_reader& rx_code_storage_item::read_stream ()
 {
-    RX_ASSERT(false);
     // this should not happen but be safe of stupidity
     static memory::std_buffer dummy_buffer;
     static serialization::std_buffer_reader dummy(dummy_buffer);
@@ -137,7 +136,6 @@ base_meta_reader& rx_code_storage_item::read_stream ()
 
 base_meta_writer& rx_code_storage_item::write_stream ()
 {
-    RX_ASSERT(false);
     // this should not happen but be safe of stupidity
     static memory::std_buffer dummy_buffer;
     static serialization::std_buffer_writer dummy(dummy_buffer);
@@ -146,27 +144,42 @@ base_meta_writer& rx_code_storage_item::write_stream ()
 
 rx_result rx_code_storage_item::open_for_read ()
 {
-    return "Storage can not be defined for this item";
+    if (dynamic_)
+        return true;
+    else
+        return "Storage can not be defined for this item";
 }
 
 rx_result rx_code_storage_item::open_for_write ()
 {
-    return "Storage can not be defined for this item";
+    if (dynamic_)
+        return true;
+    else
+        return "Storage can not be defined for this item";
 }
 
 rx_result rx_code_storage_item::close_read ()
 {
-    return "Storage can not be defined for this item";
+    if (dynamic_)
+        return true;
+    else
+        return "Storage can not be defined for this item";
 }
 
 void rx_code_storage_item::commit_write (storage_callback_t callback, runtime_transaction_id_t trans_id)
 {
-    callback(trans_id,  "Storage can not be defined for this item");
+    if (dynamic_)
+        callback(trans_id, true);
+    else
+        callback(trans_id,  "Storage can not be defined for this item");
 }
 
 rx_result rx_code_storage_item::commit_write_sync ()
 {
-    return  "Storage can not be defined for this item";
+    if (dynamic_)
+        return true;
+    else
+        return  "Storage can not be defined for this item";
 }
 
 const string_type& rx_code_storage_item::get_item_reference () const
@@ -177,7 +190,10 @@ const string_type& rx_code_storage_item::get_item_reference () const
 
 rx_result rx_code_storage_item::delete_item ()
 {
-    return "Delete not valid for this item.";
+    if (dynamic_)
+        return true;
+    else
+        return "Delete not valid for this item.";
 }
 
 bool rx_code_storage_item::preprocess_meta_data (meta_data& data)
@@ -193,13 +209,22 @@ string_type rx_code_storage_item::get_item_path () const
 
 rx_result rx_code_storage_item::save (runtime_transaction_id_t trans_id, byte_string data, storage_callback_t callback)
 {
-    return RX_NOT_IMPLEMENTED;
+    if (dynamic_)
+        return true;
+    else
+        return RX_NOT_IMPLEMENTED;
+}
+
+bool rx_code_storage_item::is_read_only () const
+{
+    return false;
 }
 
 
 // Class rx_platform::storage_base::rx_code_storage 
 
-rx_code_storage::rx_code_storage()
+rx_code_storage::rx_code_storage (bool dynamic)
+      : dynamic_(dynamic)
 {
 }
 
@@ -222,7 +247,7 @@ bool rx_code_storage::is_valid_storage () const
 
 rx_result_with<rx_storage_item_ptr> rx_code_storage::get_item_storage (const meta_data& data, rx_item_type type)
 {
-    rx_storage_item_ptr ret = std::make_unique<rx_code_storage_item>();
+    rx_storage_item_ptr ret = std::make_unique<rx_code_storage_item>(dynamic_);
     return ret;
 }
 

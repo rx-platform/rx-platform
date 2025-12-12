@@ -57,7 +57,8 @@ enum class rx_http_method
     get,
     post,
     put,
-    del
+    del,
+    options
 };
 
 typedef std::map<string_type, string_type> rx_http_params_type;
@@ -127,7 +128,7 @@ struct http_response
 
       string_type result_string;
 
-      bool cache_me;
+      string_type cache_path;
 
   public:
 

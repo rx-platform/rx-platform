@@ -37,7 +37,6 @@
 #include "testing/rx_test.h"
 
 #include "security/rx_security.h"
-#include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "terminal/rx_term_table.h"
 #include "rx_test_io.h"

@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_interactive.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -69,6 +69,8 @@ class win32_console_host : public host::interactive::interactive_console_host
 
       rx_result setup_console (int argc, char* argv[]);
 
+      void restore_console ();
+
       static string_type get_win32_interactive_info ();
 
       bool supports_ansi () const;
@@ -76,6 +78,8 @@ class win32_console_host : public host::interactive::interactive_console_host
       string_type get_full_path (const string_type& path);
 
       void fill_plugin_libs (string_array& paths);
+
+      string_type get_dotnet_host_path ();
 
 	  template<class tupleType>
 	  auto register_types(tupleType before)
@@ -107,6 +111,10 @@ class win32_console_host : public host::interactive::interactive_console_host
       int width_;
 
       int height_;
+
+      DWORD in_mode_;
+
+      DWORD out_mode_;
 
 
 };

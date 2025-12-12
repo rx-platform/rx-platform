@@ -109,9 +109,12 @@ typedef int sys_handle_t;
 #define RX_PLATFORM_API
 #endif
 
+RX_COMMON_API int rx_assert_print( const char * expression, const char *filename, int line);
 
 #ifdef _DEBUG
-#define RX_ASSERT(v) assert(v)
+#define RX_ASSERT(v)\
+( ( void ) ( ( v ) ? \
+0 : rx_assert_print( #v, __FILE__, __LINE__ ) ) )
 #else
 #define RX_ASSERT(v) ((void)0)
 #endif

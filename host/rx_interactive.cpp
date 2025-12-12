@@ -4,27 +4,27 @@
 *
 *  host\rx_interactive.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -54,10 +54,11 @@ namespace host {
 
 namespace interactive {
 
-// Class host::interactive::interactive_console_host
+// Class host::interactive::interactive_console_host 
 
 interactive_console_host::interactive_console_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
-      : exit_(false)
+      : exit_(false),
+        debug_stop_(false)
 	, hosting::rx_platform_host(storages)
 {
 	//startup_script_ = "test run meta/construct-wide\n";
@@ -266,6 +267,12 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 	ret = parse_command_line(argc, argv, "rx-interactive", config);
 	if (ret)
 	{
+		if (debug_stop_)
+		{
+			std::cout << "Press <ENTER> to continue...\r\n";
+			string_type dummy;
+			std::getline(std::cin, dummy);
+		}
 		std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 		std::cout << "Reading configuration file...";
 		ret = parse_config_files(config);
@@ -331,7 +338,7 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 					std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 					std::cout << "Registering plug-ins...";
-					ret = register_plugins(plugins);
+					ret = register_plugins(plugins, config);
 					if (ret)
 					{
 						std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
@@ -388,6 +395,12 @@ int interactive_console_host::console_main (int argc, char* argv[], std::vector<
 	rx_platform::threads::thread::deinitialize();
 	restore_console();
 	std::cout << "\r\n";
+	if (debug_stop_)
+	{
+		std::cout << "Press <ENTER> to continue...\r\n";
+		string_type dummy;
+		std::getline(std::cin, dummy);
+	}
 	return ret ? 0 : -1;
 }
 
@@ -587,8 +600,17 @@ string_type interactive_console_host::get_default_log_directory () const
 
 }
 
+void interactive_console_host::add_command_line_options (hosting::command_line_options_t& options, rx_platform::configuration_data_t& config)
+{
+	rx_platform_host::add_command_line_options(options, config);
 
-// Class host::interactive::interactive_console_port
+	options.add_options()
+		("wait", "Wait interactive on process startup and exit", cxxopts::value<bool>(debug_stop_))
+		;
+}
+
+
+// Class host::interactive::interactive_console_port 
 
 interactive_console_port::interactive_console_port (interactive_console_host* host)
       : listening_(false)
@@ -671,7 +693,7 @@ void interactive_console_port::terminal_size_changed (int width, int height)
 }
 
 
-// Class host::interactive::interactive_console_endpoint
+// Class host::interactive::interactive_console_endpoint 
 
 interactive_console_endpoint::interactive_console_endpoint (interactive_console_host* host, interactive_console_port* my_port)
       : host_(host),

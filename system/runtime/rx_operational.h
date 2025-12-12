@@ -33,12 +33,12 @@
 
 
 
+// rx_value_point
+#include "runtime_internal/rx_value_point.h"
 // rx_relations
 #include "system/runtime/rx_relations.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
-// rx_value_point
-#include "runtime_internal/rx_value_point.h"
 // rx_ptr
 #include "lib/rx_ptr.h"
 
@@ -112,7 +112,7 @@ class connected_tags
     typedef std::map<logic_blocks::method_data*, runtime_handle_t> methods_type;
 	typedef std::map<structure::variable_data*, runtime_handle_t> variables_type;
     typedef std::map<structure::value_block_data*, runtime_handle_t> blocks_type;
-    typedef std::map<relation_ptr, runtime_handle_t> relations_type;
+    typedef std::map<relations::relation_data*, runtime_handle_t> relations_type;
     typedef std::map<relations::relation_value_data*, runtime_handle_t> relation_values_type;
     typedef std::map<structure::variable_block_data*, runtime_handle_t> variable_blocks_type;
 
@@ -174,6 +174,8 @@ class connected_tags
       void binded_value_change (structure::value_data* whose, const rx_value& val);
 
       void binded_block_change (structure::value_block_data* whose, const rx_value& val);
+
+      void binded_relation_change (relations::relation_data* whose, const rx_value& val);
 
       void variable_change (structure::variable_data* whose, const rx_value& val);
 
@@ -240,6 +242,8 @@ class connected_tags
 
       blocks_type blocks_;
 
+      relations_type relations_;
+
 
       handles_map_type handles_map_;
 
@@ -292,6 +296,7 @@ class binded_tags
     typedef std::map<structure::variable_block_data*, callback_data_t> variable_blocks_type;
     typedef std::map<structure::variable_data*, callback_data_t> variables_type;
 	typedef std::map<runtime_handle_t, rt_value_ref> handles_map_type;
+    typedef std::map<relations::relation_data*, callback_data_t> relations_type;
 
     typedef std::map<runtime_handle_t, std::unique_ptr<rx_internal::sys_runtime::data_source::callback_value_point> > connected_values_type;
 
@@ -300,6 +305,8 @@ class binded_tags
 
       ~binded_tags();
 
+
+      void init_tags (relations::relations_holder* relations, logic_blocks::logic_holder* logic, display_blocks::displays_holder* displays);
 
       rx_result get_value (runtime_handle_t handle, rx_simple_value& val) const;
 
@@ -320,6 +327,8 @@ class binded_tags
       rx_result pool_value (runtime_handle_t handle, std::function<void(const rx_value&)> callback) const;
 
       void value_change (structure::value_data* whose, const rx_value& val);
+
+      void relation_change (relations::relation_data* whose, const rx_value& val);
 
       void full_value_changed (structure::full_value_data* whose, const rx_value& val, connected_tags& tags);
 
@@ -397,8 +406,12 @@ class binded_tags
 
       variable_blocks_type variable_blocks_;
 
+      relations_type relations_;
+
 
       handles_map_type handles_map_;
+
+      relations::relations_holder* parent_relations_;
 
 
 };

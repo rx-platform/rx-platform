@@ -106,11 +106,13 @@ void runtime_holder_algorithms<typeT>::fire_job (typename typeT::RType& whose)
 template <class typeT>
 rx_result runtime_holder_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, data::runtime_values_data> >& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
-    std::vector<rx_result> results;
     for (const auto& item : items)
     {
         auto result = whose.tags_.connected_tags_.write_tag(transaction_id, test, item.first, data::runtime_values_data(item.second), monitor);
-        results.emplace_back(std::move(result));
+        if(!result && monitor)
+        {
+            monitor->write_complete(transaction_id, item.first, 0, rx_result(result.move()));
+		}
     }
     return true;
 }
@@ -118,11 +120,13 @@ rx_result runtime_holder_algorithms<typeT>::write_items (runtime_transaction_id_
 template <class typeT>
 rx_result runtime_holder_algorithms<typeT>::write_items (runtime_transaction_id_t transaction_id, bool test, const std::vector<std::pair<runtime_handle_t, rx_simple_value> >& items, runtime::tag_blocks::tags_callback_ptr monitor, typename typeT::RType& whose)
 {
-    std::vector<rx_result> results;
     for (const auto& item : items)
     {
         auto result = whose.tags_.connected_tags_.write_tag(transaction_id, test, item.first, rx_simple_value(item.second), monitor);
-        results.emplace_back(std::move(result));
+        if (!result && monitor)
+        {
+            monitor->write_complete(transaction_id, item.first, 0, rx_result(result.move()));
+        }
     }
     return true;
 }
@@ -723,7 +727,7 @@ void runtime_relation_algorithms::read_value (const string_type& path, read_resu
     rx_result result;
     if (path.empty())
     {// our value
-        rx_value value = whose.get_value();
+        rx_value value = whose.value.value;
         callback(std::move(result), std::move(value));
     }
     else

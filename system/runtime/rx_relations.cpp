@@ -37,7 +37,6 @@
 // rx_relations
 #include "system/runtime/rx_relations.h"
 
-#include "system/server/rx_server.h"
 #include "sys_internal/rx_internal_ns.h"
 #include "rx_objbase.h"
 #include "model/rx_model_algorithms.h"
@@ -441,9 +440,9 @@ rx_item_type relation_data::get_type_id () const
 	return rx_item_type::rx_relation;
 }
 
-values::rx_value relation_data::get_value () const
+values::rx_value relation_data::get_value (runtime_process_context* ctx) const
 {
-	return rx_value(value.value);
+	return value.get_value(ctx);
 }
 
 const string_type& relation_data::get_name () const
@@ -454,6 +453,11 @@ const string_type& relation_data::get_name () const
 security::security_guard_ptr relation_data::get_security_guard ()
 {
 	return context_->get_security_guard(0);//sec warning
+}
+
+values::rx_simple_value relation_data::simple_get_value () const
+{
+	return value.simple_get_value();
 }
 
 

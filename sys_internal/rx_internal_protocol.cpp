@@ -866,10 +866,10 @@ void rx_protocol_subscription::destroy ()
 
 rx_result rx_protocol_subscription::add_items (const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results)
 {
-	string_array paths;
+	std::vector<sys_runtime::subscriptions::rx_subs_item_data> paths;
 	for (const auto& one : items)
 	{
-		paths.emplace_back(one.path);
+		paths.push_back(sys_runtime::subscriptions::rx_subs_item_data{ std::move(one.path), one.trigger_type });
 	}
 	auto result = my_subscription_->connect_items(paths, results);
 	if (!result)

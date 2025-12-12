@@ -37,7 +37,6 @@
 #include "testing/rx_test_io.h"
 
 #include "terminal/rx_terminal_style.h"
-#include "system/server/rx_server.h"
 #include "sys_internal/rx_inf.h"
 
 

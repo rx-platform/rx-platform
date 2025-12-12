@@ -4,7 +4,7 @@
 *
 *  first_plugin\first_plugin.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -233,7 +233,6 @@ First Object. Object implementation in test plugin.");
       rx_result deinitialize_object ();
 
 	  static std::map<rx_node_id, first_object::smart_ptr> runtime_instances;
-
   protected:
 
   private:

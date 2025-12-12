@@ -4,27 +4,27 @@
 *
 *  upython\upy_internal.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -37,13 +37,13 @@
 // upy_internal
 #include "upython/upy_internal.h"
 
-
 #include "upythonc.h"
 #include "upy_method.h"
 #include "model/rx_meta_internals.h"
 #include "upy_values.h"
 #include "sys_internal/rx_async_functions.h"
 #include "upython.h"
+rx_security_handle_t rx_security_context();
 
 host_data g_host_data{};
 
@@ -54,8 +54,25 @@ using rx_platform::python::upy_method_execution_context;
 std::vector<mp_obj_t> g_modules;
 std::vector<mp_obj_t> g_results;
 
+namespace {
+class thread_context_restorer
+{
+public:
+    thread_context_restorer()
+    {
+        rx_restore_thread_context();
+    }
+    ~thread_context_restorer()
+    {
+        rx_save_thread_context();
+    }
+};
+}
+
 int get_modules(uint32_t timeout, size_t* count, mp_obj_t** objs, size_t* ccaunt, mp_obj_t** cobjs)
 {
+    thread_context_restorer _;
+
     g_modules.clear();
     g_results.clear();
     bool ret = rx_platform::python::upy_thread::instance().get_modules(timeout, g_modules, g_results);
@@ -79,26 +96,37 @@ int get_modules(uint32_t timeout, size_t* count, mp_obj_t** objs, size_t* ccaunt
     {
         *ccaunt = 0;
     }
+
+
     return 1;
 }
 void module_done(uint32_t id, mp_obj_t result)
 {
+    thread_context_restorer _;
+
     if(mp_obj_is_exception_instance(result))
         bool ret = rx_platform::python::upy_thread::instance().transaction_ended(id, 0, result);
     else
         bool ret = rx_platform::python::upy_thread::instance().transaction_ended(id, result, 0);
+
 }
 
 mp_obj_t module_read(uint32_t id, const char* path, mp_obj_t iter)
 {
+    thread_context_restorer _;
+
     return rx_platform::python::upy_thread::instance().read(id, path, iter);
 }
 mp_obj_t module_write(uint32_t id, const char* path, mp_obj_t what, mp_obj_t iter)
 {
+    thread_context_restorer _;
+
     return rx_platform::python::upy_thread::instance().write(id, path, what, iter);
 }
 void log_write(const char* data, size_t size)
 {
+    thread_context_restorer _;
+
     bool found = false;
     string_type str_data;
     while (size > 0)
@@ -223,7 +251,7 @@ rx_result_with<mp_obj_t> compile_from_str(const char* name, const char* str)
         mp_lexer_t* lex = mp_lexer_new_from_str_len(src_name, str, strlen(str), false);
         mp_parse_tree_t pt = mp_parse(lex, MP_PARSE_FILE_INPUT);
         mp_obj_t module_fun = mp_compile(&pt, src_name, false);
-        
+
         nlr_pop();
         return module_fun;
     }
@@ -319,7 +347,6 @@ int test_main(const char* str) {
     return 0;
 }
 
-
 void init_script_engine()
 {
     mp_stack_ctrl_init();
@@ -331,6 +358,7 @@ void init_script_engine()
     static mp_obj_t pystack[1024];
     mp_pystack_init(pystack, &pystack[MP_ARRAY_SIZE(pystack)]);
     // Initialize interpreter
+
     mp_init();
 
 }
@@ -398,6 +426,21 @@ string_type get_python_value(const std::variant<rx_simple_value, std::vector<rx_
     if (std::holds_alternative<rx_simple_value>(val))
     {
         const rx_simple_value& rx_val = std::get<rx_simple_value>(val);
+        if(rx_val.is_array())
+        {
+            auto size = rx_val.array_size();
+            string_type res = "[";
+            bool first = true;
+            for (size_t i = 0 ; i<size; i++)
+            {
+                if (!first)
+                    res += ", ";
+                first = false;
+                res += get_python_value(rx_val[(int)i]);
+            }
+            res += "]";
+            return res;
+		}
         if (rx_val.is_string())
         {
             return "\""s + rx_val.get_string() + "\"";
@@ -414,7 +457,7 @@ string_type get_python_value(const std::variant<rx_simple_value, std::vector<rx_
     return "None";
 }
 
-// Class rx_platform::python::upy_thread 
+// Class rx_platform::python::upy_thread
 
 upy_thread::upy_thread()
       : has_job_(false),
@@ -435,8 +478,12 @@ uint32_t upy_thread::handler ()
 
     UPYTHON_LOG_INFO("upy_thread", 900, "Starting micropython thread.");
 
-    register_host(&g_host_data);
+    auto ctx = security::active_security();
 
+
+    register_host(&g_host_data);
+    int ret = 0;
+    rx_save_thread_context();
 
     init_script_engine();
 
@@ -471,13 +518,17 @@ uint32_t upy_thread::handler ()
         mp_obj_t exc = MP_OBJ_FROM_PTR(nlr.ret_val);
         string_type err = get_exception_string(exc);
         mp_obj_print_exception(&mp_plat_print, exc);
-        return -1;// (mp_obj_t)nlr.ret_val;
+        ret = -1;// (mp_obj_t)nlr.ret_val;
     }
+
+
+    rx_restore_thread_context();
+
 
     UPYTHON_LOG_INFO("upy_thread", 900, "Exiting micropython thread.");
 
 
-    return 0;
+    return ret;
 }
 
 void upy_thread::include (upy_module_ptr what)
@@ -503,8 +554,6 @@ rx_result upy_thread::start_script (const std::vector<std::pair<string_type, str
 {
     file_modules_ = modules;
 
-    g_host_data.hevent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
     g_host_data.modules_callback = c_get_modules;
     g_host_data.module_done = c_module_done;
     g_host_data.module_read = c_module_read;
@@ -524,22 +573,21 @@ rx_result upy_thread::start_script (const std::vector<std::pair<string_type, str
 void upy_thread::stop_script ()
 {
     end();
-    if (g_host_data.hevent)
-        CloseHandle(g_host_data.hevent);
 }
 
 bool upy_thread::wait (modules_type& queued, results_type& results, uint32_t timeout)
 {
+
     if (RX_WAIT_0 != has_job_.wait_handle(timeout))
         return false;
 
     locks::auto_lock_t dummy(&jobs_lock_);
 
-    RX_ASSERT(!(modules_.empty() && results_.empty()));
     queued.assign(modules_.begin(), modules_.end());
     modules_.clear();
     results = std::move(results_);
     results_ = results_type();
+
 
     return true;
 }
@@ -573,6 +621,7 @@ bool upy_thread::get_modules (uint32_t timeout, std::vector<mp_obj_t>& modules, 
         {
             if (!obj)
             {
+
                 return false;
             }
             // process module
@@ -590,6 +639,8 @@ bool upy_thread::get_modules (uint32_t timeout, std::vector<mp_obj_t>& modules, 
             }
         }
     }
+
+
     return true;
 }
 
@@ -604,6 +655,8 @@ bool upy_thread::transaction_ended (runtime_transaction_id_t id, mp_obj_t result
             this->include(it->second);
         }
         waited_modules_.erase(it);
+        if (!waited_modules_.empty())
+            has_job_.set();
         return true;
     }
     return false;
@@ -630,6 +683,7 @@ void upy_thread::append_result (upy_callback_ptr data)
 
 mp_obj_t upy_thread::read (runtime_transaction_id_t id, const string_type& path, mp_obj_t iter)
 {
+
     auto it = waited_modules_.find(id);
     if (it != waited_modules_.end())
     {
@@ -645,15 +699,15 @@ mp_obj_t upy_thread::write (runtime_transaction_id_t id, const string_type& path
     {
         it->second->write(path, val, iter, single_result_callback_);
     }
+
     return 0;
 }
 
 
-// Class rx_platform::python::upy_module 
+// Class rx_platform::python::upy_module
 
-upy_module::upy_module (const string_type& script, const string_type& eval_script, platform_item_ptr item)
+upy_module::upy_module (const string_type& script, platform_item_ptr item)
       : script_(script),
-        eval_script_(eval_script),
         py_module_(0),
         item_(std::move(item))
 {
@@ -720,10 +774,21 @@ upy_module_process_data upy_module::process_module ()
         }
         for (auto& ctx : temp_array)
         {
-           auto id = ctx->get_id();
-           auto ret = pending_contexts_.emplace(id, std::move(ctx));
-           eval_str("source1", ret.first->second->get_eval_code().c_str());
-           ret_data.trans_ids.push_back(id);
+           string_type code_str = ctx->get_eval_code();
+           if (!code_str.empty())
+           {
+               auto id = ctx->get_id();
+               auto ret = pending_contexts_.emplace(id, std::move(ctx));
+               eval_str("source1", code_str.c_str());
+               ret_data.trans_ids.push_back(id);
+
+			   // return regular function;
+               return ret_data;
+           }
+           else
+           {
+			   ctx->execution_complete(rx_result("Empty eval code!"));
+           }
         }
     }
     else
@@ -734,12 +799,14 @@ upy_module_process_data upy_module::process_module ()
             temp_array = std::move(contexts_);
             contexts_ = contexts_type();
         }
+        exception_text_ = "Module not compiled!";
         for (auto& ctx : temp_array)
         {
             ctx->execution_complete(rx_result(exception_text_));
         }
     }
     return ret_data;
+
 }
 
 bool upy_module::transaction_ended (runtime_transaction_id_t id, mp_obj_t result, mp_obj_t exc)
@@ -769,7 +836,7 @@ bool upy_module::transaction_ended (runtime_transaction_id_t id, mp_obj_t result
                 mp_obj_get_array(result, &len, &items);
                 std::vector<rx_simple_value> vals;
                 rx_result conv_result(true);
-                for (int i = 0; i < len; i++)
+                for (size_t i = 0; i < len; i++)
                 {
                     rx_simple_value temp_val;
                     conv_result = upy_convertor::upy_to_simple(items[i], temp_val);
@@ -801,7 +868,7 @@ bool upy_module::transaction_ended (runtime_transaction_id_t id, mp_obj_t result
 
                 data::runtime_values_data data;
                 rx_result conv_result(true);
-                for (int i = 0; i < len; i++)
+                for (size_t i = 0; i < len; i++)
                 {
                     string_type key_str;
                     string_type val_str;
@@ -919,7 +986,7 @@ void upy_module::deinit ()
 }
 
 
-// Class rx_platform::python::upy_callback_module 
+// Class rx_platform::python::upy_callback_module
 
 upy_callback_module::upy_callback_module()
 {
@@ -932,7 +999,7 @@ upy_callback_module::~upy_callback_module()
 
 
 
-// Class rx_platform::python::upy_read_callback 
+// Class rx_platform::python::upy_read_callback
 
 
 upy_callback_data upy_read_callback::process_module ()
@@ -953,7 +1020,7 @@ upy_callback_data upy_read_callback::process_module ()
 }
 
 
-// Class rx_platform::python::upy_write_callback 
+// Class rx_platform::python::upy_write_callback
 
 
 upy_callback_data upy_write_callback::process_module ()

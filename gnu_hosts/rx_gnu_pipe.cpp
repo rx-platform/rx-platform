@@ -4,7 +4,7 @@
 *
 *  gnu_hosts\rx_gnu_pipe.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -98,6 +98,15 @@ void gnu_pipe_host::fill_plugin_libs (string_array& paths)
 	fill_plugin_paths(paths);
 }
 
+string_type gnu_pipe_host::get_dotnet_host_path ()
+{
+	string_type path;
+	fill_dotnet_host_path(path);
+	return path;
+}
+
 
 } // namespace gnu
+
+
 

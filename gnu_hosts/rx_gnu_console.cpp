@@ -4,7 +4,7 @@
 *
 *  gnu_hosts\rx_gnu_console.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -41,10 +41,53 @@
 #include "gnu_hosts/rx_gnu_console.h"
 
 
+int do_stdin_stuff() {
+
+
+
+	int flags;
+	if ((flags = fcntl(STDIN_FILENO, F_GETFL, 0)) < 0) {
+		printf("Error calling fcntl in %s: %s\r\n", __FUNCTION__, strerror(errno));
+	}
+	if (0 != (flags & (O_NONBLOCK))) {
+		printf("Warning, STDIN in nonblock mode\r\n");
+
+		if(fcntl(STDIN_FILENO, F_SETFL, flags & ~(O_NONBLOCK)) < 0)
+            printf("Error calling fcntl in %s: %s\r\n", __FUNCTION__, strerror(errno));
+        else
+            printf("Info, STDIN now in block mode\r\n");
+
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+}
+
 void dump_termio(struct termios* tm)
 {
+	printf("Termios:\r\nc_iflag:%08x\r\nc_oflag:%08x\r\nc_cflag:%08x\r\nc_lflag:%08x\r\n"
+		, tm->c_iflag, tm->c_oflag, tm->c_cflag, tm->c_lflag);
+
+	printf("\tVINTR		= %d\r\n", tm->c_cc[VINTR]);
+	printf("\tVQUIT		= %d\r\n", tm->c_cc[VQUIT]);
+	printf("\tVERASE	= %d\r\n", tm->c_cc[VERASE]);
+	printf("\tVKILL		= %d\r\n", tm->c_cc[VKILL]);
+	printf("\tVEOF		= %d\r\n", tm->c_cc[VEOF]);
+	printf("\tVTIME		= %d\r\n", tm->c_cc[VTIME]);
+	printf("\tVMIN		= %d\r\n", tm->c_cc[VMIN]);
+	printf("\tVSWTC		= %d\r\n", tm->c_cc[VSWTC]);
+	printf("\tVSTART	= %d\r\n", tm->c_cc[VSTART]);
+	printf("\tVSTOP		= %d\r\n", tm->c_cc[VSTOP]);
+	printf("\tVSUSP		= %d\r\n", tm->c_cc[VSUSP]);
+	printf("\tVEOL		= %d\r\n", tm->c_cc[VEOL]);
+	printf("\tVREPRINT	= %d\r\n", tm->c_cc[VREPRINT]);
+	printf("\tVDISCARD	= %d\r\n", tm->c_cc[VDISCARD]);
+	printf("\tVWERASE	= %d\r\n", tm->c_cc[VWERASE]);
+	printf("\tVLNEXT	= %d\r\n", tm->c_cc[VLNEXT]);
+	printf("\tVEOL2		= %d\r\n", tm->c_cc[VEOL2]);
     return;
-    //printf("Termios:\r\nc_iflag:%08x\r\nc_oflag:%08xc_iflag:%08x")
 
     int flags;
 
@@ -133,24 +176,34 @@ bool gnu_console_host::break_host (const string_type& msg)
 
 bool gnu_console_host::read_stdin (std::array<char,0x100>& chars, size_t& count)
 {
-  static bool first=true;
+	static bool first = true;
 
-  if(first)
-  {
-    first=false;
-    adjust_terminal_size();
-  }
+	if (first)
+    {
+        first = false;
+        adjust_terminal_size();
+    }
 
-  int ret_val = read(STDIN_FILENO,&chars[0],0x100);
-  if(ret_val<0)
-  {
-    return false;
-  }
-  else
-  {
-    count=ret_val;
-    return true;
-  }
+	int ret_val  = 0;
+	memzero(&chars[0], 0x100);
+	//for (int i = 0; i < 0x100; i++)
+	{
+		do_stdin_stuff();
+
+		ret_val = read(STDIN_FILENO, &chars[0], chars.size());
+		if (ret_val < 0)
+		{
+			return false;
+		}
+		else
+		{
+
+            //ioctl(STDIN_FILENO, FIONREAD, &i);
+            //fprintf(stderr, "FIONREAD() got %d\n", i);
+			count = ret_val;
+			return true;
+		}
+	}
 }
 
 bool gnu_console_host::write_stdout (const void* data, size_t size)
@@ -178,6 +231,10 @@ rx_result gnu_console_host::setup_console (int argc, char* argv[])
 		ttynew = ttyold_;
 
         cfmakeraw(&ttynew);
+
+        ttynew.c_lflag &= ~IUTF8;
+		ttynew.c_iflag &= ~(IXON | IXOFF | ICRNL);
+
 		//ttynew.c_iflag = 0;
 		//ttynew.c_oflag = 0;
 
@@ -190,8 +247,8 @@ rx_result gnu_console_host::setup_console (int argc, char* argv[])
 		// do not process ETX (Ctrl-C)
 	//	ttynew.c_lflag &= ~VINTR;
 
-	//	ttynew.c_cc[VMIN] = 1;
-	//	ttynew.c_cc[VTIME] = 1;
+		ttynew.c_cc[VMIN] = 0;
+		ttynew.c_cc[VTIME] = 1;
 
 		// set new terminal attributes
 		if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ttynew) != 0)
@@ -270,6 +327,14 @@ void gnu_console_host::fill_plugin_libs (string_array& paths)
 	fill_plugin_paths(paths);
 }
 
+string_type gnu_console_host::get_dotnet_host_path ()
+{
+	string_type path;
+	fill_dotnet_host_path(path);
+	return path;
+}
+
 
 } // namespace gnu
+
 

@@ -39,10 +39,12 @@
 //#include "system/threads/rx_thread.h"
 using namespace std::placeholders;
 
-rx_thread_handle_t rx_thread_context();
 
 
 namespace rx_platform {
+rx_thread_handle_t rx_thread_context();
+void rx_save_thread_context();
+void rx_restore_thread_context();
 
 namespace callback {
 typedef uint32_t callback_handle_t;
@@ -173,6 +175,7 @@ class rx_remote_function
 namespace rx_platform
 {
 typedef rx_platform::callback::rx_any_callback<rx_result&&> rx_result_callback;
+typedef rx_platform::callback::rx_any_callback<> rx_void_callback;
 
 template <typename resultT>
 using rx_result_with_callback = rx_platform::callback::rx_any_callback<rx_result_with<resultT>&&>;

@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_interactive.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -288,7 +288,9 @@ win32_console_host::win32_console_host (const std::vector<storage_base::rx_platf
         no_ansi_(false),
         use_ansi_(false),
         width_(0),
-        height_(0)
+        height_(0),
+        in_mode_(0),
+        out_mode_(0)
 	, host::interactive::interactive_console_host(storages)
 {
 }
@@ -548,7 +550,18 @@ rx_result win32_console_host::setup_console (int argc, char* argv[])
 		default_attribute_ = info.wAttributes;
 	}
 
+	in_mode_ = in_mode;
+	out_mode_ = out_mode;
+
 	return true;
+}
+
+void win32_console_host::restore_console ()
+{
+	if (in_handle_)
+		SetConsoleMode(in_handle_, in_mode_);
+	if (out_handle_)
+		SetConsoleMode(out_handle_, out_mode_);
 }
 
 string_type win32_console_host::get_win32_interactive_info ()
@@ -594,6 +607,14 @@ void win32_console_host::fill_plugin_libs (string_array& paths)
 	fill_plugin_paths(paths);
 }
 
+string_type win32_console_host::get_dotnet_host_path ()
+{
+	string_type path;
+	fill_dotnet_host_path(path);
+	return path;
+}
+
 
 } // namespace win32
+
 

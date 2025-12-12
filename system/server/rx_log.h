@@ -4,7 +4,7 @@
 *
 *  system\server\rx_log.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,14 +36,14 @@
 
 typedef std::function<void(void)> log_callback_func_t;
 
-// rx_lock
-#include "lib/rx_lock.h"
-// rx_ptr
-#include "lib/rx_ptr.h"
 // rx_job
 #include "system/threads/rx_job.h"
 // rx_thread
 #include "system/threads/rx_thread.h"
+// rx_lock
+#include "lib/rx_lock.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 
 
@@ -130,7 +130,7 @@ class log_subscriber : public rx::pointers::reference_object
 
       virtual string_type get_name () const = 0;
 
-      virtual rx_result read_log (log_query_type query, log_events_type& result) const;
+      virtual rx_result read_log (const log_query_type& query, log_events_type& result);
 
 
   protected:
@@ -165,7 +165,7 @@ class log_object : public rx::locks::lockable
 
       rx_result start (bool test, std::vector<log_subscriber::smart_ptr>& subscribers, int priority = RX_PRIORITY_IDLE);
 
-      bool read_log (const string_type& log, const log_query_type& query, std::function<void(rx_result_with<log_events_type>&&)> callback) const;
+      bool read_log (const string_type& log, const log_query_type& query, std::function<void(rx_result_with<log_events_type>&&)> callback);
 
 
   protected:
@@ -258,7 +258,7 @@ class stream_log_subscriber : public log_subscriber
 
       string_type get_name () const;
 
-      virtual rx_result read_log (const log_query_type& query, log_events_type& result);
+      rx_result read_log (const log_query_type& query, log_events_type& result);
 
 
   protected:
@@ -289,7 +289,7 @@ class cache_log_subscriber : public log_subscriber
 
       void log_event (log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when);
 
-      rx_result read_log (log_query_type query, log_events_type& result) const;
+      rx_result read_log (const log_query_type& query, log_events_type& result);
 
       string_type get_name () const;
 

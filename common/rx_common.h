@@ -81,6 +81,7 @@ typedef intptr_t rx_security_handle_t;
 
 RX_COMMON_API void* rx_heap_alloc(size_t size);
 RX_COMMON_API int rx_heap_free(void* ptr);
+RX_COMMON_API void* rx_heap_realloc(void* ptr, size_t size);
 RX_COMMON_API size_t rx_heap_house_keeping();
 
 RX_COMMON_API size_t rx_get_values_count();
@@ -452,6 +453,7 @@ RX_COMMON_API int rx_init_string_value_struct(string_value_struct* data, const c
 RX_COMMON_API const char* rx_c_str(const string_value_struct* data);
 RX_COMMON_API int rx_copy_string_value(string_value_struct* dest, const string_value_struct* src);
 RX_COMMON_API void rx_destory_string_value_struct(string_value_struct* data);
+RX_COMMON_API void rx_destroy_string_value_struct(string_value_struct* data);
 
 typedef struct bytes_value_struct_t
 {
@@ -463,6 +465,7 @@ typedef struct bytes_value_struct_t
 RX_COMMON_API int rx_init_bytes_value_struct(bytes_value_struct* data, const uint8_t* bytes, size_t len);
 RX_COMMON_API const uint8_t* rx_c_ptr(const bytes_value_struct* data, size_t* size);
 RX_COMMON_API int rx_copy_bytes_value(bytes_value_struct* dest, const bytes_value_struct* src);
+RX_COMMON_API void rx_destroy_bytes_value_struct(bytes_value_struct* data);
 RX_COMMON_API void rx_destory_bytes_value_struct(bytes_value_struct* data);
 
 
@@ -513,11 +516,22 @@ typedef struct rx_node_id_struct_t
 
 } rx_node_id_struct;
 
+typedef struct rx_full_node_id_struct_t
+{
+	string_value_struct namespace_name;
+	enum rx_node_id_type node_type;
+	union rx_node_id_union value;
+
+} rx_full_node_id_struct;
+
 
 RX_COMMON_API void rx_generate_new_uuid(rx_uuid_t* u);
 RX_COMMON_API int rx_uuid_to_string(const rx_uuid_t* u, char* str);
 RX_COMMON_API int rx_string_to_uuid(const char* str, rx_uuid_t* u);
 RX_COMMON_API int rx_is_null_uuid(const rx_uuid_t* val);
+
+
+RX_COMMON_API int rx_init_node_id(rx_node_id_struct* data, const rx_full_node_id_struct* node, uint16_t ns);
 
 RX_COMMON_API int rx_init_null_node_id(rx_node_id_struct* data);
 RX_COMMON_API int rx_init_int_node_id(rx_node_id_struct* data, uint32_t id, uint16_t namesp);
@@ -535,6 +549,22 @@ RX_COMMON_API int rx_node_id_to_string(const rx_node_id_struct* data, string_val
 RX_COMMON_API int rx_node_id_from_string(rx_node_id_struct* data, const char* str);
 
 RX_COMMON_API void rx_destory_node_id(rx_node_id_struct* data);
+RX_COMMON_API void rx_destroy_node_id(rx_node_id_struct* data);
+
+
+
+RX_COMMON_API int rx_init_full_node_id(rx_full_node_id_struct* data, const rx_node_id_struct* node, const char* ns);
+RX_COMMON_API int rx_init_null_full_node_id(rx_full_node_id_struct* data);
+
+RX_COMMON_API int rx_copy_full_node_id(rx_full_node_id_struct* data, const rx_full_node_id_struct* src);
+RX_COMMON_API int rx_move_full_node_id(rx_full_node_id_struct* data, rx_full_node_id_struct* src);
+
+RX_COMMON_API int rx_is_null_full_node_id(const rx_full_node_id_struct* data);
+
+RX_COMMON_API int rx_full_node_id_to_string(const rx_full_node_id_struct* data, string_value_struct* str);
+RX_COMMON_API int rx_full_node_id_from_string(rx_full_node_id_struct* data, const char* str);
+
+RX_COMMON_API void rx_destroy_full_node_id(rx_full_node_id_struct* data);
 
 
 union rx_value_union
@@ -718,6 +748,7 @@ typedef struct values_array_struct_t
 
 RX_COMMON_API int rx_init_values_array_struct(values_array_struct* data, const struct typed_value_type* values, size_t len);
 RX_COMMON_API void rx_destory_values_array_struct(values_array_struct* data);
+RX_COMMON_API void rx_destroy_values_array_struct(values_array_struct* data);
 
 union rx_reference_data
 {
@@ -799,11 +830,15 @@ typedef enum namespace_item_attributes_t
 	// special type of item
 	namespace_item_system = 0x20,
 	namespace_item_internal = 0x40,
+	namespace_item_code_generated = 0x80,
 	// combinations
 	namespace_item_full_type_access = 0xf,
 	namespace_item_full_access = 0x1f,
 	namespace_item_system_access = 0x29,
 	namespace_item_internal_access = 0x79,
+
+
+	namespace_item_system_rw_access = 0x2f,
 	// masks
 	namespace_item_system_mask = 0x60
 

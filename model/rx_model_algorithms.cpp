@@ -441,6 +441,7 @@ rx_result delete_some_type(typeCache& cache, const rx_item_reference& rx_item_re
 		META_LOG_INFO("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::type_id) + " "s + item.get_meta().get_full_path());
 	else
 		META_LOG_TRACE("types_model_algorithm", 100, "Deleted "s + rx_item_type_name(typeCache::HType::type_id) + " "s + item.get_meta().get_full_path());
+	
 	return true;
 }
 
@@ -534,24 +535,26 @@ rx_result_with<typeType> create_some_type(typeCache& cache, typeType prototype, 
 		ret.register_error("Unable to add "s + type_name + " to directory!");
 		return ret.errors();
 	}
-	else if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
+	else
 	{
 		transaction.push([=]() mutable {
 			auto remove_result = dir->delete_item(type_name);
 			});
 		// we have to do save, we are running
-
-		auto save_result = prototype->get_item_ptr()->save_sync();
-		if (!save_result)
+		if (rx_gate::instance().get_platform_status() == rx_platform_status::running)
 		{
-			rx_result_with<typeType> ret(save_result.errors());
-			ret.register_error("Error saving type item "s + prototype->meta_info.get_full_path());
-			return ret;
+
+			auto save_result = prototype->get_item_ptr()->save_sync();
+			if (!save_result)
+			{
+				rx_result_with<typeType> ret(save_result.errors());
+				ret.register_error("Error saving type item "s + prototype->meta_info.get_full_path());
+				return ret;
+			}
+			META_LOG_INFO("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::type_id) + " "s + prototype->meta_info.get_full_path());
 		}
-		META_LOG_INFO("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::type_id) + " "s + prototype->meta_info.get_full_path());
 	}
-	else
-		META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::type_id) + " "s + prototype->meta_info.get_full_path());
+	META_LOG_TRACE("types_model_algorithm", 100, "Created "s + rx_item_type_name(typeCache::HType::type_id) + " "s + prototype->meta_info.get_full_path());
 
 	return prototype;
 }

@@ -249,7 +249,7 @@ rx_result rx_platform_directory::reserve_name (const string_type& name)
 			if (it2 == reserved_.end())
 			{
 				reserved_.insert(name);
-				ret = true;;
+				ret = true;
 			}
 			else
 			{

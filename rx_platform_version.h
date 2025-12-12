@@ -4,8 +4,8 @@
 
 #define RX_SERVER_NAME "Molecule"
 #define RX_SERVER_MAJOR_VERSION 2
-#define RX_SERVER_MINOR_VERSION 7
-#define RX_SERVER_BUILD_NUMBER 5
+#define RX_SERVER_MINOR_VERSION 9
+#define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
 // version 0.14.9 introduced rx_result<>
@@ -63,4 +63,7 @@
 // version 2.7.1 added data model while in initialization
 // version 2.7.2 corrected errors in data model
 // version 2.7.5 added SPA support to HTTP server
+// version 2.8.0 added .NET hosting support
+// version 2.8.1 added proper namespace handling
+// version 2.9.0 .NET hosting support version one is done
 

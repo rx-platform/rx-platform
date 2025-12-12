@@ -32,7 +32,6 @@
 #define upython_h 1
 
 
-#ifdef UPYTHON_SUPPORT
 #include "system/server/rx_server.h"
 
 
@@ -98,7 +97,6 @@ class upython
 } // namespace python
 } // namespace rx_platform
 
-#endif
 
 
 #endif

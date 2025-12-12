@@ -42,6 +42,7 @@ rx_result rx_list_files(const std::string& dir, const std::string& pattern, std:
 std::string rx_combine_paths(const std::string& path1, const std::string& path2);
 std::string rx_get_extension(const std::string& path);
 std::string rx_remove_extension(const std::string& path);
+bool rx_path_compare(const std::string& path1, const std::string& path2);
 
 rx_result create_directory(const std::string& dir, bool fail_on_exsists);
 rx_result rx_delete_all_files(const std::string& dir, const std::string& pattern);

@@ -43,6 +43,7 @@
 #include "runtime_internal/rx_runtime_internal.h"
 #include "system/server/rx_directory_cache.h"
 #include "sys_internal/rx_plugin_manager.h"
+#include "lib/rx_ser_json.h"
 
 
 namespace rx_internal {
@@ -200,31 +201,32 @@ rx_result rx_http_static_display::handle_request_internal (rx_platform::http::ht
 	else if (req.method == rx_http_method::put)
 	{
 		string_type str(req.get_content_as_string());
-		rapidjson::Document doc;
-		doc.Parse(str.c_str());
-		if (doc.IsObject())
+
+		data::runtime_values_data temp;
+		serialization::json_reader reader;
+		reader.parse_data(str);
+		reader.read_init_values(nullptr, temp);
+		if(temp.values.size() == 1 && std::holds_alternative<rx_simple_value>(temp.values.begin()->second))
 		{
-			int cnt = doc.MemberCount();
-			if (cnt == 1)
+			string_type name = temp.values.begin()->first;
+			rx_simple_value val = std::get<rx_simple_value>(temp.values.begin()->second);
+
+			auto result = write_point(name, val);
+			if (result)
 			{
-				string_type name = doc.MemberBegin()->name.GetString();
-				string_type val = doc.MemberBegin()->value.GetString();
+				resp.set_string_content("{ \"success\" : true }");
+				resp.headers["Content-Type"] = "text/json";
+				resp.result = 200;
 
-				if (!name.empty())
-				{
-					auto result = write_point(name, val);
-					if (result)
-					{
-						resp.set_string_content("OK");
-						resp.headers["Content-Type"] = "text/plain";
-						resp.result = 200;
-
-						return true;
-					}
-				}
+				return true;
 			}
 		}
 		return "Invalid parameters";
+	}
+	else
+	{
+		resp.result = 405;
+		return true;
 	}
 	return true;
 }
@@ -809,6 +811,7 @@ string_type rx_http_display_base::collect_json_data ()
 {
 	rapidjson::StringBuffer buffer;
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	std::set<string_type> sent_points;
 
 	writer.StartObject();
 		writer.Key("ver");
@@ -819,6 +822,8 @@ string_type rx_http_display_base::collect_json_data ()
 			{
 				if (one.second.live)
 				{
+					if (sent_points.find(one.second.point_id) != sent_points.end())
+						continue;
 					writer.Key(one.second.point_id.c_str());
 					const auto& val = one.second.point->get_value();
 					if(val.is_null())
@@ -837,6 +842,7 @@ string_type rx_http_display_base::collect_json_data ()
 					{
 						writer.String(val.to_string().c_str());
 					}
+					sent_points.insert(one.second.point_id);
 				}
 			}
 		writer.EndObject();
@@ -903,13 +909,21 @@ string_array rx_http_display_base::get_paths_to_register (runtime::runtime_proce
 	registered_paths.push_back(disp_path);
 	if (is_index)
 		registered_paths.push_back(disp_path.substr(0, idx));
+	bool had_plain_name = false;
 	if (disp_path.size() > 6 && string_view_type(&disp_path[0], 6) == "/world")
 	{
-		registered_paths.push_back(disp_path.substr(6));
+		string_type world_removed_path = disp_path.substr(6);
+		if (world_removed_path.size() > 1 && world_removed_path.find('/', 1)== string_type::npos)
+		{
+			had_plain_name = true;
+		}
+		registered_paths.push_back(world_removed_path);
 		if (is_index)
 			registered_paths.push_back(disp_path.substr(6, idx - 6));
 	}
-	if (ctx->meta_info.attributes & namespace_item_system_mask)
+	
+	if (ctx->meta_info.attributes & namespace_item_system_mask
+		&& !had_plain_name)
 	{
 		if (is_index)
 			registered_paths.push_back("/"s + ctx->meta_info.name);
@@ -974,7 +988,7 @@ void rx_http_display_base::point_changed ()
 {
 }
 
-rx_result rx_http_display_base::write_point (const string_type& id, const string_type& val)
+rx_result rx_http_display_base::write_point (const string_type& id, rx_simple_value val)
 {
 	auto it = points_hash_.find(id);
 	if (it != points_hash_.end())
@@ -982,13 +996,18 @@ rx_result rx_http_display_base::write_point (const string_type& id, const string
 		auto it2 = connected_points_.find(it->second);
 		if (it2 != connected_points_.end())
 		{
-			rx_simple_value rval;
-			rval.assign_static(val);
-			it2->second.point->write(std::move(rval), 0);
+			it2->second.point->write(std::move(val), 0);
 			return true;
 		}
 	}
 	return RX_INVALID_ARGUMENT;
+}
+
+rx_result rx_http_display_base::write_point (const string_type& id, const string_type& val)
+{
+	rx_simple_value rval;
+	rval.assign_static(val);
+	return write_point(id, std::move(rval));
 }
 
 const char* system_paths[] = {

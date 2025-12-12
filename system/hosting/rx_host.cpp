@@ -4,27 +4,27 @@
 *
 *  system\hosting\rx_host.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -49,6 +49,7 @@
 #include "sys_internal/rx_storage_build.h"
 #include "terminal/rx_term_table.h"
 #include "system/server/rx_file_helpers.h"
+#include "dotnet/rx_dotnet.h"
 using namespace rx;
 
 
@@ -296,8 +297,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.heap.heap_trigger = atoi(row.second.c_str());
 		else if (row.first == "heap.bucket" && config.heap.heap_bucket_capacity == 0)
 			config.heap.heap_bucket_capacity = atoi(row.second.c_str());
-		else if (row.first == "instance.code" && !config.build_system_from_code && get_bool_value(row.second))
-			config.build_system_from_code = true;
+		else if (row.first == "instance.storage" && !config.build_system_from_storage && get_bool_value(row.second))
+			config.build_system_from_storage = true;
 		else if (row.first.size() > 8 && row.first.substr(0, 6) == "world.")
 			config.user_storages.emplace(row);
 		else if (row.first.size() > 6 && row.first.substr(0, 4) == "sys.")
@@ -309,11 +310,29 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.log.cache_size = atoi(row.second.c_str());
 		else if (row.first == "log.directory" && config.log.directory.empty())
 			config.log.directory = row.second;
+
+		else if (row.first == "dotnet.version" && config.dotnet.version.empty())
+			config.dotnet.version = row.second;
+		else if (row.first == "dotnet.server_gc" && config.dotnet.server_gc && !get_bool_value(row.second))
+			config.dotnet.server_gc = false;
+		else if (row.first == "dotnet.concurrent_gc" && config.dotnet.concurrent_gc && !get_bool_value(row.second))
+			config.dotnet.concurrent_gc = false;
+		else if (row.first == "dotnet.host_path" && config.dotnet.host_path.empty())
+			config.dotnet.host_path = row.second;
+		else if (row.first == "dotnet.app_path" && config.dotnet.app_path.empty())
+			config.dotnet.app_path = row.second;
+		else if (row.first == "dotnet.lib_path" && config.dotnet.lib_path.empty())
+			config.dotnet.lib_path = row.second;
+		else if (row.first == "dotnet.max_threads" && config.dotnet.max_threads == 0)
+			config.dotnet.max_threads = atoi(row.second.c_str());
+		else if (row.first == "dotnet.min_threads" && config.dotnet.min_threads == 0)
+			config.dotnet.min_threads = atoi(row.second.c_str());
 	}
 }
-}
 
-// Class rx_platform::hosting::rx_platform_host 
+} // anonymous namespace
+
+// Class rx_platform::hosting::rx_platform_host
 
 rx_platform_host::rx_platform_host(const rx_platform_host &right)
       : parent_(nullptr)
@@ -478,7 +497,18 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 
 	cxxopts::Options options(help_name, "");
 
+	bool angular = false;
+	options.add_options("http" ,"\
+platform HTTP server options\r\n\
+=============================\r\n\
+these options set HTTP server parameters such as port and document root\r\n\
+you can also define Single Page Application document response\r\n\
+angular switch turns on <index.html> as spa document to support Angular\
+")
+		("angular", "Add Angular support for Web Server", cxxopts::value<bool>(angular));
+
 	add_command_line_options(options, config);
+
 
 	// had to do stuff, but if we do not have actual command line
 	// it must be safe to send 0, nullptr as command line arguments
@@ -493,6 +523,8 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 		{
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
+			//string_type arg = result["help"].as<string_type>();
+
 			// fill paths
 			hosting::rx_host_directories host_directories_;
 			rx_result fill_result = fill_host_directories(host_directories_);
@@ -503,7 +535,7 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 			rx_platform_host::print_offline_manual(help_name, host_directories_);
 
 			std::ostringstream ss;
-			ss << options.help({ "" });
+			ss << options.help({ });
 			std::cout << ss.str();
 
 			// don't execute
@@ -514,12 +546,88 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
 
 			string_type version = rx_gate::instance().get_rx_version();
+			string_type common = rx_gate::instance().get_common_version();
+			string_type abi = rx_gate::instance().get_abi_version();
+			string_type dotnet = rx_internal::dotnet::dotnet_hosting::instance().get_dotnet_info().rx_native_version;
+			string_array hosts;
+			get_host_info(hosts);
 
-			std::cout << "\r\n" ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+			std::cout << "\r\n" ANSI_COLOR_BLUE ANSI_COLOR_BOLD;
+			std::cout << "{rx-platform}  ";
+			std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD
 				<< version << ANSI_COLOR_RESET;
+
+			std::cout << "\r\n" ANSI_COLOR_BLUE ANSI_COLOR_BOLD;
+			std::cout << "common library ";
+			std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+				<< common << ANSI_COLOR_RESET;
+
+			if(!hosts.empty())
+			{
+				std::cout << "\r\n\r\n" ANSI_COLOR_BLUE ANSI_COLOR_BOLD;
+				std::cout << "hosts:" << "\r\n";
+
+				for (const auto& one : hosts)
+				{
+					std::cout << "   " ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+						<< one << ANSI_COLOR_RESET "\r\n";
+				}
+			}
+
+			std::cout << "\r\n" ANSI_COLOR_BLUE ANSI_COLOR_BOLD;
+			std::cout << "ABI interface  ";
+			std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+				<< abi << ANSI_COLOR_RESET "\r\n";
+
+
+			std::cout << "\r\n" ANSI_COLOR_BLUE ANSI_COLOR_BOLD;
+			std::cout << "Native .NET hosting  ";
+			std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD
+				<< dotnet << ANSI_COLOR_RESET "\r\n";
+
+
+			std::cout << "\r\nLoading static plug-ins...";
+			std::cout.flush();
+
+			string_array libs;
+			fill_plugin_libs(libs);
+			std::vector<std::unique_ptr<library::rx_plugin_base> > plugins;
+
+			for (auto& one : libs)
+			{
+				auto one_plugin = std::make_unique< library::rx_dynamic_plugin>(one);
+				auto result = one_plugin->load_plugin();
+				if (result)
+				{
+					result = one_plugin->bind_plugin();
+					plugins.emplace_back(std::move(one_plugin));
+				}
+			}
+			size_t longest = 0;
+			for (const auto& one : plugins)
+			{
+				if(one->get_plugin_name().size()>longest)
+					longest = one->get_plugin_name().size();
+			}
+			std::cout << SAFE_ANSI_STATUS_OK << "\r\n";
+			std::cout << "\r\n";
+			for (const auto& one : plugins)
+			{
+				string_type name = one->get_plugin_name();
+				string_type info_prefix(longest + 2 - name.size(), ' ');
+				auto info = one->get_plugin_info();
+				std::cout << ANSI_COLOR_BLUE ANSI_COLOR_BOLD;
+				std::cout << name << info_prefix
+					<< ANSI_COLOR_GREEN ANSI_COLOR_BOLD << info.plugin_version << ANSI_COLOR_RESET "\r\n";
+			}
 
 			// don't execute
 			return false;
+		}
+		if (angular)
+		{
+			if (config.other.http_spa.empty())
+				config.other.http_spa = "index.html";
 		}
 		return true;
 	}
@@ -535,7 +643,13 @@ bool rx_platform_host::parse_command_line (int argc, char* argv[], const char* h
 
 void rx_platform_host::add_command_line_options (command_line_options_t& options, rx_platform::configuration_data_t& config)
 {
-	options.add_options()
+	options.add_options("runtime", "\
+Runtime Environment\r\n\
+=====================\r\n\
+These options set number of threads in system\r\n\
+Here you can also change timer related settings\r\n\
+Priority of the process can be set ro real-time\
+")
 		("io", "I/O pool thread pool size", cxxopts::value<int>(config.processor.io_pool_size))
 		("workers", "Workers pool thread pool size", cxxopts::value<int>(config.processor.workers_pool_size))
 		("slow", "Slow pool thread pool size", cxxopts::value<int>(config.processor.slow_pool_size))
@@ -543,37 +657,106 @@ void rx_platform_host::add_command_line_options (command_line_options_t& options
 		("calculation", "Use dedicated calculation timer", cxxopts::value<bool>(config.processor.has_calculation_timer))
 		("no-hd-timer", "Do not use high definition timer", cxxopts::value<bool>(config.processor.no_hd_timer))
 		("r,real-time", "Force Real-time priority for process", cxxopts::value<bool>(config.processor.real_time))
+		;
+
+	options.add_options("heap", "\
+Heap Memory Management\r\n\
+=========================\r\n\
+These options set heap memory allocation parameters\r\n\
+Here you can also change allocation ahead algorithm settings\r\n\
+")
 		("heap-initial", "Initial Heap size", cxxopts::value<size_t>(config.heap.initial_heap_size))
 		("heap-alloc", "Heap Allocation size", cxxopts::value<size_t>(config.heap.heap_alloc_size))
 		("heap-trigger", "Heap Trigger for additional allocation [1-1023]", cxxopts::value<size_t>(config.heap.heap_trigger))
+		;
 
+	options.add_options("binding", "\
+Host System binding\r\n\
+===================\r\n\
+These options set script and storage references of the platform\r\n\
+")
 		("s,startup", "Startup script", cxxopts::value<string_type>(config.management.startup_script))
 		("u,user", "User storage reference", cxxopts::value<string_type>(config.storage.user_storage_reference))
 		("test", "Test storage reference", cxxopts::value<string_type>(config.storage.test_storage_reference))
 		("system", "System storage reference", cxxopts::value<string_type>(config.storage.system_storage_reference))
-		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.instance.name))
-		("port", "UDP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.instance.port))
-		("group", "IP address of rx-protocol multi-cast group", cxxopts::value<string_type>(config.instance.group))
-		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.instance.plugin))
+		("storage", "Force building platform system from storage", cxxopts::value<bool>(config.build_system_from_storage))
+		;
+
+	options.add_options("http")
 		("http-path", "Location of the http resource files", cxxopts::value<string_type>(config.other.http_path))
 		("http", "Location of the http user resource files", cxxopts::value<string_type>(config.other.http_user))
 		("http-spa", "HTTP server Single Page Application file name", cxxopts::value<string_type>(config.other.http_spa))
 		("http-port", "TCP/IP port for web server to listen to", cxxopts::value<uint16_t>(config.other.http_port))
+		;
+
+	options.add_options("upy", "\
+MicroPython hosting\r\n\
+====================\r\n\
+These options set paths for .py files used by MicroPython compiler at startup.\
+")
 		("upy-path", "Location of the micropython files", cxxopts::value<string_type>(config.other.upy_path))
 		("upy", "Location of the micropython user program files", cxxopts::value<string_type>(config.other.upy_user))
-		("opc-port", "TCP/IP port for OPCUA binary server to listen to", cxxopts::value<uint16_t>(config.other.opcua_port))
+;
 
+	options.add_options("system", "\
+System General Options\r\n\
+=========================\r\n\
+These options enable you to change instance, name,\r\n\
+ip listening ports and security of the platform\r\n\
+you can also turn debug behavior for the platform\
+")
+		("n,name", "{rx-platform} Instance Name", cxxopts::value<string_type>(config.instance.name))
+		("port", "UDP/IP port for rx-protocol server to listen to", cxxopts::value<uint16_t>(config.instance.port))
+		("group", "IP address of rx-protocol multi-cast group", cxxopts::value<string_type>(config.instance.group))
+		("opc-port", "TCP/IP port for OPCUA binary server to listen to", cxxopts::value<uint16_t>(config.other.opcua_port))
 		("rx-port", "TCP/IP port for platform protocol", cxxopts::value<uint16_t>(config.other.rx_port))
 		("security", "Default security provider for {rx-platform}", cxxopts::value<string_type>(config.other.rx_security))
+		("debug", "Force debugging options thorough the platform", cxxopts::value<bool>(config.management.debug))
+		;
 
+	options.add_options("log", "\
+Log Options\r\n\
+=============\r\n\
+These options enable you to change system log behavior\r\n\
+you can change log level, directory and other parameters\r\n\
+log level for events:\
+ 	- 0 : debug\r\n\
+ 	- 1 : trace\r\n\
+ 	- 2 : info\r\n\
+ 	- 3 : warning\r\n\
+ 	- 4 : error\r\n\
+ 	- 5 : critical\
+")
 		("log-test", "Test log at startup", cxxopts::value<bool>(config.log.test_log))
 		("log-size", "Log size for in process log cache", cxxopts::value<uint32_t>(config.log.cache_size))
 		("l,log-dir", "Log directory for file logging", cxxopts::value<string_type>(config.log.directory))
-		("log-level", "Log level for for file logging", cxxopts::value<int32_t>(config.log.log_level))
+		("log-level", "Log level for for file logging, defaults to 1 (trace)", cxxopts::value<int32_t>(config.log.log_level))
 
-		("debug" , "Force debugging options thorough the platform", cxxopts::value<bool>(config.management.debug))
+		;
+
+	options.add_options("dotnet", "\
+Microsoft.NETCore.App Runtime Hosting\r\n\
+=====================================\r\n\
+version can be one of the following : \r\n\
+	<empty> [default] - do not use dotnet hosting \r\n\
+	latest - use maximum available version.\r\n\
+	<ver> -use max available version with the same version number\r\n\
+	<ver>.<major> -use maximum available version with the same version, and major number\r\n\
+config properties System.Threading.ThreadPool.Min(Max)Threads\r\n\
+can be overridden by dotnet-threads-min(max) switches\
+")
+		("dotnet-version", ".NET Core hosting version", cxxopts::value<string_type>(config.dotnet.version))
+		("dotnet-threads-min", "thread pool min threads", cxxopts::value<uint32_t>(config.dotnet.min_threads))
+		("dotnet-threads-max", "thread pool max threads", cxxopts::value<uint32_t>(config.dotnet.max_threads))
+		("dotnet-no-server-gc", "use client garbage collection", cxxopts::value<bool>(config.dotnet.server_gc))
+		("dotnet-non-concurrent-gc", "use non-concurrent garbage collection", cxxopts::value<bool>(config.dotnet.concurrent_gc))
+		("dotnet-app", "dotnet application path", cxxopts::value<string_type>(config.dotnet.app_path))
+		("dotnet-host", "dotnet hosting library path", cxxopts::value<string_type>(config.dotnet.host_path))
+		("dotnet-lib", "dotnet library path", cxxopts::value<string_type>(config.dotnet.lib_path))
+		;
+	options.add_options()
+		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.instance.plugin))
 		("v,version", "Displays platform version")
-		("code", "Force building platform system from code builders", cxxopts::value<bool>(config.build_system_from_code))
 		("h,help", "Print help")
 		;
 }
@@ -815,7 +998,7 @@ rx_result rx_platform_host::init_storage (const string_type& name, const string_
 	}
 }
 
-rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_base*>& plugins)
+rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_base*>& plugins, const configuration_data_t& data)
 {
 	rx_gate::instance().set_host(this);
 	static std::vector<std::unique_ptr<library::rx_dynamic_plugin> > dynamic_plugins;
@@ -849,6 +1032,12 @@ rx_result rx_platform_host::register_plugins (std::vector<library::rx_plugin_bas
 		{
 			HOST_LOG_ERROR("Base", 999, "Error registering plugin "s + one->get_plugin_name() + ". " + ret.errors_line());
 		}
+	}
+	// dotnet stuff
+	ret = rx_internal::dotnet::dotnet_hosting::instance().initialize(this, data);
+	if(!ret)
+	{
+		HOST_LOG_ERROR("Base", 999, "Error initializing .NET runtime. "s + ret.errors_line());
 	}
 	return true;
 }
@@ -1072,6 +1261,11 @@ void rx_platform_host::fill_plugin_libs (string_array& paths)
 {
 }
 
+string_type rx_platform_host::get_dotnet_host_path ()
+{
+  return "";
+}
+
 std::vector<std::pair<string_type, rx_storage_ptr> > rx_platform_host::get_configured_storages ()
 {
 	std::vector<std::pair<string_type, rx_storage_ptr> > ret;
@@ -1106,7 +1300,7 @@ rx_result rx_platform_host::register_storage_type (const string_type& prefix, st
 		return RX_INVALID_ARGUMENT;
 
 	storages_.storage_types.emplace(prefix, what);
-	
+
 	return true;
 }
 
@@ -1140,13 +1334,13 @@ string_type rx_platform_host::get_default_log_directory () const
 }
 
 
-// Class rx_platform::hosting::configuration_reader 
+// Class rx_platform::hosting::configuration_reader
 
 
-// Class rx_platform::hosting::host_platform_builder 
+// Class rx_platform::hosting::host_platform_builder
 
 
-// Class rx_platform::hosting::startup_log_subscriber 
+// Class rx_platform::hosting::startup_log_subscriber
 
 
 void startup_log_subscriber::log_event (log::log_event_type event_type, const string_type& library, const string_type& source, uint16_t level, const string_type& user, const string_type& code, const string_type& message, rx_time when)

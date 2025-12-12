@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_objbase.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -85,13 +85,13 @@ rx_item_type object_runtime::type_id = rx_item_type::rx_object;
 
 object_runtime::object_runtime()
       : context_(nullptr),
-        executer_(-1)
+        executer_(0)
 {
 }
 
 object_runtime::object_runtime (lock_reference_struct* extern_data)
       : context_(nullptr),
-        executer_(-1)
+        executer_(0)
 	, reference_object(extern_data)
 {
 }
@@ -123,14 +123,19 @@ rx_result object_runtime::stop_runtime (runtime_stop_context& ctx)
 	return true;
 }
 
+void object_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(std::move(job), rx_internal::infrastructure::server_runtime::instance().get_executer(executer_));
+}
+
+void object_runtime::add_job (job_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().get_executer(executer_)->append(std::move(job));
+}
+
 threads::job_thread* object_runtime::get_jobs_queue ()
 {
 	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
-}
-
-void object_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
-{
-	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
 }
 
 
@@ -140,13 +145,13 @@ rx_item_type application_runtime::type_id = rx_item_type::rx_application;
 
 application_runtime::application_runtime()
       : context_(nullptr),
-        executer_(-1)
+        executer_(0)
 {
 }
 
 application_runtime::application_runtime (lock_reference_struct* extern_data)
       : context_(nullptr),
-        executer_(-1)
+        executer_(0)
 	, reference_object(extern_data)
 {
 }
@@ -178,14 +183,19 @@ rx_result application_runtime::stop_runtime (runtime_stop_context& ctx)
 	return true;
 }
 
+void application_runtime::add_periodic_job (timer_job_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(std::move(job), rx_internal::infrastructure::server_runtime::instance().get_executer(executer_));
+}
+
+void application_runtime::add_job (job_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().get_executer(executer_)->append(std::move(job));
+}
+
 threads::job_thread* application_runtime::get_jobs_queue ()
 {
 	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
-}
-
-void application_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
-{
-	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
 }
 
 
@@ -195,13 +205,13 @@ rx_item_type domain_runtime::type_id = rx_item_type::rx_domain;
 
 domain_runtime::domain_runtime()
       : context_(nullptr),
-        executer_(-1)
+        executer_(0)
 {
 }
 
 domain_runtime::domain_runtime (lock_reference_struct* extern_data)
       : context_(nullptr),
-        executer_(-1)
+        executer_(0)
 	, reference_object(extern_data)
 {
 }
@@ -233,14 +243,19 @@ rx_result domain_runtime::stop_runtime (runtime_stop_context& ctx)
 	return true;
 }
 
+void domain_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(std::move(job), rx_internal::infrastructure::server_runtime::instance().get_executer(executer_));
+}
+
+void domain_runtime::add_job (job_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().get_executer(executer_)->append(std::move(job));
+}
+
 threads::job_thread* domain_runtime::get_jobs_queue ()
 {
 	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
-}
-
-void domain_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
-{
-	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
 }
 
 // has to be before call
@@ -251,13 +266,13 @@ rx_item_type port_runtime::type_id = rx_item_type::rx_port;
 
 port_runtime::port_runtime()
       : context_(nullptr),
-        executer_(-1)
+        executer_(0)
 {
 }
 
 port_runtime::port_runtime (lock_reference_struct* extern_data)
       : context_(nullptr),
-        executer_(-1)
+        executer_(0)
 	, reference_object(extern_data)
 {
 }
@@ -366,19 +381,19 @@ rx_result port_runtime::disconnect_stack_endpoint (rx_protocol_stack_endpoint* w
 	return rx_internal::interfaces::port_stack::stack_active::active_builder::disconnect_stack_endpoint(runtime_, what);
 }
 
-threads::job_thread* port_runtime::get_jobs_queue ()
-{
-    return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
-}
-
 void port_runtime::add_periodic_job (jobs::periodic_job::smart_ptr job)
 {
-	rx_internal::infrastructure::server_runtime::instance().append_timer_job(job, get_jobs_queue());
+	rx_internal::infrastructure::server_runtime::instance().append_timer_job(std::move(job), rx_internal::infrastructure::server_runtime::instance().get_executer(executer_));
+}
+
+void port_runtime::add_job (job_ptr job)
+{
+	rx_internal::infrastructure::server_runtime::instance().get_executer(executer_)->append(std::move(job));
 }
 
 threads::job_thread* port_runtime::get_io_queue ()
 {
-	return rx_internal::infrastructure::server_runtime::instance().get_executer(RX_DOMAIN_META);
+	return rx_internal::infrastructure::server_runtime::instance().get_executer(RX_DOMAIN_IO);
 }
 
 void port_runtime::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
@@ -398,6 +413,11 @@ rx_result_with<io::rx_io_buffer> port_runtime::alloc_io_buffer ()
 void port_runtime::release_io_buffer (io::rx_io_buffer buff)
 {
 	return rx_internal::interfaces::port_stack::port_buffers::release_io_buffer(runtime_, std::move(buff));
+}
+
+threads::job_thread* port_runtime::get_jobs_queue ()
+{
+	return rx_internal::infrastructure::server_runtime::instance().get_executer(executer_);
 }
 
 

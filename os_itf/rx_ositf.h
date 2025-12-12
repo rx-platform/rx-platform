@@ -244,6 +244,12 @@ extern "C" {
 	sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr, const struct sockaddr_in* multicast);
 	uint32_t rx_socket_listen(sys_handle_t handle);
 	void rx_close_socket(sys_handle_t handle);
+
+
+	sys_handle_t rx_create_fast_ethernet_socket(const char* adapter_name);
+	uint32_t rx_ethernet_socket_read(struct rx_io_register_data_t* what, size_t* readed);
+	uint32_t rx_ethernet_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count);
+
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	// COM port abstractions
@@ -299,6 +305,7 @@ extern "C" {
 	uint32_t rx_send_ethernet_packet(peth_socket psock, const void* buffer, size_t size);
 	uint32_t rx_recive_ethernet_packet(peth_socket psock, uint8_t** buffer, size_t* recv_size, int* has_more, struct timeval* tv);
 	uint32_t rx_close_ethernet_socket(peth_socket psock);
+
 
 
 	int rx_init_auth_context(rx_auth_context_t* ctx);

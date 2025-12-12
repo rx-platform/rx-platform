@@ -33,10 +33,10 @@
 
 
 
-// rx_security
-#include "security/rx_security.h"
 // rx_meta_support
 #include "system/meta/rx_meta_support.h"
+// rx_security
+#include "security/rx_security.h"
 // rx_rt_data
 #include "lib/rx_rt_data.h"
 
@@ -227,6 +227,12 @@ public:
 
       const security::security_guard& get_security_guard () const;
 
+      const bool is_sealed () const
+      {
+        return is_sealed_;
+      }
+
+
 
   protected:
 
@@ -253,6 +259,8 @@ public:
       values::rx_simple_value value_;
 
       rx_item_reference data_type_ref_;
+
+      bool is_sealed_;
 
 
 };
@@ -405,6 +413,12 @@ public:
       }
 
 
+      const bool is_sealed () const
+      {
+        return is_sealed_;
+      }
+
+
 
   protected:
 
@@ -429,6 +443,8 @@ public:
       values::rx_simple_value value_;
 
       rx_item_reference data_type_ref_;
+
+      bool is_sealed_;
 
 
 };
@@ -709,6 +725,12 @@ class variable_attribute
       }
 
 
+      const bool is_sealed () const
+      {
+        return is_sealed_;
+      }
+
+
 
   protected:
 
@@ -735,6 +757,8 @@ class variable_attribute
       values::rx_simple_value value_;
 
       rx_item_reference data_type_ref_;
+
+      bool is_sealed_;
 
 
 };

@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_headless.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -61,7 +61,11 @@ class win32_headless_host : public host::headless::headless_platform_host
 
       rx_result setup_console (int argc, char* argv[]);
 
+      void restore_console ();
+
       void fill_plugin_libs (string_array& paths);
+
+      string_type get_dotnet_host_path ();
 
 
   protected:
@@ -75,6 +79,10 @@ class win32_headless_host : public host::headless::headless_platform_host
 
 
       bool supports_ansi_;
+
+      DWORD out_mode_;
+
+      HANDLE out_handle_;
 
 
 };

@@ -62,6 +62,7 @@
 #include "protocols/mqtt/mqtt_simple.h"
 #include "protocols/mqtt/mqtt_simple_server.h"
 #include "protocols/mqtt/mqtt_display.h"
+#include "dotnet/rx_dotnet.h"
 
 
 namespace rx_internal {
@@ -418,6 +419,8 @@ std::vector<server_command_base_ptr> server_command_manager::get_internal_comman
 	ret_commands.push_back(rx_create_reference<rx_internal::plugins::plugin_command>());
 	// interfaces commands
 	ret_commands.push_back(rx_create_reference<rx_internal::interfaces::io_endpoints::net_command>());
+	// dotnet command
+	ret_commands.push_back(rx_create_reference<dotnet::dotnet_command>());
 
 	return ret_commands;
 }

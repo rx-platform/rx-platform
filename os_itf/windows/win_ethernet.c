@@ -311,4 +311,18 @@ uint32_t rx_close_ethernet_socket(peth_socket psock)
 }
 
 
+sys_handle_t rx_create_fast_ethernet_socket(const char* adapter_name)
+{
+	return 0;
+}
+uint32_t rx_ethernet_socket_read(struct rx_io_register_data_t* what, size_t* readed)
+{
+	return RX_ERROR;
+}
+uint32_t rx_ethernet_socket_write(struct rx_io_register_data_t* what, const void* data, size_t count)
+{
+	return RX_ERROR;
+}
+
+
 

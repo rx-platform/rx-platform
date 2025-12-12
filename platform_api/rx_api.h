@@ -161,6 +161,11 @@ RX_PLUGIN_API void rxGetPluginName(string_value_struct* name)\
 {\
 	rx_init_string_value_struct(name, RX_PLUGIN_ID, -1);\
 }\
+RX_PLUGIN_API void rxGetPluginName2(string_value_struct* name, string_value_struct* ns)\
+{\
+	rx_init_string_value_struct(name, RX_PLUGIN_ID, -1);\
+	rx_init_string_value_struct(ns, RX_PLUGIN_NAMESPACE, -1);\
+}\
 RX_PLUGIN_API rx_result_struct rxInitPlugin()\
 {\
 	return rx_platform_api::rx_init_plugin(_g_plugin_obj_.get());\

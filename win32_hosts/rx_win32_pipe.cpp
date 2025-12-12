@@ -4,7 +4,7 @@
 *
 *  win32_hosts\rx_win32_pipe.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -43,7 +43,9 @@ namespace win32 {
 // Class win32::win32_pipe_host 
 
 win32_pipe_host::win32_pipe_host (const std::vector<storage_base::rx_platform_storage_type*>& storages)
-      : supports_ansi_(false)
+      : supports_ansi_(false),
+        out_mode_(0),
+        out_handle_(NULL)
 	, rx_pipe_host(storages)
 {
 }
@@ -95,11 +97,10 @@ bool win32_pipe_host::supports_ansi () const
 
 rx_result win32_pipe_host::setup_console (int argc, char* argv[])
 {
-	auto out_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	out_handle_ = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	DWORD in_mode = 0;
 	DWORD out_mode = 0;
-	GetConsoleMode(out_handle, &out_mode);
+	GetConsoleMode(out_handle_, &out_mode);
 
 	std::bitset<32> out_bits(out_mode);
 
@@ -107,12 +108,20 @@ rx_result win32_pipe_host::setup_console (int argc, char* argv[])
 	out_bits.set(0);
 	//out_bits.reset(3);
 
-	SetConsoleMode(out_handle, out_bits.to_ulong());
+	SetConsoleMode(out_handle_, out_bits.to_ulong());
 
-	if (GetConsoleMode(out_handle, &out_mode) && (ENABLE_VIRTUAL_TERMINAL_PROCESSING & out_mode))
+	if (GetConsoleMode(out_handle_, &out_mode) && (ENABLE_VIRTUAL_TERMINAL_PROCESSING & out_mode))
 		supports_ansi_ = true;
 
+	out_mode_ = out_mode;
+
 	return true;
+}
+
+void win32_pipe_host::restore_console ()
+{
+	if (out_handle_)
+		SetConsoleMode(out_handle_, out_mode_);
 }
 
 void win32_pipe_host::fill_plugin_libs (string_array& paths)
@@ -120,6 +129,14 @@ void win32_pipe_host::fill_plugin_libs (string_array& paths)
 	fill_plugin_paths(paths);
 }
 
+string_type win32_pipe_host::get_dotnet_host_path ()
+{
+	string_type path;
+	fill_dotnet_host_path(path);
+	return path;
+}
+
 
 } // namespace win32
+
 

@@ -31,6 +31,8 @@
 #define RX_NS_XML_CLASSES_NAME "xml"
 #define RX_NS_JSON_CLASSES_NAME "json"
 
+#define RX_NS_DOTNET_NAME "dotnet"
+
 #define RX_NULL_ITEM_NAME "<nullptr>"
 
 // basic classes
@@ -817,10 +819,35 @@
 #define RX_PEER_STATUS_TYPE_NAME "PeerStatus"
 #define RX_PEER_STATUS_TYPE_ID 0xc0000b0
 
+// dotnet stuff
+#define RX_DOTNET_STRUCT_TYPE_NAME "DotNetStruct"
+#define RX_DOTNET_STRUCT_TYPE_ID 0xc000116
+#define RX_DOTNET_METHOD_TYPE_NAME "DotNetMethod"
+#define RX_DOTNET_METHOD_TYPE_ID 0xc000112
+#define RX_DOTNET_EVENT_TYPE_NAME "DotNetEvent"
+#define RX_DOTNET_EVENT_TYPE_ID 0xc000113
+#define RX_DOTNET_SOURCE_TYPE_NAME "DotNetSource"
+#define RX_DOTNET_SOURCE_TYPE_ID 0xc000114
+#define RX_DOTNET_MAPPER_TYPE_NAME "DotNetMapper"
+#define RX_DOTNET_MAPPER_TYPE_ID 0xc000115
+#define RX_DOTNET_RELATION_TYPE_NAME "DotNetRelation"
+#define RX_DOTNET_RELATION_TYPE_ID 0xc00011a
+#define RX_DOTNET_STATIC_RELATION_TYPE_NAME "DotNetStaticRelation"
+#define RX_DOTNET_STATIC_RELATION_TYPE_ID 0xc00011b
+#define RX_DOTNET_DYNAMIC_RELATION_TYPE_NAME "DotNetDynamicRelation"
+#define RX_DOTNET_DYNAMIC_RELATION_TYPE_ID 0xc00011c
+#define RX_DOTNET_APPLICATION_TYPE_NAME "DotNetAppType"
+#define RX_DOTNET_APPLICATION_TYPE_ID 0xc000117
+#define RX_DOTNET_DOMAIN_TYPE_NAME "DotNetDomainType"
+#define RX_DOTNET_DOMAIN_TYPE_ID 0xc000119
+#define RX_DOTNET_APPLICATION_NAME "DotNetApp"
+#define RX_DOTNET_APPLICATION_ID 0xc000118
+
+
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc000111!!!! 
+// last is 0xc00011c!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

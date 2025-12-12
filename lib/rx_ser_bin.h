@@ -4,7 +4,7 @@
 *
 *  lib\rx_ser_bin.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -71,6 +71,8 @@ class binary_reader : public base_meta_reader
 
 
       bool read_id (const char* name, rx_node_id& id);
+
+      bool read_full_id (const char* name, rx_full_node_id& id);
 
       bool read_string (const char* name, string_type& str);
 
@@ -182,6 +184,8 @@ class binary_writer : public base_meta_writer
 
       bool write_id (const char* name, const rx_node_id& id);
 
+      bool write_full_id (const char* name, const rx_full_node_id& id);
+
       bool write_string (const char* name, const char* str);
 
       bool write_bool (const char* name, bool val);
@@ -269,4 +273,3 @@ typedef binary_writer<memory::std_vector_allocator, false> std_buffer_writer;
 
 
 #endif
-

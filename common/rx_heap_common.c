@@ -424,4 +424,40 @@ RX_COMMON_API int rx_heap_free(void* ptr)
 	return 1;
 }
 
+RX_COMMON_API void* rx_heap_realloc(void* ptr, size_t size)
+{
+	if(ptr == NULL)
+		return rx_heap_alloc(size);
+	if (size == 0)
+	{
+		rx_heap_free(ptr);
+		return NULL;
+	}
+
+	uint64_t* mem = (uint64_t*)ptr;
+	mem--;
+	uint64_t chunk = *mem;
+	size_t old_size = 0;
+	if (chunk != 0xff)
+	{
+		old_size = ((size_t)8 << chunk);
+	}
+	else
+	{
+		RX_ASSERT(0);// we should not be here because we don't know old size
+		return NULL;
+	}
+	if (old_size > size)
+	{
+		return ptr;// we don't need to re-alloc because we have enough space
+	}
+	void* ret = rx_heap_alloc(size);
+	if (ret && ptr)
+	{
+		memcpy(ret, ptr, old_size);
+		rx_heap_free(ptr);
+	}
+	return ret;
+}
+
 

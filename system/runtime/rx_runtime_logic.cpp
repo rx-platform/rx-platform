@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_logic.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -203,7 +203,7 @@ void logic_holder::collect_data (data::runtime_values_data& data, runtime_value_
         for (const auto& one : runtime_methods_)
         {
             data::runtime_values_data one_data;
-            one.collect_data(one_data, type);
+            one.collect_data("", one_data, type);
             if (!one_data.empty())
                 data.add_child(one.name, std::move(one_data));
         }
@@ -377,6 +377,7 @@ rx_result logic_holder::get_value_ref (string_view_type path, rt_value_ref& ref)
 
 rx_result logic_holder::get_struct_value (string_view_type item, string_view_type path, data::runtime_values_data& data, runtime_value_type type, runtime_process_context* ctx) const
 {
+    
     const structure::runtime_item* item_ptr = nullptr;
     for (const auto& one : runtime_programs_)
     {
@@ -392,7 +393,7 @@ rx_result logic_holder::get_struct_value (string_view_type item, string_view_typ
         {
             if (one.name == item)
             {
-                one.item->collect_data(path, data, type);
+                one.collect_data(path, data, type);
                 return true;
             }
         }
@@ -491,17 +492,60 @@ void method_data::fill_data (const data::runtime_values_data& data)
     }
 }
 
-void method_data::collect_data (data::runtime_values_data& data, runtime_value_type type) const
+void method_data::collect_data (string_view_type path, data::runtime_values_data& data, runtime_value_type type) const
 {
-    item->collect_data("", data, type);
-    if (type != runtime_value_type::persistent_runtime_value)
+	auto idx = path.find(RX_OBJECT_DELIMETER);
+    if (idx != string_view_type::npos)
     {
-        data::runtime_values_data child_inputs;
-        data::runtime_values_data child_outputs;
-        inputs.collect_data("", child_inputs, type);
-        outputs.collect_data("", child_outputs, type);
-        data.add_child("In", std::move(child_inputs));
-        data.add_child("Out", std::move(child_outputs));
+        if (type != runtime_value_type::persistent_runtime_value)
+        {
+            string_view_type sub_path = path.substr(0, idx);
+            string_view_type rest_path = path.substr(idx + 1);
+            if (sub_path == "In")
+            {
+                inputs.collect_data(rest_path, data, type);
+            }
+            else if (sub_path == "Out")
+            {
+                outputs.collect_data(rest_path, data, type);
+            }
+            else
+            {
+                item->collect_data(path, data, type);
+            }
+        }
+        else
+        {
+            item->collect_data(path, data, type);
+        }
+    }
+    else if (!path.empty())
+    {
+        if (path == "In" && type != runtime_value_type::persistent_runtime_value)
+        {
+            inputs.collect_data("", data, type);
+        }
+        else if (path == "Out" && type != runtime_value_type::persistent_runtime_value)
+        {
+            outputs.collect_data("", data, type);
+        }
+        else
+        {
+            item->collect_data(path, data, type);
+        }
+    }
+    else
+    {
+        item->collect_data("", data, type);
+        if (type != runtime_value_type::persistent_runtime_value)
+        {
+            data::runtime_values_data child_inputs;
+            data::runtime_values_data child_outputs;
+            inputs.collect_data("", child_inputs, type);
+            outputs.collect_data("", child_outputs, type);
+            data.add_child("In", std::move(child_inputs));
+            data.add_child("Out", std::move(child_outputs));
+        }
     }
 }
 
@@ -746,12 +790,12 @@ void method_data::execution_complete (runtime_transaction_id_t id, rx_result&& r
             std::ostringstream ss;
             ss << "Method "
                 << full_path
-                << " execute completed for id, result:"
-                << id << " - ";
+                << " execute completed for id "
+                << id;
             if (result)
-                ss << "OK";
+                ss << " successfully.";
             else
-                ss << result.errors_line();
+                ss << " with error.";
             RUNTIME_LOG_DEBUG("method_data", 500, ss.str());
         }
         method_execute_result_data result_data;

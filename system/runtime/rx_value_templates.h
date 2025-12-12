@@ -62,7 +62,8 @@ public:
     rx_result bind(const string_type& path, runtime_init_context& ctx, callback_t callback = callback_t())
     {
         callback_ = callback;
-        auto result = ctx.connect_item(path, [this](const rx_value& val)
+        ctx_ = ctx.context;
+        auto result = ctx.connect_item(path, 100, [this](const rx_value& val)
             {
                 if (ctx_->is_mine_value(val))
                 {
@@ -84,15 +85,15 @@ public:
                         callback_(value_, valid_);
                     }
                 }
-            });
+            }, tag_blocks::binded_write_result_callback_t(), tag_blocks::binded_execute_result_callback_t());
         if (result)
         {
-            ctx_ = ctx.context;
             handle_ = result.move_value();
             return true;
         }
         else
         {
+            ctx_ = nullptr;
             return result.errors();
         }
     }
@@ -572,6 +573,35 @@ public:
     const rx_simple_value& value() const;
 };
 
+
+struct async_complex_value
+{
+    using callback_t = std::function<void(const rx_simple_value&)>;
+    callback_t callback_;
+    rx_simple_value bad_value_;
+    rx_simple_value value_;
+    locks::slim_lock lock_;
+    runtime_handle_t handle_ = 0;
+    runtime_process_context* ctx_ = nullptr;
+    void internal_commit(rx_simple_value val, tag_blocks::binded_write_result_callback_t callback);
+public:
+    async_complex_value() = default;
+    ~async_complex_value() = default;
+    async_complex_value(const async_complex_value&) = default;
+    async_complex_value(async_complex_value&&) = default;
+    async_complex_value& operator=(const async_complex_value&) = default;
+    async_complex_value& operator=(async_complex_value&&) = default;
+    rx_result bind(const string_type& path, runtime_init_context& ctx, callback_t callback = callback_t());
+    async_complex_value(const rx_simple_value& right);
+    async_complex_value(rx_simple_value&& right);
+    async_complex_value(const rx_simple_value& right, const rx_simple_value& bad_value);
+    async_complex_value(rx_simple_value&& right, rx_simple_value&& bad_value);
+    const rx_simple_value& value() const;
+    void commit(const rx_simple_value& val, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t());
+    void commit(rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t());
+
+};
+
 template <typename typeT, bool manual = false>
 struct async_owned_value
 {
@@ -776,7 +806,7 @@ public:
             typeT temp(right);
             ctx_->set_async_binded_as<typeT>(handle_, std::move(temp), tag_blocks::binded_write_result_callback_t());
         }
-        return this;
+        return *this;
     }
     rx_result write(typeT right, tag_blocks::binded_write_result_callback_t callback)
     {

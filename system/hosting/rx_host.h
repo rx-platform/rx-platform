@@ -4,7 +4,7 @@
 *
 *  system\hosting\rx_host.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -207,6 +207,7 @@ struct rx_host_directories
 	string_type local_folder;
     string_type copyright_file;
     string_type license_file;
+	string_type dotnet_host;
 	// storage files locations
 	string_type system_storage;
 	string_type user_storage;
@@ -318,6 +319,8 @@ class rx_platform_host
 
       virtual void fill_plugin_libs (string_array& paths);
 
+      virtual string_type get_dotnet_host_path ();
+
       std::vector<std::pair<string_type, rx_storage_ptr> > get_configured_storages ();
 
       rx_result register_storage_type (const string_type& prefix, storage_base::rx_platform_storage_type* what);
@@ -353,7 +356,7 @@ class rx_platform_host
 
       void deinitialize_storages ();
 
-      rx_result register_plugins (std::vector<library::rx_plugin_base*>& plugins);
+      rx_result register_plugins (std::vector<library::rx_plugin_base*>& plugins, const configuration_data_t& data);
 
       virtual rx_result fill_host_directories (rx_host_directories& data) = 0;
 

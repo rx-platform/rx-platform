@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_subscription.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -69,7 +69,7 @@ rx_subscription::~rx_subscription()
 
 
 
-rx_result rx_subscription::connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& result)
+rx_result rx_subscription::connect_items (const std::vector<rx_subs_item_data>& paths, std::vector<rx_result_with<runtime_handle_t> >& result)
 {
 
 	// OutputDebugStringA("****************Something to connect\r\n");
@@ -79,13 +79,13 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 		///!!!!!IT HAS BEEN DONE ON PURPOSE
 		///!!!!!JUST BE CAREFUL
 		items_lock_.lock();
-		auto it_inv = tag_paths_.find(one);
+		auto it_inv = tag_paths_.find(one.path);
 		if (it_inv == tag_paths_.end())
 		{
 			runtime_handle_t new_id = 0;
 			string_type object_path;
 			string_type item_path;
-			rx_split_item_path(one, object_path, item_path);
+			rx_split_item_path(one.path, object_path, item_path);
 			auto it = connection_paths_.find(object_path);
 			if (it != connection_paths_.end())
 			{
@@ -98,6 +98,7 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 				tag.ref_count = 1;
 				tag.sampling_rate = 0;
 				tag.target_handle = 0;
+				tag.trigger = one.trigger;
 
 				new_id = connections_[it->second].add_tag(std::move(tag), new_id);
 
@@ -118,6 +119,7 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 				tag.ref_count = 1;
 				tag.sampling_rate = 0;
 				tag.target_handle = 0;
+				tag.trigger = one.trigger;
 
 				new_id = temp.add_tag(std::move(tag), new_id);
 
@@ -129,7 +131,7 @@ rx_result rx_subscription::connect_items (const string_array& paths, std::vector
 			}
 			if (new_id)
 			{
-				tag_paths_.emplace(one, new_id);
+				tag_paths_.emplace(one.path, new_id);
 				inverse_tags_.emplace(new_id, one);
 			}
 			items_lock_.unlock();
@@ -202,7 +204,7 @@ rx_result rx_subscription::disconnect_items (const std::vector<runtime_handle_t>
 				auto it = inverse_tags_.find(one);
 				if (it != inverse_tags_.end())
 				{
-					tag_paths_.erase(it->second);
+					tag_paths_.erase(it->second.path);
 					inverse_tags_.erase(it);
 				}
 				// inverse_tags_
@@ -323,10 +325,24 @@ void rx_subscription::process_subscription (bool posted)
 		items_lock_.lock();
 		RX_ASSERT(rx_gate::instance().is_shutting_down() || pending_updates_.size() <= tag_paths_.size() * 50);
 		callback = callback_;
-		if (!pending_updates_.empty())
+		if(!extra_updates_.empty())
+		{
+			to_send = std::move(extra_updates_);
+			extra_updates_.clear();
+		}
+		else if (!pending_updates_.empty())
 		{
 			to_send = pending_updates_;
 			pending_updates_.clear();
+			pending_handles_.clear();
+		}
+		if(!weak_updates_.empty())
+		{
+			for (auto& one : weak_updates_)
+			{
+				to_send.emplace_back(std::move(one.second));
+			}
+			weak_updates_.clear();
 		}
 		items_lock_.unlock();
 		if (callback)
@@ -370,20 +386,38 @@ void rx_subscription::items_changed (const std::vector<update_item>& items)
 					rx_value temp_val = one.value;
 					temp_val.set_origin(mode_.create_origin(temp_val.get_origin()));
 					temp_val.increment_signal_level();
-					if(active_)
-						pending_updates_.emplace_back(update_item{ std::forward<decltype(handle)>(handle), temp_val });
-					values_cache_[handle]= std::move(temp_val);
+					if (active_)
+					{
+						if (handle.second == subscription_trigger_periodic)
+						{
+							weak_updates_[handle.first] = update_item{ handle.first, temp_val };
+							continue;
+						}
+						else
+						{
+							if (pending_handles_.count(handle.first) > 0)
+							{
+								extra_updates_ = pending_updates_;
+								pending_updates_.clear();
+								pending_handles_.clear();
+								timer_->start(200, true);
+							}
+							pending_handles_.insert(handle.first);
+							pending_updates_.emplace_back(update_item{ handle.first, temp_val });
+						}
+					}
+					values_cache_[handle.first]= std::move(temp_val);
 				}
 
 				if (one.value.is_dead())
 				{
-					auto conn = get_connection(it->second.front());
+					auto conn = get_connection(it->second.front().first);
 					if (conn)
 					{
 						if (conn->connection_dead())
 						{
-							to_retrieve_.emplace(it->second.front() >> 16);
-							to_process_.emplace(it->second.front() >> 16);
+							to_retrieve_.emplace(it->second.front().first >> 16);
+							to_process_.emplace(it->second.front().first >> 16);
 							handles_.erase(it);
 						}
 					}
@@ -586,7 +620,8 @@ bool runtime_connection_data::process_connection (const rx_time& ts, rx_subscrip
 				{
 					had_good = true;
 					tags_[connect_indexes[idx]].target_handle = result[idx].value();
-					whose->handles_[result[idx].value()].emplace_back(tags_[connect_indexes[idx]].mine_handle);
+					whose->handles_[result[idx].value()].emplace_back(
+						tags_[connect_indexes[idx]].mine_handle, tags_[connect_indexes[idx]].trigger);
 				}
 				else
 				{
@@ -1172,6 +1207,11 @@ void subscription_write_manager::process (rx_subscription& subs)
 				for (auto&& write : conns_it.second)
 				{
 					auto write_result = connection.item->write_items(write.first, subs.mode_.is_test(), std::move(write.second), subs.smart_this());
+					if (!write_result)
+					{
+						for(auto& one_res : write.second)
+							write_complete(write.first, one_res.first, 0, write_result.errors(), subs);
+					}
 				}
 			}
 		}
@@ -1183,6 +1223,11 @@ void subscription_write_manager::process (rx_subscription& subs)
 				for (auto&& write : conns_it.second)
 				{
 					auto write_result = connection.item->write_items(write.first, subs.mode_.is_test(), std::move(write.second), subs.smart_this());
+					if (!write_result)
+					{
+						for (auto& one_res : write.second)
+							write_complete(write.first, one_res.first, 0, write_result.errors(), subs);
+					}
 				}
 			}
 		}
@@ -1292,6 +1337,7 @@ rx_result_with<runtime_handle_t> rx_event_subscription::connect_events (const ev
 			tag.ref_count = 1;
 			tag.sampling_rate = 0;
 			tag.target_handle = 0;
+			tag.trigger = subscription_trigger_critical;
 
 			new_id = connections_[it->second].add_tag(std::move(tag), new_id);
 
@@ -1312,6 +1358,7 @@ rx_result_with<runtime_handle_t> rx_event_subscription::connect_events (const ev
 			tag.ref_count = 1;
 			tag.sampling_rate = 0;
 			tag.target_handle = 0;
+			tag.trigger = subscription_trigger_critical;
 
 			new_id = temp.add_tag(std::move(tag), new_id);
 

@@ -228,6 +228,10 @@ RX_COMMON_API int rx_copy_string_value(string_value_struct* dest, const string_v
 }
 RX_COMMON_API void rx_destory_string_value_struct(string_value_struct* data)
 {
+	rx_destroy_string_value_struct(data);
+}
+RX_COMMON_API void rx_destroy_string_value_struct(string_value_struct* data)
+{
 	if (data->size + 1 > sizeof(data->value))
 	{
 		RX_ASSERT(data->value);
@@ -317,11 +321,15 @@ RX_COMMON_API const uint8_t* rx_c_ptr(const bytes_value_struct* data, size_t* si
 	else
 		return data->value;
 }
-RX_COMMON_API void rx_destory_bytes_value_struct(bytes_value_struct* data)
+RX_COMMON_API void rx_destroy_bytes_value_struct(bytes_value_struct* data)
 {
 	if (data->size > sizeof(data->value))
 		rx_heap_free(data->value);
 	memzero(data, sizeof(bytes_value_struct));
+}
+RX_COMMON_API void rx_destory_bytes_value_struct(bytes_value_struct* data)
+{
+	rx_destroy_bytes_value_struct(data);
 }
 
 RX_COMMON_API int rx_init_values_array_struct(values_array_struct* data, const struct typed_value_type* values, size_t len)
@@ -341,6 +349,10 @@ RX_COMMON_API int rx_init_values_array_struct(values_array_struct* data, const s
 	return RX_OK;
 }
 RX_COMMON_API void rx_destory_values_array_struct(values_array_struct* data)
+{
+	rx_destroy_values_array_struct(data);
+}
+RX_COMMON_API void rx_destroy_values_array_struct(values_array_struct* data)
 {
 	if (data->size && data->values)
 	{
@@ -506,7 +518,30 @@ RX_COMMON_API int rx_is_null_uuid(const rx_uuid_t* val)
 			return 0;
 	return 1;
 }
-
+RX_COMMON_API int rx_init_node_id(rx_node_id_struct* data, const rx_full_node_id_struct* node, uint16_t ns)
+{
+	data->namespace_index = ns;
+	data->node_type = node->node_type;
+	switch (node->node_type)
+	{
+	case rx_node_id_numeric:
+		data->value.int_value = node->value.int_value;
+		return RX_OK;
+	case rx_node_id_string:
+		return rx_init_string_value_struct(&data->value.string_value, rx_c_str(&node->value.string_value), -1);
+	case rx_node_id_uuid:
+		data->value.uuid_value = node->value.uuid_value;
+		return RX_OK;
+	case rx_node_id_bytes:
+		{
+			size_t count = 0;
+			const uint8_t* ptr = rx_c_ptr(&node->value.bstring_value, &count);
+			return rx_init_bytes_value_struct(&data->value.bstring_value, ptr, count);
+		}
+	default:
+		return RX_ERROR;
+	}
+}
 RX_COMMON_API int rx_init_null_node_id(rx_node_id_struct* data)
 {
 	memzero(data, sizeof(rx_node_id_struct));
@@ -906,11 +941,377 @@ RX_COMMON_API int rx_node_id_from_string(rx_node_id_struct* data, const char* st
 
 RX_COMMON_API void rx_destory_node_id(rx_node_id_struct* data)
 {
-	if (data->node_type == rx_node_id_string)
-		rx_destory_string_value_struct(&data->value.string_value);
-	if (data->node_type == rx_node_id_bytes)
-		rx_destory_bytes_value_struct(&data->value.bstring_value);
+	rx_destroy_node_id(data);
 }
+RX_COMMON_API void rx_destroy_node_id(rx_node_id_struct* data)
+{
+	if (data->node_type == rx_node_id_string)
+		rx_destroy_string_value_struct(&data->value.string_value);
+	if (data->node_type == rx_node_id_bytes)
+		rx_destroy_bytes_value_struct(&data->value.bstring_value);
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+RX_COMMON_API int rx_init_full_node_id(rx_full_node_id_struct* data, const rx_node_id_struct* node, const char* ns)
+{
+	if (data == NULL || node == NULL || ns == NULL)
+		return RX_ERROR;
+
+	data->node_type = node->node_type;
+	rx_init_string_value_struct(&data->namespace_name, ns, -1);
+	switch (node->node_type)
+	{
+	case rx_node_id_numeric:
+		data->value.int_value = node->value.int_value;
+		return RX_OK;
+	case rx_node_id_string:
+		return rx_init_string_value_struct(&data->value.string_value, rx_c_str(&node->value.string_value), -1);
+	case rx_node_id_uuid:
+		data->value.uuid_value = node->value.uuid_value;
+		return RX_OK;
+	case rx_node_id_bytes:
+		{
+			size_t count = 0;
+			const uint8_t* ptr = rx_c_ptr(&node->value.bstring_value, &count);
+			return rx_init_bytes_value_struct(&data->value.bstring_value, ptr, count);
+		}
+	default:
+		return RX_ERROR;
+	}
+}
+
+RX_COMMON_API int rx_init_null_full_node_id(rx_full_node_id_struct* data)
+{
+	memzero(data, sizeof(rx_full_node_id_struct));
+	return RX_OK;
+}
+RX_COMMON_API int rx_copy_full_node_id(rx_full_node_id_struct* data, const rx_full_node_id_struct* src)
+{
+	memcpy(data, src, sizeof(rx_full_node_id_struct));
+
+	// handle the types that are not plain copy
+	rx_init_string_value_struct(&data->namespace_name, rx_c_str(&src->namespace_name), -1);
+	switch (src->node_type)
+	{
+		case rx_node_id_string:
+			return rx_init_string_value_struct(&data->value.string_value, rx_c_str(&src->value.string_value), -1);
+		case rx_node_id_bytes:
+			{
+				size_t count = 0;
+				const uint8_t* ptr = rx_c_ptr(&src->value.bstring_value, &count);
+				return rx_init_bytes_value_struct(&data->value.bstring_value, ptr, count);
+			}
+		default:;
+	}
+	return RX_OK;
+}
+RX_COMMON_API int rx_move_full_node_id(rx_full_node_id_struct* data, rx_full_node_id_struct* src)
+{
+	memcpy(data, src, sizeof(rx_full_node_id_struct));
+	memzero(src, sizeof(rx_full_node_id_struct));
+	return RX_OK;
+}
+
+RX_COMMON_API int rx_is_null_full_node_id(const rx_full_node_id_struct* data)
+{
+	const char* ns = rx_c_str(&data->namespace_name);
+	return data->node_type == rx_node_id_numeric
+		&& (ns == NULL || *ns == '\0')
+		&& data->value.int_value == 0;
+}
+
+size_t get_full_node_id_string_size(const rx_full_node_id_struct* data)
+{
+	if (rx_is_null_full_node_id(data))
+	{
+		return 0;
+	}
+	size_t buffer_size = 1 + data->namespace_name.size + 2;// namespace + ':' + type + ':' + '\0'
+	// calculate total buffer size
+	switch (data->node_type)
+	{
+		case rx_node_id_numeric:
+			buffer_size += 0x10;
+			break;
+		case rx_node_id_string:
+			buffer_size += data->value.string_value.size + 1;
+			break;
+		case rx_node_id_uuid:
+			buffer_size += 40;// uuid string size
+			break;
+		case rx_node_id_bytes:
+			buffer_size += data->value.string_value.size * 2 + 1;
+			break;
+	}
+	return buffer_size;
+}
+
+int internal_full_node_id_to_string(const rx_full_node_id_struct* data, char* buffer)
+{
+	int ret_value = RX_OK;
+	switch (data->node_type)
+	{
+		case rx_node_id_numeric:
+			{
+				const char* ns = rx_c_str(&data->namespace_name);
+				if (ns == NULL)
+					ns = "";
+				int ret;
+				ret = sprintf(buffer, "%s|i:%u", ns, data->value.int_value);
+				ret_value = ret > 0 ? RX_OK : RX_ERROR;
+			}
+			break;
+		case rx_node_id_string:
+			{
+				const char* ns = rx_c_str(&data->namespace_name);
+				if (ns == NULL)
+					ns = "";
+				const char* str = rx_c_str(&data->value.string_value);
+				int ret = -1;
+
+				if (str)
+					ret = sprintf(buffer, "%s|s:%s", ns, str);
+				else
+					ret = sprintf(buffer, "%s|s:", ns);
+
+				ret_value = ret > 0 ? RX_OK : RX_ERROR;
+			}
+			break;
+		case rx_node_id_uuid:
+			{
+				int ret;
+				const char* ns = rx_c_str(&data->namespace_name);
+				if (ns == NULL)
+					ns = "";
+				ret = sprintf(buffer, "%s|g:", ns);
+				if (ret <= 0)
+					return RX_ERROR;
+				size_t idx = ret;
+				ret_value = rx_uuid_to_string(&data->value.uuid_value, &buffer[idx]);
+			}
+			break;
+		case rx_node_id_bytes:
+			{
+				int ret;
+				const char* ns = rx_c_str(&data->namespace_name);
+				if (ns == NULL)
+					ns = "";
+				ret = sprintf(buffer, "%s|b:", ns);
+				if (ret <= 0)
+					return RX_ERROR;
+				size_t idx = ret;
+				for (size_t i = 0; i < data->value.bstring_value.size; i++)
+				{
+					ret = sprintf(&buffer[idx], "%02X", (int)data->value.bstring_value.value[i]);
+					if (ret <= 0)
+					{
+						ret_value = RX_ERROR;
+						break;
+					}
+					idx += ret;
+				}
+			}
+			break;
+	}
+	return ret_value;
+}
+
+RX_COMMON_API int rx_full_node_id_to_string(const rx_full_node_id_struct* data, string_value_struct* str)
+{
+	if (rx_is_null_full_node_id(data))
+	{
+		return rx_init_string_value_struct(str, NULL, -1);
+	}
+	int ret_value = RX_OK;
+	char static_buff[0x40];
+	int allocated = 0;
+	char* buffer = NULL;
+	size_t buffer_size = get_full_node_id_string_size(data);
+	if (buffer_size == 0)
+	{
+		return RX_ERROR;
+	}
+
+	// now we have the size, check to see for allocation
+	if (buffer_size > sizeof(static_buff) / sizeof(static_buff[0]))
+	{
+		buffer = rx_heap_alloc(buffer_size);
+		if (buffer == NULL)
+			return RX_ERROR;
+		allocated = 1;
+	}
+	else
+	{
+		buffer = static_buff;
+	}
+	// now create the string
+	ret_value = internal_full_node_id_to_string(data, buffer);
+
+	if (ret_value)
+	{
+		ret_value = rx_init_string_value_struct(str, buffer, -1);
+	}
+
+	if (allocated)
+		rx_heap_free(buffer);
+
+	return ret_value;
+}
+
+
+int internal_init_int_full_node_id(rx_full_node_id_struct* data, uint32_t id, const char* namesp)
+{
+	data->node_type = rx_node_id_numeric;
+	rx_init_string_value_struct(&data->namespace_name, namesp, -1);
+	data->value.int_value = id;
+	return RX_OK;
+}
+int internal_init_string_full_node_id(rx_full_node_id_struct* data, const char* id, int count, const char* namesp)
+{
+	data->node_type = rx_node_id_string;
+	rx_init_string_value_struct(&data->namespace_name, namesp, -1);
+	return rx_init_string_value_struct(&data->value.string_value, id, count);
+}
+int internal_init_uuid_full_node_id(rx_full_node_id_struct* data, const rx_uuid_t* id, const char* namesp)
+{
+	data->node_type = rx_node_id_uuid;
+	rx_init_string_value_struct(&data->namespace_name, namesp, -1);
+	data->value.uuid_value = *id;
+	return RX_OK;
+}
+int internal_init_bytes_full_node_id(rx_full_node_id_struct* data, const uint8_t* id, size_t len, const char* namesp)
+{
+	data->node_type = rx_node_id_bytes;
+	rx_init_string_value_struct(&data->namespace_name, namesp, -1);
+	return rx_init_bytes_value_struct(&data->value.bstring_value, id, len);
+
+}
+
+int internal_full_node_id_from_string(rx_full_node_id_struct* data, const char* str)
+{
+	char temp_buffer[0x40];
+	if (str == NULL)
+		return RX_ERROR;
+	size_t len = strlen(str);
+	if (len < 2)
+		return RX_ERROR;
+	size_t idx = 0;
+	const char* namespace_name = NULL;
+	for (; idx < len; idx++)
+	{
+		if (str[idx] == '|')
+		{// we found first separator
+			if (idx + 1 > sizeof(temp_buffer))
+			{
+				namespace_name = rx_heap_alloc(idx + 1);
+			}
+			else
+			{
+				namespace_name = temp_buffer;
+			}
+			memcpy(temp_buffer, str, idx);
+			temp_buffer[idx] = '\0';
+			break;
+		}
+	}
+	if (namespace_name == NULL)
+		return RX_ERROR;
+	if (idx == len)
+	{
+		if(namespace_name != temp_buffer)
+			rx_heap_free((void*)namespace_name);
+		return RX_ERROR;
+	}
+
+	idx++;
+
+	if (idx == len)
+	{
+		if (namespace_name != temp_buffer)
+			rx_heap_free((void*)namespace_name);
+		return RX_ERROR;
+	}
+	char type = str[idx];
+	idx++;
+	if (idx == len || str[idx] != ':')
+	{
+		if (namespace_name != temp_buffer)
+			rx_heap_free((void*)namespace_name);
+		return RX_ERROR;
+	}
+	idx++;
+	if (idx == len)
+	{
+		if(namespace_name != temp_buffer)
+			rx_heap_free((void*)namespace_name);
+		return RX_ERROR;
+	}
+
+	int ret_value = RX_ERROR;
+
+	switch (type)
+	{
+		case 'i':
+			{// integer
+				uint32_t val;
+				if (parse_uint32(&str[idx], &val))
+					ret_value = internal_init_int_full_node_id(data, val, namespace_name);
+				else
+					ret_value = RX_ERROR;
+			}
+			break;
+		case 's':
+			{
+				ret_value = internal_init_string_full_node_id(data, &str[idx], -1, namespace_name);
+			}
+			break;
+		case 'g':
+			{
+				rx_uuid_t temp_uuid;
+				int ret = rx_string_to_uuid(&str[idx], &temp_uuid);
+				if (ret)
+				{
+					ret = internal_init_uuid_full_node_id(data, &temp_uuid, namespace_name);
+				}
+				ret_value = ret;
+			}
+			break;
+		case 'b':
+			// TODO parsing byte array
+		default:
+			RX_ASSERT(0);
+			ret_value = RX_ERROR;
+	}
+	if(namespace_name != temp_buffer)
+		rx_heap_free((void*)namespace_name);
+
+	return ret_value;
+}
+
+RX_COMMON_API int rx_full_node_id_from_string(rx_full_node_id_struct* data, const char* str)
+{
+	if (str == NULL || *str == '\0')
+		return rx_init_null_full_node_id(data);
+	else
+		return internal_full_node_id_from_string(data, str);
+}
+
+RX_COMMON_API void rx_destroy_full_node_id(rx_full_node_id_struct* data)
+{
+	rx_destroy_string_value_struct(&data->namespace_name);
+	if (data->node_type == rx_node_id_string)
+		rx_destroy_string_value_struct(&data->value.string_value);
+	if (data->node_type == rx_node_id_bytes)
+		rx_destroy_bytes_value_struct(&data->value.bstring_value);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 /*
 union rx_reference_data

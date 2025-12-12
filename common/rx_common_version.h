@@ -2,7 +2,7 @@
 
 
 #define RX_COMMON_MAJOR_VERSION 3
-#define RX_COMMON_MINOR_VERSION 3
+#define RX_COMMON_MINOR_VERSION 4
 #define RX_COMMON_BUILD_NUMBER 0
 
 // Ver 1.0.1 added RX_STRUCT_TYPE support
@@ -22,3 +22,6 @@
 // Ver 3.2.1 added rx_init_array_value_with_move and rx_init_array_value_with_ptrs_move
 // Ver 3.2.2 corrected memory leak for strings of length 8
 // Ver 3.3.0 added weak pointer support for shared references
+// Ver 3.3.1 added rx_heap_realloc
+// Ver 3.3.2 corrected is unsigned and is integer functions bug
+// Ver 3.4.0 introduced rx_full_nod_id_struct

@@ -1674,14 +1674,9 @@ void value_point_impl::unary (uint8_t o, rx_value& r, char*& prog, char*& token,
 	}
 	else if (o == LEN_CODE)
 	{
-		if (r.is_array())
-		{
-			uint32_t len = 
-				(uint32_t)/*This has to be uniquely defined function and 64 is an overkill by me*/r.array_size();
-			r.assign_static(len);
-		}
-		else
-			throw std::runtime_error("Parser error, invalid op!");
+		uint32_t len = 
+			(uint32_t)/*This has to be uniquely defined function and 64 is an overkill by me*/r.array_size();
+		r.assign_static(len);
 	}
 	else
 	{

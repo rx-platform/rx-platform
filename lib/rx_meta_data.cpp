@@ -4,7 +4,7 @@
 *
 *  lib\rx_meta_data.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -378,6 +378,11 @@ void meta_data::set_version (uint32_t val)
 
 void meta_data::set_run_at (const string_type& run)
 {
+}
+
+bool meta_data::is_from_code () const
+{
+	return (this->attributes & namespace_item_attributes::namespace_item_code_generated) != 0;
 }
 
 meta_data create_meta_for_new(const meta_data& proto)

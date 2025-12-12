@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_ethernet.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,18 +35,20 @@
 
 // dummy
 #include "dummy.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_ports_templates
 #include "system/runtime/rx_ports_templates.h"
-// rx_thread
-#include "system/threads/rx_thread.h"
+// rx_io
+#include "interfaces/rx_io.h"
 
 namespace rx_internal {
 namespace interfaces {
 namespace ethernet {
-class ethernet_port;
 class ethernet_endpoint;
+class ethernet_port;
 
 } // namespace ethernet
 } // namespace interfaces
@@ -125,6 +127,72 @@ class ethernet_endpoint : public rx_platform::threads::thread
       std::vector<uint16_t> ether_types_;
 
       byte_string local_mac_;
+
+
+};
+
+
+
+
+
+
+class ethernet_endpoint2 : public io_endpoints::dispatcher_subscriber  
+{
+    enum class ether_state
+    {
+        not_active = 0,
+        not_binded = 1,
+        binded = 2,
+        stopped = 3
+    };
+
+  public:
+      ethernet_endpoint2();
+
+
+      rx_protocol_stack_endpoint* get_stack_endpoint ();
+
+      runtime::items::port_runtime* get_port ();
+
+      rx_protocol_result_t send_packet (send_protocol_packet packet);
+
+      rx_result open (io::ip4_address addr, security::security_context_ptr identity, ethernet_port* port);
+
+      rx_result close ();
+
+      bool tick ();
+
+      bool is_connected () const;
+
+      void release_buffer (buffer_ptr what);
+
+
+  protected:
+
+  private:
+
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+
+      void disconnected (rx_security_handle_t identity);
+
+      bool readed (const void* data, size_t count, const struct sockaddr* addr, rx_security_handle_t identity);
+
+      void start_timer (bool fire_now);
+
+      void suspend_timer ();
+
+
+
+      rx_protocol_stack_endpoint stack_endpoint_;
+
+      ethernet_port *my_port_;
+
+
+      ether_state current_state_;
+
+      rx_timer_ptr timer_;
+
+      locks::slim_lock state_lock_;
 
 
 };

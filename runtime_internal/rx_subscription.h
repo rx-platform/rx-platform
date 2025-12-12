@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_subscription.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_job
-#include "system/threads/rx_job.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
+// rx_job
+#include "system/threads/rx_job.h"
 // rx_event_manager
 #include "system/runtime/rx_event_manager.h"
 
@@ -86,6 +86,8 @@ class rx_subscription_tag
       runtime_handle_t target_handle;
 
       runtime_handle_t mine_handle;
+
+      subscription_trigger_type trigger;
 
 
   protected:
@@ -329,6 +331,11 @@ class subscription_write_manager
 };
 
 
+struct rx_subs_item_data
+{
+    string_type path;
+    subscription_trigger_type trigger;
+};
 
 
 
@@ -337,9 +344,9 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 {
 	DECLARE_REFERENCE_PTR(rx_subscription);
 
-	typedef std::map<runtime_handle_t, std::vector<runtime_handle_t> > handles_type;// target_handle -> mine handles
+	typedef std::map<runtime_handle_t, std::vector<std::pair<runtime_handle_t, subscription_trigger_type> > > handles_type;// target_handle -> mine handles
 	typedef std::map<string_type, runtime_handle_t> tags_type;// path -> mine handle
-    typedef std::map<runtime_handle_t, string_type> inverse_tags_type;// mine handle -> path
+    typedef std::map<runtime_handle_t, rx_subs_item_data> inverse_tags_type;// mine handle -> path
 
     typedef std::map<runtime_handle_t, rx_value> values_cache_type;// values cache
 
@@ -348,6 +355,8 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 	typedef std::map<rx_thread_handle_t, std::vector<size_t> > connection_attempts_type;
 	static constexpr uint32_t timer_period_ = 1000;
 
+	typedef std::set<runtime_handle_t> pending_handles_type;
+    typedef std::map<runtime_handle_t, update_item> weak_updates_type;
     typedef std::vector<update_item> pending_updates_type;
   
     friend class runtime_connection_data;
@@ -358,7 +367,7 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
       ~rx_subscription();
 
 
-      rx_result connect_items (const string_array& paths, std::vector<rx_result_with<runtime_handle_t> >& result);
+      rx_result connect_items (const std::vector<rx_subs_item_data>& paths, std::vector<rx_result_with<runtime_handle_t> >& result);
 
       rx_result disconnect_items (const std::vector<runtime_handle_t>& items, std::vector<rx_result>& results);
 
@@ -424,7 +433,13 @@ class rx_subscription : public rx_platform::runtime::tag_blocks::rx_tags_callbac
 
       connection_paths_type connection_paths_;
 
+      pending_handles_type pending_handles_;
+
       pending_updates_type pending_updates_;
+
+      pending_updates_type extra_updates_;
+
+      weak_updates_type weak_updates_;
 
       std::unordered_set<size_t> to_retrieve_;
 

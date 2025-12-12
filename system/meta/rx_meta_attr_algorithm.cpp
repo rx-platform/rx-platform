@@ -382,6 +382,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 				temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 				temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
 				temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
+				temp.value().value_opt[runtime::structure::value_opt_sealed] = whose.is_sealed();
 				if (!whose.security_guard.is_null())
 				{
 					string_type path = ctx.get_current_path() + whose.name_;
@@ -414,6 +415,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 						temp.value().value = first;
 					temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 					temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
+					temp.value().value_opt[runtime::structure::value_opt_sealed] = whose.is_sealed();
 					temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
 					data.push_back(temp.move_value());
 				}
@@ -455,6 +457,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 					temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 					temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
 					temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
+					temp.value().value_opt[runtime::structure::value_opt_sealed] = whose.is_sealed();
 					runtime::structure::variable_block_data block;
 					block.variable = temp.move_value();
 					block.type_ptr = std::move(temp_data.value().type_ptr);
@@ -500,6 +503,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 						temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
 						temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
 						temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
+						temp.value().value_opt[runtime::structure::value_opt_sealed] = whose.is_sealed();
 						runtime::structure::variable_block_data block;
 						block.variable = temp.move_value();
 						block.type_ptr = std::move(temp_data.value().type_ptr);
@@ -1453,12 +1457,13 @@ rx_result complex_data_algorithm::get_depends (const complex_data_type& whose, d
 	return true;
 }
 
-std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool persistent, bool in_model, uint32_t sec_idx)
+std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool persistent, bool is_sealed, bool in_model, uint32_t sec_idx)
 {
 	std::bitset<32> ret((uint64_t)(sec_idx << 8));
 	ret[runtime::structure::value_opt_readonly] = read_only;
 	ret[runtime::structure::value_opt_persistent] = persistent;
 	ret[runtime::structure::opt_is_in_model] = in_model;
+	ret[runtime::structure::value_opt_sealed] = is_sealed;
 	return ret;
 }
 
@@ -1481,6 +1486,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 				get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
+					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx));
 			if (!ret)
 			{
@@ -1502,6 +1508,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 				get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
+					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx));
 			if (!ret)
 			{
@@ -1539,6 +1546,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 				data.struct_value.value_opt = get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
+					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx);
 				data.struct_value.value_opt[opt_is_constant] = true;
 				data.block = std::move(temp.value().runtime);
@@ -1569,6 +1577,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 						temp_data.struct_value.value_opt = get_value_opt(
 							whose.get_read_only(),
 							whose.get_persistent(),
+							whose.is_sealed(),
 							ctx.is_in_model(), sec_idx);
 						temp_data.struct_value.value_opt[opt_is_constant] = true;
 						temp_data.block = std::move(temp.value().runtime);
@@ -1609,6 +1618,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 				get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
+					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx));
 			if (!ret)
 			{
@@ -1630,6 +1640,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 				get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
+					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx));
 			if (!ret)
 			{
@@ -1666,6 +1677,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 				data.struct_value.value_opt = get_value_opt(
 					whose.get_read_only(),
 					whose.get_persistent(),
+					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx);
 				data.block = std::move(temp.value().runtime);
 				data.timestamp = ctx.now;
@@ -1701,6 +1713,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 					temp_data.struct_value.value_opt = get_value_opt(
 						whose.get_read_only(),
 						whose.get_persistent(),
+						whose.is_sealed(),
 						ctx.is_in_model(), sec_idx);
 					temp_data.block = std::move(temp.value().runtime);
 					temp_data.timestamp = ctx.now;

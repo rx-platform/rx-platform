@@ -46,6 +46,44 @@ size_t g_page_size = 0;
 uint32_t g_trans_id = 1;
 uint32_t g_handle_id = 1;
 
+int debuggerIsAttached()
+{
+    char buf[4096];
+
+    const int status_fd = open("/proc/self/status", O_RDONLY);
+    if (status_fd == -1)
+        return 0;
+
+    const ssize_t num_read = read(status_fd, buf, sizeof(buf) - 1);
+    close(status_fd);
+
+    if (num_read <= 0)
+        return 0;
+
+    buf[num_read] = '\0';
+    char tracerPidString[] = "TracerPid:";
+    const char* tracer_pid_ptr = strstr(buf, tracerPidString);
+    if (!tracer_pid_ptr)
+        return 0;
+
+    for (const char* characterPtr = tracer_pid_ptr + sizeof(tracerPidString) - 1; characterPtr <= buf + num_read; ++characterPtr)
+    {
+        if (isspace(*characterPtr))
+            continue;
+        else
+            return isdigit(*characterPtr) != 0 && *characterPtr != '0';
+    }
+
+    return 0;
+}
+
+RX_COMMON_API int rx_assert_print( const char * expression, const char *filename, int line)
+{
+    fprintf( stderr, "\r\nASSERT: %s:%d: failed assertion: %s\r\n", filename, line, expression);
+    if(debuggerIsAttached())
+        raise(SIGTRAP);
+    return 0;
+}
 RX_COMMON_API runtime_transaction_id_t rx_get_new_transaction_id()
 {
     uint32_t ret =__sync_add_and_fetch(&g_trans_id, 1);

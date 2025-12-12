@@ -229,7 +229,7 @@ bool runtime_connect_test::run_test (std::istream& in, std::ostream& out, std::o
 	*/
 	auto subs = rx_create_reference<rx_internal::sys_runtime::subscriptions::rx_subscription>(&callback_, rx_mode_type());
 	subs->activate();
-	string_array paths{ path };
+	std::vector<rx_internal::sys_runtime::subscriptions::rx_subs_item_data> paths{ {path, subscription_trigger_type::subscription_trigger_critical} };
 	std::vector<rx_result_with<runtime_handle_t> > results;
 	auto result = no_subscription ? rx_result(true) : subs->connect_items(paths, results);
 	if (result)
