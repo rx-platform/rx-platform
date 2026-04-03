@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2023 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -57,7 +57,7 @@ typedef RX_COMMON_API struct rx_platform_init_data_t
 {
 	uint64_t version;
 	int rx_hd_timer; // use high definition timer
-	int is_debug; // is this a debug instance, pure informatively, 
+	int is_debug; // is this a debug instance, pure informatively,
 				  // this is a best place to keep this information i think
 	size_t rx_initial_heap_size;
 	size_t rx_alloc_heap_size;
@@ -736,6 +736,8 @@ RX_COMMON_API int rx_get_unassigned_value(const struct typed_value_type* val, si
 RX_COMMON_API int rx_get_bool_value(const struct typed_value_type* val, size_t idx, int* value);
 RX_COMMON_API int rx_get_string_value(const struct typed_value_type* val, size_t idx, string_value_struct* value);
 RX_COMMON_API int rx_get_bytes_value(const struct typed_value_type* val, size_t idx, bytes_value_struct* value);
+RX_COMMON_API int rx_get_uuid_value(const struct typed_value_type* val, size_t idx, rx_uuid_t* value);
+RX_COMMON_API int rx_get_time_value(const struct typed_value_type* val, size_t idx, rx_time_struct* value);
 
 
 typedef struct values_array_struct_t

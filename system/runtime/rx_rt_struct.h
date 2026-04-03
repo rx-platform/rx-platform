@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_rt_struct.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -626,7 +626,7 @@ public:
 
       void process_write_result (rx_result&& result, runtime_transaction_id_t id);
 
-      void process_event (event_fired_data data);
+      void process_event (runtime_transaction_id_t trans_id, event_fired_data data);
 
       void process_execute_result (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id);
 
@@ -657,6 +657,10 @@ public:
       rx_result filter_changed ();
 
       bool is_root () const;
+
+      void mapper_event_result_pending (rx_result&& result, runtime_transaction_id_t id);
+
+      void mapper_refire_events (rx_result&& result, runtime_transaction_id_t id);
 
 
       full_value_data mapped_value;
@@ -1169,6 +1173,7 @@ public:
 		return event_ptr;
 	}
     friend class meta::meta_algorithm::meta_blocks_algorithm<meta::def_blocks::event_attribute>;
+    typedef std::vector<std::pair<runtime_transaction_id_t, rx_result>> pending_queue_type;
 
   public:
       event_data();
@@ -1192,7 +1197,7 @@ public:
 
       rx_result stop_runtime (runtime::runtime_stop_context& ctx);
 
-      void process_runtime (runtime_process_context* ctx, event_fired_data data);
+      void process_event (runtime_process_context* ctx, event_fired_data data);
 
       rx_result get_value (string_view_type path, rx_value& val, runtime_process_context* ctx) const;
 
@@ -1208,9 +1213,13 @@ public:
 
       data::runtime_data_model get_arguments ();
 
-      void event_fired (event_fired_data&& data);
+      void event_fired (runtime_transaction_id_t trans_id, rx_simple_value data, string_type queue, bool state, bool remove);
 
-      void event_fired (data::runtime_values_data data);
+      void event_fired (runtime_transaction_id_t trans_id, data::runtime_values_data data, string_type queue, bool state, bool remove);
+
+      void event_result_pending (rx_result&& result, runtime_transaction_id_t id);
+
+      void process_result (runtime_transaction_id_t id, rx_result&& result);
 
 
       block_data arguments;

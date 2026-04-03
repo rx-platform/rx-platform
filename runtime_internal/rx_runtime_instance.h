@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_runtime_instance.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -43,8 +43,6 @@
 #include "interfaces/rx_port_instance.h"
 // rx_security
 #include "security/rx_security.h"
-// rx_event_manager
-#include "system/runtime/rx_event_manager.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -169,12 +167,6 @@ class domain_instance_data
       }
 
 
-      rx_platform::runtime::events::runtime_events_manager& get_events ()
-      {
-        return events_;
-      }
-
-
 
       rx_thread_handle_t get_executer () const
       {
@@ -197,8 +189,6 @@ class domain_instance_data
       rx_application_ptr my_application_;
 
       rx_platform::meta::runtime_data::domain_data data_;
-
-      rx_platform::runtime::events::runtime_events_manager events_;
 
 
       rx_thread_handle_t executer_;
@@ -255,12 +245,6 @@ class application_instance_data
       }
 
 
-      rx_platform::runtime::events::runtime_events_manager& get_events ()
-      {
-        return events_;
-      }
-
-
 
       rx_thread_handle_t get_executer () const
       {
@@ -287,8 +271,6 @@ class application_instance_data
       rx_platform::meta::runtime_data::application_data data_;
 
       rx_reference<rx_platform::security::security_context> security_ctx_;
-
-      rx_platform::runtime::events::runtime_events_manager events_;
 
 
       rx_thread_handle_t executer_;

@@ -76,8 +76,9 @@ string_type rx_url_decode(const char* path, size_t path_len)
 
 // Class protocols::rx_http::http_parser 
 
-http_parser::http_parser()
-      : content_left_(0)
+http_parser::http_parser (bool simple)
+      : content_left_(0),
+        simple_(simple)
 {
 }
 
@@ -96,7 +97,12 @@ rx_protocol_result_t http_parser::received (recv_protocol_packet packet)
 		if (packet.buffer->size < content_left_)
 		{
 			// we need to read even more data!!!!
-			prepared_request_.content.insert(prepared_request_.content.end(), (const std::byte*)packet.buffer->buffer_ptr, (const std::byte*)packet.buffer->buffer_ptr + packet.buffer->size);
+			result = rx_push_to_packet(&receive_buffer_
+				, packet.buffer->buffer_ptr
+				, packet.buffer->size);
+			if (result != RX_PROTOCOL_OK)
+				return result;
+			prepared_request_.content_size += packet.buffer->size;
 			content_left_ -= packet.buffer->size;
 
 			return RX_PROTOCOL_OK;
@@ -104,8 +110,13 @@ rx_protocol_result_t http_parser::received (recv_protocol_packet packet)
 		else if (packet.buffer->size == content_left_)
 		{
 			// we read everything
-			prepared_request_.content.insert(prepared_request_.content.end(), (const std::byte*)packet.buffer->buffer_ptr, (const std::byte*)packet.buffer->buffer_ptr + content_left_);
+			result = rx_push_to_packet(&receive_buffer_
+				, packet.buffer->buffer_ptr
+				, packet.buffer->size);
+			prepared_request_.content_ptr = receive_buffer_.buffer_ptr + (size_t)prepared_request_.content_ptr;
+			prepared_request_.content_size += content_left_;
 			content_left_ = 0;
+
 			send_current_request();
 
 			rx_reinit_packet_buffer(&receive_buffer_);
@@ -114,10 +125,17 @@ rx_protocol_result_t http_parser::received (recv_protocol_packet packet)
 		}
 		else
 		{
+			// we read everything
+			result = rx_push_to_packet(&receive_buffer_
+				, packet.buffer->buffer_ptr
+				, content_left_);
+
 			RX_ASSERT(packet.buffer->size > content_left_);
 			// we read everything and even more
-			prepared_request_.content.insert(prepared_request_.content.end(), (const std::byte*)packet.buffer->buffer_ptr, (const std::byte*)packet.buffer->buffer_ptr + content_left_);
+			prepared_request_.content_ptr = receive_buffer_.buffer_ptr + (size_t)prepared_request_.content_ptr;
+			prepared_request_.content_size += content_left_;
 			content_left_ = 0;
+
 			send_current_request();
 
 			rx_reinit_packet_buffer(&receive_buffer_);
@@ -155,6 +173,109 @@ rx_protocol_result_t http_parser::received (recv_protocol_packet packet)
 		std::byte* content_ptr = (std::byte*)buffer_to_read + parsed;
 		size_t content_max = receive_buffer_.size - parsed;
 		result = create_and_forward_request(method, method_len, path, path_len, num_headers, content_ptr, content_max);
+
+		if(content_left_ > 0)
+		{
+			prepared_request_.content_ptr = (void*)parsed;
+			prepared_request_.content_size = content_max;
+		}
+
+	}
+	else if (pret == -2)// request is incomplete
+		result = RX_PROTOCOL_OK;
+	else if (pret == -1)
+		result = RX_PROTOCOL_PARSING_ERROR;
+	else
+		result = RX_PROTOCOL_COLLECT_ERROR;
+
+	return result;
+}
+
+rx_protocol_result_t http_parser::received_response (recv_protocol_packet packet)
+{
+	const char* msg;
+	int pret, minor_version;
+	int status_code = 0;
+	size_t buflen = 0, prevbuflen = 0, msg_len, num_headers;
+	const char* buffer_to_read = nullptr;
+	rx_protocol_result_t result;
+
+	if (content_left_ > 0)
+	{
+		if (packet.buffer->size < content_left_)
+		{
+			// we need to read even more data!!!!
+			result = rx_push_to_packet(&receive_buffer_
+				, packet.buffer->buffer_ptr
+				, packet.buffer->size);
+			if (result != RX_PROTOCOL_OK)
+				return result;
+			prepared_response_.content_size += packet.buffer->size;
+			content_left_ -= packet.buffer->size;
+
+			return RX_PROTOCOL_OK;
+		}
+		else if (packet.buffer->size == content_left_)
+		{
+			// we read everything
+			result = rx_push_to_packet(&receive_buffer_
+				, packet.buffer->buffer_ptr
+				, packet.buffer->size);
+			prepared_response_.content_size += content_left_;
+			content_left_ = 0;
+			send_current_request();
+
+			rx_reinit_packet_buffer(&receive_buffer_);
+
+			return RX_PROTOCOL_OK;
+		}
+		else
+		{
+			// we read everything
+			result = rx_push_to_packet(&receive_buffer_
+				, packet.buffer->buffer_ptr
+				, content_left_);
+
+			RX_ASSERT(packet.buffer->size > content_left_);
+			// we read everything and even more
+			prepared_response_.content_size += content_left_;
+			content_left_ = 0;
+			send_current_response();
+
+			rx_reinit_packet_buffer(&receive_buffer_);
+
+			// now do the even more stuff
+			result = rx_push_to_packet(&receive_buffer_
+				, packet.buffer->buffer_ptr + content_left_
+				, packet.buffer->size - content_left_);
+			if (result != RX_PROTOCOL_OK)
+				return result;
+
+			buflen = receive_buffer_.size;
+			buffer_to_read = (const char*)(receive_buffer_.buffer_ptr);
+
+			return RX_PROTOCOL_OK;
+		}
+	}
+	else
+	{
+		prevbuflen = receive_buffer_.size;
+
+		result = rx_push_to_packet(&receive_buffer_, packet.buffer->buffer_ptr, packet.buffer->size);
+		if (result != RX_PROTOCOL_OK)
+			return result;
+
+		buflen = receive_buffer_.size;
+		buffer_to_read = (const char*)(receive_buffer_.buffer_ptr);
+	}
+	num_headers = sizeof(headers_buffer_) / sizeof(headers_buffer_[0]);
+	pret = phr_parse_response(buffer_to_read, buflen, &minor_version, &status_code, &msg, &msg_len, headers_buffer_, &num_headers, prevbuflen);
+	if (pret > 0)
+	{
+		size_t parsed = pret;
+		std::byte* content_ptr = (std::byte*)buffer_to_read + parsed;
+		size_t content_max = receive_buffer_.size - parsed;
+		result = create_and_forward_response(status_code, msg, msg_len, num_headers, content_ptr, content_max);
 
 		rx_reinit_packet_buffer(&receive_buffer_);
 	}
@@ -206,7 +327,7 @@ rx_protocol_result_t http_parser::create_and_forward_request (const char* method
 	}
 	request.path = rx_url_decode(str_path.c_str(), str_path.size());
 	idx++;
-	if (idx < path_len)
+	if (!simple_ && idx < path_len)
 	{
 		size_t idx_start = idx;
 		string_type param_name;
@@ -266,32 +387,72 @@ rx_protocol_result_t http_parser::create_and_forward_request (const char* method
 	size_t content_len = 0;
 	for (size_t i = 0; i < num_headers; i++)
 	{
-		string_type name;
-		string_type val;
+		string_view_type name;
+		string_view_type val;
 		if (headers_buffer_[i].name_len > 0)
-			name.assign(headers_buffer_[i].name, headers_buffer_[i].name_len);
+			name = string_view_type(headers_buffer_[i].name, headers_buffer_[i].name_len);
 		if (headers_buffer_[i].value_len > 0)
-			val.assign(headers_buffer_[i].value, headers_buffer_[i].value_len);
+			val = string_view_type(headers_buffer_[i].value, headers_buffer_[i].value_len);
 		if (name == "Content-Length")
 		{
 			std::from_chars(headers_buffer_[i].value, headers_buffer_[i].value + headers_buffer_[i].value_len, content_len);
 		}
-		request.headers.emplace(std::move(name), std::move(val));
+		request.headers.emplace(string_view_type(headers_buffer_[i].name, headers_buffer_[i].name_len), string_view_type(val.data(), val.size()));
 	}
 
 	if (content_len > 0 && content_max_size > 0)
 	{
-		request.content = byte_string(content_ptr, content_ptr + std::min(content_len, content_max_size));
+		request.content_ptr = content_ptr;
+		request.content_size = std::min(content_len, content_max_size);
+	}
+	else
+	{
+		request.content_ptr = nullptr;
+		request.content_size = 0;
 	}
 
 	if (content_len > content_max_size)
-	{
+	{	
 		prepared_request_ = std::move(request);
 		content_left_ = content_len - content_max_size;
 		return RX_PROTOCOL_OK;
 	}
+
+	rx_reinit_packet_buffer(&receive_buffer_);
+
 	if (callback)
-		return callback(std::move(std::move(request)));
+		return callback(std::move(request));
+	else
+		return RX_PROTOCOL_OK;
+}
+
+rx_protocol_result_t http_parser::create_and_forward_response (int status_code, const char* msg, size_t msg_len, size_t num_headers, std::byte* content_ptr, size_t content_max_size)
+{
+	http_parsed_response response;
+	response.status = status_code;
+	response.message = string_view_type(msg, msg_len);
+	for (size_t i = 0; i < num_headers; i++)
+	{
+		string_view_type name;
+		string_view_type val;
+		if (headers_buffer_[i].name_len > 0)
+			name = string_view_type(headers_buffer_[i].name, headers_buffer_[i].name_len);
+		if (headers_buffer_[i].value_len > 0)
+			val = string_view_type(headers_buffer_[i].value, headers_buffer_[i].value_len);
+		response.headers.emplace(name, val);
+	}
+	if (content_ptr && content_max_size > 0)
+	{
+		response.content_ptr = content_ptr;
+		response.content_size = content_max_size;
+	}
+	else
+	{
+		response.content_ptr = nullptr;
+		response.content_size = 0;
+	}
+	if (client_callback)
+		return client_callback(std::move(response));
 	else
 		return RX_PROTOCOL_OK;
 }
@@ -302,8 +463,22 @@ void http_parser::send_current_request ()
 		callback(std::move(prepared_request_));
 }
 
+void http_parser::send_current_response ()
+{
+	if (client_callback)
+		client_callback(std::move(prepared_response_));
+}
+
+rx_const_packet_buffer http_parser::create_const_buffer ()
+{
+	return rx_const_packet_buffer{ receive_buffer_.buffer_ptr, receive_buffer_.size, 0 };
+}
+
 
 // Class protocols::rx_http::http_parsed_request 
+
+
+// Class protocols::rx_http::http_parsed_response 
 
 
 } // namespace rx_http

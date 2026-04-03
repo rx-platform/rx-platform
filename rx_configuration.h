@@ -22,6 +22,7 @@
 #define RX_NS_PORT_CLASSES_NAME "ports"
 #define RX_NS_OPC_CLASSES_NAME "opc"
 #define RX_NS_MQTT_CLASSES_NAME "mqtt"
+#define RX_NS_KNX_CLASSES_NAME "knx"
 #define RX_NS_SUPPORT_CLASSES_NAME "support"
 #define RX_NS_SIMULATION_CLASSES_NAME "simulation"
 #define RX_NS_TERMINAL_NAME "term"
@@ -404,8 +405,8 @@
 #define RX_OPCUA_CLIENT_TRANSPORT_OPTIONS_TYPE_ID 0xc00009b
 
 
-#define RX_OPCUA_ENDPOINT_DATA_NAME "OpcEndpointBindData"
-#define RX_OPCUA_ENDPOINT_DATA_ID 0xc0000a3
+#define RX_BIND_STRING_DATA_NAME "StringBindData"
+#define RX_BIND_STRING_DATA_ID 0xc0000a3
 
 #define RX_OPCUA_SEC_BASE_PORT_TYPE_NAME "OpcSecBase"
 #define RX_OPCUA_SEC_BASE_PORT_TYPE_ID 0xc000080
@@ -480,6 +481,20 @@
 #define RX_MQTT_SIMPLE_CLIENT_PORT_TYPE_ID 0xc0000be
 #define RX_MQTT_SIMPLE_CLIENT_RELATION_TYPE_NAME "MqttSimpleClientConnection"
 #define RX_MQTT_SIMPLE_CLIENT_RELATION_TYPE_ID 0xc0000bf
+
+
+
+#define RX_KNX_IP_PORT_TYPE_NAME "KnxIpPort"
+#define RX_KNX_IP_PORT_TYPE_ID 0xc00011e
+
+#define RX_KNX_IP_PORT_OPTIONS_TYPE_NAME "KnxIpPortOptions"
+#define RX_KNX_IP_PORT_OPTIONS_TYPE_ID 0xc00011f
+#define RX_KNX_IP_PORT_STATUS_TYPE_NAME "KnxIpPortStatus"
+#define RX_KNX_IP_PORT_STATUS_TYPE_ID 0xc000120
+
+
+#define RX_KNX_SOURCE_TYPE_NAME "KnxSource"
+#define RX_KNX_SOURCE_TYPE_ID 0xc000121
 
 
 #define RX_MQTT_SERVER_BASE_PORT_TYPE_NAME "MqttServerBase"
@@ -739,6 +754,8 @@
 #define RX_NS_WS_TYPE_NAME "WSProtocol"
 #define RX_NS_WS_TYPE_ID 0xc0000b4
 
+#define RX_NS_WS_CLIENT_TYPE_NAME "WSClientProtocol"
+#define RX_NS_WS_CLIENT_TYPE_ID 0xc00011d
 
 #define RX_PATH_BIND_TYPE_NAME "PathBindData"
 #define RX_PATH_BIND_TYPE_ID 0xc00010d
@@ -847,7 +864,7 @@
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc00011c!!!! 
+// last is 0xc00011d!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

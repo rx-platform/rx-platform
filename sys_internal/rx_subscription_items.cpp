@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_subscription_items.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -161,6 +161,15 @@ rx_message_type_t remove_items_request::type_id = rx_remove_items_request_id;
 rx_result remove_items_request::serialize (base_meta_writer& stream) const
 {
 	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.start_array("items", items.size()))
+		return stream.get_error();
+	for (const auto& one : items)
+	{
+		if (!stream.write_uint("handle", one)) 
+			return stream.get_error();
+	}
+	if (!stream.end_array())
 		return stream.get_error();
 	return true;
 }
@@ -826,6 +835,306 @@ rx_result item_result_data::deserialize (base_meta_reader& stream)
 	if (!stream.read_string("errMsg", error_text))
 		return stream.get_error();
 	return true;
+}
+
+
+// Class rx_internal::rx_protocol::messages::items_messages::add_event_item_data 
+
+
+rx_result add_event_item_data::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uint("client", client_handle))
+		return stream.get_error();
+	if (!stream.write_string("path", path.c_str()))
+		return stream.get_error();
+	if (!stream.write_string("queue", queue.c_str()))
+		return stream.get_error();
+	if (!stream.write_bool("active", active))
+		return stream.get_error();
+	if (!stream.write_item_reference("type", data_type))
+		return stream.get_error();
+	return true;
+}
+
+rx_result add_event_item_data::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_uint("client", client_handle))
+		return stream.get_error();
+	if (!stream.read_string("path", path))
+		return stream.get_error();
+	if (!stream.read_string("queue", queue))
+		return stream.get_error();
+	if (!stream.read_bool("active", active))
+		return stream.get_error();
+	if(!stream.read_item_reference("type", data_type))
+		return stream.get_error();
+	return true;
+}
+
+
+// Class rx_internal::rx_protocol::messages::items_messages::remove_event_items_response 
+
+string_type remove_event_items_response::type_name = "removeEvtItemsResp";
+
+rx_message_type_t remove_event_items_response::type_id = rx_remove_event_items_response_id;
+
+
+const string_type& remove_event_items_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t remove_event_items_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::items_messages::add_event_items_response 
+
+string_type add_event_items_response::type_name = "addEvtItemsResp";
+
+rx_message_type_t add_event_items_response::type_id = rx_add_event_items_response_id;
+
+
+const string_type& add_event_items_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t add_event_items_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+rx_result add_event_items_response::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.start_array("results", results.size()))
+		return stream.get_error();
+	for (const auto& one : results)
+	{
+		if (!stream.start_object("item"))
+			return stream.get_error();
+		auto one_result = one.serialize(stream);
+		if (!one_result)
+		{
+			one_result.register_error("Unable to serialize item");
+			return one_result;
+		}
+		if (!stream.end_object())
+			return stream.get_error();
+	}
+	if (!stream.end_array())
+		return stream.get_error();
+	return true;
+}
+
+rx_result add_event_items_response::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	if (!stream.start_array("results"))
+		return stream.get_error();
+	while (!stream.array_end())
+	{
+		add_item_result_data one;
+		if (!stream.start_object("item"))
+			return stream.get_error();
+		auto one_result = one.deserialize(stream);
+		if (!one_result)
+		{
+			one_result.register_error("Unable to deserialize item");
+			return one_result;
+		}
+		if (!stream.end_object())
+			return stream.get_error();
+		results.emplace_back(one);
+	}
+	return true;
+}
+
+
+// Class rx_internal::rx_protocol::messages::items_messages::add_event_items_request 
+
+string_type add_event_items_request::type_name = "addEvtItemsReq";
+
+rx_message_type_t add_event_items_request::type_id = rx_add_event_items_request_id;
+
+
+rx_result add_event_items_request::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.start_array("items", items.size()))
+		return stream.get_error();
+	for (const auto& one : items)
+	{
+		if (!stream.start_object("item"))
+			return stream.get_error();
+		auto one_result = one.serialize(stream);
+		if (!one_result)
+		{
+			one_result.register_error("Unable to serialize item");
+			return one_result;
+		}
+		if (!stream.end_object())
+			return stream.get_error();
+	}
+	if (!stream.end_array())
+		return stream.get_error();
+	return true;
+}
+
+rx_result add_event_items_request::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	if (!stream.start_array("items"))
+		return stream.get_error();
+	while (!stream.array_end())
+	{
+		add_event_item_data one;
+		if (!stream.start_object("item"))
+			return stream.get_error();
+		auto one_result = one.deserialize(stream);
+		if (!one_result)
+		{
+			one_result.register_error("Unable to deserialize item");
+			return one_result;
+		}
+		if (!stream.end_object())
+			return stream.get_error();
+		items.emplace_back(one);
+	}
+	return true;
+}
+
+message_ptr add_event_items_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	std::vector<event_subscription_item> subs_items;
+	subs_items.reserve(items.size());
+	for (const auto& one : items)
+	{
+		event_subscription_item temp;
+		temp.local_handle = 0;
+		temp.client_handle = one.client_handle;
+		temp.path = one.path;
+		temp.active = one.active;
+		temp.queue = one.queue;
+		temp.type = one.data_type;
+		subs_items.emplace_back(std::move(temp));
+	}
+	std::vector<rx_result_with<runtime_handle_t> > results;
+	auto result = conn->add_event_items(subscription_id, subs_items, results);
+	if (result)
+	{
+		auto response = std::make_unique<add_event_items_response>();
+		response->request_id = request_id;
+		response->subscription_id = subscription_id;
+		response->results.reserve(results.size());
+		for (auto& one : results)
+		{
+			response->results.emplace_back(std::move(one));
+		}
+		return response;
+	}
+	else
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+}
+
+const string_type& add_event_items_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t add_event_items_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::items_messages::remove_event_items_request 
+
+string_type remove_event_items_request::type_name = "removeEvtItemsReq";
+
+rx_message_type_t remove_event_items_request::type_id = rx_remove_event_items_request_id;
+
+
+rx_result remove_event_items_request::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.start_array("items", items.size()))
+		return stream.get_error();
+	for (const auto& one : items)
+	{
+		if (!stream.write_uint("handle", one))
+			return stream.get_error();
+	}
+	if (!stream.end_array())
+		return stream.get_error();
+	return true;
+}
+
+rx_result remove_event_items_request::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	if (!stream.start_array("items"))
+		return stream.get_error();
+	while (!stream.array_end())
+	{
+		runtime_handle_t item;
+		if (!stream.read_uint("handle", item))
+			return stream.get_error();
+		items.emplace_back(item);
+	}
+	return true;
+}
+
+message_ptr remove_event_items_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	std::vector<rx_result> results;
+	auto result = conn->remove_event_items(subscription_id, std::move(items), results);
+	if (result)
+	{
+		auto response = std::make_unique<remove_event_items_response>();
+		response->subscription_id = subscription_id;
+		response->request_id = request_id;
+		for (auto& one : results)
+			response->results.emplace_back(std::move(one));
+		return response;
+	}
+	return std::make_unique<error_message>(result, 9, request_id);
+}
+
+const string_type& remove_event_items_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t remove_event_items_request::get_type_id ()
+{
+  return type_id;
+
 }
 
 

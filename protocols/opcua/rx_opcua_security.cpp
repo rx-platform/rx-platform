@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_security.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -109,68 +109,6 @@ void opcua_sec_none_endpoint::close_endpoint ()
 }
 
 
-// Class protocols::opcua::opcua_transport::opcua_sec_none_port 
-
-std::map<rx_node_id, opcua_sec_none_port::smart_ptr> opcua_sec_none_port::runtime_instances;
-
-opcua_sec_none_port::opcua_sec_none_port()
-{
-    construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
-    {
-        auto rt = std::make_unique<opcua_sec_none_endpoint>(this);
-        return construct_func_type::result_type{ &rt->stack_entry, std::move(rt) };
-    };
-}
-
-
-
-rx_result opcua_sec_none_port::initialize_runtime (runtime::runtime_init_context& ctx)
-{
-    auto result = opcua_sec_none_base::initialize_runtime(ctx);
-    if (result)
-    {
-        result = status.initialize(ctx);
-        if (result)
-        {
-            registered_endpoint_data data;
-
-            data.security_mode = security_mode_t::none;
-            data.policy_uri = "http://opcfoundation.org/UA/SecurityPolicy#None";
-            data.security_level = 0;
-            data.transport_profile_uri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary";
-
-            opcua_resources_repository::instance().register_endpoint(ctx.meta.get_full_path(), data);
-        }
-    }
-    return result;
-}
-
-rx_result opcua_sec_none_port::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
-{
-    auto result = opcua_sec_none_base::deinitialize_runtime(ctx);
-
-    opcua_resources_repository::instance().unregister_endpoint(ctx.meta.get_full_path());
-
-    return result;
-}
-
-void opcua_sec_none_port::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
-{
-    if (local_addr.is_null())
-    {
-        string_type str_addr;
-
-        auto ascii = binder_data.get_value("Bind.Endpoint");
-        if (!ascii.is_null() && ascii.is_string())
-        {
-            str_addr = ascii.get_string();
-            io::string_address addr(str_addr);
-            local_addr = &addr;
-        }
-    }
-}
-
-
 // Class protocols::opcua::opcua_transport::opcua_sec_none_client_port 
 
 std::map<rx_node_id, opcua_sec_none_client_port::smart_ptr> opcua_sec_none_client_port::runtime_instances;
@@ -253,6 +191,78 @@ rx_protocol_result_t opcua_sec_none_client_endpoint::disconnected_function (rx_p
         ret = rx_notify_disconnected(reference, session, reason);
     }
     return ret;
+}
+
+
+// Class protocols::opcua::opcua_transport::opcua_sec_none_port 
+
+std::map<rx_node_id, opcua_sec_none_port::smart_ptr> opcua_sec_none_port::runtime_instances;
+
+opcua_sec_none_port::opcua_sec_none_port()
+{
+    construct_func = [this](const protocol_address* local_address, const protocol_address* remote_address)
+        {
+            auto rt = std::make_unique<opcua_sec_none_endpoint>(this);
+            return construct_func_type::result_type{ &rt->stack_entry, std::move(rt) };
+        };
+}
+
+
+
+rx_result opcua_sec_none_port::initialize_runtime (runtime::runtime_init_context& ctx)
+{
+    auto result = opcua_sec_none_base::initialize_runtime(ctx);
+    if (result)
+    {
+        result = status.initialize(ctx);
+        if (result)
+        {
+            registered_endpoint_data data;
+
+            data.security_mode = security_mode_t::none;
+            data.policy_uri = "http://opcfoundation.org/UA/SecurityPolicy#None";
+            data.security_level = 0;
+            data.transport_profile_uri = "http://opcfoundation.org/UA-Profile/Transport/uatcp-uasc-uabinary";
+
+            opcua_resources_repository::instance().register_endpoint(ctx.meta.get_full_path(), data);
+        }
+    }
+    return result;
+}
+
+rx_result opcua_sec_none_port::deinitialize_runtime (runtime::runtime_deinit_context& ctx)
+{
+    auto result = opcua_sec_none_base::deinitialize_runtime(ctx);
+
+    opcua_resources_repository::instance().unregister_endpoint(ctx.meta.get_full_path());
+
+    return result;
+}
+
+void opcua_sec_none_port::extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr)
+{
+    if (local_addr.is_null())
+    {
+        string_type str_addr;
+
+        auto ascii = binder_data.get_value("Bind.Endpoint");
+        if (!ascii.is_null() && ascii.is_string())
+        {
+            str_addr = ascii.get_string();
+            io::string_address addr(str_addr);
+            local_addr = &addr;
+        }
+    }
+}
+
+void opcua_sec_none_port::stack_assembled ()
+{
+    listen(nullptr, nullptr);
+}
+
+rx_result opcua_sec_none_port::start_listen (const protocol_address* local_address, const protocol_address* remote_address)
+{
+    return true;
 }
 
 

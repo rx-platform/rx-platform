@@ -759,7 +759,7 @@ rx_result method_data::execute (context_execute_data&& data, std::unique_ptr<str
         ss << "Method "
             << full_path
             << " started execute request with id:"
-            << data.transaction_id;
+            << new_trans;
         RUNTIME_LOG_DEBUG("method_data", 500, ss.str());
     }
     result = method_ptr->execute(std::move(send_data), ctx);

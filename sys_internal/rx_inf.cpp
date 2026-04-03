@@ -45,6 +45,7 @@
 #include "runtime_internal/rx_runtime_internal.h"
 #include "upython/upy_internal.h"
 #include "sys_internal/rx_async_functions.h"
+#include "system/runtime/rx_event_manager.h"
 
 
 namespace rx_internal {
@@ -241,11 +242,16 @@ rx_result server_runtime::start (hosting::rx_platform_host* host, const runtime_
 		low_priority_->start(6000);
 	}
 
+	events::runtime_events_manager::instance().start(host, data, io_data);
+
 	return true;
 }
 
 void server_runtime::stop ()
 {
+
+
+	events::runtime_events_manager::instance().stop();
 
 	if (io_pool_)
 		io_pool_->get_pool().end();

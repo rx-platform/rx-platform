@@ -4,7 +4,7 @@
 *
 *  system\threads\rx_job.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -41,8 +41,8 @@
 
 namespace rx_platform {
 namespace threads {
-class timer;
 class job_thread;
+class timer;
 
 } // namespace threads
 } // namespace rx_platform

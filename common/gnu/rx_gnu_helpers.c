@@ -115,11 +115,15 @@ void handle_error(const char* file, int lineno, const char* msg) {
 int g_is_debug_instance = 0;
 
 
-extern SSL_CTX* g_ssl_ctx;
+SSL_CTX* g_ssl_ctx = NULL;
 
 EVP_MD* g_sha1_evp = NULL;
 EVP_MD* g_sha256_evp = NULL;
 
+RX_COMMON_API SSL_CTX* get_ssl_context()
+{
+    return g_ssl_ctx;
+}
 
 void create_ssl_context()
 {
@@ -269,7 +273,7 @@ RX_COMMON_API void rx_unload_library(rx_module_handle_t module_handle)
 RX_COMMON_API rx_timer_ticks_t rx_get_tick_count()
 {
 	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 	uint64_t ret = (uint64_t)ts.tv_sec * 1000;
 	ret = ret + (uint64_t)ts.tv_nsec / 1000000ul;
 	return (uint64_t)ret;
@@ -277,7 +281,7 @@ RX_COMMON_API rx_timer_ticks_t rx_get_tick_count()
 RX_COMMON_API rx_timer_ticks_t rx_get_us_ticks()
 {
 	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+	clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 	uint64_t ret = (uint64_t)ts.tv_sec * 1000000ul;
 	ret = ret + (uint64_t)ts.tv_nsec / 1000ul;
 	return ret;
@@ -514,13 +518,19 @@ RX_COMMON_API uint32_t rx_handle_wait(sys_handle_t what, uint32_t timeout)
     pfds.revents = 0;
     ret = poll(&pfds, 1, (int)timeout);
     if (ret == 0)
+    {
         return RX_WAIT_TIMEOUT;
+    }
     else if (ret == 1)
     {
         //do the read to release it
         ret = read(what, &buff, sizeof(buff));
         if (ret > 0)
             return RX_WAIT_0;
+    }
+    else
+    {
+        perror("handle wait pool:");
     }
     return RX_WAIT_ERROR;
 

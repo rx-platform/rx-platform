@@ -4,27 +4,27 @@
 *
 *  sys_internal\rx_internal_protocol.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -77,7 +77,7 @@ rx_result serialize_message(base_meta_writer& stream, int requestId, messages::r
 	return true;
 }
 
-// Class rx_internal::rx_protocol::rx_client_connection 
+// Class rx_internal::rx_protocol::rx_client_connection
 
 rx_client_connection::rx_client_connection (rx_json_protocol_client_port* port)
       : executer_(-1),
@@ -332,7 +332,7 @@ void rx_client_connection::timer_tick ()
 }
 
 
-// Class rx_internal::rx_protocol::rx_json_protocol_client_port 
+// Class rx_internal::rx_protocol::rx_json_protocol_client_port
 
 std::map<rx_node_id,rx_json_protocol_client_port::smart_ptr> rx_json_protocol_client_port::runtime_instances;
 
@@ -422,7 +422,7 @@ rx_result rx_json_protocol_client_port::stop_runtime (runtime_stop_context& ctx)
 }
 
 
-// Class rx_internal::rx_protocol::rx_protocol_client_connection 
+// Class rx_internal::rx_protocol::rx_protocol_client_connection
 
 std::atomic<messages::rx_request_id_t> rx_protocol_client_connection::g_next_request_id = 1;
 
@@ -489,10 +489,10 @@ void rx_protocol_client_connection::timer_tick ()
 }
 
 
-// Class rx_internal::rx_protocol::rx_protocol_client_user 
+// Class rx_internal::rx_protocol::rx_protocol_client_user
 
 
-// Class rx_internal::rx_protocol::rx_json_protocol_port 
+// Class rx_internal::rx_protocol::rx_json_protocol_port
 
 rx_json_protocol_port::rx_json_protocol_port()
 {
@@ -518,10 +518,10 @@ rx_result rx_json_protocol_port::initialize_runtime (runtime_init_context& ctx)
 }
 
 
-// Class rx_internal::rx_protocol::rx_local_subscription 
+// Class rx_internal::rx_protocol::rx_local_subscription
 
 
-// Class rx_internal::rx_protocol::rx_protocol_connection 
+// Class rx_internal::rx_protocol::rx_protocol_connection
 
 rx_protocol_connection::rx_protocol_connection (rx_mode_type mode)
       : current_directory_path_("/world"),
@@ -656,6 +656,19 @@ rx_result rx_protocol_connection::add_items (const rx_uuid& id, const std::vecto
 	}
 }
 
+rx_result rx_protocol_connection::add_event_items (const rx_uuid& id, const std::vector<event_subscription_item>& items, std::vector<rx_result_with<runtime_handle_t> >& results)
+{
+	auto it = event_subscriptions_.find(id);
+	if (it != event_subscriptions_.end())
+	{
+		return it->second->add_items(items, results);
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
 rx_result rx_protocol_connection::write_items (const rx_uuid& id, runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results)
 {
 	auto it = subscriptions_.find(id);
@@ -695,6 +708,19 @@ rx_result rx_protocol_connection::remove_items (const rx_uuid& id, std::vector<r
 	}
 }
 
+rx_result rx_protocol_connection::remove_event_items (const rx_uuid& id, std::vector<runtime_handle_t>&& items, std::vector<rx_result>& results)
+{
+	auto it = event_subscriptions_.find(id);
+	if (it != event_subscriptions_.end())
+	{
+		return it->second->remove_items(std::move(items), results);
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
 void rx_protocol_connection::close_connection ()
 {
 	current_directory_ = rx_directory_ptr::null_ptr;
@@ -720,8 +746,51 @@ message_ptr rx_protocol_connection::set_context (api::rx_context ctx, const mess
 	return message_ptr();
 }
 
+rx_result rx_protocol_connection::connect_event_subscription (event_subscription_data& data)
+{
+	if (data.subscription_id.is_null())
+	{
+		data.subscription_id = rx_uuid::create_new();
+		auto temp = std::make_unique<rx_protocol_event_subscription>(data, smart_this(), mode_);
+		event_subscriptions_.emplace(data.subscription_id, std::move(temp));
+		return true;
+	}
+	else
+	{
+		return "Subscription reuse not implemented yet!";
+	}
+}
 
-// Class rx_internal::rx_protocol::rx_protocol_subscription 
+rx_result rx_protocol_connection::delete_event_subscription (const rx_uuid& id)
+{
+	auto it = event_subscriptions_.find(id);
+	if (it != event_subscriptions_.end())
+	{
+		it->second->destroy();
+		event_subscriptions_.erase(it);
+		return true;
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
+rx_result rx_protocol_connection::update_event_subscription (event_subscription_data& data)
+{
+	auto it = event_subscriptions_.find(data.subscription_id);
+	if (it != event_subscriptions_.end())
+	{
+		return it->second->update_subscription(data);
+	}
+	else
+	{
+		return "Invalid subscription Id";
+	}
+}
+
+
+// Class rx_internal::rx_protocol::rx_protocol_subscription
 
 rx_protocol_subscription::rx_protocol_subscription (subscription_data& data, rx_protocol_connection_ptr conn, rx_mode_type mode)
       : data_(data)
@@ -877,15 +946,18 @@ rx_result rx_protocol_subscription::add_items (const std::vector<subscription_it
 	size_t idx = 0;
 	for (const auto& one : results)
 	{
-		subscription_item_data temp;
-		temp.local_handle = one.value();
-		temp.client_handle = items[idx].client_handle;
-		temp.path = items[idx].path;
-		temp.active = items[idx].active;
-		temp.trigger_type = items[idx].trigger_type;
-		items_.emplace(one.value(), std::move(temp));
-		handles_.emplace(items[idx].client_handle, one.value());
-		idx++;
+		if (one)
+		{
+			subscription_item_data temp;
+			temp.local_handle = one.value();
+			temp.client_handle = items[idx].client_handle;
+			temp.path = items[idx].path;
+			temp.active = items[idx].active;
+			temp.trigger_type = items[idx].trigger_type;
+			items_.emplace(one.value(), std::move(temp));
+			handles_.emplace(items[idx].client_handle, one.value());
+			idx++;
+		}
 	}
 	return true;
 }
@@ -923,7 +995,7 @@ rx_result rx_protocol_subscription::remove_items (std::vector<runtime_handle_t >
 }
 
 
-// Class rx_internal::rx_protocol::rx_server_connection 
+// Class rx_internal::rx_protocol::rx_server_connection
 
 rx_server_connection::rx_server_connection (rx_json_protocol_port* port)
       : executer_(-1),
@@ -979,10 +1051,10 @@ rx_protocol_result_t rx_server_connection::received (recv_protocol_packet packet
 
 		messages::rx_request_id_t request_id = 0;
 		// read the header first
-			serialization::json_reader reader(temp_version);
-			if (!reader.parse_data(json))
-				return RX_PROTOCOL_PARSING_ERROR;
-				auto request = messages::rx_request_message::create_request_from_stream(request_id, reader);
+        serialization::json_reader reader(temp_version);
+        if (!reader.parse_data(json))
+            return RX_PROTOCOL_PARSING_ERROR;
+        auto request = messages::rx_request_message::create_request_from_stream(request_id, reader);
 		if (request)
 		{
 			rx_post_function_to(get_executer(), smart_this(),
@@ -1082,13 +1154,13 @@ void rx_server_connection::send_message (message_ptr msg)
 }
 
 
-// Class rx_internal::rx_protocol::subscription_data 
+// Class rx_internal::rx_protocol::subscription_data
 
 
-// Class rx_internal::rx_protocol::subscription_item_data 
+// Class rx_internal::rx_protocol::subscription_item_data
 
 
-// Class rx_internal::rx_protocol::rx_opc_protocol_adapter_port 
+// Class rx_internal::rx_protocol::rx_opc_protocol_adapter_port
 
 rx_opc_protocol_adapter_port::rx_opc_protocol_adapter_port()
 {
@@ -1109,7 +1181,7 @@ rx_result rx_opc_protocol_adapter_port::initialize_runtime (runtime_init_context
 }
 
 
-// Class rx_internal::rx_protocol::rx_opc_adapter_endpoint 
+// Class rx_internal::rx_protocol::rx_opc_adapter_endpoint
 
 rx_opc_adapter_endpoint::rx_opc_adapter_endpoint (rx_opc_protocol_adapter_port* port)
       : port_(port)
@@ -1186,7 +1258,7 @@ rx_protocol_result_t rx_opc_adapter_endpoint::received (recv_protocol_packet pac
 		recv_protocol_packet up = rx_create_recv_packet(packet.id, &pack, packet.from, packet.to);
 		return rx_move_packet_up(&stack_entry_, up);
 	}
-	
+
 	return RX_PROTOCOL_PARSING_ERROR;
 }
 
@@ -1205,6 +1277,127 @@ rx_protocol_result_t rx_opc_adapter_endpoint::send (send_protocol_packet packet)
 
 	return rx_move_packet_down(&stack_entry_ , packet);
 }
+
+
+// Class rx_internal::rx_protocol::rx_protocol_event_subscription
+
+rx_protocol_event_subscription::rx_protocol_event_subscription (event_subscription_data& data, rx_protocol_connection_ptr conn, rx_mode_type mode)
+	: connection_(conn)
+	, data_(data)
+{
+	my_subscription_ = rx_create_reference<sys_runtime::subscriptions::rx_event_subscription>(this, mode);
+	if (data.active)
+		my_subscription_->activate();
+	std::ostringstream ss;
+	ss << "Protocol Event subscription "
+		<< data_.subscription_id.to_string()
+		<< " created.";
+	RUNTIME_LOG_TRACE("", 100, ss.str());
+}
+
+
+rx_protocol_event_subscription::~rx_protocol_event_subscription()
+{
+	destroy();
+	std::ostringstream ss;
+	ss << "Protocol Event subscription "
+		<< data_.subscription_id.to_string()
+		<< " destroyed.";
+	RUNTIME_LOG_TRACE("", 100, ss.str());
+}
+
+
+
+rx_result rx_protocol_event_subscription::update_subscription (event_subscription_data& data)
+{
+	return RX_NOT_IMPLEMENTED;
+}
+
+void rx_protocol_event_subscription::destroy ()
+{
+}
+
+rx_result rx_protocol_event_subscription::add_items (const std::vector<event_subscription_item>& items, std::vector<rx_result_with<runtime_handle_t> >& results)
+{
+	results.clear();
+	results.reserve(items.size());
+	for(const auto& one : items)
+	{
+		event_filter filter;
+		filter.paths.push_back(one.path);
+		filter.queues.push_back(one.queue);
+		auto result = my_subscription_->connect_events(one.type, filter);
+		if (!result)
+		{
+			results.push_back(std::move(result));
+		}
+		else
+		{
+			event_subscription_item temp;
+			temp.local_handle = result.value();
+			temp.client_handle = one.client_handle;
+			temp.path = one.path;
+			temp.active = one.active;
+			temp.type = one.type;
+			items_.emplace(result.value(), std::move(temp));
+			handles_.emplace(result.value(), one.client_handle);
+			results.push_back(std::move(result));
+		}
+	}
+	return true;
+}
+
+rx_result rx_protocol_event_subscription::remove_items (std::vector<runtime_handle_t >&& items, std::vector<rx_result>& results)
+{
+	std::vector<runtime_handle_t> local_handles;
+	local_handles.reserve(items.size());
+	for (const auto& one : items)
+	{
+		runtime_handle_t local_handle = 0;
+		auto it = handles_.find(one);
+		if (it != handles_.end())
+		{
+			local_handle = it->second;
+		}
+		local_handles.push_back(local_handle);
+	}
+	for (const auto& one : local_handles)
+	{
+		auto result = my_subscription_->disconnect_events(one);
+		if (result)
+		{
+			items_.erase(one);
+			handles_.erase(one);
+		}
+		results.push_back(std::move(result));
+	}
+	return true;
+}
+
+void rx_protocol_event_subscription::event_fired (runtime_handle_t handle, const simple_event_item& data)
+{
+}
+
+void rx_protocol_event_subscription::event_fired (runtime_handle_t handle, const data_event_item& data)
+{
+	if (connection_)
+	{
+		auto notify_msg = std::make_unique<messages::subscription_messages::subscription_event_fired>();
+		notify_msg->request_id = 0;
+		notify_msg->subscription_id = data_.subscription_id;
+		notify_msg->handle = handles_[handle];
+		notify_msg->data = data.data;
+		notify_msg->queue = data.event_id;
+		notify_msg->time = data.ts;
+		connection_->data_processed(std::move(notify_msg));
+	}
+}
+
+
+// Class rx_internal::rx_protocol::event_subscription_data
+
+
+// Class rx_internal::rx_protocol::event_subscription_item
 
 
 } // namespace rx_protocol

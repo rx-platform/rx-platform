@@ -4,7 +4,7 @@
 *
 *  system\threads\rx_job.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -98,7 +98,9 @@ void job::release_unsafe_ptr ()
 
 void job::process_wrapper ()
 {
+#ifndef RX_DOTNET_WP
     security::secured_scope _(security_context_);
+#endif
     process();
 }
 

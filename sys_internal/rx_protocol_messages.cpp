@@ -203,6 +203,10 @@ rx_result rx_request_message::init_request_messages ()
 	registered_messages_.emplace(subscription_messages::create_subscription_request::type_id, [] { return std::make_unique<subscription_messages::create_subscription_request>(); });
 	registered_messages_.emplace(subscription_messages::update_subscription_request::type_id, [] { return std::make_unique<subscription_messages::update_subscription_request>(); });
 	registered_messages_.emplace(subscription_messages::delete_subscription_request::type_id, [] { return std::make_unique<subscription_messages::delete_subscription_request>(); });
+	registered_messages_.emplace(subscription_messages::create_event_subscription_request::type_id, [] { return std::make_unique<subscription_messages::create_event_subscription_request>(); });
+	registered_messages_.emplace(subscription_messages::update_event_subscription_request::type_id, [] { return std::make_unique<subscription_messages::update_event_subscription_request>(); });
+	registered_messages_.emplace(subscription_messages::delete_event_subscription_request::type_id, [] { return std::make_unique<subscription_messages::delete_event_subscription_request>(); });
+
 	// subscription items messages
 	registered_messages_.emplace(items_messages::add_items_request::type_id, [] { return std::make_unique<items_messages::add_items_request>(); });
 	registered_messages_.emplace(items_messages::modify_items_request::type_id, [] { return std::make_unique<items_messages::modify_items_request>(); });
@@ -210,6 +214,9 @@ rx_result rx_request_message::init_request_messages ()
 	registered_messages_.emplace(items_messages::read_items_request::type_id, [] { return std::make_unique<items_messages::read_items_request>(); });
 	registered_messages_.emplace(items_messages::write_items_request::type_id, [] { return std::make_unique<items_messages::write_items_request>(); });
 	registered_messages_.emplace(items_messages::execute_item_request::type_id, [] { return std::make_unique<items_messages::execute_item_request>(); });
+	registered_messages_.emplace(items_messages::add_event_items_request::type_id, [] { return std::make_unique<items_messages::add_event_items_request>(); });
+	registered_messages_.emplace(items_messages::remove_event_items_request::type_id, [] { return std::make_unique<items_messages::remove_event_items_request>(); });
+
 	// special messages
 	registered_messages_.emplace(rx_keep_alive_message::type_id, [] { return std::make_unique<rx_keep_alive_message>(); });
 
@@ -238,6 +245,10 @@ rx_result rx_request_message::init_request_messages ()
 	registered_string_messages_.emplace(subscription_messages::create_subscription_request::type_name, [] { return std::make_unique<subscription_messages::create_subscription_request>(); });
 	registered_string_messages_.emplace(subscription_messages::update_subscription_request::type_name, [] { return std::make_unique<subscription_messages::update_subscription_request>(); });
 	registered_string_messages_.emplace(subscription_messages::delete_subscription_request::type_name, [] { return std::make_unique<subscription_messages::delete_subscription_request>(); });
+	registered_string_messages_.emplace(subscription_messages::create_event_subscription_request::type_name, [] { return std::make_unique<subscription_messages::create_event_subscription_request>(); });
+	registered_string_messages_.emplace(subscription_messages::update_event_subscription_request::type_name, [] { return std::make_unique<subscription_messages::update_event_subscription_request>(); });
+	registered_string_messages_.emplace(subscription_messages::delete_event_subscription_request::type_name, [] { return std::make_unique<subscription_messages::delete_event_subscription_request>(); });
+
 	// subscription items messages
 	registered_string_messages_.emplace(items_messages::add_items_request::type_name, [] { return std::make_unique<items_messages::add_items_request>(); });
 	registered_string_messages_.emplace(items_messages::modify_items_request::type_name, [] { return std::make_unique<items_messages::modify_items_request>(); });
@@ -245,6 +256,9 @@ rx_result rx_request_message::init_request_messages ()
 	registered_string_messages_.emplace(items_messages::read_items_request::type_name, [] { return std::make_unique<items_messages::read_items_request>(); });
 	registered_string_messages_.emplace(items_messages::write_items_request::type_name, [] { return std::make_unique<items_messages::write_items_request>(); });
 	registered_string_messages_.emplace(items_messages::execute_item_request::type_name, [] { return std::make_unique<items_messages::execute_item_request>(); });
+	registered_string_messages_.emplace(items_messages::add_event_items_request::type_name, [] { return std::make_unique<items_messages::add_event_items_request>(); });
+	registered_string_messages_.emplace(items_messages::remove_event_items_request::type_name, [] { return std::make_unique<items_messages::remove_event_items_request>(); });
+
 	// special messages
 	registered_string_messages_.emplace(rx_keep_alive_message::type_name, [] { return std::make_unique<rx_keep_alive_message>(); });
 

@@ -2,9 +2,9 @@
 
 #include "version/rx_version.h"
 
-#define RX_SERVER_NAME "Molecule"
-#define RX_SERVER_MAJOR_VERSION 2
-#define RX_SERVER_MINOR_VERSION 9
+#define RX_SERVER_NAME "Nebula"
+#define RX_SERVER_MAJOR_VERSION 3
+#define RX_SERVER_MINOR_VERSION 1
 #define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
@@ -66,4 +66,7 @@
 // version 2.8.0 added .NET hosting support
 // version 2.8.1 added proper namespace handling
 // version 2.9.0 .NET hosting support version one is done
+// version 2.10.0 added wide events support
+// version 3.0.0 dotnet worker process and events finished with acknowledgement support
+// version 3.1.0 implemented Web Socket server port, and corrected some errors in Web Socket server port
 

@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_blocks.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -50,6 +50,63 @@ namespace rx_platform {
 namespace runtime {
 
 namespace blocks {
+
+
+
+
+
+class filter_runtime : public rx::pointers::reference_object  
+{
+	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+filter runtime. basic implementation of an filter runtime");
+
+	DECLARE_REFERENCE_PTR(filter_runtime);
+    friend class structure::filter_data;
+
+  public:
+      filter_runtime();
+
+      filter_runtime (lock_reference_struct* extern_data);
+
+      virtual ~filter_runtime();
+
+
+      string_type get_type_name () const;
+
+      virtual rx_result initialize_filter (runtime::runtime_init_context& ctx);
+
+      virtual rx_result start_filter (runtime::runtime_start_context& ctx);
+
+      virtual rx_result stop_filter (runtime::runtime_stop_context& ctx);
+
+      virtual rx_result deinitialize_filter (runtime::runtime_deinit_context& ctx);
+
+
+      static string_type type_name;
+
+
+  protected:
+
+      rx_result filter_changed ();
+
+
+  private:
+
+      virtual bool supports_input () const;
+
+      virtual bool supports_output () const;
+
+      virtual rx_result filter_input (rx_value& val);
+
+      virtual rx_result filter_output (rx_simple_value& val);
+
+
+
+      structure::filter_data* container_;
+
+
+};
+
 
 
 
@@ -106,6 +163,8 @@ mapper runtime. basic implementation of an mapper runtime");
       data::runtime_data_model get_event_arguments ();
 
       data::runtime_data_model get_data_type ();
+
+      void mapper_event_result_received (rx_result&& result, runtime_transaction_id_t id);
 
 
       rx_value_t get_value_type () const;
@@ -175,7 +234,7 @@ mapper runtime. basic implementation of an mapper runtime");
 
       virtual void mapper_result_received (rx_result&& result, runtime_transaction_id_t id, runtime_process_context* ctx);
 
-      virtual void mapped_event_fired (rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx);
+      virtual void mapped_event_fired (runtime_transaction_id_t trans_id, rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx);
 
       virtual void mapper_execute_result_received (rx_result&& result, values::rx_simple_value out_data, runtime_transaction_id_t id, runtime_process_context* ctx);
 
@@ -396,12 +455,17 @@ event runtime. basic implementation of an event runtime");
 
   protected:
 
-      void event_fired (event_fired_data&& data);
+      void event_fired (runtime_transaction_id_t trans_id, rx_simple_value data, string_type queue, bool state, bool remove);
+
+      void event_fired (runtime_transaction_id_t trans_id, data::runtime_values_data data, string_type queue, bool state, bool remove);
 
       data::runtime_data_model get_arguemnts ();
 
 
   private:
+
+      virtual void event_result_received (rx_result&& result, runtime_transaction_id_t id);
+
 
 
       structure::event_data* container_;
@@ -504,63 +568,6 @@ data type runtime. basic implementation of an data runtime");
   protected:
 
   private:
-
-
-};
-
-
-
-
-
-
-class filter_runtime : public rx::pointers::reference_object  
-{
-	DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-filter runtime. basic implementation of an filter runtime");
-
-	DECLARE_REFERENCE_PTR(filter_runtime);
-    friend class structure::filter_data;
-
-  public:
-      filter_runtime();
-
-      filter_runtime (lock_reference_struct* extern_data);
-
-      virtual ~filter_runtime();
-
-
-      string_type get_type_name () const;
-
-      virtual rx_result initialize_filter (runtime::runtime_init_context& ctx);
-
-      virtual rx_result start_filter (runtime::runtime_start_context& ctx);
-
-      virtual rx_result stop_filter (runtime::runtime_stop_context& ctx);
-
-      virtual rx_result deinitialize_filter (runtime::runtime_deinit_context& ctx);
-
-
-      static string_type type_name;
-
-
-  protected:
-
-      rx_result filter_changed ();
-
-
-  private:
-
-      virtual bool supports_input () const;
-
-      virtual bool supports_output () const;
-
-      virtual rx_result filter_input (rx_value& val);
-
-      virtual rx_result filter_output (rx_simple_value& val);
-
-
-
-      structure::filter_data* container_;
 
 
 };

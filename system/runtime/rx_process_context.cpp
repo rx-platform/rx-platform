@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_process_context.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -31,10 +31,10 @@
 #include "pch.h"
 
 
-// rx_operational
-#include "system/runtime/rx_operational.h"
 // rx_event_manager
 #include "system/runtime/rx_event_manager.h"
+// rx_operational
+#include "system/runtime/rx_operational.h"
 // rx_rt_struct
 #include "system/runtime/rx_rt_struct.h"
 // rx_process_context
@@ -57,6 +57,7 @@ structs_type g_empty_structs;
 source_writes_type g_empty_source_writes;
 source_updates_type g_empty_source_updates;
 source_results_type g_empty_source_results;
+event_results_type g_empty_event_results;
 variable_results_type g_empty_variable_results;
 block_variable_results_type g_empty_block_variable_results;
 programs_type g_empty_programs;
@@ -101,7 +102,6 @@ bool runtime_process_context::should_do_step()
 runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, const_size_vector<security::security_guard>* guards, events::runtime_events_manager* events)
       : tags_(tags),
         binded_(binded),
-        events_manager_(events),
         object_changed(nullptr),
         current_step_(runtime_process_step::idle),
         now_(rx_time::now().c_data().t_value),
@@ -481,6 +481,15 @@ void runtime_process_context::event_pending (event_fired_struct<structure::event
     events_.emplace_back(std::move(data));
 }
 
+void runtime_process_context::event_result_pending (write_result_struct<structure::event_data> data)
+{
+    locks::auto_lock_t _(&context_lock_);
+    if (state_ >= runtime_context_state::stopping)
+        return;
+    turn_on_pending<runtime_process_step::source_inputs>();
+    event_results_.emplace_back(std::move(data));
+}
+
 events_type& runtime_process_context::get_events_for_process ()
 {
     locks::auto_lock_t _(&context_lock_);
@@ -619,21 +628,21 @@ runtime_handle_t runtime_process_context::connect (const string_type& path, uint
     }
 }
 
-std::pair<source_results_type*, source_updates_type*> runtime_process_context::get_source_inputs ()
+std::tuple<event_results_type*, source_results_type*, source_updates_type*> runtime_process_context::get_source_inputs ()
 {
     locks::auto_lock_t _(&context_lock_);
     if (should_do_step<runtime_process_step::source_inputs>())
-        return { &source_results_.get_and_swap() , &source_inputs_.get_and_swap() };
+        return  { &event_results_.get_and_swap() , &source_results_.get_and_swap() , &source_inputs_.get_and_swap() };
     else
-        return { &g_empty_source_results, &g_empty_source_updates };
+        return { &g_empty_event_results, &g_empty_source_results, &g_empty_source_updates };
 }
 
-void runtime_process_context::runtime_dirty (serialize_callback_t callback)
+void runtime_process_context::runtime_dirty (serialize_callback_t callback, data::runtime_values_data save_data)
 {
     locks::auto_lock_t _(&context_lock_);
     if(serialize_trans_id_ ==0)
         serialize_trans_id_ = rx_get_new_transaction_id();
-    serialize_callbacks_[serialize_trans_id_].emplace_back(std::move(callback));
+    serialize_callbacks_[serialize_trans_id_].push_back(serialize_data_t{std::move(callback), std::move(save_data)});
 }
 
 bool runtime_process_context::should_save ()
@@ -647,7 +656,7 @@ bool runtime_process_context::register_save_callback (serialize_callback_t callb
     locks::auto_lock_t _(&context_lock_);
     if (serialize_trans_id_ != 0)
     {
-        serialize_callbacks_[serialize_trans_id_].emplace_back(std::move(callback));
+        serialize_callbacks_[serialize_trans_id_].emplace_back(serialize_data_t {std::move(callback), data::runtime_values_data()});
         return true;
     }
     else

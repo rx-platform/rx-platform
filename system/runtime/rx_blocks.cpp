@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_blocks.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -46,6 +46,90 @@ namespace rx_platform {
 namespace runtime {
 
 namespace blocks {
+
+// Class rx_platform::runtime::blocks::filter_runtime 
+
+string_type filter_runtime::type_name = RX_CPP_FILTER_TYPE_NAME;
+
+filter_runtime::filter_runtime()
+      : container_(nullptr)
+{
+}
+
+filter_runtime::filter_runtime (lock_reference_struct* extern_data)
+      : container_(nullptr)
+    , reference_object(extern_data)
+{
+}
+
+
+filter_runtime::~filter_runtime()
+{
+}
+
+
+
+string_type filter_runtime::get_type_name () const
+{
+  return type_name;
+
+}
+
+rx_result filter_runtime::initialize_filter (runtime::runtime_init_context& ctx)
+{
+	return true;
+}
+
+rx_result filter_runtime::start_filter (runtime::runtime_start_context& ctx)
+{
+	return true;
+}
+
+rx_result filter_runtime::stop_filter (runtime::runtime_stop_context& ctx)
+{
+	return true;
+}
+
+rx_result filter_runtime::deinitialize_filter (runtime::runtime_deinit_context& ctx)
+{
+	return true;
+}
+
+bool filter_runtime::supports_input () const
+{
+  return true;
+
+}
+
+bool filter_runtime::supports_output () const
+{
+  return true;
+
+}
+
+rx_result filter_runtime::filter_input (rx_value& val)
+{
+    return true;
+}
+
+rx_result filter_runtime::filter_output (rx_simple_value& val)
+{
+    return true;
+}
+
+rx_result filter_runtime::filter_changed ()
+{
+    if (container_)
+    {
+        return container_->filter_changed();
+    }
+    else
+    {
+        RX_ASSERT(false);
+        return "Context not binded!";
+    }
+}
+
 
 // Class rx_platform::runtime::blocks::mapper_runtime 
 
@@ -183,7 +267,7 @@ void mapper_runtime::mapper_result_received (rx_result&& result, runtime_transac
 {
 }
 
-void mapper_runtime::mapped_event_fired (rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx)
+void mapper_runtime::mapped_event_fired (runtime_transaction_id_t trans_id, rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx)
 {
 }
 
@@ -246,6 +330,10 @@ data::runtime_data_model mapper_runtime::get_data_type ()
         RX_ASSERT(false);
         return data::runtime_data_model();
     }
+}
+
+void mapper_runtime::mapper_event_result_received (rx_result&& result, runtime_transaction_id_t id)
+{
 }
 
 
@@ -481,11 +569,23 @@ rx_result event_runtime::deinitialize_event (runtime::runtime_deinit_context& ct
 	return true;
 }
 
-void event_runtime::event_fired (event_fired_data&& data)
+void event_runtime::event_fired (runtime_transaction_id_t trans_id, rx_simple_value data, string_type queue, bool state, bool remove)
 {
     if(container_)
     {
-        container_->event_fired(std::move(data));
+        container_->event_fired(trans_id, std::move(data), queue, state, remove);
+    }
+    else
+    {
+        RX_ASSERT(false);
+    }
+}
+
+void event_runtime::event_fired (runtime_transaction_id_t trans_id, data::runtime_values_data data, string_type queue, bool state, bool remove)
+{
+    if (container_)
+    {
+        container_->event_fired(trans_id, std::move(data), queue, state, remove);
     }
     else
     {
@@ -504,6 +604,10 @@ data::runtime_data_model event_runtime::get_arguemnts ()
         RX_ASSERT(false);
         return data::runtime_data_model();
     }
+}
+
+void event_runtime::event_result_received (rx_result&& result, runtime_transaction_id_t id)
+{
 }
 
 
@@ -612,90 +716,6 @@ rx_result data_type_runtime::stop_data_type (runtime::runtime_stop_context& ctx)
 rx_result data_type_runtime::deinitialize_data_type (runtime::runtime_deinit_context& ctx)
 {
     return true;
-}
-
-
-// Class rx_platform::runtime::blocks::filter_runtime 
-
-string_type filter_runtime::type_name = RX_CPP_FILTER_TYPE_NAME;
-
-filter_runtime::filter_runtime()
-      : container_(nullptr)
-{
-}
-
-filter_runtime::filter_runtime (lock_reference_struct* extern_data)
-      : container_(nullptr)
-    , reference_object(extern_data)
-{
-}
-
-
-filter_runtime::~filter_runtime()
-{
-}
-
-
-
-string_type filter_runtime::get_type_name () const
-{
-  return type_name;
-
-}
-
-rx_result filter_runtime::initialize_filter (runtime::runtime_init_context& ctx)
-{
-	return true;
-}
-
-rx_result filter_runtime::start_filter (runtime::runtime_start_context& ctx)
-{
-	return true;
-}
-
-rx_result filter_runtime::stop_filter (runtime::runtime_stop_context& ctx)
-{
-	return true;
-}
-
-rx_result filter_runtime::deinitialize_filter (runtime::runtime_deinit_context& ctx)
-{
-	return true;
-}
-
-bool filter_runtime::supports_input () const
-{
-  return true;
-
-}
-
-bool filter_runtime::supports_output () const
-{
-  return true;
-
-}
-
-rx_result filter_runtime::filter_input (rx_value& val)
-{
-    return true;
-}
-
-rx_result filter_runtime::filter_output (rx_simple_value& val)
-{
-    return true;
-}
-
-rx_result filter_runtime::filter_changed ()
-{
-    if (container_)
-    {
-        return container_->filter_changed();
-    }
-    else
-    {
-        RX_ASSERT(false);
-        return "Context not binded!";
-    }
 }
 
 

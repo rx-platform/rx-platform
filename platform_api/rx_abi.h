@@ -1114,6 +1114,9 @@ extern "C" {
 	typedef rx_result_struct(*rx_start_event_t)(void* whose, start_ctx_ptr ctx);
 	typedef rx_result_struct(*rx_stop_event_t)(void* whose);
 	typedef rx_result_struct(*rx_deinit_event_t)(void* whose);
+	typedef void(*rx_event_result_received_t)(void* whose, rx_result_struct result, runtime_transaction_id_t id, runtime_ctx_ptr ctx);
+	typedef void(*rx_event_ack_received_t)(void* whose, const char* message, runtime_transaction_id_t ack_id, runtime_ctx_ptr ctx);
+
 
 
 	typedef struct plugin_event_def_struct_t
@@ -1127,6 +1130,21 @@ extern "C" {
 
 
 	} plugin_event_def_struct;
+
+
+
+	typedef struct plugin_event_def_struct2_t
+	{
+		rx_get_code_info_t code_info;
+
+		rx_init_event_t init_event;
+		rx_start_event_t start_event;
+		rx_stop_event_t stop_event;
+		rx_deinit_event_t deinit_event;
+		rx_event_result_received_t event_result_received;
+		rx_event_ack_received_t event_ack_received;
+
+	} plugin_event_def_struct2;
 
 	typedef void(*rx_event_fired_t)(void* whose, runtime_transaction_id_t id, int test
 		, rx_security_handle_t identity, struct timed_value_type data, const char* queue, int state_machine, int remove);
@@ -1149,6 +1167,17 @@ extern "C" {
 		uint32_t io_data;
 
 	} plugin_event_runtime_struct;
+
+
+	typedef struct plugin_event_runtime_struct2_t
+	{
+		lock_reference_struct anchor;
+		void* host;
+		plugin_event_def_struct2* def;
+		host_event_def_struct* host_def;
+		uint32_t io_data;
+
+	} plugin_event_runtime_struct2;
 
 
 	// Event ABI interface

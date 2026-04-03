@@ -37,6 +37,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OPENSSL TLS implementation
 
+RX_COMMON_API SSL_CTX* get_ssl_context();
 
 #define DEFAULT_BUF_SIZE 64
 
@@ -59,7 +60,6 @@ static enum sslstatus get_sslstatus(SSL* ssl, int n)
 	}
 }
 
-SSL_CTX* g_ssl_ctx = NULL;
 
 
 
@@ -79,7 +79,7 @@ int rx_aquire_cert_credentials(rx_cred_t* cred, struct rx_time_struct_t* life_ti
 {
 
     /* create the SSL server context */
-    cred->ssl_ctx = g_ssl_ctx;
+    cred->ssl_ctx = get_ssl_context();
 	cred->client = client;
 
     cred->buffer_size = 0x4000;

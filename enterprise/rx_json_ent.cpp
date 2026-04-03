@@ -243,7 +243,7 @@ void json_enterprise_interface::sync_write (uint64_t trans_id, platform_item_ptr
 
 
 	serialization::json_reader reader;
-	if (reader.parse_data(string_type(data)))
+	if (reader.parse_data(string_type(data.data(), data.size())))
 	{
 		data::runtime_values_data vals;
 		if (reader.read_init_values(nullptr, vals))
@@ -314,7 +314,7 @@ void json_enterprise_interface::sync_execute (uint64_t trans_id, platform_item_p
 
 
 	serialization::json_reader reader;
-	if (reader.parse_data(string_type(data)))
+	if (reader.parse_data(string_type(data.data(), data.size())))
 	{
 		data::runtime_values_data vals;
 		if (reader.read_init_values(nullptr, vals))

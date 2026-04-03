@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_port_stack_passive.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -517,25 +517,25 @@ bool listen_connect_subscriber::is_connect_subscriber ()
 }
 
 
-// Class rx_internal::interfaces::port_stack::stack_passive::server_master_router 
+// Class rx_internal::interfaces::port_stack::stack_passive::listen_sender_subscriber 
 
 
-bool server_master_router::is_listen_sender ()
+bool listen_sender_subscriber::is_listen_sender ()
 {
     return true;
 }
 
-bool server_master_router::is_connect_sender ()
+bool listen_sender_subscriber::is_connect_sender ()
 {
     return false;
 }
 
-bool server_master_router::is_listen_subscriber ()
+bool listen_sender_subscriber::is_listen_subscriber ()
 {
     return true;
 }
 
-bool server_master_router::is_connect_subscriber ()
+bool listen_sender_subscriber::is_connect_subscriber ()
 {
     return false;
 }

@@ -107,7 +107,8 @@ typedef callback::rx_any_callback<uint32_t, rx_result, data::runtime_values_data
 struct event_filter
 {
     string_array paths;
-    rx_node_id type;
+    string_array queues;
+    bool matches(string_view_type path, string_view_type queue) const;
 };
 
 

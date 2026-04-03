@@ -43,6 +43,39 @@
 
 namespace rx_platform {
 
+bool event_filter::matches(string_view_type path, string_view_type queue) const
+{
+	if (paths.empty() && queues.empty())
+		return true;
+	bool path_matches = true;
+	if (!paths.empty())
+	{
+		path_matches = false;
+		for (const auto& p : paths)
+		{
+			if (p.size() > path.size())
+				continue;
+			if (!std::equal(p.begin(), p.end(), path.begin()))
+				continue;
+			path_matches = true;
+			if (queues.empty())
+				return true;
+		}
+	}
+	if (!queues.empty() && path_matches)
+	{
+		for (const auto& p : queues)
+		{
+			if (p.size() > queue.size())
+				continue;
+			if (!std::equal(p.begin(), p.end(), path.begin()))
+				continue;
+			return true;
+		}
+	}
+	return false;
+}
+
 namespace ns {
 
 // Class rx_platform::ns::rx_platform_item 

@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_port_stack_passive.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -238,7 +238,7 @@ class listen_connect_subscriber : public port_passive_behavior
 
 
 
-class server_master_router : public port_passive_behavior  
+class listen_sender_subscriber : public port_passive_behavior  
 {
 
   public:

@@ -1,99 +1,76 @@
 
-![perica](https://rx-platform.github.io/images/favicon-128.png)
-
+<div align="left">
+<img src="https://rx-platform.github.io/images/favicon-128.png"  width="128" />
+<img src="https://rx-platform.github.io/images/ensaco.png"  width="52" />
+</div>
 
 ## The Mission
 
-The main intention for building this platform is to connect different kind of programmers (Industrial Languages, C, C++, C#, Java, Python) on the same project and to enable them to collaborate and share ideas and solutions.
+The main intention for building this platform is to connect different kind of programmers 
+(Industrial Languages, C, C++, C#, Go, Java, Python) on the same project
+and to enable them to collaborate and share ideas and solutions.
 
 
-## RX Platform
+<h2 align="left">
+<b>{rx-platform}</b>
+</h2>
 
-Read or download RX Platform Documentation. From general documents for users to source code documentation. It is currentlly in a "wiki phase" so first take a look at [Wiki Pages](https://github.com/rx-platform/rx-docs/wiki) of this repository.
+`{rx-platform}` is distributed platform for building applications that exchange Real-Time data. 
+It enables seamless integration of various OT (Operational Technology) systems,
+providing a unified framework for data acquisition, processing, and visualization.
+
+- You can download the latest version of platform binaries from [this link](http://rx-platform.org).
+- Commercial support is available at [ENSACO Solutions doo.](https://ensaco.rs/)
+- Documentation is available at [this link](https://ensaco.rs/)
 
 ## The Code...
 
-Start with the main function. This function is actually left out from the repository. It depends on your environment so no projects are uploaded. If you set your working environment correctly you just write the missing main function.
-
-On GNU/Linux machines this is the main function example:
+This repository is the main repository of the platform itself
+and provides source code for the platform runtime and the plugin interfaces.
+The section of the main function for one of the _"hosts"_
+, please notice double includes without pre-processor definitions regarding operating system, is shown below:
 
 ```cpp
- // this is a linux platform
- #include "os_itf/linux/rx_linux.h"
+// Windows Win32/WinRT executable - Console App
+#include "os_itf/windows/rx_win.h"
 
- // a platform itself
- #include "rx_platform.h"
+// GNU Linux executable
+#include "os_itf/linux/rx_linux.h"
 
- // the host...
+// the rx-platform
+#include "rx_platform.h"
+
+// the Win32 host
+#include "win32_hosts/rx_win32_interactive.h"
+
+// the GNU host
 #include "gnu_hosts/rx_gnu_console.h"
-// and the plugins...
-#include "local-plugins/modbus/include/rx_modbus_plugin.h"
-#include "local-plugins/opc-ua/include/rx-opc-ua.h"
+
+// storages
+#include "storage/rx_file_storage.h"
 
 int main(int argc, char* argv[])
-{
-    // create the storages
-    storage::files::file_system_storage_holder system;
-    storage::files::file_system_storage_holder user;
-    storage::files::file_system_storage_holder test;
-    hosting::rx_host_storages storages;
-    storages.system_storage = &system;
-    storages.user_storage = &user;
-    storages.test_storage = &test;
-    
-    // create the host
-    gnu::gnu_console_host host(storages);
-    // add plig-ins
-    std::vector<library::rx_plugin_base*> plugins;
+{    
+	// register storages
+	std::vector<storage_base::rx_platform_storage_type*> storages;
+	storage::files::file_system_storage_type file;
+	storages.emplace_back(&file);
 
-    protocols::modbus::rx_modbus_plugin modbus_plugin;
-    plugins.emplace_back(&modbus_plugin);
+	
+	// create the Win32 host
+	win32::win32_interactive_host host(storages);
 
-    protocols::opc_ua::rx_opc_ua_plugin opc_ua_plugin;
-    plugins.emplace_back(&opc_ua_plugin);
-    // run console
-    return host.console_main(argc, argv, plugins);
+	// create the GNU host
+	gnu::gnu_console_host host(storages);
+
+	// add staticly linked plug-ins
+	// really not recomended, better to use dynamic plug-ins!
+	std::vector<library::rx_plugin_base*> plugins;
+
+	// run console
+	auto ret = host.console_main(argc, argv, plugins);
+
+	return ret;
 }
 ```
-
-On Windows machines this is the main function example:
-```cpp
- // this is a windows platform
- #include "os_itf/windows/rx_win.h"
-
- // a platform itself
- #include "rx_platform.h"
-
- // the host
- #include "host/win32_hosts/rx_win32_console.h"
-
-// and the plugins...
-#include "local-plugins/modbus/include/rx_modbus_plugin.h"
-#include "local-plugins/opc-ua/include/rx-opc-ua.h"
-
-int main(int argc, char* argv[])
-{
-    // create the storages
-    storage::files::file_system_storage_holder system;
-    storage::files::file_system_storage_holder user;
-    storage::files::file_system_storage_holder test;
-    hosting::rx_host_storages storages;
-    storages.system_storage = &system;
-    storages.user_storage = &user;
-    storages.test_storage = &test;
-    
-    // create the host
-    gnu::win32_console_host host(storages);
-    // add plig-ins
-    std::vector<library::rx_plugin_base*> plugins;
-
-    protocols::modbus::rx_modbus_plugin modbus_plugin;
-    plugins.emplace_back(&modbus_plugin);
-
-    protocols::opc_ua::rx_opc_ua_plugin opc_ua_plugin;
-    plugins.emplace_back(&opc_ua_plugin);
-    // run console
-    return host.console_main(argc, argv, plugins);
-}
-```
-For more information about the code see documentation repository wiki at [https://github.com/rx-platform/rx-docs/wiki/The-Code](https://github.com/rx-platform/rx-docs/wiki/The-Code)
+So far so much, for more details please check the documentation ;). 

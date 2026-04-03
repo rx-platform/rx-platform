@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_event_manager.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -35,6 +35,8 @@
 
 // rx_process_context
 #include "system/runtime/rx_process_context.h"
+// rx_thread
+#include "system/threads/rx_thread.h"
 // rx_values
 #include "lib/rx_values.h"
 // rx_rt_data
@@ -43,6 +45,8 @@
 #include "lib/rx_ptr.h"
 
 #include "system/server/rx_platform_item.h"
+#include "system/hosting/rx_host.h"
+#include "system/server/rx_server.h"
 
 
 namespace rx_platform {
@@ -77,6 +81,8 @@ class fired_event_data
 
       bool remove_queue;
 
+      bool state_event;
+
 
   protected:
 
@@ -92,12 +98,13 @@ class fired_event_data
 
 class rx_events_callback : public rx::pointers::reference_object  
 {
+	DECLARE_REFERENCE_PTR(rx_events_callback);
 
   public:
 
-      virtual void event_fired (const simple_event_item& data) = 0;
+      virtual void event_fired (runtime_handle_t handle, const simple_event_item& data) = 0;
 
-      virtual void event_fired (const data_event_item& data) = 0;
+      virtual void event_fired (runtime_handle_t handle, const data_event_item& data) = 0;
 
 
   protected:
@@ -113,16 +120,18 @@ class rx_events_callback : public rx::pointers::reference_object
 
 
 
-class runtime_events_manager 
+class runtime_events_manager : public threads::physical_job_thread  
 {
-    typedef std::map<string_type, fired_event_data> event_cache_type;
+    typedef std::map<string_type, std::unique_ptr<fired_event_data> > event_cache_type;
+	typedef std::map<rx_node_id, std::set<fired_event_data*>> types_cache_type;
     struct subscriber_data_t
     {
         rx_events_callback::smart_ptr callback;
         event_filter filter;
         bool bin_value;
     };
-    typedef std::map<runtime_handle_t, subscriber_data_t> subscribers_type;
+    typedef std::map<runtime_handle_t, subscriber_data_t> subscribers_list_type;
+	typedef std::map<rx_node_id, subscribers_list_type> subscribers_type;
 
   public:
       runtime_events_manager();
@@ -132,15 +141,33 @@ class runtime_events_manager
 
       void event_fired (fired_event_data data);
 
+      static runtime_events_manager& instance ();
+
+      rx_result_with<runtime_handle_t> register_subscriber (rx_events_callback::smart_ptr who, rx_node_id type, event_filter filter, bool bin);
+
+      rx_result unregister_subscriber (rx_node_id type, runtime_handle_t handle);
+
+      rx_result start (hosting::rx_platform_host* host, const runtime_data_t& data, const io_manager_data_t& io_data);
+
+      void stop ();
+
 
   protected:
 
   private:
 
+      void remove_types (const types_cache& types, fired_event_data* whose);
+
+      void add_types (const types_cache& types, fired_event_data* whose);
+
+
 
       event_cache_type event_cache_;
 
       subscribers_type subscribers_;
+
+
+      types_cache_type types_cache_;
 
 
 };

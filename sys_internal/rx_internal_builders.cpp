@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -200,7 +200,7 @@ rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance
 }
 
 
-// Class rx_internal::builders::rx_platform_builder
+// Class rx_internal::builders::rx_platform_builder 
 
 rx_platform_builder::rx_platform_builder()
 {
@@ -376,7 +376,8 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		auto result = one->do_build(config, data);
 		if (!result)
 		{
-			BUILD_LOG_WARNING("rx_platform_builder", 900, "Error building platform additional configuration!");
+			BUILD_LOG_WARNING("rx_platform_builder", 900
+				, rx_create_string("Error building platform additional configuration:", result.errors_line()));
 		}
 	}
 
@@ -387,7 +388,8 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 		auto result = one->do_build(config, data);
 		if (!result)
 		{
-			BUILD_LOG_ERROR("rx_platform_builder", 900, "Errors occurred while building platform user configuration!");
+			BUILD_LOG_ERROR("rx_platform_builder", 900
+				, rx_create_string("Errors occurred while building platform user configuration:", result.errors_line()));
 		}
 	}
 	BUILD_LOG_INFO("rx_platform_builder", 900, "User items built.");
@@ -399,7 +401,8 @@ rx_result rx_platform_builder::build_platform (hosting::rx_platform_host* host, 
 			auto result = one->do_build(config, data);
 			if (!result)
 			{
-				BUILD_LOG_WARNING("rx_platform_builder", 900, "Errors occurred while building platform test configuration!");
+				BUILD_LOG_WARNING("rx_platform_builder", 900
+					, rx_create_string("Errors occurred while building platform test configuration:", result.errors_line()));
 			}
 		}
 	}
@@ -427,6 +430,7 @@ std::vector<std::unique_ptr<rx_platform_builder> > rx_platform_builder::get_syst
 		builders.emplace_back(std::make_unique<port_types_builder>());
 		builders.emplace_back(std::make_unique<opc_types_builder>());
 		builders.emplace_back(std::make_unique<mqtt_types_builder>());
+		builders.emplace_back(std::make_unique<knx_types_builder>());
 		builders.emplace_back(std::make_unique<simulation_types_builder>());
 		builders.emplace_back(std::make_unique<xml_types_builder>());
 		builders.emplace_back(std::make_unique<json_types_builder>());
@@ -631,7 +635,7 @@ void rx_platform_builder::recursive_destory_fs (rx_directory_ptr dir)
 }
 
 
-// Class rx_internal::builders::root_folder_builder
+// Class rx_internal::builders::root_folder_builder 
 
 root_folder_builder::root_folder_builder (hosting::rx_platform_host* host)
       : host_(host)
@@ -675,6 +679,8 @@ rx_result root_folder_builder::do_build (configuration_data_t& config, startup_c
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_OPC_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_MQTT_CLASSES_NAME
+			, rx_storage_ptr::null_ptr },
+		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_KNX_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
 		{ RX_DIR_DELIMETER_STR RX_NS_SYS_NAME RX_DIR_DELIMETER_STR RX_NS_CLASSES_NAME RX_DIR_DELIMETER_STR RX_NS_XML_CLASSES_NAME
 			, rx_storage_ptr::null_ptr },
@@ -734,7 +740,7 @@ rx_result root_folder_builder::do_build (configuration_data_t& config, startup_c
 }
 
 
-// Class rx_internal::builders::basic_object_types_builder
+// Class rx_internal::builders::basic_object_types_builder 
 
 
 rx_result basic_object_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -919,7 +925,7 @@ void basic_types_builder::build_basic_type(rx_directory_ptr dir, rx_reference<rx
 	model::platform_types_manager::instance().get_data_types_repository().register_type(what);
 	dir->add_item(what->get_item_ptr());
 }
-// Class rx_internal::builders::system_types_builder
+// Class rx_internal::builders::system_types_builder 
 
 
 rx_result system_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -1213,7 +1219,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config, startup_
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data.register_struct("Bind", RX_OPCUA_ENDPOINT_DATA_ID);
+		port->complex_data.register_struct("Bind", RX_BIND_STRING_DATA_ID);
 		add_type_to_configuration(dir, port, false);
 
 
@@ -1224,7 +1230,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config, startup_
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		port->complex_data.register_struct("Connect", RX_OPCUA_ENDPOINT_DATA_ID);
+		port->complex_data.register_struct("Connect", RX_BIND_STRING_DATA_ID);
 		port->complex_data.register_struct("Status", RX_CLIENT_PORT_STATUS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
@@ -1285,6 +1291,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config, startup_
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		port->complex_data.register_struct("Bind", RX_BIND_STRING_DATA_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1294,6 +1301,18 @@ rx_result system_types_builder::do_build (configuration_data_t& config, startup_
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
+		port->complex_data.register_struct("Bind", RX_BIND_STRING_DATA_ID);
+		add_type_to_configuration(dir, port, false);
+
+		port = create_type<port_type>(meta::object_type_creation_data{
+			RX_NS_WS_CLIENT_TYPE_NAME
+			, RX_NS_WS_CLIENT_TYPE_ID
+			, RX_TRANSPORT_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Connect", RX_BIND_STRING_DATA_ID);
+		port->complex_data.register_struct("Status", RX_CLIENT_PORT_STATUS_TYPE_ID);
 		add_type_to_configuration(dir, port, false);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -1353,7 +1372,7 @@ void system_types_builder::build_host_info_struct_type(rx_directory_ptr dir, str
 	what->complex_data.register_simple_value_static<uint64_t>("MemoryFree", 0ull, true, false);
 	what->complex_data.register_const_value_static<uint32_t>("PageSize", 0u);
 }
-// Class rx_internal::builders::port_types_builder
+// Class rx_internal::builders::port_types_builder 
 
 
 rx_result port_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -1631,7 +1650,7 @@ rx_result port_types_builder::do_build (configuration_data_t& config, startup_cr
 }
 
 
-// Class rx_internal::builders::system_objects_builder
+// Class rx_internal::builders::system_objects_builder 
 
 
 rx_result system_objects_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -1738,7 +1757,7 @@ rx_result system_objects_builder::do_build (configuration_data_t& config, startu
 }
 
 
-// Class rx_internal::builders::support_types_builder
+// Class rx_internal::builders::support_types_builder 
 
 
 rx_result support_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -2358,8 +2377,8 @@ rx_result support_types_builder::do_build (configuration_data_t& config, startup
 
 		//
 		what = create_type<struct_type>(meta::type_creation_data{
-			RX_OPCUA_ENDPOINT_DATA_NAME
-			, RX_OPCUA_ENDPOINT_DATA_ID
+			RX_BIND_STRING_DATA_NAME
+			, RX_BIND_STRING_DATA_ID
 			, RX_CLASS_STRUCT_BASE_ID
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
@@ -2675,7 +2694,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config, startup
 }
 
 
-// Class rx_internal::builders::relation_types_builder
+// Class rx_internal::builders::relation_types_builder 
 
 
 rx_result relation_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -2752,7 +2771,7 @@ rx_result relation_types_builder::do_build (configuration_data_t& config, startu
 }
 
 
-// Class rx_internal::builders::simulation_types_builder
+// Class rx_internal::builders::simulation_types_builder 
 
 
 rx_result simulation_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -2778,7 +2797,7 @@ rx_result simulation_types_builder::do_build (configuration_data_t& config, star
 }
 
 
-// Class rx_internal::builders::system_ports_builder
+// Class rx_internal::builders::system_ports_builder 
 
 
 rx_result system_ports_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -2979,7 +2998,7 @@ rx_result system_ports_builder::do_build (configuration_data_t& config, startup_
 }
 
 
-// Class rx_internal::builders::terminal_commands_builder
+// Class rx_internal::builders::terminal_commands_builder 
 
 
 rx_result terminal_commands_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -3066,7 +3085,7 @@ rx_result terminal_commands_builder::do_build (configuration_data_t& config, sta
 }
 
 
-// Class rx_internal::builders::http_builder
+// Class rx_internal::builders::http_builder 
 
 
 rx_result http_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -3178,7 +3197,7 @@ rx_result http_builder::do_build (configuration_data_t& config, startup_create_d
 }
 
 
-// Class rx_internal::builders::basic_types_builder
+// Class rx_internal::builders::basic_types_builder 
 
 
 rx_result basic_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -3334,7 +3353,7 @@ rx_result basic_types_builder::do_build (configuration_data_t& config, startup_c
 }
 
 
-// Class rx_internal::builders::opc_types_builder
+// Class rx_internal::builders::opc_types_builder 
 
 
 rx_result opc_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -3459,7 +3478,7 @@ rx_result opc_types_builder::do_build (configuration_data_t& config, startup_cre
 			, full_path
 			});
 		port->complex_data.register_struct("Options", RX_OPCUA_SERVER_PORT_OPTIONS_TYPE_ID);
-		port->complex_data.register_struct("Bind", RX_OPCUA_ENDPOINT_DATA_ID);
+		port->complex_data.register_struct("Bind", RX_BIND_STRING_DATA_ID);
 		add_type_to_configuration(dir, port, true);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -3507,7 +3526,7 @@ rx_result opc_types_builder::do_build (configuration_data_t& config, startup_cre
 			, full_path
 			});
 		port->complex_data.register_struct("Options", RX_OPCUA_CLIENT_PORT_OPTIONS_TYPE_ID);
-		port->complex_data.register_struct("Connect", RX_OPCUA_ENDPOINT_DATA_ID);
+		port->complex_data.register_struct("Connect", RX_BIND_STRING_DATA_ID);
 		add_type_to_configuration(dir, port, true);
 
 		port = create_type<port_type>(meta::object_type_creation_data{
@@ -3651,14 +3670,14 @@ rx_result opc_types_builder::do_build (configuration_data_t& config, startup_cre
 		add_simple_type_to_configuration<event_type>(dir, ev, true);
 
 
-
+		
 	}
 	BUILD_LOG_INFO("opc_types_builder", 900, "OPC UA types built.");
 	return true;
 }
 
 
-// Class rx_internal::builders::mqtt_types_builder
+// Class rx_internal::builders::mqtt_types_builder 
 
 
 rx_result mqtt_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -3964,7 +3983,6 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config, startup_cr
 		add_simple_type_to_configuration<display_type>(dir, disp, true);
 
 
-
 	}
 
 	BUILD_LOG_INFO("mqtt_types_builder", 900, "MQTT types built.");
@@ -3972,7 +3990,7 @@ rx_result mqtt_types_builder::do_build (configuration_data_t& config, startup_cr
 }
 
 
-// Class rx_internal::builders::xml_types_builder
+// Class rx_internal::builders::xml_types_builder 
 
 
 rx_result xml_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -4022,7 +4040,7 @@ rx_result xml_types_builder::do_build (configuration_data_t& config, startup_cre
 }
 
 
-// Class rx_internal::builders::json_types_builder
+// Class rx_internal::builders::json_types_builder 
 
 
 rx_result json_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -4047,6 +4065,76 @@ rx_result json_types_builder::do_build (configuration_data_t& config, startup_cr
 
 	}
 	BUILD_LOG_INFO("json_types_builder", 900, "JSON types built.");
+	return true;
+}
+
+
+// Class rx_internal::builders::knx_types_builder 
+
+
+rx_result knx_types_builder::do_build (configuration_data_t& config, startup_create_data_type& data)
+{
+	string_type path(RX_NS_SYS_NAME "/" RX_NS_CLASSES_NAME "/" RX_NS_KNX_CLASSES_NAME);
+	string_type full_path = RX_DIR_DELIMETER + path;
+	auto dir_result = ns::rx_directory_cache::instance().get_directory(full_path);
+	if (dir_result)
+	{
+		auto dir = dir_result;
+
+
+		auto what = create_type<struct_type>(meta::type_creation_data{
+			RX_KNX_IP_PORT_OPTIONS_TYPE_NAME
+			, RX_KNX_IP_PORT_OPTIONS_TYPE_ID
+			, RX_PORT_OPTIONS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_const_value_static("TopicBase", "");
+		what->complex_data.register_const_value_static("PublishTimeBuffer", (uint32_t)50);
+		what->complex_data.register_const_value_static("ClientID", "");
+		what->complex_data.register_const_value_static("KeepAlive", (uint16_t)0);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+		what = create_type<struct_type>(meta::type_creation_data{
+			RX_KNX_IP_PORT_STATUS_TYPE_NAME
+			, RX_KNX_IP_PORT_STATUS_TYPE_ID
+			, RX_PORT_STATUS_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		what->complex_data.register_simple_value_static("Connected", false, true, false);
+		what->complex_data.register_simple_value_static("Published", (uint64_t)0, true, false);
+		what->complex_data.register_simple_value_static("Received", (uint64_t)0, true, false);
+		add_simple_type_to_configuration<struct_type>(dir, what, false);
+
+
+		auto port = create_type<port_type>(meta::object_type_creation_data{
+			RX_KNX_IP_PORT_TYPE_NAME
+			, RX_KNX_IP_PORT_TYPE_ID
+			, RX_APPLICATION_PORT_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		port->complex_data.register_struct("Status", RX_KNX_IP_PORT_STATUS_TYPE_ID);
+		port->complex_data.register_struct("Options", RX_KNX_IP_PORT_OPTIONS_TYPE_ID);
+		add_type_to_configuration(dir, port, false);
+
+		auto src = create_type<basic_types::source_type>(meta::type_creation_data{
+			RX_KNX_SOURCE_TYPE_NAME
+			, RX_KNX_SOURCE_TYPE_ID
+			, RX_EXTERN_SOURCE_TYPE_ID
+			, namespace_item_attributes::namespace_item_internal_access
+			, full_path
+			});
+		src->complex_data.register_const_value_static("ValuePath", "val");
+		src->complex_data.register_const_value_static("TimePath", "");
+		src->complex_data.register_const_value_static("QualityPath", "");
+		add_simple_type_to_configuration<source_type>(dir, src, true);
+
+	}
+
+	BUILD_LOG_INFO("knx_types_builder", 900, "KNX types built.");
 	return true;
 }
 

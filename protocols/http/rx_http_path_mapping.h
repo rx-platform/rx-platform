@@ -4,7 +4,7 @@
 *
 *  protocols\http\rx_http_path_mapping.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,17 +33,19 @@
 
 
 
+// rx_http_parser
+#include "protocols/http/rx_http_parser.h"
+// dummy
+#include "dummy.h"
 // rx_port_helpers
 #include "system/runtime/rx_port_helpers.h"
 // rx_transport_templates
 #include "system/runtime/rx_transport_templates.h"
-// dummy
-#include "dummy.h"
 
 namespace protocols {
 namespace rx_http {
-class rx_http_host_name_port;
 class rx_http_addressing_port;
+class rx_http_host_name_port;
 
 } // namespace rx_http
 } // namespace protocols
@@ -70,6 +72,10 @@ class rx_http_path_endpoint
 
       rx_reference<rx_http_addressing_port> get_port ();
 
+      rx_result send_response (http_response response);
+
+      rx_protocol_result_t parsed_request (http_parsed_request req);
+
 
       rx_protocol_stack_endpoint stack_entry;
 
@@ -84,10 +90,18 @@ class rx_http_path_endpoint
 
       rx_reference<rx_http_addressing_port> my_port_;
 
+      http_parser parser_;
+
 
       io::rx_io_buffer my_buffer_;
 
       bool use_host_name_;
+
+      locks::slim_lock port_lock_;
+
+      string_type my_addr_;
+
+      string_type upgrade_address_;
 
 
 };
@@ -98,7 +112,7 @@ class rx_http_path_endpoint
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< rx_http_path_endpoint  > rx_http_addressing_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< protocols::rx_http::rx_http_path_endpoint  > rx_http_addressing_port_base;
 
 
 

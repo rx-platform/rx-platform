@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_subscription.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,12 @@
 
 
 
+// rx_event_manager
+#include "system/runtime/rx_event_manager.h"
 // rx_operational
 #include "system/runtime/rx_operational.h"
 // rx_job
 #include "system/threads/rx_job.h"
-// rx_event_manager
-#include "system/runtime/rx_event_manager.h"
 
 namespace rx_internal {
 namespace sys_runtime {
@@ -466,14 +466,100 @@ class rx_event_subscription_callback
       virtual ~rx_event_subscription_callback();
 
 
-      virtual void event_fired (const simple_event_item& data);
+      virtual void event_fired (runtime_handle_t handle, const simple_event_item& data);
 
-      virtual void event_fired (const data_event_item& data);
+      virtual void event_fired (runtime_handle_t handle, const data_event_item& data);
 
 
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class rx_event_subscription : public rx_platform::runtime::events::rx_events_callback  
+{
+    DECLARE_REFERENCE_PTR(rx_event_subscription);
+
+    enum class item_status
+     {
+         pending,
+         active,
+         failed
+	};  
+    struct subs_item_data
+    {
+		rx_item_reference type;
+        rx_node_id type_id;
+        event_filter filter;
+        events_callback_ptr callback;
+		runtime_handle_t connection_handle;
+    };
+	// his/mine handle -> target handle
+	typedef std::map<runtime_handle_t, runtime_handle_t> handle_map_type;
+    // mine /subs data
+	typedef std::map<runtime_handle_t, subs_item_data> subscriptions_data_type;
+    // mine / subs_data
+	typedef std::map<runtime_handle_t, subs_item_data> pending_items_type;
+
+    static constexpr uint32_t timer_period_ = 1000;
+    friend class runtime_connection_data;
+
+  public:
+      rx_event_subscription (rx_event_subscription_callback* callback, rx_mode_type mode);
+
+
+      void activate ();
+
+      void deactivate ();
+
+      rx_result_with<runtime_handle_t> connect_events (rx_item_reference type, const event_filter& filter);
+
+      rx_result disconnect_events (runtime_handle_t hndl);
+
+      void event_fired (runtime_handle_t handle, const simple_event_item& data);
+
+      void event_fired (runtime_handle_t handle, const data_event_item& data);
+
+
+  protected:
+
+  private:
+
+      void process_subscription (bool posted = false);
+
+
+
+      rx_reference<rx_platform::jobs::periodic_job> timer_;
+
+      rx_event_subscription_callback *callback_;
+
+
+      rx_thread_handle_t target_;
+
+      locks::slim_lock items_lock_;
+
+      std::atomic<bool> active_;
+
+      rx_mode_type mode_;
+
+      subscriptions_data_type subscriptions_data_;
+
+      rx_node_id type_id_;
+
+      rx_item_reference type_ref_;
+
+      pending_items_type pending_items_;
+
+      handle_map_type handle_map_;
+
+      pending_items_type to_activate_items_;
 
 
 };
@@ -538,70 +624,6 @@ class runtime_event_connection_data
       string_array to_connect_;
 
       std::vector<size_t> connect_indexes_;
-
-
-};
-
-
-
-
-
-
-class rx_event_subscription : public rx_platform::runtime::events::rx_events_callback  
-{
-    DECLARE_REFERENCE_PTR(rx_event_subscription);
-
-
-    typedef std::vector<runtime_connection_data> connections_type;
-    typedef std::map<string_type, size_t> connection_paths_type;
-    typedef std::map<rx_thread_handle_t, std::vector<size_t> > connection_attempts_type;
-    static constexpr uint32_t timer_period_ = 1000;
-
-    typedef std::vector<update_item> pending_updates_type;
-
-    friend class runtime_connection_data;
-
-  public:
-      rx_event_subscription (rx_event_subscription_callback* callback, rx_mode_type mode);
-
-
-      void activate ();
-
-      void deactivate ();
-
-      rx_result_with<runtime_handle_t> connect_events (const event_filter& filter, events_callback_ptr monitor);
-
-      rx_result disconnect_events (runtime_handle_t hndl, events_callback_ptr monitor);
-
-
-  protected:
-
-  private:
-
-      void process_subscription (bool posted = false);
-
-
-
-      rx_reference<rx_platform::jobs::periodic_job> timer_;
-
-      connections_type connections_;
-
-      rx_event_subscription_callback *callback_;
-
-
-      rx_thread_handle_t target_;
-
-      locks::slim_lock items_lock_;
-
-      std::atomic<bool> active_;
-
-      rx_mode_type mode_;
-
-      std::unordered_set<size_t> to_retrieve_;
-
-      std::unordered_set<size_t> to_process_;
-
-      connection_paths_type connection_paths_;
 
 
 };

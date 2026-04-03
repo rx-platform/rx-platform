@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_extern_blocks.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_blocks
-#include "system/runtime/rx_blocks.h"
 // rx_platform_api
 #include "api/rx_platform_api.h"
+// rx_blocks
+#include "system/runtime/rx_blocks.h"
 
 
 
@@ -289,12 +289,15 @@ class extern_event_runtime : public event_runtime
 
       byte_string extern_get_arguments ();
 
-      void extern_event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data, string_view_type queue, bool state, bool remove);
+      void extern_event_fired (runtime_transaction_id_t trans_id, bool test, rx_security_handle_t identity, rx_timed_value data, string_view_type queue, bool state, bool remove);
 
 
   protected:
 
   private:
+
+      void event_result_received (rx_result&& result, runtime_transaction_id_t id);
+
 
 
       plugin_event_runtime_struct* impl_;

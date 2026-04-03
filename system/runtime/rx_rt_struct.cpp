@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_rt_struct.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -481,6 +481,7 @@ void variable_data::update_prepared (rx_value prepared_value, runtime_process_co
 	value = prepared_value;
 	// send subscription update
 	ctx->variable_value_changed(this, prepared_value);
+	//!!!!PERSISTENT!!!!
 	if (value_opt[value_opt_persistent])
 	{
 		ctx->runtime_dirty([ctx, prepared_value = prepared_value, this](rx_result result)
@@ -488,7 +489,7 @@ void variable_data::update_prepared (rx_value prepared_value, runtime_process_co
 				if (result)
 				{
 				}
-			});
+			}, data::runtime_values_data());
 	}
 
 	// send update to mappers
@@ -1064,7 +1065,7 @@ void mapper_data::process_write_result (rx_result&& result, runtime_transaction_
 	}
 }
 
-void mapper_data::process_event (event_fired_data data)
+void mapper_data::process_event (runtime_transaction_id_t trans_id, event_fired_data data)
 {
 	if (mapper_ptr)
 	{
@@ -1077,7 +1078,7 @@ void mapper_data::process_event (event_fired_data data)
 
 			RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
 		}
-		mapper_ptr->mapped_event_fired(std::move(data.value), data.queue, data.state_machine, data.remove_queue, context_);
+		mapper_ptr->mapped_event_fired(trans_id, std::move(data.value), data.queue, data.state_machine, data.remove_queue, context_);
 	}
 }
 
@@ -1239,6 +1240,28 @@ bool mapper_data::is_root () const
 	return item->get_local_as("Root", false);
 	/*RX_ASSERT(!io_.get_is_root());
 	return io_.get_is_root();*/
+}
+
+void mapper_data::mapper_event_result_pending (rx_result&& result, runtime_transaction_id_t id)
+{
+	if (io_.get_in_event() && id)
+	{
+		write_result_struct<event_data> reg_data;
+		reg_data.whose = my_owner_.event_ptr;
+		reg_data.transaction_id = id;
+		reg_data.result = std::move(result);
+
+		if (context_)
+			context_->event_result_pending(std::move(reg_data));
+	}
+	else
+	{
+		RX_ASSERT(false);
+	}
+}
+
+void mapper_data::mapper_refire_events (rx_result&& result, runtime_transaction_id_t id)
+{
 }
 
 
@@ -1731,6 +1754,7 @@ rx_result event_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
 	if(event_ptr)
 		event_ptr->container_ = this;
+	path_ = ctx.meta.get_full_path() + RX_OBJECT_DELIMETER + ctx.path.get_current_path();
 	ctx.event = this;
 	ctx.structure.push_item(*item);
 	auto result = event_ptr->initialize_event_internal(ctx);
@@ -1787,7 +1811,7 @@ rx_result event_data::stop_runtime (runtime::runtime_stop_context& ctx)
 	return result;
 }
 
-void event_data::process_runtime (runtime_process_context* ctx, event_fired_data data)
+void event_data::process_event (runtime_process_context* ctx, event_fired_data data)
 {
 	RX_ASSERT(!data.types.empty());
 	// send update to mappers
@@ -1795,7 +1819,10 @@ void event_data::process_runtime (runtime_process_context* ctx, event_fired_data
 	{
 
 		events::fired_event_data rest_data;
+		runtime_transaction_id_t transaction_id = data.transaction_id;
+		
 		rest_data.path = path_;
+		rest_data.queue = data.queue.empty() ? path_ : data.queue;
 		rest_data.remove_queue = data.remove_queue;
 		rest_data.simple_value = data.value.to_simple();
 		rest_data.test = data.test;
@@ -1805,22 +1832,40 @@ void event_data::process_runtime (runtime_process_context* ctx, event_fired_data
 		{
 			auto& mappers = item->get_mappers();
 
-			rest_data.queue = data.queue;
 			rest_data.types = data.types;
 
-			ctx->get_events_manager()->event_fired(std::move(rest_data));
+			bool should_send_result = true;
+			bool is_transactional = transaction_id != 0 && data.state_machine;
+			
 			if (!mappers.empty())
 			{
-				if (mappers.size() == 1)
+				if(is_transactional)
+					should_send_result = false;
+
+				if (mappers.size() == 1 && !is_transactional)// important because of move semantics
+											//, if there is transaction id we need to keep data for all mappers
+											//, otherwise we can move it for single mapper case
 				{
-					mappers[0].process_event(std::move(data));
+					mappers[0].process_event(is_transactional ? transaction_id : 0, std::move(data));
 				}
 				else
 				{
 					for (auto& one : mappers)
 					{
-						one.process_event(data);
+						one.process_event(is_transactional ? transaction_id : 0, data);
 					}
+				}
+			}
+			events::runtime_events_manager::instance().event_fired(std::move(rest_data));
+			if (is_transactional)
+			{
+				if (should_send_result)
+				{
+					write_result_struct<structure::event_data> reg_data;
+					reg_data.whose = this;
+					reg_data.transaction_id = transaction_id;
+					reg_data.result = true;
+					ctx->event_result_pending(std::move(reg_data));
 				}
 			}
 		}
@@ -1946,22 +1991,7 @@ data::runtime_data_model event_data::get_arguments ()
 	return arguments.create_runtime_model();
 }
 
-void event_data::event_fired (event_fired_data&& data)
-{
-	event_fired_struct<event_data> reg_data;
-	reg_data.whose = this;
-	if (data.identity == 0)
-	{
-		data.identity = rx_security_context();
-	}
-	reg_data.data = std::move(data);
-	reg_data.data.types = types;
-
-	if (context_)
-		context_->event_pending(std::move(reg_data));
-}
-
-void event_data::event_fired (data::runtime_values_data data)
+void event_data::event_fired (runtime_transaction_id_t trans_id, rx_simple_value data, string_type queue, bool state, bool remove)
 {
 	RX_ASSERT(context_);
 	if (context_)
@@ -1972,17 +2002,50 @@ void event_data::event_fired (data::runtime_values_data data)
 		reg_data.data.types = types;
 		reg_data.data.internal = true;
 		reg_data.data.test = context_->get_mode().is_test();
-		reg_data.data.transaction_id = 0;
+		reg_data.data.transaction_id = trans_id;
+		reg_data.data.value = rx_timed_value(std::move(data), context_->now());
+		reg_data.data.state_machine = state;
+		reg_data.data.remove_queue = remove;
+
+		context_->event_pending(std::move(reg_data));
+	}
+}
+
+void event_data::event_fired (runtime_transaction_id_t trans_id, data::runtime_values_data data, string_type queue, bool state, bool remove)
+{
+	RX_ASSERT(context_);
+	if (context_)
+	{
+		event_fired_struct<event_data> reg_data;
+		reg_data.whose = this;
+		reg_data.data.identity = rx_security_context();
+		reg_data.data.types = types;
+		reg_data.data.internal = true;
+		reg_data.data.test = context_->get_mode().is_test();
+		reg_data.data.transaction_id = trans_id;
 		rx_simple_value val;
 		block_data temp = arguments;
 		temp.fill_data(data);
 		temp.collect_value(val, runtime_value_type::simple_runtime_value);
 		reg_data.data.value = rx_timed_value(std::move(val), context_->now());
-		reg_data.data.state_machine = false;
-		reg_data.data.remove_queue = true;
+		reg_data.data.state_machine = state;
+		reg_data.data.remove_queue = remove;
 
 		context_->event_pending(std::move(reg_data));
 	}
+}
+
+void event_data::event_result_pending (rx_result&& result, runtime_transaction_id_t id)
+{
+	write_result_struct<structure::event_data> data;
+	data.whose = this;
+	data.transaction_id = id;
+	data.result = std::move(result);
+	context_->event_result_pending(std::move(data));
+}
+
+void event_data::process_result (runtime_transaction_id_t id, rx_result&& result)
+{
 }
 
 
@@ -2374,7 +2437,8 @@ rx_result value_data::write_value (write_data&& data, runtime_process_context* c
 							data->task->process_result(std::move(result));
 					};
 				value = std::move(temp);
-				ctx->runtime_dirty(std::move(serialize_callback));
+				//!!!!PERSISTENT!!!!
+				ctx->runtime_dirty(std::move(serialize_callback), data::runtime_values_data());
 				changed = false;
 			}
 			else
@@ -4379,6 +4443,7 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 						data->task = std::move(task);
 						data->whose = this;
 
+						//!!!!PERSISTENT!!!!
 						ctx->runtime_dirty([data = std::move(data)](rx_result result)
 							{
 								if (!result)
@@ -4396,7 +4461,7 @@ rx_result value_block_data::write_value (write_data&& data, runtime_process_cont
 
 								if (data->task)
 									data->task->process_result(std::move(result));
-							});
+							}, data::runtime_values_data());
 					}
 					else
 					{

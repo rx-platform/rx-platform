@@ -4,7 +4,7 @@
 *
 *  dotnet\rx_dotnet_runtime.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -44,8 +44,8 @@
 
 namespace rx_internal {
 namespace dotnet {
-class dotnet_relation;
 class dotnet_method;
+class dotnet_relation;
 
 } // namespace dotnet
 } // namespace rx_internal
@@ -67,7 +67,7 @@ struct binded_value_data
 };
 
 typedef std::vector<std::unique_ptr<binded_value_data> > binded_values_type;
-typedef std::vector< std::unique_ptr<runtime::async_local_value<string_type> > > relation_values_type;
+typedef std::vector< std::unique_ptr<runtime::async_complex_value > > relation_values_type;
 
 
 
@@ -107,7 +107,7 @@ class dotnet_object_runtime : public rx_platform::runtime::items::object_runtime
 
       void post_own_job (plugin_job_struct* what);
 
-      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback);
+      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
 
       rx_result execute_method (uint32_t trans_id, const string_type& method, const string_type& value, rx_reference<dotnet_method> whose);
 
@@ -280,7 +280,9 @@ class dotnet_event : public rx_platform::runtime::blocks::event_runtime
 
       void fill_code_info (std::ostream& info, const string_type& name) const;
 
-      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback);
+      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
+
+      void fire_event (string_type data, string_type queue, bool state, bool remove);
 
 
   protected:
@@ -329,7 +331,7 @@ class dotnet_mapper : public rx_platform::runtime::blocks::mapper_runtime
 
       void fill_code_info (std::ostream& info, const string_type& name) const;
 
-      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback);
+      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
 
 
   protected:
@@ -378,7 +380,7 @@ class dotnet_source : public rx_platform::runtime::blocks::source_runtime
 
       void fill_code_info (std::ostream& info, const string_type& name) const;
 
-      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback);
+      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
 
       void source_changed (rx_value&& val);
 
@@ -437,7 +439,7 @@ class dotnet_struct : public rx_platform::runtime::blocks::struct_runtime
 
       void fill_code_info (std::ostream& info, const string_type& name) const;
 
-      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback);
+      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
 
 
   protected:

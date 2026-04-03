@@ -150,37 +150,78 @@ std::vector<rx_result> runtime_holder_algorithms<typeT>::disconnect_items (const
 template <class typeT>
 void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whose)
 {
+    runtime_transaction_id_t this_transaction_id = 0;
+    std::vector<serialize_data_t> serialize_data;
+    {
+
+        this_transaction_id = whose.context_->serialize_trans_id_.exchange(0);
+        std::scoped_lock _(whose.context_->context_lock_);
+        auto it = whose.context_->serialize_callbacks_.find(this_transaction_id);
+        if (it != whose.context_->serialize_callbacks_.end())
+        {
+            serialize_data = std::move(it->second);
+            whose.context_->serialize_callbacks_.erase(it);
+        }
+    }
+
     auto storage_result = resolve_storage(whose.meta_info_);
     if (storage_result)
     {
         auto item_result = storage_result.value()->get_runtime_storage(whose.meta_info_, whose.get_type_id());
         if (item_result)
         {
-            runtime_transaction_id_t this_transaction_id = whose.context_->serialize_trans_id_.exchange(0);
-            serialization::pretty_json_writer writer;
-            string_type data;
-
-            writer.write_header(STREAMING_TYPE_MESSAGE, 0);
-            auto result = serialize_runtime_value(writer, runtime_value_type::persistent_runtime_value, whose);
-            if (result)
+            // first collect all the pending data
+            data::runtime_values_data runtime_data;
+            collect_data(runtime_data, runtime_value_type::persistent_runtime_value, whose);
+            
+            if (!serialize_data.empty())
             {
-                result = writer.write_footer();
-                if (result)
+                for (auto it = serialize_data.begin(); it != serialize_data.end(); ++it)
                 {
-                    data = writer.get_string();
+                    runtime_data.combine(std::move(it->value));
                 }
             }
+
+
+            serialization::pretty_json_writer writer;
+            string_type str_data;
+
+            rx_result result = true;
+
+            if (writer.write_header(STREAMING_TYPE_MESSAGE, 0))
+            {
+                if (writer.write_init_values(nullptr, runtime_data))
+                {
+                    result = writer.write_footer();
+                    if (result)
+                    {
+                        str_data = writer.get_string();
+                    }
+                    else
+                    {
+                        result = writer.get_error();
+                    }
+                }
+                else
+                {
+                    result = writer.get_error();
+                }
+            }
+            else
+            {
+                result = writer.get_error();
+            }      
 
             //
             if (result)
             {
-                byte_string buffer(data.size());
-                if (!data.empty())
+                byte_string buffer(str_data.size());
+                if (!str_data.empty())
                 {
-                    memcpy(&buffer[0], &data[0], data.size());
+                    memcpy(&buffer[0], &str_data[0], str_data.size());
                 }
 
-                result = item_result.value()->save(this_transaction_id, std::move(buffer), [ whose = whose.smart_this()](runtime_transaction_id_t trans_id, rx_result result)
+                result = item_result.value()->save(this_transaction_id, std::move(buffer), [serialize_data , whose = whose.smart_this()](runtime_transaction_id_t trans_id, rx_result result)
                     {
                         if (!result)
                         {
@@ -193,33 +234,22 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
                             RUNTIME_LOG_INFO("runtime_model_algorithm", 100, "Saved "s
                                 + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose->meta_info_.get_full_path());
                         }
-                        auto it = whose->context_->serialize_callbacks_.find(trans_id);
-                        if (it != whose->context_->serialize_callbacks_.end())
+                        for (auto callback : serialize_data)
                         {
-                            for (auto callback : it->second)
-                            {
-                                if (result)
-                                    callback(true);
-                                else
-                                    callback(result.errors());
-                            }
-                            whose->context_->serialize_callbacks_.erase(it);
+                            if (result)
+                                callback.callback(true);
+                            else
+                                callback.callback(result.errors());
                         }
                     });
-            }
-
-            if (!result)
+            } 
+            else //(!result)
             {
                 RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s
                     + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path() + " " + result.errors_line());
-                auto it = whose.context_->serialize_callbacks_.find(this_transaction_id);
-                if (it != whose.context_->serialize_callbacks_.end())
+                for (auto callback : serialize_data)
                 {
-                    for (auto callback : it->second)
-                    {
-                        callback(result.errors());
-                    }
-                    whose.context_->serialize_callbacks_.erase(it);
+                    callback.callback(result.errors());
                 }
             }
         }
@@ -229,16 +259,10 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
             runtime_transaction_id_t this_transaction_id = whose.context_->serialize_trans_id_.exchange(0);
             RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error opening runtime storage for "s
                 + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path() + " " + item_result.errors_line());
-
-
-            auto it = whose.context_->serialize_callbacks_.find(this_transaction_id);
-            if (it != whose.context_->serialize_callbacks_.end())
+            rx_result result = item_result.errors();
+            for (auto callback : serialize_data)
             {
-                for (auto callback : it->second)
-                {
-                    callback(item_result.errors());
-                }
-                whose.context_->serialize_callbacks_.erase(it);
+                callback.callback(result.errors());
             }
         }
     }
@@ -248,14 +272,10 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
         RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error resolving storage for "s
             + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path() + " " + storage_result.errors_line());
 
-        auto it = whose.context_->serialize_callbacks_.find(this_transaction_id);
-        if (it != whose.context_->serialize_callbacks_.end())
+        rx_result result = storage_result.errors();
+        for (auto callback : serialize_data)
         {
-            for (auto callback : it->second)
-            {
-                callback(storage_result.errors());
-            }
-            whose.context_->serialize_callbacks_.erase(it);
+            callback.callback(result.errors());
         }
     }
 }

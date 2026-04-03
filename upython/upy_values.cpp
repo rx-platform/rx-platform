@@ -79,7 +79,6 @@ rx_result upy_convertor::upy_to_data (mp_obj_t py, data::runtime_values_data dat
 
 rx_result upy_convertor::value_to_upy (const values::rx_value& val, mp_obj_t* py)
 {
-	auto type = val.get_type();
 	if (val.is_array() || val.is_struct())
 		return "Array and struct are still unsupported";
 	if (val.get_type() == RX_BOOL_TYPE)

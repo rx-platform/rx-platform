@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_subscription.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -39,11 +39,14 @@
 #include "sys_internal/rx_async_functions.h"
 #include "api/rx_namespace_api.h"
 #include "system/server/rx_platform_item.h"
+#include "system/runtime/rx_event_manager.h"
+#include "api/rx_namespace_api.h"
 
 namespace rx_platform
 {
 rx_security_handle_t rx_security_context();
 }
+using namespace rx_platform::runtime::events;
 
 
 namespace rx_internal {
@@ -1316,79 +1319,170 @@ void rx_event_subscription::deactivate ()
 	}
 }
 
-rx_result_with<runtime_handle_t> rx_event_subscription::connect_events (const event_filter& filter, events_callback_ptr monitor)
+rx_result_with<runtime_handle_t> rx_event_subscription::connect_events (rx_item_reference type, const event_filter& filter)
 {
-	// OutputDebugStringA("****************Something to connect\r\n");
-	for (const auto& one : filter.paths)
-	{		
-		runtime_handle_t new_id = 0;
-		string_type object_path;
-		string_type item_path;
-		rx_split_item_path(one, object_path, item_path);
-		auto it = connection_paths_.find(object_path);
-		if (it != connection_paths_.end())
-		{
-			RX_ASSERT(it->second < connections_.size());
-			// create runtime handle from connections size and connection tags size + 1 (to have zero as invalid)
-			new_id = (runtime_handle_t)(it->second << 16);
+	if(type.is_null())
+		type = rx_item_reference(RX_CLASS_DATA_BASE_ID);
+	subs_item_data data;
+	data.type = type;
+	data.filter = filter;
+	data.connection_handle = 0;
 
-			rx_subscription_tag tag;
-			tag.path = item_path;
-			tag.ref_count = 1;
-			tag.sampling_rate = 0;
-			tag.target_handle = 0;
-			tag.trigger = subscription_trigger_critical;
 
-			new_id = connections_[it->second].add_tag(std::move(tag), new_id);
-
-			to_process_.emplace(it->second);
-		}
-		else
-		{
-			size_t idx = connections_.size();
-			// create runtime handle from connections size + 1 (to have zero as invalid)
-			new_id = (runtime_handle_t)(idx << 16);
-
-			runtime_connection_data temp;
-			temp.path = object_path;
-			temp.connecting = false;
-
-			rx_subscription_tag tag;
-			tag.path = item_path;
-			tag.ref_count = 1;
-			tag.sampling_rate = 0;
-			tag.target_handle = 0;
-			tag.trigger = subscription_trigger_critical;
-
-			new_id = temp.add_tag(std::move(tag), new_id);
-
-			connections_.emplace_back(std::move(temp));
-			connection_paths_.emplace(object_path, idx);
-
-			to_retrieve_.emplace(idx);
-			to_process_.emplace(idx);
-		}
-		items_lock_.unlock();
-
-		if (new_id)
-		{
-			return new_id;
-		}
-		else
-		{
-			return "Something really gone wrong here!!!";
-		}
-	}
-	return true;
+	runtime_handle_t handle = rx_get_new_handle();
+	
+	std::scoped_lock lock(items_lock_);
+	pending_items_.emplace(handle, std::move(data));
+	
+	return handle;
 }
 
-rx_result rx_event_subscription::disconnect_events (runtime_handle_t hndl, events_callback_ptr monitor)
+rx_result rx_event_subscription::disconnect_events (runtime_handle_t hndl)
 {
-	return RX_NOT_IMPLEMENTED;
+	std::scoped_lock lock(items_lock_);
+	auto it = subscriptions_data_.find(hndl);
+	if (it != subscriptions_data_.end())
+	{
+		handle_map_.erase(it->second.connection_handle);
+		runtime_events_manager::instance().unregister_subscriber(it->second.type_id, it->second.connection_handle);
+		subscriptions_data_.erase(it);
+		
+		RX_ASSERT(pending_items_.find(hndl) == pending_items_.end());
+	}
+
+
+	auto ita = to_activate_items_.find(hndl);
+	if (ita != to_activate_items_.end())
+	{
+		to_activate_items_.erase(ita); 
+	}
+	auto pending_it = pending_items_.find(hndl);
+	if (pending_it != pending_items_.end())
+	{
+		pending_items_.erase(pending_it);
+	}
+
+	return true;
 }
 
 void rx_event_subscription::process_subscription (bool posted)
 {
+	if (posted)
+	{
+		std::vector<std::pair<runtime_handle_t, subs_item_data> > items_to_activate;
+		std::vector<std::pair<runtime_handle_t, subs_item_data> > items_to_process;
+		{
+			std::scoped_lock lock(items_lock_);
+			for (auto& one : pending_items_)
+			{
+				items_to_process.emplace_back(one.first, std::move(one.second));
+			}
+		}
+		auto it = items_to_process.begin();
+		while(it != items_to_process.end())
+		{
+			rx_node_id id;
+			if (it->second.type.is_node_id())
+			{
+				id = it->second.type.get_node_id();
+			}
+			else
+			{
+				rx_directory_resolver dirs;
+				auto res = rx_platform::api::ns::rx_resolve_reference(it->second.type, dirs);
+				if (res)
+				{
+					id = res.value();
+				}
+			}
+			if (!id.is_null())
+			{
+				it->second.type_id = id;
+				items_to_activate.emplace_back(it->first, std::move(it->second));
+				it = items_to_process.erase(it);
+				continue;
+			}
+			it++;
+		}
+		std::scoped_lock lock(items_lock_);
+		for (auto& one : items_to_activate)
+		{
+			to_activate_items_.emplace(one.first, std::move(one.second));
+			pending_items_.erase(one.first);
+		}
+	}
+	else
+	{
+		bool has_pending = false;
+		std::vector<std::pair<runtime_handle_t, subs_item_data> > items_to_activate;
+		{
+			std::scoped_lock lock(items_lock_);
+			for (auto& one : to_activate_items_)
+			{
+				items_to_activate.emplace_back(one.first, std::move(one.second));
+			}
+			has_pending = !pending_items_.empty();
+		}
+		if (has_pending)
+		{
+			rx_post_function_to(target_, smart_this(), [this]() { process_subscription(true); });
+		}
+		for (auto& one : items_to_activate)
+		{
+			auto res = runtime_events_manager::instance().register_subscriber(smart_this(), one.second.type_id, one.second.filter, false);
+			if (res)
+			{
+				runtime_handle_t my_handle = one.first;
+				auto temp = one.second;
+				temp.connection_handle = res.value();
+				std::scoped_lock lock(items_lock_);
+				to_activate_items_.erase(my_handle);
+				subscriptions_data_.emplace(my_handle, std::move(temp));
+				handle_map_[res.value()] = my_handle;
+			}
+		}
+	}
+
+}
+
+void rx_event_subscription::event_fired (runtime_handle_t handle, const simple_event_item& data)
+{
+	rx_post_function_to(target_, smart_this(), [this, handle, data]() 
+		{
+			runtime_handle_t local_handle = 0;
+			{
+				std::scoped_lock lock(items_lock_);
+				auto it_hndl = handle_map_.find(handle);
+				if (it_hndl != handle_map_.end())
+				{
+					local_handle = it_hndl->second;
+				}
+			}
+			if (callback_ && local_handle != 0)
+			{
+				callback_->event_fired(local_handle, data);
+			}
+		});
+}
+
+void rx_event_subscription::event_fired (runtime_handle_t handle, const data_event_item& data)
+{
+	rx_post_function_to(target_, smart_this(), [this, handle, data]()
+		{
+			runtime_handle_t client_handle = 0;
+			{
+				std::scoped_lock lock(items_lock_);
+				auto it_hndl = handle_map_.find(handle);
+				if (it_hndl != handle_map_.end())
+				{
+					client_handle = it_hndl->second;
+				}
+			}
+			if (callback_ && client_handle != 0)
+			{
+				callback_->event_fired(client_handle, data);
+			}
+		});
 }
 
 
@@ -1400,11 +1494,11 @@ rx_event_subscription_callback::~rx_event_subscription_callback()
 
 
 
-void rx_event_subscription_callback::event_fired (const simple_event_item& data)
+void rx_event_subscription_callback::event_fired (runtime_handle_t handle, const simple_event_item& data)
 {
 }
 
-void rx_event_subscription_callback::event_fired (const data_event_item& data)
+void rx_event_subscription_callback::event_fired (runtime_handle_t handle, const data_event_item& data)
 {
 }
 

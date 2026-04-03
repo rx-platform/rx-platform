@@ -1968,6 +1968,36 @@ RX_COMMON_API int rx_get_bytes_value(const struct typed_value_type* val, size_t 
 	}
 	return rx_copy_bytes_value(value, &val->value.bytes_value);
 }
+RX_COMMON_API int rx_get_uuid_value(const struct typed_value_type* val, size_t idx, rx_uuid_t* value)
+{
+	if (value == NULL && val->value_type != RX_UUID_TYPE)
+	{
+		RX_ASSERT(0);
+		return RX_ERROR;
+	}
+	else
+	{
+#ifdef RX_VALUE_SIZE_16
+		*value = val->value.uuid_value;
+#else
+		* value = *val->value.uuid_value;
+#endif
+		return RX_OK;
+	}
+}
+RX_COMMON_API int rx_get_time_value(const struct typed_value_type* val, size_t idx, rx_time_struct* value)
+{
+	if (value == NULL && val->value_type != RX_TIME_TYPE)
+	{
+		RX_ASSERT(0);
+		return RX_ERROR;
+	}
+	else
+	{
+		value->t_value = val->value.time_value.t_value;
+		return RX_OK;
+	}
+}
 
 
 RX_COMMON_API int rx_get_sub_struct_value(size_t idx_count, const size_t* idxs, struct typed_value_type* out_val, const struct typed_value_type* val)
@@ -2177,10 +2207,16 @@ RX_COMMON_API int rx_get_sub_struct_size(size_t idx_count, const size_t* idxs, c
 				return RX_ERROR;
 			}
 		}
-		else if (val->value_type == RX_STRUCT_TYPE
-			&& idxs[0] < val->value.struct_value.size)
+		else if (val->value_type == RX_STRUCT_TYPE)
 		{
-			return rx_get_sub_struct_size(idx_count - 1, idxs + 1, &val->value.struct_value.values[idxs[0]], size);
+			if (idxs[0] < val->value.struct_value.size)
+			{
+				return rx_get_sub_struct_size(idx_count - 1, idxs + 1, &val->value.struct_value.values[idxs[0]], size);
+			}
+			else
+			{
+				return RX_ERROR;
+			}
 		}
 		else
 		{

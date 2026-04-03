@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_process_context.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -453,6 +453,7 @@ typedef std::vector<write_data_struct<structure::mapper_data> > mapper_writes_ty
 typedef std::vector<execute_data_struct<structure::mapper_data> > mapper_executes_type;
 typedef std::vector<write_data_struct<structure::source_data> > source_writes_type;
 typedef std::vector<write_result_struct<structure::source_data> > source_results_type;
+typedef std::vector<write_result_struct<structure::event_data> > event_results_type;
 typedef std::vector<write_result_struct<structure::variable_data> > variable_results_type;
 typedef std::vector<write_result_struct<structure::variable_block_data> > block_variable_results_type;
 
@@ -478,6 +479,12 @@ struct variable_data_for_process_t
 
 typedef std::function<void(rx_result)> serialize_callback_t;
 
+struct serialize_data_t
+{
+    serialize_callback_t callback;
+    data::runtime_values_data value;
+};
+
 
 
 
@@ -492,7 +499,8 @@ class runtime_process_context
     friend class algorithms::runtime_relation_algorithms;
 
     typedef std::function<void()> fire_callback_func_t;
-    typedef std::map<runtime_transaction_id_t, std::vector<serialize_callback_t> > serialize_callbacks_type;
+    
+    typedef std::map<runtime_transaction_id_t, std::vector<serialize_data_t> > serialize_callbacks_type;
     enum class runtime_context_state : int_fast8_t
     {
         idle = 0,
@@ -598,6 +606,8 @@ class runtime_process_context
 
       void event_pending (event_fired_struct<structure::event_data> data);
 
+      void event_result_pending (write_result_struct<structure::event_data> data);
+
       events_type& get_events_for_process ();
 
       void struct_pending (structure::struct_data* whose);
@@ -616,9 +626,9 @@ class runtime_process_context
 
       runtime_handle_t connect (const string_type& path, uint32_t rate, std::function<void(const rx_value&)> callback, runtime_start_context& ctx);
 
-      std::pair<source_results_type*, source_updates_type*> get_source_inputs ();
+      std::tuple<event_results_type*, source_results_type*, source_updates_type*> get_source_inputs ();
 
-      void runtime_dirty (serialize_callback_t callback);
+      void runtime_dirty (serialize_callback_t callback, data::runtime_values_data save_data);
 
       bool should_save ();
 
@@ -645,18 +655,6 @@ class runtime_process_context
       void simple_value_changed ();
 
       bool in_scan () const;
-
-
-      events::runtime_events_manager * get_events_manager ()
-      {
-        return events_manager_;
-      }
-
-      void set_events_manager (events::runtime_events_manager * value)
-      {
-        events_manager_ = value;
-      }
-
 
 
       const rx_mode_type get_mode () const
@@ -734,8 +732,6 @@ class runtime_process_context
 
       tag_blocks::binded_tags& binded_;
 
-      events::runtime_events_manager *events_manager_;
-
 
       std::atomic<runtime_process_step> current_step_;
 
@@ -770,6 +766,8 @@ class runtime_process_context
       double_collection<programs_type> programs_;
 
       double_collection<events_type> events_;
+
+      double_collection<event_results_type> event_results_;
 
       double_collection<structs_type> structs_;
 

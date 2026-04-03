@@ -223,6 +223,22 @@ int rx_create_server_side_pipe(struct pipe_server_t* pipes,size_t size)
     pipes->client_read=pipe2[0];
     pipes->client_write=pipe1[1];
 
+
+    return RX_OK;
+}
+
+int rx_sync_server_pipe(struct pipe_server_t* pipes)
+{
+    if(pipes->client_write)
+    {
+        close(pipes->client_write);
+        pipes->client_write=0;
+	}
+    if(pipes->client_read)
+    {
+        close(pipes->client_read);
+        pipes->client_read=0;
+	}
     return RX_OK;
 }
 int rx_create_client_side_pipe(struct pipe_server_t* server_pipes, struct pipe_client_t* pipes)
@@ -255,6 +271,11 @@ int rx_destry_server_side_pipe(struct pipe_server_t* pipes)
     }
     return RX_OK;
 }
+
+int rx_sync_client_pipe(struct pipe_client_t* pipes)
+{
+    return RX_OK;
+}
 int rx_destry_client_side_pipe(struct pipe_client_t* pipes)
 {
 
@@ -276,6 +297,7 @@ int rx_write_pipe_server(struct pipe_server_t* pipes, const void* data, size_t s
     int ret = write(pipes->server_write, data, size);
     if(ret<0 || ret!=(int)size)
     {
+        perror("pipe write");
         return RX_ERROR;
     }
     else
@@ -288,6 +310,7 @@ int rx_write_pipe_client(struct pipe_client_t* pipes, const void* data, size_t s
     int ret = write(pipes->client_write, data, size);
     if(ret<0 || ret!=(int)size)
     {
+        perror("pipe write wp");
         return RX_ERROR;
     }
     else
@@ -297,8 +320,13 @@ int rx_write_pipe_client(struct pipe_client_t* pipes, const void* data, size_t s
 }
 int rx_read_pipe_server(struct pipe_server_t* pipes, void* data, size_t* size)
 {
-    int ret = read(pipes->server_write, data, *size);
+    int ret = read(pipes->server_read, data, *size);
     if(ret<0)
+    {
+        perror("pipe read");
+        return RX_ERROR;
+    }
+    else if (ret == 0)
     {
         return RX_ERROR;
     }
@@ -312,6 +340,11 @@ int rx_read_pipe_client(struct pipe_client_t* pipes, void* data, size_t* size)
 {
     int ret = read(pipes->client_read, data, *size);
     if(ret<0)
+    {
+        perror("pipe read wp");
+        return RX_ERROR;
+    }
+    else if (ret == 0)
     {
         return RX_ERROR;
     }
@@ -453,6 +486,9 @@ typedef struct linux_thread_chunk
 
 void* do_stuff(void* arg)
 {
+
+
+
     int ret;
 	struct linux_thread_chunk* start_chunk = (struct linux_thread_chunk*)arg;
 	eventfd_t buff = 1;
@@ -483,15 +519,15 @@ void* do_stuff(void* arg)
                 break;
         }
 
-		if(setpriority(PRIO_PROCESS, 0, niceness)<0)
-			perror("\rsetpriority");
+		setpriority(PRIO_PROCESS, 0, niceness);
 	}
 	//(addr)(start_chunk->arg);
+
+
 
 	(*start_chunk->f)(start_chunk->arg);
 	//start_chunk.f(NULL);
 	//(start_chunk->f)(start_chunk->arg);
-
 	ret = write(start_chunk->thread_fd, &buff, sizeof(buff));
 	if(ret<0)
         perror("Error in do stuff - write.");
@@ -512,11 +548,10 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
 
     struct linux_thread_chunk* chunk = (struct linux_thread_chunk*)rx_heap_alloc(sizeof(struct linux_thread_chunk));
     chunk->f = f;
-    chunk->thread_fd = eventfd(0, EFD_NONBLOCK);
+    chunk->thread_fd = eventfd(0, EFD_NONBLOCK| EFD_CLOEXEC);
     chunk->arg = arg;
     chunk->priority = priority;
     pthread_attr_init(&chunk->attr);
-
 
     struct sched_param sp;
     memzero(&sp, sizeof(sp));
@@ -561,8 +596,8 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
 
 	ret = pthread_setname_np(chunk->thr, name_buff);
 #ifdef _DEBUG
-	if (ret != 0)
-        perror("pthread_setname_np");
+	//if (ret != 0)
+     //   perror("pthread_setname_np");
 #endif
 
 
@@ -574,6 +609,7 @@ sys_handle_t rx_thread_create(start_address_t f, void* arg, int priority, uint32
             perror("pthread_setschedparam");
         }
     }
+
 
 	return chunk->thread_fd;
 }
@@ -591,7 +627,7 @@ int rx_thread_close(sys_handle_t what)
 	// warning this here leaves memory lekage
 	// not so many threads created or stopped to have problem yet, but see what to do with it
 	close(what);
-	return RX_ERROR;
+	return RX_OK;
 }
 sys_handle_t rx_current_thread()
 {

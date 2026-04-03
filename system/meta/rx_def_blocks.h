@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_def_blocks.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -43,9 +43,9 @@
 namespace rx_platform {
 namespace meta {
 namespace def_blocks {
+class mapper_attribute;
 class variable_attribute;
 class struct_attribute;
-class mapper_attribute;
 
 } // namespace def_blocks
 } // namespace meta
@@ -163,10 +163,11 @@ class const_value_def
 public:
 	const_value_def(const const_value_def& right) = default;
 	const_value_def(const_value_def&& right) = default;
-	const_value_def() = default;
 	~const_value_def() = default;
 
   public:
+      const_value_def();
+
       const_value_def (const string_type& name, rx_simple_value&& value, bool config_only);
 
       const_value_def (const string_type& name, const rx_simple_value& value, bool config_only);
@@ -351,10 +352,11 @@ class simple_value_def
 public:
 	simple_value_def(const simple_value_def& right) = default;
 	simple_value_def(simple_value_def&& right) = default;
-	simple_value_def() = default;
 	~simple_value_def() = default;
 
   public:
+      simple_value_def();
+
       simple_value_def (const string_type& name, rx_simple_value&& value, bool read_only, bool persistent);
 
       simple_value_def (const string_type& name, const rx_simple_value& value, bool read_only, bool persistent);

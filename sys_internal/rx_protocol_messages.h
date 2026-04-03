@@ -165,6 +165,26 @@ const rx_message_type_t rx_write_items_response_id = 0x8088;
 const rx_message_type_t rx_execute_item_request_id = 0x0089;
 const rx_message_type_t rx_execute_item_response_id = 0x8089;
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+// subscription messages constants
+const rx_message_type_t rx_create_event_subscription_request_id = 0x008a;
+const rx_message_type_t rx_create_event_subscription_response_id = 0x808a;
+
+const rx_message_type_t rx_update_event_subscription_request_id = 0x008b;
+const rx_message_type_t rx_update_event_subscription_response_id = 0x808b;
+
+const rx_message_type_t rx_delete_event_subscription_request_id = 0x008c;
+const rx_message_type_t rx_delete_event_subscription_response_id = 0x808c;
+
+
+const rx_message_type_t rx_add_event_items_request_id = 0x008d;
+const rx_message_type_t rx_add_event_items_response_id = 0x808d;
+
+const rx_message_type_t rx_modify_event_items_request_id = 0x008e;
+const rx_message_type_t rx_modify_event_items_response_id = 0x808e;
+
+const rx_message_type_t rx_remove_event_items_request_id = 0x008f;
+const rx_message_type_t rx_remove_event_items_response_id = 0x808f;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // Async messages constants
@@ -172,6 +192,7 @@ const rx_message_type_t rx_subscription_items_notification_id = 0x7001;
 const rx_message_type_t rx_subscription_write_done_id = 0x7002;
 const rx_message_type_t rx_connection_notify_id = 0x7003;
 const rx_message_type_t rx_subscription_exec_done_id = 0x7004;
+const rx_message_type_t rx_subscription_event_fired_id = 0x7005;
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // keep alive message constant
 const rx_message_type_t rx_keep_alive_message_id = 0xfffe;

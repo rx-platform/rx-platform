@@ -4,33 +4,32 @@
 *
 *  dotnet\rx_dotnet_runtime.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
 #include "pch.h"
 
-#include "rx_dotnet_os.h"
 
 // rx_dotnet_runtime
 #include "dotnet/rx_dotnet_runtime.h"
@@ -83,7 +82,7 @@ namespace rx_internal {
 
 namespace dotnet {
 
-// Class rx_internal::dotnet::dotnet_method 
+// Class rx_internal::dotnet::dotnet_method
 
 dotnet_method::dotnet_method()
 {
@@ -201,7 +200,7 @@ void dotnet_method::received_execute_done (uint32_t transId, const string_type& 
 }
 
 
-// Class rx_internal::dotnet::dotnet_object_runtime 
+// Class rx_internal::dotnet::dotnet_object_runtime
 
 std::map<rx_node_id, dotnet_object_runtime::smart_ptr> dotnet_object_runtime::runtime_instances;
 
@@ -334,7 +333,7 @@ rx_result dotnet_object_runtime::initialize_runtime (runtime_init_context& ctx)
             {
 				rel_it->second->set_index(idx);
             }
-            auto temp = std::make_unique<runtime::async_local_value<string_type> >();
+            auto temp = std::make_unique<runtime::async_complex_value>();
             auto result = temp->bind(rel, ctx);
             if (!result)
             {
@@ -388,15 +387,15 @@ rx_result dotnet_object_runtime::stop_runtime (runtime_stop_context& ctx)
 
 void dotnet_object_runtime::fill_code_info (std::ostream& info, const string_type& name) const
 {
-    rx_time_struct ret; 
+    rx_time_struct ret;
     create_module_compile_time(__DATE__, __TIME__, &ret);
-    info << "CODE INFO" << "\r\n"; 
-    info << "--------------------------------------------------------------------------------" << "\r\n"; 
-    info << "name       : " << name << "\r\n"; 
+    info << "CODE INFO" << "\r\n";
+    info << "--------------------------------------------------------------------------------" << "\r\n";
+    info << "name       : " << name << "\r\n";
     info << "subsystem  : " << "dotnet" << "\r\n";
     info << "--------------------------------------------------------------------------------" << "\r\n";
     info << "assembly   : " << code_info_.assembly_name << "\r\n";
-    info << "file       : " << code_info_.file_name << "\r\n"; 
+    info << "file       : " << code_info_.file_name << "\r\n";
     info << "class name : " << code_info_.class_name << "\r\n";
 }
 
@@ -407,15 +406,15 @@ void dotnet_object_runtime::post_own_job (plugin_job_struct* what)
     //get_context()->own_pending(job);
 }
 
-void dotnet_object_runtime::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback)
+void dotnet_object_runtime::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
     DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
 		, rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
-    
+
     if(idx < binded_values_.size())
     {
-		auto callback_ptr = std::make_shared<rx_result_callback>(std::move(callback));
-        binded_values_[idx]->value.commit(rx_simple_value(val), [trans_id = transId, callback_ptr = callback_ptr]
+		auto callback_ptr = std::make_shared<rx_result_callback>(smart_this(), std::move(callback), get_executer());
+        binded_values_[idx]->value.commit(std::move(val), [trans_id = transId, callback_ptr = callback_ptr]
         (runtime_transaction_id_t , rx_result result) mutable
             {
                 (*callback_ptr)(std::move(result));
@@ -427,12 +426,19 @@ void dotnet_object_runtime::received_write_value (uint32_t transId, void* inst, 
     else if (idx < binded_values_.size() + relation_values_.size())
     {
         size_t rel_idx = idx - binded_values_.size();
-		string_type rel_val = val.extract_static<string_type>("");
-		(*relation_values_[rel_idx]) = rel_val;
+        auto callback_ptr = std::make_shared<rx_result_callback>(smart_this(), std::move(callback), get_executer());
+		relation_values_[rel_idx]->commit(std::move(val), [trans_id = transId, callback_ptr = callback_ptr]
+        (runtime_transaction_id_t, rx_result result) mutable
+            {
+                (*callback_ptr)(std::move(result));
+                DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
+                    , rx_create_string("Received write result for transId: ", trans_id, "."));
+
+            });
     }
     else
     {
-        callback(rx_result(RX_INVALID_ARGUMENT).move());
+        callback(rx_result(RX_INVALID_ARGUMENT));
     }
 }
 
@@ -503,7 +509,7 @@ void dotnet_object_runtime::register_relation (const string_type& name, rx_refer
 }
 
 
-// Class rx_internal::dotnet::dotnet_relation 
+// Class rx_internal::dotnet::dotnet_relation
 
 dotnet_relation::dotnet_relation()
       : index_(0x8000)
@@ -606,7 +612,7 @@ void dotnet_relation::set_index (size_t index)
 }
 
 
-// Class rx_internal::dotnet::dotnet_event 
+// Class rx_internal::dotnet::dotnet_event
 
 dotnet_event::dotnet_event (string_type conn_data, rx_node_id type_id)
       : conn_data_(conn_data),
@@ -749,14 +755,14 @@ void dotnet_event::fill_code_info (std::ostream& info, const string_type& name) 
 {
 }
 
-void dotnet_event::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback)
+void dotnet_event::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
     DOTNET_LOG_DEBUG("dotnet_event", 100
         , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
 
     if (idx < binded_values_.size())
     {
-        auto callback_ptr = std::make_shared<rx_result_callback>(std::move(callback));
+        auto callback_ptr = std::make_shared<rx_result_callback>(smart_this(), std::move(callback));
         binded_values_[idx]->value.commit(rx_simple_value(val), [trans_id = transId, callback_ptr = callback_ptr]
         (runtime_transaction_id_t, rx_result result) mutable
             {
@@ -791,17 +797,31 @@ void dotnet_event::binded_value_changed (int idx, const values::rx_simple_value&
                     ser_val.assign_static(writer.get_string());
                 }
             }
-            dotnet_hosting::instance().runtime_value_changed(idx, std::move(ser_val), rx_item_type::rx_mapper_type, this);
+            dotnet_hosting::instance().runtime_value_changed(idx, std::move(ser_val), rx_item_type::rx_event_type, this);
         }
         else
         {
-            dotnet_hosting::instance().runtime_value_changed(idx, rx_simple_value(val), rx_item_type::rx_mapper_type, this);
+            dotnet_hosting::instance().runtime_value_changed(idx, rx_simple_value(val), rx_item_type::rx_event_type, this);
+        }
+    }
+}
+
+void dotnet_event::fire_event (string_type data, string_type queue, bool state, bool remove)
+{
+    data::runtime_values_data event_data;
+
+    serialization::json_reader reader;
+    if (reader.parse_data(data))
+    {
+        if (reader.read_init_values(nullptr, event_data))
+        {
+            event_fired(0, std::move(event_data), std::move(queue), state, remove);
         }
     }
 }
 
 
-// Class rx_internal::dotnet::dotnet_mapper 
+// Class rx_internal::dotnet::dotnet_mapper
 
 dotnet_mapper::dotnet_mapper (string_type conn_data, rx_node_id type_id)
       : conn_data_(conn_data),
@@ -945,14 +965,14 @@ void dotnet_mapper::fill_code_info (std::ostream& info, const string_type& name)
 {
 }
 
-void dotnet_mapper::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback)
+void dotnet_mapper::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
     DOTNET_LOG_DEBUG("dotnet_mapper", 100
         , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
 
     if (idx < binded_values_.size())
     {
-        auto callback_ptr = std::make_shared<rx_result_callback>(std::move(callback));
+        auto callback_ptr = std::make_shared<rx_result_callback>(smart_this(), std::move(callback));
         binded_values_[idx]->value.commit(rx_simple_value(val), [trans_id = transId, callback_ptr = callback_ptr]
         (runtime_transaction_id_t, rx_result result) mutable
             {
@@ -997,7 +1017,7 @@ void dotnet_mapper::binded_value_changed (int idx, const values::rx_simple_value
 }
 
 
-// Class rx_internal::dotnet::dotnet_source 
+// Class rx_internal::dotnet::dotnet_source
 
 dotnet_source::dotnet_source (string_type conn_data, rx_node_id type_id)
       : conn_data_(conn_data),
@@ -1141,14 +1161,14 @@ void dotnet_source::fill_code_info (std::ostream& info, const string_type& name)
 {
 }
 
-void dotnet_source::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback)
+void dotnet_source::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
     DOTNET_LOG_DEBUG("dotnet_source", 100
         , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
 
     if (idx < binded_values_.size())
     {
-        auto callback_ptr = std::make_shared<rx_result_callback>(std::move(callback));
+        auto callback_ptr = std::make_shared<rx_result_callback>(smart_this(), std::move(callback));
         binded_values_[idx]->value.commit(rx_simple_value(val), [trans_id = transId, callback_ptr = callback_ptr]
         (runtime_transaction_id_t, rx_result result) mutable
             {
@@ -1218,7 +1238,7 @@ rx_result dotnet_source::source_execute (execute_data&& data, runtime_process_co
 }
 
 
-// Class rx_internal::dotnet::dotnet_struct 
+// Class rx_internal::dotnet::dotnet_struct
 
 dotnet_struct::dotnet_struct (string_type conn_data, rx_node_id type_id)
       : conn_data_(conn_data),
@@ -1347,13 +1367,15 @@ rx_result dotnet_struct::start_struct (runtime::runtime_start_context& ctx)
 
 rx_result dotnet_struct::stop_struct (runtime::runtime_stop_context& ctx)
 {
-    DOTNET_LOG_DEBUG("dotnet_struct", 100, "dotnet proxy struct initialized.");
+    DOTNET_LOG_DEBUG("dotnet_struct", 100, "dotnet proxy struct stopped.");
     return true;
 }
 
 rx_result dotnet_struct::deinitialize_struct (runtime::runtime_deinit_context& ctx)
 {
     dotnet_hosting::instance().unbind_struct(object_id_, path_, type_id_, this);
+
+    DOTNET_LOG_DEBUG("dotnet_struct", 100, "dotnet proxy struct de-initialized.");
     return true;
 }
 
@@ -1361,14 +1383,14 @@ void dotnet_struct::fill_code_info (std::ostream& info, const string_type& name)
 {
 }
 
-void dotnet_struct::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback)
+void dotnet_struct::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
     DOTNET_LOG_DEBUG("dotnet_struct", 100
         , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
 
     if (idx < binded_values_.size())
     {
-        auto callback_ptr = std::make_shared<rx_result_callback>(std::move(callback));
+        auto callback_ptr = std::make_shared<rx_result_callback>(smart_this(), std::move(callback));
         binded_values_[idx]->value.commit(rx_simple_value(val), [trans_id = transId, callback_ptr = callback_ptr]
         (runtime_transaction_id_t, rx_result result) mutable
             {
@@ -1413,7 +1435,7 @@ void dotnet_struct::binded_value_changed (int idx, const values::rx_simple_value
 }
 
 
-// Class rx_internal::dotnet::dotnet_appliacation 
+// Class rx_internal::dotnet::dotnet_appliacation
 
 dotnet_appliacation::dotnet_appliacation()
 {
@@ -1447,7 +1469,7 @@ rx_result dotnet_appliacation::stop_runtime (runtime_stop_context& ctx)
 }
 
 
-// Class rx_internal::dotnet::dotnet_domain 
+// Class rx_internal::dotnet::dotnet_domain
 
 dotnet_domain::dotnet_domain()
 {

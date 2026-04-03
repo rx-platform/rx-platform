@@ -315,7 +315,16 @@ rx_result rx_gate::start (hosting::rx_platform_host* host, const configuration_d
 
 rx_result rx_gate::stop ()
 {
+	
 	platform_status_ = rx_platform_status::stopping;
+	auto stopped_event = std::make_shared<locks::event>(false);
+	rx_void_callback callback(rx_reference_ptr(), [stopped_event]()
+		{
+			stopped_event->set();
+		}, RX_DOMAIN_META);
+	rx_internal::dotnet::dotnet_hosting::instance().deinitialize(std::move(callback));
+	//stopped_event->wait_handle();
+
 	rx_internal::sys_runtime::platform_runtime_manager::instance().stop_all();
 	rx_internal::model::platform_types_manager::instance().stop();
 #ifdef UPYTHON_SUPPORT

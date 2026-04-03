@@ -46,6 +46,7 @@ namespace rx_http {
 rx_http_endpoint::rx_http_endpoint (rx_reference<rx_http_port> port)
       : executer_(-1),
         port_(port)
+	, parser_(false)
 {
 	HTTP_LOG_DEBUG("rx_http_endpoint", 200, "HTTP communication server endpoint created.");
 	rx_init_stack_entry(&stack_entry_, this);
@@ -82,10 +83,16 @@ rx_protocol_stack_endpoint* rx_http_endpoint::bind_endpoint (std::function<void(
 			http_request request;
 			request.method = req.method;
 			request.path = std::move(req.path);
-			request.headers = std::move(req.headers);
-			request.content = std::move(req.content);
-			request.acceptable_types = req.acceptable_types;
-			request.extension = std::move(req.extension);
+			for(auto& one : req.headers)
+			{
+				request.headers[std::string(one.first)] = std::string(one.second);
+			}
+			request.content = byte_string((std::byte*)req.content_ptr, (std::byte*)req.content_ptr + req.content_size);
+			for(auto& one : req.acceptable_types)
+			{
+				request.acceptable_types.push_back(std::string(one));
+			}
+			request.extension = req.extension;
 			request.params = std::move(req.params);
 			request.whose = smart_this();
 			request.identity = security::active_security();

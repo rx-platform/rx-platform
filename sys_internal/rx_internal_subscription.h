@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_subscription.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_protocol_messages
-#include "sys_internal/rx_protocol_messages.h"
 // rx_subscription_items
 #include "sys_internal/rx_subscription_items.h"
+// rx_protocol_messages
+#include "sys_internal/rx_protocol_messages.h"
 
 #include "system/runtime/rx_runtime_helpers.h"
 #include "system/runtime/rx_runtime_holder.h"
@@ -388,6 +388,275 @@ class subscription_execute_done : public rx_message_base
       data::runtime_values_data data;
 
       uint32_t signal_level;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class create_event_subscription_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      uint32_t revised_publish_rate;
+
+      uint32_t revised_keep_alive_period;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class delete_event_subscription_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class update_event_subscription_response : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      uint32_t revised_publish_rate;
+
+      uint32_t revised_keep_alive_period;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class create_event_subscription_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      uint32_t publish_rate;
+
+      uint32_t keep_alive_period;
+
+      bool active;
+
+      uint8_t priority;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class update_event_subscription_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      uint32_t publish_rate;
+
+      uint32_t keep_alive_period;
+
+      bool active;
+
+      uint8_t priority;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class delete_event_subscription_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class subscription_event_fired : public rx_message_base  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      runtime_transaction_id_t handle;
+
+      rx_time time;
+
+      string_type queue;
+
+      data::runtime_values_data data;
 
 
   protected:

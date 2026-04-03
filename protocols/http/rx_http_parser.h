@@ -59,15 +59,45 @@ struct http_parsed_request
 
       string_type path;
 
-      string_type extension;
+      string_view_type extension;
 
-      rx_http_headers_type headers;
+      rx_http_parsed_headers_type headers;
 
-      rx_acceptable_types_type acceptable_types;
+      rx_parsed_acceptable_types_type acceptable_types;
 
-      rx_http_params_type params;
+      rx_http_parsed_params_type params;
 
-      byte_string content;
+      void* content_ptr;
+
+      size_t content_size;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct http_parsed_response 
+{
+
+
+      int status;
+
+      string_view_type message;
+
+      rx_http_parsed_headers_type headers;
+
+      void* content_ptr;
+
+      size_t content_size;
 
   public:
 
@@ -88,15 +118,22 @@ class http_parser
 {
     
     typedef std::function<rx_protocol_result_t(http_parsed_request)> callback_type;
+    typedef std::function<rx_protocol_result_t(http_parsed_response)> client_callback_type;
 
   public:
-      http_parser();
+      http_parser (bool simple);
 
 
       rx_protocol_result_t received (recv_protocol_packet packet);
 
+      rx_protocol_result_t received_response (recv_protocol_packet packet);
+
+      rx_const_packet_buffer create_const_buffer ();
+
 
       callback_type callback;
+
+      client_callback_type client_callback;
 
 
   protected:
@@ -105,7 +142,11 @@ class http_parser
 
       rx_protocol_result_t create_and_forward_request (const char* method, size_t method_len, const char* path, size_t path_len, size_t num_headers, std::byte* content_ptr, size_t content_max_size);
 
+      rx_protocol_result_t create_and_forward_response (int status_code, const char* msg, size_t msg_len, size_t num_headers, std::byte* content_ptr, size_t content_max_size);
+
       void send_current_request ();
+
+      void send_current_response ();
 
 
 
@@ -116,7 +157,11 @@ class http_parser
 
       http_parsed_request prepared_request_;
 
+      http_parsed_response prepared_response_;
+
       phr_header headers_buffer_[0x80];
+
+      bool simple_;
 
 
 };

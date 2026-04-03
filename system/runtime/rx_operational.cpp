@@ -778,6 +778,9 @@ rx_result binded_tags::internal_get_item (const string_type& path, rx_simple_val
 	case rt_value_ref_type::rt_value:
 		what = ref.ref_value_ptr.value->get_value(ctx).to_simple();
 		return true;
+	case rt_value_ref_type::rt_block_value:
+		what = ref.ref_value_ptr.block_value->get_value(ctx).to_simple();
+		return true;
 	case rt_value_ref_type::rt_full_value:
 		what = ref.ref_value_ptr.full_value->get_value(ctx).to_simple();
 		return true;

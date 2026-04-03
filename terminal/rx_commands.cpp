@@ -63,6 +63,7 @@
 #include "protocols/mqtt/mqtt_simple_server.h"
 #include "protocols/mqtt/mqtt_display.h"
 #include "dotnet/rx_dotnet.h"
+#include "protocols/knx/rx_knx_ip.h"
 
 
 namespace rx_internal {
@@ -259,6 +260,21 @@ void server_command_manager::register_internal_commands ()
 			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_http_display>();
 		});
 
+
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
+		RX_MQTT_SIMPLE_SOURCE_TYPE_ID, [] {
+			return rx_create_reference<protocols::mqtt::mqtt_simple::mqtt_json_source>();
+		});
+
+	result = rx_internal::model::register_internal_constructor<port_type, protocols::knx::knx_ip_port>(
+		nullptr, RX_KNX_IP_PORT_TYPE_ID, [] {
+			return rx_create_reference<protocols::knx::knx_ip_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_simple_type_repository<source_type>().register_constructor(
+		RX_KNX_SOURCE_TYPE_ID, [] {
+			return rx_create_reference<protocols::knx::knx_ip_source>();
+		});
+
 	//
 
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
@@ -288,6 +304,10 @@ void server_command_manager::register_internal_commands ()
 	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
 		RX_NS_WS_TYPE_ID, [] {
 			return rx_create_reference<protocols::rx_http::rx_web_socket_port>();
+		});
+	result = rx_internal::model::platform_types_manager::instance().get_type_repository<port_type>().register_constructor(
+		RX_NS_WS_CLIENT_TYPE_ID, [] {
+			return rx_create_reference<protocols::rx_http::rx_web_socket_client_port>();
 		});
 
 	auto commands = get_internal_commands();

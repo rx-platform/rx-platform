@@ -251,6 +251,9 @@ void thread::_inner_handler (void* arg)
 {
 	thread *p = static_cast<thread *>(arg);
 
+
+#ifndef RX_DOTNET_WP
+
 	rx_thread_data_object* ptr = nullptr;
 
 	rx_push_thread_context(p->rx_thread_id_);
@@ -265,6 +268,10 @@ void thread::_inner_handler (void* arg)
 	RX_ASSERT(ptr1 == ptr);
 	if (ptr)
 		delete ptr;
+#else
+	p->handler();
+
+#endif
 
 }
 
@@ -608,7 +615,9 @@ void timer::init_random_sequences ()
 		medium_randoms_[i] = (rx_timer_ticks_t)rx_border_rand(0, rx_medium_time_offset);
 		soft_randoms_[i] = (rx_timer_ticks_t)rx_border_rand(0, rx_soft_time_offset);
 	}
+#ifndef RX_DOTNET_WP
 	real_time_ = rx_gate::instance().get_configuration().processor.real_time;
+#endif
 }
 
 rx_timer_ticks_t timer::get_random_time_offset (job& whose)

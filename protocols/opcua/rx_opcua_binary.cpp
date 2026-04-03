@@ -934,7 +934,7 @@ void ua_binary_ostream::serialize_vunion(uint8_t type, const vunion_type& vu)
 		(*this) << vu.sc_val;
 		break;
 	case opcid_Byte:
-		(*this) << vu.b_val;
+		(*this) << vu.c_val;
 		break;
 	case opcid_Int16:
 		(*this) << vu.sw_val;

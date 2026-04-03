@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_server.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -34,16 +34,16 @@
 
 #include "system/server/rx_server.h"
 
-// rx_http_request
-#include "system/http_support/rx_http_request.h"
-// rx_http
-#include "system/http_support/rx_http.h"
 // rx_http_displays
 #include "http_server/rx_http_displays.h"
 // rx_http_handlers
 #include "http_server/rx_http_handlers.h"
 // rx_http_mapping
 #include "protocols/http/rx_http_mapping.h"
+// rx_http_request
+#include "system/http_support/rx_http_request.h"
+// rx_http
+#include "system/http_support/rx_http.h"
 
 namespace rx_internal {
 namespace rx_http_server {
@@ -75,7 +75,7 @@ class standard_request_filter : public rx_platform::http::http_request_filter
 {
 
   public:
-      standard_request_filter (const string_type& spa);
+      standard_request_filter (const string_type& spa, const string_type& start_page);
 
 
       rx_result handle_request_after (http_request& req, http_response& resp);
@@ -89,6 +89,8 @@ class standard_request_filter : public rx_platform::http::http_request_filter
 
 
       string_type spa_;
+
+      string_type start_page_;
 
 
 };
@@ -327,6 +329,8 @@ class http_server
       cached_paths_type cached_content_paths_;
 
       string_type spa_;
+
+      string_type start_page_;
 
 
 };

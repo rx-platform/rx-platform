@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_extern_blocks.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -82,7 +82,7 @@ extern "C"
     }
 
     host_source_def_struct _g_source_def_
-    { 
+    {
         {
             nullptr
             , nullptr
@@ -101,7 +101,7 @@ extern "C"
         {
             return rx_result(RX_ERROR_STOPPED).move();
         }
-        rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>* self 
+        rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>* self
             = (rx_platform::runtime::blocks::extern_source_runtime<plugin_source_runtime_struct4>*)whose;
         return self->update_source(rx_value(std::move(val))).move();
     }
@@ -162,7 +162,7 @@ extern "C"
         {
             return rx_result(RX_ERROR_STOPPED).move();
         }
-        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct>* self 
+        rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct>* self
             = (rx_platform::runtime::blocks::extern_mapper_runtime<plugin_mapper_runtime_struct>*)whose;
         return self->mapper_write(id, test!=0, identity, rx_simple_value(std::move(val))).move();
     }
@@ -484,7 +484,7 @@ extern "C"
     }
 
     host_filter_def_struct _g_filter_def_
-    { 
+    {
         {
             nullptr
             , nullptr
@@ -1116,18 +1116,13 @@ byte_string extern_event_runtime::extern_get_arguments ()
     return byte_string();
 }
 
-void extern_event_runtime::extern_event_fired (runtime_transaction_id_t id, bool test, rx_security_handle_t identity, rx_timed_value data, string_view_type queue, bool state, bool remove)
+void extern_event_runtime::extern_event_fired (runtime_transaction_id_t trans_id, bool test, rx_security_handle_t identity, rx_timed_value data, string_view_type queue, bool state, bool remove)
 {
-    event_fired_data ev_data;
-    ev_data.identity = identity;
-    ev_data.internal = false;
-    ev_data.test = test;
-    ev_data.transaction_id = id;
-    ev_data.value = std::move(data);
-    ev_data.queue = queue;
-    ev_data.state_machine = state;
-    ev_data.remove_queue = remove;
-    event_fired(std::move(ev_data));
+    event_fired(trans_id, data.to_simple(), string_type(queue), state, remove);
+}
+
+void extern_event_runtime::event_result_received (rx_result&& result, runtime_transaction_id_t id)
+{
 }
 
 

@@ -65,12 +65,14 @@ extern "C" {
 	{
 		sys_handle_t client_read;
 		sys_handle_t client_write;
-	} client_server;
+	} pipe_client;
 
 	void rx_initialize_server_side_pipe(struct pipe_server_t* pipes);
 	void rx_initialize_client_side_pipe(struct pipe_client_t* pipes);
 	int rx_create_server_side_pipe(struct pipe_server_t* pipes, size_t size);
+	int rx_sync_server_pipe(struct pipe_server_t* pipes);
 	int rx_create_client_side_pipe(struct pipe_server_t* server_pipes, struct pipe_client_t* pipes);
+	int rx_sync_client_pipe(struct pipe_client_t* pipes);
 	int rx_destry_server_side_pipe(struct pipe_server_t* pipes);
 	int rx_destry_client_side_pipe(struct pipe_client_t* pipes);
 
@@ -173,6 +175,8 @@ extern "C" {
 	/////////////////////////////////////////////////////////////////////////////////////////////
 	// file related stuff
 	/////////////////////////////////////////////////////////////////////////////////////////////
+
+
 	int rx_create_directory(const char* path, int fail_on_exsist);
 
 

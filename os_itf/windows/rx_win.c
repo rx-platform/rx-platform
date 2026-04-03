@@ -471,6 +471,31 @@ int rx_create_server_side_pipe(struct pipe_server_t* pipes, size_t size)
 	}
 	return RX_ERROR;
 }
+
+int rx_sync_server_pipe(struct pipe_server_t* pipes)
+{
+	char temp_buff;
+	size_t temp_size = 1;
+
+	auto ret = rx_write_pipe_server(pipes, "", 1);
+	if (ret != RX_OK)
+		return ret;
+	ret = rx_read_pipe_server(pipes, &temp_buff, &temp_size);
+	if (ret != RX_OK)
+		return ret;
+
+	if(pipes->client_write)
+	{
+		CloseHandle(pipes->client_write);
+		pipes->client_write = NULL;
+	}
+	if(pipes->client_read)
+	{
+		CloseHandle(pipes->client_read);
+		pipes->client_read = NULL;
+	}
+	return RX_OK;
+}
 int rx_create_client_side_pipe(struct pipe_server_t* server_pipes, struct pipe_client_t* pipes)
 {
 	pipes->client_read = server_pipes->client_read;
@@ -502,6 +527,20 @@ int rx_destry_server_side_pipe(struct pipe_server_t* pipes)
 	}
 	return RX_OK;
 }
+
+int rx_sync_client_pipe(struct pipe_client_t* pipes)
+{
+	char temp_buff;
+	size_t temp_size = 1;
+
+	auto ret = rx_write_pipe_client(pipes, "", 1);
+	if (ret != RX_OK)
+		return ret;
+	ret = rx_read_pipe_client(pipes, &temp_buff, &temp_size);
+	if (ret != RX_OK)
+		return ret;
+	return RX_OK;
+}
 int rx_destry_client_side_pipe(struct pipe_client_t* pipes)
 {
 	if (pipes->client_read)
@@ -522,7 +561,7 @@ int rx_destry_client_side_pipe(struct pipe_client_t* pipes)
 int rx_write_pipe_server(struct pipe_server_t* pipes, const void* data, size_t size)
 {
 	DWORD writen = 0;
-	BOOL ret = WriteFile(pipes->server_write, &size, sizeof(size), &writen, NULL);
+	BOOL ret = WriteFile(pipes->server_write, data, (DWORD)size, &writen, NULL);
 	if (!ret || writen != size)
 	{
 		return RX_ERROR;
@@ -537,6 +576,7 @@ int rx_write_pipe_client(struct pipe_client_t* pipes, const void* data, size_t s
 	BOOL ret = WriteFile(pipes->client_write, data, (DWORD)size, &writen, NULL);
 	if (!ret || writen != size)
 	{
+		DWORD err = GetLastError();
 		return RX_ERROR;
 	}
 
@@ -1044,6 +1084,7 @@ void rx_find_file_close(find_file_handle_t hndl)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // file handling functions
+
 
 int rx_create_directory(const char* dir, int fail_on_exsists)
 {

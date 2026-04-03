@@ -242,7 +242,7 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
             {
                 whose.runtime_data_cache_ = dt;
                 whose.json_cache_.clear();
-                whose.context_->object_changed->event_fired(std::move(dt));
+                whose.context_->object_changed->event_fired(0, std::move(dt), "", false, false);
             }
         }
     }
@@ -404,12 +404,17 @@ template <class typeT>
 void runtime_scan_algorithms<typeT>::process_source_inputs (typename typeT::RType& whose, runtime_process_context& ctx)
 {
     auto to_process = ctx.get_source_inputs();
-    while (!to_process.first->empty() || !to_process.second->empty())
+    while (!std::get<0>(to_process)->empty() || !std::get<1>(to_process)->empty() || !std::get<2>(to_process)->empty())
     {
-        for (auto& one : *to_process.first)
+		// process write results first as they can trigger more writes
+        // and we want to process them in the same scan
+        for (auto& one : *std::get<1>(to_process))
             one.whose->process_result(one.transaction_id, std::move(one.result));
 
-        for (auto& one : *to_process.second)
+        for (auto& one : *std::get<0>(to_process))
+            one.whose->process_result(one.transaction_id, std::move(one.result));
+
+        for (auto& one : *std::get<2>(to_process))
             one.whose->process_update(std::move(one.value));
 
         to_process = ctx.get_source_inputs();
@@ -489,7 +494,7 @@ void runtime_scan_algorithms<typeT>::process_events (typename typeT::RType& whos
         // event processing!!!!
         for (auto& one : *events)
         {
-            one.whose->process_runtime(&ctx, std::move(one.data));
+            one.whose->process_event(&ctx, std::move(one.data));
         }
         events = &ctx.get_events_for_process();
     }

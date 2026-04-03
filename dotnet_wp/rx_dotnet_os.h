@@ -32,7 +32,8 @@
 #define rx_dotnet_os_h 1
 
 
-#include "system/server/rx_server.h"
+#include "dotnet_wp/dotnet_wp_protocol.h"
+#include "dotnet_wp_log_macros.h"
 
 
 
@@ -50,19 +51,22 @@ namespace rx_internal
 {
 namespace dotnet{
 
-    struct rx_dotnet_config_data_t
-    {
-        string_type config_tfm;
-        string_type config_framework;
-        string_type config_framework_version;
-	};
+enum class log_event_type
+{
+	debug = 0,
+	trace = 1,
+	info = 2,
+	warning = 3,
+	error = 4,
+	critical = 5
+};
     
-    rx_result load_hostfxr(const rx_platform::dotnet_data_t& config, rx_dotnet_config_data_t& init_config);
-	rx_result init_dotnet_host(string_type runtime_config);
-    string_array get_dotnet_runtimes();
-    string_type get_hosted_dotnet_version();
-    rx_result load_assembly(const string_type& path);
-    rx_result get_function_pointer(const string_type& type_name, const string_type& method_name, const string_type& delegate_name, void** del);
+rx_result load_hostfxr(rx_dotnet_config_data_t& init_config);
+rx_result init_dotnet_host(string_type runtime_config);
+string_array get_dotnet_runtimes();
+string_type get_hosted_dotnet_version();
+rx_result load_assembly(const string_type& path);
+rx_result get_function_pointer(const string_type& type_name, const string_type& method_name, const string_type& delegate_name, void** del);
 
 
 } // namespace dotnet

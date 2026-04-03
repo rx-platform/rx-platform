@@ -4,7 +4,7 @@
 *
 *  dotnet\rx_dotnet.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -31,7 +31,6 @@
 #include "pch.h"
 
 #include "rx_dotnet_version.h"
-#include "rx_dotnet_os.h"
 
 // rx_dotnet_host
 #include "dotnet/rx_dotnet_host.h"
@@ -64,12 +63,6 @@ rx_result add_object_to_configuration(rx_directory_ptr dir, typename T::instance
 
 
 namespace dotnet {
-namespace{
-
-init_hosting_entry_point_fn init_hosting_fp = nullptr;
-deinit_hosting_entry_point_fn deinit_hosting_fp = nullptr;
-
-}
 
 // Class rx_internal::dotnet::dotnet_builder 
 
@@ -282,82 +275,30 @@ rx_result dotnet_hosting::initialize (hosting::rx_platform_host* host, const con
     DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, "Initializing .NET hosting.");
     
     rx_dotnet_config_data_t config;
+	config.requested_version = data.dotnet.version;
+	config.server_gc = data.dotnet.server_gc;
+	config.concurrent_gc = data.dotnet.concurrent_gc;
+	config.max_threads = data.dotnet.max_threads;
+    config.min_threads = data.dotnet.min_threads;
+    config.host_path = host_path;
+    config.app_path = data.dotnet.app_path;
+    config.lib_path = data.dotnet.lib_path;
+	config.launch_debugger = data.dotnet.launch_debugger;
 
-	result = load_hostfxr(data.dotnet, config);
-    if (!result)
+	host_ = std::make_unique<dotnet_host>(data, config);
+	result = host_->initialize(config);
+
+    if(!result)
     {
-        DOTNET_LOG_ERROR("dotnet_hosting::initialize", 500, "Unable to load .NET runtime environment");
-		return result;
-    }
-	auto runtimes = get_dotnet_runtimes();
-    for(const auto& ver : runtimes)
-    {
-        DOTNET_LOG_TRACE("dotnet_hosting::initialize", 500, "Detected .NET runtime version: " + ver);
+        DOTNET_LOG_ERROR("dotnet_hosting::initialize", 500, "Error initializing .NET hosting. " + result.errors_line());
+        host_->stop();
+        host_.reset();
+        return result;
 	}
-	string_type hosted_ver = get_hosted_dotnet_version();
-    if(hosted_ver.empty())
-    {
-        DOTNET_LOG_ERROR("dotnet_hosting::initialize", 500, "Unable to find requested .NET version " + data.dotnet.version);
-        return rx_result("Unable to find requested .NET version.");
-	}
-    else
-    {
-        DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, "Initializing Native host for version: " + hosted_ver);
-        
-
-        string_array host_files;
-		string_array assembly_files;
-        string_array lib_files;
-        string_array files;
-        string_array dirs;
-        rx_list_files(host_path, "*.dll", files, dirs);
-        for (const auto& one : files)
-        {
-            host_files.emplace_back(rx_combine_paths(host_path, one));
-        }
-		files.clear();
-        dirs.clear();
 
 
-        rx_list_files(data.dotnet.app_path, "*.dll", files, dirs);
-        for (const auto& one : files)
-        {
-            assembly_files.emplace_back(rx_combine_paths(data.dotnet.app_path, one));
-        }
-        if(!data.dotnet.lib_path.empty())
-        {
-            files.clear();
-            dirs.clear();
-            rx_list_files(data.dotnet.lib_path, "*.dll", files, dirs);
-            for (const auto& one : files)
-            {
-                lib_files.emplace_back(rx_combine_paths(data.dotnet.lib_path, one));
-            }
-		}
-        if (host_files.empty())
-        {
-            DOTNET_LOG_WARNING("dotnet_hosting::initialize", 500, "No .NET host assemblies found in " + host_path);
-            return true;// dotnet not configured
-        }
-        if (assembly_files.empty())
-        {
-            DOTNET_LOG_WARNING("dotnet_hosting::initialize", 500, "No .NET user assemblies found in " + data.dotnet.app_path);
-            return true;// dotnet not configured
-        }
-		host_ = std::make_unique<dotnet_host>(data, config);
-		result = host_->initialize(host, host_files, assembly_files, lib_files, dotnet_host_version_);
+    DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, ".NET hosting initialized.");
 
-        if(!result)
-        {
-            DOTNET_LOG_ERROR("dotnet_hosting::initialize", 500, "Error initializing .NET hosting. " + result.errors_line());
-            host_.reset();
-            return result;
-		}
-
-
-        DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, ".NET hosting initialized.");
-    }
-    
 	return true;
 }
 
@@ -379,8 +320,11 @@ rx_result dotnet_hosting::start (hosting::rx_platform_host* host, const configur
 
 void dotnet_hosting::deinitialize (rx_void_callback callback)
 {
-    if (get_hosted_dotnet_version().empty())
-		return;// dotnet not configured
+    if (!host_ || host_->get_hosted_dotnet_version().empty())
+    {
+        callback();
+        return;// dotnet not configured
+    }
 
     DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, "Deinitializing .NET hosting.");
 
@@ -401,9 +345,9 @@ dotnet_runtime_info_t dotnet_hosting::get_dotnet_info () const
         ASSIGN_MODULE_VERSION(rx_ver, RX_DOTNET_NAME, RX_DOTNET_MAJOR_VERSION, RX_DOTNET_MINOR_VERSION, RX_DOTNET_BUILD_NUMBER);
     }
     dotnet_runtime_info_t ret;
-    ret.runtime_version = get_hosted_dotnet_version();
+    ret.runtime_version = host_ ? host_->get_hosted_dotnet_version() : string_type();
     ret.rx_native_version = rx_ver; 
-    ret.rx_dotnet_version = dotnet_host_version_;
+    ret.rx_dotnet_version = host_ ? host_->get_dotnet_host_version() : string_type();
     return ret;
 }
 
@@ -471,7 +415,7 @@ void dotnet_hosting::received_void_callback (uint32_t transId)
     }
 }
 
-void dotnet_hosting::received_write_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback)
+void dotnet_hosting::received_write_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
     if(host_)
     {
@@ -614,6 +558,14 @@ void dotnet_hosting::received_source_write_done (uint32_t trans_id, void* inst, 
     if (host_)
     {
         host_->received_source_write_done(trans_id, inst, std::move(result));
+    }
+}
+
+void dotnet_hosting::received_fire_event (void* inst, string_type val, string_type queue, bool state, bool remove)
+{
+    if (host_)
+    {
+        host_->received_fire_event(inst, std::move(val), std::move(queue), state, remove);
     }
 }
 

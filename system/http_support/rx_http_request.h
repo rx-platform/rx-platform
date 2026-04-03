@@ -66,6 +66,11 @@ typedef std::map<string_type, string_type> rx_http_headers_type;
 typedef std::vector<string_type> rx_acceptable_types_type;
 
 
+typedef std::map<string_type, string_type> rx_http_parsed_params_type;
+typedef std::map<string_view_type, string_view_type> rx_http_parsed_headers_type;
+typedef std::vector<string_view_type> rx_parsed_acceptable_types_type;
+
+
 
 
 

@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_def_blocks.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -185,6 +185,15 @@ rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 
 
 // Class rx_platform::meta::def_blocks::const_value_def 
+
+const_value_def::const_value_def()
+      : is_sealed_(false)
+	, array_size_(-1)
+	, read_only_(false)
+	, persistent_(false)
+	, config_only_(false)
+{
+}
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value, bool config_only)
       : is_sealed_(false)
@@ -499,6 +508,14 @@ mapper_attribute::mapper_attribute (const string_type& name, const string_type& 
 
 
 // Class rx_platform::meta::def_blocks::simple_value_def 
+
+simple_value_def::simple_value_def()
+      : is_sealed_(false)
+	, array_size_(-1)
+	, read_only_(false)
+	, persistent_(false)
+{
+}
 
 simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& value, bool read_only, bool persistent)
       : is_sealed_(false)

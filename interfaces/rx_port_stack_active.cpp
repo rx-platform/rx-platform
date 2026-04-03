@@ -294,10 +294,41 @@ rx_result active_builder::register_routing_endpoint (rx_port_ptr who, rx_protoco
 
 rx_result active_builder::unbind_stack_endpoint (rx_port_ptr who, rx_protocol_stack_endpoint* what)
 {
-	auto result = who->get_instance_data().stack_data.active_map.unregister_endpoint(what, who);
-	if (result)
-		who->get_implementation()->destroy_endpoint(what);
-	return result;
+	if (who && what)
+	{
+		auto result = who->get_instance_data().stack_data.active_map.unregister_endpoint(what, who);
+		if (result)
+			who->get_implementation()->destroy_endpoint(what);
+		return result;
+	}
+	else
+	{
+		if(!who)
+		{
+			std::ostringstream ss;
+			ss << "Port  error unbinding endpoint: null pointer for port.";
+			ITF_LOG_ERROR("active_builder", 500, ss.str());
+			return "Null pointer for port!:"s + ss.str();
+		}
+		else if (!what)
+		{
+			std::ostringstream ss;
+			ss << "Port "
+				<< who->meta_info().get_full_path()
+				<< " error unbinding endpoint: null pointer for endpoint.";
+			ITF_LOG_ERROR("active_builder", 500, ss.str());
+			return "Null pointer for endpoint!:"s + ss.str();
+		}
+		else // (!what && !who)
+		{
+			std::ostringstream ss;
+			ss << "Port "
+				<< who->meta_info().get_full_path()
+				<< " error unbinding endpoint: null pointer for port and endpoint.";
+			ITF_LOG_ERROR("active_builder", 500, ss.str());
+			return "Null pointer for port and endpoint!:"s + ss.str();
+		}
+	}
 }
 
 void active_builder::close_all_endpoints (rx_port_ptr who)

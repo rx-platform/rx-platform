@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_subscription_items.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -588,6 +588,180 @@ class read_items_response : public subscription_items_response
       static string_type type_name;
 
       static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class add_event_item_data 
+{
+    typedef std::vector<add_event_item_data> items_type;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+
+      bool active;
+
+      rx_item_reference data_type;
+
+      string_type path;
+
+      string_type queue;
+
+      runtime_handle_t client_handle;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class remove_event_items_response : public subscription_items_response  
+{
+
+  public:
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class add_event_items_response : public rx_message_base  
+{
+    typedef std::vector<add_item_result_data> results_type;
+
+  public:
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+
+      results_type results;
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class add_event_items_request : public rx_request_message  
+{
+    typedef std::vector<add_event_item_data> items_type;
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      items_type items;
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class remove_event_items_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_uuid subscription_id;
+
+      std::vector<runtime_handle_t> items;
 
 
   protected:

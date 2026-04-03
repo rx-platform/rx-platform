@@ -261,6 +261,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.other.http_user = row.second;
 		else if (row.first == "http.spa" && config.other.http_spa.empty())
 			config.other.http_spa = row.second;
+		else if (row.first == "http.start_page" && config.other.http_start_page.empty())
+			config.other.http_start_page = row.second;
 		else if (row.first == "upy.resources" && config.other.upy_path.empty())
 			config.other.upy_path = row.second;
 		else if (row.first == "upy.user" && config.other.upy_user.empty())
@@ -319,6 +321,8 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.dotnet.concurrent_gc = false;
 		else if (row.first == "dotnet.host_path" && config.dotnet.host_path.empty())
 			config.dotnet.host_path = row.second;
+		else if (row.first == "dotnet.debug_break" && !config.dotnet.launch_debugger && get_bool_value(row.second))
+			config.dotnet.launch_debugger = true;
 		else if (row.first == "dotnet.app_path" && config.dotnet.app_path.empty())
 			config.dotnet.app_path = row.second;
 		else if (row.first == "dotnet.lib_path" && config.dotnet.lib_path.empty())
@@ -750,6 +754,7 @@ can be overridden by dotnet-threads-min(max) switches\
 		("dotnet-threads-max", "thread pool max threads", cxxopts::value<uint32_t>(config.dotnet.max_threads))
 		("dotnet-no-server-gc", "use client garbage collection", cxxopts::value<bool>(config.dotnet.server_gc))
 		("dotnet-non-concurrent-gc", "use non-concurrent garbage collection", cxxopts::value<bool>(config.dotnet.concurrent_gc))
+		("dotnet-debug-break", "launch debugger on startup of the dotnet runtime code", cxxopts::value<bool>(config.dotnet.launch_debugger))
 		("dotnet-app", "dotnet application path", cxxopts::value<string_type>(config.dotnet.app_path))
 		("dotnet-host", "dotnet hosting library path", cxxopts::value<string_type>(config.dotnet.host_path))
 		("dotnet-lib", "dotnet library path", cxxopts::value<string_type>(config.dotnet.lib_path))

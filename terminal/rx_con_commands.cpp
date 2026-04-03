@@ -254,6 +254,11 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	table.emplace_back(rx_row_type());
 	table.back().emplace_back("Engine", col_prefix, ANSI_COLOR_RESET);
 	table.back().emplace_back(rx_gate::instance().get_rx_version(), color_prefix, ANSI_COLOR_RESET);
+
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("");
+	table.back().emplace_back("");
+
 	if (show_all)
 	{
 		table.emplace_back(rx_row_type());
@@ -269,15 +274,11 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	table.emplace_back(rx_row_type());
 	table.back().emplace_back("Common", col_prefix, ANSI_COLOR_RESET);
 	table.back().emplace_back(rx_gate::instance().get_common_version(), color_prefix, ANSI_COLOR_RESET);
-	if (show_all)
-	{
-		table.emplace_back(rx_row_type());
-		table.back().emplace_back(".NET Hosting Version");
-		table.back().emplace_back(dotnet::dotnet_hosting::instance().get_dotnet_info().rx_dotnet_version);
-		table.emplace_back(rx_row_type());
-		table.back().emplace_back(".NET Runtime");
-		table.back().emplace_back(dotnet::dotnet_hosting::instance().get_dotnet_info().runtime_version);
-	}
+
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("");
+	table.back().emplace_back("");
+
 	if (show_all)
 	{
 		table.emplace_back(rx_row_type());
@@ -330,6 +331,28 @@ bool rx_name_command::do_console_command (std::istream& in, std::ostream& out, s
 	table.emplace_back(rx_row_type());
 	table.back().emplace_back("Memory", col_prefix, ANSI_COLOR_RESET);
 	table.back().emplace_back(ss.str(), color_prefix, ANSI_COLOR_RESET);
+
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("");
+	table.back().emplace_back("");
+
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("Native .Net Host", col_prefix, ANSI_COLOR_RESET);
+	table.back().emplace_back(dotnet::dotnet_hosting::instance().get_dotnet_info().rx_native_version, color_prefix, ANSI_COLOR_RESET);
+	table.emplace_back(rx_row_type());
+	table.back().emplace_back("Managed .NET Host", col_prefix, ANSI_COLOR_RESET);
+	if(dotnet::dotnet_hosting::instance().get_dotnet_info().rx_dotnet_version.empty())
+		table.back().emplace_back("<<not loaded>>", color_prefix, ANSI_COLOR_RESET);
+	else
+		table.back().emplace_back(dotnet::dotnet_hosting::instance().get_dotnet_info().rx_dotnet_version, color_prefix, ANSI_COLOR_RESET);
+
+
+	if (show_all)
+	{
+		table.emplace_back(rx_row_type());
+		table.back().emplace_back(".NET Runtime");
+		table.back().emplace_back(dotnet::dotnet_hosting::instance().get_dotnet_info().runtime_version);
+	}
 
 	rx_dump_table(table, out, false, true);
 #ifdef _DEBUG
@@ -593,7 +616,7 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 	bool help = false;
 	bool version = false;
 	bool user = false;
-	bool sub = false;
+	bool sub = true;
 	string_type pattern = "*";
 	int count = 40;
 
@@ -601,7 +624,7 @@ bool log_command::do_read_command (std::istream& in, std::ostream& out, std::ost
 
 	parser_t parser;
 	parser.add_bit_option('u', "user", &user, "Show user column.");
-	parser.add_bit_option('s', "subsystem", &sub, "Show subsystem column.");
+	//parser.add_bit_option('s', "subsystem", &sub, "Show subsystem column.");
 	parser.add_bit_option('e', "error", &error, "Reads error level content, only error and critical events are returned.");
 	parser.add_bit_option('h', "help", &help, "Prints help.");
 	parser.add_bit_option('v', "version", &version, "Prints version of the command.");

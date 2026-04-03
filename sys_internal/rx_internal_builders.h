@@ -440,6 +440,26 @@ class json_types_builder : public rx_platform_builder
 };
 
 
+
+
+
+
+class knx_types_builder : public rx_platform_builder  
+{
+
+  public:
+
+      rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
+
+
+  protected:
+
+  private:
+
+
+};
+
+
 } // namespace builders
 } // namespace rx_internal
 

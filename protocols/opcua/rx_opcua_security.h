@@ -4,7 +4,7 @@
 *
 *  protocols\opcua\rx_opcua_security.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -44,8 +44,8 @@
 namespace protocols {
 namespace opcua {
 namespace opcua_transport {
-class opcua_sec_none_client_port;
 class opcua_sec_none_port;
+class opcua_sec_none_client_port;
 
 } // namespace opcua_transport
 } // namespace opcua
@@ -112,42 +112,6 @@ class opcua_sec_none_endpoint : public opcua_sec_none_protocol_type
 
 
 typedef rx_platform::runtime::io_types::ports_templates::connection_transport_port_impl< opcua_sec_none_endpoint  > opcua_sec_none_base;
-
-
-
-
-
-
-class opcua_sec_none_port : public opcua_sec_none_base  
-{
-    DECLARE_CODE_INFO("rx", 0, 9, 0, "\
-OPC-UA Security None port. Implementation of binary OPC-UA Security None server transport channel.");
-
-    DECLARE_REFERENCE_PTR(opcua_sec_none_port);
-
-  public:
-      opcua_sec_none_port();
-
-
-      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
-
-      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
-
-      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
-
-
-      rx_platform::runtime::io_types::simple_port_status status;
-
-
-      static std::map<rx_node_id, opcua_sec_none_port::smart_ptr> runtime_instances;
-
-
-  protected:
-
-  private:
-
-
-};
 
 
 
@@ -221,6 +185,46 @@ OPC-UA Security None port. Implementation of binary OPC-UA Security None client 
 
 
       static std::map<rx_node_id, opcua_sec_none_client_port::smart_ptr> runtime_instances;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class opcua_sec_none_port : public opcua_sec_none_base  
+{
+    DECLARE_CODE_INFO("rx", 0, 9, 0, "\
+OPC-UA Security None port. Implementation of binary OPC-UA Security None server transport channel.");
+
+    DECLARE_REFERENCE_PTR(opcua_sec_none_port);
+
+  public:
+      opcua_sec_none_port();
+
+
+      rx_result initialize_runtime (runtime::runtime_init_context& ctx);
+
+      virtual rx_result deinitialize_runtime (runtime::runtime_deinit_context& ctx);
+
+      void extract_bind_address (const data::runtime_values_data& binder_data, io::any_address& local_addr, io::any_address& remote_addr);
+
+      void stack_assembled ();
+
+      rx_result start_listen (const protocol_address* local_address, const protocol_address* remote_address);
+
+
+      rx_platform::runtime::io_types::simple_port_status status;
+
+
+      static std::map<rx_node_id, opcua_sec_none_port::smart_ptr> runtime_instances;
 
 
   protected:

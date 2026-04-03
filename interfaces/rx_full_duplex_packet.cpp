@@ -984,27 +984,22 @@ void string_routing_port::extract_bind_address (const data::runtime_values_data&
 {
 	if (local_addr.is_null())
 	{
-		auto addr = binder_data.get_value("Bind.Address");
+		auto addr = binder_data.get_value("Bind.Endpoint");
 		string_type addr_val;
 		if (addr.is_string())
 			addr_val = addr.extract_static(string_type{});
-		if (addr_val.size() == MAC_ADDR_SIZE)
-		{
-			io::string_address str_addr(addr_val);
-			local_addr = &str_addr;
-		}
+		
+		io::string_address str_addr(addr_val);
+		local_addr = &str_addr;
 	}
 	if (remote_addr.is_null())
 	{
-		auto addr = binder_data.get_value("Connect.Address");
+		auto addr = binder_data.get_value("Connect.Endpoint");
 		string_type addr_val;
-		if (addr.is_byte_string())
+		if (addr.is_string())
 			addr_val = addr.extract_static(string_type{});
-		if (addr_val.size() == MAC_ADDR_SIZE)
-		{
-			io::string_address str_addr(addr_val);
-			remote_addr = &str_addr;
-		}
+		io::string_address str_addr(addr_val);
+		remote_addr = &str_addr;
 	}
 }
 

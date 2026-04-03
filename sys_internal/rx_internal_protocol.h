@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_protocol.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -51,9 +51,9 @@
 namespace rx_internal {
 namespace rx_protocol {
 class rx_json_protocol_client_port;
+class rx_opc_protocol_adapter_port;
 class rx_protocol_connection;
 class rx_json_protocol_port;
-class rx_opc_protocol_adapter_port;
 
 } // namespace rx_protocol
 } // namespace rx_internal
@@ -449,10 +449,205 @@ class rx_protocol_subscription : public sys_runtime::subscriptions::rx_subscript
 
 
 
+
+class rx_opc_adapter_endpoint 
+{
+
+  public:
+      rx_opc_adapter_endpoint (rx_opc_protocol_adapter_port* port);
+
+      ~rx_opc_adapter_endpoint();
+
+
+      rx_protocol_stack_endpoint& get_stack_entry ()
+      {
+        return stack_entry_;
+      }
+
+
+
+      rx_opc_protocol_adapter_port* get_port ()
+      {
+        return port_;
+      }
+
+
+
+  protected:
+
+  private:
+
+      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
+
+      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
+
+      rx_protocol_result_t received (recv_protocol_packet packet);
+
+      rx_protocol_result_t send (send_protocol_packet packet);
+
+
+
+      rx_protocol_stack_endpoint stack_entry_;
+
+
+      rx_opc_protocol_adapter_port* port_;
+
+
+};
+
+
+
+
+
+
+
+typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< rx_opc_adapter_endpoint  > rx_opc_protocol_adapter_port_base;
+
+
+
+
+
+
+class rx_opc_protocol_adapter_port : public rx_opc_protocol_adapter_port_base  
+{
+    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+OPC Adapter Port. Implementation of adapter for OPC to rx-platform protocol port.");
+
+    DECLARE_REFERENCE_PTR(rx_opc_protocol_adapter_port);
+
+  public:
+      rx_opc_protocol_adapter_port();
+
+
+      rx_result initialize_runtime (runtime_init_context& ctx);
+
+
+      rx_platform::runtime::io_types::simple_port_status status;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct event_subscription_data 
+{
+
+
+      rx_uuid subscription_id;
+
+      uint32_t publish_rate;
+
+      uint32_t keep_alive_period;
+
+      bool active;
+
+      uint8_t priority;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+struct event_subscription_item 
+{
+
+
+      bool active;
+
+      string_type path;
+
+      string_type queue;
+
+      rx_item_reference type;
+
+      runtime_handle_t client_handle;
+
+      runtime_handle_t local_handle;
+
+  public:
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class rx_protocol_event_subscription : public sys_runtime::subscriptions::rx_event_subscription_callback  
+{
+	typedef std::map<runtime_handle_t, event_subscription_item> items_type;
+	typedef std::map<runtime_handle_t, runtime_handle_t> handles_type;
+
+  public:
+      rx_protocol_event_subscription (event_subscription_data& data, rx_protocol_connection_ptr conn, rx_mode_type mode);
+
+      ~rx_protocol_event_subscription();
+
+
+      rx_result update_subscription (event_subscription_data& data);
+
+      void destroy ();
+
+      rx_result add_items (const std::vector<event_subscription_item>& items, std::vector<rx_result_with<runtime_handle_t> >& results);
+
+      rx_result remove_items (std::vector<runtime_handle_t >&& items, std::vector<rx_result>& results);
+
+      void event_fired (runtime_handle_t handle, const simple_event_item& data);
+
+      void event_fired (runtime_handle_t handle, const data_event_item& data);
+
+
+  protected:
+
+  private:
+
+
+      rx_reference<rx_protocol_connection> connection_;
+
+      rx_reference<sys_runtime::subscriptions::rx_event_subscription> my_subscription_;
+
+      event_subscription_data data_;
+
+      items_type items_;
+
+
+      handles_type handles_;
+
+
+};
+
+
+
+
+
+
 class rx_protocol_connection : public rx::pointers::reference_object  
 {
     DECLARE_REFERENCE_PTR(rx_protocol_connection);
     typedef std::map<rx_uuid, std::unique_ptr<rx_protocol_subscription> > subscriptions_type;
+    typedef std::map<rx_uuid, std::unique_ptr<rx_protocol_event_subscription> > event_subscriptions_type;
 
   public:
       rx_protocol_connection (rx_mode_type mode);
@@ -476,15 +671,25 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
       rx_result add_items (const rx_uuid& id, const std::vector<subscription_item_data>& items, std::vector<rx_result_with<runtime_handle_t> >& results);
 
+      rx_result add_event_items (const rx_uuid& id, const std::vector<event_subscription_item>& items, std::vector<rx_result_with<runtime_handle_t> >& results);
+
       rx_result write_items (const rx_uuid& id, runtime_transaction_id_t transaction_id, std::vector<std::pair<runtime_handle_t, rx_simple_value> >&& values, std::vector<rx_result>& results);
 
       rx_result execute_item (const rx_uuid& id, runtime_transaction_id_t transaction_id, runtime_handle_t item, data::runtime_values_data data);
 
       rx_result remove_items (const rx_uuid& id, std::vector<runtime_handle_t>&& items, std::vector<rx_result>& results);
 
+      rx_result remove_event_items (const rx_uuid& id, std::vector<runtime_handle_t>&& items, std::vector<rx_result>& results);
+
       void close_connection ();
 
       virtual message_ptr set_context (api::rx_context ctx, const messages::rx_connection_context_request& req);
+
+      rx_result connect_event_subscription (event_subscription_data& data);
+
+      rx_result delete_event_subscription (const rx_uuid& id);
+
+      rx_result update_event_subscription (event_subscription_data& data);
 
 
       const string_type& get_current_directory_path () const
@@ -503,6 +708,8 @@ class rx_protocol_connection : public rx::pointers::reference_object
 
 
       subscriptions_type subscriptions_;
+
+      event_subscriptions_type event_subscriptions_;
 
 
       rx_directory_ptr current_directory_;
@@ -613,94 +820,6 @@ System protocol port class. Implementation of a rx-platform JSON protocol");
 
 
       void stack_assembled ();
-
-      rx_result initialize_runtime (runtime_init_context& ctx);
-
-
-      rx_platform::runtime::io_types::simple_port_status status;
-
-
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-
-class rx_opc_adapter_endpoint 
-{
-
-  public:
-      rx_opc_adapter_endpoint (rx_opc_protocol_adapter_port* port);
-
-      ~rx_opc_adapter_endpoint();
-
-
-      rx_protocol_stack_endpoint& get_stack_entry ()
-      {
-        return stack_entry_;
-      }
-
-
-
-      rx_opc_protocol_adapter_port* get_port ()
-      {
-        return port_;
-      }
-
-
-
-  protected:
-
-  private:
-
-      static rx_protocol_result_t received_function (rx_protocol_stack_endpoint* reference, recv_protocol_packet packet);
-
-      static rx_protocol_result_t send_function (rx_protocol_stack_endpoint* reference, send_protocol_packet packet);
-
-      rx_protocol_result_t received (recv_protocol_packet packet);
-
-      rx_protocol_result_t send (send_protocol_packet packet);
-
-
-
-      rx_protocol_stack_endpoint stack_entry_;
-
-
-      rx_opc_protocol_adapter_port* port_;
-
-
-};
-
-
-
-
-
-
-
-typedef rx_platform::runtime::io_types::ports_templates::transport_port_impl< rx_internal::rx_protocol::rx_opc_adapter_endpoint  > rx_opc_protocol_adapter_port_base;
-
-
-
-
-
-
-class rx_opc_protocol_adapter_port : public rx_opc_protocol_adapter_port_base  
-{
-    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
-OPC Adapter Port. Implementation of adapter for OPC to rx-platform protocol port.");
-
-    DECLARE_REFERENCE_PTR(rx_opc_protocol_adapter_port);
-
-  public:
-      rx_opc_protocol_adapter_port();
-
 
       rx_result initialize_runtime (runtime_init_context& ctx);
 

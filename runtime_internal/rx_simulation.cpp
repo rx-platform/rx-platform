@@ -99,7 +99,7 @@ rx_result local_register_source::source_write (write_data&& data, runtime_proces
 
                     }
                     source_result_received(std::move(result), trans_id);
-                });
+                }, data::runtime_values_data());
 		}
         else
         {

@@ -4,7 +4,7 @@
 *
 *  lib\rx_rt_data.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2025 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -322,14 +322,14 @@ void runtime_values_data::add_array_child (string_view_type name, std::vector<ru
 
 	if (idx == string_type::npos)
 	{// our value
-		auto child_it = children.find(static_cast<string_type>(name));
+		auto child_it = children.find(string_type(name));
 		if (child_it != children.end())
 		{
 			child_it->second = array_child_type(std::move(data));
 		}
 		else
 		{
-			children.emplace(name, array_child_type(std::move(data)));
+			children.emplace(string_type(name), array_child_type(std::move(data)));
 		}
 	}
 	else
@@ -596,6 +596,81 @@ bool runtime_values_data::get_complex_value (rx_simple_value& val) const
 		}
 	}
 	return false;
+}
+
+rx_result runtime_values_data::combine (rx::data::runtime_values_data other)
+{
+	for (auto& val : other.values)
+	{
+		string_view_type name = val.first;
+		auto it = values.find(static_cast<string_type>(name));
+		if(it != values.end())
+		{
+			it->second = std::move(val.second);
+		}
+		else
+		{
+			values.insert(std::make_pair(name, std::move(val.second)));
+		}
+	}
+	for (auto& val : other.children)
+	{
+		string_view_type name = val.first;
+		auto it = children.find(static_cast<string_type>(name));
+		if (it != children.end())
+		{
+			if (std::holds_alternative<child_type>(val.second))
+			{
+				if (std::holds_alternative<child_type>(it->second))
+				{
+					std::get<child_type>(it->second).combine(std::move(std::get<child_type>(std::move(val.second))));
+				}
+				else
+				{
+					it->second = std::move(val.second);
+				}
+			}
+			else if (std::holds_alternative<array_child_type>(val.second))
+			{
+				if (std::holds_alternative<array_child_type>(it->second))
+				{
+					size_t old_size = std::get<array_child_type>(it->second).size();
+					size_t new_size = std::get<array_child_type>(val.second).size();
+					if(old_size >= new_size)
+					{
+						auto& old_array_data = std::get<array_child_type>(it->second);
+						auto& new_array_data = std::get<array_child_type>(val.second);
+						for(size_t i=0; i< new_size; i++)
+						{
+							old_array_data[i].combine(std::move(new_array_data[i]));
+						}
+					}
+					else //if (new_size > old_size)
+					{
+						auto& old_array_data = std::get<array_child_type>(it->second);
+						auto& new_array_data = std::get<array_child_type>(val.second);
+						for (size_t i = 0; i < old_size; i++)
+						{
+							old_array_data[i].combine(std::move(new_array_data[i]));
+						}
+						for(size_t i= old_size; i< new_size; i++)
+						{
+							old_array_data.push_back(std::move(new_array_data[i]));
+						}
+					}
+				}
+				else
+				{
+					it->second = std::move(val.second);
+				}
+			}
+		}
+		else 
+		{
+			children.insert(std::make_pair(name, std::move(val.second)));
+		}
+	}
+	return true;
 }
 
 

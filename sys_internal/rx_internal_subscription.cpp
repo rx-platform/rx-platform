@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_internal_subscription.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -597,6 +597,370 @@ const string_type& subscription_execute_done::get_type_name ()
 }
 
 rx_message_type_t subscription_execute_done::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::subscription_messages::create_event_subscription_response 
+
+string_type create_event_subscription_response::type_name = "createEvtSubsResp";
+
+rx_message_type_t create_event_subscription_response::type_id = rx_create_event_subscription_response_id;
+
+
+rx_result create_event_subscription_response::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.write_uint("rate", revised_publish_rate))
+		return stream.get_error();
+	if (!stream.write_uint("keepalive", revised_keep_alive_period))
+		return stream.get_error();
+	return true;
+}
+
+rx_result create_event_subscription_response::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	if (!stream.read_uint("rate", revised_publish_rate))
+		return stream.get_error();
+	if (!stream.read_uint("keepalive", revised_keep_alive_period))
+		return stream.get_error();
+	return true;
+}
+
+const string_type& create_event_subscription_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t create_event_subscription_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::subscription_messages::delete_event_subscription_response 
+
+string_type delete_event_subscription_response::type_name = "delEvtSubsResp";
+
+rx_message_type_t delete_event_subscription_response::type_id = rx_delete_event_subscription_response_id;
+
+
+rx_result delete_event_subscription_response::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	return true;
+}
+
+rx_result delete_event_subscription_response::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	return true;
+}
+
+const string_type& delete_event_subscription_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t delete_event_subscription_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::subscription_messages::update_event_subscription_response 
+
+string_type update_event_subscription_response::type_name = "updEvtSubsResp";
+
+rx_message_type_t update_event_subscription_response::type_id = rx_update_event_subscription_response_id;
+
+
+rx_result update_event_subscription_response::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.write_uint("rate", revised_publish_rate))
+		return stream.get_error();
+	if (!stream.write_uint("keepalive", revised_keep_alive_period))
+		return stream.get_error();
+	return true;
+}
+
+rx_result update_event_subscription_response::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	if (!stream.read_uint("rate", revised_publish_rate))
+		return stream.get_error();
+	if (!stream.read_uint("keepalive", revised_keep_alive_period))
+		return stream.get_error();
+	return true;
+}
+
+const string_type& update_event_subscription_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t update_event_subscription_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::subscription_messages::create_event_subscription_request 
+
+string_type create_event_subscription_request::type_name = "createEvtSubsReq";
+
+rx_message_type_t create_event_subscription_request::type_id = rx_create_event_subscription_request_id;
+
+
+rx_result create_event_subscription_request::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.write_uint("rate", publish_rate))
+		return stream.get_error();
+	if (!stream.write_uint("keepalive", keep_alive_period))
+		return stream.get_error();
+	if (!stream.write_bool("active", active))
+		return stream.get_error();
+	if (!stream.write_byte("priority", priority))
+		return stream.get_error();
+	return true;
+}
+
+rx_result create_event_subscription_request::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	if (!stream.read_uint("rate", publish_rate))
+		return stream.get_error();
+	if (!stream.read_uint("keepalive", keep_alive_period))
+		return stream.get_error();
+	if (!stream.read_bool("active", active))
+		return stream.get_error();
+	if (!stream.read_byte("priority", priority))
+		return stream.get_error();
+	return true;
+}
+
+message_ptr create_event_subscription_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	event_subscription_data data;
+	data.active = active;
+	data.subscription_id = subscription_id;
+	data.keep_alive_period = keep_alive_period;
+	data.publish_rate = publish_rate;
+	data.priority = priority;
+	auto result = conn->connect_event_subscription(data);
+	if (result)
+	{
+		auto response = std::make_unique<create_event_subscription_response>();
+		response->request_id = request_id;
+		response->subscription_id = data.subscription_id;
+		response->revised_keep_alive_period = data.keep_alive_period;
+		response->revised_publish_rate = data.publish_rate;
+		return response;
+	}
+	else
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+}
+
+const string_type& create_event_subscription_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t create_event_subscription_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::subscription_messages::update_event_subscription_request 
+
+string_type update_event_subscription_request::type_name = "updEvtSubsReq";
+
+rx_message_type_t update_event_subscription_request::type_id = rx_update_event_subscription_request_id;
+
+
+rx_result update_event_subscription_request::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.write_uint("rate", publish_rate))
+		return stream.get_error();
+	if (!stream.write_uint("keepalive", keep_alive_period))
+		return stream.get_error();
+	if (!stream.write_bool("active", active))
+		return stream.get_error();
+	if (!stream.write_byte("priority", priority))
+		return stream.get_error();
+	return true;
+}
+
+rx_result update_event_subscription_request::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	if (!stream.read_uint("rate", publish_rate))
+		return stream.get_error();
+	if (!stream.read_uint("keepalive", keep_alive_period))
+		return stream.get_error();
+	if (!stream.read_bool("active", active))
+		return stream.get_error();
+	if (!stream.read_byte("priority", priority))
+		return stream.get_error();
+	return true;
+}
+
+message_ptr update_event_subscription_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	return std::make_unique<error_message>(RX_NOT_IMPLEMENTED, 9, request_id);
+}
+
+const string_type& update_event_subscription_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t update_event_subscription_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::subscription_messages::delete_event_subscription_request 
+
+string_type delete_event_subscription_request::type_name = "delEvtSubsReq";
+
+rx_message_type_t delete_event_subscription_request::type_id = rx_delete_event_subscription_request_id;
+
+
+rx_result delete_event_subscription_request::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	return true;
+}
+
+rx_result delete_event_subscription_request::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	return true;
+}
+
+message_ptr delete_event_subscription_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	auto result = conn->delete_event_subscription(subscription_id);
+	if (result)
+	{
+		auto response = std::make_unique<delete_event_subscription_response>();
+		response->subscription_id = subscription_id;
+		return response;
+	}
+	else
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+}
+
+const string_type& delete_event_subscription_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t delete_event_subscription_request::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::subscription_messages::subscription_event_fired 
+
+string_type subscription_event_fired::type_name = "subsEventFired";
+
+rx_message_type_t subscription_event_fired::type_id = rx_subscription_event_fired_id;
+
+
+rx_result subscription_event_fired::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_uuid("id", subscription_id))
+		return stream.get_error();
+	if (!stream.write_uint("handle", handle))
+		return stream.get_error();
+	if (!stream.write_time("time", time.c_data()))
+		return stream.get_error();
+	if (!stream.write_string("queue", queue.c_str()))
+		return stream.get_error();
+	if (!stream.write_init_values("data", data))
+		return stream.get_error();
+	return true;
+}
+
+rx_result subscription_event_fired::deserialize (base_meta_reader& stream)
+{
+	rx_uuid_t temp;
+	if (!stream.read_uuid("id", temp))
+		return stream.get_error();
+	subscription_id = temp;
+	if (!stream.read_uint("handle", handle))
+		return stream.get_error();
+	rx_time_struct_t ttemp;
+	if (!stream.read_time("time", ttemp))
+		return stream.get_error();
+	time = ttemp;
+	if (!stream.read_string("queue", queue))
+		return stream.get_error();
+	if (!stream.read_init_values("data", data))
+		return stream.get_error();
+	return true;
+}
+
+const string_type& subscription_event_fired::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t subscription_event_fired::get_type_id ()
 {
   return type_id;
 

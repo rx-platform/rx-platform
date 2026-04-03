@@ -33,6 +33,7 @@
 
 
 
+#define RX_DOMAIN_DOTNET 0xfffa
 #define RX_DOMAIN_PYTHON 0xfffa
 #define RX_DOMAIN_EXTERN 0xfffb
 #define RX_DOMAIN_META 0xfffc
@@ -93,6 +94,7 @@ struct general_data_t
     string_type http_path;
     string_type http_user;
     string_type http_spa;
+    string_type http_start_page;
     uint16_t http_port = 0;
     uint16_t mqtt_port = 0;
     string_type mqtt_address;
@@ -173,6 +175,7 @@ struct dotnet_data_t
 	string_type host_path;
     string_type app_path;
     string_type lib_path;
+	bool launch_debugger = false;
 };
 
 struct configuration_data_t

@@ -66,6 +66,14 @@ rx_time_struct iso_8601_to_rx_time(const char* str)
 	else
 		return rx_time_struct{ 0 };
 
+
+
+	uint32_t hour = 0;
+	uint32_t minute = 0;
+
+	int64_t sgn = 0;
+
+
 	if (*ptr != L'\0')
 	{
 		if (*ptr != L'T')
@@ -84,15 +92,36 @@ rx_time_struct iso_8601_to_rx_time(const char* str)
 
 		if (*ptr != L'\0')
 		{// seconds too
-			if (sscanf(ptr, "%2u", &os_time.second) == 1)
-				ptr += 2;
-			else
-				return rx_time_struct{ 0 };
-			if (*ptr == L'.')
-			{
-				ptr++;
-				if (sscanf(ptr, "%3u", &os_time.milliseconds) == 1)
-					ptr += 3;
+			if (*ptr != L'\0')
+			{// seconds too
+				if (sscanf(ptr, "%2u", &os_time.second) == 1)
+					ptr += 2;
+				else
+					return rx_time_struct{ 0 };
+				if (*ptr == L'.')
+				{
+					char* endptr = NULL;
+					double val = strtod(ptr, &endptr);
+					uint32_t ms = (uint32_t)(val * 1000.0);
+					os_time.milliseconds = ms;
+					ptr = endptr;
+					if (*ptr != '\0' && *ptr != 'Z')
+					{
+						// invert to create right offset for UTC
+						if (*ptr == '+')
+							sgn = -1;
+						else if (*ptr == '-')
+							sgn = 1;
+						ptr++;
+						if (sgn)
+						{
+							if (sscanf(ptr, "%2u:%2u", &hour, &minute) != 2)
+							{
+								sgn = 0;
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -100,6 +129,14 @@ rx_time_struct iso_8601_to_rx_time(const char* str)
 	rx_time_struct ts;
 	if (rx_os_collect_time(&os_time, &ts))
 	{
+		if (sgn)
+		{
+			int64_t period = (60ull * 1000 * 1000 * 10 * minute
+				+ 60ull * 60 * 1000 * 1000 * 10 * hour) * sgn;
+
+			ts.t_value = (uint64_t)(((int64_t)ts.t_value) + period);
+
+		}
 		return ts;
 	}
 	else

@@ -4,7 +4,7 @@
 *
 *  lib\rx_io_buffers.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -38,6 +38,7 @@
 // dummy
 #include "dummy.h"
 
+using rx::values::rx_simple_value;
 
 
 namespace rx {
@@ -77,6 +78,10 @@ class rx_const_io_buffer
 
       const void* get_data (size_t count);
 
+      rx_result read_node_id (rx_node_id& val);
+
+      rx_result read_value (rx_simple_value& val);
+
 	  template<typename T>
 	  rx_result read_from_buffer(T& val)
 	  {
@@ -108,6 +113,9 @@ class rx_const_io_buffer
   protected:
 
   private:
+
+      rx_result read_union (rx_value_union& who, rx_value_t type);
+
 
 
       rx_const_packet_buffer* buffer_;
@@ -152,6 +160,10 @@ class rx_io_buffer : public rx_packet_buffer
       void reinit ();
 
       rx_result write_front (const void* data, size_t size);
+
+      rx_result write_node_id (const rx_node_id& val);
+
+      rx_result write_value (const rx_simple_value& val);
 
 	  // disable copy semantics
 	  rx_io_buffer(const rx_io_buffer&) = delete;
@@ -224,6 +236,8 @@ class rx_io_buffer : public rx_packet_buffer
   private:
 
       void zero_memory ();
+
+      rx_result write_union (const rx_value_union& who, rx_value_t type);
 
 
 

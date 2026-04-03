@@ -4,7 +4,7 @@
 *
 *  http_server\rx_http_server.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *
@@ -55,6 +55,7 @@
 #include "sys_internal/rx_async_functions.h"
 #include "system/server/rx_file_helpers.h"
 #include "rx_aspnet.h"
+#include "jwt_token_filter.h"
 
 
 namespace rx_internal {
@@ -103,6 +104,7 @@ http_server& http_server::instance ()
 rx_result http_server::initialize (hosting::rx_platform_host* host, configuration_data_t& config)
 {
 	spa_ = config.other.http_spa;
+	start_page_ = config.other.http_start_page;
 
 	register_standard_filters();
 	http_displays::rx_http_display_base::fill_globals();
@@ -190,7 +192,15 @@ rx_result http_server::handle_request (http_request req)
 
 	for (auto& one : filters_)
 	{
-		one->handle_request_before(req, response);
+		auto result = one->handle_request_before(req, response);
+		if(!result)
+		{
+			response.set_string_content(result.errors_line());
+			response.headers["Content-Type"] = "text/plain";
+			response.result = 500;
+			send_response(req, std::move(response));
+			return true;// done with filters
+		}
 	}
 	auto handler = handlers_.get_handler(req.extension);
 	if (handler)
@@ -230,7 +240,11 @@ void http_server::send_response (http_request& request, http_response response)
 {
 	for (auto& one : filters_)
 	{
-		one->handle_request_after(request, response);
+		auto result = one->handle_request_after(request, response);
+		if(!result)
+		{
+			HTTP_LOG_ERROR("http_server", 100, "Error on filter for HTTP response "s + result.errors_line() + " for "s + request.path);
+		}
 	}
 	if (request.request_identity)
 	{
@@ -333,8 +347,9 @@ rx_result http_server::get_parsed_html_content (const string_type& path, const s
 void http_server::register_standard_filters ()
 {
 	filters_.emplace_back(std::make_unique<http_path_filter>());
-	filters_.emplace_back(std::make_unique<standard_request_filter>(spa_));
-	filters_.emplace_back(std::make_unique<aspnet::aspnet_authorizer>());
+	filters_.emplace_back(std::make_unique<standard_request_filter>(spa_, start_page_));
+	//filters_.emplace_back(std::make_unique<aspnet::aspnet_authorizer>());
+	filters_.emplace_back(std::make_unique<jwt_authorize::jwt_authorizer>());
 }
 
 void http_server::dump_http_references (std::ostream& out)
@@ -374,8 +389,9 @@ void http_server::process_file_changes (string_array paths)
 
 // Class rx_internal::rx_http_server::standard_request_filter
 
-standard_request_filter::standard_request_filter (const string_type& spa)
-      : spa_(spa.empty() ? ""s : "/"s + spa)
+standard_request_filter::standard_request_filter (const string_type& spa, const string_type& start_page)
+      : spa_(spa.empty() ? ""s : "/"s + spa),
+        start_page_(start_page.empty() ? ""s : "/"s + start_page)
 {
 }
 
@@ -443,7 +459,12 @@ rx_result standard_request_filter::handle_request_before (http_request& req, htt
 	if (spa_.empty())
 	{
 		if (req.path.empty() || req.path == "/")
-			req.path = "/System.index.disp";
+		{
+			if (!start_page_.empty())
+				req.path = start_page_;
+			else
+				req.path = "/System.index.disp";
+		}
 	}
 
 	int sub_count = 0;

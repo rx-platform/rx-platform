@@ -75,7 +75,7 @@ void fill_plugin_paths(string_array& paths)
 
 	//paths.emplace_back("C:\\temp\\UrosBum\\rx-lgacsmart5\\rx-lgacsmart5\\bin\\Debug\\net8.0\\win-x64\\native\\rx-lgacsmart5.dll");
 
-//	paths.emplace_back("C:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
+	//paths.emplace_back("C:\\RX\\rx-MES\\Saobracaj\\x64\\Debug\\linn-tms.dll");
 
 	//paths.emplace_back("C:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_simm.dll");
 	//paths.emplace_back("C:\\RX\\ENSACO\\BizServer\\Vontobel\\Cirko Price Engine\\price_engine\\x64\\Debug\\price_test.dll");

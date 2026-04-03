@@ -334,9 +334,16 @@ int parse_time_from_ISO8601(const char* str, rx_time_struct* val)
 	else
 		return RX_ERROR;
 
-	if (*ptr != L'\0')
+
+
+	uint32_t hour = 0;
+	uint32_t minute = 0;
+
+	int64_t sgn = 0;
+
+	if (*ptr != '\0')
 	{
-		if (*ptr != L'T')
+		if (*ptr != 'T')
 			return RX_ERROR;
 		ptr++;
 
@@ -350,6 +357,7 @@ int parse_time_from_ISO8601(const char* str, rx_time_struct* val)
 		if (*ptr == L':')
 			ptr++;
 
+
 		if (*ptr != L'\0')
 		{// seconds too
 			if (sscanf(ptr, "%2u", &os_time.second) == 1)
@@ -358,16 +366,41 @@ int parse_time_from_ISO8601(const char* str, rx_time_struct* val)
 				return RX_ERROR;
 			if (*ptr == L'.')
 			{
-				ptr++;
-				if (sscanf(ptr, "%3u", &os_time.milliseconds) == 1)
-					ptr += 3;
+				char* endptr = NULL;
+				double val = strtod(ptr, &endptr);
+				uint32_t ms = (uint32_t)(val * 1000.0);
+				os_time.milliseconds = ms;
+				ptr = endptr;
+				if(*ptr!= '\0' && *ptr != 'Z')
+				{
+					// invert to create right offset for UTC
+					if (*ptr == '+')
+						sgn = -1;
+					else if (*ptr == '-')
+						sgn = 1;
+					ptr++;
+					if(sgn)
+					{
+						if (sscanf(ptr, "%2u:%2u", &hour, &minute) != 2)
+						{
+							sgn = 0;
+						}
+					}
+				}
 			}
 		}
 	}
-
 	rx_time_struct ts;
 	if (rx_os_collect_time(&os_time, &ts))
 	{
+		if (sgn)
+		{
+			int64_t period = (60ull * 1000 * 1000 * 10 * minute
+				+ 60ull * 60 * 1000 * 1000 * 10 * hour) * sgn;
+
+			ts.t_value = (uint64_t)(((int64_t)ts.t_value) + period);
+
+		}
 		*val = ts;
 		return RX_OK;
 	}
@@ -1815,6 +1848,10 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					{
 						rx_destory_string_value_struct(&what->string_value);
 						what->time_value = temp;
+					}
+					else
+					{
+						printf("****Error converting string to time: %s\r\n", rx_c_str(&what->string_value));
 					}
 					return ret;
 				}

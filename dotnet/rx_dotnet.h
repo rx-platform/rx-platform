@@ -4,7 +4,7 @@
 *
 *  dotnet\rx_dotnet.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,10 +33,10 @@
 
 
 
-// rx_commands
-#include "terminal/rx_commands.h"
 // rx_internal_builders
 #include "sys_internal/rx_internal_builders.h"
+// rx_commands
+#include "terminal/rx_commands.h"
 // rx_dotnet_host
 #include "dotnet/rx_dotnet_host.h"
 
@@ -118,7 +118,7 @@ class dotnet_hosting
 
       void received_void_callback (uint32_t transId);
 
-      void received_write_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, rx_result_callback callback);
+      void received_write_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
 
       void bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_object_runtime> ref);
 
@@ -154,6 +154,8 @@ class dotnet_hosting
 
       void received_source_write_done (uint32_t trans_id, void* inst, rx_result result);
 
+      void received_fire_event (void* inst, string_type val, string_type queue, bool state, bool remove);
+
 
   protected:
 
@@ -163,9 +165,6 @@ class dotnet_hosting
 
 
       std::unique_ptr<dotnet_host> host_;
-
-
-      string_type dotnet_host_version_;
 
 
 };
