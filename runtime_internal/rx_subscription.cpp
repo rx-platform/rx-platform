@@ -509,7 +509,7 @@ rx_subscription_callback::~rx_subscription_callback()
 rx_subscription_tag* runtime_connection_data::get_tag (runtime_handle_t handle)
 {
 	size_t idx = (handle & 0xffff) - 1;
-	if (idx < tags_.size() && !tags_[idx].path.empty())
+	if (idx < tags_.size())
 	{
 		return &tags_[idx];
 	}

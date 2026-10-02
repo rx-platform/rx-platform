@@ -199,8 +199,8 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
         {
             auto own = whose.context_->get_for_own_process();
         }
-        /////////////////////////////////////////////////////////////////////////////////////////////////
-
+            /////////////////////////////////////////////////////////////////////////////////////////////////
+        
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // OUTPUTS
         if constexpr (C_has_tag_updates)
@@ -228,7 +228,7 @@ void runtime_scan_algorithms<typeT>::process_runtime (typename typeT::RType& who
             auto source_writes = &whose.context_->get_source_writes();
         }
         /////////////////////////////////////////////////////////////////////////////////////////////////
-
+        
         lap_count++;
 
     } while (whose.context_->should_repeat());
@@ -348,8 +348,13 @@ void runtime_scan_algorithms<typeT>::process_from_remotes (typename typeT::RType
     auto async_values = &ctx.get_async_values();
     while (!async_values->empty())
     {
-        for (auto& one : *async_values)
-            ctx.set_value(one.handle, std::move(one.value), std::move(one.callback));
+        if (!whose.context_->get_mode().is_off())
+        {
+            for (auto& one : *async_values)
+            {
+                ctx.set_value(one.handle, std::move(one.value), std::move(one.callback));
+            }
+        }
         async_values = &ctx.get_async_values();
     }
 }
@@ -406,16 +411,19 @@ void runtime_scan_algorithms<typeT>::process_source_inputs (typename typeT::RTyp
     auto to_process = ctx.get_source_inputs();
     while (!std::get<0>(to_process)->empty() || !std::get<1>(to_process)->empty() || !std::get<2>(to_process)->empty())
     {
-		// process write results first as they can trigger more writes
-        // and we want to process them in the same scan
-        for (auto& one : *std::get<1>(to_process))
-            one.whose->process_result(one.transaction_id, std::move(one.result));
+        if (!whose.context_->get_mode().is_off())
+        {
+            // process write results first as they can trigger more writes
+            // and we want to process them in the same scan
+            for (auto& one : *std::get<1>(to_process))
+                one.whose->process_result(one.transaction_id, std::move(one.result));
 
-        for (auto& one : *std::get<0>(to_process))
-            one.whose->process_result(one.transaction_id, std::move(one.result));
+            for (auto& one : *std::get<0>(to_process))
+                one.whose->process_result(one.transaction_id, std::move(one.result));
 
-        for (auto& one : *std::get<2>(to_process))
-            one.whose->process_update(std::move(one.value));
+            for (auto& one : *std::get<2>(to_process))
+                one.whose->process_update(std::move(one.value));
+        }
 
         to_process = ctx.get_source_inputs();
     }
@@ -427,11 +435,22 @@ void runtime_scan_algorithms<typeT>::process_mapper_inputs (typename typeT::RTyp
     auto to_process = ctx.get_mapper_inputs();
     while (!to_process.first->empty() || !to_process.second->empty())
     {
-        for (auto& one : *to_process.first)
-            one.whose->process_write(std::move(one.data));
+        if (whose.context_->get_mode().is_off())
+        {
+            for (auto& one : *to_process.first)
+				one.whose->process_write_result(rx_result(RX_ERROR_STOPPED), one.data.transaction_id);
 
-        for (auto& one : *to_process.second)
-            one.whose->process_execute(std::move(one.data));
+            for (auto& one : *to_process.second)
+                one.whose->process_execute_result(rx_result(RX_ERROR_STOPPED), rx_simple_value(), one.data.transaction_id);
+        }
+        else
+        {
+            for (auto& one : *to_process.first)
+               one.whose->process_write(std::move(one.data));
+
+            for (auto& one : *to_process.second)
+                one.whose->process_execute(std::move(one.data));
+        }
 
         to_process = ctx.get_mapper_inputs();
     }
@@ -475,11 +494,14 @@ void runtime_scan_algorithms<typeT>::process_programs (typename typeT::RType& wh
     auto to_process = ctx.get_logic_for_process();
     while (!to_process.first->empty() || !to_process.second->empty())
     {
-        for (auto& one : *to_process.first)
-            one.whose->process_execute_result(one.transaction_id, std::move(one.result), std::move(one.data));
+        if (!whose.context_->get_mode().is_off())
+        {
+            for (auto& one : *to_process.first)
+                one.whose->process_execute_result(one.transaction_id, std::move(one.result), std::move(one.data));
 
-        for (auto& one : *to_process.second)
-            one->process_program(ctx);
+            for (auto& one : *to_process.second)
+                one->process_program(ctx);
+        }
 
         to_process = ctx.get_logic_for_process();
     }
@@ -491,10 +513,19 @@ void runtime_scan_algorithms<typeT>::process_events (typename typeT::RType& whos
     auto events = &ctx.get_events_for_process();
     while (!events->empty())
     {
-        // event processing!!!!
-        for (auto& one : *events)
+        if (!whose.context_->get_mode().is_off())
         {
-            one.whose->process_event(&ctx, std::move(one.data));
+            // event processing!!!!
+            for (auto& one : *events)
+            {
+                one.whose->process_event(&ctx, std::move(one.data));
+            }
+        }
+
+        else
+        {
+            for (auto& one : *events)
+                one.whose->event_result_pending(rx_result(RX_ERROR_STOPPED), one.data.transaction_id);
         }
         events = &ctx.get_events_for_process();
     }
@@ -530,8 +561,11 @@ void runtime_scan_algorithms<typeT>::process_own (typename typeT::RType& whose, 
     auto own_jobs = &ctx.get_for_own_process();
     while (!own_jobs->empty())
     {
-        for (auto& one : *own_jobs)
-            one->process();
+        if (!whose.context_->get_mode().is_off())
+        {
+            for (auto& one : *own_jobs)
+                one->process();
+        }
         own_jobs = &ctx.get_for_own_process();
     }
 }
@@ -549,8 +583,11 @@ void runtime_scan_algorithms<typeT>::process_mapper_outputs (typename typeT::RTy
     auto mapper_updates = &ctx.get_mapper_updates();
     while (!mapper_updates->empty())
     {
-        for (auto& one : *mapper_updates)
-            one.whose->process_update(std::move(one.value));
+        if (!whose.context_->get_mode().is_off())
+        {
+            for (auto& one : *mapper_updates)
+                one.whose->process_update(std::move(one.value));
+        }
         mapper_updates = &ctx.get_mapper_updates();
     }
 }
@@ -561,8 +598,16 @@ void runtime_scan_algorithms<typeT>::process_source_outputs (typename typeT::RTy
     auto source_writes = &ctx.get_source_writes();
     while (!source_writes->empty())
     {
-        for (auto& one : *source_writes)
-            one.whose->process_write(std::move(one.data));
+        if (!whose.context_->get_mode().is_off())
+        {
+            for (auto& one : *source_writes)
+                one.whose->process_write(std::move(one.data));
+        }
+        else
+        {
+            for (auto& one : *source_writes)
+				one.whose->process_result(rx_result(RX_ERROR_STOPPED), one.data.transaction_id);
+        }
         source_writes = &ctx.get_source_writes();
     }
 }

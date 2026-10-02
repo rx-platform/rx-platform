@@ -44,7 +44,15 @@ void owned_complex_value::internal_commit(tag_blocks::binded_write_result_callba
 {
     if (ctx_ && handle_)// just in case both of them...
     {
-        ctx_->set_value(handle_, rx_simple_value(val_), callback);
+        auto result = ctx_->set_value(handle_, rx_simple_value(val_), callback);
+        if(!result && callback)
+        {
+			callback(0, std::move(result));
+		}
+    }
+    else if (callback)
+    {
+        callback(0, RX_NOT_CONNECTED);
     }
 }
 rx_result owned_complex_value::bind(const string_type& path, runtime_init_context& ctx)
@@ -89,6 +97,36 @@ void owned_complex_value::owned_complex_value::commit(rx_simple_value&& val, tag
     internal_commit(callback);
 }
 
+void owned_complex_value::execute(const rx_simple_value& val, tag_blocks::binded_execute_result_callback_t callback)
+{
+    if(ctx_ && handle_)// just in case both of them...
+    {
+        auto result = ctx_->execute_value(handle_, rx_simple_value(val), callback);
+        if (!result && callback)
+        {
+            callback(0, std::move(result), rx_simple_value());
+        }
+	}
+    else if (callback)
+    {
+        callback(0, RX_NOT_CONNECTED, rx_simple_value());
+    }
+}
+void owned_complex_value::execute(rx_simple_value&& val, tag_blocks::binded_execute_result_callback_t callback)
+{
+    if (ctx_ && handle_)// just in case both of them...
+    {
+        auto result = ctx_->execute_value(handle_, std::move(val), callback);
+        if (!result && callback)
+        {
+            callback(0, std::move(result), rx_simple_value());
+        }
+    }
+    else if(callback)
+    {
+        callback(0, RX_NOT_CONNECTED, rx_simple_value());
+	}
+}
 rx_result local_complex_value::bind(const string_type& path, runtime_init_context& ctx, callback_t callback)
 {
     callback_ = callback;
@@ -247,6 +285,7 @@ void async_complex_value::commit(rx_simple_value&& val, tag_blocks::binded_write
 {
     internal_commit(std::move(val), callback);
 }
+
 
 
 

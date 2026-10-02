@@ -127,7 +127,11 @@ rx_result_with<rx_directory_ptr> rx_directory_cache::add_directory (const string
 	}
 	else
 	{
-		return RX_INVALID_PATH;
+		auto parent = get_or_create_directory(path);
+		if(parent)
+			return add_directory(parent.value(), name, storage);
+		else
+			return RX_INVALID_PATH ", parent directory does not exist and cannot be created";
 	}
 }
 
@@ -304,7 +308,7 @@ rx_result rx_directory_cache::insert_cached_item (const string_type& name, const
 
 rx_result rx_directory_cache::remove_cached_item (const string_type& name, const rx_namespace_item& item)
 {
-	return RX_NOT_IMPLEMENTED;
+	return names_cache_.removed_cached_item(name, item.get_meta().id);
 }
 
 rx_namespace_item rx_directory_cache::get_cached_item (const string_type& name) const

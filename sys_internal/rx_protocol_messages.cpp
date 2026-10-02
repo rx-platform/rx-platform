@@ -196,6 +196,7 @@ rx_result rx_request_message::init_request_messages ()
 	registered_messages_.emplace(set_messages::prototype_runtime_request::type_id, [] { return std::make_unique<set_messages::prototype_runtime_request>(); });
 	registered_messages_.emplace(set_messages::read_runtime_request::type_id, [] { return std::make_unique<set_messages::read_runtime_request>(); });
 	registered_messages_.emplace(set_messages::rx_update_directory_request_message::type_id, [] { return std::make_unique<set_messages::rx_update_directory_request_message>(); });
+	registered_messages_.emplace(query_messages::read_json_request::type_id, [] { return std::make_unique<query_messages::read_json_request>(); });
 	// directory messages
 	registered_messages_.emplace(directory_messages::rx_make_directory_request::type_id, [] { return std::make_unique<directory_messages::rx_make_directory_request>(); });
 	registered_messages_.emplace(directory_messages::rx_remove_directory_request::type_id, [] { return std::make_unique<directory_messages::rx_remove_directory_request>(); });
@@ -238,6 +239,7 @@ rx_result rx_request_message::init_request_messages ()
 	registered_string_messages_.emplace(set_messages::prototype_runtime_request::type_name, [] { return std::make_unique<set_messages::prototype_runtime_request>(); });
 	registered_string_messages_.emplace(set_messages::read_runtime_request::type_name, [] { return std::make_unique<set_messages::read_runtime_request>(); });
 	registered_string_messages_.emplace(set_messages::rx_update_directory_request_message::type_name, [] { return std::make_unique<set_messages::rx_update_directory_request_message>(); });
+	registered_string_messages_.emplace(query_messages::read_json_request::type_name, [] { return std::make_unique<query_messages::read_json_request>(); });
 	// directory messages
 	registered_string_messages_.emplace(directory_messages::rx_make_directory_request::type_name, [] { return std::make_unique<directory_messages::rx_make_directory_request>(); });
 	registered_string_messages_.emplace(directory_messages::rx_remove_directory_request::type_name, [] { return std::make_unique<directory_messages::rx_remove_directory_request>(); });

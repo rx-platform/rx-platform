@@ -1722,6 +1722,19 @@ sys_handle_t rx_create_and_bind_ip4_udp_socket(const struct sockaddr_in* addr, c
 	setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char*)&buff_len, sizeof(buff_len));
 	buff_len = 0;//just in case...
 	setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char*)&buff_len, sizeof(buff_len));
+
+	DWORD bytes_returned = 0;
+	BOOL behavior = FALSE; // Set to FALSE to disable reporting WSAECONNRESET
+
+	WSAIoctl(sock,
+		SIO_UDP_CONNRESET,
+		&behavior,
+		sizeof(behavior),
+		NULL,
+		0,
+		&bytes_returned,
+		NULL,
+		NULL);
 	
 	
 	if (addr)

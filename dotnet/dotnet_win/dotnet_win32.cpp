@@ -30,6 +30,7 @@
 
 #include "pch.h"
 #include "dotnet_wp/dotnet_wp_protocol.h"
+#include "system/server/rx_file_helpers.h"
 
 
 
@@ -92,10 +93,26 @@ sys_handle_t create_dotnet_process(const rx_dotnet_config_data_t& config, pipe_s
 	char full_path[1024];
 #ifdef _DEBUG
 	if (rx_full_path_from_process("rx-dotnet-wp.exe", full_path) != RX_OK)
-#else
-	if (rx_full_path_from_process("bin\\rx-dotnet-wp.exe", full_path) != RX_OK)
-#endif
 		return RX_ERROR;
+#else
+	char buff[MAX_PATH];
+	DWORD size = sizeof(buff);
+	string_type search_dir;
+	if (GetEnvironmentVariableA("rx-path", buff, size))
+	{
+		if (buff[0] == '"')
+		{
+			search_dir = rx::rx_combine_paths(&buff[1], "bin\\rx-dotnet-wp.exe");
+		}
+		else
+		{
+			search_dir = rx::rx_combine_paths(buff, "bin\\rx-dotnet-wp.exe");
+		}
+	}
+	if(search_dir.empty())
+		return RX_ERROR;
+	strcpy(full_path, search_dir.c_str());
+#endif
 	STARTUPINFOA si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(si));

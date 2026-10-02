@@ -4,7 +4,7 @@
 *
 *  protocols\mqtt\mqtt_simple.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -1046,7 +1046,7 @@ void mqtt_simple_event_mapper::port_disconnected (port_ptr_t port)
 {
 }
 
-void mqtt_simple_event_mapper::mapped_event_fired (rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx)
+void mqtt_simple_event_mapper::mapped_event_fired (runtime_transaction_id_t trans_id, rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx)
 {
 	mqtt_publish_data data;
 	string_type topic_add;
@@ -1100,6 +1100,7 @@ rx_result mqtt_json_event_mapper::initialize_mapper (runtime::runtime_init_conte
 void mqtt_json_event_mapper::update_publish_from_value (rx_timed_value val, mqtt_common::mqtt_publish_data& data, string_type& topic_add)
 {
 	data::runtime_values_data rt;
+
 
 	if (model_.elements.empty())
 	{

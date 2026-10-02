@@ -56,6 +56,9 @@ struct rx_dotnet_config_data_t
     string_type app_path;
     string_type lib_path;
     bool launch_debugger = false;
+    uint32_t scan_rate = 100;
+    uint32_t write_timeout = 5000;
+    uint32_t exec_timeout = 60000;
 };
 
 
@@ -310,6 +313,23 @@ bool remove;
 
 
 
+#define RX_DOTNET_WP_EXECUTE_VALUE 0x0013
+/*
+rx_item_type type;
+intptr_t inst;
+size_t idx;
+rx_simple_value val;
+*/
+
+
+#define RX_DOTNET_WP_EXECUTE_RESULT 0x8013
+/*
+rx_result result;
+*/
+
+
+
+
 namespace rx_internal {
 
 namespace dotnet {
@@ -356,6 +376,8 @@ class worker_initialized_message
       string_type hosted_version;
 
       string_type dotnet_host_version;
+
+      string_type worker_version;
 
       static constexpr uint32_t msg_id = RX_DOTNET_INITIALIZE_RESP;
   protected:
@@ -622,9 +644,9 @@ class dotnet_binding_runtime_message
 
   public:
 
-      rx_result serialize (io::rx_io_buffer& buffer) const;
+      rx_result serialize_base (io::rx_io_buffer& buffer) const;
 
-      rx_result deserialize (io::rx_const_io_buffer& buffer);
+      rx_result deserialize_base (io::rx_const_io_buffer& buffer);
 
 
       rx_item_type type;
@@ -655,6 +677,11 @@ class dotnet_unbind_runtime_message : public dotnet_binding_runtime_message
 
   public:
 
+      rx_result serialize (io::rx_io_buffer& buffer) const;
+
+      rx_result deserialize (io::rx_const_io_buffer& buffer);
+
+
       static constexpr uint32_t msg_id = RX_DOTNET_UNBIND_RUNTIME;
   protected:
 
@@ -672,6 +699,14 @@ class dotnet_bind_runtime_message : public dotnet_binding_runtime_message
 {
 
   public:
+
+      rx_result serialize (io::rx_io_buffer& buffer) const;
+
+      rx_result deserialize (io::rx_const_io_buffer& buffer);
+
+
+      string_type initial;
+
 
       static constexpr uint32_t msg_id = RX_DOTNET_BIND_RUNTIME;
   protected:
@@ -736,37 +771,6 @@ class dotnet_initial_values_message
       intptr_t whose;
 
       static constexpr uint32_t msg_id = RX_DOTNET_INITIAL_VALUES;
-  protected:
-
-  private:
-
-
-};
-
-
-
-
-
-
-class wp_write_value_message 
-{
-
-  public:
-
-      rx_result serialize (io::rx_io_buffer& buffer) const;
-
-      rx_result deserialize (io::rx_const_io_buffer& buffer);
-
-
-      rx_item_type type;
-
-      intptr_t inst;
-
-      size_t idx;
-
-      rx_simple_value val;
-
-      static constexpr uint32_t msg_id = RX_DOTNET_WP_WRITE_VALUE;
   protected:
 
   private:
@@ -1011,7 +1015,6 @@ class dotnet_stop_message
       rx_result deserialize (io::rx_const_io_buffer& buffer);
 
       static constexpr uint32_t msg_id = RX_DOTNET_STOP;
-
   protected:
 
   private:
@@ -1034,6 +1037,95 @@ class wp_void_response
       rx_result deserialize (io::rx_const_io_buffer& buffer);
 
       static constexpr uint32_t msg_id = RX_DOTNET_WP_VOID;
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class wp_write_value_message 
+{
+
+  public:
+
+      rx_result serialize (io::rx_io_buffer& buffer) const;
+
+      rx_result deserialize (io::rx_const_io_buffer& buffer);
+
+
+      rx_item_type type;
+
+      intptr_t inst;
+
+      size_t idx;
+
+      rx_simple_value val;
+
+      static constexpr uint32_t msg_id = RX_DOTNET_WP_WRITE_VALUE;
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class wp_execute_value_message 
+{
+
+  public:
+
+      rx_result serialize (io::rx_io_buffer& buffer);
+
+      rx_result deserialize (io::rx_const_io_buffer& buffer);
+
+
+      rx_item_type type;
+
+      intptr_t inst;
+
+      size_t idx;
+
+      rx_simple_value val;
+
+      static constexpr uint32_t msg_id = RX_DOTNET_WP_EXECUTE_VALUE;
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class wp_execute_response 
+{
+
+  public:
+
+      rx_result serialize (io::rx_io_buffer& buffer) const;
+
+      rx_result deserialize (io::rx_const_io_buffer& buffer);
+
+
+      rx_result action_result;
+
+      rx_simple_value result_value;
+
+      static constexpr uint32_t msg_id = RX_DOTNET_WP_EXECUTE_RESULT;
 
   protected:
 

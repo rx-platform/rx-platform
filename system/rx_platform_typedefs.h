@@ -150,6 +150,7 @@ constexpr static int value_opt_persistent = 1;
 constexpr static int value_opt_default_value = 2;
 // sealed or not
 constexpr static int value_opt_sealed = 4;
+constexpr static int value_opt_init_only = 8;
 
 // internal status for state ignorant values (On, Test, Status Simulate)
 constexpr static int opt_state_ignorant = 30;

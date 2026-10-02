@@ -41,11 +41,13 @@
 #include "system/runtime/rx_blocks.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_ptr
+#include "lib/rx_ptr.h"
 
 namespace rx_internal {
 namespace dotnet {
-class dotnet_method;
 class dotnet_relation;
+class dotnet_method;
 
 } // namespace dotnet
 } // namespace rx_internal
@@ -65,9 +67,15 @@ struct binded_value_data
     runtime::async_complex_value value;
     data::runtime_data_model model;
 };
+struct execute_value_data
+{
+    runtime::owned_complex_value value;
+    data::runtime_data_model model;
+};
 
 typedef std::vector<std::unique_ptr<binded_value_data> > binded_values_type;
 typedef std::vector< std::unique_ptr<runtime::async_complex_value > > relation_values_type;
+typedef std::vector< std::unique_ptr<execute_value_data> > method_values_type;
 
 
 
@@ -109,6 +117,8 @@ class dotnet_object_runtime : public rx_platform::runtime::items::object_runtime
 
       void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
 
+      void received_execute_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_simple_value&&, rx_result&&)> callback);
+
       rx_result execute_method (uint32_t trans_id, const string_type& method, const string_type& value, rx_reference<dotnet_method> whose);
 
       void received_execute_done (uint32_t transId, const string_type& val, rx_result result);
@@ -138,9 +148,13 @@ class dotnet_object_runtime : public rx_platform::runtime::items::object_runtime
 
       string_array rel_data_;
 
+      string_array method_data_;
+
       binded_values_type binded_values_;
 
       relation_values_type relation_values_;
+
+      method_values_type method_values_;
 
       execute_transactions_type execute_transactions_;
 
@@ -450,8 +464,6 @@ class dotnet_struct : public rx_platform::runtime::blocks::struct_runtime
 
 
 
-      string_type conn_data_;
-
       binded_values_type binded_values_;
 
       rx_node_id type_id_;
@@ -459,6 +471,10 @@ class dotnet_struct : public rx_platform::runtime::blocks::struct_runtime
       rx_node_id object_id_;
 
       string_type path_;
+
+      string_array conn_data_;
+
+      string_array init_data_;
 
 
 };
@@ -527,6 +543,110 @@ dotnet domain class.");
   protected:
 
   private:
+
+
+};
+
+
+
+
+
+
+class dotnet_monitored_struct : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(dotnet_monitored_struct)
+
+  public:
+      dotnet_monitored_struct (string_type conn_data, rx_node_id type_id);
+
+      ~dotnet_monitored_struct();
+
+
+      rx_result initialize_struct (runtime::runtime_init_context& ctx);
+
+      rx_result start_struct (runtime::runtime_start_context& ctx);
+
+      rx_result stop_struct (runtime::runtime_stop_context& ctx);
+
+      rx_result deinitialize_struct (runtime::runtime_deinit_context& ctx);
+
+      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
+
+
+  protected:
+
+  private:
+
+      void binded_value_changed (int idx, const values::rx_simple_value& val);
+
+
+
+      rx_reference<dotnet_domain> domain_;
+
+
+      binded_values_type binded_values_;
+
+      rx_node_id type_id_;
+
+      rx_node_id object_id_;
+
+      string_type path_;
+
+      string_array conn_data_;
+
+      string_array init_data_;
+
+
+};
+
+
+
+
+
+
+class dotnet_monitored_object : public rx::pointers::reference_object  
+{
+    DECLARE_REFERENCE_PTR(dotnet_monitored_object)
+
+  public:
+      dotnet_monitored_object (string_type conn_data, rx_node_id type_id);
+
+      ~dotnet_monitored_object();
+
+
+      rx_result initialize_object (runtime::runtime_init_context& ctx);
+
+      rx_result start_object (runtime::runtime_start_context& ctx);
+
+      rx_result stop_object (runtime::runtime_stop_context& ctx);
+
+      rx_result deinitialize_object (runtime::runtime_deinit_context& ctx);
+
+      void received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
+
+
+  protected:
+
+  private:
+
+      void binded_value_changed (int idx, const values::rx_simple_value& val);
+
+
+
+      rx_reference<dotnet_domain> domain_;
+
+
+      binded_values_type binded_values_;
+
+      rx_node_id type_id_;
+
+      rx_node_id object_id_;
+
+      string_type path_;
+
+      string_array conn_data_;
+
+      string_array init_data_;
 
 
 };

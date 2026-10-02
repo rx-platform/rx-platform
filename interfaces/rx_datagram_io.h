@@ -191,7 +191,21 @@ template <class buffT>
 void udp_socket<buffT>::close ()
 {
     this->disconnect_dispatcher();
-    ::rx_close_socket(this->dispatcher_data_.handle);
+    sys_handle_t hndl = 0;
+    {
+        std::scoped_lock lock(read_lock_);
+        std::scoped_lock lock2(write_lock_);
+        if (this->dispatcher_data_.handle)
+        {
+            hndl = this->dispatcher_data_.handle;
+            this->dispatcher_data_.handle = 0;
+        }
+        shutdown_called_ = true;
+    }
+    if (hndl)
+    {
+        ::rx_close_socket(hndl);
+    }
 }
 
 template <class buffT>
@@ -199,12 +213,13 @@ int udp_socket<buffT>::internal_read_from_callback (size_t count, uint32_t statu
 {
     bool receiving;
     bool ret = false;
-    read_lock_.lock();
-    receiving = receiving_;
-    receiving_ = false;
-    read_lock_.unlock();
-    if (!receiving)
-        return 0;
+    {
+        std::scoped_lock lock(read_lock_);
+        receiving = receiving_;
+        receiving_ = false;
+        if (!receiving || shutdown_called_)
+            return 0;
+    }
 
     if (status == 0)
     {
@@ -215,6 +230,7 @@ int udp_socket<buffT>::internal_read_from_callback (size_t count, uint32_t statu
                 ret = read_loop();
                 if (!ret)
                 {   // read closes socket here
+
                     internal_shutdown_callback(0);
                 }
             }
@@ -233,6 +249,11 @@ int udp_socket<buffT>::internal_write_callback (uint32_t status)
     buffer_ptr current;
     bool ret = true;
     write_lock_.lock();
+	if (dispatcher_data_.handle == 0)
+	{
+		write_lock_.unlock();
+		return 0;
+	}
     sending_ = false;
     current = current_buffer_;
     current_buffer_ = buffer_ptr::null_ptr;
@@ -251,8 +272,9 @@ int udp_socket<buffT>::internal_write_callback (uint32_t status)
 template <class buffT>
 int udp_socket<buffT>::internal_shutdown_callback (uint32_t status)
 {
-    if (shutdown_called_)
-        return 0;
+
+    disconnect_dispatcher();
+
     read_lock_.lock();
     write_lock_.lock();
     if (shutdown_called_)
@@ -263,18 +285,29 @@ int udp_socket<buffT>::internal_shutdown_callback (uint32_t status)
     }
     receiving_ = false;
     sending_ = false;
-    disconnect_dispatcher();
-    rx_close_socket(dispatcher_data_.handle);
+	sys_handle_t hndl = 0;
+    if (this->dispatcher_data_.handle)
+    {
+        hndl = this->dispatcher_data_.handle;
+        this->dispatcher_data_.handle = 0;
+    }
     shutdown_called_ = true;
     write_lock_.unlock();
     read_lock_.unlock();
+
+	if (hndl)
+	{
+		::rx_close_socket(hndl);
+	}
+
+    
     on_shutdown(get_identity());
     unregister_timed();
     return 1;
 }
 
 template <class buffT>
-bool udp_socket<buffT>::write_loop ()
+bool udp_socket<buffT>::write_loop()
 {
     uint32_t result = RX_OK;
     bool ret = true;
@@ -345,8 +378,9 @@ bool udp_socket<buffT>::write_loop ()
     write_lock_.unlock();
 
     if (shutdown)
+    {
         internal_shutdown_callback(255);
-
+    }
     if (!ret)
     {
         initiate_shutdown();
@@ -390,6 +424,9 @@ bool udp_socket<buffT>::read_loop ()
             }
             else if (result == RX_ERROR)
             {
+                /*char buff[0x200];
+				rx_last_os_error("Error reading socket", buff, sizeof(buff));
+                printf("\r\nUDP socket shutdown initiated read_from == %s\r\n", buff);*/
                 ret = false;
             }
         }
@@ -431,6 +468,11 @@ bool udp_socket<buffT>::write (buffer_ptr what, const struct sockaddr* addr, siz
     memcpy(&entry.first, addr, addrsize);
     entry.second = what;
     write_lock_.lock();
+    if (dispatcher_data_.handle == 0)
+    {
+        write_lock_.unlock();
+        return false;
+    }
     sending_queue_.push(entry);
     write_lock_.unlock();
     write_loop();

@@ -398,7 +398,7 @@ typedef int32_t rx_count_ref_t;
 struct lock_reference_struct_t;
 typedef void(*reference_destroy_func_t)(void* ref);
 
-typedef struct lock_reference_def_struct_t
+typedef struct lock_reference_def_struct
 {
 	reference_destroy_func_t destroy_reference;
 
@@ -412,7 +412,7 @@ typedef struct lock_reference_struct_t
 
 } lock_reference_struct;
 
-typedef struct lock_reference_def_struct2_t
+typedef struct lock_reference_def_struct2
 {
 	reference_destroy_func_t destroy_reference;
 	int version;
@@ -882,6 +882,7 @@ RX_COMMON_API void rx_deinit_meta_data(rx_meta_data_struct* what);
 #define RX_HASH_SHA1 5
 
 RX_COMMON_API crypt_key_t rx_crypt_create_symetric_key(const void* data, size_t size, int alg, int mode);
+RX_COMMON_API crypt_key_t rx_crypt_open_public_from_pem(const char* data);
 RX_COMMON_API int rx_crypt_set_IV(crypt_key_t key, const void* data);
 RX_COMMON_API void rx_crypt_destroy_key(crypt_key_t key);
 RX_COMMON_API int rx_crypt_decrypt(crypt_key_t key, const void* chiper, void* plain, size_t* size);
@@ -892,6 +893,8 @@ RX_COMMON_API crypt_hash_t rx_crypt_create_hash(crypt_key_t key, int alg);
 RX_COMMON_API void rx_crypt_destroy_hash(crypt_hash_t hash);
 RX_COMMON_API int rx_crypt_hash_data(crypt_hash_t hhash, const void* buffer, size_t size);
 RX_COMMON_API int rx_crypt_get_hash(crypt_hash_t hhash, void* buffer, size_t* size);
+RX_COMMON_API int rx_crypt_rsa_verify_sha256(crypt_key_t key, const void* content, size_t content_size, const void* sig, size_t sig_size);
+
 
 
 RX_COMMON_API int rx_init_certificate_struct(rx_certificate_t* cert);

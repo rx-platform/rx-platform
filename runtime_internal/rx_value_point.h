@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_value_point.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,20 +36,20 @@
 using namespace rx_platform;
 
 
+namespace rx_platform {
+namespace runtime {
+class runtime_process_context;
+} // namespace runtime
+} // namespace rx_platform
+
 namespace rx_internal {
 namespace sys_runtime {
 namespace data_source {
 class data_controler;
+
 } // namespace data_source
 } // namespace sys_runtime
 } // namespace rx_internal
-
-namespace rx_platform {
-namespace runtime {
-class runtime_process_context;
-
-} // namespace runtime
-} // namespace rx_platform
 
 
 
@@ -86,6 +86,7 @@ class value_point_impl
     typedef std::vector<rx_value> tag_variables_type;
     typedef std::map<value_handle_type, int> tag_handles_type;
     typedef std::map<runtime_transaction_id_t, runtime_transaction_id_t> pending_transactions_type;
+	typedef std::map<string_type, value_handle_type> local_vars_type;
 
   public:
       value_point_impl();
@@ -105,7 +106,7 @@ class value_point_impl
 
       void execute (data::runtime_values_data data, runtime_transaction_id_t id, data_controler* controler = nullptr);
 
-      rx_value calculate_local_var (const rx_value& val, char* token_buff);
+      rx_value calculate_local_vars (const std::vector<std::pair<value_handle_type, rx_simple_value> >& vals, char* token_buff);
 
       void calculate (char* token_buff);
 
@@ -122,6 +123,8 @@ class value_point_impl
       bool shared_execute_result_received (const rx_result& result, const data::runtime_values_data& data, runtime_transaction_id_t id);
 
       bool single_execute_result_received (rx_result result, data::runtime_values_data&& data, runtime_transaction_id_t id);
+
+      value_handle_type add_variable (const string_type& name);
 
 
       const rx_platform::runtime::runtime_process_context * get_context () const;
@@ -193,6 +196,8 @@ class value_point_impl
       string_type expression_;
 
       pending_transactions_type pending_transactions_;
+
+      std::unique_ptr<local_vars_type> local_vars_;
 
 
 };

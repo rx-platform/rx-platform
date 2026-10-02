@@ -434,6 +434,8 @@ bool security_guard::check_permission (security_mask_t mask, security_context_pt
 		if (roles_.empty())
 			return true;// Default empty security Guard
 
+
+
 		std::map<string_type, bool> roles_map;
 		for (const auto& one : roles_)
 		{
@@ -449,6 +451,7 @@ bool security_guard::check_permission (security_mask_t mask, security_context_pt
 				}
 			}
 		}
+
 		// first do the denied stuff
 		for (const auto& one : roles_)
 		{

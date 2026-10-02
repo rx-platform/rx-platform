@@ -42,6 +42,9 @@
 namespace
 {
 
+
+hostfxr_set_runtime_property_value_fn set_rt_property_value_fptr = nullptr;
+
 hostfxr_initialize_for_runtime_config_fn init_fptr = nullptr;
 hostfxr_get_dotnet_environment_info_fn get_dotnet_info_fptr = nullptr;
 hostfxr_get_runtime_delegate_fn get_delegate_fptr = nullptr;
@@ -74,6 +77,21 @@ namespace
 {
 rx_dotnet_config_data_t _init_config;
 }
+
+
+string_type get_full_path_from_relative(const string_type& path)
+{
+    char buff[MAX_PATH];
+    if (GetFullPathNameA(path.c_str(), MAX_PATH, buff, NULL))
+    {
+        return buff;
+    }
+    else
+    {
+        return path;
+    }
+}
+
 rx_result load_hostfxr(rx_dotnet_config_data_t& init_config)
 {
     // Pre-allocate a large buffer for the path to hostfxr
@@ -110,6 +128,7 @@ rx_result load_hostfxr(rx_dotnet_config_data_t& init_config)
     get_delegate_fptr = (hostfxr_get_runtime_delegate_fn)GetProcAddress(hostfxr_lib, "hostfxr_get_runtime_delegate");
     get_dotnet_info_fptr = (hostfxr_get_dotnet_environment_info_fn)GetProcAddress(hostfxr_lib, "hostfxr_get_dotnet_environment_info");
     close_fptr = (hostfxr_close_fn)GetProcAddress(hostfxr_lib, "hostfxr_close");
+	set_rt_property_value_fptr = (hostfxr_set_runtime_property_value_fn)GetProcAddress(hostfxr_lib, "hostfxr_set_runtime_property_value");
 
     if (get_dotnet_info_fptr)
     {
@@ -207,9 +226,15 @@ rx_result load_hostfxr(rx_dotnet_config_data_t& init_config)
 
     return true;
 }
-
-rx_result init_dotnet_host(string_type runtime_config)
+string_type get_dotnet_rid()
 {
+	return "win-x64";
+}
+
+rx_result init_dotnet_host(string_type runtime_config, string_type app_dir)
+{
+    
+
     if (init_fptr && get_delegate_fptr && close_fptr)
     {
         string_type config_path;
@@ -223,7 +248,6 @@ rx_result init_dotnet_host(string_type runtime_config)
                 return "Unable to get temporary file name!";
             }
             config_path = rx_combine_paths(szTempPath, "rx-platform.runtimeconfig.json");
-
 
             int size = MultiByteToWideChar(CP_UTF8, 0, config_path.c_str(), -1, nullptr, 0);
             if (size <= 0)
@@ -252,7 +276,7 @@ rx_result init_dotnet_host(string_type runtime_config)
         int rc = init_fptr(wconfig_path, nullptr, &host_cxt);
 
         delete[] wconfig_path;
-        rx_file_delete(config_path.c_str());
+       // rx_file_delete(config_path.c_str());
 
         if (rc != 0 || host_cxt == nullptr)
         {
@@ -262,6 +286,28 @@ rx_result init_dotnet_host(string_type runtime_config)
             host_cxt = nullptr;
             return "Unable to initialize .NET runtime:" + ss.str();
         }
+        if (set_rt_property_value_fptr)
+        {
+            // Set the application path as a runtime property so that it can be used in the runtimeconfig.json
+            char_t* wapp_dir = nullptr;
+
+            string_type naive_dir = app_dir;// rx_combine_paths(app_dir, "runtimes\\win-x64\\native");
+
+            auto size = MultiByteToWideChar(CP_UTF8, 0, naive_dir.c_str(), -1, nullptr, 0);
+            if (size <= 0)
+                return "Invalid UTF8 to UNICODE conversion.";
+            wapp_dir = new char_t[size];
+            MultiByteToWideChar(CP_UTF8, 0, naive_dir.c_str(), -1, wapp_dir, size);
+            auto rc = set_rt_property_value_fptr(host_cxt, L"NATIVE_DLL_SEARCH_DIRECTORIES", wapp_dir);
+            delete[] wapp_dir;
+            if (rc != 0)
+            {
+                std::ostringstream ss;
+                ss << "Set runtime property failed: " << std::hex << std::showbase << rc;
+                return ss.str();
+            }
+        }
+
         rc = get_delegate_fptr(
             host_cxt,
             hdt_load_assembly,
@@ -283,6 +329,8 @@ rx_result init_dotnet_host(string_type runtime_config)
             ss << "Get delegate failed: " << std::hex << std::showbase << rc;
             return ss.str();
         }
+
+        
 
 
         return true;

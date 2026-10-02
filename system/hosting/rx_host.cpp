@@ -313,6 +313,10 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 		else if (row.first == "log.directory" && config.log.directory.empty())
 			config.log.directory = row.second;
 
+
+		else if (row.first == "instance.debug" && !config.management.debug && get_bool_value(row.second))
+			config.management.debug = true;
+
 		else if (row.first == "dotnet.version" && config.dotnet.version.empty())
 			config.dotnet.version = row.second;
 		else if (row.first == "dotnet.server_gc" && config.dotnet.server_gc && !get_bool_value(row.second))
@@ -331,6 +335,12 @@ void read_base_config_options(const std::map<string_type, string_type>& options,
 			config.dotnet.max_threads = atoi(row.second.c_str());
 		else if (row.first == "dotnet.min_threads" && config.dotnet.min_threads == 0)
 			config.dotnet.min_threads = atoi(row.second.c_str());
+		else if (row.first == "dotnet.scan_rate" && config.dotnet.scan_rate == 0)
+			config.dotnet.scan_rate = atoi(row.second.c_str());
+		else if (row.first == "dotnet.write_timeout" && config.dotnet.write_timeout == 0)
+			config.dotnet.write_timeout = atoi(row.second.c_str());
+		else if (row.first == "dotnet.exec_timeout" && config.dotnet.exec_timeout == 0)
+			config.dotnet.exec_timeout = atoi(row.second.c_str());
 	}
 }
 
@@ -553,6 +563,8 @@ angular switch turns on <index.html> as spa document to support Angular\
 			string_type common = rx_gate::instance().get_common_version();
 			string_type abi = rx_gate::instance().get_abi_version();
 			string_type dotnet = rx_internal::dotnet::dotnet_hosting::instance().get_dotnet_info().rx_native_version;
+			string_type worker = rx_internal::dotnet::dotnet_hosting::instance().get_dotnet_info().rx_worker_version;
+
 			string_array hosts;
 			get_host_info(hosts);
 
@@ -588,7 +600,6 @@ angular switch turns on <index.html> as spa document to support Angular\
 			std::cout << "Native .NET hosting  ";
 			std::cout << ANSI_COLOR_GREEN ANSI_COLOR_BOLD
 				<< dotnet << ANSI_COLOR_RESET "\r\n";
-
 
 			std::cout << "\r\nLoading static plug-ins...";
 			std::cout.flush();
@@ -758,6 +769,9 @@ can be overridden by dotnet-threads-min(max) switches\
 		("dotnet-app", "dotnet application path", cxxopts::value<string_type>(config.dotnet.app_path))
 		("dotnet-host", "dotnet hosting library path", cxxopts::value<string_type>(config.dotnet.host_path))
 		("dotnet-lib", "dotnet library path", cxxopts::value<string_type>(config.dotnet.lib_path))
+		("dotnet-scan-rate", "dotnet scan rate", cxxopts::value<uint32_t>(config.dotnet.scan_rate))
+		("dotnet-write-timeout", "dotnet write timeout", cxxopts::value<uint32_t>(config.dotnet.write_timeout))
+		("dotnet-exec-timeout", "dotnet exec timeout", cxxopts::value<uint32_t>(config.dotnet.exec_timeout))
 		;
 	options.add_options()
 		("plugin", "Load just named plugin", cxxopts::value<string_type>(config.instance.plugin))

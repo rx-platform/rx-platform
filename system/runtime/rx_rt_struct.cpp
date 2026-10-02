@@ -423,13 +423,13 @@ bool variable_data::prepare_value (rx_value& prepared_value, runtime_process_con
 	if (prepared_value.get_time().is_null())
 		return false;
 
-	if (prepared_value.is_null())
-	{
-		rx_value temp_val(value);
-		temp_val.set_quality(prepared_value.get_quality());
-		temp_val.set_time(prepared_value.get_time());
-		prepared_value = std::move(temp_val);
-	}
+	//if (prepared_value.is_null())
+	//{
+	//	prepared_value.convert_to(value.get_type());/*
+	//	temp_val.set_quality(prepared_value.get_quality());
+	//	temp_val.set_time(prepared_value.get_time());
+	//	prepared_value = std::move(temp_val);*/
+	//}
 	if (!ctx->get_mode().is_off() && (prepared_value.is_test() == ctx->get_mode().is_test()))
 	{
 		string_type time_str1 = prepared_value.get_time().get_string();
@@ -513,6 +513,10 @@ void variable_data::update_prepared (rx_value prepared_value, runtime_process_co
 rx_result variable_data::check_set_value (runtime_process_context* ctx, bool internal, bool test) const
 {
 	if (value_opt[runtime::structure::opt_is_constant])
+	{
+		return RX_NOT_SUPPORTED;
+	}
+	if (value_opt[runtime::structure::value_opt_init_only])
 	{
 		return RX_NOT_SUPPORTED;
 	}
@@ -844,6 +848,21 @@ void mapper_data::process_write (write_data&& data)
 		{
 			if (my_owner_.variable_ptr)
 			{
+				auto check_result = my_owner_.variable_ptr->check_set_value(context_, data.internal, data.test);
+				if (!check_result)
+				{
+					if (rx_is_debug_instance())
+					{
+						std::ostringstream ss;
+						ss << "Mapper "
+							<< full_path
+							<< " sending write result for id:"
+							<< data.transaction_id << " - " << check_result.errors_line();
+						RUNTIME_LOG_DEBUG("mapper_data", 500, ss.str());
+					}
+					mapper_ptr->mapper_result_received(std::move(check_result), data.transaction_id, context_);
+					return;
+				}
 				auto trans_id = data.transaction_id;
 				rx_value prepared_value = rx_value(std::move(data.value), rx_time());
 				if (!prepared_value.convert_to(get_variable_value().get_type()))
@@ -967,6 +986,7 @@ void mapper_data::mapper_write_pending (write_data&& data)
 {
 	if (!io_.get_in_method() && !io_.get_in_event())
 	{
+		
 		write_data_struct<mapper_data> reg_data;
 		reg_data.whose = this;
 		if (data.identity == 0)
@@ -1026,7 +1046,7 @@ rx_value mapper_data::get_mapped_value () const
 
 rx_result mapper_data::value_changed (rx_value&& val)
 {
-	if (!io_.get_in_method() && !io_.get_in_event())
+	if (!io_.get_in_method() && !io_.get_in_event() && can_read())
 	{
 		if (context_)
 			context_->mapper_update_pending({ this, std::move(val) });
@@ -1036,12 +1056,12 @@ rx_result mapper_data::value_changed (rx_value&& val)
 
 bool mapper_data::can_read () const
 {
-	return mapper_ptr ? mapper_ptr->supports_read() && io_.get_input() : false;
+	return mapper_ptr ? mapper_ptr->supports_read() && io_.get_output() : false;
 }
 
 bool mapper_data::can_write () const
 {
-	return mapper_ptr ? mapper_ptr->supports_write() && io_.get_output() : false;
+	return mapper_ptr ? mapper_ptr->supports_write() && io_.get_input() : false;
 }
 
 void mapper_data::process_write_result (rx_result&& result, runtime_transaction_id_t id)
@@ -1771,6 +1791,7 @@ rx_result event_data::initialize_runtime (runtime::runtime_init_context& ctx)
 		result = item->initialize_runtime(ctx);
 		if (result)
 		{
+			ctx.structure.register_data_type(ctx.path.get_current_path() + RX_OBJECT_DELIMETER + "Args", arguments.create_runtime_model());
 			result = event_ptr->initialize_event(ctx);
 		}
 	}
@@ -2474,6 +2495,10 @@ rx_result value_data::check_set_value (runtime_process_context* ctx, bool intern
 	{
 		return RX_NOT_SUPPORTED;
 	}
+	if (value_opt[runtime::structure::value_opt_init_only])
+	{
+		return RX_NOT_SUPPORTED;
+	}
 	if (value_opt[runtime::structure::value_opt_readonly] && !internal)
 	{
 		return RX_ACCESS_DENIED;
@@ -2792,6 +2817,7 @@ void block_data::fill_data (const data::runtime_values_data& data)
 			break;
 		case rt_data_index_type:
 			{// child value
+				//RX_ASSERT(one.name != "SubDataArray");
 				if (!children[(one.index >> rt_type_shift)].is_array())
 				{
 					auto it = data.children.find(one.name);
@@ -2856,7 +2882,7 @@ void block_data::fill_data (const data::runtime_values_data& data)
 					else
 					{// special case null for empty array
 						auto val = data.get_value(one.name);
-						if (val.is_null())
+						if ((val.is_array() && val.array_size() == 0) || val.is_null())
 						{
 							auto& this_val = children[(one.index >> rt_type_shift)];
 							RX_ASSERT(this_val.get_prototype());
@@ -3369,6 +3395,7 @@ const runtime_item* block_data::get_child_item (string_view_type path) const
 
 rx_result block_data::initialize_runtime (runtime::runtime_init_context& ctx)
 {
+
 	return true;// nothing to do for data
 }
 
@@ -3705,8 +3732,10 @@ rx_result block_data::check_value (rx_value_t val_type, const rx_value_union& da
 {
 	if (val_type != RX_STRUCT_TYPE)
 		return "Type is not a struct";
-	if(data.struct_value.size != items.size())
+	if (data.struct_value.size != items.size())
+	{
 		return "Invalid struct size";
+	}
 	for (size_t i = 0; i < data.struct_value.size; i++)
 	{
 		auto& item = items[i];
@@ -4387,6 +4416,10 @@ rx_result value_block_data::check_set_value (runtime_process_context* ctx, bool 
 	{
 		return RX_NOT_SUPPORTED;
 	}
+	if (struct_value.value_opt[runtime::structure::value_opt_init_only])
+	{
+		return RX_NOT_SUPPORTED;
+	}
 	if (struct_value.value_opt[runtime::structure::value_opt_readonly] && !internal)
 	{
 		return RX_ACCESS_DENIED;
@@ -4789,6 +4822,11 @@ rx_result variable_block_data::prepare_value (rx_simple_value& val, data::runtim
 
 rx_result variable_block_data::write_value (write_data&& data, std::unique_ptr<write_task> task, runtime_process_context* ctx)
 {
+	
+	if (variable.value_opt[runtime::structure::value_opt_init_only])
+	{
+		return RX_NOT_SUPPORTED;
+	}
 
 	auto ret = variable.write_value(std::move(data), std::move(task), ctx);
 

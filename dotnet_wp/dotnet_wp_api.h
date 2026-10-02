@@ -66,6 +66,8 @@ extern "C" {
 
 	typedef void(*dotnetRuntimeCallback_t)(uint64_t transId, rx_result_struct result);
 
+	typedef void(*dotnetExecuteRuntimeCallback_t)(uint64_t transId, const char* value, rx_result_struct result);
+
 	typedef void(*dotnetResultCallback_t)(uint32_t transId, rx_result_struct result);
 	typedef void(*dotnetVoidCallback_t)(uint32_t transId);
 
@@ -79,7 +81,17 @@ extern "C" {
 		, void* instance
 		, size_t idx
 		, typed_value_type value
-		, dotnetRuntimeCallback_t callback /*dotnetRuntimeResultDelegate*/);
+		, dotnetRuntimeCallback_t callback);
+
+
+
+	typedef void(*dotnetExecuteValue_t)(
+		rx_item_type itemType
+		, uint32_t transId
+		, void* instance
+		, size_t idx
+		, typed_value_type value
+		, dotnetExecuteRuntimeCallback_t callback);
 
 
 	typedef void(*dotnetExecuteDone_t)(
@@ -136,8 +148,15 @@ extern "C" {
 		, void* instance
 		, size_t idx
 		, typed_value_type value
-		, dotnetRuntimeCallback_t callback/*dotnetRuntimeResultDelegate*/);
+		, dotnetRuntimeCallback_t callback);
 
+	void dotnetExecuteValue(
+		rx_item_type itemType
+		, uint32_t transId
+		, void* instance
+		, size_t idx
+		, typed_value_type value
+		, dotnetExecuteRuntimeCallback_t callback);
 
 	void dotnetExecuteDone(
 		uint32_t transId
@@ -189,12 +208,16 @@ extern "C" {
 
 		dotnetFireEvent_t fire_event;
 
+
+		dotnetExecuteValue_t execute_value;
+
 	} dotnet_loading_api;
 
 
-	typedef rx_result_struct(CORECLR_DELEGATE_CALLTYPE* init_hosting_entry_point_fn)(dotnet_loading_api_t* apiPtr, uint32_t host_stream_version, uint32_t* dotnet_stream_version, const char** assemblies, uint32_t count, string_value_struct* version, int options);
+	typedef rx_result_struct(CORECLR_DELEGATE_CALLTYPE* init_hosting_entry_point_fn)(dotnet_loading_api_t* apiPtr, uint32_t host_stream_version, uint32_t* dotnet_stream_version, const char* app_file, const char** libs, uint32_t lcount, const char** assemblies, uint32_t count, string_value_struct* version, int options);
 	typedef rx_result_struct(CORECLR_DELEGATE_CALLTYPE* start_hosting_entry_point_fn)();
-	typedef void(CORECLR_DELEGATE_CALLTYPE* bind_object_entry_point_fn)(rx_item_type type, const rx_node_id_struct* node_id, const char* path, const rx_node_id_struct* parent_id, void* runtime);
+	typedef void(CORECLR_DELEGATE_CALLTYPE* bind_object_entry_point_fn)(rx_item_type type, const rx_node_id_struct* node_id, const char* path, const rx_node_id_struct* parent_id, void* runtime, const char* initialValues);
+	typedef void(CORECLR_DELEGATE_CALLTYPE* unbind_object_entry_point_fn)(rx_item_type type, const rx_node_id_struct* node_id, const char* path, const rx_node_id_struct* parent_id, void* runtime);
 	typedef rx_result_struct(CORECLR_DELEGATE_CALLTYPE* build_library_hosting_entry_point_fn)(const char* lib);
 	typedef void (CORECLR_DELEGATE_CALLTYPE* deinit_library_hosting_entry_point_fn)(const char* lib, uint32_t transId);
 	typedef void (CORECLR_DELEGATE_CALLTYPE* deinit_hosting_entry_point_fn)(uint32_t transId);

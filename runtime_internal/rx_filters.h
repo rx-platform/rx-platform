@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_filters.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -281,7 +281,7 @@ Can treat empty string as 0.");
 
 class latch_filter : public rx_platform::runtime::blocks::filter_runtime  
 {
-    DECLARE_CODE_INFO("rx", 1, 0, 0, "\
+    DECLARE_CODE_INFO("rx", 1, 1, 0, "\
 Implementation latch filter.\r\n\
 Supports both string and numeric values");
 
@@ -302,15 +302,23 @@ Supports both string and numeric values");
 
       rx_result filter_input (rx_value& val);
 
+      rx_result filter_output (rx_simple_value& val);
+
 
 
       runtime::local_value<bool> unlatch_;
 
       values::rx_value latched_;
 
+      values::rx_value real_;
+
       runtime::local_value<uint32_t> timeout_;
 
       rx_timer_ptr timer_;
+
+      rx_simple_value skip_value_;
+
+      bool release_on_output_;
 
 
 };
@@ -400,6 +408,10 @@ General expression filter.");
       runtime::local_value<string_type> output_path_;
 
       char token_buffer_[64];
+
+      data_source::value_handle_type in_handle_;
+
+      data_source::value_handle_type out_handle_;
 
 
 };

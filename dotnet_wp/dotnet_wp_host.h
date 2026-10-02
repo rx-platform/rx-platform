@@ -59,6 +59,8 @@ class dotnet_configuration
 
       bool should_break () const;
 
+      string_type get_app_path ();
+
 
   protected:
 
@@ -86,7 +88,7 @@ class dotnet_wp_host
       ~dotnet_wp_host();
 
 
-      rx_result initialize (const string_array& host_files, const string_array& app_files, const string_array& lib_files, string_type& version);
+      rx_result initialize (const string_type& app_dir, const string_array& host_files, const string_array& app_files, const string_array& lib_files, string_type& version);
 
       rx_result start ();
 
@@ -104,31 +106,15 @@ class dotnet_wp_host
 
       void received_write_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, rxwp_result_callback callback);
 
-      void bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr);
+      void bind_runtime (rx_item_type type, const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, const string_type& initial);
 
-      void unbind_runtime (const rx_node_id& id, const rx_node_id& type_id, void* ptr);
+      void unbind_runtime (rx_item_type type, const rx_node_id& id, const rx_node_id& type_id, void* ptr);
 
       void runtime_value_changed (size_t idx, rx_simple_value val, rx_item_type type, void* whose);
 
       void send_initial_values (string_array names, std::vector<rx_simple_value> val, rx_item_type type, void* whose);
 
       rx_result execute_method (uint32_t trans_id, void* whose, const string_type& method, const string_type& value);
-
-      void bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
-
-      void unbind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
-
-      void bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
-
-      void unbind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
-
-      void bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
-
-      void unbind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
-
-      void bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
-
-      void unbind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 
       rx_result source_write (uint32_t trans_id, void* whose, typed_value_type val);
 
@@ -163,7 +149,7 @@ class dotnet_wp_host
 
       bind_object_entry_point_fn bind_object_fn_;
 
-      bind_object_entry_point_fn unbind_object_fn_;
+      unbind_object_entry_point_fn unbind_object_fn_;
 
       deinit_library_hosting_entry_point_fn deinit_library_fn_;
 

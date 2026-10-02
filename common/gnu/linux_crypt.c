@@ -128,13 +128,72 @@ crypt_key_t rx_crypt_create_symetric_key(const void* data, size_t size, int alg,
 {
 	return 0;
 }
+RX_COMMON_API crypt_key_t rx_crypt_open_public_from_pem(const char* data)
+{
+    BIO* bio = BIO_new_mem_buf((const void*)data, -1);
+    if (!bio)
+        return NULL;
+
+    // Try PKCS#1 format first ("-----BEGIN RSA PUBLIC KEY-----")
+    RSA* rsa = PEM_read_bio_RSAPublicKey(bio, NULL, NULL, NULL);
+    if (!rsa)
+    {
+        // Fall back to X.509 SubjectPublicKeyInfo format ("-----BEGIN PUBLIC KEY-----")
+        BIO_reset(bio);
+        EVP_PKEY* pkey = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
+        if (pkey)
+        {
+            rsa = EVP_PKEY_get1_RSA(pkey);
+            EVP_PKEY_free(pkey);
+        }
+    }
+    BIO_free(bio);
+
+    if (!rsa)
+        return NULL;
+
+    // DER-encode the RSA public key (PKCS#1 format) to store in the crypt_key_t struct
+    int der_len = i2d_RSAPublicKey(rsa, NULL);
+    if (der_len <= 0)
+    {
+        RSA_free(rsa);
+        return NULL;
+    }
+
+    crypt_key_t result = (crypt_key_t)malloc(sizeof(struct _crypt_key_t));
+    if (!result)
+    {
+        RSA_free(rsa);
+        return NULL;
+    }
+
+    result->data = (uint8_t*)malloc((size_t)der_len);
+    if (!result->data)
+    {
+        RSA_free(rsa);
+        free(result);
+        return NULL;
+    }
+
+    uint8_t* p = result->data;
+    i2d_RSAPublicKey(rsa, &p);
+    result->size = (uint32_t)der_len;
+    RSA_free(rsa);
+
+    return result;
+}
 int rx_crypt_set_IV(crypt_key_t key, const void* data)
 {
 	return RX_ERROR;
 }
 void rx_crypt_destroy_key(crypt_key_t key)
 {
-
+    if (key)
+    {
+        if (key->data)
+            free(key->data);
+        free(key);
+    }
 }
 int rx_crypt_decrypt(crypt_key_t key, const void* chiper, void* plain, size_t* size)
 {
@@ -200,6 +259,50 @@ int rx_crypt_get_hash(crypt_hash_t hhash, void* buffer, size_t* size)
         return RX_ERROR;
 
 	return RX_OK;
+}
+int rx_crypt_rsa_verify_sha256(crypt_key_t key, const void* content, size_t content_size, const void* sig, size_t sig_size)
+{
+    if (!key || !key->data || key->size == 0)
+        return RX_ERROR;
+
+    // Reconstruct the RSA key from the stored DER-encoded PKCS#1 blob
+    const uint8_t* p = key->data;
+    RSA* rsa = d2i_RSAPublicKey(NULL, &p, (long)key->size);
+    if (!rsa)
+        return RX_ERROR;
+
+    EVP_PKEY* pkey = EVP_PKEY_new();
+    if (!pkey)
+    {
+        RSA_free(rsa);
+        return RX_ERROR;
+    }
+    // EVP_PKEY_assign_RSA transfers ownership of rsa to pkey
+    if (!EVP_PKEY_assign_RSA(pkey, rsa))
+    {
+        EVP_PKEY_free(pkey);
+        RSA_free(rsa);
+        return RX_ERROR;
+    }
+
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (!ctx)
+    {
+        EVP_PKEY_free(pkey);
+        return RX_ERROR;
+    }
+
+    int ret = RX_ERROR;
+    if (EVP_DigestVerifyInit(ctx, NULL, EVP_sha256(), NULL, pkey) == 1
+        && EVP_DigestVerifyUpdate(ctx, content, content_size) == 1
+        && EVP_DigestVerifyFinal(ctx, (const unsigned char*)sig, sig_size) == 1)
+    {
+        ret = RX_OK;
+    }
+
+    EVP_MD_CTX_free(ctx);
+    EVP_PKEY_free(pkey);  // also frees rsa via assigned ownership
+    return ret;
 }
 
 

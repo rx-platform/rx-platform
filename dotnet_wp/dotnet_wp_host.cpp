@@ -70,7 +70,9 @@ struct dotnet_loading_api_t g_loading_api =
     dotnetSourceWriteDone,
     dotnetSourceChange,
 
-	dotnetFireEvent
+	dotnetFireEvent,
+
+    dotnetExecuteValue
 
 };
 }
@@ -101,11 +103,12 @@ dotnet_wp_host::~dotnet_wp_host()
 
 
 
-rx_result dotnet_wp_host::initialize (const string_array& host_files, const string_array& app_files, const string_array& lib_files, string_type& version)
+rx_result dotnet_wp_host::initialize (const string_type& app_dir, const string_array& host_files, const string_array& app_files, const string_array& lib_files, string_type& version)
 {
-    auto result = init_dotnet_host(configuration_.get_runtime_config());
+    auto result = init_dotnet_host(configuration_.get_runtime_config(), get_full_path_from_relative(configuration_.get_app_path()));
+	string_type app_file = rx_combine_paths(app_dir, "rx-platform.app.json");
 
-    if (app_files.size() == 0 || !result)
+    if (rx_file_exsist(app_file.c_str()) == 0 || app_files.size() == 0 || !result)
     {
         string_view_type msg = "No application files specified for.NET hosting parameters.";
         if (result)
@@ -122,13 +125,14 @@ rx_result dotnet_wp_host::initialize (const string_array& host_files, const stri
 
     string_type host_path;
 
-    int skip_index = -1;
+	std::vector<bool> to_skip(host_files.size(), false);
+	bool host_found = false;
     for (int i = 0; i < (int)host_files.size(); ++i)
     {
         if (host_files[i].find("rx-platform-dotnet-host.dll") != string_type::npos)
         {
             host_path = host_files[i];
-            skip_index = i;
+            to_skip[i] = true;
             DOTNET_LOG_INFO("dotnet_host::initialize", 500, "Loading .NET host assembly from " + host_path);
             auto load_result = load_assembly(host_path);
             if (!load_result)
@@ -140,39 +144,39 @@ rx_result dotnet_wp_host::initialize (const string_array& host_files, const stri
             {
                 return result;
             }
+            else
+            {
+                host_found = true;
+            }
             DOTNET_LOG_INFO("dotnet_host::initialize", 500, ".NET host loaded from " + host_path);
             break;
         }
+        else if (host_files[i].find("ENSACO.RxPlatform") != string_type::npos)
+        {
+            to_skip[i] = true;
+        }
     }
-    if (skip_index < 0)
+    if (!host_found)
     {
         DOTNET_LOG_ERROR("dotnet_host::initialize", 500, "Unable to find hosting library." + host_path);
         return RX_INVALID_ARGUMENT;
     }
     for (int i = 0; i < (int)host_files.size(); ++i)
     {
-        if (i == skip_index)
+        if (to_skip[i])
             continue;
         DOTNET_LOG_INFO("dotnet_host::initialize", 500, "Loading .NET assembly from " + host_files[i]);
         auto load_result = load_assembly(host_files[i]);
         if (!load_result)
         {
-            DOTNET_LOG_ERROR("dotnet_host::initialize", 500, "Unable to load assembly:" + load_result.errors_line());
-            return load_result;
-        }
-    }
-    for (int i = 0; i < (int)lib_files.size(); ++i)
-    {
-        if (i == skip_index)
-            continue;
-        DOTNET_LOG_INFO("dotnet_host::initialize", 500, "Loading .NET assembly from " + lib_files[i]);
-        auto load_result = load_assembly(lib_files[i]);
-        if (!load_result)
-        {
             DOTNET_LOG_WARNING("dotnet_host::initialize", 500, "Unable to load assembly:" + load_result.errors_line());
         }
     }
-
+    std::vector<const char*> lib_paths;
+    for (size_t i = 0; i < lib_files.size(); ++i)
+    {
+        lib_paths.push_back(lib_files[i].c_str());
+    }
     std::vector<const char*> plugin_paths;
     for (size_t i = 0; i < app_files.size(); ++i)
     {
@@ -187,9 +191,17 @@ rx_result dotnet_wp_host::initialize (const string_array& host_files, const stri
         options |= 0x1;
     }
 
+	const char** libs = nullptr;
+    if(lib_paths.size() > 0)
+    {
+        libs = &lib_paths[0];
+	}
+
     rx_result ret = init_fn_(&g_loading_api
         , RX_CURRENT_SERIALIZE_VERSION
         , &dotnet_stream_ver
+		, app_file.c_str()
+		, libs, (uint32_t)lib_paths.size()
         , &plugin_paths[0], (uint32_t)plugin_paths.size()
         , &version_info
         , options);
@@ -199,7 +211,6 @@ rx_result dotnet_wp_host::initialize (const string_array& host_files, const stri
         return ret;
     }
     version = rx_c_str(&version_info);
-    DOTNET_LOG_INFO("dotnet_host::initialize", 0, "Native host initialized, version: "s + rx_c_str(&version_info));
     return true;
 }
 
@@ -329,7 +340,7 @@ rx_result dotnet_wp_host::bind_functions ()
         del_result.register_error("Unable to get function pointer for method UnbindObject.");
         return del_result.errors();
     }
-    unbind_object_fn_ = (bind_object_entry_point_fn)delegate;
+    unbind_object_fn_ = (unbind_object_entry_point_fn)delegate;
 
     del_result = get_function_pointer(
         "ENSACO.RxPlatform.Hosting.PlatformHostMain, rx-platform-dotnet-host"
@@ -423,14 +434,14 @@ void dotnet_wp_host::received_write_value (rx_item_type type, uint32_t transId, 
 {
 }
 
-void dotnet_wp_host::bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr)
+void dotnet_wp_host::bind_runtime (rx_item_type type, const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, const string_type& initial)
 {
-    bind_object_fn_(rx_item_type::rx_object, id.c_ptr(), path.c_str(), type_id.c_ptr(), ptr);
+    bind_object_fn_(type, id.c_ptr(), path.c_str(), type_id.c_ptr(), ptr, initial.c_str());
 }
 
-void dotnet_wp_host::unbind_runtime (const rx_node_id& id, const rx_node_id& type_id, void* ptr)
+void dotnet_wp_host::unbind_runtime (rx_item_type type, const rx_node_id& id, const rx_node_id& type_id, void* ptr)
 {
-    unbind_object_fn_(rx_item_type::rx_object, id.c_ptr(), "", type_id.c_ptr(), ptr);
+    unbind_object_fn_(type, id.c_ptr(), "", type_id.c_ptr(), ptr);
 }
 
 void dotnet_wp_host::runtime_value_changed (size_t idx, rx_simple_value val, rx_item_type type, void* whose)
@@ -466,45 +477,6 @@ rx_result dotnet_wp_host::execute_method (uint32_t trans_id, void* whose, const 
         return "Execute method function is not bound in .NET host.";
     }
     return execute_method_(trans_id, whose, method.c_str(), value.c_str());
-}
-
-void dotnet_wp_host::bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
-{
-    bind_object_fn_(rx_item_type::rx_struct_type, id.c_ptr(), path.c_str(), type_id.c_ptr(), ptr);
-}
-
-void dotnet_wp_host::unbind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
-{
-    unbind_object_fn_(rx_item_type::rx_struct_type, id.c_ptr(), path.c_str(), type_id.c_ptr(), ptr);
-}
-
-void dotnet_wp_host::bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
-{
-    bind_object_fn_(rx_item_type::rx_source_type, id.c_ptr(), path.c_str(), type_id.c_ptr(), ptr);
-}
-
-void dotnet_wp_host::unbind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
-{
-    unbind_object_fn_(rx_item_type::rx_source_type, id.c_ptr(), path.c_str(), type_id.c_ptr(), ptr);
-}
-
-void dotnet_wp_host::bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
-{
-    bind_object_fn_(rx_item_type::rx_mapper_type, id.c_ptr(), path.c_str(), type_id.c_ptr(), ptr);
-}
-
-void dotnet_wp_host::unbind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
-{
-    bind_object_fn_(rx_item_type::rx_mapper_type, id.c_ptr(), path.c_str(), type_id.c_ptr(), ptr);
-}
-
-void dotnet_wp_host::bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
-{
-    bind_object_fn_(rx_item_type::rx_event_type, id.c_ptr(), path.c_str(), type_id.c_ptr(), ptr);
-}
-
-void dotnet_wp_host::unbind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
-{
 }
 
 rx_result dotnet_wp_host::source_write (uint32_t trans_id, void* whose, typed_value_type val)
@@ -578,6 +550,11 @@ string_type dotnet_configuration::get_runtime_config () const
 bool dotnet_configuration::should_break () const
 {
     return runtime_config_.launch_debugger;
+}
+
+string_type dotnet_configuration::get_app_path ()
+{
+	return runtime_config_.lib_path;
 }
 
 

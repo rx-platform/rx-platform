@@ -4,7 +4,7 @@
 *
 *  lib\rx_rt_data.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -673,6 +673,81 @@ rx_result runtime_values_data::combine (rx::data::runtime_values_data other)
 	return true;
 }
 
+const runtime_values_data& runtime_values_data::get_child (string_view_type path) const
+{
+	static const runtime_values_data g_empty;
+
+	if (path.empty())
+		return *this;
+	auto idx = path.find(".");
+
+	if (idx == string_view_type::npos)
+	{// our value
+		int array_idx = -1;
+		string_view_type basic_path = extract_index(path, array_idx);
+		if (!basic_path.empty())
+		{
+			auto val_it = children.find(static_cast<string_type>(basic_path));
+			if (val_it != children.end())
+			{
+				if (array_idx < 0 && std::holds_alternative<child_type>(val_it->second))
+					return std::get<child_type>(val_it->second);
+				else if ((int)array_idx >= 0 && std::holds_alternative<array_child_type>(val_it->second)
+					&& array_idx < (int)std::get<array_child_type>(val_it->second).size())
+					return std::get<array_child_type>(val_it->second)[idx];
+
+			}
+			else
+			{
+				auto child_it = children.find(static_cast<string_type>(basic_path));
+				if (child_it != children.end())
+				{
+					if (array_idx == -1)
+					{
+						if (std::holds_alternative<child_type>(child_it->second))
+						{
+							auto& child = std::get<child_type>(child_it->second);
+							return child;
+						}
+					}
+					else if (std::holds_alternative<array_child_type>(child_it->second)
+						&& (size_t)array_idx < std::get<array_child_type>(child_it->second).size())
+					{
+						auto& child = std::get<array_child_type>(child_it->second);
+						if (child.size() > (size_t)array_idx)
+						{
+							return child[array_idx];
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		int array_idx = -1;
+		string_view_type mine = path.substr(0, idx);
+		string_view_type basic_path = extract_index(mine, array_idx);
+		if (!basic_path.empty())
+		{
+			auto child_it = children.find(static_cast<string_type>(basic_path));
+			if (child_it != children.end())
+			{
+				if (array_idx < 0 && std::holds_alternative<child_type>(child_it->second))
+				{
+					return std::get<child_type>(child_it->second).get_child(path.substr(idx + 1));
+				}
+				else if (array_idx >= 0 && std::holds_alternative<array_child_type>(child_it->second)
+					&& (size_t)array_idx < std::get<array_child_type>(child_it->second).size())
+				{
+					return std::get<array_child_type>(child_it->second)[array_idx].get_child(path.substr(idx + 1));
+				}
+			}
+		}
+	}
+	return g_empty;
+}
+
 
 // Class rx::data::runtime_data_model 
 
@@ -853,13 +928,106 @@ rx_result runtime_data_model::fill_runtime_value (data::runtime_values_data& dat
 	return true;
 }
 
-rx_result runtime_data_model::fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_value& val, std::vector<size_t>& indexes, string_array& paths) const
+rx_result runtime_data_model::fill_simple_value (values::rx_simple_value& out_val, const data::runtime_values_data& in_data) const
+{
+	std::vector<rx_simple_value> vals;
+	for (const auto& one : elements)
+	{
+		if (one.is_value())
+		{
+			rx_simple_value val = in_data.get_value(one.name);
+			if (val.is_null())
+				return rx_create_string("Element [", one.name, "] is missing!");
+
+			vals.push_back(std::move(val));
+		}
+		else if (one.is_complex())
+		{
+			auto it = in_data.children.find(one.name);
+			if(it==in_data.children.end())
+				return rx_create_string("Complex element [", one.name, "] is missing!");
+			if(!std::holds_alternative<runtime_values_data>(it->second))
+				return rx_create_string("Complex element [", one.name, "] is an array and should not be!");
+
+			runtime_values_data child_data = std::get<runtime_values_data>(it->second);
+			rx_simple_value child_val;
+			auto result = one.get_complex().fill_simple_value(child_val, child_data);
+			if (!result)
+				return result;
+
+			vals.push_back(std::move(child_val));
+		}
+		else if (one.is_complex_array())
+		{
+			rx_simple_value array_val;
+			auto it_val = in_data.values.find(one.name);
+			if(it_val!=in_data.values.end())
+			{// simple empty array or null value
+				if(std::holds_alternative<rx_simple_value>(it_val->second))
+				{
+					auto& val = std::get<rx_simple_value>(it_val->second);
+					if (val.is_null() || val.is_array() && val.array_size() == 0)
+					{
+						array_val.assign_array(std::vector<rx_simple_value>());
+					}
+					else
+					{
+						return rx_create_string("Complex element [", one.name, "] is not an array and should be!");
+					}
+				}
+				else // std::holds_alternative<std::vector<rx_simple_value> >(it_val->second)
+				{
+					auto& val = std::get< std::vector<rx_simple_value> >(it_val->second);
+					if (val.empty())
+					{
+						array_val.assign_array(std::vector<rx_simple_value>());
+					}
+					else
+					{
+						return rx_create_string("Complex element [", one.name, "] is not an array and should be!");
+					}
+				}
+			}
+			else
+			{
+				rx_simple_value val = in_data.get_value(one.name);
+				auto it = in_data.children.find(one.name);
+				if (it == in_data.children.end())
+					return rx_create_string("Complex element [", one.name, "] is missing!");
+				if (!std::holds_alternative<std::vector<runtime_values_data> >(it->second))
+					return rx_create_string("Complex element [", one.name, "] is not an array and should be!");
+
+				std::vector<runtime_values_data> child_data = std::get<std::vector<runtime_values_data>>(it->second);
+				std::vector<rx_simple_value> child_vals;
+				child_vals.reserve(child_data.size());
+				auto& sub_item = one.get_complex_array();
+				for (auto& one_child_data : child_data)
+				{
+					rx_simple_value child_val;
+					auto result = sub_item.fill_simple_value(child_val, one_child_data);
+					if (!result)
+						return result;
+
+					child_vals.push_back(std::move(child_val));
+				}
+				array_val.assign_array(std::move(child_vals));
+			}
+			vals.push_back(std::move(array_val));
+		}
+	}
+	out_val.assign_static(std::move(vals));
+	return true;
+}
+
+
+
+template<typename valueT>
+rx_result runtime_data_model::fill_runtime_value_recursive(data::runtime_values_data& data, const data::runtime_data_model& model, const valueT& val, std::vector<size_t>& indexes, string_array& paths) const
 {
 	size_t idx = 0;
 	string_type path;
 	for (const auto& str : model.elements)
 	{
-//		RX_ASSERT(str.name != "Temperature");
 		indexes.push_back(idx);
 		path = str.name;
 		paths.push_back(path);
@@ -895,7 +1063,7 @@ rx_result runtime_data_model::fill_runtime_value_recursive (data::runtime_values
 
 			if (sz == rx_value::npos)
 				return rx_create_string("Invalid data structure at ", path);
-			
+
 			std::vector<runtime_values_data> one_val;
 			for (size_t idx2 = 0; idx2 < sz; idx2++)
 			{
@@ -924,30 +1092,6 @@ rx_result runtime_data_model::fill_runtime_value_recursive (data::runtime_values
 	}
 	return true;
 }
-
-rx_result runtime_data_model::fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_simple_value& val, std::vector<size_t>& indexes, string_array& paths) const
-{
-	return RX_NOT_IMPLEMENTED;
-}
-
-rx_result runtime_data_model::fill_simple_value (values::rx_simple_value& out_val, const data::runtime_values_data& in_data) const
-{
-	std::vector<rx_simple_value> vals;
-	for (const auto& one : elements)
-	{
-		if (one.is_value())
-		{
-			rx_simple_value val = in_data.get_value(one.name);
-			if (val.is_null())
-				return rx_create_string("Element [", one.name, "] is missing!");
-
-			vals.push_back(std::move(val));
-		}
-	}
-	out_val.assign_static(std::move(vals));
-	return true;
-}
-
 runtime_data_model::runtime_data_model(const runtime_data_model& right)
 {
 	if (!right.elements.empty())

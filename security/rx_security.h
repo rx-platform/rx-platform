@@ -61,7 +61,7 @@ enum security_mask_t : std::uint_fast32_t
     rx_security_read_access = 0x01,
     rx_security_write_access = 0x02,
     rx_security_delete_access = 0x04,
-    rx_security_poll_access = 0x04,
+    rx_security_poll_access = 0x08,
     rx_security_execute_access = 0x10,
 
     rx_security_full = 0x1f,

@@ -286,6 +286,45 @@ browse_command::~browse_command()
 bool browse_command::do_with_item (platform_item_ptr&& rt_item, string_type sub_item, console_context_ptr ctx, std::istream& in, std::ostream& out, std::ostream& err, rx_thread_handle_t executer)
 {
 
+	using parser_t = urke::parser::parser3000;
+	bool pretty = false;
+	bool help = false;
+	bool version = false;
+
+	if (!in.eof())
+	{
+		parser_t parser;
+		parser.add_bit_option('h', "pretty", &pretty, "\"Pretty\" - human readable form of output. The <h> switch is obvious.");
+
+		auto ret = parser.parse(in, err);
+		if (ret)
+		{
+			if (help)
+			{
+				parser.print_help("json [PATH] [VALUE] [OPTIONS]", out);
+				return true;
+			}
+			else if (version)
+			{
+				auto version = code_version();
+				out << "Version "
+					<< version[0] << ". "
+					<< version[1] << ". "
+					<< version[2] << ".";
+				return true;
+			}
+			else
+			{
+				// do the rest, fall through
+			}
+		}
+		else
+		{
+			return false;
+		}
+
+	}
+
 	auto rctx = ctx->create_api_context();
 	
 	rt_item->browse("", sub_item, "", browse_result_callback_t(rctx.object

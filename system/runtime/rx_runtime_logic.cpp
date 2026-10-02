@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_logic.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,6 +36,7 @@
 #include "system/runtime/rx_runtime_logic.h"
 
 #include "runtime_internal/rx_runtime_internal.h"
+#include "lib/rx_ser_json.h"
 
 
 namespace rx_platform {
@@ -704,7 +705,7 @@ rx_result method_data::execute (context_execute_data&& data, std::unique_ptr<str
 
     if (std::holds_alternative<rx_simple_value>(data.data))
     {
-        result = inputs.check_value(std::get<rx_simple_value>(data.data));
+        auto result = prepare_input_value(std::get<rx_simple_value>(data.data), nullptr, ctx);
         if (result)
         {
             to_send = std::move(std::get<rx_simple_value>(data.data));
@@ -879,6 +880,10 @@ rx_result method_data::initialize_runtime (runtime::runtime_init_context& ctx)
     if (!ret)
         return ret;
 
+
+    ctx.structure.register_data_type(ctx.path.get_current_path() + RX_OBJECT_DELIMETER + "In", inputs.create_runtime_model());
+    ctx.structure.register_data_type(ctx.path.get_current_path() + RX_OBJECT_DELIMETER + "Out", outputs.create_runtime_model());
+
     ret = method_ptr->initialize_runtime(ctx);
     if (!ret)
         return ret;
@@ -964,6 +969,71 @@ data::runtime_data_model method_data::get_method_inputs ()
 data::runtime_data_model method_data::get_method_outputs ()
 {
     return outputs.create_runtime_model();
+}
+
+rx_result method_data::prepare_input_value (rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx)
+{
+    if (data)
+    {
+        structure::block_data temp = inputs;
+        temp.fill_data(*data);
+        rx_simple_value temp_val;
+        auto ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+        if (ret)
+        {
+            val = std::move(temp_val);
+        }
+        return ret;
+    }
+    else
+    {
+        if (val.get_type() == RX_NULL_TYPE)
+        {
+            // allow null as empty struct
+            val.assign_static(std::vector<rx_simple_value>{});
+        }
+        if (val.get_type() == RX_STRING_TYPE)
+        {
+            string_type str_val = val.to_string();
+
+            serialization::json_reader reader;
+            if (!reader.parse_data(str_val))
+                return RX_INVALID_CONVERSION;
+            data::runtime_values_data rt_data;
+            auto ret = reader.read_init_values(nullptr, rt_data);
+            if (ret)
+            {
+                structure::block_data temp = inputs;
+                temp.fill_data(rt_data);
+                rx_simple_value temp_val;
+                auto ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+                if (ret)
+                {
+                    val = std::move(temp_val);
+                }
+            }
+            return ret;
+        }
+        else if (val.get_type() == RX_STRUCT_TYPE)
+        {
+            structure::block_data temp = inputs;
+            auto ret = temp.fill_value(val);
+            if (ret)
+            {
+                rx_simple_value temp_val;
+                ret = temp.collect_value(temp_val, runtime_value_type::simple_runtime_value);
+                if (ret)
+                {
+                    val = std::move(temp_val);
+                }
+            }
+            return ret;
+        }
+        else
+        {
+            return RX_INVALID_CONVERSION;
+        }
+    }
 }
 
 

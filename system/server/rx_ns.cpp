@@ -302,6 +302,11 @@ rx_result rx_platform_directory::delete_item (const string_type& name)
 		auto it = sub_items_.find(name);
 		if (it != sub_items_.end())
 		{
+			auto cache_result = ns::rx_directory_cache::instance().remove_cached_item(name, it->second);
+			if (!cache_result)
+			{
+				NAMESPACE_LOG_WARNING("rx_platform_directory", 200, rx_create_string("Unalbe to unregister from cache;", cache_result.errors_line()));
+			}
 			sub_items_.erase(it);
 			return true;
 		}

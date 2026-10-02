@@ -4,7 +4,7 @@
 
 #define RX_SERVER_NAME "Nebula"
 #define RX_SERVER_MAJOR_VERSION 3
-#define RX_SERVER_MINOR_VERSION 1
+#define RX_SERVER_MINOR_VERSION 3
 #define RX_SERVER_BUILD_NUMBER 0
 
 // version 0.14 introduced runtime_data<>
@@ -69,4 +69,10 @@
 // version 2.10.0 added wide events support
 // version 3.0.0 dotnet worker process and events finished with acknowledgement support
 // version 3.1.0 implemented Web Socket server port, and corrected some errors in Web Socket server port
+// version 3.1.1 changes in dotnet hosting API, overrides in init_context
+// version 3.1.2 added variables in value_point
+// version 3.1.3 corrected null and empty array data
+// version 3.2.0 added execute support to context bound values
+// version 3.2.1 added null values to convert to default var values
+// version 3.3.0 added JWT token support
 

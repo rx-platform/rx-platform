@@ -39,7 +39,7 @@
 #define ASPNET_LOG_DEBUG(src,lvl,msg) RX_LOG_DEBUG("ASPNET",src,lvl,msg)
 #define ASPNET_LOG_TRACE(src,lvl,msg) RX_TRACE("ASPNET",src,lvl,msg)
 
-#define RX_ASPFORM_SECURITY_INFO "{rx-platform} ASPNET Cookie Security Provider"
+#define RX_ASPFORM_SECURITY_INFO "{rx-platform} ASP.NET Cookie Security Provider"
 
 
 // rx_aspnet_security
@@ -268,17 +268,17 @@ void aspnet_security_provider::deinitialize ()
 
 rx_result_with<security::security_context_ptr> aspnet_security_provider::create_host_context (hosting::rx_platform_host* host, configuration_data_t& data)
 {
-	return RX_NOT_IMPLEMENTED;
+	return RX_NOT_SUPPORTED;
 }
 
 rx_result_with<security::security_context_ptr> aspnet_security_provider::create_system_context (hosting::rx_platform_host* host, configuration_data_t& data)
 {
-	return RX_NOT_IMPLEMENTED;
+	return RX_NOT_SUPPORTED;
 }
 
 rx_result_with<security::security_context_ptr> aspnet_security_provider::create_world_context (hosting::rx_platform_host* host, configuration_data_t& data)
 {
-	return RX_NOT_IMPLEMENTED;
+	return RX_NOT_SUPPORTED;
 }
 
 string_type aspnet_security_provider::logon (const string_type& user, const string_type& pass)

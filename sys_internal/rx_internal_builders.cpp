@@ -955,7 +955,7 @@ rx_result system_types_builder::do_build (configuration_data_t& config, startup_
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		obj->complex_data.register_simple_value("Status", rx_node_id(RX_NS_MEMORY_STATUS_TYPE_ID), false, true, false);
+		obj->complex_data.register_simple_value("Status", rx_node_id(RX_NS_MEMORY_STATUS_TYPE_ID), false, true, false, false);
 		add_type_to_configuration(dir, obj, false);
 
 		obj = create_type<object_type>(meta::object_type_creation_data{
@@ -2105,7 +2105,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config, startup
 			, full_path
 			});
 		filter->complex_data.register_simple_value_static("Unlatch", false, false, false);
-		filter->complex_data.register_simple_value_static("Timeout", (uint32_t)0, false, true);
+		filter->complex_data.register_simple_value_static("Timeout", (uint32_t)0, false, false);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		filter = create_type<basic_types::filter_type>(meta::type_creation_data{
@@ -2115,8 +2115,8 @@ rx_result support_types_builder::do_build (configuration_data_t& config, startup
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 				});
-		filter->complex_data.register_simple_value_static("InPath", "x", false, true);
-		filter->complex_data.register_simple_value_static("OutPath", "x", false, true);
+		filter->complex_data.register_simple_value_static("InPath", "x", false, false);
+		filter->complex_data.register_simple_value_static("OutPath", "x", false, false);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 
@@ -2127,7 +2127,7 @@ rx_result support_types_builder::do_build (configuration_data_t& config, startup
 			, namespace_item_attributes::namespace_item_internal_access
 			, full_path
 			});
-		filter->complex_data.register_simple_value_static("DecimalPlaces", 2, false, true);
+		filter->complex_data.register_simple_value_static("DecimalPlaces", 2, false, false);
 		add_simple_type_to_configuration<filter_type>(dir, filter, false);
 
 		auto what = create_type<struct_type>(meta::type_creation_data{

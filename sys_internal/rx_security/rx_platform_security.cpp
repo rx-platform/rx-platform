@@ -37,6 +37,7 @@
 #include "system/runtime/rx_internal_objects.h"
 #include "rx_x509_security.h"
 #include "rx_aspnet_security.h"
+#include "jwt_token_security.h"
 namespace rx_platform
 {
 rx_security_handle_t rx_security_context();
@@ -342,6 +343,7 @@ std::vector<std::unique_ptr<platform_security_provider> > platform_security::col
     std::vector<std::unique_ptr<platform_security_provider> > ret;
     ret.push_back(std::make_unique<none_security_provider>());
     ret.push_back(std::make_unique<x509::certificate_security_provider>());
+    ret.push_back(std::make_unique<jwt_token::jwt_token_security_provider>());
     ret.push_back(std::make_unique<aspnet_forms::aspnet_security_provider>());
     return ret;
 }

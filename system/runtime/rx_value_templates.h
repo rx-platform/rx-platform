@@ -546,6 +546,8 @@ public:
     rx_simple_value& value();
     void commit(const rx_simple_value& val, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t());
     void commit(rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t());
+    void execute(const rx_simple_value& val, tag_blocks::binded_execute_result_callback_t callback = tag_blocks::binded_execute_result_callback_t());
+    void execute(rx_simple_value&& val, tag_blocks::binded_execute_result_callback_t callback = tag_blocks::binded_execute_result_callback_t());
 
 
 };
@@ -599,7 +601,7 @@ public:
     const rx_simple_value& value() const;
     void commit(const rx_simple_value& val, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t());
     void commit(rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback = tag_blocks::binded_write_result_callback_t());
-
+ 
 };
 
 template <typename typeT, bool manual = false>

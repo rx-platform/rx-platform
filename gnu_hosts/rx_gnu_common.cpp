@@ -96,7 +96,7 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("/media/sf_RX/GCC/project/bin/Debug/librx-first-plugin.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/Modbus/bin/Debug/librx-modbus.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/InfoControl/bin/Debug/librx-infocontrol.so");
-	//paths.emplace_back("/media/sf_rx-release/Dev/GCC/ISO/bin/Debug/librx-iso.so");
+	paths.emplace_back("/media/sf_rx-release/Dev/GCC/ISO/bin/Debug/librx-iso.so");
 	//paths.emplace_back("/media/sf_rx-release/Dev/GCC/Siemens/bin/Debug/librx-siemens.so");
 	paths.emplace_back("/media/sf_rx-release/Dev/GCC/iec61850/bin/Debug/libiec61850.so");
 	// rPi plugin not working in regular ubuntu!!!

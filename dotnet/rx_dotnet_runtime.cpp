@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -37,6 +37,7 @@
 #include "runtime_internal/rx_runtime_internal.h"
 #include "lib/rx_ser_json.h"
 #include "rx_dotnet.h"
+#include "sys_internal/rx_async_functions.h"
 
 extern "C"
 {
@@ -81,8 +82,51 @@ extern "C"
 namespace rx_internal {
 
 namespace dotnet {
+void init_connection_data(const string_type& input, string_array& init_data, string_array& conn_data)
+{
+    string_type dyn_conns;
+    string_type init_conns;
 
-// Class rx_internal::dotnet::dotnet_method
+    auto idxs = input.find('|');
+    if (idxs != string_type::npos)
+    {
+        dyn_conns = input.substr(0, idxs);
+        idxs++;
+        init_conns = input.substr(idxs);
+    }
+    else
+    {
+        dyn_conns = input;
+    }
+
+    size_t idx1 = 0;
+    size_t idx2 = 0;
+    if (!dyn_conns.empty())
+    {
+        idx2 = dyn_conns.find(';');
+        while (idx2 != string_type::npos)
+        {
+            conn_data.push_back(dyn_conns.substr(idx1, idx2 - idx1));
+            idx1 = idx2 + 1;
+            idx2 = dyn_conns.find(';', idx1);
+        }
+        conn_data.push_back(dyn_conns.substr(idx1));
+    }
+    if (!init_conns.empty())
+    {
+        idx1 = 0;
+        idx2 = init_conns.find(';');
+        while (idx2 != string_type::npos)
+        {
+            init_data.push_back(init_conns.substr(idx1, idx2 - idx1));
+            idx1 = idx2 + 1;
+            idx2 = init_conns.find(';', idx1);
+        }
+        init_data.push_back(init_conns.substr(idx1));
+    }
+}
+
+// Class rx_internal::dotnet::dotnet_method 
 
 dotnet_method::dotnet_method()
 {
@@ -146,6 +190,10 @@ rx_result dotnet_method::execute (execute_data data, runtime::runtime_process_co
 					values = writer.get_string();
                 }
             }
+            else
+            {
+                return result;
+            }
         }
         return my_object_->execute_method(data.transaction_id, method_name_, values, smart_this());
     }
@@ -200,7 +248,7 @@ void dotnet_method::received_execute_done (uint32_t transId, const string_type& 
 }
 
 
-// Class rx_internal::dotnet::dotnet_object_runtime
+// Class rx_internal::dotnet::dotnet_object_runtime 
 
 std::map<rx_node_id, dotnet_object_runtime::smart_ptr> dotnet_object_runtime::runtime_instances;
 
@@ -214,6 +262,8 @@ dotnet_object_runtime::dotnet_object_runtime (string_type conn_data, rx_node_id 
     string_type dyn_conns;
     string_type init_conns;
     string_type rel_conns;
+    string_type method_conns;
+
     auto idxs = conn_data.find('|');
     if (idxs != string_type::npos)
     {
@@ -223,7 +273,16 @@ dotnet_object_runtime::dotnet_object_runtime (string_type conn_data, rx_node_id 
         if (idxe != string_type::npos)
         {
             init_conns = conn_data.substr(idxs, idxe - idxs);
-            rel_conns = conn_data.substr(idxe + 1);
+            auto idxm = conn_data.find('|', idxe + 1);
+            if (idxm != string_type::npos)
+            {
+                rel_conns = conn_data.substr(idxe + 1, idxm - idxe - 1);
+                method_conns = conn_data.substr(idxm + 1);
+            }
+            else
+            {
+                rel_conns = conn_data.substr(idxe + 1);
+            }
         }
         else
         {
@@ -234,6 +293,7 @@ dotnet_object_runtime::dotnet_object_runtime (string_type conn_data, rx_node_id 
     {
         dyn_conns = conn_data;
     }
+
     size_t idx1 = 0;
     size_t idx2 = 0;
     if (!dyn_conns.empty())
@@ -259,7 +319,7 @@ dotnet_object_runtime::dotnet_object_runtime (string_type conn_data, rx_node_id 
         }
         init_data_.push_back(init_conns.substr(idx1));
     }
-    if(!rel_conns.empty())
+    if (!rel_conns.empty())
     {
         idx1 = 0;
         idx2 = rel_conns.find(';');
@@ -270,7 +330,19 @@ dotnet_object_runtime::dotnet_object_runtime (string_type conn_data, rx_node_id 
             idx2 = rel_conns.find(';', idx1);
         }
         rel_data_.push_back(rel_conns.substr(idx1));
-	}
+    }
+    if (!method_conns.empty())
+    {
+        idx1 = 0;
+        idx2 = method_conns.find(';');
+        while (idx2 != string_type::npos)
+        {
+            method_data_.push_back(method_conns.substr(idx1, idx2 - idx1));
+            idx1 = idx2 + 1;
+            idx2 = method_conns.find(';', idx1);
+        }
+        method_data_.push_back(method_conns.substr(idx1));
+    }
     my_relations_ = std::make_unique<std::map<string_type, rx_reference<dotnet_relation> >>();
 }
 
@@ -284,7 +356,12 @@ dotnet_object_runtime::~dotnet_object_runtime()
 
 rx_result dotnet_object_runtime::initialize_runtime (runtime_init_context& ctx)
 {
-    dotnet_hosting::instance().bind_runtime(ctx.meta.id, ctx.meta.get_full_path(), type_id_, this, smart_this());
+	rx::serialization::json_writer writer;
+	writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+	writer.write_init_values(nullptr, ctx.init_data);
+	writer.write_footer();
+	string_type init = writer.get_string();
+    dotnet_hosting::instance().bind_runtime(ctx.meta.id, ctx.meta.get_full_path(), type_id_, this, smart_this(), init);
 
     int idx = 0;
 
@@ -344,6 +421,25 @@ rx_result dotnet_object_runtime::initialize_runtime (runtime_init_context& ctx)
             idx++;
         }
 	}
+
+    if (!method_data_.empty())
+    {
+        method_values_.reserve(method_data_.size());
+        for (const auto& method : method_data_)
+        {
+            auto temp = std::make_unique<execute_value_data>();
+            temp->model = ctx.get_data_model("."s + method + RX_OBJECT_DELIMETER + "Out");
+
+            auto result = temp->value.bind(method, ctx);
+            if (!result)
+            {
+                DOTNET_LOG_ERROR("dotnet_object_runtime", 900
+                    , rx_create_string("Failed to bind to ", method, result.errors_line().c_str()));
+            }
+            method_values_.push_back(std::move(temp));
+            idx++;
+        }
+    }
     my_relations_.reset();
     DOTNET_LOG_DEBUG("dotnet_object_runtime", 100, "dotnet proxy object initialized.");
     return true;
@@ -351,10 +447,13 @@ rx_result dotnet_object_runtime::initialize_runtime (runtime_init_context& ctx)
 
 rx_result dotnet_object_runtime::start_runtime (runtime_start_context& ctx)
 {
-    if (!init_data_.empty())
+    std::vector<rx_simple_value> initial_values;
+	string_array init_names_array;
+    if (!init_data_.empty() || !conn_data_.empty())
     {
-		std::vector<rx_simple_value> initial_values;
-		initial_values.reserve(init_data_.size());
+
+		initial_values.reserve(init_data_.size() + conn_data_.size());
+		init_names_array.reserve(init_data_.size() + conn_data_.size());
 
         for(const auto& one : init_data_)
         {
@@ -365,9 +464,49 @@ rx_result dotnet_object_runtime::start_runtime (runtime_start_context& ctx)
                 temp = rx_simple_value();
             }
 			initial_values.push_back(std::move(temp));
+			init_names_array.push_back(one);
 		}
-        dotnet_hosting::instance().send_initial_values(std::move(init_data_), std::move(initial_values), rx_item_type::rx_object, this);
+        size_t idx = 0;
+        for (const auto& one : conn_data_)
+        {
+            rx_simple_value temp;
+            auto result = ctx.get_item(one, temp);
+            if (!result)
+            {
+                temp = rx_simple_value();
+            }
+            if (binded_values_[idx])
+            {
+                if(!binded_values_[idx]->model.elements.empty())
+                {
+                    rx_simple_value ser_val;
+                    data::runtime_values_data rt;
+                    auto result = binded_values_[idx]->model.fill_runtime_value(rt, temp);
+                    if (result)
+                    {
+                        serialization::json_writer writer;
+                        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+                        if (writer.write_init_values(nullptr, rt))
+                        {
+                            writer.write_footer();
+							string_type str_val = writer.get_string();
+				             ser_val.assign_static(str_val);
+							temp = std::move(ser_val);
+                        }
+                    }
+                }
+				else
+                {
+                    temp = binded_values_[idx]->value.value();
+                }
+            }
+            initial_values.push_back(std::move(temp));
+            init_names_array.push_back(one);
+            idx++;
+        }
     }
+    dotnet_hosting::instance().send_initial_values(std::move(init_names_array), std::move(initial_values), rx_item_type::rx_object, this);
+
     DOTNET_LOG_DEBUG("dotnet_object_runtime", 100, "dotnet proxy object started.");
     return true;
 }
@@ -408,18 +547,18 @@ void dotnet_object_runtime::post_own_job (plugin_job_struct* what)
 
 void dotnet_object_runtime::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
-    DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
-		, rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
+    /*DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
+		, rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));*/
 
     if(idx < binded_values_.size())
-    {
+    {        
 		auto callback_ptr = std::make_shared<rx_result_callback>(smart_this(), std::move(callback), get_executer());
         binded_values_[idx]->value.commit(std::move(val), [trans_id = transId, callback_ptr = callback_ptr]
         (runtime_transaction_id_t , rx_result result) mutable
             {
                 (*callback_ptr)(std::move(result));
-                DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
-                    , rx_create_string("Received write result for transId: ", trans_id, "."));
+             /*   DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
+                    , rx_create_string("Received write result for transId: ", trans_id, "."));*/
 
             });
     }
@@ -431,8 +570,8 @@ void dotnet_object_runtime::received_write_value (uint32_t transId, void* inst, 
         (runtime_transaction_id_t, rx_result result) mutable
             {
                 (*callback_ptr)(std::move(result));
-                DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
-                    , rx_create_string("Received write result for transId: ", trans_id, "."));
+      /*          DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
+                    , rx_create_string("Received write result for transId: ", trans_id, "."));*/
 
             });
     }
@@ -440,6 +579,66 @@ void dotnet_object_runtime::received_write_value (uint32_t transId, void* inst, 
     {
         callback(rx_result(RX_INVALID_ARGUMENT));
     }
+}
+
+void dotnet_object_runtime::received_execute_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_simple_value&&, rx_result&&)> callback)
+{
+    DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
+        , rx_create_string("Received execute value, transId: ", transId, ", value: ", val.to_string().c_str()));
+
+    rx_post_function_to(get_executer(), smart_this(), [this, transId, idx, val = std::move(val), callback = std::move(callback)]()
+        {
+            if (idx >= binded_values_.size() + relation_values_.size())
+            {
+                size_t met_idx = idx - binded_values_.size() - relation_values_.size();
+                if (met_idx < method_values_.size())
+                {
+					auto model = method_values_[met_idx]->model;
+                    auto callback_ptr = std::make_shared<rx_platform::callback::rx_any_callback<rx_simple_value&&, rx_result&&>>(smart_this(), std::move(callback), get_executer());
+                    method_values_[met_idx]->value.execute(std::move(val), [model = std::move(model), trans_id = transId, callback_ptr = callback_ptr]
+                    (runtime_transaction_id_t, rx_result result, rx_simple_value val) mutable
+                        {
+                            if (result)
+                            {
+                                data::runtime_values_data rt;
+                                result = model.fill_runtime_value(rt, val);
+                                if(result)
+                                 {
+                                    serialization::json_writer writer;
+                                    writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+                                    if (writer.write_init_values(nullptr, rt))
+                                    {
+                                        writer.write_footer();
+                                        val.assign_static(writer.get_string());
+                                    }
+                                    else
+                                    {
+                                        result = ("Failed to serialize output value!");
+                                        val = rx_simple_value();
+                                    }
+                                }
+                                else
+                                {
+                                    result = ("Failed to convert output value!");
+                                    val = rx_simple_value();
+								}
+                            }
+                            (*callback_ptr)(std::move(val), std::move(result));
+                            DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
+                                , rx_create_string("Received execute result for transId: ", trans_id, "."));
+
+                        });
+                }
+                else
+                {
+                    callback(rx_simple_value(), rx_result(RX_INVALID_ARGUMENT ". No method under index"));
+                }
+            }
+            else
+            {
+                callback(rx_simple_value(), rx_result(RX_INVALID_ARGUMENT ". Index out of range"));
+            }
+        });
 }
 
 void dotnet_object_runtime::binded_value_changed (int idx, const values::rx_simple_value& val)
@@ -509,7 +708,7 @@ void dotnet_object_runtime::register_relation (const string_type& name, rx_refer
 }
 
 
-// Class rx_internal::dotnet::dotnet_relation
+// Class rx_internal::dotnet::dotnet_relation 
 
 dotnet_relation::dotnet_relation()
       : index_(0x8000)
@@ -612,7 +811,7 @@ void dotnet_relation::set_index (size_t index)
 }
 
 
-// Class rx_internal::dotnet::dotnet_event
+// Class rx_internal::dotnet::dotnet_event 
 
 dotnet_event::dotnet_event (string_type conn_data, rx_node_id type_id)
       : conn_data_(conn_data),
@@ -631,7 +830,17 @@ rx_result dotnet_event::initialize_event (runtime::runtime_init_context& ctx)
 {
     object_id_ = ctx.meta.id;
     path_ = ctx.path.get_current_path();
-    dotnet_hosting::instance().bind_event(object_id_, path_, type_id_, this, smart_this());
+    string_type init;
+	const auto& init_rt = ctx.init_data.get_child(ctx.path.get_current_path());
+    if (!init_rt.empty())
+    {
+        rx::serialization::json_writer writer;
+        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+        writer.write_init_values(nullptr, init_rt);
+        writer.write_footer();
+        init = writer.get_string();
+    }
+    dotnet_hosting::instance().bind_event(object_id_, path_, type_id_, this, smart_this(), init);
     string_type dyn_conns;
     auto idxs = conn_data_.find('|');
     if (idxs != string_type::npos)
@@ -660,6 +869,8 @@ rx_result dotnet_event::initialize_event (runtime::runtime_init_context& ctx)
         string_type conn;
         for (const auto& conn1 : binding_conns)
         {
+            if (conn1.empty())
+                continue;
             conn = "."s + conn1;
             auto temp = std::make_unique<binded_value_data>();
             temp->model = ctx.get_data_model(conn);
@@ -672,7 +883,7 @@ rx_result dotnet_event::initialize_event (runtime::runtime_init_context& ctx)
                 if (!result)
                 {
                     DOTNET_LOG_ERROR("dotnet_event", 900
-                        , rx_create_string("Failed to bind to ", conn, result.errors_line().c_str()));
+                        , rx_create_string("Failed to bind event to ", conn, result.errors_line().c_str()));
                 }
             }
             else
@@ -684,7 +895,7 @@ rx_result dotnet_event::initialize_event (runtime::runtime_init_context& ctx)
                 if (!result)
                 {
                     DOTNET_LOG_ERROR("dotnet_event", 900
-                        , rx_create_string("Failed to bind to ", conn, result.errors_line().c_str()));
+                        , rx_create_string("Failed to bind event to ", conn, result.errors_line().c_str()));
                 }
             }
             binded_values_.push_back(std::move(temp));
@@ -707,9 +918,10 @@ rx_result dotnet_event::start_event (runtime::runtime_start_context& ctx)
     {
         stat_conns = "";
     }
+    string_array binding_conns;
+    std::vector<rx_simple_value> initial_values;
     if (!stat_conns.empty())
     {
-        string_array binding_conns;
         size_t idx1 = 0;
         size_t idx2 = stat_conns.find(';');
         while (idx2 != string_type::npos)
@@ -720,7 +932,6 @@ rx_result dotnet_event::start_event (runtime::runtime_start_context& ctx)
         }
         binding_conns.push_back(stat_conns.substr(idx1));
 
-        std::vector<rx_simple_value> initial_values;
         initial_values.reserve(binding_conns.size());
 
         for (const auto& one : binding_conns)
@@ -733,8 +944,9 @@ rx_result dotnet_event::start_event (runtime::runtime_start_context& ctx)
             }
             initial_values.push_back(std::move(temp));
         }
-        dotnet_hosting::instance().send_initial_values(std::move(binding_conns), std::move(initial_values), rx_item_type::rx_event_type, this);
     }
+    dotnet_hosting::instance().send_initial_values(std::move(binding_conns), std::move(initial_values), rx_item_type::rx_event_type, this);
+
     DOTNET_LOG_DEBUG("dotnet_event", 100, "dotnet proxy event started.");
 	return true;
 }
@@ -757,8 +969,8 @@ void dotnet_event::fill_code_info (std::ostream& info, const string_type& name) 
 
 void dotnet_event::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
-    DOTNET_LOG_DEBUG("dotnet_event", 100
-        , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
+    /*DOTNET_LOG_DEBUG("dotnet_event", 100
+        , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));*/
 
     if (idx < binded_values_.size())
     {
@@ -767,8 +979,8 @@ void dotnet_event::received_write_value (uint32_t transId, void* inst, size_t id
         (runtime_transaction_id_t, rx_result result) mutable
             {
                 (*callback_ptr)(std::move(result));
-                DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
-                    , rx_create_string("Received write result for transId: ", trans_id, "."));
+               /* DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
+                    , rx_create_string("Received write result for transId: ", trans_id, "."));*/
 
             });
     }
@@ -821,7 +1033,7 @@ void dotnet_event::fire_event (string_type data, string_type queue, bool state, 
 }
 
 
-// Class rx_internal::dotnet::dotnet_mapper
+// Class rx_internal::dotnet::dotnet_mapper 
 
 dotnet_mapper::dotnet_mapper (string_type conn_data, rx_node_id type_id)
       : conn_data_(conn_data),
@@ -840,7 +1052,17 @@ rx_result dotnet_mapper::initialize_mapper (runtime::runtime_init_context& ctx)
 {
     object_id_ = ctx.meta.id;
     path_ = ctx.path.get_current_path();
-    dotnet_hosting::instance().bind_mapper(object_id_, path_, type_id_, this, smart_this());
+    string_type init;
+    const auto& init_rt = ctx.init_data.get_child(ctx.path.get_current_path());
+    if (!init_rt.empty())
+    {
+        rx::serialization::json_writer writer;
+        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+        writer.write_init_values(nullptr, init_rt);
+        writer.write_footer();
+        init = writer.get_string();
+    }
+    dotnet_hosting::instance().bind_mapper(object_id_, path_, type_id_, this, smart_this(), init);
     string_type dyn_conns;
     auto idxs = conn_data_.find('|');
     if (idxs != string_type::npos)
@@ -967,8 +1189,8 @@ void dotnet_mapper::fill_code_info (std::ostream& info, const string_type& name)
 
 void dotnet_mapper::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
-    DOTNET_LOG_DEBUG("dotnet_mapper", 100
-        , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
+    //DOTNET_LOG_DEBUG("dotnet_mapper", 100
+    //    , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
 
     if (idx < binded_values_.size())
     {
@@ -976,9 +1198,9 @@ void dotnet_mapper::received_write_value (uint32_t transId, void* inst, size_t i
         binded_values_[idx]->value.commit(rx_simple_value(val), [trans_id = transId, callback_ptr = callback_ptr]
         (runtime_transaction_id_t, rx_result result) mutable
             {
-                (*callback_ptr)(std::move(result));
-                DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
-                    , rx_create_string("Received write result for transId: ", trans_id, "."));
+               (*callback_ptr)(std::move(result));
+               /*  DOTNET_LOG_DEBUG("dotnet_object_runtime", 100
+                    , rx_create_string("Received write result for transId: ", trans_id, "."));*/
 
             });
     }
@@ -1017,7 +1239,7 @@ void dotnet_mapper::binded_value_changed (int idx, const values::rx_simple_value
 }
 
 
-// Class rx_internal::dotnet::dotnet_source
+// Class rx_internal::dotnet::dotnet_source 
 
 dotnet_source::dotnet_source (string_type conn_data, rx_node_id type_id)
       : conn_data_(conn_data),
@@ -1035,8 +1257,18 @@ dotnet_source::~dotnet_source()
 rx_result dotnet_source::initialize_source (runtime::runtime_init_context& ctx)
 {
     object_id_ = ctx.meta.id;
-    path_ = ctx.path.get_current_path();
-	dotnet_hosting::instance().bind_source(object_id_, path_, type_id_, this, smart_this());
+    path_ = ctx.path.get_current_path(); rx::serialization::json_writer writer;
+    string_type init;
+    const auto& init_rt = ctx.init_data.get_child(ctx.path.get_current_path());
+    if (!init_rt.empty())
+    {
+        rx::serialization::json_writer writer;
+        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+        writer.write_init_values(nullptr, init_rt);
+        writer.write_footer();
+        init = writer.get_string();
+    }
+	dotnet_hosting::instance().bind_source(object_id_, path_, type_id_, this, smart_this(), init);
     string_type dyn_conns;
     auto idxs = conn_data_.find('|');
     if (idxs != string_type::npos)
@@ -1163,9 +1395,9 @@ void dotnet_source::fill_code_info (std::ostream& info, const string_type& name)
 
 void dotnet_source::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
-    DOTNET_LOG_DEBUG("dotnet_source", 100
-        , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
-
+  /*  DOTNET_LOG_DEBUG("dotnet_source", 100
+       , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
+ */
     if (idx < binded_values_.size())
     {
         auto callback_ptr = std::make_shared<rx_result_callback>(smart_this(), std::move(callback));
@@ -1173,8 +1405,8 @@ void dotnet_source::received_write_value (uint32_t transId, void* inst, size_t i
         (runtime_transaction_id_t, rx_result result) mutable
             {
                 (*callback_ptr)(std::move(result));
-                DOTNET_LOG_DEBUG("dotnet_source", 100
-                    , rx_create_string("Received write result for transId: ", trans_id, "."));
+               /* DOTNET_LOG_DEBUG("dotnet_source", 100
+                    , rx_create_string("Received write result for transId: ", trans_id, "."));*/
 
             });
     }
@@ -1238,12 +1470,12 @@ rx_result dotnet_source::source_execute (execute_data&& data, runtime_process_co
 }
 
 
-// Class rx_internal::dotnet::dotnet_struct
+// Class rx_internal::dotnet::dotnet_struct 
 
 dotnet_struct::dotnet_struct (string_type conn_data, rx_node_id type_id)
-      : conn_data_(conn_data),
-        type_id_(type_id)
+      : type_id_(type_id)
 {
+	init_connection_data(conn_data, init_data_, conn_data_);
 }
 
 
@@ -1257,41 +1489,30 @@ rx_result dotnet_struct::initialize_struct (runtime::runtime_init_context& ctx)
 {
 	object_id_ = ctx.meta.id;
 	path_ = ctx.path.get_current_path();
-    dotnet_hosting::instance().bind_struct(object_id_, path_, type_id_, this, smart_this());
-    string_type dyn_conns;
-    auto idxs = conn_data_.find('|');
-    if (idxs != string_type::npos)
+    string_type init;
+    const auto& init_rt = ctx.init_data.get_child(ctx.path.get_current_path());
+    if (!init_rt.empty())
     {
-        dyn_conns = conn_data_.substr(0, idxs);
+        rx::serialization::json_writer writer;
+        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+        writer.write_init_values(nullptr, init_rt);
+        writer.write_footer();
+        init = writer.get_string();
     }
-    else
-    {
-        dyn_conns = conn_data_;
-    }
+    dotnet_hosting::instance().bind_struct(object_id_, path_, type_id_, this, smart_this(), init);
+    int idx = 0;
 
-    string_array binding_conns;
-    size_t idx1 = 0;
-    size_t idx2 = dyn_conns.find(';');
-    while (idx2 != string_type::npos)
+    if (!conn_data_.empty())
     {
-        binding_conns.push_back(dyn_conns.substr(idx1, idx2 - idx1));
-        idx1 = idx2 + 1;
-        idx2 = dyn_conns.find(';', idx1);
-    }
-    binding_conns.push_back(dyn_conns.substr(idx1));
-    if (!binding_conns.empty())
-    {
-        binded_values_.reserve(binding_conns.size());
-        int idx = 0;
-        string_type conn;
-        for (const auto& conn1 : binding_conns)
+        binded_values_.reserve(conn_data_.size());
+        for (const auto& conn : conn_data_)
         {
-            conn = "."s + conn1;
+			string_type conn_path = "."s + conn;
             auto temp = std::make_unique<binded_value_data>();
-            temp->model = ctx.get_data_model(conn);
+            temp->model = ctx.get_data_model(conn_path);
             if (!temp->model.elements.empty())
             {
-                auto result = temp->value.bind(conn, ctx, [idx, this](const values::rx_simple_value& val)
+                auto result = temp->value.bind(conn_path, ctx, [idx, this](const values::rx_simple_value& val)
                     {
                         binded_value_changed(idx, val);
                     });
@@ -1303,7 +1524,7 @@ rx_result dotnet_struct::initialize_struct (runtime::runtime_init_context& ctx)
             }
             else
             {
-                auto result = temp->value.bind(conn, ctx, [idx, this](const values::rx_simple_value& val)
+                auto result = temp->value.bind(conn_path, ctx, [idx, this](const values::rx_simple_value& val)
                     {
                         binded_value_changed(idx, val);
                     });
@@ -1323,44 +1544,58 @@ rx_result dotnet_struct::initialize_struct (runtime::runtime_init_context& ctx)
 
 rx_result dotnet_struct::start_struct (runtime::runtime_start_context& ctx)
 {
-    string_type stat_conns;
-    auto idxs = conn_data_.find('|');
-    if (idxs != string_type::npos)
+    std::vector<rx_simple_value> initial_values;
+    string_array init_names_array;
+    if (!init_data_.empty() || !conn_data_.empty())
     {
-        stat_conns = conn_data_.substr(idxs + 1);
-    }
-    else
-    {
-        stat_conns = "";
-    }
-    if (!stat_conns.empty())
-    {
-        string_array binding_conns;
-        size_t idx1 = 0;
-        size_t idx2 = stat_conns.find(';');
-        while (idx2 != string_type::npos)
-        {
-            binding_conns.push_back(stat_conns.substr(idx1, idx2 - idx1));
-            idx1 = idx2 + 1;
-            idx2 = stat_conns.find(';', idx1);
-        }
-        binding_conns.push_back(stat_conns.substr(idx1));
 
-        std::vector<rx_simple_value> initial_values;
-        initial_values.reserve(binding_conns.size());
+        initial_values.reserve(init_data_.size() + conn_data_.size());
+        init_names_array.reserve(init_data_.size() + conn_data_.size());
 
-        for (const auto& one : binding_conns)
+        for (const auto& one : init_data_)
         {
             rx_simple_value temp;
-            auto result = ctx.get_item("."s + one, temp);
+            auto result = ctx.get_item(one, temp);
             if (!result)
             {
                 temp = rx_simple_value();
             }
             initial_values.push_back(std::move(temp));
+            init_names_array.push_back(one);
         }
-        dotnet_hosting::instance().send_initial_values(std::move(binding_conns), std::move(initial_values), rx_item_type::rx_struct_type, this);
+        size_t idx = 0;
+        for (const auto& one : conn_data_)
+        {
+            rx_simple_value temp;
+            temp = binded_values_[idx]->value.value();
+            if (binded_values_[idx])
+            {
+                if (!binded_values_[idx]->model.elements.empty())
+                {
+                    rx_simple_value ser_val;
+                    data::runtime_values_data rt;
+                    auto result = binded_values_[idx]->model.fill_runtime_value(rt, temp);
+                    if (result)
+                    {
+                        serialization::json_writer writer;
+                        writer.write_header(STREAMING_TYPE_MESSAGE, 0);
+                        if (writer.write_init_values(nullptr, rt))
+                        {
+                            writer.write_footer();
+                            string_type str_val = writer.get_string();
+                            ser_val.assign_static(str_val);
+                            temp = std::move(ser_val);
+                        }
+                    }
+                }
+            }
+            initial_values.push_back(std::move(temp));
+            init_names_array.push_back(one);
+            idx++;
+        }
     }
+    dotnet_hosting::instance().send_initial_values(std::move(init_names_array), std::move(initial_values), rx_item_type::rx_struct_type, this);
+    
     DOTNET_LOG_DEBUG("dotnet_struct", 100, "dotnet proxy struct started.");
     return true;
 }
@@ -1385,18 +1620,18 @@ void dotnet_struct::fill_code_info (std::ostream& info, const string_type& name)
 
 void dotnet_struct::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
 {
-    DOTNET_LOG_DEBUG("dotnet_struct", 100
-        , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));
+  /*  DOTNET_LOG_DEBUG("dotnet_struct", 100
+        , rx_create_string("Received write value, transId: ", transId, ", value: ", val.to_string().c_str()));*/
 
     if (idx < binded_values_.size())
     {
         auto callback_ptr = std::make_shared<rx_result_callback>(smart_this(), std::move(callback));
-        binded_values_[idx]->value.commit(rx_simple_value(val), [trans_id = transId, callback_ptr = callback_ptr]
+        binded_values_[idx]->value.commit(std::move(val), [trans_id = transId, callback_ptr = callback_ptr]
         (runtime_transaction_id_t, rx_result result) mutable
             {
                 (*callback_ptr)(std::move(result));
-                DOTNET_LOG_DEBUG("dotnet_struct", 100
-                    , rx_create_string("Received write result for transId: ", trans_id, "."));
+             /*   DOTNET_LOG_DEBUG("dotnet_struct", 100
+                    , rx_create_string("Received write result for transId: ", trans_id, "."));*/
 
             });
     }
@@ -1435,7 +1670,7 @@ void dotnet_struct::binded_value_changed (int idx, const values::rx_simple_value
 }
 
 
-// Class rx_internal::dotnet::dotnet_appliacation
+// Class rx_internal::dotnet::dotnet_appliacation 
 
 dotnet_appliacation::dotnet_appliacation()
 {
@@ -1469,7 +1704,7 @@ rx_result dotnet_appliacation::stop_runtime (runtime_stop_context& ctx)
 }
 
 
-// Class rx_internal::dotnet::dotnet_domain
+// Class rx_internal::dotnet::dotnet_domain 
 
 dotnet_domain::dotnet_domain()
 {
@@ -1500,6 +1735,92 @@ rx_result dotnet_domain::start_runtime (runtime_start_context& ctx)
 rx_result dotnet_domain::stop_runtime (runtime_stop_context& ctx)
 {
     return true;
+}
+
+
+// Class rx_internal::dotnet::dotnet_monitored_struct 
+
+dotnet_monitored_struct::dotnet_monitored_struct (string_type conn_data, rx_node_id type_id)
+      : type_id_(type_id)
+{
+}
+
+
+dotnet_monitored_struct::~dotnet_monitored_struct()
+{
+}
+
+
+
+rx_result dotnet_monitored_struct::initialize_struct (runtime::runtime_init_context& ctx)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result dotnet_monitored_struct::start_struct (runtime::runtime_start_context& ctx)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result dotnet_monitored_struct::stop_struct (runtime::runtime_stop_context& ctx)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result dotnet_monitored_struct::deinitialize_struct (runtime::runtime_deinit_context& ctx)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+void dotnet_monitored_struct::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
+{
+}
+
+void dotnet_monitored_struct::binded_value_changed (int idx, const values::rx_simple_value& val)
+{
+}
+
+
+// Class rx_internal::dotnet::dotnet_monitored_object 
+
+dotnet_monitored_object::dotnet_monitored_object (string_type conn_data, rx_node_id type_id)
+      : type_id_(type_id)
+{
+}
+
+
+dotnet_monitored_object::~dotnet_monitored_object()
+{
+}
+
+
+
+rx_result dotnet_monitored_object::initialize_object (runtime::runtime_init_context& ctx)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result dotnet_monitored_object::start_object (runtime::runtime_start_context& ctx)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result dotnet_monitored_object::stop_object (runtime::runtime_stop_context& ctx)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+rx_result dotnet_monitored_object::deinitialize_object (runtime::runtime_deinit_context& ctx)
+{
+    return RX_NOT_IMPLEMENTED;
+}
+
+void dotnet_monitored_object::received_write_value (uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback)
+{
+}
+
+void dotnet_monitored_object::binded_value_changed (int idx, const values::rx_simple_value& val)
+{
 }
 
 

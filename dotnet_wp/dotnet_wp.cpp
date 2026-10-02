@@ -40,6 +40,7 @@
 #include "dotnet_wp/donet_wp_version.h"
 #include "dotnet_wp/dotnet_wp_api.h"
 #include "dotnet_wp/dotnet_wp_protocol.h"
+#include "../dotnet/rx_dotnet_version.h"
 
 
 #define STACK_LOG_SIZE 0x400
@@ -94,7 +95,7 @@ dotnet_wp::dotnet_wp()
 	static char version[0x60] = { 0 };
 	if (!g_version[0])
 	{
-		ASSIGN_MODULE_VERSION(g_version, RX_DOTNET_WP_NAME, RX_DOTNET_WP_MAJOR_VERSION, RX_DOTNET_WP_MINOR_VERSION, RX_DOTNET_WP_BUILD_NUMBER);
+		ASSIGN_MODULE_VERSION(g_version, RX_DOTNET_WP_NAME, RX_DOTNET_MAJOR_VERSION, RX_DOTNET_MINOR_VERSION, RX_DOTNET_BUILD_NUMBER);
 	}
 }
 
@@ -145,15 +146,15 @@ int dotnet_wp::run (int argc, char* argv[])
 	printf("Opening pipes...\r\n");
 
 	pipe_client_t pipes = { (sys_handle_t)read_handle, (sys_handle_t)write_handle };
-	
+
 
 	pipe_client_ = std::make_unique<pipe_client>(pipes);
 
 
 	int sync_ret = rx_sync_client_pipe(&pipes);
-	
 
-	
+
+
 	sender_.run();
 
 	printf("Initializing dotnet hosting...\r\n");
@@ -181,6 +182,7 @@ int dotnet_wp::run (int argc, char* argv[])
 	init_message.action_result = std::move(init_result);
 	init_message.hosted_version = get_hosted_dotnet_version();
 	init_message.dotnet_host_version = dotnet_host_version_;
+	init_message.worker_version = g_version;
 
 	send_message(std::move(init_message), 0);
 
@@ -231,6 +233,9 @@ int dotnet_wp::run (int argc, char* argv[])
 		}
 		if (error)
 		{
+#ifdef _DEBUG
+			RX_ASSERT(false);
+#endif
 			break;
 		}
 
@@ -244,7 +249,7 @@ int dotnet_wp::run (int argc, char* argv[])
 bool dotnet_wp::parse_command_line (int argc, char* argv[], const char* help_name, rx_dotnet_config_data_t& config, uint64_t& read_handle, uint64_t& write_handle)
 {
 
-	
+
 	cxxopts::Options options(help_name, "");
 
 	bool angular = false;
@@ -461,25 +466,10 @@ rx_result dotnet_wp::received_packet (rx_const_packet_buffer& received)
 				auto result = msg.deserialize(io_buffer);
 				if (host_ && result)
 				{
-					switch(msg.type)
-					{
-						case rx_item_type::rx_object:
-							host_->bind_runtime(msg.id, msg.path, msg.type_id, (void*)msg.ptr);
-							break;
-						case rx_item_type::rx_struct_type:
-							host_->bind_struct(msg.id, msg.path, msg.type_id, (void*)msg.ptr);
-							break;
-						case rx_item_type::rx_source_type:
-							host_->bind_source(msg.id, msg.path, msg.type_id, (void*)msg.ptr);
-							break;
-						case rx_item_type::rx_mapper_type:
-							host_->bind_mapper(msg.id, msg.path, msg.type_id, (void*)msg.ptr);
-							break;
-						case rx_item_type::rx_event_type:
-							host_->bind_event(msg.id, msg.path, msg.type_id, (void*)msg.ptr);
-							break;
-					}
+					host_->bind_runtime(msg.type, msg.id, msg.path, msg.type_id, (void*)msg.ptr, msg.initial);
 				}
+				wp_void_response response_msg;
+				send_message(std::move(response_msg), head->trans);
 			}
 			break;
 		case dotnet_unbind_runtime_message::msg_id:
@@ -488,25 +478,10 @@ rx_result dotnet_wp::received_packet (rx_const_packet_buffer& received)
 				auto result = msg.deserialize(io_buffer);
 				if (host_ && result)
 				{
-					switch (msg.type)
-					{
-						case rx_item_type::rx_object:
-							host_->unbind_runtime(msg.id, msg.type_id, (void*)msg.ptr);
-							break;
-						case rx_item_type::rx_struct_type:
-							host_->unbind_struct(msg.id, msg.path, msg.type_id, (void*)msg.ptr);
-							break;
-						case rx_item_type::rx_source_type:
-							host_->unbind_source(msg.id, msg.path, msg.type_id, (void*)msg.ptr);
-							break;
-						case rx_item_type::rx_mapper_type:
-							host_->unbind_mapper(msg.id, msg.path, msg.type_id, (void*)msg.ptr);
-							break;
-						case rx_item_type::rx_event_type:
-							host_->unbind_event(msg.id, msg.path, msg.type_id, (void*)msg.ptr);
-							break;
-					}
+					host_->unbind_runtime(msg.type, msg.id, msg.type_id, (void*)msg.ptr);
 				}
+				wp_void_response response_msg;
+				send_message(std::move(response_msg), head->trans);
 			}
 			break;
 		case dotnet_value_changed_message::msg_id:
@@ -526,6 +501,8 @@ rx_result dotnet_wp::received_packet (rx_const_packet_buffer& received)
 				if (host_ && result)
 				{
 					host_->send_initial_values(msg.names, msg.values, msg.type, (void*)msg.whose);
+					wp_void_response response_msg;
+					send_message(std::move(response_msg), head->trans);
 				}
 			}
 			break;
@@ -549,18 +526,29 @@ rx_result dotnet_wp::received_packet (rx_const_packet_buffer& received)
 			{
 				if (head->trans && RX_IS_DOTNET_RESPONSE(head->type))
 				{
-					//RX_ASSERT(false);
-					auto it = pending_wp_transactions_.find(head->trans);
-					if (it != pending_wp_transactions_.end())
+					std::shared_ptr<dotnet_host_transaction> transaction_ptr;
 					{
-
-						it->second->response(head->type, io_buffer);
-						pending_wp_transactions_.erase(it);
-						return true;
+						std::scoped_lock lock(transactions_lock_);
+						//RX_ASSERT(false);
+						auto it = pending_wp_transactions_.find(head->trans);
+						if (it != pending_wp_transactions_.end())
+						{
+							transaction_ptr = it->second;
+							pending_wp_transactions_.erase(it);
+						}
+						else
+						{
+							return rx_create_string("Unknown .NET process transaction id response: ", head->trans);
+						}
 					}
-					return rx_create_string("Unknown .NET process transaction id response: ", head->trans);
+					if(transaction_ptr)
+						transaction_ptr->response(head->type, io_buffer);
+
 				}
-				return rx_create_string("Unknown message type received from .NET process: ", head->type);
+				else
+				{
+					return rx_create_string("Unknown message type received from .NET process: ", head->type);
+				}
 			}
 	}
 	return true;
@@ -588,37 +576,65 @@ rx_result dotnet_wp::initialize (rx_dotnet_config_data_t& config)
 	}
 	else
 	{
+		bool is_net8 = false;
+		auto idx = hosted_ver.find('.');
+		if(idx!= string_type::npos)
+		{
+			is_net8 = hosted_ver.substr(0, idx) == "8";
+		}
 		DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, "Initializing Native host for version: " + hosted_ver);
 
-		printf("Initializing Native host for path: %s\r\n", config.host_path.c_str());
+		string_type full_path = get_full_path_from_relative(config.host_path);
+
+
+		printf("Initializing Native host from path: %s\r\n", full_path.c_str());
 
 		string_array host_files;
 		string_array assembly_files;
 		string_array lib_files;
 		string_array files;
 		string_array dirs;
-		rx_list_files(config.host_path, "*.dll", files, dirs);
+		rx_list_files(full_path, "*.dll", files, dirs);
 		for (const auto& one : files)
 		{
-			host_files.emplace_back(rx_combine_paths(config.host_path, one));
+			host_files.emplace_back(rx_combine_paths(full_path, one));
 		}
 		files.clear();
 		dirs.clear();
 
+		string_type app_full_path = get_full_path_from_relative(config.app_path);
 
-		rx_list_files(config.app_path, "*.dll", files, dirs);
+		printf("Initializing Native app from path: %s\r\n", app_full_path.c_str());
+
+		rx_list_files(app_full_path, "*.dll", files, dirs);
 		for (const auto& one : files)
 		{
-			assembly_files.emplace_back(rx_combine_paths(config.app_path, one));
+			if (is_net8)
+			{
+				// in .NET 8 we have to load all assemblies because of the new assembly loading context
+				if(
+					one == "System.Private.CoreLib.dll"
+                || one == "System.Runtime.dll"
+					|| one == "netstandard.dll"
+					|| one == "System.Collections.Immutable.dll")
+				{
+					continue;
+				}
+			}
+			assembly_files.emplace_back(rx_combine_paths(app_full_path, one));
 		}
+		string_type app_dir = app_full_path;
 		if (!config.lib_path.empty())
 		{
 			files.clear();
 			dirs.clear();
-			rx_list_files(config.lib_path, "*.dll", files, dirs);
+
+
+			string_type lib_full_path = get_full_path_from_relative(config.lib_path);
+			rx_list_files(lib_full_path, "*.dll", files, dirs);
 			for (const auto& one : files)
 			{
-				lib_files.emplace_back(rx_combine_paths(config.lib_path, one));
+				lib_files.emplace_back(rx_combine_paths(lib_full_path, one));
 			}
 		}
 		if (host_files.empty())
@@ -632,7 +648,7 @@ rx_result dotnet_wp::initialize (rx_dotnet_config_data_t& config)
 			return "No .NET user assemblies found in " + config.app_path;
 		}
 		host_ = std::make_unique<dotnet_wp_host>(config);
-		result = host_->initialize(host_files, assembly_files, lib_files, dotnet_host_version_);
+		result = host_->initialize(app_dir, host_files, assembly_files, lib_files, dotnet_host_version_);
 
 		if (!result)
 		{
@@ -640,9 +656,9 @@ rx_result dotnet_wp::initialize (rx_dotnet_config_data_t& config)
 			host_.reset();
 			return result;
 		}
+		worker_version_ = g_version;
 
-
-		DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, ".NET hosting initialized.");
+		DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, ".NET worker initialized; "s + worker_version_);
 	}
 
 	return true;
@@ -682,6 +698,12 @@ void dotnet_wp::send_result_response (uint32_t trans_id, rx_result result)
 {
 	rx_internal::dotnet::wp_result_response msg;
 	msg.action_result = std::move(result);
+	rx_internal::dotnet::dotnet_wp::instance().send_message(std::move(msg), trans_id);
+}
+
+void dotnet_wp::send_void_response (uint32_t trans_id)
+{
+	rx_internal::dotnet::wp_void_response msg;
 	rx_internal::dotnet::dotnet_wp::instance().send_message(std::move(msg), trans_id);
 }
 
@@ -963,13 +985,13 @@ rx_result wp_write_transaction::response (uint32_t msg_type, io::rx_const_io_buf
 {
 	if (msg_type != wp_result_response::msg_id)
 	{
-		return rx_create_string("Invalid message type for build runtime response: ", msg_type);
+		return rx_create_string("Invalid message type for write response: ", msg_type);
 	}
 	wp_result_response msg;
 	auto result = msg.deserialize(buffer);
 	if (!result)
 	{
-		result = rx_create_string("Error deserializing build runtime response: ", result.errors_line().c_str());
+		result = rx_create_string("Error deserializing write response: ", result.errors_line().c_str());
 	}
 	callback_(dotnet_trans_id_, result.move());
 	return true;
@@ -977,7 +999,7 @@ rx_result wp_write_transaction::response (uint32_t msg_type, io::rx_const_io_buf
 
 void wp_write_transaction::timeouted ()
 {
-	callback_(dotnet_trans_id_, rx_result("Build runtime transaction timed out").move());
+	callback_(dotnet_trans_id_, rx_result("Write transaction timed out").move());
 }
 
 uint32_t wp_write_transaction::get_transaction_id () const
@@ -1087,6 +1109,57 @@ rx_result delete_wp_type_transaction::wait_result ()
 		result_ = rx_result("Delete type transaction timed out");
 	}
 	return std::move(result_);
+}
+
+
+// Class rx_internal::dotnet::wp_execute_transaction 
+
+wp_execute_transaction::wp_execute_transaction (uint64_t dotnet_trans, wp_execute_value_message arg, dotnetExecuteRuntimeCallback_t callback, uint32_t timeout)
+      : trans_id_(rx_get_new_transaction_id()),
+        arg_(arg),
+        callback_(callback),
+        dotnet_trans_id_(dotnet_trans)
+{
+}
+
+
+
+rx_result wp_execute_transaction::start (dotnet_wp& wp) const
+{
+    wp.send_message(std::move(arg_), trans_id_);
+
+	return true;
+}
+
+rx_result wp_execute_transaction::response (uint32_t msg_type, io::rx_const_io_buffer& buffer)
+{
+    if (msg_type != wp_execute_response::msg_id)
+	{
+		return rx_create_string("Invalid message type for build runtime response: ", msg_type);
+	}
+	wp_execute_response msg;
+	auto result = msg.deserialize(buffer);
+	if (!result)
+	{
+		result = rx_create_string("Error deserializing execute response: ", result.errors_line().c_str());
+	}
+	string_type result_val = "";
+	if (msg.result_value.is_string())
+	{
+		result_val = msg.result_value.get_string();
+	}
+	callback_(dotnet_trans_id_, result_val.empty() ? nullptr : result_val.c_str(), msg.action_result.move());
+	return true;
+}
+
+void wp_execute_transaction::timeouted ()
+{
+    callback_(dotnet_trans_id_, nullptr, rx_result("Execute transaction timed out").move());
+}
+
+uint32_t wp_execute_transaction::get_transaction_id () const
+{
+	return trans_id_;
 }
 
 

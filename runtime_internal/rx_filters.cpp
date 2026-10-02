@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_filters.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -39,6 +39,10 @@
 #include "runtime_internal/rx_filters.h"
 
 #include "sys_internal/rx_async_functions.h"
+
+
+#define POINT_IO_NAME "x"
+#define POINT_AGGREGATE_NAME "a"
 
 
 namespace rx_internal {
@@ -433,7 +437,8 @@ rx_result latch_filter::initialize_filter (runtime::runtime_init_context& ctx)
 				if (!latched_.is_null())
 				{
 					auto type = latched_.get_type();
-					latched_.set_float(0.0, type);
+					latched_ = rx_value();
+					real_.set_time(rx_time::now());
 					filter_changed();
 				}
 				unlatch_ = false;
@@ -445,13 +450,19 @@ rx_result latch_filter::initialize_filter (runtime::runtime_init_context& ctx)
 
 rx_result latch_filter::start_filter (runtime::runtime_start_context& ctx)
 {
+	rx_simple_value temp;
+	auto r1 = ctx.get_item(".SkipValue", temp);
+	if (!r1)
+		temp = rx_simple_value();
+	skip_value_ = temp;
 	timer_ = ctx.create_timer_function(smart_this(), [this]()
 		{
 			timer_->suspend();
 			if (!latched_.is_null())
 			{
-				auto type = latched_.get_type();
-				latched_.set_float(0.0, type);
+				//auto type = latched_.get_type();
+				real_.set_time(rx_time::now());
+				latched_ = rx_value();
 				filter_changed();
 			}
 		});
@@ -470,25 +481,34 @@ rx_result latch_filter::stop_filter (runtime::runtime_stop_context& ctx)
 
 rx_result latch_filter::filter_input (rx_value& val)
 {
-	if (val.is_numeric() && val.is_good())
+	real_ = val;
+	if (!latched_.is_null())
 	{
-		if (val.get_float() == 0.0)
+		val = latched_;
+	}
+	else if (// this if gives the option to skip to_simle conversion in lot of cases
+		!(skip_value_.is_null() && val.is_null()) &&
+		val.to_simple() != skip_value_)
+	{
+		latched_ = val;
+		if (timeout_ > 0)
 		{
-			if (!latched_.is_null())
-				val = latched_;
-		}
-		else
-		{
-			if (timeout_ > 0)
-			{
-				timer_->start(timeout_);
-			}
-			latched_ = val;
+			timer_->start(timeout_);
 		}
 	}
-	else
+	return true;
+}
+
+rx_result latch_filter::filter_output (rx_simple_value& val)
+{
+	if (release_on_output_)
 	{
-		val.set_quality(RX_BAD_QUALITY_TYPE_MISMATCH);
+		if (!latched_.is_null())
+		{
+			real_.set_time(rx_time::now());
+			latched_ = rx_value();
+			filter_changed();
+		}
 	}
 	return true;
 }
@@ -498,7 +518,9 @@ rx_result latch_filter::filter_input (rx_value& val)
 
 calculation_filter::calculation_filter()
       : input_path_(""),
-        output_path_("")
+        output_path_(""),
+        in_handle_(0),
+        out_handle_(0)
 	, input_point_(this)
 	, output_point_(this)
 {
@@ -514,7 +536,9 @@ calculation_filter::~calculation_filter()
 rx_result calculation_filter::initialize_filter (runtime::runtime_init_context& ctx)
 {
 	input_point_.set_context(ctx.context);
+	in_handle_ = input_point_.add_variable(POINT_IO_NAME);
 	output_point_.set_context(ctx.context);
+	out_handle_ = output_point_.add_variable(POINT_IO_NAME);
 	auto result = input_path_.bind(".InPath", ctx, [this](const string_type& val)
 		{
 			connect_input(val);
@@ -542,15 +566,17 @@ rx_result calculation_filter::stop_filter (runtime::runtime_stop_context& ctx)
 
 rx_result calculation_filter::filter_input (rx_value& val)
 {
-	val = input_point_.calculate_local_var(val, token_buffer_);
+	std::vector<std::pair<data_source::value_handle_type, rx_simple_value> > vars;
+	vars.push_back({ in_handle_, val.to_simple()});
+	val = input_point_.calculate_local_vars(vars, token_buffer_);
 	return true;
 }
 
 rx_result calculation_filter::filter_output (rx_simple_value& val)
 {
-	rx_value temp(val);
-	temp.set_good_locally();
-	temp = output_point_.calculate_local_var(temp, token_buffer_);
+	std::vector<std::pair<data_source::value_handle_type, rx_simple_value> > vars;
+	vars.push_back({ out_handle_, val });
+	rx_value temp = output_point_.calculate_local_vars(vars, token_buffer_);
 	if (temp.is_good())
 	{
 		val = temp.to_simple();

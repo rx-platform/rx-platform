@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_query_messages.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -538,6 +538,76 @@ class get_code_info_response_message : public rx_response_message
       static rx_message_type_t type_id;
 
       string_type code_info;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class read_json_response : public rx_response_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      data::runtime_values_data data;
+
+
+  protected:
+
+  private:
+
+
+};
+
+
+
+
+
+
+class read_json_request : public rx_request_message  
+{
+
+  public:
+
+      rx_result serialize (base_meta_writer& stream) const;
+
+      rx_result deserialize (base_meta_reader& stream);
+
+      message_ptr do_job (api::rx_context ctx, rx_protocol_connection_ptr conn);
+
+      const string_type& get_type_name ();
+
+      rx_message_type_t get_type_id ();
+
+
+      static string_type type_name;
+
+      static rx_message_type_t type_id;
+
+      rx_item_reference ref;
+
+      string_type sub_item;
 
 
   protected:

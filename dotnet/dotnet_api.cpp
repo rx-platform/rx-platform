@@ -60,6 +60,7 @@ namespace
 struct module_data
 {
 	string_type information;
+	string_array assemblies;
 	std::vector<meta_data> types;
 	std::vector<meta_data> runtimes;
 };
@@ -496,10 +497,22 @@ rx_result dotnet_register_item(const string_type& module, uintptr_t plugin, uint
 	std::scoped_lock lock(g_modules_lock);
 
 	string_type module_id;
+	string_type assembly_name;
+	string_type info;
 	auto idx = string_type(module).find_first_of(';');
 	if (idx != string_type::npos)
 	{
 		module_id = string_type(module).substr(0, idx);
+		auto idx2 = string_type(module).find_first_of(';', idx + 1);
+		if(idx2 != string_type::npos)
+		{
+			assembly_name = string_type(module).substr(idx + 1, idx2 - idx - 1);
+			info = string_type(module).substr(idx2 + 1);
+		}
+		else
+		{
+			info = string_type(module).substr(idx + 1);
+		}
 	}
 	else
 	{
@@ -508,11 +521,22 @@ rx_result dotnet_register_item(const string_type& module, uintptr_t plugin, uint
 	auto it = g_dotnet_modules.find(module_id);
 	if (it == g_dotnet_modules.end())
 	{
+		module_data data;
 		it = g_dotnet_modules.emplace(module_id, module_data()).first;
 		if (idx != string_type::npos)
 		{
-			it->second.information = string_type(module).substr(idx + 1);
+			it->second.information = info;
+			if(!assembly_name.empty())
+			{
+				if (std::find(it->second.assemblies.begin(), it->second.assemblies.end(), assembly_name) == it->second.assemblies.end())
+					it->second.assemblies.push_back(assembly_name);
+			}
 		}
+	}
+	else if(!assembly_name.empty())
+	{
+		if (std::find(it->second.assemblies.begin(), it->second.assemblies.end(), assembly_name) == it->second.assemblies.end())
+			it->second.assemblies.push_back(assembly_name);
 	}
 	meta_data meta;
 	meta.name = name;
@@ -535,6 +559,62 @@ rx_result_struct dotnet_delete_item(uintptr_t plugin, rx_item_type item_type, co
 	{
 	}
 	return result.move();
+}
+
+rx_result dotnet_register_monitor_item(const string_type& module, rx_item_type item_type, const string_type& name, const string_type& path
+	, const rx_node_id& id, const rx_node_id& parent
+	, uint32_t version, rx_time_struct modified, uint32_t stream_version, const string_type& data)
+{
+	if (data.empty())
+		return rx_result("Invalid data!");
+
+	rx::serialization::json_reader stream;
+	if (!stream.parse_data(data))
+		return rx_result("Failed to parse JSON data!");
+
+	std::scoped_lock lock(g_modules_lock);
+
+	string_type module_id;
+	auto idx = string_type(module).find_first_of(';');
+	if (idx != string_type::npos)
+	{
+		module_id = string_type(module).substr(0, idx);
+	}
+	else
+	{
+		module_id = string_type(module);
+	}
+	auto dir = rx_directory_cache::instance().get_directory("/world/"s + module_id);
+	if (!dir)
+	{
+		rx_directory_cache::instance().add_directory("/world/"s + module_id,
+			rx_create_reference<storage_base::rx_code_storage>(true));
+	}
+
+	auto it = g_dotnet_modules.find(module_id);
+	if (it == g_dotnet_modules.end())
+	{
+		it = g_dotnet_modules.emplace(module_id, module_data()).first;
+
+		if (idx != string_type::npos)
+		{
+			it->second.information = string_type(module).substr(idx + 1);
+		}
+	}
+
+	rx_result result = dotnet_create_runtime_from_stream(item_type, name, path, id, parent, version, modified, stream);
+
+	meta_data meta;
+	meta.name = name;
+	meta.id = rx_node_id(id);
+	meta.parent = rx_item_reference(parent);
+	meta.path = path;
+	meta.version = 0x10001;
+
+	it->second.runtimes.emplace_back(std::move(meta));
+
+	return result;
+
 }
 rx_result dotnet_register_runtime_item(const string_type& module, rx_item_type item_type, const string_type& name, const string_type& path
 	, const rx_node_id& id, const rx_node_id& parent
@@ -763,13 +843,22 @@ void dotnetBuildRuntime(rx_item_type type, const string_type& module, const  rx_
 	rx_node_id node_id_parent(parent);
 	string_type str_def(def);
 	auto callback_ptr = std::make_shared< std::function<void(rx_result&&)>>(std::move(callback));
-	rx_post_function_to(RX_DOMAIN_META, rx_reference_ptr()
-		, [type, module_id = std::move(module_id), node_id_id = std::move(node_id_id), node_id_parent = std::move(node_id_parent), str_name = std::move(str_name), str_path = std::move(str_path), str_def = std::move(str_def), callback_ptr = std::move(callback_ptr)]
-		 ()
-		{
-			auto result = dotnet_register_runtime_item(module_id, type, str_name, str_path, node_id_id, node_id_parent, 0x10001, { 0 }, 0, str_def);
-			(*callback_ptr)(std::move(result));
-		});		
+
+	if (version == 0xffffffff)
+	{
+		(*callback_ptr)(rx_result(RX_NOT_IMPLEMENTED));
+		return;
+	}
+	else
+	{
+		rx_post_function_to(RX_DOMAIN_META, rx_reference_ptr()
+			, [type, module_id = std::move(module_id), node_id_id = std::move(node_id_id), node_id_parent = std::move(node_id_parent), str_name = std::move(str_name), str_path = std::move(str_path), str_def = std::move(str_def), callback_ptr = std::move(callback_ptr)]
+			()
+			{
+				auto result = dotnet_register_runtime_item(module_id, type, str_name, str_path, node_id_id, node_id_parent, 0x10001, { 0 }, 0, str_def);
+				(*callback_ptr)(std::move(result));
+			});
+	}
 }
 
 void dotnetDeleteRuntime(rx_item_type type, const char* module, const rx_node_id_struct_t* id, std::function<void(rx_result&&)> callback)
@@ -826,6 +915,25 @@ void dotnetWriteValue(
 		, std::move(temp_value)
 		, callback);
 		
+}
+
+
+void dotnetExecuteValue(
+	rx_item_type itemType
+	, uint32_t transId
+	, void* instance
+	, size_t idx
+	, typed_value_type value
+	, std::function<void(rx_simple_value&&, rx_result&&)> callback/*dotnetRuntimeResultDelegate*/)
+{
+	rx_simple_value temp_value(std::move(value));
+	rx_internal::dotnet::dotnet_hosting::instance().received_execute_value(itemType
+		, transId
+		, instance
+		, idx
+		, std::move(temp_value)
+		, callback);
+
 }
 
 
@@ -888,6 +996,23 @@ std::vector<std::pair<string_type, string_type> > get_loaded_dotnet_libraries()
 	for (const auto& one : g_dotnet_modules)
 	{
 		result.emplace_back(one.first, one.second.information);
+	}
+	return result;
+}
+
+
+std::vector<string_type> get_loaded_dotnet_assemblies(const string_type lib)
+{
+	std::vector<string_type> result;
+	std::scoped_lock lock(g_modules_lock);
+	auto it = g_dotnet_modules.find(lib);
+	if(it != g_dotnet_modules.end())
+	{
+		result.reserve(it->second.assemblies.size());
+		for (const auto& assembly : it->second.assemblies)
+		{
+			result.emplace_back(assembly);
+		}
 	}
 	return result;
 }

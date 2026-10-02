@@ -535,6 +535,8 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 					return "Can't override sealed constant value!";
 				if (!check_read_only(value_opt, const_values_opts[elem.index >> rt_type_shift]))
 					return "Can't override const value wrong read-only value";
+				if (!check_init_only(value_opt, const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override const value wrong init-only value";
 				const_values.emplace_back(std::move(temp));
 				const_values_opts.push_back(value_opt);
 				elem.index = (new_idx << rt_type_shift) | rt_const_index_type;
@@ -552,6 +554,8 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, rx_s
 					return "Can't override sealed value!";
 				if (!check_read_only(value_opt, this_val.get_item()->value_opt))
 					return "Can't override const value wrong read-only value";
+				if (!check_init_only(value_opt, this_val.get_item()->value_opt))
+					return "Can't override const value wrong init-only value";
 
 				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
 				runtime::structure::const_value_data temp;
@@ -605,6 +609,8 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, std:
 					return "Can't override constant value, can not replace simple value with array!";
 				if (value[0].get_type() != this_val.get_item(0)->value.get_type())
 					return "Can't override constant value, wrong value type!";
+				if (!check_init_only(value_opt, const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override const value wrong init-only value";
 
 				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
 
@@ -631,6 +637,8 @@ rx_result runtime_data_prototype::add_const_value (const string_type& name, std:
 					return "Can't override value, can not replace simple value with array!";
 				if (value[0].get_type() != values[elem.index >> rt_type_shift].get_item(0)->value.get_type())
 					return "Can't override value, wrong value type!";
+				if (!check_init_only(value_opt, this_val.get_prototype()->value_opt))
+					return "Can't override const value wrong init-only value";
 
 				members_index_type new_idx = static_cast<members_index_type>(const_values.size());
 
@@ -694,6 +702,8 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 					return "Can't override sealed constant value!";
 				if (!check_read_only(temp_val.value_opt, const_values_opts[elem.index >> rt_type_shift]))
 					return "Can't override const value wrong read-only value";
+				if (!check_init_only(temp_val.value_opt, const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override const value wrong init-only value";
 				values.push_back(std::move(temp_val));
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}
@@ -715,6 +725,8 @@ rx_result runtime_data_prototype::add_value (const string_type& name, rx_timed_v
 					return "Can't override sealed value!";
 				if (!check_read_only(temp_val.value_opt, this_val.get_item()->value_opt))
 					return "Can't override value wrong read-only value";
+				if (!check_init_only(temp_val.value_opt, this_val.get_item()->value_opt))
+					return "Can't override value wrong init-only value";
 				values.push_back(std::move(temp_val));
 				elem.index = (new_idx << rt_type_shift) | rt_value_index_type;
 			}
@@ -955,6 +967,8 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 					return "Can't override sealed constant value!";
 				if (!check_read_only(value.value_opt, const_values_opts[elem.index >> rt_type_shift]))
 					return "Can't override const value wrong read-only value";
+				if (!check_init_only(value.value_opt, const_values_opts[elem.index >> rt_type_shift]))
+					return "Can't override const value wrong init-only value";
 				if (this_val.is_array())
 					return "Can't override constant value, can not replace array with simple value!";
 				if (value.value.get_type() != this_val.get_item()->value.get_type())
@@ -973,6 +987,8 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 					return "Can't override sealed value!";
 				if(!check_read_only(value.value_opt, this_val.get_item()->value_opt))
 					return "Can't override value wrong read-only value";
+				if (!check_init_only(value.value_opt, this_val.get_item()->value_opt))
+					return "Can't override value wrong init-only value";
 				if (this_val.is_array())
 					return "Can't override value, can not replace array with simple value!";
 				if (value.value.get_type() != this_val.get_item()->value.get_type())
@@ -990,6 +1006,8 @@ rx_result runtime_data_prototype::add_variable (const string_type& name, runtime
 					return "Can't override sealed variable value!";
 				if (!check_read_only(value.value_opt, this_val.get_item()->value_opt))
 					return "Can't override variable wrong read-only value";
+				if (!check_init_only(value.value_opt, this_val.get_item()->value_opt))
+					return "Can't override variable wrong init-only value";
 				if (this_val.is_array())
 					return "Can't override variable, can not replace array with simple value!";
 				if (value.value.get_type() != this_val.get_item()->value.get_type())
@@ -1221,6 +1239,8 @@ rx_result runtime_data_prototype::add_value_block (const string_type& name, runt
 						return "Can't override sealed value!";
 					if (!check_read_only(value.struct_value.value_opt, this_val.second.get_item()->struct_value.value_opt))
 						return "Can't override const value wrong read-only value";
+					if(!check_init_only(value.struct_value.value_opt, this_val.second.get_item()->struct_value.value_opt))
+						return "Can't override const value wrong init-only value";
 					if (this_val.second.is_array())
 						return "Can't override constant value, can not replace array with scalar data!";
 					if(!platform_types_manager::instance().get_data_types_repository().is_derived_from(id, blocks[elem.index >> rt_type_shift].first))
@@ -1240,6 +1260,8 @@ rx_result runtime_data_prototype::add_value_block (const string_type& name, runt
 						return "Can't override sealed value!";
 					if (!check_read_only(value.struct_value.value_opt, this_val.second.get_item()->variable.value_opt))
 						return "Can't override variable data wrong read-only value";
+					if (!check_init_only(value.struct_value.value_opt, this_val.second.get_item()->variable.value_opt))
+						return "Can't override variable data wrong init-only value";
 					if (this_val.second.is_array())
 						return "Can't override variable data, can not replace array with scalar data!";
 
@@ -2137,6 +2159,13 @@ bool runtime_data_prototype::check_read_only(const std::bitset<32>& to, const st
 	return
 		to[runtime::structure::value_opt_readonly] ||
 		 !from[runtime::structure::value_opt_readonly];
+}
+
+bool runtime_data_prototype::check_init_only(const std::bitset<32>& to, const std::bitset<32>& from)
+{
+	return
+		to[runtime::structure::value_opt_init_only] ||
+		!from[runtime::structure::value_opt_init_only];
 }
 bool runtime_data_prototype::check_is_sealed(const std::bitset<32>& from)
 {

@@ -4,7 +4,7 @@
 *
 *  protocols\mqtt\mqtt_simple.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -33,12 +33,12 @@
 
 
 
+// rx_port_helpers
+#include "system/runtime/rx_port_helpers.h"
 // rx_protocol_templates
 #include "system/runtime/rx_protocol_templates.h"
 // rx_blocks_templates
 #include "system/runtime/rx_blocks_templates.h"
-// rx_port_helpers
-#include "system/runtime/rx_port_helpers.h"
 // mqtt_subscription
 #include "protocols/mqtt/mqtt_subscription.h"
 // mqtt_base
@@ -49,8 +49,8 @@
 namespace protocols {
 namespace mqtt {
 namespace mqtt_simple {
-class mqtt_simple_client_port;
 class mqtt_simple_source;
+class mqtt_simple_client_port;
 
 } // namespace mqtt_simple
 } // namespace mqtt
@@ -136,7 +136,7 @@ public:
 
 
 
-typedef rx_platform::runtime::io_types::ports_templates::master_client_port_impl< protocols::mqtt::mqtt_simple::mqtt_simple_client_endpoint  > mqtt_simple_client_port_base;
+typedef rx_platform::runtime::io_types::ports_templates::master_client_port_impl< mqtt_simple_client_endpoint  > mqtt_simple_client_port_base;
 
 
 
@@ -438,7 +438,7 @@ class mqtt_simple_event_mapper : public mqtt_simple_mapper_base
 
   private:
 
-      virtual void mapped_event_fired (rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx);
+      virtual void mapped_event_fired (runtime_transaction_id_t trans_id, rx_timed_value val, string_view_type queue, bool state, bool remove, runtime_process_context* ctx);
 
 
 

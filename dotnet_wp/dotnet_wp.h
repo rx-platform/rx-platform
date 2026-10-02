@@ -188,6 +188,8 @@ public:
 
       void send_result_response (uint32_t trans_id, rx_result result);
 
+      void send_void_response (uint32_t trans_id);
+
       void send_fire_event (void* inst, string_type value, string_type queue, bool state, bool remove);
 
 
@@ -224,6 +226,8 @@ public:
       locks::slim_lock transactions_lock_;
 
       string_type dotnet_host_version_;
+
+      string_type worker_version_;
 
 
 };
@@ -423,6 +427,43 @@ class delete_wp_type_transaction : public dotnet_host_transaction
       rx_result result_;
 
       delete_one_type_message arg_;
+
+
+};
+
+
+
+
+
+
+class wp_execute_transaction : public dotnet_host_transaction  
+{
+
+  public:
+      wp_execute_transaction (uint64_t dotnet_trans, wp_execute_value_message arg, dotnetExecuteRuntimeCallback_t callback, uint32_t timeout);
+
+
+      rx_result start (dotnet_wp& wp) const;
+
+      rx_result response (uint32_t msg_type, io::rx_const_io_buffer& buffer);
+
+      void timeouted ();
+
+      uint32_t get_transaction_id () const;
+
+
+  protected:
+
+  private:
+
+
+      uint32_t trans_id_;
+
+      wp_execute_value_message arg_;
+
+      dotnetExecuteRuntimeCallback_t callback_;
+
+      uint64_t dotnet_trans_id_;
 
 
 };

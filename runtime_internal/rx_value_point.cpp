@@ -4,7 +4,7 @@
 *
 *  runtime_internal\rx_value_point.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -114,7 +114,6 @@ oper_struct operations[] = {
 	{ LEN_CODE,"len",3}
 };
 
-#define POINT_LOCAL_VAR_NAME "x"
 
 
 extern uint32_t g_count;
@@ -734,9 +733,20 @@ void value_point_impl::execute (data::runtime_values_data data, runtime_transact
 	}
 }
 
-rx_value value_point_impl::calculate_local_var (const rx_value& val, char* token_buff)
+rx_value value_point_impl::calculate_local_vars (const std::vector<std::pair<value_handle_type, rx_simple_value> >& vals, char* token_buff)
 {
-	value_changed(0, val);
+	if(local_vars_)
+	{
+		for (const auto& pair : vals)
+		{
+			if (local_vars_->size() > pair.first)
+			{
+				rx_value temp_val(pair.second);
+				temp_val.set_good_locally();
+				value_changed(pair.first, temp_val);
+			}
+		}
+	}
 	rx_value res = internal_calculate(token_buff);
 	return res;
 }
@@ -839,8 +849,6 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 			auto itv = vars.find(var_name);
 			if (itv == vars.end())
 			{
-				if (var_name == POINT_LOCAL_VAR_NAME)
-					local_val_index = (int)tags_count;
 				tags_count++;
 				rx_value dummy;
 				dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
@@ -882,8 +890,6 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 				auto itv = vars.find(var_name);
 				if (itv == vars.end())
 				{
-					if (var_name == POINT_LOCAL_VAR_NAME)
-						local_val_index = (int)tags_count;
 					tags_count++;
 					rx_value dummy;
 					dummy.set_quality(RX_NOT_CONNECTED_QUALITY);
@@ -920,29 +926,32 @@ void value_point_impl::parse_and_connect (const char* path, char* tbuff, const r
 		string_type buffer;
 		for (auto it = vars.begin(); it != vars.end(); it++)
 		{
+			if (local_vars_)
+			{
+				auto itv = local_vars_->find(it->first);
+				if (itv != local_vars_->end())
+				{
+					tag_handles_[itv->second] = (it->second & TAG_ID_MASK);
+					continue;
+				}
+			}
 			value_handle_type temp = 0;
-			if (it->first != POINT_LOCAL_VAR_NAME)
+			rx_mode_type mode;
+			if (context_ != nullptr)
 			{
-				rx_mode_type mode;
-				if (context_ != nullptr)
-				{
-					mode = context_->get_mode();
-				}
-				RX_ASSERT(!it->first.empty());
-				if (translate_path(it->first, buffer))
-					temp = controler->add_item(buffer, rate_, mode);
-				else
-					temp = controler->add_item(it->first, rate_, mode);
-				if (temp)
-				{
-					tag_handles_[temp] = (it->second & TAG_ID_MASK);
-					controler->register_value(temp, this);
-				}
+				mode = context_->get_mode();
 			}
+			RX_ASSERT(!it->first.empty());
+			if (translate_path(it->first, buffer))
+				temp = controler->add_item(buffer, rate_, mode);
 			else
+				temp = controler->add_item(it->first, rate_, mode);
+			if (temp)
 			{
-				tag_handles_[0] = (it->second & TAG_ID_MASK);
+				tag_handles_[temp] = (it->second & TAG_ID_MASK);
+				controler->register_value(temp, this);
 			}
+
 		}
 	}
 
@@ -1824,6 +1833,23 @@ void value_point_impl::get_expression (rx_value& result, char* tok)
 			result.set_quality(RX_BAD_QUALITY_SYNTAX_ERROR);
 		}
 	}
+}
+
+value_handle_type value_point_impl::add_variable (const string_type& name)
+{
+	if (!local_vars_)
+	{
+		local_vars_ = std::make_unique<local_vars_type>();
+	}
+	else
+	{
+		auto it = local_vars_->find(name);
+		if (it != local_vars_->end())
+			return it->second;
+	}
+	value_handle_type handle = (value_handle_type)(local_vars_->size());
+	local_vars_->emplace(name, handle);
+	return handle;
 }
 
 

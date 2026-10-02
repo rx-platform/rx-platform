@@ -43,6 +43,7 @@
 #define RX_NONE_SECURITY_NAME "none"
 #define RX_CERT_SECURITY_NAME "x509"
 #define RX_ASP_SECURITY_NAME "ASPForm"
+#define RX_JWT_SECURITY_NAME "jwt"
 
 
 namespace rx_internal {

@@ -4,7 +4,7 @@
 *
 *  interfaces\rx_udp.h
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -107,8 +107,6 @@ public:
       rx_protocol_stack_endpoint* get_stack_endpoint ();
 
       runtime::items::port_runtime* get_port ();
-
-      rx_protocol_result_t send_packet (send_protocol_packet packet);
 
       rx_result open (io::ip4_address addr, io::ip4_address multicast, security::security_context_ptr identity, udp_port* port);
 

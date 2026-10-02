@@ -157,7 +157,7 @@ extern "C" {
 	}
 	void dotnetVoidCallback(uint32_t transId)
 	{
-		//rx_internal::dotnet::dotnet_hosting::instance().received_void_callback(transId);
+		rx_internal::dotnet::dotnet_wp::instance().send_void_response(transId);
 	}
 	void dotnetWriteValue(
 		rx_item_type itemType
@@ -165,7 +165,7 @@ extern "C" {
 		, void* instance
 		, size_t idx
 		, typed_value_type value
-		, dotnetRuntimeCallback_t callback/*dotnetRuntimeResultDelegate*/)
+		, dotnetRuntimeCallback_t callback)
 	{
 		rx_internal::dotnet::wp_write_value_message msg;
 		msg.type = itemType;
@@ -173,11 +173,29 @@ extern "C" {
 		msg.idx = idx;
 		msg.val = rx_simple_value(std::move(value));
 
-		auto trans = std::make_shared<rx_internal::dotnet::wp_write_transaction>(transId, std::move(msg), callback, 1000);
+		auto trans = std::make_shared<rx_internal::dotnet::wp_write_transaction>(transId, std::move(msg), callback, 10000);
 
 		rx_internal::dotnet::dotnet_wp::instance().append_trans(trans);
 	}
 
+	void dotnetExecuteValue(
+		rx_item_type itemType
+		, uint32_t transId
+		, void* instance
+		, size_t idx
+		, typed_value_type value
+		, dotnetExecuteRuntimeCallback_t callback)
+	{
+		rx_internal::dotnet::wp_execute_value_message msg;
+		msg.type = itemType;
+		msg.inst = (intptr_t)instance;
+		msg.idx = idx;
+		msg.val = rx_simple_value(std::move(value));
+
+		auto trans = std::make_shared<rx_internal::dotnet::wp_execute_transaction>(transId, std::move(msg), callback, 60000);
+
+		rx_internal::dotnet::dotnet_wp::instance().append_trans(trans);
+	}
 
 	void dotnetExecuteDone(
 		uint32_t transId

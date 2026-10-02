@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_logic.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -36,10 +36,10 @@
 #include "rx_runtime_helpers.h"
 #include "rx_rt_struct.h"
 
-// rx_rt_struct
-#include "system/runtime/rx_rt_struct.h"
 // rx_logic
 #include "system/logic/rx_logic.h"
+// rx_rt_struct
+#include "system/runtime/rx_rt_struct.h"
 
 
 
@@ -147,7 +147,7 @@ public:
       rx_result execute (context_execute_data&& data, std::unique_ptr<structure::execute_task> task, runtime_process_context* ctx);
 
       void execution_complete (runtime_transaction_id_t id, rx_result&& result, values::rx_simple_value&& data);
-
+      
       void process_execute_result (runtime_transaction_id_t id, rx_result&& result, values::rx_simple_value&& data);
 
       rx_result initialize_runtime (runtime::runtime_init_context& ctx);
@@ -161,6 +161,8 @@ public:
       data::runtime_data_model get_method_inputs ();
 
       data::runtime_data_model get_method_outputs ();
+
+      rx_result prepare_input_value (rx_simple_value& val, data::runtime_values_data* data, runtime::runtime_process_context* ctx);
 
 
       method_runtime_ptr method_ptr;

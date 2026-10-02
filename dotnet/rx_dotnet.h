@@ -57,6 +57,7 @@ struct dotnet_runtime_info_t
 {
     string_type runtime_version;
     string_type rx_native_version;
+    string_type rx_worker_version;
 	string_type rx_dotnet_version;
 };
 
@@ -108,6 +109,8 @@ class dotnet_hosting
 
       dotnet_runtime_info_t get_dotnet_info () const;
 
+      string_array get_loaded_assemblies (const string_type& lib);
+
       rx_result do_build (configuration_data_t& config, startup_create_data_type& data);
 
       std::vector<std::pair<string_type, string_type> > get_loaded_libraries ();
@@ -120,23 +123,25 @@ class dotnet_hosting
 
       void received_write_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
 
-      void bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_object_runtime> ref);
+      void received_execute_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_simple_value&&, rx_result&&)> callback);
+
+      void bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_object_runtime> ref, const string_type& init);
 
       void unbind_runtime (const rx_node_id& id, const rx_node_id& type_id, void* ptr);
 
-      void bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_struct> ref);
+      void bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_struct> ref, const string_type& init);
 
       void unbind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 
-      void bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_source> ref);
+      void bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_source> ref, const string_type& init);
 
       void unbind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 
-      void bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_mapper> ref);
+      void bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_mapper> ref, const string_type& init);
 
       void unbind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 
-      void bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_event> ref);
+      void bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_event> ref, const string_type& init);
 
       void unbind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 

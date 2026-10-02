@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -97,7 +97,7 @@ bool runtime_process_context::should_do_step()
     }
 }
 
-// Class rx_platform::runtime::runtime_process_context 
+// Class rx_platform::runtime::runtime_process_context
 
 runtime_process_context::runtime_process_context (tag_blocks::binded_tags& binded, tag_blocks::connected_tags& tags, const meta_data& info, ns::rx_directory_resolver* dirs, rx_reference_ptr anchor, const_size_vector<security::security_guard>* guards, events::runtime_events_manager* events)
       : tags_(tags),
@@ -194,6 +194,11 @@ rx_result runtime_process_context::get_value (runtime_handle_t handle, values::r
 rx_result runtime_process_context::set_value (runtime_handle_t handle, values::rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback)
 {
     return binded_.set_value(handle, std::move(val), tags_, this, std::move(callback));
+}
+
+rx_result runtime_process_context::execute_value (runtime_handle_t handle, values::rx_simple_value&& val, tag_blocks::binded_execute_result_callback_t callback)
+{
+    return binded_.execute_value(handle, std::move(val), this, std::move(callback));
 }
 
 rx_result runtime_process_context::set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx)
@@ -725,11 +730,19 @@ void runtime_process_context::method_changed (logic_blocks::method_data* whose)
 
 rx_result runtime_process_context::write_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id)
 {
-    return binded_.write_connected(handle, std::move(val), trans_id);
+    if (get_mode().is_off())
+    {
+        return RX_ERROR_STOPPED;
+    }
+    return binded_.write_connected(handle, std::move(val), trans_id, get_mode().is_off());
 }
 
 rx_result runtime_process_context::execute_connected (runtime_handle_t handle, rx_simple_value&& val, runtime_transaction_id_t trans_id)
 {
+    if (get_mode().is_off())
+    {
+        return RX_ERROR_STOPPED;
+    }
     return binded_.execute_connected(handle, std::move(val), trans_id);
 }
 
@@ -754,28 +767,28 @@ bool runtime_process_context::in_scan () const
 }
 
 
-// Parameterized Class rx_platform::runtime::process_context_job 
+// Parameterized Class rx_platform::runtime::process_context_job
 
 
-// Class rx_platform::runtime::context_job 
+// Class rx_platform::runtime::context_job
 
 
-// Class rx_platform::runtime::context_write_data 
+// Class rx_platform::runtime::context_write_data
 
 
-// Class rx_platform::runtime::relation_subscriber 
+// Class rx_platform::runtime::relation_subscriber
 
 
-// Class rx_platform::runtime::context_execute_data 
+// Class rx_platform::runtime::context_execute_data
 
 
-// Class rx_platform::runtime::write_data 
+// Class rx_platform::runtime::write_data
 
 
-// Class rx_platform::runtime::execute_data 
+// Class rx_platform::runtime::execute_data
 
 
-// Class rx_platform::runtime::event_fired_data 
+// Class rx_platform::runtime::event_fired_data
 
 
 } // namespace runtime

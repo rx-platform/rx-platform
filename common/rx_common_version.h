@@ -3,7 +3,7 @@
 
 #define RX_COMMON_MAJOR_VERSION 3
 #define RX_COMMON_MINOR_VERSION 4
-#define RX_COMMON_BUILD_NUMBER 2
+#define RX_COMMON_BUILD_NUMBER 3
 
 // Ver 1.0.1 added RX_STRUCT_TYPE support
 // Ver 2.0.0 added meta data to rx-common
@@ -27,3 +27,4 @@
 // Ver 3.4.0 introduced rx_full_nod_id_struct
 // Ver 3.4.1 some corrections in time format value conversion
 // Ver 3.4.2 introduced time and uuid extract and set value
+// Ver 3.4.3 added cryptography functions needed for JWT token check

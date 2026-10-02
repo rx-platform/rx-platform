@@ -77,12 +77,12 @@ rx_result complex_data_type::register_struct (const string_type& name, const rx_
 	return ret;
 }
 
-rx_result complex_data_type::register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only, bool persistent)
+rx_result complex_data_type::register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only, bool persistent, bool init_only)
 {
 	auto ret = check_name(name, (static_cast<int>(variables_.size() | variables_mask)));
 	if(ret)
 	{
-		variables_.emplace_back(variable_attribute(name, id, std::move(value), read_only));
+		variables_.emplace_back(variable_attribute(name, id, std::move(value), read_only, init_only));
 	}
 	return ret;
 }
@@ -108,7 +108,7 @@ rx_result complex_data_type::register_event (const string_type& name, const rx_n
 	return ret;
 }
 
-rx_result complex_data_type::register_simple_value (const string_type& name, rx_simple_value&& val, bool read_only, bool persistent)
+rx_result complex_data_type::register_simple_value (const string_type& name, rx_simple_value&& val, bool read_only, bool persistent, bool init_only)
 {
 	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
 	if (ret)
@@ -118,7 +118,7 @@ rx_result complex_data_type::register_simple_value (const string_type& name, rx_
 	return ret;
 }
 
-rx_result complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val, bool config_only)
+rx_result complex_data_type::register_const_value (const string_type& name, rx_simple_value&& val, bool config_only, bool init_only)
 {
 	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
 	if (ret)
@@ -138,7 +138,7 @@ rx_result complex_data_type::register_simple_value (const string_type& name, con
 	return ret;
 }
 
-rx_result complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val, bool config_only)
+rx_result complex_data_type::register_const_value (const string_type& name, const rx_simple_value& val, bool config_only, bool init_only)
 {
 	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
 	if(ret)
@@ -148,7 +148,7 @@ rx_result complex_data_type::register_const_value (const string_type& name, cons
 	return ret;
 }
 
-rx_result complex_data_type::register_simple_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool read_only, bool persistent)
+rx_result complex_data_type::register_simple_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool read_only, bool persistent, bool init_only)
 {
 	auto ret = check_name(name, (static_cast<int>(simple_values_.size() | simple_values_mask)));
 	if (ret)
@@ -158,7 +158,7 @@ rx_result complex_data_type::register_simple_value (const string_type& name, con
 	return ret;
 }
 
-rx_result complex_data_type::register_const_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool config_only)
+rx_result complex_data_type::register_const_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool config_only, bool init_only)
 {
 	auto ret = check_name(name, (static_cast<int>(const_values_.size() | const_values_mask)));
 	if (ret)
@@ -187,7 +187,8 @@ rx_result complex_data_type::check_name (const string_type& name, int rt_index)
 // Class rx_platform::meta::def_blocks::const_value_def 
 
 const_value_def::const_value_def()
-      : is_sealed_(false)
+      : is_sealed_(false),
+        init_only_(false)
 	, array_size_(-1)
 	, read_only_(false)
 	, persistent_(false)
@@ -196,7 +197,8 @@ const_value_def::const_value_def()
 }
 
 const_value_def::const_value_def (const string_type& name, rx_simple_value&& value, bool config_only)
-      : is_sealed_(false)
+      : is_sealed_(false),
+        init_only_(false)
 	, array_size_(-1)
 	, name_(name)
 	, value_(std::move(value))
@@ -207,7 +209,8 @@ const_value_def::const_value_def (const string_type& name, rx_simple_value&& val
 }
 
 const_value_def::const_value_def (const string_type& name, const rx_simple_value& value, bool config_only)
-      : is_sealed_(false)
+      : is_sealed_(false),
+        init_only_(false)
 	, array_size_(-1)
 	, name_(name)
 	, value_(value)
@@ -218,7 +221,8 @@ const_value_def::const_value_def (const string_type& name, const rx_simple_value
 }
 
 const_value_def::const_value_def (const string_type& name, const rx_item_reference& type_id, bool is_array, bool config_only)
-      : is_sealed_(false)
+      : is_sealed_(false),
+        init_only_(false)
 	, array_size_(is_array ?  0 : -1)
 	, name_(name)
 	, data_type_ref_(type_id)
@@ -510,7 +514,8 @@ mapper_attribute::mapper_attribute (const string_type& name, const string_type& 
 // Class rx_platform::meta::def_blocks::simple_value_def 
 
 simple_value_def::simple_value_def()
-      : is_sealed_(false)
+      : is_sealed_(false),
+        init_only_(false)
 	, array_size_(-1)
 	, read_only_(false)
 	, persistent_(false)
@@ -518,7 +523,8 @@ simple_value_def::simple_value_def()
 }
 
 simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& value, bool read_only, bool persistent)
-      : is_sealed_(false)
+      : is_sealed_(false),
+        init_only_(false)
 	, array_size_(-1)
 	, name_(name)
 	, value_(std::move(value))
@@ -528,7 +534,8 @@ simple_value_def::simple_value_def (const string_type& name, rx_simple_value&& v
 }
 
 simple_value_def::simple_value_def (const string_type& name, const rx_simple_value& value, bool read_only, bool persistent)
-      : is_sealed_(false)
+      : is_sealed_(false),
+        init_only_(false)
 	, array_size_(-1)
 	, name_(name)
 	, value_(value)
@@ -538,7 +545,8 @@ simple_value_def::simple_value_def (const string_type& name, const rx_simple_val
 }
 
 simple_value_def::simple_value_def (const string_type& name, const rx_item_reference& type_id, bool is_array, bool read_only, bool persistent)
-      : is_sealed_(false)
+      : is_sealed_(false),
+        init_only_(false)
 	, array_size_(is_array ? 0 : -1)
 	, name_(name)
 	, data_type_ref_(type_id)
@@ -770,13 +778,14 @@ struct_attribute::struct_attribute (const string_type& name, const string_type& 
 
 // Class rx_platform::meta::def_blocks::variable_attribute 
 
-variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only)
+variable_attribute::variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only, bool init_only)
       : name_(name),
         array_size_(-1),
         is_sealed_(false)
 	, target_(id)
 	, value_(std::move(value))
 	, read_only_(read_only)
+	, init_only_(init_only)
 {
 }
 
@@ -786,6 +795,7 @@ variable_attribute::variable_attribute (const string_type& name, const string_ty
         is_sealed_(false)
 	, target_(target_name)
 	, read_only_(false)
+	, init_only_(false)
 {
 }
 

@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
+*  
+*  This file is part of {rx-platform} 
 *
-*  This file is part of {rx-platform}
-*
-*
+*  
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*
+*  
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
+*  
+*  You should have received a copy of the GNU General Public License  
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*
+*  
 ****************************************************************************/
 
 
@@ -80,9 +80,9 @@ void dotnet_wp_connection::send_message(T message, uint32_t trans_id)
 
 }
 
-// Class rx_internal::dotnet::dotnet_host
+// Class rx_internal::dotnet::dotnet_host 
 
-dotnet_host::dotnet_host (const configuration_data_t& data, const rx_dotnet_config_data_t& init_config)
+dotnet_host::dotnet_host ()
 {
 }
 
@@ -100,6 +100,7 @@ rx_result dotnet_host::initialize (const rx_dotnet_config_data_t& config)
     {
 		hosted_version_ = wp_.hosted_version;
 		dotnet_host_version_ = wp_.dotnet_host_version;
+		worker_version_ = wp_.worker_version;
     }
     return result;
 }
@@ -209,10 +210,29 @@ void dotnet_host::received_write_value (rx_item_type type, uint32_t transId, voi
     }
 }
 
-void dotnet_host::bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_object_runtime> ref)
+void dotnet_host::received_execute_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_simple_value&&, rx_result&&)> callback)
+{
+    switch (type)
+    {
+        case rx_item_type::rx_object:
+        {
+            auto it = runtime_objects_.find(inst);
+            if (it != runtime_objects_.end())
+            {
+                it->second->received_execute_value(transId, inst, idx, std::move(val), std::move(callback));
+            }
+        }
+        break;
+        default:
+            callback(rx_simple_value(), rx_result("Type invalid to support write!"));
+            break;
+    }
+}
+
+void dotnet_host::bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_object_runtime> ref, const string_type& init)
 {
     runtime_objects_.emplace(ptr, std::move(ref));
-    wp_.bind_object(rx_item_type::rx_object, id, path.c_str(), type_id, ptr);
+    wp_.bind_object(rx_item_type::rx_object, id, path.c_str(), type_id, ptr, init);
 }
 
 void dotnet_host::unbind_runtime (const rx_node_id& id, const rx_node_id& type_id, void* ptr)
@@ -233,6 +253,7 @@ void dotnet_host::send_initial_values (string_array names, std::vector<rx_simple
 
 rx_result dotnet_host::execute_method (uint32_t trans_id, void* whose, const string_type& method, const string_type& value)
 {
+
     return wp_.execute_method(trans_id, whose, method, value);
 }
 
@@ -245,10 +266,10 @@ void dotnet_host::received_execute_done (uint32_t transId, void* inst, const str
     }
 }
 
-void dotnet_host::bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_struct> ref)
+void dotnet_host::bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_struct> ref, const string_type& init)
 {
     runtime_structs_.emplace(ptr, std::move(ref));
-	wp_.bind_object(rx_item_type::rx_struct_type, id, path, type_id, ptr);
+	wp_.bind_object(rx_item_type::rx_struct_type, id, path, type_id, ptr, init);
 }
 
 void dotnet_host::unbind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
@@ -257,10 +278,10 @@ void dotnet_host::unbind_struct (const rx_node_id id, const string_type& path, c
     runtime_structs_.erase(ptr);
 }
 
-void dotnet_host::bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_source> ref)
+void dotnet_host::bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_source> ref, const string_type& init)
 {
     runtime_sources_.emplace(ptr, std::move(ref));
-    wp_.bind_object(rx_item_type::rx_source_type, id, path, type_id, ptr);
+    wp_.bind_object(rx_item_type::rx_source_type, id, path, type_id, ptr, init);
 }
 
 void dotnet_host::unbind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
@@ -269,10 +290,10 @@ void dotnet_host::unbind_source (const rx_node_id id, const string_type& path, c
     runtime_sources_.erase(ptr);
 }
 
-void dotnet_host::bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_mapper> ref)
+void dotnet_host::bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_mapper> ref, const string_type& init)
 {
     runtime_mappers_.emplace(ptr, std::move(ref));
-    wp_.bind_object(rx_item_type::rx_mapper_type, id, path, type_id, ptr);
+    wp_.bind_object(rx_item_type::rx_mapper_type, id, path, type_id, ptr, init);
 }
 
 void dotnet_host::unbind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
@@ -281,10 +302,10 @@ void dotnet_host::unbind_mapper (const rx_node_id id, const string_type& path, c
     runtime_mappers_.erase(ptr);
 }
 
-void dotnet_host::bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_event> ref)
+void dotnet_host::bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_event> ref, const string_type& init)
 {
     runtime_events_.emplace(ptr, std::move(ref));
-    wp_.bind_object(rx_item_type::rx_event_type, id, path, type_id, ptr);
+    wp_.bind_object(rx_item_type::rx_event_type, id, path, type_id, ptr, init);
 }
 
 void dotnet_host::unbind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
@@ -330,9 +351,24 @@ const string_type& dotnet_host::get_hosted_dotnet_version () const
 	return hosted_version_;
 }
 
+string_type dotnet_host::get_native_host_version ()
+{
+    static char rx_ver[0x60] = { 0 };
+    if (!rx_ver[0])
+    {
+        ASSIGN_MODULE_VERSION(rx_ver, RX_DOTNET_NAME, RX_DOTNET_MAJOR_VERSION, RX_DOTNET_MINOR_VERSION, RX_DOTNET_BUILD_NUMBER);
+    }
+    return rx_ver;
+}
+
 const string_type& dotnet_host::get_dotnet_host_version () const
 {
-	return dotnet_host_version_;
+    return dotnet_host_version_;
+}
+
+const string_type& dotnet_host::get_worker_version () const
+{
+	return worker_version_;
 }
 
 void dotnet_host::stop ()
@@ -341,7 +377,7 @@ void dotnet_host::stop ()
 }
 
 
-// Class rx_internal::dotnet::dotnet_wp_connection
+// Class rx_internal::dotnet::dotnet_wp_connection 
 
 dotnet_wp_connection::dotnet_wp_connection()
       : my_host_(nullptr),
@@ -406,26 +442,55 @@ rx_result dotnet_wp_connection::initialize (dotnet_host* host, const rx_dotnet_c
     return true;
 }
 
-void dotnet_wp_connection::bind_object (rx_item_type type, const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
+void dotnet_wp_connection::bind_object (rx_item_type type, const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, const string_type& init)
 {
-    dotnet_bind_runtime_message msg;
+    auto msg = dotnet_bind_runtime_message();
 	msg.type = type;
 	msg.id = id;
 	msg.path = path;
 	msg.type_id = type_id;
 	msg.ptr = (intptr_t)ptr;
-    send_message(msg, 0);
+	msg.initial = init;
+
+	auto trans = std::make_shared<void_wp_transaction<dotnet_bind_runtime_message> >(std::move(msg), 1000);
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
+    auto result = trans->start(*this);
+    if (!result)
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.erase(trans->get_transaction_id());
+        return;
+    }
+
+	trans->wait_result();
 }
 
 void dotnet_wp_connection::unbind_object (rx_item_type type, const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr)
 {
-    dotnet_unbind_runtime_message msg;
+    auto msg = dotnet_unbind_runtime_message();
     msg.type = type;
     msg.id = id;
     msg.path = path;
     msg.type_id = type_id;
     msg.ptr = (intptr_t)ptr;
-    send_message(msg, 0);
+
+    auto trans = std::make_shared<void_wp_transaction<dotnet_unbind_runtime_message> >(std::move(msg), 1000);
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
+    auto result = trans->start(*this);
+    if (!result)
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.erase(trans->get_transaction_id());
+        return;
+    }
+
+	trans->wait_result();
 }
 
 void dotnet_wp_connection::runtime_value_changed (size_t idx, rx_simple_value val, rx_item_type type, void* whose)
@@ -440,22 +505,45 @@ void dotnet_wp_connection::runtime_value_changed (size_t idx, rx_simple_value va
 
 void dotnet_wp_connection::send_initial_values (string_array names, std::vector<rx_simple_value> val, rx_item_type type, void* whose)
 {
-    dotnet_initial_values_message msg;
+
+    auto msg = dotnet_initial_values_message();
     msg.type = type;
     msg.names = std::move(names);
     msg.values = std::move(val);
     msg.whose = (intptr_t)whose;
-    send_message(msg, 0);
+    auto trans = std::make_shared<void_wp_transaction<dotnet_initial_values_message> >(std::move(msg), 1000);
+
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
+    auto result = trans->start(*this);
+    if (!result)
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.erase(trans->get_transaction_id());
+        return;
+    }
+
+    trans->wait_result();
 }
 
 rx_result dotnet_wp_connection::execute_method (uint32_t trans_id, void* whose, const string_type& method, const string_type& value)
 {
     auto trans = std::make_shared<execute_method_wp_transaction>(trans_id, whose, method, value);
+
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
     auto result = trans->start(*this);
     if (!result)
+	{
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.erase(trans->get_transaction_id());
         return result;
+	}
 
-    pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
     return true;
 }
 
@@ -464,11 +552,12 @@ rx_result dotnet_wp_connection::source_write (uint32_t trans_id, void* whose, ty
 	return RX_NOT_IMPLEMENTED;
 }
 
-void dotnet_wp_connection::initialize_completed (uint32_t trans_id, rx_result result, string_type hosted_version, string_type dotnet_host_version)
+void dotnet_wp_connection::initialize_completed (uint32_t trans_id, rx_result result, string_type hosted_version, string_type dotnet_host_version, string_type worker_version)
 {
 	action_result_ = std::move(result);
 	this->hosted_version = std::move(hosted_version);
 	this->dotnet_host_version = std::move(dotnet_host_version);
+	this->worker_version = std::move(worker_version);
 	initialized_.set();
 }
 
@@ -476,10 +565,17 @@ rx_result dotnet_wp_connection::do_build (const string_type& lib, uint32_t timeo
 {
 
 	auto trans = std::make_shared<build_types_wp_transaction>(lib, timeout);
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
     auto result = trans->start(*this);
     if(!result)
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.erase(trans->get_transaction_id());
         return result;
-    pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
 	result = trans->wait_result();
     return result;
 }
@@ -487,10 +583,17 @@ rx_result dotnet_wp_connection::do_build (const string_type& lib, uint32_t timeo
 rx_result dotnet_wp_connection::do_reload (const string_type& lib, uint32_t timeout)
 {
     auto trans = std::make_shared<reload_wp_transaction>(lib, timeout);
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
     auto result = trans->start(*this);
     if (!result)
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.erase(trans->get_transaction_id());
         return result;
-    pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
     result = trans->wait_result();
     return result;
 }
@@ -498,28 +601,35 @@ rx_result dotnet_wp_connection::do_reload (const string_type& lib, uint32_t time
 void dotnet_wp_connection::do_unload (const string_type& lib, rx_result_callback callback, uint32_t timeout)
 {
     auto trans = std::make_shared<unload_wp_transaction>(lib, std::move(callback), timeout);
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
     auto result = trans->start(*this);
     if(!result)
     {
+        std::scoped_lock _(transactions_lock_);
+        {
+            pending_out_transactions_.erase(trans->get_transaction_id());
+        }
         callback(std::move(result));
         return;
 	}
-    pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
 }
 
 io::rx_io_buffer dotnet_wp_connection::get_buffer ()
 {
-    if (!free_buffers_.empty())
     {
-        io::rx_io_buffer ret = std::move(free_buffers_.top());
-        free_buffers_.pop();
-        return ret;
+        std::scoped_lock _(buffers_lock_);
+        if (!free_buffers_.empty())
+        {
+            io::rx_io_buffer ret = std::move(free_buffers_.top());
+            free_buffers_.pop();
+            return ret;
+        }
     }
-    else
-    {
-        io::rx_io_buffer new_buffer(0x10000, 0);
-        return new_buffer;
-    }
+    io::rx_io_buffer new_buffer(0x10000, 0);
+    return new_buffer;
 }
 
 void dotnet_wp_connection::release_buffer (io::rx_io_buffer what)
@@ -527,6 +637,7 @@ void dotnet_wp_connection::release_buffer (io::rx_io_buffer what)
     if (what.size <= free_border_)
     {
         what.reinit();
+        std::scoped_lock _(buffers_lock_);
         free_buffers_.push(std::move(what));
     }
 }
@@ -545,7 +656,7 @@ rx_result dotnet_wp_connection::received (io::rx_const_io_buffer& buffer)
                 {
                     return rx_create_string("Error deserializing initialization result: ", result.errors_line().c_str());
                 }
-                initialize_completed(phead->trans, std::move(msg.action_result), std::move(msg.hosted_version), std::move(msg.dotnet_host_version));
+                initialize_completed(phead->trans, std::move(msg.action_result), std::move(msg.hosted_version), std::move(msg.dotnet_host_version), std::move(msg.worker_version));
 
                 return true;
             }
@@ -679,6 +790,28 @@ rx_result dotnet_wp_connection::received (io::rx_const_io_buffer& buffer)
                 return true;
             }
             break;
+
+        case wp_execute_value_message::msg_id:
+            {
+                wp_execute_value_message msg = {  };
+                auto result = msg.deserialize(buffer);
+                if (!result)
+                {
+                    return rx_create_string("Error deserializing execute value message: ", result.errors_line().c_str());
+                }
+                std::function<void(rx_simple_value&&, rx_result&&)> callback = [this, trans_id = phead->trans](rx_simple_value&& value, rx_result&& result) mutable
+                    {
+                        wp_execute_response response;
+                        response.action_result = std::move(result);
+                        response.result_value = std::move(value);
+                        send_message(std::move(response), trans_id);
+                    };
+                api::dotnetExecuteValue(msg.type
+                    , phead->trans, (void*)msg.inst, msg.idx, msg.val.move()
+                    , std::move(callback));
+                return true;
+            }
+            break;
         case dotnet_fire_event_message::msg_id:
             {
                 dotnet_fire_event_message msg = {  };
@@ -693,16 +826,27 @@ rx_result dotnet_wp_connection::received (io::rx_const_io_buffer& buffer)
             break;
         default:
             {
+				std::shared_ptr<dotnet_wp_transaction> trans_obj;
                 if(phead->trans && RX_IS_DOTNET_RESPONSE(phead->type))
                 {
-                    auto it = pending_out_transactions_.find(phead->trans);
-                    if (it != pending_out_transactions_.end())
                     {
-                        it->second->response(phead->type, buffer);
-                        pending_out_transactions_.erase(it);
+                        std::scoped_lock _(transactions_lock_);
+                        auto it = pending_out_transactions_.find(phead->trans);
+                        if (it != pending_out_transactions_.end())
+                        {
+                            trans_obj = it->second;
+                            pending_out_transactions_.erase(it);
+                        }
+                    }
+                    if (trans_obj)
+                    {
+                        trans_obj->response(phead->type, buffer);
                         return true;
                     }
-                    return rx_create_string("Unknown .NET process transaction id response: ", phead->trans);
+                    else
+                    {
+                        return rx_create_string("Unknown .NET process transaction id response: ", phead->trans, " message type:", phead->type);
+                    }
                 }
 				string_type err_str = rx_create_string("Unknown message type received from .NET process: ", phead->type);
                 return err_str;
@@ -712,7 +856,13 @@ rx_result dotnet_wp_connection::received (io::rx_const_io_buffer& buffer)
 
 void dotnet_wp_connection::pipe_broken (string_type msg)
 {
-    for (auto& trans : pending_out_transactions_)
+    pending_out_transactions_type temp;
+    {
+        std::scoped_lock _(transactions_lock_);
+        temp = std::move(pending_out_transactions_);
+        pending_out_transactions_.clear();
+	}
+    for (auto& trans : temp)
     {
 		trans.second->response_error(rx_result(msg));
     }
@@ -728,13 +878,21 @@ rx_result dotnet_wp_connection::start ()
 void dotnet_wp_connection::deinitialize (rx_void_callback callback, uint32_t timeout)
 {
     auto trans = std::make_shared<stop_wp_transaction>(std::move(callback), timeout);
+
+    {
+        std::scoped_lock _(transactions_lock_);
+        pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
+    }
     auto result = trans->start(*this);
     if (!result)
     {
+        {
+            std::scoped_lock _(transactions_lock_);
+            pending_out_transactions_.erase(trans->get_transaction_id());
+        }
         callback();
         return;
     }
-    pending_out_transactions_.emplace(trans->get_transaction_id(), trans);
 }
 
 void dotnet_wp_connection::stop ()
@@ -745,7 +903,7 @@ void dotnet_wp_connection::stop ()
 }
 
 
-// Class rx_internal::dotnet::pipe_receiver
+// Class rx_internal::dotnet::pipe_receiver 
 
 pipe_receiver::pipe_receiver()
       : my_connection_(nullptr),
@@ -886,7 +1044,7 @@ void pipe_receiver::set_my_connection (dotnet_wp_connection * value)
 }
 
 
-// Class rx_internal::dotnet::dotnet_wp_transaction
+// Class rx_internal::dotnet::dotnet_wp_transaction 
 
 dotnet_wp_transaction::dotnet_wp_transaction()
 {
@@ -899,7 +1057,7 @@ dotnet_wp_transaction::~dotnet_wp_transaction()
 
 
 
-// Class rx_internal::dotnet::build_types_wp_transaction
+// Class rx_internal::dotnet::build_types_wp_transaction 
 
 build_types_wp_transaction::build_types_wp_transaction (const string_type& lib, uint32_t timeout)
       : trans_id_(rx_get_new_transaction_id()),
@@ -911,7 +1069,7 @@ build_types_wp_transaction::build_types_wp_transaction (const string_type& lib, 
 
 
 
-rx_result build_types_wp_transaction::start (dotnet_wp_connection& connection) const
+rx_result build_types_wp_transaction::start (dotnet_wp_connection& connection)
 {
 	build_types_message msg;
 	msg.library = library_;
@@ -964,7 +1122,7 @@ rx_result build_types_wp_transaction::wait_result ()
 }
 
 
-// Class rx_internal::dotnet::execute_method_wp_transaction
+// Class rx_internal::dotnet::execute_method_wp_transaction 
 
 execute_method_wp_transaction::execute_method_wp_transaction (uint32_t trans_id, void* whose, const string_type& method, const string_type& value)
       : trans_id_(trans_id),
@@ -976,7 +1134,7 @@ execute_method_wp_transaction::execute_method_wp_transaction (uint32_t trans_id,
 
 
 
-rx_result execute_method_wp_transaction::start (dotnet_wp_connection& connection) const
+rx_result execute_method_wp_transaction::start (dotnet_wp_connection& connection)
 {
     dotnet_execute_method_message msg;
 	msg.inst = (intptr_t)whose_;
@@ -1018,7 +1176,7 @@ uint32_t execute_method_wp_transaction::get_transaction_id () const
 }
 
 
-// Class rx_internal::dotnet::reload_wp_transaction
+// Class rx_internal::dotnet::reload_wp_transaction 
 
 reload_wp_transaction::reload_wp_transaction (const string_type& lib, uint32_t timeout)
       : trans_id_(rx_get_new_transaction_id()),
@@ -1030,7 +1188,7 @@ reload_wp_transaction::reload_wp_transaction (const string_type& lib, uint32_t t
 
 
 
-rx_result reload_wp_transaction::start (dotnet_wp_connection& connection) const
+rx_result reload_wp_transaction::start (dotnet_wp_connection& connection)
 {
     reload_message msg;
     msg.library = library_;
@@ -1083,7 +1241,7 @@ rx_result reload_wp_transaction::wait_result ()
 }
 
 
-// Class rx_internal::dotnet::unload_wp_transaction
+// Class rx_internal::dotnet::unload_wp_transaction 
 
 unload_wp_transaction::unload_wp_transaction (const string_type& lib, rx_result_callback callback, uint32_t timeout)
       : trans_id_(rx_get_new_transaction_id()),
@@ -1095,7 +1253,7 @@ unload_wp_transaction::unload_wp_transaction (const string_type& lib, rx_result_
 
 
 
-rx_result unload_wp_transaction::start (dotnet_wp_connection& connection) const
+rx_result unload_wp_transaction::start (dotnet_wp_connection& connection)
 {
     unload_message msg;
     msg.library = library_;
@@ -1138,7 +1296,7 @@ uint32_t unload_wp_transaction::get_transaction_id () const
 }
 
 
-// Class rx_internal::dotnet::stop_wp_transaction
+// Class rx_internal::dotnet::stop_wp_transaction 
 
 stop_wp_transaction::stop_wp_transaction (rx_void_callback callback, uint32_t timeout)
       : trans_id_(rx_get_new_transaction_id()),
@@ -1149,7 +1307,7 @@ stop_wp_transaction::stop_wp_transaction (rx_void_callback callback, uint32_t ti
 
 
 
-rx_result stop_wp_transaction::start (dotnet_wp_connection& connection) const
+rx_result stop_wp_transaction::start (dotnet_wp_connection& connection)
 {
     dotnet_stop_message msg;
     connection.send_message(std::move(msg), trans_id_);

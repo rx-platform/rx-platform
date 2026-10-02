@@ -571,7 +571,7 @@ rx_protocol_result_t rx_web_socket_endpoint::handle_ping_frame (io::rx_io_buffer
 
 rx_protocol_result_t rx_web_socket_endpoint::handle_pong_frame (io::rx_io_buffer& buffer, size_t available)
 {
-    return RX_PROTOCOL_NOT_IMPLEMENTED; // Ping/Pong handling is not yet implemented
+    return RX_PROTOCOL_OK; // Ping/Pong handling is not yet implemented
 }
 
 

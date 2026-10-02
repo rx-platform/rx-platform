@@ -857,6 +857,8 @@
 #define RX_DOTNET_APPLICATION_TYPE_ID 0xc000117
 #define RX_DOTNET_DOMAIN_TYPE_NAME "DotNetDomainType"
 #define RX_DOTNET_DOMAIN_TYPE_ID 0xc000119
+#define RX_DOTNET_DOMAIN_NAME "DotNetDomain"
+#define RX_DOTNET_DOMAIN_ID 0xc000122
 #define RX_DOTNET_APPLICATION_NAME "DotNetApp"
 #define RX_DOTNET_APPLICATION_ID 0xc000118
 
@@ -864,7 +866,7 @@
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////
-// last is 0xc00011d!!!! 
+// last is 0xc000122!!!! 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //////////////////////////////////////////////

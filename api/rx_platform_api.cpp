@@ -1448,6 +1448,7 @@ extern_period_job::extern_period_job (plugin_job_struct* extern_data)
 
 void extern_period_job::process ()
 {
+	extern_data_->process(extern_data_->anchor.target);
 }
 
 

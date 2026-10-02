@@ -840,11 +840,6 @@ void rx_client_master_port<endpointT>::status_write_done (uint64_t time, bool su
     if (!success)
     {
         failed_write_count_ += 1;
-        online_ = false;
-    }
-    else
-    {
-        online_ = true;
     }
     write_count_ += 1;
 }
@@ -859,11 +854,6 @@ void rx_client_master_port<endpointT>::status_read_done (uint64_t time, bool suc
     if (!success)
     {
         failed_read_count_ += 1;
-        online_ = false;
-    }
-    else
-    {
-        online_ = true;
     }
     read_count_ += 1;
 }

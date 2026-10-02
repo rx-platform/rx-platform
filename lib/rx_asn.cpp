@@ -99,16 +99,19 @@ oid_t::oid_t (const std::vector<uint32_t>& vals)
       : heap_storage_(NULL)
 {
 	size_ = vals.size();
-	if (size_ > OID_STATIC_SIZE)
+	if (size_ > 0)
 	{
-		heap_storage_ = new uint32_t[OID_DYNAMIC_SIZE];
-		data_ = heap_storage_;
+		if (size_ > OID_STATIC_SIZE)
+		{
+			heap_storage_ = new uint32_t[OID_DYNAMIC_SIZE];
+			data_ = heap_storage_;
+		}
+		else
+		{// static storage
+			data_ = static_storage_;
+		}
+		memcpy(data_, &vals[0], size_ * sizeof(uint32_t));
 	}
-	else
-	{// static storage
-		data_ = static_storage_;
-	}
-	memcpy(data_, &vals[0], size_ * sizeof(uint32_t));
 }
 
 oid_t::oid_t (const char* vals)
@@ -234,6 +237,14 @@ bool oid_t::empty () const
 
 void oid_t::to_string (string_type& str) const
 {
+	std::ostringstream ss;
+	for (size_t i = 0; i < size_; i++)
+	{
+		if (i != 0)
+			ss << ".";
+		ss << data_[i];
+	}
+	str = ss.str();
 }
 
 void oid_t::init_from_string (const string_type& str)
@@ -395,8 +406,13 @@ bool rx_asn_in_stream::read_next_tag (uint32_t& type)
 	}
 	else
 	{// we're done so do stack pop
-		stack_.pop();
-		return false;
+		if (!stack_.empty())
+		{
+			stack_.pop();
+			return read_next_tag(type);
+		}
+		else
+			return false;
 	}
 }
 
@@ -572,12 +588,26 @@ rx_asn_in_stream& rx_asn_in_stream::operator >> (oid_t& val)
 		buffer_->read_data(temp, 1);
 		i++;
 		if (temp[0] < 0x80)
+		{
 			val.push_back(temp[0]);
+		}
 		else
 		{
 			buffer_->read_data(&temp[1], 1);
 			i++;
-			val.push_back(((temp[0] & 0x7f) << 7) | (temp[1] & 0x7f));
+			if (temp[1] < 0x80)
+			{
+				val.push_back(((temp[0] & 0x7f) << 7) | (temp[1] & 0x7f));
+			}
+			else
+			{
+				buffer_->read_data(&temp[2], 1);
+				i++;
+				if (temp[2] < 0x80)
+				{
+					val.push_back(((temp[0] & 0x7f) << 14) | ((temp[1] & 0x7f) << 7) | (temp[2] & 0x7f));
+				}
+			}
 		}
 	}
 	return *this;
@@ -1293,8 +1323,14 @@ void rx_asn_out_stream::write_explicit (const int32_t& val, uint32_t type)
 
 void rx_asn_out_stream::write_explicit (const oid_t& val, uint32_t type)
 {
+	if (val.empty())
+	{
+		write_explicit(asn::null_asn_type(), 0x05); 
+		return;
+	}
 	byte_string arr(1);
 	arr[0] = (std::byte)(val[0] * 40 + val[1]);
+	size_t i = 2;
 	for (size_t i = 2; i < val.size(); i++)
 	{
 		if (val[i] < 0x80)
@@ -1302,6 +1338,12 @@ void rx_asn_out_stream::write_explicit (const oid_t& val, uint32_t type)
 		else if (val[i] < 0x4000)
 		{// two bytes
 			arr.push_back((std::byte)((val[i] >> 7) | 0x80));// we don't have mask because upper bits are already tested!
+			arr.push_back((std::byte)(val[i] & 0x7f));
+		}
+		else
+		{// three bytes
+			arr.push_back((std::byte)(((val[i] >> 14) & 0x7f) | 0x80));// we don't have mask because upper bits are already tested!
+			arr.push_back((std::byte)(((val[i] >> 7) & 0x7f) | 0x80));
 			arr.push_back((std::byte)(val[i] & 0x7f));
 		}
 	}

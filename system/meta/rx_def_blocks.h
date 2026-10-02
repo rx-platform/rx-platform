@@ -7,24 +7,24 @@
 *  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
-*  
-*  This file is part of {rx-platform} 
 *
-*  
+*  This file is part of {rx-platform}
+*
+*
 *  {rx-platform} is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
 *  the Free Software Foundation, either version 3 of the License, or
 *  (at your option) any later version.
-*  
+*
 *  {rx-platform} is distributed in the hope that it will be useful,
 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *  GNU General Public License for more details.
-*  
-*  You should have received a copy of the GNU General Public License  
+*
+*  You should have received a copy of the GNU General Public License
 *  along with {rx-platform}. It is also available in any {rx-platform} console
 *  via <license> command. If not, see <http://www.gnu.org/licenses/>.
-*  
+*
 ****************************************************************************/
 
 
@@ -110,7 +110,7 @@ class mapped_data_algorithm;
 class variable_data_algorithm;
 class filtered_data_algorithm;
 class event_blocks_algorithm;
-class data_blocks_algorithm; 
+class data_blocks_algorithm;
 class method_blocks_algorithm;
 class data_types_algorithm;
 class mapsrc_data_algorithm;
@@ -158,7 +158,7 @@ enum rx_subitem_type : uint8_t
 
 
 
-class const_value_def 
+class const_value_def
 {
 public:
 	const_value_def(const const_value_def& right) = default;
@@ -234,6 +234,12 @@ public:
       }
 
 
+      const bool get_init_only () const
+      {
+        return init_only_;
+      }
+
+
 
   protected:
 
@@ -263,6 +269,8 @@ public:
 
       bool is_sealed_;
 
+      bool init_only_;
+
 
 };
 
@@ -272,7 +280,7 @@ public:
 
 
 
-class event_attribute 
+class event_attribute
 {
   public:
 	  typedef rx_platform::meta::basic_types::event_type TargetType;
@@ -347,7 +355,7 @@ class event_attribute
 
 
 
-class simple_value_def 
+class simple_value_def
 {
 public:
 	simple_value_def(const simple_value_def& right) = default;
@@ -421,6 +429,12 @@ public:
       }
 
 
+      const bool get_init_only () const
+      {
+        return init_only_;
+      }
+
+
 
   protected:
 
@@ -448,6 +462,8 @@ public:
 
       bool is_sealed_;
 
+      bool init_only_;
+
 
 };
 
@@ -459,9 +475,9 @@ typedef std::vector<std::pair<string_type, int> > names_cahce_type;
 
 
 
-class complex_data_type 
+class complex_data_type
 {
-	
+
 	typedef std::vector<const_value_def> const_values_type;
 	typedef std::vector<simple_value_def> simple_values_type;
 	typedef std::vector<struct_attribute> structs_type;
@@ -475,23 +491,23 @@ class complex_data_type
 
       rx_result register_struct (const string_type& name, const rx_node_id& id);
 
-      rx_result register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only, bool persistent);
+      rx_result register_variable (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only, bool persistent, bool init_only);
 
       rx_result register_event (const def_blocks::event_attribute& what);
 
       rx_result register_event (const string_type& name, const rx_node_id& id, const rx_node_id& data_id);
 
-      rx_result register_simple_value (const string_type& name, rx_simple_value&& val, bool read_only, bool persistent);
+      rx_result register_simple_value (const string_type& name, rx_simple_value&& val, bool read_only, bool persistent, bool init_only);
 
-      rx_result register_const_value (const string_type& name, rx_simple_value&& val, bool config_only = false);
+      rx_result register_const_value (const string_type& name, rx_simple_value&& val, bool config_only, bool init_only);
 
       rx_result register_simple_value (const string_type& name, const rx_simple_value& val, bool read_only, bool persistent);
 
-      rx_result register_const_value (const string_type& name, const rx_simple_value& val, bool config_only = false);
+      rx_result register_const_value (const string_type& name, const rx_simple_value& val, bool config_only, bool init_only);
 
-      rx_result register_simple_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool read_only, bool persistent);
+      rx_result register_simple_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool read_only, bool persistent, bool init_only);
 
-      rx_result register_const_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool config_only = false);
+      rx_result register_const_value (const string_type& name, const rx_item_reference& ref, bool is_array, bool config_only, bool init_only);
 
       rx_result check_name (const string_type& name, int rt_index);
 
@@ -528,13 +544,12 @@ class complex_data_type
       string_type description;
 
 	  template <typename constT>
-	  bool register_const_value_static(const string_type& name, constT&& value, bool config_only = false);
+	  bool register_const_value_static(const string_type& name, constT&& value, bool config_only = false, bool init_only = false);
 	  template <typename valT>
-	  bool register_simple_value_static(const string_type& name, valT&& value, bool read_only, bool persistent);
+	  bool register_simple_value_static(const string_type& name, valT&& value, bool read_only, bool persistent, bool init_only = false);
 	  template <typename valT>
-	  bool register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only, bool persistent);
+	  bool register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only, bool persistent, bool init_only = false);
 
-	  
 	  static constexpr const int structs_mask =			0x01000000;
 	  static constexpr const int simple_values_mask =	0x02000000;
 	  static constexpr const int const_values_mask =	0x03000000;
@@ -581,7 +596,7 @@ class complex_data_type
 
 
 
-class struct_attribute 
+class struct_attribute
 {
   public:
 	  typedef rx_platform::meta::basic_types::struct_type TargetType;
@@ -655,7 +670,7 @@ class struct_attribute
 
 
 
-class variable_attribute 
+class variable_attribute
 {
   public:
 	  typedef rx_platform::meta::basic_types::variable_type TargetType;
@@ -669,7 +684,7 @@ class variable_attribute
 	  ~variable_attribute() = default;
 
   public:
-      variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only);
+      variable_attribute (const string_type& name, const rx_node_id& id, rx_simple_value&& value, bool read_only, bool init_only);
 
       variable_attribute (const string_type& name, const string_type& target_name);
 
@@ -733,6 +748,12 @@ class variable_attribute
       }
 
 
+      const bool get_init_only () const
+      {
+        return init_only_;
+      }
+
+
 
   protected:
 
@@ -762,6 +783,8 @@ class variable_attribute
 
       bool is_sealed_;
 
+      bool init_only_;
+
 
 };
 
@@ -770,7 +793,7 @@ class variable_attribute
 
 
 
-struct io_attribute 
+struct io_attribute
 {
 
 
@@ -796,7 +819,7 @@ struct io_attribute
 
 
 
-class filter_attribute 
+class filter_attribute
 {
   public:
 	  typedef rx_platform::meta::basic_types::filter_type TargetType;
@@ -872,7 +895,7 @@ class filter_attribute
 
 
 
-class mapper_attribute 
+class mapper_attribute
 {
   public:
 	  typedef rx_platform::meta::basic_types::mapper_type TargetType;
@@ -948,7 +971,7 @@ class mapper_attribute
 
 
 
-class source_attribute 
+class source_attribute
 {
   public:
 	  typedef rx_platform::meta::basic_types::source_type TargetType;
@@ -1025,7 +1048,7 @@ class source_attribute
 
 
 
-class mapsrc_data_type 
+class mapsrc_data_type
 {
     typedef std::vector<source_attribute> sources_type;
 	typedef std::vector<mapper_attribute> mappers_type;
@@ -1061,7 +1084,7 @@ class mapsrc_data_type
 
 
 
-class variable_data_type 
+class variable_data_type
 {
 	typedef std::vector<filter_attribute> filters_type;
 
@@ -1088,7 +1111,7 @@ class variable_data_type
 
 
 
-class filtered_data_type 
+class filtered_data_type
 {
     typedef std::vector<filter_attribute> filters_type;
 
@@ -1114,7 +1137,7 @@ class filtered_data_type
 
 
 
-class data_attribute 
+class data_attribute
 {
 public:
     typedef rx_platform::meta::basic_types::data_type TargetType;
@@ -1180,7 +1203,7 @@ public:
 
 
 
-class method_attribute 
+class method_attribute
 {
 public:
     typedef rx_platform::meta::basic_types::method_type TargetType;
@@ -1263,7 +1286,7 @@ public:
 
 
 
-class program_attribute 
+class program_attribute
 {
 public:
     typedef rx_platform::meta::basic_types::program_type TargetType;
@@ -1329,7 +1352,7 @@ public:
 
 
 
-class display_attribute 
+class display_attribute
 {
 public:
     typedef rx_platform::meta::basic_types::display_type TargetType;
@@ -1395,7 +1418,7 @@ public:
 
 
 
-class data_value_def 
+class data_value_def
 {
 public:
     data_value_def(const data_value_def& right) = default;
@@ -1460,7 +1483,7 @@ public:
 
 
 
-class data_type_def 
+class data_type_def
 {
     typedef std::vector<def_blocks::data_value_def> values_type;
     typedef std::vector<def_blocks::data_attribute> children_type;
@@ -1546,7 +1569,7 @@ class data_type_def
 
 
 
-class mapped_data_type 
+class mapped_data_type
 {
     typedef std::vector<mapper_attribute> mappers_type;
 
@@ -1581,25 +1604,25 @@ namespace meta {
 namespace def_blocks {
 
 template <typename valT>
-bool complex_data_type::register_const_value_static(const string_type& name, valT&& value, bool config_only)
+bool complex_data_type::register_const_value_static(const string_type& name, valT&& value, bool config_only, bool init_only)
 {
 	rx_simple_value temp;
 	temp.assign_static(std::forward<valT>(value));
-	return register_const_value(name, std::move(temp), config_only);
+	return register_const_value(name, std::move(temp), config_only, init_only);
 }
 template <typename valT>
-bool complex_data_type::register_simple_value_static(const string_type& name, valT&& value, bool read_only, bool persistent)
+bool complex_data_type::register_simple_value_static(const string_type& name, valT&& value, bool read_only, bool persistent, bool init_only)
 {
 	rx_simple_value temp;
 	temp.assign_static<valT>(std::forward<valT>(value));
-	return register_simple_value(name, std::move(temp), read_only, persistent);
+	return register_simple_value(name, std::move(temp), read_only, persistent, init_only);
 }
 template <typename valT>
-bool complex_data_type::register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only, bool persistent)
+bool complex_data_type::register_variable_static(const string_type& name, const rx_node_id& id, valT&& value, bool read_only, bool persistent, bool init_only)
 {
 	rx_simple_value temp;
 	temp.assign_static<valT>(std::forward<valT>(value));
-	return register_variable(name, id, std::move(temp), read_only, persistent);
+	return register_variable(name, id, std::move(temp), read_only, persistent, init_only);
 }
 
 

@@ -118,7 +118,7 @@ class dotnet_wp_transaction
       virtual ~dotnet_wp_transaction();
 
 
-      virtual rx_result start (dotnet_wp_connection& connection) const = 0;
+      virtual rx_result start (dotnet_wp_connection& connection) = 0;
 
       virtual rx_result response (uint32_t msg_type, io::rx_const_io_buffer& buffer) = 0;
 
@@ -158,7 +158,7 @@ public:
 
       rx_result initialize (dotnet_host* host, const rx_dotnet_config_data_t& config);
 
-      void bind_object (rx_item_type type, const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
+      void bind_object (rx_item_type type, const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, const string_type& init);
 
       void unbind_object (rx_item_type type, const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 
@@ -170,7 +170,7 @@ public:
 
       rx_result source_write (uint32_t trans_id, void* whose, typed_value_type val);
 
-      void initialize_completed (uint32_t trans_id, rx_result result, string_type hosted_version, string_type dotnet_host_version);
+      void initialize_completed (uint32_t trans_id, rx_result result, string_type hosted_version, string_type dotnet_host_version, string_type worker_version);
 
       rx_result do_build (const string_type& lib, uint32_t timeout);
 
@@ -192,6 +192,8 @@ public:
       string_type hosted_version;
 
       string_type dotnet_host_version;
+
+      string_type worker_version;
 
 
   protected:
@@ -225,6 +227,10 @@ public:
 
       rx_result action_result_;
 
+      locks::slim_lock transactions_lock_;
+
+      locks::slim_lock buffers_lock_;
+
 
 };
 
@@ -250,8 +256,12 @@ public:
     typedef std::map<void*, rx_reference<dotnet_event> > runtime_events_type;
     typedef std::map<void*, rx_reference<dotnet_struct> > runtime_structs_type;
 
+	typedef std::map<void*, rx_reference<dotnet_object_runtime> > monitored_objects_type;
+    typedef std::map<void*, rx_reference<dotnet_struct> > monitored_structs_type;
+
+
   public:
-      dotnet_host (const configuration_data_t& data, const rx_dotnet_config_data_t& init_config);
+      dotnet_host ();
 
       ~dotnet_host();
 
@@ -274,7 +284,9 @@ public:
 
       void received_write_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_result&&)> callback);
 
-      void bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_object_runtime> ref);
+      void received_execute_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_simple_value&&, rx_result&&)> callback);
+
+      void bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_object_runtime> ref, const string_type& init);
 
       void unbind_runtime (const rx_node_id& id, const rx_node_id& type_id, void* ptr);
 
@@ -286,19 +298,19 @@ public:
 
       void received_execute_done (uint32_t transId, void* inst, const string_type& val, rx_result result);
 
-      void bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_struct> ref);
+      void bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_struct> ref, const string_type& init);
 
       void unbind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 
-      void bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_source> ref);
+      void bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_source> ref, const string_type& init);
 
       void unbind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 
-      void bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_mapper> ref);
+      void bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_mapper> ref, const string_type& init);
 
       void unbind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 
-      void bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_event> ref);
+      void bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_event> ref, const string_type& init);
 
       void unbind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr);
 
@@ -312,7 +324,11 @@ public:
 
       const string_type& get_hosted_dotnet_version () const;
 
+      static string_type get_native_host_version ();
+
       const string_type& get_dotnet_host_version () const;
+
+      const string_type& get_worker_version () const;
 
       void stop ();
 
@@ -334,6 +350,10 @@ public:
 
       dotnet_wp_connection wp_;
 
+      monitored_objects_type monitored_objects_;
+
+      monitored_structs_type monitored_structs_;
+
 
       result_callbacks_type result_callbacks_;
 
@@ -344,6 +364,8 @@ public:
       string_type hosted_version_;
 
       string_type dotnet_host_version_;
+
+      string_type worker_version_;
 
 
 };
@@ -360,7 +382,7 @@ class build_types_wp_transaction : public dotnet_wp_transaction
       build_types_wp_transaction (const string_type& lib, uint32_t timeout);
 
 
-      rx_result start (dotnet_wp_connection& connection) const;
+      rx_result start (dotnet_wp_connection& connection);
 
       rx_result response (uint32_t msg_type, io::rx_const_io_buffer& buffer);
 
@@ -403,7 +425,7 @@ class execute_method_wp_transaction : public dotnet_wp_transaction
       execute_method_wp_transaction (uint32_t trans_id, void* whose, const string_type& method, const string_type& value);
 
 
-      rx_result start (dotnet_wp_connection& connection) const;
+      rx_result start (dotnet_wp_connection& connection);
 
       rx_result response (uint32_t msg_type, io::rx_const_io_buffer& buffer);
 
@@ -442,7 +464,7 @@ class reload_wp_transaction : public dotnet_wp_transaction
       reload_wp_transaction (const string_type& lib, uint32_t timeout);
 
 
-      rx_result start (dotnet_wp_connection& connection) const;
+      rx_result start (dotnet_wp_connection& connection);
 
       rx_result response (uint32_t msg_type, io::rx_const_io_buffer& buffer);
 
@@ -485,7 +507,7 @@ class unload_wp_transaction : public dotnet_wp_transaction
       unload_wp_transaction (const string_type& lib, rx_result_callback callback, uint32_t timeout);
 
 
-      rx_result start (dotnet_wp_connection& connection) const;
+      rx_result start (dotnet_wp_connection& connection);
 
       rx_result response (uint32_t msg_type, io::rx_const_io_buffer& buffer);
 
@@ -526,7 +548,7 @@ class stop_wp_transaction : public dotnet_wp_transaction
       stop_wp_transaction (rx_void_callback callback, uint32_t timeout);
 
 
-      rx_result start (dotnet_wp_connection& connection) const;
+      rx_result start (dotnet_wp_connection& connection);
 
       rx_result response (uint32_t msg_type, io::rx_const_io_buffer& buffer);
 
@@ -552,6 +574,101 @@ class stop_wp_transaction : public dotnet_wp_transaction
 
 
 };
+
+
+
+
+
+
+template <class msgT>
+class void_wp_transaction : public dotnet_wp_transaction  
+{
+
+  public:
+      void_wp_transaction (msgT msg, uint32_t timeout);
+
+
+      rx_result start (dotnet_wp_connection& connection);
+
+      rx_result response (uint32_t msg_type, io::rx_const_io_buffer& buffer);
+
+      void response_error (rx_result result);
+
+      void timeouted ();
+
+      uint32_t get_transaction_id () const;
+
+      rx_result wait_result ();
+
+
+  protected:
+
+  private:
+
+
+      uint32_t trans_id_;
+
+      uint32_t timeout_;
+
+      locks::event trans_done_;
+
+      msgT msg_;
+
+
+};
+
+
+// Parameterized Class rx_internal::dotnet::void_wp_transaction 
+
+template <class msgT>
+void_wp_transaction<msgT>::void_wp_transaction (msgT msg, uint32_t timeout)
+      : trans_id_(rx_get_new_transaction_id()),
+        timeout_(timeout),
+        trans_done_(false),
+        msg_(std::move(msg))
+{
+}
+
+
+
+template <class msgT>
+rx_result void_wp_transaction<msgT>::start (dotnet_wp_connection& connection)
+{
+    connection.send_message(msg_, trans_id_);
+    return true;
+}
+
+template <class msgT>
+rx_result void_wp_transaction<msgT>::response (uint32_t msg_type, io::rx_const_io_buffer& buffer)
+{
+    trans_done_.set();
+    return true;
+}
+
+template <class msgT>
+void void_wp_transaction<msgT>::response_error (rx_result result)
+{
+    trans_done_.set();
+}
+
+template <class msgT>
+void void_wp_transaction<msgT>::timeouted ()
+{
+    trans_done_.set();
+}
+
+template <class msgT>
+uint32_t void_wp_transaction<msgT>::get_transaction_id () const
+{
+    return trans_id_;
+}
+
+template <class msgT>
+rx_result void_wp_transaction<msgT>::wait_result ()
+{
+    trans_done_.wait_handle(timeout_);
+    return true;
+}
 
 
 } // namespace dotnet

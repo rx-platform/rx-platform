@@ -246,11 +246,7 @@ void http_server::send_response (http_request& request, http_response response)
 			HTTP_LOG_ERROR("http_server", 100, "Error on filter for HTTP response "s + result.errors_line() + " for "s + request.path);
 		}
 	}
-	if (request.request_identity)
-	{
-		request.request_identity->logout();
-		request.request_identity = security::security_context_ptr::null_ptr;
-	}
+	
 	if (!response.cache_path.empty() && request.method == rx_http_method::get)
 	{
 		locks::auto_lock_t _(&cache_lock_);
@@ -262,6 +258,11 @@ void http_server::send_response (http_request& request, http_response response)
 	if (!ret)
 	{
 		HTTP_LOG_ERROR("http_server", 100, "Error Sending HTTP response "s + ret.errors_line() + " for "s + request.path);
+	}
+	if (request.request_identity)
+	{
+		request.request_identity->logout();
+		request.request_identity = security::security_context_ptr::null_ptr;
 	}
 }
 
@@ -348,7 +349,7 @@ void http_server::register_standard_filters ()
 {
 	filters_.emplace_back(std::make_unique<http_path_filter>());
 	filters_.emplace_back(std::make_unique<standard_request_filter>(spa_, start_page_));
-	//filters_.emplace_back(std::make_unique<aspnet::aspnet_authorizer>());
+	filters_.emplace_back(std::make_unique<aspnet::aspnet_authorizer>());
 	filters_.emplace_back(std::make_unique<jwt_authorize::jwt_authorizer>());
 }
 
@@ -405,8 +406,8 @@ rx_result standard_request_filter::handle_request_after (http_request& req, http
 		resp.headers["Access-Control-Allow-Origin"] = "*";
 		resp.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE";
 	}
-	resp.headers.emplace("Cross-Origin-Opener-Policy", "same-origin");
-	resp.headers.emplace("Cross-Origin-Embedder-Policy", "require-corp");
+	//resp.headers.emplace("Cross-Origin-Opener-Policy", "same-origin");
+//	resp.headers.emplace("Cross-Origin-Embedder-Policy", "require-corp");
 	////////////////////////////////////////////////////////////////////////////////////
 	resp.headers.emplace("Connection", "Keep-Alive");
 	resp.headers.emplace("Keep-Alive", "timeout=32");

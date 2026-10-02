@@ -88,6 +88,7 @@ namespace dotnet
 
 
 std::vector<std::pair<string_type, string_type> > get_loaded_dotnet_libraries();
+std::vector<string_type> get_loaded_dotnet_assemblies(const string_type lib);
 
 namespace api
 {
@@ -107,7 +108,16 @@ void dotnetWriteValue(
 	, void* instance
 	, size_t idx
 	, typed_value_type value
-	, std::function<void(rx_result&&)> callback/*dotnetRuntimeResultDelegate*/);
+	, std::function<void(rx_result&&)> callback);
+
+
+void dotnetExecuteValue(
+	rx_item_type itemType
+	, uint32_t transId
+	, void* instance
+	, size_t idx
+	, typed_value_type value
+	, std::function<void(rx_simple_value&&, rx_result&&)> callback);
 
 }
 

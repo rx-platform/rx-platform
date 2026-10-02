@@ -65,13 +65,16 @@ void fill_plugin_paths(string_array& paths)
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\Beka\\x64\\Debug\\rx-mesrnp.dll");
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\SAMTMS\\x64\\Debug\\rx-samcomm.dll");
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\iec61850\\x64\\Debug\\iec61850.dll");
-	paths.emplace_back("C:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linntms.dll");
-	paths.emplace_back("C:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linnmes.dll");
+
+	//paths.emplace_back("C:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linntms.dll");
+	//paths.emplace_back("C:\\RX\\LINNMES\\VS\\MESworkspace\\x64\\Debug\\rx-linnmes.dll");
 
 	paths.emplace_back("C:\\RX\\Plugins\\Dev\\VS\\LazzarStuff\\x64\\Debug\\lazzar.dll");
 
 	paths.emplace_back("C:\\RX\\Plugins\\LearnProject\\PortsExample\\x64\\Debug\\ports_example.dll");
 	paths.emplace_back("C:\\RX\\Native\\VS\\RxNodeJs\\x64\\Debug\\rx-platform-node.dll");
+
+	paths.emplace_back("C:\\RX\\ENSACO\\Laza\\Milestone\\Code\\InitialSolution\\ENSACO.Milestone.Plugin\\bin\\Debug\\net9.0\\publish\\win-x64\\ENSACO.Milestone.Plugin.dll");
 
 	//paths.emplace_back("C:\\temp\\UrosBum\\rx-lgacsmart5\\rx-lgacsmart5\\bin\\Debug\\net8.0\\win-x64\\native\\rx-lgacsmart5.dll");
 

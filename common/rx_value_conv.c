@@ -496,22 +496,24 @@ int bytes_to_str(const bytes_value_struct* val, string_value_struct* str)
 {
 	if (val->size == 0)
 		return rx_init_string_value_struct(str, NULL, 0);
+
 	char hex_buff[0x40];
 	char* pbuffer = hex_buff;
 	size_t temp_size;
 	const uint8_t* pbytes = rx_c_ptr(val, &temp_size);
-	if (val->size * 2 + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
+	if (val->size + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
 	{
-		pbuffer = rx_heap_alloc(val->size * 2 + 1);
+		pbuffer = rx_heap_alloc(val->size + 1);
 		if (pbuffer == NULL)
 			return RX_ERROR;
 	}
 	for (size_t i = 0; i < val->size; i++)
 	{
-		sprintf(&pbuffer[i*2], "%02X", pbytes[i]);
+		pbuffer[i] = pbytes[i];
 	}
+	pbuffer[val->size]='\0';
 	int ret = rx_init_string_value_struct(str, pbuffer, -1);
-	if (val->size * 2 + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
+	if (val->size + 1 > sizeof(hex_buff) / sizeof(hex_buff[0]))
 		rx_heap_free(pbuffer);
 	return ret;
 }
@@ -752,6 +754,21 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+				{
+					int8_t temp = 0;
+					size_t size = 0;
+					const uint8_t* pbytes = rx_c_ptr(&what->bytes_value, &size);
+					if (pbytes == NULL || size > 1)
+						return RX_ERROR;
+
+					if (size == 1)
+						temp = (int8_t)pbytes[0];
+
+					rx_destory_bytes_value_struct(&what->bytes_value);
+					what->int8_value = temp;
+
+					return RX_OK;
+				}
 			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
@@ -835,6 +852,23 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+				{
+					int16_t temp = 0;
+					size_t size = 0;
+					const uint8_t* pbytes = rx_c_ptr(&what->bytes_value, &size);
+					if (pbytes == NULL || size > 2)
+						return RX_ERROR;
+
+					if (size == 1)
+						temp = (int16_t)(int16_t)pbytes[0];
+					else if (size == 2)
+						temp = (int16_t)(((int16_t)pbytes[1] << 8) | (int16_t)pbytes[0]);
+
+					rx_destory_bytes_value_struct(&what->bytes_value);
+					what->int16_value = temp;
+
+					return RX_OK;
+				}
 			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
@@ -918,6 +952,27 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+				{
+					int32_t temp = 0;
+					size_t size = 0;
+					const uint8_t* pbytes = rx_c_ptr(&what->bytes_value, &size);
+					if (pbytes == NULL || size > 4)
+						return RX_ERROR;
+
+					if (size == 1)
+						temp = (int8_t)(int32_t)pbytes[0];
+					else if (size == 2)
+						temp = (int16_t)(((int32_t)pbytes[1] << 8) | (int32_t)pbytes[0]);
+					else if (size == 3)
+						temp = (int32_t)(((int32_t)pbytes[2] << 16) | ((int32_t)pbytes[1] << 8) | (int32_t)pbytes[0]);
+					else if (size == 4)
+						temp = (int32_t)(((int32_t)pbytes[3] << 24) | ((int32_t)pbytes[2] << 16) | ((int32_t)pbytes[1] << 8) | (int32_t)pbytes[0]);
+
+					rx_destory_bytes_value_struct(&what->bytes_value);
+					what->int32_value = temp;
+
+					return RX_OK;
+				}
 			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
@@ -1001,6 +1056,35 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+				{
+					int64_t temp = 0;
+					size_t size = 0;
+					const uint8_t* pbytes = rx_c_ptr(&what->bytes_value, &size);
+					if (pbytes == NULL || size > 8)
+						return RX_ERROR;
+
+					if (size == 1)
+						temp = (int64_t)(int64_t)pbytes[0];
+					else if (size == 2)
+						temp = (int64_t)(((int64_t)pbytes[1] << 8) | (int64_t)pbytes[0]);
+					else if (size == 3)
+						temp = (int64_t)(((int64_t)pbytes[2] << 16) | ((int64_t)pbytes[1] << 8) | (int64_t)pbytes[0]);
+					else if (size == 4)
+						temp = (int64_t)(((int64_t)pbytes[3] << 24) | ((int64_t)pbytes[2] << 16) | ((int64_t)pbytes[1] << 8) | (int64_t)pbytes[0]);
+					else if (size == 5)
+						temp = (int64_t)(((int64_t)pbytes[4] << 32) | ((int64_t)pbytes[3] << 24) | ((int64_t)pbytes[2] << 16) | ((int64_t)pbytes[1] << 8) | (int64_t)pbytes[0]);
+					else if (size == 6)
+						temp = (int64_t)(((int64_t)pbytes[5] << 40) | ((int64_t)pbytes[4] << 32) | ((int64_t)pbytes[3] << 24) | ((int64_t)pbytes[2] << 16) | ((int64_t)pbytes[1] << 8) | (int64_t)pbytes[0]);
+					else if (size == 7)
+						temp = (int64_t)(((int64_t)pbytes[6] << 48) | ((int64_t)pbytes[5] << 40) | ((int64_t)pbytes[4] << 32) | ((int64_t)pbytes[3] << 24) | ((int64_t)pbytes[2] << 16) | ((int64_t)pbytes[1] << 8) | (int64_t)pbytes[0]);
+					else if (size == 8)
+						temp = (int64_t)(((int64_t)pbytes[7] << 56) | ((int64_t)pbytes[6] << 48) | ((int64_t)pbytes[5] << 40) | ((int64_t)pbytes[4] << 32) | ((int64_t)pbytes[3] << 24) | ((int64_t)pbytes[2] << 16) | ((int64_t)pbytes[1] << 8) | (int64_t)pbytes[0]);
+
+					rx_destory_bytes_value_struct(&what->bytes_value);
+					what->int64_value = temp;
+
+					return RX_OK;
+				}
 			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
@@ -1084,6 +1168,21 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+				{
+					uint8_t temp = 0;
+					size_t size = 0;
+					const uint8_t* pbytes = rx_c_ptr(&what->bytes_value, &size);
+					if (pbytes == NULL || size > 1)
+						return RX_ERROR;
+
+					if (size == 1)
+						temp = (uint8_t)pbytes[0];
+
+					rx_destory_bytes_value_struct(&what->bytes_value);
+					what->uint8_value = temp;
+
+					return RX_OK;
+				}
 			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
@@ -1167,6 +1266,23 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+				{
+					uint16_t temp = 0;
+					size_t size = 0;
+					const uint8_t* pbytes = rx_c_ptr(&what->bytes_value, &size);
+					if (pbytes == NULL || size > 2)
+						return RX_ERROR;
+
+					if (size == 1)
+						temp = (uint16_t)(uint16_t)pbytes[0];
+					else if (size == 2)
+						temp = (uint16_t)(((uint16_t)pbytes[1] << 8) | (uint16_t)pbytes[0]);
+
+					rx_destory_bytes_value_struct(&what->bytes_value);
+					what->uint16_value = temp;
+
+					return RX_OK;
+				}
 			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
@@ -1250,6 +1366,27 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+				{
+					uint32_t temp = 0;
+					size_t size = 0;
+					const uint8_t* pbytes = rx_c_ptr(&what->bytes_value, &size);
+					if (pbytes == NULL || size > 4)
+						return RX_ERROR;
+
+					if (size == 1)
+						temp = (uint32_t)(uint32_t)pbytes[0];
+					else if (size == 2)
+						temp = (uint32_t)(((uint32_t)pbytes[1] << 8) | (uint32_t)pbytes[0]);
+					else if (size == 3)
+						temp = (uint32_t)(((uint32_t)pbytes[2] << 16) | ((uint32_t)pbytes[1] << 8) | (uint32_t)pbytes[0]);
+					else if (size == 4)
+						temp = (uint32_t)(((uint32_t)pbytes[3] << 24) | ((uint32_t)pbytes[2] << 16) | ((uint32_t)pbytes[1] << 8) | (uint32_t)pbytes[0]);
+
+					rx_destory_bytes_value_struct(&what->bytes_value);
+					what->uint32_value = temp;
+
+					return RX_OK;
+				}
 			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
@@ -1333,6 +1470,35 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 					return ret;
 				}
 			case RX_BYTES_TYPE:
+				{
+					uint64_t temp = 0;
+					size_t size = 0;
+					const uint8_t* pbytes = rx_c_ptr(&what->bytes_value, &size);
+					if (pbytes == NULL || size > 8)
+						return RX_ERROR;
+
+					if (size == 1)
+						temp = (uint64_t)(uint64_t)pbytes[0];
+					else if (size == 2)
+						temp = (uint64_t)(((uint64_t)pbytes[1] << 8) | (uint64_t)pbytes[0]);
+					else if (size == 3)
+						temp = (uint64_t)(((uint64_t)pbytes[2] << 16) | ((uint64_t)pbytes[1] << 8) | (uint64_t)pbytes[0]);
+					else if (size == 4)
+						temp = (uint64_t)(((uint64_t)pbytes[3] << 24) | ((uint64_t)pbytes[2] << 16) | ((uint64_t)pbytes[1] << 8) | (uint64_t)pbytes[0]);
+					else if (size == 5)
+						temp = (uint64_t)(((uint64_t)pbytes[4] << 32) | ((uint64_t)pbytes[3] << 24) | ((uint64_t)pbytes[2] << 16) | ((uint64_t)pbytes[1] << 8) | (uint64_t)pbytes[0]);
+					else if (size == 6)
+						temp = (uint64_t)(((uint64_t)pbytes[5] << 40) | ((uint64_t)pbytes[4] << 32) | ((uint64_t)pbytes[3] << 24) | ((uint64_t)pbytes[2] << 16) | ((uint64_t)pbytes[1] << 8) | (uint64_t)pbytes[0]);
+					else if (size == 7)
+						temp = (uint64_t)(((uint64_t)pbytes[6] << 48) | ((uint64_t)pbytes[5] << 40) | ((uint64_t)pbytes[4] << 32) | ((uint64_t)pbytes[3] << 24) | ((uint64_t)pbytes[2] << 16) | ((uint64_t)pbytes[1] << 8) | (uint64_t)pbytes[0]);
+					else if (size == 8)
+						temp = (uint64_t)(((uint64_t)pbytes[7] << 56) | ((uint64_t)pbytes[6] << 48) | ((uint64_t)pbytes[5] << 40) | ((uint64_t)pbytes[4] << 32) | ((uint64_t)pbytes[3] << 24) | ((uint64_t)pbytes[2] << 16) | ((uint64_t)pbytes[1] << 8) | (uint64_t)pbytes[0]);
+
+					rx_destory_bytes_value_struct(&what->bytes_value);
+					what->uint64_value = temp;
+
+					return RX_OK;
+				}
 			case RX_STRUCT_TYPE:
 				return RX_ERROR;
 			case RX_NODE_ID_TYPE:
@@ -2031,6 +2197,7 @@ int convert_union(union rx_value_union* what, rx_value_t source, rx_value_t targ
 						return RX_OK;
 					}
 				case RX_BYTES_TYPE:
+					return RX_OK;
 				case RX_STRUCT_TYPE:
 				case RX_NODE_ID_TYPE:
 					return RX_ERROR;

@@ -176,6 +176,9 @@ struct dotnet_data_t
     string_type app_path;
     string_type lib_path;
 	bool launch_debugger = false;
+    uint32_t scan_rate = 100;
+    uint32_t write_timeout = 5000;
+    uint32_t exec_timeout = 60000;
 };
 
 struct configuration_data_t

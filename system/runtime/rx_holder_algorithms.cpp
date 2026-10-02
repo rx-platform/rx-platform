@@ -173,7 +173,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
             // first collect all the pending data
             data::runtime_values_data runtime_data;
             collect_data(runtime_data, runtime_value_type::persistent_runtime_value, whose);
-            
+
             if (!serialize_data.empty())
             {
                 for (auto it = serialize_data.begin(); it != serialize_data.end(); ++it)
@@ -210,7 +210,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
             else
             {
                 result = writer.get_error();
-            }      
+            }
 
             //
             if (result)
@@ -242,7 +242,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
                                 callback.callback(result.errors());
                         }
                     });
-            } 
+            }
             else //(!result)
             {
                 RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error saving "s
@@ -256,7 +256,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
         else
         {
 
-            runtime_transaction_id_t this_transaction_id = whose.context_->serialize_trans_id_.exchange(0);
+            whose.context_->serialize_trans_id_.exchange(0);
             RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error opening runtime storage for "s
                 + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path() + " " + item_result.errors_line());
             rx_result result = item_result.errors();
@@ -268,7 +268,7 @@ void runtime_holder_algorithms<typeT>::save_runtime (typename typeT::RType& whos
     }
     else
     {
-        runtime_transaction_id_t this_transaction_id = whose.context_->serialize_trans_id_.exchange(0);
+        whose.context_->serialize_trans_id_.exchange(0);
         RUNTIME_LOG_ERROR("runtime_model_algorithm", 100, "Error resolving storage for "s
             + rx_item_type_name(typeT::RImplType::type_id) + " "s + whose.meta_info_.get_full_path() + " " + storage_result.errors_line());
 
@@ -291,6 +291,7 @@ runtime_init_context runtime_holder_algorithms<typeT>::create_init_context (type
 {
     runtime_init_context ret = runtime::runtime_init_context(*whose.tags_.item_, whose.meta_info_, whose.context_.get(), &whose.tags_.binded_tags_, &whose.directories_, typeT::runtime_type_id);
     ret.path.model = std::move(model);
+	ret.init_data = whose.overrides_;
     return ret;
 }
 
@@ -667,7 +668,9 @@ void runtime_holder_algorithms<typeT>::fill_access_guards (meta::construct_conte
 {
 	auto& access_guards = data.get_access_guards();
     if (!root.is_null())
+    {
         access_guards[""] = std::move(root);
+    }
 
 	std::map<string_type, uint32_t> access_map;
 	std::vector<security::security_guard> access_guards_vector;

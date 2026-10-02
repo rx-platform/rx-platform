@@ -4,7 +4,7 @@
 *
 *  lib\rx_rt_data.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -95,6 +95,8 @@ public:
 
       rx_result combine (runtime_values_data other);
 
+      const runtime_values_data& get_child (string_view_type path) const;
+
 
       values_type values;
 
@@ -154,12 +156,8 @@ class runtime_data_model
   protected:
 
   private:
-
-      rx_result fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_value& val, std::vector<size_t>& indexes, string_array& paths) const;
-
-      rx_result fill_runtime_value_recursive (data::runtime_values_data& data, const data::runtime_data_model& model, const values::rx_simple_value& val, std::vector<size_t>& indexes, string_array& paths) const;
-
-
+	  template<typename valueT>
+      rx_result fill_runtime_value_recursive(data::runtime_values_data& data, const data::runtime_data_model& model, const valueT& val, std::vector<size_t>& indexes, string_array& paths) const;
 
 };
 

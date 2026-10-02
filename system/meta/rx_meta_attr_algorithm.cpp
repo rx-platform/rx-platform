@@ -4,7 +4,7 @@
 *
 *  system\meta\rx_meta_attr_algorithm.cpp
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -380,6 +380,7 @@ rx_result meta_blocks_algorithm<def_blocks::variable_attribute>::construct_compl
 			{
 				temp.value().value = whose.get_value(ctx.now);
 				temp.value().value_opt[runtime::structure::value_opt_readonly] = whose.read_only_;
+				temp.value().value_opt[runtime::structure::value_opt_init_only] = whose.init_only_;
 				temp.value().value_opt[runtime::structure::value_opt_persistent] = whose.persistent_;
 				temp.value().value_opt[runtime::structure::opt_is_in_model] = ctx.is_in_model();
 				temp.value().value_opt[runtime::structure::value_opt_sealed] = whose.is_sealed();
@@ -638,9 +639,9 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::serialize_complex
 		return stream.get_error();
 	if (!stream.write_item_reference("target", whose.target_))
 		return stream.get_error();
-	if (!stream.write_bool("read", whose.io_.input))
+	if (!stream.write_bool("read", whose.io_.output))
 		return stream.get_error();
-	if (!stream.write_bool("write", whose.io_.output))
+	if (!stream.write_bool("write", whose.io_.input))
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
@@ -668,9 +669,9 @@ rx_result meta_blocks_algorithm<def_blocks::mapper_attribute>::deserialize_compl
 		return stream.get_error();
 	if (!stream.read_item_reference("target", whose.target_))
 		return stream.get_error();
-	if (!stream.read_bool("read", whose.io_.input))
+	if (!stream.read_bool("read", whose.io_.output))
 		return stream.get_error();
-	if (!stream.read_bool("write", whose.io_.output))
+	if (!stream.read_bool("write", whose.io_.input))
 		return stream.get_error();
 	if (stream.get_version() >= RX_DESCRIPTIONS_VERSION)
 	{
@@ -1457,13 +1458,14 @@ rx_result complex_data_algorithm::get_depends (const complex_data_type& whose, d
 	return true;
 }
 
-std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool persistent, bool is_sealed, bool in_model, uint32_t sec_idx)
+std::bitset<32> complex_data_algorithm::get_value_opt (bool read_only, bool init_only, bool persistent, bool is_sealed, bool in_model, uint32_t sec_idx)
 {
 	std::bitset<32> ret((uint64_t)(sec_idx << 8));
 	ret[runtime::structure::value_opt_readonly] = read_only;
 	ret[runtime::structure::value_opt_persistent] = persistent;
 	ret[runtime::structure::opt_is_in_model] = in_model;
 	ret[runtime::structure::value_opt_sealed] = is_sealed;
+	ret[runtime::structure::value_opt_init_only] = init_only;
 	return ret;
 }
 
@@ -1485,6 +1487,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 				whose.get_value(),
 				get_value_opt(
 					whose.get_read_only(),
+					whose.get_init_only(),
 					whose.get_persistent(),
 					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx));
@@ -1507,6 +1510,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 				whose.get_values(),
 				get_value_opt(
 					whose.get_read_only(),
+					whose.get_init_only(),
 					whose.get_persistent(),
 					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx));
@@ -1545,6 +1549,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 
 				data.struct_value.value_opt = get_value_opt(
 					whose.get_read_only(),
+					whose.get_init_only(),
 					whose.get_persistent(),
 					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx);
@@ -1576,6 +1581,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const const_value
 
 						temp_data.struct_value.value_opt = get_value_opt(
 							whose.get_read_only(),
+							whose.get_init_only(),
 							whose.get_persistent(),
 							whose.is_sealed(),
 							ctx.is_in_model(), sec_idx);
@@ -1617,6 +1623,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 				whose.get_value(ctx.now),
 				get_value_opt(
 					whose.get_read_only(),
+					whose.get_init_only(),
 					whose.get_persistent(),
 					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx));
@@ -1639,6 +1646,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 				whose.get_values(ctx.now),
 				get_value_opt(
 					whose.get_read_only(),
+					whose.get_init_only(),
 					whose.get_persistent(),
 					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx));
@@ -1676,6 +1684,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 
 				data.struct_value.value_opt = get_value_opt(
 					whose.get_read_only(),
+					whose.get_init_only(),
 					whose.get_persistent(),
 					whose.is_sealed(),
 					ctx.is_in_model(), sec_idx);
@@ -1712,6 +1721,7 @@ rx_result complex_data_algorithm::construct_complex_attribute (const simple_valu
 
 					temp_data.struct_value.value_opt = get_value_opt(
 						whose.get_read_only(),
+						whose.get_init_only(),
 						whose.get_persistent(),
 						whose.is_sealed(),
 						ctx.is_in_model(), sec_idx);

@@ -52,4 +52,5 @@
 2.2.1 implemented rx_file_rename
 2.2.2 implemented rx_file_rename with MoveFileWithTransactionA
 2.3.0 added TLS client to platform
+2.3.1 corrected 10054 error on udp turn notifications off
 *********************************************************************************/

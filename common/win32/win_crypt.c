@@ -213,6 +213,7 @@ RX_COMMON_API int rx_close_certificate(rx_certificate_t* cert)
 
 
 HCRYPTPROV hcrypt = 0;
+NCRYPT_PROV_HANDLE nc_hcrypt = 0;
 
 
 ALG_ID algorithm_from_int(int alg)
@@ -277,7 +278,49 @@ crypt_key_t rx_crypt_create_symetric_key(const void* data, size_t size, int alg,
 		err = GetLastError();
 	return 0;
 }
+RX_COMMON_API crypt_key_t rx_crypt_open_public_from_pem(const char* data)
+{
+	DWORD binaryBlobLen = 0;
+	HCRYPTKEY hKey = 0;
+	BYTE* pbRsaBlob = NULL;
+	DWORD cbRsaBlob = 0;
 
+	// Step 1: Decode the PEM Base64 payload into a binary DER blob
+	// CRYPT_STRING_BASE64HEADER automatically strips "-----BEGIN..." and "-----END..." strings
+	if (!CryptStringToBinaryA(data, 0, CRYPT_STRING_BASE64HEADER, NULL, &binaryBlobLen, NULL, NULL))
+	{
+		return 0;
+	}
+
+	BYTE* binaryDerBlob = rx_heap_alloc(binaryBlobLen);
+	if (!CryptStringToBinaryA(data, 0, CRYPT_STRING_BASE64HEADER, binaryDerBlob, &binaryBlobLen, NULL, NULL))
+	{
+		rx_heap_free(binaryDerBlob);
+		return 0;
+	}
+
+	// Step 2: Decode the PKCS#1 RSA public key DER directly into a Windows RSA PUBLICKEYBLOB
+	// RSA_CSP_PUBLICKEYBLOB handles the "-----BEGIN RSA PUBLIC KEY-----" (PKCS#1) DER format
+	if (!CryptDecodeObjectEx(X509_ASN_ENCODING, RSA_CSP_PUBLICKEYBLOB,
+		binaryDerBlob, binaryBlobLen, CRYPT_DECODE_ALLOC_FLAG, NULL,
+		&pbRsaBlob, &cbRsaBlob))
+	{
+		rx_heap_free(binaryDerBlob);
+		return 0;
+	}
+
+	// Step 3: Import the RSA blob into the crypto context
+	if (!CryptImportKey(hcrypt, pbRsaBlob, cbRsaBlob, 0, 0, &hKey))
+	{
+		hKey = 0;
+	}
+
+	// Clean up temporary buffers
+	LocalFree(pbRsaBlob);
+	rx_heap_free(binaryDerBlob);
+
+	return hKey;
+}
 int rx_crypt_set_IV(crypt_key_t key, const void* data)
 {
 	if (CryptSetKeyParam(key, KP_IV, data, 0))
@@ -391,6 +434,40 @@ int rx_crypt_get_hash(crypt_hash_t hhash, void* buffer, size_t* size)
 	{
 		return RX_ERROR;
 	}
+}
+int rx_crypt_rsa_verify_sha256(crypt_key_t key, const void* content, size_t content_size, const void* sig, size_t sig_size)
+{
+	HCRYPTHASH hhash = 0;
+	BYTE* rev_sig = NULL;
+	int ret = RX_ERROR;
+
+	// Hash the JWT content (header.payload) with SHA-256, no HMAC key
+	if (!CryptCreateHash(hcrypt, CALG_SHA_256, 0, 0, &hhash))
+		return RX_ERROR;
+
+	if (!CryptHashData(hhash, (const BYTE*)content, (DWORD)content_size, 0))
+	{
+		CryptDestroyHash(hhash);
+		return RX_ERROR;
+	}
+
+	// WinCrypt RSA signatures are stored in little-endian byte order,
+	// but JWT/PKCS#1 signatures are big-endian, so reverse before verifying.
+	rev_sig = (BYTE*)malloc(sig_size);
+	if (!rev_sig)
+	{
+		CryptDestroyHash(hhash);
+		return RX_ERROR;
+	}
+	for (size_t i = 0; i < sig_size; i++)
+		rev_sig[i] = ((const BYTE*)sig)[sig_size - 1 - i];
+
+	if (CryptVerifySignatureA(hhash, rev_sig, (DWORD)sig_size, key, NULL, 0))
+		ret = RX_OK;
+
+	free(rev_sig);
+	CryptDestroyHash(hhash);
+	return ret;
 }
 
 

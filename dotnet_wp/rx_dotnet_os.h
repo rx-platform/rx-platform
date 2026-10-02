@@ -62,8 +62,10 @@ enum class log_event_type
 };
     
 rx_result load_hostfxr(rx_dotnet_config_data_t& init_config);
-rx_result init_dotnet_host(string_type runtime_config);
+string_type get_full_path_from_relative(const string_type& path);
+rx_result init_dotnet_host(string_type runtime_config, string_type app_dir);
 string_array get_dotnet_runtimes();
+string_type get_dotnet_rid();
 string_type get_hosted_dotnet_version();
 rx_result load_assembly(const string_type& path);
 rx_result get_function_pointer(const string_type& type_name, const string_type& method_name, const string_type& delegate_name, void** del);

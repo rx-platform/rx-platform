@@ -86,6 +86,9 @@ rx_result worker_initialized_message::serialize (io::rx_io_buffer& buffer) const
 	result = buffer.write_string(dotnet_host_version.empty() ? "" : dotnet_host_version.c_str());
 	if (!result)
 		return result;
+	result = buffer.write_string(worker_version.empty() ? "" : worker_version.c_str());
+	if (!result)
+		return result;
 	return true;
 }
 
@@ -108,6 +111,9 @@ rx_result worker_initialized_message::deserialize (io::rx_const_io_buffer& buffe
 	if(!result)
 		return result;
 	result = buffer.read_string(dotnet_host_version);
+	if (!result)
+		return result;
+	result = buffer.read_string(worker_version);
 	if (!result)
 		return result;
 	return true;
@@ -507,7 +513,7 @@ rx_result build_runtime_response::deserialize (io::rx_const_io_buffer& buffer)
 // Class rx_internal::dotnet::dotnet_binding_runtime_message 
 
 
-rx_result dotnet_binding_runtime_message::serialize (io::rx_io_buffer& buffer) const
+rx_result dotnet_binding_runtime_message::serialize_base (io::rx_io_buffer& buffer) const
 {
 	auto result = buffer.write_to_buffer((int)type);
 	if (!result)
@@ -527,7 +533,7 @@ rx_result dotnet_binding_runtime_message::serialize (io::rx_io_buffer& buffer) c
 	return true;
 }
 
-rx_result dotnet_binding_runtime_message::deserialize (io::rx_const_io_buffer& buffer)
+rx_result dotnet_binding_runtime_message::deserialize_base (io::rx_const_io_buffer& buffer)
 {
 	int type_int = 0;
 	auto result = buffer.read_from_buffer(type_int);
@@ -553,7 +559,45 @@ rx_result dotnet_binding_runtime_message::deserialize (io::rx_const_io_buffer& b
 // Class rx_internal::dotnet::dotnet_unbind_runtime_message 
 
 
+rx_result dotnet_unbind_runtime_message::serialize (io::rx_io_buffer& buffer) const
+{
+	return serialize_base(buffer);
+}
+
+rx_result dotnet_unbind_runtime_message::deserialize (io::rx_const_io_buffer& buffer)
+{
+	return deserialize_base(buffer);
+}
+
+
 // Class rx_internal::dotnet::dotnet_bind_runtime_message 
+
+
+rx_result dotnet_bind_runtime_message::serialize (io::rx_io_buffer& buffer) const
+{
+	auto result = serialize_base(buffer);
+	if (!result)
+		return result;
+	
+	result = buffer.write_string(initial.empty() ? "" : initial.c_str());
+	if (!result)
+		return result;
+
+	return true;
+}
+
+rx_result dotnet_bind_runtime_message::deserialize (io::rx_const_io_buffer& buffer)
+{
+	auto result = deserialize_base(buffer);
+	if (!result)
+		return result;
+
+	result = buffer.read_string(initial);
+	if (!result)
+		return result;
+
+	return true;
+}
 
 
 // Class rx_internal::dotnet::dotnet_value_changed_message 
@@ -668,46 +712,6 @@ rx_result dotnet_initial_values_message::deserialize (io::rx_const_io_buffer& bu
 }
 
 
-// Class rx_internal::dotnet::wp_write_value_message 
-
-
-rx_result wp_write_value_message::serialize (io::rx_io_buffer& buffer) const
-{
-	auto result = buffer.write_to_buffer((int)type);
-	if (!result)
-		return result;
-	result = buffer.write_to_buffer(inst);
-	if (!result)
-		return result;
-	result = buffer.write_to_buffer(idx);
-	if (!result)
-		return result;
-	result = buffer.write_value(val);
-	if (!result)
-		return result;
-	return true;
-}
-
-rx_result wp_write_value_message::deserialize (io::rx_const_io_buffer& buffer)
-{
-	int type_int = 0;
-	auto result = buffer.read_from_buffer(type_int);
-	if (!result)
-		return result;
-	type = (rx_item_type)type_int;
-	result = buffer.read_from_buffer(inst);
-	if (!result)
-		return result;
-	result = buffer.read_from_buffer(idx);
-	if (!result)
-		return result;
-	result = buffer.read_value(val);
-	if (!result)
-		return result;
-	return true;
-}
-
-
 // Class rx_internal::dotnet::wp_result_response 
 
 
@@ -783,6 +787,7 @@ rx_result dotnet_execute_method_message::deserialize (io::rx_const_io_buffer& bu
 	result = buffer.read_string(value);
 	if (!result)
 		return result;
+
 
 	return true;
 }
@@ -1019,6 +1024,138 @@ rx_result wp_void_response::serialize (io::rx_io_buffer& buffer) const
 
 rx_result wp_void_response::deserialize (io::rx_const_io_buffer& buffer)
 {
+	return true;
+}
+
+
+// Class rx_internal::dotnet::wp_write_value_message 
+
+
+rx_result wp_write_value_message::serialize (io::rx_io_buffer& buffer) const
+{
+	auto result = buffer.write_to_buffer((int)type);
+	if (!result)
+		return result;
+	result = buffer.write_to_buffer(inst);
+	if (!result)
+		return result;
+	result = buffer.write_to_buffer(idx);
+	if (!result)
+		return result;
+	result = buffer.write_value(val);
+	if (!result)
+		return result;
+	return true;
+}
+
+rx_result wp_write_value_message::deserialize (io::rx_const_io_buffer& buffer)
+{
+	int type_int = 0;
+	auto result = buffer.read_from_buffer(type_int);
+	if (!result)
+		return result;
+	type = (rx_item_type)type_int;
+	result = buffer.read_from_buffer(inst);
+	if (!result)
+		return result;
+	result = buffer.read_from_buffer(idx);
+	if (!result)
+		return result;
+	result = buffer.read_value(val);
+	if (!result)
+		return result;
+	return true;
+}
+
+
+// Class rx_internal::dotnet::wp_execute_value_message 
+
+
+rx_result wp_execute_value_message::serialize (io::rx_io_buffer& buffer)
+{
+	auto result = buffer.write_to_buffer((int)type);
+	if (!result)
+		return result;
+	result = buffer.write_to_buffer(inst);
+	if (!result)
+		return result;
+	result = buffer.write_to_buffer(idx);
+	if (!result)
+		return result;
+	result = buffer.write_value(val);
+	if (!result)
+		return result;
+	return true;
+}
+
+rx_result wp_execute_value_message::deserialize (io::rx_const_io_buffer& buffer)
+{
+	int type_int = 0;
+	auto result = buffer.read_from_buffer(type_int);
+	if (!result)
+		return result;
+	type = (rx_item_type)type_int;
+	result = buffer.read_from_buffer(inst);
+	if (!result)
+		return result;
+	result = buffer.read_from_buffer(idx);
+	if (!result)
+		return result;
+	result = buffer.read_value(val);
+	if (!result)
+		return result;
+	return true;
+}
+
+
+// Class rx_internal::dotnet::wp_execute_response 
+
+
+rx_result wp_execute_response::serialize (io::rx_io_buffer& buffer) const
+{
+	rx_result result;
+	if (action_result)
+	{
+		result = buffer.write_to_buffer(0);
+		if (!result)
+			return result;
+	}
+	else
+	{
+		result = buffer.write_to_buffer((uint32_t)action_result.errors().size());
+		if (!result)
+			return result;
+		for (const auto& err : action_result.errors())
+		{
+			result = buffer.write_string(err);
+			if (!result)
+				return result;
+		}
+	}
+	result = buffer.write_value(result_value);
+	if(!result)
+		return result;
+	return true;
+}
+
+rx_result wp_execute_response::deserialize (io::rx_const_io_buffer& buffer)
+{
+	uint32_t err_size = 0;
+	string_type errMsg;
+	auto result = buffer.read_from_buffer(err_size);
+	if (!result)
+		return result;
+
+	for (uint32_t i = 0; i < err_size; ++i)
+	{
+		result = buffer.read_string(errMsg);
+		if (!result)
+			return result;
+		action_result.register_error(errMsg);
+	}
+	result = buffer.read_value(result_value);
+	if (!result)
+		return result;
 	return true;
 }
 

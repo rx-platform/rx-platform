@@ -4,7 +4,7 @@
 *
 *  sys_internal\rx_query_messages.cpp
 *
-*  Copyright (c) 2020-2024 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *
@@ -1026,6 +1026,8 @@ rx_result browse_runtime_response_message::serialize (base_meta_writer& stream) 
 			return stream.get_error();
 		if (!stream.write_string("path", one.full_path.c_str()))
 			return stream.get_error();
+		if (!stream.write_value("value", one.value))
+			return stream.get_error();
 		if (!stream.end_object())
 			return stream.get_error();
 	}
@@ -1056,7 +1058,8 @@ rx_result browse_runtime_response_message::deserialize (base_meta_reader& stream
 			return stream.get_error();
 		if (!stream.read_string("path", one.full_path))
 			return stream.get_error();
-
+		if (!stream.read_value("value", one.value))
+			return stream.get_error();
 		if (!stream.end_object())
 			return stream.get_error();
 
@@ -1225,6 +1228,133 @@ const string_type& get_code_info_response_message::get_type_name ()
 }
 
 rx_message_type_t get_code_info_response_message::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::query_messages::read_json_response
+
+string_type read_json_response::type_name = "jsonResp";
+
+rx_message_type_t read_json_response::type_id = rx_json_response_id;
+
+
+rx_result read_json_response::serialize (base_meta_writer& stream) const
+{
+	return stream.write_init_values("data", data);
+}
+
+rx_result read_json_response::deserialize (base_meta_reader& stream)
+{
+	return stream.read_init_values("data", data);
+}
+
+const string_type& read_json_response::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t read_json_response::get_type_id ()
+{
+  return type_id;
+
+}
+
+
+// Class rx_internal::rx_protocol::messages::query_messages::read_json_request
+
+string_type read_json_request::type_name = "jsonReq";
+
+rx_message_type_t read_json_request::type_id = rx_json_request_id;
+
+
+rx_result read_json_request::serialize (base_meta_writer& stream) const
+{
+	if (!stream.write_item_reference("ref", ref))
+		return stream.get_error();
+	if (!stream.write_string("subItem", sub_item.c_str()))
+		return stream.get_error();
+	return true;
+}
+
+rx_result read_json_request::deserialize (base_meta_reader& stream)
+{
+	if (!stream.read_item_reference("ref", ref))
+		return stream.get_error();
+	if (!stream.read_string("subItem", sub_item))
+		return stream.get_error();
+	return true;
+}
+
+message_ptr read_json_request::do_job (api::rx_context ctx, rx_protocol_connection_ptr conn)
+{
+	rx_directory_resolver directories;
+	directories.add_paths({ ctx.active_path });
+
+	auto resolve_result = api::ns::rx_resolve_reference(ref, directories);
+	if (!resolve_result)
+	{
+		auto ret_value = std::make_unique<error_message>(resolve_result.errors(), 13, request_id);
+		return ret_value;
+
+	}
+
+	rx_thread_handle_t executer = rx_thread_context();
+	rx_result result = model::algorithms::do_with_runtime_item(resolve_result.value()
+		, [ctx, conn = conn, request_id = request_id, sub_item = sub_item, executer](rx_result_with<platform_item_ptr>&& item) mutable -> int
+		{
+			if (!item)
+			{
+				return 0;
+			}
+			auto rctx = ctx;
+			read_struct_data data;
+			data.type = runtime_value_type::simple_runtime_value;
+			data.callback = read_struct_callback_t(rctx.object, [ctx, request_id = request_id, conn = conn](rx_result&& result, data::runtime_values_data&& data) mutable
+				{
+					data::runtime_values_data ret_data;
+					if (result)
+					{
+						ret_data = std::move(data);
+					}
+
+					auto ret = std::make_unique<read_json_response>();
+					ret->request_id = request_id;
+					ret->data = std::move(ret_data);
+
+					conn->data_processed(std::move(ret));
+
+
+				}, executer);
+			item.value()->read_struct(sub_item, std::move(data));
+			return 0;
+		}
+		, callback::rx_any_callback<int>(ctx.object
+			, [](int) mutable
+			{
+				
+			}, executer)
+		, ctx);
+
+	if (!result)
+	{
+		auto ret_value = std::make_unique<error_message>(result, 13, request_id);
+		return ret_value;
+	}
+
+	return message_ptr();
+}
+
+const string_type& read_json_request::get_type_name ()
+{
+  return type_name;
+
+}
+
+rx_message_type_t read_json_request::get_type_id ()
 {
   return type_id;
 

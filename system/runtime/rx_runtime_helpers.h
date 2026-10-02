@@ -4,7 +4,7 @@
 *
 *  system\runtime\rx_runtime_helpers.h
 *
-*  Copyright (c) 2020-2025 ENSACO Solutions doo
+*  Copyright (c) 2020-2026 ENSACO Solutions doo
 *  Copyright (c) 2018-2019 Dusan Ciric
 *
 *  
@@ -68,13 +68,6 @@ class rx_directory_resolver;
 } // namespace ns
 
 namespace runtime {
-namespace structure {
-class mapper_data;
-class variable_data;
-class runtime_item;
-class source_data;
-} // namespace structure
-
 namespace algorithms {
 template <class typeT> class runtime_holder;
 } // namespace algorithms
@@ -87,8 +80,15 @@ class relation_subscriber;
 class runtime_process_context;
 namespace tag_blocks {
 class binded_tags;
-
 } // namespace tag_blocks
+
+namespace structure {
+class variable_data;
+class runtime_item;
+class source_data;
+class mapper_data;
+
+} // namespace structure
 } // namespace runtime
 } // namespace rx_platform
 
@@ -661,6 +661,8 @@ struct runtime_init_context
       size_t points_count;
 
       std::map<string_type, security::security_guard> guards;
+
+      data::runtime_values_data init_data;
 
   public:
       runtime_init_context(const runtime_init_context&) = delete;

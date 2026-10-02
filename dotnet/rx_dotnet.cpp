@@ -74,6 +74,8 @@ rx_result dotnet_builder::do_build (configuration_data_t& config, startup_create
     if (dir_result)
     {
         auto dir = dir_result;
+
+
         auto app = builders::create_type<application_type>(meta::object_type_creation_data{
             RX_DOTNET_APPLICATION_TYPE_NAME
             , RX_DOTNET_APPLICATION_TYPE_ID
@@ -102,16 +104,16 @@ rx_result dotnet_builder::do_build (configuration_data_t& config, startup_create
         app_instance_data.instance_data.priority = rx_domain_priority::normal;
         auto result = builders::add_object_to_configuration(dir, std::move(app_instance_data), data::runtime_values_data(), tl::type2type<application_type>(), data);
 
-  /*      runtime_data::domain_runtime_data domain_instance_data;
-        domain_instance_data.meta_info.name = RX_NS_SYSTEM_DOM_NAME;
-        domain_instance_data.meta_info.id = RX_NS_SYSTEM_DOM_ID;
-        domain_instance_data.meta_info.parent = RX_NS_SYSTEM_DOM_TYPE_ID;
+        runtime_data::domain_runtime_data domain_instance_data;
+        domain_instance_data.meta_info.name = RX_DOTNET_DOMAIN_NAME;
+        domain_instance_data.meta_info.id = RX_DOTNET_DOMAIN_ID;
+        domain_instance_data.meta_info.parent = RX_DOTNET_DOMAIN_TYPE_ID;
         domain_instance_data.meta_info.attributes = namespace_item_attributes::namespace_item_internal_access;
         domain_instance_data.meta_info.path = full_path;
         domain_instance_data.instance_data.processor = -1;
-        domain_instance_data.instance_data.app_ref = rx_node_id(RX_NS_SYSTEM_APP_ID);
+        domain_instance_data.instance_data.app_ref = rx_node_id(RX_DOTNET_APPLICATION_ID);
         domain_instance_data.instance_data.priority = rx_domain_priority::normal;
-        result = builders::add_object_to_configuration(dir, std::move(domain_instance_data), data::runtime_values_data(), tl::type2type<domain_type>(), data);*/
+        result = builders::add_object_to_configuration(dir, std::move(domain_instance_data), data::runtime_values_data(), tl::type2type<domain_type>(), data);
 
     }
 	return dotnet_hosting::instance().do_build(config, data);
@@ -159,9 +161,18 @@ bool dotnet_command::do_console_command (std::istream& in, std::ostream& out, st
         {
             out << ANSI_COLOR_GREEN ANSI_COLOR_BOLD
 				<< lib.first
-				<< "\t" ANSI_COLOR_RESET
+				<< " - " ANSI_COLOR_RESET
                 << lib.second
                 << "\r\n";
+			out << "Assemblies:\r\n";
+            auto assemblies = dotnet_hosting::instance().get_loaded_assemblies(lib.first);
+            for (const auto& assembly : assemblies)
+            {
+                out << "   " ANSI_COLOR_CYAN ANSI_COLOR_BOLD
+                    << assembly
+                    << ANSI_COLOR_RESET << "\r\n";
+            }
+			out << "\r\n";
         }
         return true;
     }
@@ -169,6 +180,7 @@ bool dotnet_command::do_console_command (std::istream& in, std::ostream& out, st
     {
         auto info = dotnet_hosting::instance().get_dotnet_info();
         out << "Native hosting module: " ANSI_COLOR_GREEN ANSI_COLOR_BOLD << info.rx_native_version << ANSI_COLOR_RESET << "\r\n";
+        out << "Worker process: " ANSI_COLOR_GREEN ANSI_COLOR_BOLD << info.rx_worker_version << ANSI_COLOR_RESET << "\r\n";
         out << ".NET hosting module: " ANSI_COLOR_GREEN ANSI_COLOR_BOLD << info.rx_dotnet_version << ANSI_COLOR_RESET << "\r\n\r\n";
         out << "Hosted .NET runtime: " ANSI_COLOR_BLUE ANSI_COLOR_BOLD << info.runtime_version << ANSI_COLOR_RESET << "\r\n";
         return true;
@@ -284,8 +296,11 @@ rx_result dotnet_hosting::initialize (hosting::rx_platform_host* host, const con
     config.app_path = data.dotnet.app_path;
     config.lib_path = data.dotnet.lib_path;
 	config.launch_debugger = data.dotnet.launch_debugger;
+	config.scan_rate = data.dotnet.scan_rate;
+	config.write_timeout = data.dotnet.write_timeout;
+	config.exec_timeout = data.dotnet.exec_timeout;
 
-	host_ = std::make_unique<dotnet_host>(data, config);
+	host_ = std::make_unique<dotnet_host>();
 	result = host_->initialize(config);
 
     if(!result)
@@ -297,7 +312,7 @@ rx_result dotnet_hosting::initialize (hosting::rx_platform_host* host, const con
 	}
 
 
-    DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, ".NET hosting initialized.");
+    DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, ".NET hosting initialized; "s + host_->get_native_host_version());
 
 	return true;
 }
@@ -331,7 +346,6 @@ void dotnet_hosting::deinitialize (rx_void_callback callback)
     if(host_)
     {
         host_->deinitialize(std::move(callback));
-        host_.reset();
 	}
 
     DOTNET_LOG_INFO("dotnet_hosting::initialize", 500, ".NET hosting deinitialized");
@@ -339,16 +353,18 @@ void dotnet_hosting::deinitialize (rx_void_callback callback)
 
 dotnet_runtime_info_t dotnet_hosting::get_dotnet_info () const
 {
-    static char rx_ver[0x60] = { 0 };
-    if (!rx_ver[0])
-    {
-        ASSIGN_MODULE_VERSION(rx_ver, RX_DOTNET_NAME, RX_DOTNET_MAJOR_VERSION, RX_DOTNET_MINOR_VERSION, RX_DOTNET_BUILD_NUMBER);
-    }
+    
     dotnet_runtime_info_t ret;
     ret.runtime_version = host_ ? host_->get_hosted_dotnet_version() : string_type();
-    ret.rx_native_version = rx_ver; 
+    ret.rx_native_version = dotnet_host::get_native_host_version(); 
     ret.rx_dotnet_version = host_ ? host_->get_dotnet_host_version() : string_type();
+	ret.rx_worker_version = host_ ? host_->get_worker_version() : string_type();
     return ret;
+}
+
+string_array dotnet_hosting::get_loaded_assemblies (const string_type& lib)
+{
+    return get_loaded_dotnet_assemblies(lib);
 }
 
 rx_result dotnet_hosting::do_build (configuration_data_t& config, startup_create_data_type& data)
@@ -427,11 +443,23 @@ void dotnet_hosting::received_write_value (rx_item_type type, uint32_t transId, 
     }
 }
 
-void dotnet_hosting::bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_object_runtime> ref)
+void dotnet_hosting::received_execute_value (rx_item_type type, uint32_t transId, void* inst, size_t idx, rx_simple_value val, std::function<void(rx_simple_value&&, rx_result&&)> callback)
+{
+    if(host_)
+    {
+        host_->received_execute_value(type, transId, inst, idx, std::move(val), std::move(callback));
+    }
+    else
+    {
+        callback(rx_simple_value(), rx_result("Dotnet hosting is not initialized."));
+        }
+}
+
+void dotnet_hosting::bind_runtime (const rx_node_id& id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_object_runtime> ref, const string_type& init)
 {
     if (host_)
     {
-        host_->bind_runtime(id, path, type_id, ptr, ref);
+        host_->bind_runtime(id, path, type_id, ptr, ref, init);
     }
 }
 
@@ -443,11 +471,11 @@ void dotnet_hosting::unbind_runtime (const rx_node_id& id, const rx_node_id& typ
     }
 }
 
-void dotnet_hosting::bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_struct> ref)
+void dotnet_hosting::bind_struct (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_struct> ref, const string_type& init)
 {
     if (host_)
     {
-        host_->bind_struct(id, path, type_id, ptr, ref);
+        host_->bind_struct(id, path, type_id, ptr, ref, init);
     }
 }
 
@@ -459,11 +487,11 @@ void dotnet_hosting::unbind_struct (const rx_node_id id, const string_type& path
     }
 }
 
-void dotnet_hosting::bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_source> ref)
+void dotnet_hosting::bind_source (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_source> ref, const string_type& init)
 {
     if (host_)
     {
-        host_->bind_source(id, path, type_id, ptr, ref);
+        host_->bind_source(id, path, type_id, ptr, ref, init);
     }
 }
 
@@ -475,11 +503,11 @@ void dotnet_hosting::unbind_source (const rx_node_id id, const string_type& path
     }
 }
 
-void dotnet_hosting::bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_mapper> ref)
+void dotnet_hosting::bind_mapper (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_mapper> ref, const string_type& init)
 {
     if (host_)
     {
-        host_->bind_mapper(id, path, type_id, ptr, ref);
+        host_->bind_mapper(id, path, type_id, ptr, ref, init);
     }
 }
 
@@ -491,11 +519,11 @@ void dotnet_hosting::unbind_mapper (const rx_node_id id, const string_type& path
     }
 }
 
-void dotnet_hosting::bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_event> ref)
+void dotnet_hosting::bind_event (const rx_node_id id, const string_type& path, const rx_node_id& type_id, void* ptr, rx_reference<dotnet_event> ref, const string_type& init)
 {
     if (host_)
     {
-        host_->bind_event(id, path, type_id, ptr, ref);
+        host_->bind_event(id, path, type_id, ptr, ref, init);
     }
 }
 

@@ -40,10 +40,6 @@
 
 namespace rx_platform {
 namespace runtime {
-namespace events {
-class runtime_events_manager;
-} // namespace events
-
 namespace tag_blocks {
 class connected_tags;
 class binded_tags;
@@ -51,8 +47,12 @@ class binded_tags;
 
 namespace structure {
 class event_data;
-
 } // namespace structure
+
+namespace events {
+class runtime_events_manager;
+
+} // namespace events
 } // namespace runtime
 } // namespace rx_platform
 
@@ -539,6 +539,8 @@ class runtime_process_context
       rx_result get_value (runtime_handle_t handle, values::rx_simple_value& val) const;
 
       rx_result set_value (runtime_handle_t handle, values::rx_simple_value&& val, tag_blocks::binded_write_result_callback_t callback);
+
+      rx_result execute_value (runtime_handle_t handle, values::rx_simple_value&& val, tag_blocks::binded_execute_result_callback_t callback);
 
       rx_result set_item (const string_type& path, values::rx_simple_value&& what, runtime_init_context& ctx);
 

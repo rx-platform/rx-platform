@@ -3,7 +3,7 @@
 
 #define RX_LIB_MAJOR_VERSION 3
 #define RX_LIB_MINOR_VERSION 4
-#define RX_LIB_BUILD_NUMBER 8
+#define RX_LIB_BUILD_NUMBER 10
 
 
 // version 0.16.0 removed virtual references and added hashes to library
@@ -90,4 +90,6 @@
 // version 3.4.6 added combine to runtime_values_data
 // version 3.4.7 added rx_node_id support to io buffers
 // version 3.4.8 added rx_simple_value support to io buffers
+// version 3.4.9 added template implementation for runtime_data_model::fill_runtime_value_recursive<T>
+// version 3.4.10 added get_child to runtime_values_data
 
